@@ -5,20 +5,16 @@ export default {
       type: 'array',
       array: true,
       format: null,
-      label: "Hosts"
+      label: 'Hosts',
     },
     target_template: {
       type: 'object',
-      lable: 'Target template'
+      lable: 'Target template',
     },
     registration_ttl: {
       type: 'number',
-      label: 'Registration TTLS'
+      label: 'Registration TTLS',
     },
   },
-  config_flow: [
-    'hosts',
-    'target_template',
-    'registration_ttl',
-  ],
+  config_flow: ['hosts', 'target_template', 'registration_ttl'],
 };

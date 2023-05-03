@@ -3,10 +3,8 @@ export default {
   config_schema: {
     duration: {
       type: 'number',
-      label: 'Duration (ms)'
-    }
+      label: 'Duration (ms)',
+    },
   },
-  config_flow: [
-    'duration'
-  ],
+  config_flow: ['duration'],
 };

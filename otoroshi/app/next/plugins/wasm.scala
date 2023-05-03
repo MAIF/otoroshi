@@ -129,7 +129,7 @@ class WasmPreRoute extends NgPreRouting {
 
 class WasmBackend extends NgBackendCall {
 
-  private val logger = Logger("otoroshi-plugins-wasm-backend")
+  private val logger                                       = Logger("otoroshi-plugins-wasm-backend")
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -570,7 +570,7 @@ class WasmRequestHandler extends RequestHandler {
   }
 }
 
-case class FakeWasmContext(config: JsValue) extends NgCachedConfigContext {
+case class FakeWasmContext(config: JsValue, idx: Int = 0) extends NgCachedConfigContext {
   override def route: NgRoute = NgRoute.empty
 }
 
@@ -620,7 +620,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = config.initialDelay
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = config.interval
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
-  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None // TODO: make it configurable base on global env ???
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           =
+    None // TODO: make it configurable base on global env ???
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils
@@ -767,7 +768,17 @@ class WasmOPA extends NgAccessValidator {
           if (canAccess) {
             NgAccess.NgAllowed.vfuture
           } else {
-            NgAccess.NgDenied(Results.Forbidden).vfuture
+            Errors
+              .craftResponseResult(
+                "Forbidden access",
+                Results.Status(403),
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(r => NgAccess.NgDenied(r))
           }
         case Left(err)  =>
           Errors

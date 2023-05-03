@@ -95,6 +95,7 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
+    console.log(this.state);
     return (
       <Loader loading={this.state.loading}>
         {!this.state.service || !this.state.status.length ? (
@@ -110,7 +111,7 @@ export class ServiceHealthPage extends Component {
             </p>
           </>
         ) : (
-          <div className="content-health">
+          <div className="content-health" style={{ maxWidth: '100%' }}>
             <div>
               <h3>Uptime last 90 days</h3>
               <Uptime

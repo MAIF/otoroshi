@@ -632,17 +632,17 @@ object NgApikeyCallsConfig {
   )
 }
 
-case class ApikeyAuthModuleConfig (
+case class ApikeyAuthModuleConfig(
     realm: Option[String] = "apikey-auth-module-realm".some,
     matcher: Option[ApiKeyRouteMatcher] = None
-  ) extends NgPluginConfig {
+) extends NgPluginConfig {
   override def json: JsValue = ApikeyAuthModuleConfig.format.writes(this)
 }
 
 object ApikeyAuthModuleConfig {
   val format = new Format[ApikeyAuthModuleConfig] {
     override def writes(o: ApikeyAuthModuleConfig): JsValue = Json.obj(
-      "realm" -> o.realm,
+      "realm"   -> o.realm,
       "matcher" -> o.matcher.map(ApiKeyRouteMatcher.format.writes)
     )
 
@@ -651,11 +651,11 @@ object ApikeyAuthModuleConfig {
         realm = json.select("realm").asOpt[String],
         matcher = ApiKeyRouteMatcher.format.reads(json.select("matcher").getOrElse(Json.obj())) match {
           case JsSuccess(value, _) => value.some
-          case JsError(_) => None
+          case JsError(_)          => None
         }
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -663,13 +663,14 @@ object ApikeyAuthModuleConfig {
 
 class ApikeyAuthModule extends NgPreRouting {
 
-  override def name: String = "Apikey auth module"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
-  override def multiInstance: Boolean = false
+  override def name: String                                = "Apikey auth module"
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean                      = false
   override def defaultConfigObject: Option[NgPluginConfig] = ApikeyAuthModuleConfig().some
-  override def description: Option[String] = "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
+  override def description: Option[String]                 =
+    "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
@@ -749,10 +750,12 @@ class ApikeyAuthModule extends NgPreRouting {
     result
   }
 
-  override def preRoute(ctx: NgPreRoutingContext)
-                       (implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
 
-    val config = ctx.cachedConfig(internalName)(ApikeyAuthModuleConfig.format)
+    val config = ctx
+      .cachedConfig(internalName)(ApikeyAuthModuleConfig.format)
       .getOrElse(ApikeyAuthModuleConfig())
 
     ctx.request.headers.get("Authorization") match {
@@ -761,13 +764,17 @@ class ApikeyAuthModule extends NgPreRouting {
           case None                       => Left(NgPreRoutingErrorWithResult(forbidden(config))).vfuture
           case Some((username, password)) =>
             env.datastores.apiKeyDataStore.findById(username).flatMap {
-              case Some(apikey) if apikey.clientSecret == password && validApikey(apikey, config.matcher.getOrElse(ApiKeyRouteMatcher())) =>
+              case Some(apikey)
+                  if apikey.clientSecret == password && validApikey(
+                    apikey,
+                    config.matcher.getOrElse(ApiKeyRouteMatcher())
+                  ) =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                 Done.right.vfuture
-              case _                       => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
+              case _ => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
             }
         }
-      case _                               => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
+      case _                                       => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
     }
   }
 }

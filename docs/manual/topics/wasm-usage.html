@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.2.1
+16.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -165,7 +165,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.2.1
+16.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -359,7 +359,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </dt>
   <dd>
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-toml">[package]
-name = &quot;plugin-template&quot;
+name = &quot;@@PLUGIN_NAME@@&quot;
 version = &quot;0.1.0&quot;
 edition = &quot;2021&quot;
 
@@ -376,7 +376,7 @@ path = &quot;./lib.rs&quot;</code></pre></dd>
   <dt>go.mod
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-mod">module go-plugin
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-mod">module @@PLUGIN_NAME@@
 
 go 1.19
 
@@ -385,7 +385,7 @@ require github.com/buger/jsonparser v1.1.1 // indirect</code></pre></dd>
   </dt>
   <dd>
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-json">{
-  &quot;name&quot;: &quot;js-plugin&quot;,
+  &quot;name&quot;: &quot;@@PLUGIN_NAME@@&quot;,
   &quot;version&quot;: &quot;0.0.1&quot;,
   &quot;devDependencies&quot;: {
     &quot;esbuild&quot;: &quot;^0.17.9&quot;

@@ -15,30 +15,30 @@ import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
-  
+
 case class NgHasAllowedUsersValidatorConfig(
-  usernames: Seq[String] = Seq.empty,
-  emails: Seq[String] = Seq.empty,
-  emailDomains: Seq[String] = Seq.empty,
-  metadataMatch: Seq[String] = Seq.empty,
-  metadataNotMatch: Seq[String] = Seq.empty,
-  profileMatch: Seq[String] = Seq.empty,
-  profileNotMatch: Seq[String] = Seq.empty,
+    usernames: Seq[String] = Seq.empty,
+    emails: Seq[String] = Seq.empty,
+    emailDomains: Seq[String] = Seq.empty,
+    metadataMatch: Seq[String] = Seq.empty,
+    metadataNotMatch: Seq[String] = Seq.empty,
+    profileMatch: Seq[String] = Seq.empty,
+    profileNotMatch: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "usernames" -> usernames,
-    "emails" -> emails,
-    "email_domains" -> emailDomains,
-    "metadata_match" -> metadataMatch,
+    "usernames"          -> usernames,
+    "emails"             -> emails,
+    "email_domains"      -> emailDomains,
+    "metadata_match"     -> metadataMatch,
     "metadata_not_match" -> metadataNotMatch,
-    "profile_match" -> profileMatch,
-    "profile_not_match" -> profileNotMatch,
+    "profile_match"      -> profileMatch,
+    "profile_not_match"  -> profileNotMatch
   )
 }
 
 object NgHasAllowedUsersValidatorConfig {
   val format = new Format[NgHasAllowedUsersValidatorConfig] {
-    override def writes(o: NgHasAllowedUsersValidatorConfig): JsValue = o.json
+    override def writes(o: NgHasAllowedUsersValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasAllowedUsersValidatorConfig] = Try {
       NgHasAllowedUsersValidatorConfig(
         usernames = json.select("usernames").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -47,7 +47,7 @@ object NgHasAllowedUsersValidatorConfig {
         metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty),
         profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty),
+        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -58,15 +58,15 @@ object NgHasAllowedUsersValidatorConfig {
 
 class NgHasAllowedUsersValidator extends NgAccessValidator {
 
-  private val logger = Logger("otoroshi-plugins-hasallowedusersvalidator")
-  override def name: String = "Allowed users only"
-  override def description: Option[String] = "This plugin only let allowed users pass".some
+  private val logger                                       = Logger("otoroshi-plugins-hasallowedusersvalidator")
+  override def name: String                                = "Allowed users only"
+  override def description: Option[String]                 = "This plugin only let allowed users pass".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHasAllowedUsersValidatorConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
@@ -87,16 +87,21 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(user) => {
-        val config = ctx.cachedConfig(internalName)(NgHasAllowedUsersValidatorConfig.format).getOrElse(NgHasAllowedUsersValidatorConfig())
-        val userMetaRaw         = user.otoroshiData.getOrElse(Json.obj())
+        val config      = ctx
+          .cachedConfig(internalName)(NgHasAllowedUsersValidatorConfig.format)
+          .getOrElse(NgHasAllowedUsersValidatorConfig())
+        val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
         if (
           config.usernames.contains(user.name) ||
-            config.emails.contains(user.email) ||
-            config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
-            (config.metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !config.metadataNotMatch.exists(
-              JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-            )) ||
-            (config.profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !config.profileNotMatch.exists(
+          config.emails.contains(user.email) ||
+          config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
+          (config.metadataMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          ) && !config.metadataNotMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          )) ||
+          (config.profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !config.profileNotMatch
+            .exists(
               JsonPathUtils.matchWith(user.profile, "user profile")
             ))
         ) {
@@ -105,32 +110,32 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
           forbidden(ctx)
         }
       }
-      case _ => forbidden(ctx)
+      case _          => forbidden(ctx)
     }
   }
 }
 
 case class NgJwtUserExtractorConfig(
-  verifier: String,
-  strict: Boolean = true,
-  strip: Boolean = false,
-  namePath: Option[String] = None,
-  emailPath: Option[String] = None,
-  metaPath: Option[String] = None,
+    verifier: String,
+    strict: Boolean = true,
+    strip: Boolean = false,
+    namePath: Option[String] = None,
+    emailPath: Option[String] = None,
+    metaPath: Option[String] = None
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "verifier" -> verifier,
-    "strict" -> strict,
-    "strip" -> strip,
-    "name_path" -> namePath,
+    "verifier"   -> verifier,
+    "strict"     -> strict,
+    "strip"      -> strip,
+    "name_path"  -> namePath,
     "email_path" -> emailPath,
-    "meta_path" -> metaPath,
+    "meta_path"  -> metaPath
   )
 }
 
 object NgJwtUserExtractorConfig {
   val format = new Format[NgJwtUserExtractorConfig] {
-    override def writes(o: NgJwtUserExtractorConfig): JsValue = o.json
+    override def writes(o: NgJwtUserExtractorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgJwtUserExtractorConfig] = Try {
       NgJwtUserExtractorConfig(
         verifier = json.select("verifier").as[String],
@@ -138,7 +143,7 @@ object NgJwtUserExtractorConfig {
         strip = json.select("strip").asOpt[Boolean].getOrElse(false),
         namePath = json.select("namePath").asOpt[String],
         emailPath = json.select("emailPath").asOpt[String],
-        metaPath = json.select("metaPath").asOpt[String],
+        metaPath = json.select("metaPath").asOpt[String]
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -149,14 +154,14 @@ object NgJwtUserExtractorConfig {
 
 class NgJwtUserExtractor extends NgPreRouting {
 
-  override def name: String = "Jwt user extractor"
-  override def description: Option[String] = "This plugin extract a user from a JWT token".some
+  override def name: String                                = "Jwt user extractor"
+  override def description: Option[String]                 = "This plugin extract a user from a JWT token".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtUserExtractorConfig("none").some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
 
   private val registeredClaims = Seq(
     "iss",
@@ -168,14 +173,21 @@ class NgJwtUserExtractor extends NgPreRouting {
     "jti"
   )
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    val config = ctx.cachedConfig(internalName)(NgJwtUserExtractorConfig.format).getOrElse(NgJwtUserExtractorConfig("none"))
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val config =
+      ctx.cachedConfig(internalName)(NgJwtUserExtractorConfig.format).getOrElse(NgJwtUserExtractorConfig("none"))
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {
       case None if !config.strict =>
         Done.rightf
       case None if config.strict  =>
-        NgPreRoutingErrorWithResult(Results.Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"))).leftf
-      case Some(verifier)  => {
+        NgPreRoutingErrorWithResult(
+          Results.Unauthorized(
+            Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
+          )
+        ).leftf
+      case Some(verifier)         => {
         verifier
           .verify(
             ctx.request,
@@ -188,7 +200,7 @@ class NgJwtUserExtractor extends NgPreRouting {
             jwtInjection.decodedToken match {
               case None if !config.strict => Results.Unauthorized(Json.obj()).future
               case None if config.strict  => Results.Ok(Json.obj()).future
-              case Some(token)     => {
+              case Some(token)            => {
                 val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
                 val strippedJsonToken                 = JsObject(parsedJsonToken.value.filter {
@@ -233,11 +245,14 @@ class NgJwtUserExtractor extends NgPreRouting {
               case 200 =>
                 Done.rightf
               case _   =>
-                NgPreRoutingErrorWithResult(Results.Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"))).leftf
+                NgPreRoutingErrorWithResult(
+                  Results.Unauthorized(
+                    Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
+                  )
+                ).leftf
             }
           }
       }
     }
   }
 }
-  

@@ -306,7 +306,8 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
         singular = (crdEntity \ "singular").as[String],
         versions = Map(
           "v1alpha1" -> (false, true, preserveUnknownFieldsSchema),
-          "v1"       -> (true, false, if (withoutSchema) preserveUnknownFieldsSchema else patchSchema(allData, data._1, data._2))
+          "v1"       -> (true, false, if (withoutSchema) preserveUnknownFieldsSchema
+          else patchSchema(allData, data._1, data._2))
         )
       )
   }

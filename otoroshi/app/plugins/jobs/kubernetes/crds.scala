@@ -1006,13 +1006,13 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       (a, b) => customizeRouteComposition(a, b, compositions)
     )
 
-  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]                    =
+  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
     client.fetchOtoroshiResources[StoredNgBackend](
       "backends",
       StoredNgBackend.format,
       (a, b) => customizeBackend(a, b, backends)
     )
-  def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                       =
+  def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                =
     client.fetchOtoroshiResources[ServiceGroup](
       "service-groups",
       ServiceGroup._fmt,
@@ -1059,42 +1059,42 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       (a, b) => customizeCert(a, b, certs, registerCertToExport)
     )
   }
-  def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]]                             =
+  def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]]                      =
     client.fetchOtoroshiResources[GlobalConfig](
       "global-configs",
       GlobalConfig._fmt,
       (a, b) => customizeGlobalConfig(a, b, config)
     )
-  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[GlobalJwtVerifier]]]           =
+  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[GlobalJwtVerifier]]]    =
     client.fetchOtoroshiResources[GlobalJwtVerifier](
       "jwt-verifiers",
       GlobalJwtVerifier._fmt,
       (a, b) => customizeJwtVerifier(a, b, verifiers)
     )
-  def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]]                =
+  def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]]         =
     client.fetchOtoroshiResources[AuthModuleConfig](
       "auth-modules",
       AuthModuleConfig._fmt(env),
       (a, b) => customizeAuthModule(a, b, modules)
     )
-  def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                        =
+  def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                 =
     client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
-  def crdsFetchWasmPlugins(plugins: Seq[WasmPlugin]): Future[Seq[OtoResHolder[WasmPlugin]]]                            =
+  def crdsFetchWasmPlugins(plugins: Seq[WasmPlugin]): Future[Seq[OtoResHolder[WasmPlugin]]]                     =
     client.fetchOtoroshiResources[WasmPlugin](
       "wasm-plugins",
       WasmPlugin.format,
       (a, b) => customizeWasmPlugins(a, b, plugins)
     )
-  def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]]                           =
+  def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]]                    =
     client
       .fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
-  def crdsFetchDataExporters(exporters: Seq[DataExporterConfig]): Future[Seq[OtoResHolder[DataExporterConfig]]]        =
+  def crdsFetchDataExporters(exporters: Seq[DataExporterConfig]): Future[Seq[OtoResHolder[DataExporterConfig]]] =
     client.fetchOtoroshiResources[DataExporterConfig](
       "data-exporters",
       DataExporterConfig.format,
       (a, b) => customizeDataExporter(a, b, exporters)
     )
-  def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]]          =
+  def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]]   =
     client.fetchOtoroshiResources[SimpleOtoroshiAdmin](
       "admins",
       v => SimpleOtoroshiAdmin.reads(v),
@@ -1102,23 +1102,36 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
 
   private[kubernetes] def customizeExtensionResource(
-    _spec: JsValue,
-    res: KubernetesOtoroshiResource,
-    entities: Seq[JsValue],
-    resource: otoroshi.api.Resource
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[JsValue],
+      resource: otoroshi.api.Resource
   ): JsValue = {
-    val spec = findAndMerge[JsValue](_spec, res, resource.singularName, None, entities, _.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty), _.select("id").asString, identity)
+    val spec = findAndMerge[JsValue](
+      _spec,
+      res,
+      resource.singularName,
+      None,
+      entities,
+      _.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+      _.select("id").asString,
+      identity
+    )
     customizeIdAndName(spec, res)
   }
 
-  private[kubernetes] def crdsFetchExtensionResources(resources: Map[otoroshi.api.Resource, Seq[JsValue]]): Future[Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]]] = {
-    val futures = resources.map {
-      case (resource, values) =>
-        () => client.fetchOtoroshiResources[JsValue](
-          resource.pluralName,
-          KubernetesHelper.reader(resource.access.validateToJson),
-          (a, b) => customizeExtensionResource(a, b, values, resource)
-        ).map(holders => (resource, holders))
+  private[kubernetes] def crdsFetchExtensionResources(
+      resources: Map[otoroshi.api.Resource, Seq[JsValue]]
+  ): Future[Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]]] = {
+    val futures = resources.map { case (resource, values) =>
+      () =>
+        client
+          .fetchOtoroshiResources[JsValue](
+            resource.pluralName,
+            KubernetesHelper.reader(resource.access.validateToJson),
+            (a, b) => customizeExtensionResource(a, b, values, resource)
+          )
+          .map(holders => (resource, holders))
     }.toList
     Source(futures)
       .mapAsync(1) { f =>
@@ -1168,7 +1181,7 @@ case class OtoroshiResourcesContext(
     routes: Seq[NgRoute],
     routeCompositions: Seq[NgRouteComposition],
     backends: Seq[StoredNgBackend],
-    extRes: Map[otoroshi.api.Resource, Seq[JsValue]],
+    extRes: Map[otoroshi.api.Resource, Seq[JsValue]]
 )
 
 case class CRDContext(
@@ -1253,7 +1266,12 @@ object KubernetesCRDsJob {
       otobackends           <-
         if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
 
-      otoextres             <- env.adminExtensions.resources().map(r => (r, r.access.allJson())).groupBy(_._1).mapValues(_.map(_._2).flatten).vfuture
+      otoextres <- env.adminExtensions
+                     .resources()
+                     .map(r => (r, r.access.allJson()))
+                     .groupBy(_._1)
+                     .mapValues(_.map(_._2).flatten)
+                     .vfuture
 
       services           <- clientSupport.client.fetchServices()
       endpoints          <- clientSupport.client.fetchEndpoints()
@@ -1297,7 +1315,7 @@ object KubernetesCRDsJob {
           routes = routes,
           routesCompositions = routecomps,
           backends = backends,
-          extRes = extres,
+          extRes = extres
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1317,7 +1335,7 @@ object KubernetesCRDsJob {
           routes = otoroutes,
           routeCompositions = otoroutecomps,
           backends = otobackends,
-          extRes = otoextres,
+          extRes = otoextres
         )
       )
     }
@@ -1361,15 +1379,17 @@ object KubernetesCRDsJob {
           compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++ (
-            ctx.kubernetes.extRes.map {
-              case (resource, values) => compareAndSave(values)(
+            ctx.kubernetes.extRes.map { case (resource, values) =>
+              compareAndSave(values)(
                 ctx.otoroshi.extRes.apply(resource),
                 v => v.select("id").asString,
-                v => resource.access.create(resource.version.name, resource.singularName, v.select("id").asOptString, v).map(_.isRight)
+                v =>
+                  resource.access
+                    .create(resource.version.name, resource.singularName, v.select("id").asOptString, v)
+                    .map(_.isRight)
               )
             }.flatten
           )
-
       ).toList
       logger.info(s"Will now sync ${entities.size} entities !")
       Source(entities)
@@ -1531,15 +1551,24 @@ object KubernetesCRDsJob {
 
       _ <-
         Source(ctx.otoroshi.extRes.map {
-          case (resource, values) => {
-            () => values.filter(sg => sg.select("metadata").as[Map[String, String]].get("otoroshi-provider").contains("kubernetes-crds"))
-              .filterNot(sg => ctx.kubernetes.extRes.apply(resource).exists(ssg => sg.select("metadata").as[Map[String, String]].get("kubernetes-path").contains(ssg.path)))
+          case (resource, values) => { () =>
+            values
+              .filter(sg =>
+                sg.select("metadata").as[Map[String, String]].get("otoroshi-provider").contains("kubernetes-crds")
+              )
+              .filterNot(sg =>
+                ctx.kubernetes.extRes
+                  .apply(resource)
+                  .exists(ssg =>
+                    sg.select("metadata").as[Map[String, String]].get("kubernetes-path").contains(ssg.path)
+                  )
+              )
               .map(_.select("id").asString)
               .debug(seq => logger.info(s"Will delete ${seq.size} out of date extension resources entities"))
               .applyOn(ids => resource.access.deleteMany(resource.version.name, ids))
           }
         }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(env.otoroshiMaterializer)
-      
+
     } yield ()
   }
 

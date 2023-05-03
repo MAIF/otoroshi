@@ -334,18 +334,18 @@ object implicits {
     def select(index: Int): JsLookupResult   = obj \ index
   }
   implicit class BetterJsReadable(private val obj: JsReadable)         extends AnyVal {
-    def asString: String   = obj.as[String]
-    def asInt: Int         = obj.as[Int]
-    def asDouble: Double   = obj.as[Double]
-    def asLong: Long       = obj.as[Long]
-    def asBoolean: Boolean = obj.as[Boolean]
-    def asObject: JsObject = obj.as[JsObject]
-    def asArray: JsArray   = obj.as[JsArray]
-    def asValue: JsValue   = obj.as[JsValue]
-    def asOptString: Option[String] = obj.asOpt[String]
+    def asString: String              = obj.as[String]
+    def asInt: Int                    = obj.as[Int]
+    def asDouble: Double              = obj.as[Double]
+    def asLong: Long                  = obj.as[Long]
+    def asBoolean: Boolean            = obj.as[Boolean]
+    def asObject: JsObject            = obj.as[JsObject]
+    def asArray: JsArray              = obj.as[JsArray]
+    def asValue: JsValue              = obj.as[JsValue]
+    def asOptString: Option[String]   = obj.asOpt[String]
     def asOptBoolean: Option[Boolean] = obj.asOpt[Boolean]
-    def asOptInt: Option[Int] = obj.asOpt[Int]
-    def asOptLong: Option[Long] = obj.asOpt[Long]
+    def asOptInt: Option[Int]         = obj.asOpt[Int]
+    def asOptLong: Option[Long]       = obj.asOpt[Long]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
     def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
@@ -522,11 +522,16 @@ object implicits {
   }
 
   implicit class BetterDecodedJWT(val jwt: DecodedJWT)                        extends AnyVal {
-    def claimStr(name: String): Option[String]   = Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asString())
-    def claimBool(name: String): Option[Boolean] = Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asBoolean())
-    def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asInt())
-    def claimLng(name: String): Option[Long]     = Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
-    def claimDbl(name: String): Option[Double]   = Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asDouble())
+    def claimStr(name: String): Option[String]   =
+      Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asString())
+    def claimBool(name: String): Option[Boolean] =
+      Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asBoolean())
+    def claimInt(name: String): Option[Int]      =
+      Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asInt())
+    def claimLng(name: String): Option[Long]     =
+      Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
+    def claimDbl(name: String): Option[Double]   =
+      Option(jwt.getClaim(name)).filterNot(_.isNull).filterNot(_.isMissing).map(_.asDouble())
     def json: JsValue                            = Json.obj(
       "header"  -> jwt.getHeader.fromBase64.parseJson,
       "payload" -> jwt.getPayload.fromBase64.parseJson

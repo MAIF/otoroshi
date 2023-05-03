@@ -17,8 +17,8 @@ export function PillButton({
         className="p-1"
         style={{
           borderRadius: '24px',
-          backgroundColor: "var(--bg-color_level2)",
-          color: "var(--color_level2)",
+          backgroundColor: 'var(--bg-color_level2)',
+          color: 'var(--color_level2)',
           position: 'relative',
           width: 'fit-content',
           ...style,
@@ -27,14 +27,14 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={rightEnabled ? { ...pillButtonStyle,color:"#FFF"}:{...pillButtonStyle}}
+          style={rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
           onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}>
           {leftText}
         </button>
         <button
           className="pill-mode"
           type="button"
-          style={!rightEnabled ? { ...pillButtonStyle,color:"#FFF"}:{...pillButtonStyle}}
+          style={!rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
           onClick={() => (onRightClick ? onRightClick() : onChange(false))}>
           {rightText}
         </button>

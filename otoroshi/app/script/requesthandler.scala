@@ -136,11 +136,11 @@ class ForwardTrafficHandler extends RequestHandler {
         builder
           .stream()
           .map { resp =>
-            val duration           = System.currentTimeMillis() - start
-            val ctypeOut           = resp.headers.get("Content-Type").orElse(resp.headers.get("content-type")).map(_.last)
-            val clenOut            =
+            val duration                     = System.currentTimeMillis() - start
+            val ctypeOut                     = resp.headers.get("Content-Type").orElse(resp.headers.get("content-type")).map(_.last)
+            val clenOut                      =
               resp.headers.get("Content-Length").orElse(resp.headers.get("content-length")).map(_.last).map(_.toLong)
-            val headersOut         = resp.headers
+            val headersOut                   = resp.headers
               .mapValues(_.last)
               .filterNot { case (key, _) =>
                 key.toLowerCase == "content-length"
@@ -149,11 +149,12 @@ class ForwardTrafficHandler extends RequestHandler {
                 key.toLowerCase == "content-type"
               }
               .toSeq
-            val transferEncoding   =
+            val transferEncoding             =
               resp.headers.get("Transfer-Encoding").orElse(resp.headers.get("transfer-encoding")).map(_.last)
-            val hasChunkedHeader   = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
-
-            val isChunked: Boolean = resp.isChunked() match { // don't know if actualy legit ...
+            val hasChunkedHeader             = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
+            val isContentLengthZero: Boolean = resp.headers.getIgnoreCase("Content-Length").contains("0")
+            val isChunked: Boolean           = resp.isChunked() match { // don't know if actualy legit ...
+              case _ if isContentLengthZero                                                        => false
               case Some(chunked)                                                                   => chunked
               case None if !env.emptyContentLengthIsChunked                                        =>
                 hasChunkedHeader // false
@@ -163,7 +164,7 @@ class ForwardTrafficHandler extends RequestHandler {
                 true
               case _                                                                               => false
             }
-            val cookiesOut         = resp.cookies.map {
+            val cookiesOut                   = resp.cookies.map {
               case c: WSCookieWithSameSite =>
                 Cookie(
                   name = c.name,

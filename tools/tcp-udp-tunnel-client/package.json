@@ -18,7 +18,7 @@
     "inquirer": "7.3.3",
     "lodash": "4.17.21",
     "minimist": "1.2.6",
-    "moment": "2.29.2",
+    "moment": "2.29.4",
     "node-fetch": "2.6.7",
     "open": "7.2.1",
     "readline-sync": "1.4.10",

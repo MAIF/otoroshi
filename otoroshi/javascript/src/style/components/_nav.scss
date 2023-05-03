@@ -44,11 +44,18 @@
 }
 
 .nav-link {
-  padding: .25 1em !important;
   color: #fff;
+  &:focus{
+    color: $primaryColor;
+  }
 }
-.nav-link:focus{
-  color: $primaryColor;
+
+li:not(.nav-item--open) .nav-link{
+  padding: .25rem 1rem !important;
+
+}
+.nav-item--open .nav-link .title{
+  margin-left: 4px;
 }
 
 .nav-item--open i {

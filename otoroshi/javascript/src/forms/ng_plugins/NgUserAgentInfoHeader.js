@@ -3,10 +3,8 @@ export default {
   config_schema: {
     header_name: {
       type: 'string',
-      label: 'Name of the header'
-    }
+      label: 'Name of the header',
+    },
   },
-  config_flow: [
-    'header_name'
-  ],
+  config_flow: ['header_name'],
 };

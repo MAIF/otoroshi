@@ -320,10 +320,11 @@ object NgCachedConfigContext {
 }
 
 trait NgCachedConfigContext {
+  def idx: Int
   def route: NgRoute
   def config: JsValue
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}"
+    val key = s"${route.cacheableId}::$plugin::$idx"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -337,7 +338,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}"
+    val key = s"${route.cacheableId}::${plugin}::$idx"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {
@@ -364,7 +365,8 @@ case class NgPreRoutingContext(
     attrs: TypedMap,
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
-    markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit]
+    markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit],
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
@@ -464,7 +466,8 @@ case class NgBeforeRequestContext(
     request: RequestHeader,
     config: JsValue,
     attrs: TypedMap,
-    globalConfig: JsValue = Json.obj()
+    globalConfig: JsValue = Json.obj(),
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -482,7 +485,8 @@ case class NgAfterRequestContext(
     request: RequestHeader,
     config: JsValue,
     attrs: TypedMap,
-    globalConfig: JsValue = Json.obj()
+    globalConfig: JsValue = Json.obj(),
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -507,7 +511,8 @@ case class NgTransformerRequestContext(
     globalConfig: JsValue = Json.obj(),
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
-    markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit]
+    markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit],
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
@@ -547,7 +552,8 @@ case class NgTransformerResponseContext(
     globalConfig: JsValue = Json.obj(),
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
-    markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit]
+    markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit],
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
@@ -586,7 +592,8 @@ case class NgTransformerErrorContext(
     config: JsValue,
     globalConfig: JsValue = Json.obj(),
     attrs: TypedMap,
-    report: NgExecutionReport
+    report: NgExecutionReport,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
@@ -604,7 +611,7 @@ case class NgTransformerErrorContext(
   )
 }
 
-trait NgFakePlugin extends NgPlugin {}
+trait NgFakePlugin        extends NgPlugin {}
 trait NgFakePluginContext extends NgCachedConfigContext
 
 trait NgRequestTransformer extends NgPlugin {
@@ -666,7 +673,8 @@ case class NgAccessContext(
     globalConfig: JsValue,
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
-    markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit]
+    markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit],
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -742,7 +750,8 @@ case class NgRouteMatcherContext(
     request: RequestHeader,
     route: NgRoute,
     config: JsValue,
-    attrs: TypedMap
+    attrs: TypedMap,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -803,7 +812,8 @@ case class NgbBackendCallContext(
     apikey: Option[ApiKey],
     config: JsValue,
     globalConfig: JsValue,
-    attrs: TypedMap
+    attrs: TypedMap,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -881,7 +891,8 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     def next(
         _ctx: NgTransformerRequestContext,
-        plugins: Seq[NgPluginWrapper[NgRequestTransformer]]
+        plugins: Seq[NgPluginWrapper[NgRequestTransformer]],
+        pluginIndex: Int
     ): Future[Either[Result, NgPluginHttpRequest]] = {
       plugins.headOption match {
         case None          => Right(_ctx.otoroshiRequest).vfuture
@@ -902,7 +913,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
             in,
             JsNull
           )
-          Try(wrapper.plugin.transformRequestSync(ctx)) match {
+          Try(wrapper.plugin.transformRequestSync(ctx.copy(idx = pluginIndex))) match {
             case Failure(exception)                            =>
               ctx.markPluginItem(
                 item,
@@ -939,12 +950,12 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
               Right(req_next).vfuture
             case Success(Right(req_next))                      =>
               ctx.markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
-              next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
+              next(_ctx.copy(otoroshiRequest = req_next), plugins.tail, pluginIndex - 1)
           }
         }
       }
     }
-    next(ctx, plugins)
+    next(ctx, plugins, plugins.size)
   }
 }
 
@@ -965,7 +976,8 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     def next(
         _ctx: NgTransformerResponseContext,
-        plugins: Seq[NgPluginWrapper[NgRequestTransformer]]
+        plugins: Seq[NgPluginWrapper[NgRequestTransformer]],
+        pluginIndex: Int
     ): Future[Either[Result, NgPluginHttpResponse]] = {
       plugins.headOption match {
         case None          => Right(_ctx.otoroshiResponse).vfuture
@@ -973,7 +985,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
@@ -1023,12 +1035,12 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
               Right(resp_next).vfuture
             case Success(Right(resp_next))                      =>
               ctx.markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-              next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+              next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail, pluginIndex - 1)
           }
         }
       }
     }
-    next(ctx, plugins)
+    next(ctx, plugins, plugins.size)
   }
 }
 
@@ -1044,14 +1056,14 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
   override def preRoute(
       _ctx: NgPreRoutingContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    def next(plugins: Seq[NgPluginWrapper[NgPreRouting]]): Future[Either[NgPreRoutingError, Done]] = {
+    def next(plugins: Seq[NgPluginWrapper[NgPreRouting]], pluginIndex: Int): Future[Either[NgPreRoutingError, Done]] = {
       plugins.headOption match {
         case None          => Right(Done).vfuture
         case Some(wrapper) => {
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
@@ -1104,12 +1116,12 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
               Right(Done).vfuture
             case Success(Right(_))                      =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-              next(plugins.tail)
+              next(plugins.tail, pluginIndex - 1)
           }
         }
       }
     }
-    next(plugins)
+    next(plugins, plugins.size)
   }
 }
 
@@ -1124,14 +1136,14 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
   override def multiInstance: Boolean = true
   override def isAccessAsync: Boolean = true
   override def access(_ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Future[NgAccess] = {
+    def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]], pluginIndex: Int): Future[NgAccess] = {
       plugins.headOption match {
         case None          => NgAccess.NgAllowed.vfuture
         case Some(wrapper) => {
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
@@ -1174,11 +1186,11 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
               NgAccess.NgAllowed.vfuture
             case Success(NgAccess.NgAllowed)                      =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-              next(plugins.tail)
+              next(plugins.tail, pluginIndex - 1)
           }
         }
       }
     }
-    next(plugins)
+    next(plugins, plugins.size)
   }
 }

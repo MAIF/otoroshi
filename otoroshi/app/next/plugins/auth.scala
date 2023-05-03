@@ -372,21 +372,21 @@ class NgAuthModuleExpectedUser extends NgAccessValidator {
   }
 }
 
-
 case class BasicAuthCallerConfig(
-                                  username: Option[String] = None,
-                                  password: Option[String] = None,
-                                  headerName: String = "Authorization",
-                                  headerValueFormat: String = "Basic %s") extends NgPluginConfig {
+    username: Option[String] = None,
+    password: Option[String] = None,
+    headerName: String = "Authorization",
+    headerValueFormat: String = "Basic %s"
+) extends NgPluginConfig {
   override def json: JsValue = BasicAuthCallerConfig.format.writes(this)
 }
 
 object BasicAuthCallerConfig {
   val format: Format[BasicAuthCallerConfig] = new Format[BasicAuthCallerConfig] {
     override def writes(o: BasicAuthCallerConfig): JsValue = Json.obj(
-      "username" -> o.username,
-      "passaword" -> o.password,
-      "headerName" -> o.headerName,
+      "username"          -> o.username,
+      "passaword"         -> o.password,
+      "headerName"        -> o.headerName,
       "headerValueFormat" -> o.headerValueFormat
     )
 
@@ -406,24 +406,25 @@ object BasicAuthCallerConfig {
 
 class BasicAuthCaller extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = false
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = false
-  override def transformsError: Boolean = false
-  override def isTransformRequestAsync: Boolean = false
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String = "Basic Auth. caller"
-  override def description: Option[String] = "This plugin can be used to call api that are authenticated using basic auth.".some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Basic Auth. caller"
+  override def description: Option[String]                 =
+    "This plugin can be used to call api that are authenticated using basic auth.".some
   override def defaultConfigObject: Option[NgPluginConfig] = BasicAuthCallerConfig().some
 
   override def transformRequestSync(
-                                        ctx: NgTransformerRequestContext
-                                      )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads).getOrElse(BasicAuthCallerConfig())
 
     (config.username, config.password) match {
@@ -434,9 +435,8 @@ class BasicAuthCaller extends NgRequestTransformer {
             ctx.otoroshiRequest.headers + (config.headerName -> config.headerValueFormat.format(token))
           )
         )
-      case _ => BadRequest(Json.obj("error" -> "Bad configuration")).left
+      case _                                                                          => BadRequest(Json.obj("error" -> "Bad configuration")).left
     }
-
 
   }
 }

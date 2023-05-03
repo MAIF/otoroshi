@@ -2135,13 +2135,15 @@ export function apisClient(group, version, pluralName) {
   return {
     findAll: () => fetchWrapper(`s/${group}/${version}/${pluralName}`),
     findAllWithPagination: (paginationState) =>
-        findAllWithPagination(pluralName, paginationState, `/bo/api/proxy/apis/${group}/${version}/`),
+      findAllWithPagination(pluralName, paginationState, `/bo/api/proxy/apis/${group}/${version}/`),
     create: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}`, 'POST', content),
-    update: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'PUT', content),
+    update: (content) =>
+      fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'PUT', content),
     findById: (entityId) => fetchWrapper(`s/${group}/${version}/${pluralName}/${entityId}`),
-    delete: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'DELETE'),
+    delete: (content) =>
+      fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'DELETE'),
     deleteById: (id) => fetchWrapper(`s/${group}/${version}/${pluralName}/${id}`, 'DELETE'),
     template: () => fetchWrapper(`s/${group}/${version}/${pluralName}/_template`),
     form: () => fetchWrapper(`s/${group}/${version}/${pluralName}/_form`),
   };
-};
+}

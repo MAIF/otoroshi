@@ -1,6 +1,6 @@
 # Otoroshi
 
-[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/2pqaMzmx) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v16.2.1/otoroshi.jar) 
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/2pqaMzmx) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v16.3.0/otoroshi.jar) 
 
 <p align="center">
   <img style="width: 45%;" src="https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png" alt="Otoroshi http reverse proxy and api management"/>

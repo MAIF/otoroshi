@@ -680,7 +680,10 @@ class HttpHandler()(implicit env: Env) {
                           .header("Transfer-Encoding")
                           .orElse(httpResponse.headers.get("Transfer-Encoding"))
                           .exists(h => h.toLowerCase().contains("chunked"))
+                        val isContentLengthZero: Boolean   =
+                          resp.header("Content-Length").orElse(httpResponse.headers.get("Content-Length")).contains("0")
                         val isChunked: Boolean             = resp.isChunked() match {
+                          case _ if isContentLengthZero                                                              => false
                           case Some(chunked)                                                                         => chunked
                           case None if !env.emptyContentLengthIsChunked                                              =>
                             hasChunkedHeader // false

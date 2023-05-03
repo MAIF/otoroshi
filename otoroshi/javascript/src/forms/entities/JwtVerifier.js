@@ -135,7 +135,9 @@ const StrategyForm = {
       if (props.readOnly) {
         return (
           <LabelAndInput label="Type">
-            <span className="d-flex align-items-center" style={{ height: '100%', color: 'var(--color-red)' }}>
+            <span
+              className="d-flex align-items-center"
+              style={{ height: '100%', color: 'var(--color-red)' }}>
               {props.value}
             </span>
           </LabelAndInput>
@@ -218,7 +220,7 @@ const StrategyForm = {
                                 } me-1`}
                                 style={{
                                   color: tags.includes(tag.toLocaleLowerCase())
-                                    ? "var(--color-primary)"
+                                    ? 'var(--color-primary)'
                                     : '#fff',
                                   padding: '4px',
                                   minWidth: '20px',

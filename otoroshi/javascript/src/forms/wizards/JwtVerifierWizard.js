@@ -16,8 +16,8 @@ function WizardStepButton(props) {
       {...props}
       type="save"
       style={{
-        backgroundColor: "var(--color-primary)",
-        borderColor: "var(--color-primary)",
+        backgroundColor: 'var(--color-primary)',
+        borderColor: 'var(--color-primary)',
         padding: '12px 48px',
       }}
     />
@@ -247,8 +247,8 @@ export class JwtVerifierWizard extends React.Component {
                 <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
                   <FeedbackButton
                     style={{
-                      backgroundColor: "var(--color-primary)",
-                      borderColor: "var(--color-primary)",
+                      backgroundColor: 'var(--color-primary)',
+                      borderColor: 'var(--color-primary)',
                       padding: '12px 48px',
                     }}
                     onPress={() => BackOfficeServices.updateJwtVerifier(jwtVerifier)}
@@ -688,7 +688,9 @@ function StrategyStep({ value, onChange }) {
                                 tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
                               } me-1`}
                               style={{
-                                color: tags.includes(tag.toLocaleLowerCase()) ? "var(--color-primary)" : '#fff',
+                                color: tags.includes(tag.toLocaleLowerCase())
+                                  ? 'var(--color-primary)'
+                                  : '#fff',
                                 padding: '4px',
                                 minWidth: '20px',
                               }}
@@ -1002,13 +1004,13 @@ function LoaderItem({ text, timeout, started }) {
       style={{
         gridTemplateColumns: '42px 1fr',
         minHeight: '42px',
-        backgroundColor:"var(--bg-color_level2)",
-        borderRadius:'5px',
+        backgroundColor: 'var(--bg-color_level2)',
+        borderRadius: '5px',
       }}
       className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
-          <i className="fas fa-check fa-2x" style={{ color: "var(--color-primary)" }} />
+          <i className="fas fa-check fa-2x" style={{ color: 'var(--color-primary)' }} />
         </Loader>
       )}
       {!started && <i className="fas fa-square fa-2x" />}

@@ -593,7 +593,7 @@ class NgProxyState(env: Env) {
                                    )
                                  })
                              } else Seq.empty[NgRoute].vfuture
-      _ <- env.adminExtensions.syncStates()
+      _                   <- env.adminExtensions.syncStates()
     } yield {
       env.proxyState.updateRawRoutes(routes)
       env.proxyState.updateRoutes(newRoutes ++ croutes)

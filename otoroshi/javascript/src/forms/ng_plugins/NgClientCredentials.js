@@ -17,7 +17,7 @@ export default {
       type: 'string',
       label: 'Secure',
     },
-   'biscuit.privkey': {
+    'biscuit.privkey': {
       type: 'array',
       array: true,
       format: null,

@@ -122,7 +122,8 @@ class AnonymousReportingEnable extends Component {
   }
 }
 
-const sidebarOpenOnLoad = (window.localStorage.getItem("otoroshi-sidebar-open") || 'true') === 'true'
+const sidebarOpenOnLoad =
+  (window.localStorage.getItem('otoroshi-sidebar-open') || 'true') === 'true';
 
 export const SidebarContext = React.createContext(sidebarOpenOnLoad);
 
@@ -136,7 +137,7 @@ class BackOfficeAppContainer extends Component {
       catchedError: null,
       env: null,
       loading: true,
-      openedSidebar: sidebarOpenOnLoad
+      openedSidebar: sidebarOpenOnLoad,
     };
   }
 
@@ -245,10 +246,11 @@ class BackOfficeAppContainer extends Component {
 
     return (
       <Loader loading={this.state.loading}>
-        <SidebarContext.Provider value={{
-          openedSidebar: this.state.openedSidebar,
-          toggleSibebar: openedSidebar => this.setState({ openedSidebar })
-        }}>
+        <SidebarContext.Provider
+          value={{
+            openedSidebar: this.state.openedSidebar,
+            toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
+          }}>
           <ReloadNewVersion />
           {this.state.env && (
             <>
@@ -265,40 +267,48 @@ class BackOfficeAppContainer extends Component {
           {/* <div className="container-fluid"> */}
           <div style={{ height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
             <div className="d-flex" style={{ position: 'relative' }}>
-              <div className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`} id="sidebar">
+              <div
+                className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
+                id="sidebar">
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
-                  onClick={e => {
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
+                  onClick={(e) => {
                     e.stopPropagation();
-                    window.localStorage.setItem("otoroshi-sidebar-open", String(!this.state.openedSidebar));
+                    window.localStorage.setItem(
+                      'otoroshi-sidebar-open',
+                      String(!this.state.openedSidebar)
+                    );
                     this.setState({
-                      openedSidebar: !this.state.openedSidebar
-                    })
+                      openedSidebar: !this.state.openedSidebar,
+                    });
                   }}
                 />
-                <div className={`sidebar-content ${this.state.openedSidebar ? 'ps-3' : ''}`} style={{
-                  alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
-                }}>
+                <div
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-3' : ''}`}
+                  style={{
+                    alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
+                  }}>
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column nav-sidebar mt-3">
                     <li className="nav-item mt-0 nav-item--open">
-                       <Link
+                      <Link
                         to="/"
-                        className={`nav-link ${window.location.pathname==="/bo/dashboard/" ?"active":""}`}
-                        {...createTooltip(
-                          "Home dashboard of Otoroshi displaying global metrics"
-                        )}
+                        className={`nav-link ${
+                          window.location.pathname === '/bo/dashboard/' ? 'active' : ''
+                        }`}
+                        {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                         onClick={() => {
                           DynamicTitle.setContent(null);
                           DynamicSidebar.setContent(null);
-                        }}
-                      >
+                        }}>
                         <i
                           className={`fab fa-fort-awesome ${
-                            this.state.openedSidebar ? "me-2" : ""
+                            this.state.openedSidebar ? 'me-2' : ''
                           }`}
                         />
-                        {this.state.openedSidebar ? "DASHBOARD" : ""}
+                        {this.state.openedSidebar ? 'Dashboard' : ''}
                       </Link>
                     </li>
                   </ul>
@@ -339,14 +349,16 @@ class BackOfficeAppContainer extends Component {
                           })
                         }
                       />
-                      {Otoroshi.extensions().flatMap(ext => ext.routes).map(item => {
-                        return (
-                          <Route
-                            path={item.path}
-                            component={(props) => this.decorate(item.component, props)}
-                          />
-                        )
-                      })}
+                      {Otoroshi.extensions()
+                        .flatMap((ext) => ext.routes)
+                        .map((item) => {
+                          return (
+                            <Route
+                              path={item.path}
+                              component={(props) => this.decorate(item.component, props)}
+                            />
+                          );
+                        })}
                       <Route
                         path="/lines/:lineId/services/:serviceId/stats"
                         component={(props) => this.decorate(ServiceLiveStatsPage, props)}
@@ -635,10 +647,7 @@ class BackOfficeAppContainer extends Component {
                         path="/eureka-servers"
                         component={(props) => this.decorate(EurekaServersPage, props)}
                       />
-                      <Route
-                        path="/audit"
-                        component={(props) => this.decorate(AuditPage, props)}
-                      />
+                      <Route path="/audit" component={(props) => this.decorate(AuditPage, props)} />
                       <Route
                         path="/alerts"
                         component={(props) => this.decorate(AlertPage, props)}
@@ -802,7 +811,7 @@ class BackOfficeAppContainer extends Component {
           </div>
           <Toasts />
         </SidebarContext.Provider>
-      </Loader >
+      </Loader>
     );
   }
 }

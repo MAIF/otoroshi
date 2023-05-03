@@ -30,7 +30,7 @@ export class NgValidationRenderer extends Component {
           {this.props.children}
           <>
             {this.props.validation.__errors.map((err, idx) => (
-              <p key={idx} style={{ color: "var(--color-red)", marginBottom: 0 }}>
+              <p key={idx} style={{ color: 'var(--color-red)', marginBottom: 0 }}>
                 {err.message || err}
               </p>
             ))}
@@ -191,7 +191,7 @@ export class NgFormRenderer extends Component {
       const titleComponent =
         !showChildren && showSummary ? (
           <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
-            <span style={{ color: "var(--color-primary)", fontWeight: 'bold' }}>{title}</span>
+            <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>{title}</span>
             {summary.length > 0 && this.displaySummary(summary, summaryFields)}
           </div>
         ) : isFunction(titleVar) && React.isValidElement(title) && !showChildren ? (

@@ -43,10 +43,10 @@ object CachedVaultSecretStatus {
   }
   case object SecretReadForbidden              extends CachedVaultSecretStatus { def value: String = "secret-read-forbidden"  }
   case object SecretReadTimeout                extends CachedVaultSecretStatus { def value: String = "secret-read-timeout"    }
-  case class  SecretReadError(error: String)    extends CachedVaultSecretStatus {
+  case class SecretReadError(error: String)    extends CachedVaultSecretStatus {
     def value: String = s"secret-read-error: ${error}"
   }
-  case class  SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                   }
+  case class SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                   }
 }
 
 case class CachedVaultSecret(key: String, at: DateTime, status: CachedVaultSecretStatus)
@@ -110,34 +110,34 @@ class EnvVault(vaultName: String, configuration: Configuration, _env: Env) exten
 
 class LocalVault(vaultName: String, configuration: Configuration, _env: Env) extends Vault {
 
-  private val logger        = Logger("otoroshi-local-vault")
+  private val logger      = Logger("otoroshi-local-vault")
   private val defaultRoot = configuration.getOptionalWithFileSupport[String](s"root")
 
   private def extractValue(obj: JsObject, path: String): CachedVaultSecretStatus = {
     Try {
       obj.atPointer(path).asOpt[JsValue] match {
-        case Some(JsString(value)) => value.some
-        case Some(JsNumber(value)) => value.toString().some
+        case Some(JsString(value))  => value.some
+        case Some(JsNumber(value))  => value.toString().some
         case Some(JsBoolean(value)) => value.toString.some
-        case Some(o@JsObject(_)) => o.stringify.some
-        case Some(arr@JsArray(_)) => arr.stringify.some
-        case Some(JsNull) => "null".some
-        case _ => None
+        case Some(o @ JsObject(_))  => o.stringify.some
+        case Some(arr @ JsArray(_)) => arr.stringify.some
+        case Some(JsNull)           => "null".some
+        case _                      => None
       }
     } match {
-      case Failure(e) =>
+      case Failure(e)            =>
         logger.error("error while trying to read JSON env. variable", e)
         CachedVaultSecretStatus.SecretReadError(e.getMessage)
-      case Success(None) => CachedVaultSecretStatus.SecretNotFound
+      case Success(None)         => CachedVaultSecretStatus.SecretNotFound
       case Success(Some(secret)) => CachedVaultSecretStatus.SecretReadSuccess(secret)
     }
   }
 
   override def get(path: String, options: Map[String, String])(implicit
-                                                               env: Env,
-                                                               ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    val parts  = path.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
+    val parts = path.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
     if (parts.isEmpty) {
       CachedVaultSecretStatus.BadSecretPath.vfuture
     } else {
@@ -658,26 +658,29 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
 
   private val logger = Logger("otoroshi-spring-cloud-vault")
 
-  private val baseUrl      = configuration
+  private val baseUrl = configuration
     .getOptionalWithFileSupport[String](s"url")
     .getOrElse("http://127.0.0.1:8888")
 
-  private val method =
+  private val method  =
     configuration.getOptionalWithFileSupport[String](s"method").getOrElse("GET")
   private val headers =
     configuration.getOptionalWithFileSupport[Map[String, String]](s"headers").getOrElse(Map.empty).toSeq
   private val timeout =
-    configuration.getOptionalWithFileSupport[Long](s"timeout").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(1.minute)
-  private val root =
+    configuration
+      .getOptionalWithFileSupport[Long](s"timeout")
+      .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
+      .getOrElse(1.minute)
+  private val root    =
     configuration.getOptionalWithFileSupport[String](s"root").getOrElse("foo/dev")
 
   override def get(path: String, options: Map[String, String])(implicit
-                                                               env: Env,
-                                                               ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    val parts     = path.split("/").toSeq.filterNot(_.isEmpty)
-    val pointer   = parts.mkString("/", "/", "")
-    val url       = s"${baseUrl}/${root}"
+    val parts   = path.split("/").toSeq.filterNot(_.isEmpty)
+    val pointer = parts.mkString("/", "/", "")
+    val url     = s"${baseUrl}/${root}"
     env.Ws
       .url(url)
       .withHttpHeaders(headers: _*)
@@ -688,8 +691,12 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
       .map { response =>
         println(response.status, response.body)
         if (response.status == 200) {
-          val sources = response.json.select("propertySources").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.select("source").asOpt[JsObject].getOrElse(Json.obj()))
-          val source = sources.foldRight(Json.obj())((s, next) => s.deepMerge(next))
+          val sources = response.json
+            .select("propertySources")
+            .asOpt[Seq[JsValue]]
+            .getOrElse(Seq.empty)
+            .map(_.select("source").asOpt[JsObject].getOrElse(Json.obj()))
+          val source  = sources.foldRight(Json.obj())((s, next) => s.deepMerge(next))
           source.atPointer(pointer).asOpt[JsValue] match {
             case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
             case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
@@ -717,24 +724,27 @@ class HttpVault(name: String, configuration: Configuration, _env: Env) extends V
 
   private val logger = Logger("otoroshi-http-vault")
 
-  private val baseUrl      = configuration
+  private val baseUrl = configuration
     .getOptionalWithFileSupport[String](s"url")
     .getOrElse("http://127.0.0.1:8888")
 
-  private val method =
+  private val method  =
     configuration.getOptionalWithFileSupport[String](s"method").getOrElse("GET")
   private val headers =
     configuration.getOptionalWithFileSupport[Map[String, String]](s"headers").getOrElse(Map.empty).toSeq
   private val timeout =
-    configuration.getOptionalWithFileSupport[Long](s"timeout").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(1.minute)
+    configuration
+      .getOptionalWithFileSupport[Long](s"timeout")
+      .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
+      .getOrElse(1.minute)
 
   override def get(path: String, options: Map[String, String])(implicit
-                                                               env: Env,
-                                                               ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    val parts     = path.split("/").toSeq.filterNot(_.isEmpty)
-    val pointer   = parts.mkString("/", "/", "")
-    val url       = s"${baseUrl}"
+    val parts   = path.split("/").toSeq.filterNot(_.isEmpty)
+    val pointer = parts.mkString("/", "/", "")
+    val url     = s"${baseUrl}"
     env.Ws
       .url(url)
       .withHttpHeaders(headers: _*)
@@ -778,7 +788,7 @@ class Vaults(env: Env) {
     .getOptionalWithFileSupport[Long]("secrets-ttl")
     .map(_.milliseconds)
     .getOrElse(5.minutes)
-  private val secretsErrorTtl = vaultConfig
+  private val secretsErrorTtl     = vaultConfig
     .getOptionalWithFileSupport[Long]("secrets-error-ttl")
     .map(_.milliseconds)
     .getOrElse(20.seconds)
@@ -879,7 +889,7 @@ class Vaults(env: Env) {
 
     def fetchSecret(): Future[CachedVaultSecretStatus] = {
       vaults.get(name) match {
-        case None =>
+        case None        =>
           cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
           CachedVaultSecretStatus.VaultNotFound.vfuture
         case Some(vault) => {
@@ -889,9 +899,9 @@ class Vaults(env: Env) {
                 case CachedVaultSecretStatus.SecretReadSuccess(v) =>
                   val computed = JsString(v).stringify.substring(1).init
                   CachedVaultSecretStatus.SecretReadSuccess(computed)
-                case s => s
+                case s                                            => s
               }
-              val secret = CachedVaultSecret(expr, DateTime.now(), theStatus)
+              val secret    = CachedVaultSecret(expr, DateTime.now(), theStatus)
               cache.put(expr, secret)
               theStatus
             }
@@ -912,7 +922,7 @@ class Vaults(env: Env) {
     } else {
       cache.getIfPresent(expr) match {
         case Some(res) => res.status.vfuture
-        case None => fetchSecret()
+        case None      => fetchSecret()
       }
     }
   }
@@ -929,21 +939,20 @@ class Vaults(env: Env) {
           }
         }
         .mapAsync(parallelFetchs) { secret =>
-
           def resolve(force: Boolean): Future[Unit] = {
             resolveExpression(secret.key, force)
               .map(_ => ())
-              .recover {
-                case e: Throwable => ()
+              .recover { case e: Throwable =>
+                ()
               }
           }
 
           val shouldRetry: Boolean = (System.currentTimeMillis() - secret.at.toDate.getTime) > secretsErrorTtl.toMillis
           secret.status match {
             case CachedVaultSecretStatus.SecretReadSuccess(_) => resolve(force = false)
-            case CachedVaultSecretStatus.VaultNotFound => resolve(force = false)
-            case _ if shouldRetry => resolve(force = true)
-            case _ if !shouldRetry => resolve(force = false)
+            case CachedVaultSecretStatus.VaultNotFound        => resolve(force = false)
+            case _ if shouldRetry                             => resolve(force = true)
+            case _ if !shouldRetry                            => resolve(force = false)
           }
         }
         .runWith(Sink.ignore)(env.otoroshiMaterializer)

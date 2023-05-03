@@ -32,36 +32,36 @@ case class AccessValidatorContext(ctx: NgAccessContext) extends VerificationCont
 }
 
 case class NgBiscuitConfig(
-  legacy: BiscuitConfig = BiscuitConfig(
-    publicKey = None,
-    checks = Seq.empty,
-    facts = Seq.empty,
-    resources = Seq.empty,
-    rules = Seq.empty,
-    revocation_ids = Seq.empty,
-    extractor = "header",
-    extractorName = "Authorization",
-    enforce = false,
-  )
+    legacy: BiscuitConfig = BiscuitConfig(
+      publicKey = None,
+      checks = Seq.empty,
+      facts = Seq.empty,
+      resources = Seq.empty,
+      rules = Seq.empty,
+      revocation_ids = Seq.empty,
+      extractor = "header",
+      extractorName = "Authorization",
+      enforce = false
+    )
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "public_key" -> legacy.publicKey,
-    "checks" -> legacy.checks,
-    "facts" -> legacy.facts,
-    "resources" -> legacy.resources,
-    "rules" -> legacy.rules,
+    "public_key"     -> legacy.publicKey,
+    "checks"         -> legacy.checks,
+    "facts"          -> legacy.facts,
+    "resources"      -> legacy.resources,
+    "rules"          -> legacy.rules,
     "revocation_ids" -> legacy.revocation_ids,
-    "extractor" -> Json.obj(
+    "extractor"      -> Json.obj(
       "name" -> legacy.extractorName,
-      "type" -> legacy.extractor,
+      "type" -> legacy.extractor
     ),
-    "enforce" -> legacy.enforce,
+    "enforce"        -> legacy.enforce
   )
 }
 
 object NgBiscuitConfig {
   val format = new Format[NgBiscuitConfig] {
-    override def writes(o: NgBiscuitConfig): JsValue = o.json
+    override def writes(o: NgBiscuitConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgBiscuitConfig] = Try {
       NgBiscuitConfig(
         legacy = BiscuitHelper.readConfigFromJson(json)
@@ -77,14 +77,15 @@ class NgBiscuitExtractor extends NgPreRouting {
 
   import collection.JavaConverters._
 
-  override def name: String = "Apikey from Biscuit token extractor"
-  override def description: Option[String] = "This plugin extract an from a Biscuit token where the biscuit has an #authority fact 'client_id' containing\napikey client_id and an #authority fact 'client_sign' that is the HMAC256 signature of the apikey client_id with the apikey client_secret".some
+  override def name: String                                = "Apikey from Biscuit token extractor"
+  override def description: Option[String]                 =
+    "This plugin extract an from a Biscuit token where the biscuit has an #authority fact 'client_id' containing\napikey client_id and an #authority fact 'client_sign' that is the HMAC256 signature of the apikey client_id with the apikey client_secret".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgBiscuitConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
@@ -120,7 +121,9 @@ class NgBiscuitExtractor extends NgPreRouting {
     NgPreRoutingErrorWithResult(Results.Unauthorized(error)).leftf
   }
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
 
     val config = ctx.cachedConfig(internalName)(NgBiscuitConfig.format).getOrElse(NgBiscuitConfig())
 
@@ -150,8 +153,8 @@ class NgBiscuitExtractor extends NgPreRouting {
           env.datastores.apiKeyDataStore.findById(client_id).flatMap {
             case Some(apikey) if apikey.isInactive() && config.legacy.enforce =>
               unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "bad_apikey"))
-            case Some(apikey) if apikey.isInactive()                   => Done.rightf
-            case Some(apikey)                                          => {
+            case Some(apikey) if apikey.isInactive()                          => Done.rightf
+            case Some(apikey)                                                 => {
               val nextSignedOk = apikey.rotation.nextSecret
                 .map(s => Signatures.hmacSha256Sign(client_id, s))
                 .contains(client_sign)
@@ -162,8 +165,8 @@ class NgBiscuitExtractor extends NgPreRouting {
                     unauthorized(
                       Json.obj("error" -> "unauthorized", "error_description" -> s"verification error: $err")
                     )
-                  case Left(_)                     => Done.rightf
-                  case Right(_)                    => {
+                  case Left(_)                            => Done.rightf
+                  case Right(_)                           => {
                     // println(biscuit.print())
                     // println(verifier.print_world())
                     ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
@@ -176,7 +179,7 @@ class NgBiscuitExtractor extends NgPreRouting {
                 Done.rightf
               }
             }
-            case _                                                     => Done.rightf
+            case _                                                            => Done.rightf
           }
         }
         case _                                    => Done.rightf
@@ -185,17 +188,18 @@ class NgBiscuitExtractor extends NgPreRouting {
 
     BiscuitHelper.extractToken(ctx.request, config.legacy) match {
       case Some(PubKeyBiscuitToken(token)) => {
-        val pubkey = new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.legacy.publicKey.get)
+        val pubkey =
+          new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.legacy.publicKey.get)
         Try(Biscuit.from_b64url(token, pubkey)).toEither match {
           case Left(err) if config.legacy.enforce =>
             unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"deserialization error: $err"))
-          case Left(_)                     => Done.rightf
-          case Right(biscuit)              =>
+          case Left(_)                            => Done.rightf
+          case Right(biscuit)                     =>
             Try(biscuit.verify(pubkey)).toEither match {
               case Left(err) if config.legacy.enforce =>
                 unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"verifier error: $err"))
-              case Left(_)                     => Done.rightf
-              case Right(biscuit)              => verification(biscuit.authorizer())
+              case Left(_)                            => Done.rightf
+              case Right(biscuit)                     => verification(biscuit.authorizer())
             }
         }
       }
@@ -206,14 +210,14 @@ class NgBiscuitExtractor extends NgPreRouting {
 
 class NgBiscuitValidator extends NgAccessValidator {
 
-  override def name: String = "Biscuit token validator"
-  override def description: Option[String] = "This plugin validates a Biscuit token".some
+  override def name: String                                = "Biscuit token validator"
+  override def description: Option[String]                 = "This plugin validates a Biscuit token".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgBiscuitConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
@@ -235,7 +239,8 @@ class NgBiscuitValidator extends NgAccessValidator {
     val config = ctx.cachedConfig(internalName)(NgBiscuitConfig.format).getOrElse(NgBiscuitConfig())
     BiscuitHelper.extractToken(ctx.request, config.legacy) match {
       case Some(PubKeyBiscuitToken(token)) => {
-        val pubkey = new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.legacy.publicKey.get)
+        val pubkey =
+          new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.legacy.publicKey.get)
         Try(Biscuit.from_b64url(token, pubkey)).toEither match {
           case Left(_)        => forbidden(ctx)
           case Right(biscuit) =>
@@ -250,9 +255,8 @@ class NgBiscuitValidator extends NgAccessValidator {
             }
         }
       }
-      case _ if config.legacy.enforce             => forbidden(ctx)
-      case _ if !config.legacy.enforce            => NgAccess.NgAllowed.vfuture
+      case _ if config.legacy.enforce      => forbidden(ctx)
+      case _ if !config.legacy.enforce     => NgAccess.NgAllowed.vfuture
     }
   }
 }
-  

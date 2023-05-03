@@ -944,26 +944,34 @@ case class AkkWsClientStreamedResponse(
       ("Content-Type" -> Seq(contentType))
     )
     val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
-    val noContentLengthHeader: Boolean = headz.getIgnoreCase("Content-Length").isEmpty
-    val hasChunkedHeader: Boolean      = headz.getIgnoreCase("Transfer-Encoding").isDefined
+    val noContentLengthHeader: Boolean =
+      httpResponse.entity.contentLengthOption.isEmpty /*headz.getIgnoreCase("Content-Length").isEmpty*/
+    val isContentLengthZero: Boolean   = httpResponse.entity.contentLengthOption.contains(
+      0L
+    ) /*headz.getIgnoreCase("Content-Length").exists(_.contains("0")) || */
+    val hasChunkedHeader: Boolean      = headz
+      .getIgnoreCase("Transfer-Encoding")
+      .isDefined && headz.getIgnoreCase("Transfer-Encoding").exists(_.contains("chunked"))
     val isChunked: Boolean             =
-      Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
+      Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actually legit ...
+        case _ if isContentLengthZero                                                              => false
         case Some(chunked)                                                                         => chunked
         case None if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader // false
         case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           => true
         case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
         case _                                                                                     => false
       }
-    if (isChunked) {
-      headz + ("Transfer-Encoding" -> Seq("chunked"))
-    } else {
-      headz
-    }
+    headz
+      .applyOnIf(isChunked)(_ + ("Transfer-Encoding" -> Seq("chunked")))
+      .applyOnIf(isContentLengthZero && !noContentLengthHeader)(_ + ("Content-Length" -> Seq("0")))
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString()
+    .applyOnWithPredicate(_ == "none/none")(_ => "application/octet-stream") + _charset
+    .map(v => ";charset=" + v.value)
+    .getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
     Await.result(
       bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat),
@@ -1014,7 +1022,10 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString()
+    .applyOnWithPredicate(_ == "none/none")(_ => "application/octet-stream") + _charset
+    .map(v => ";charset=" + v.value)
+    .getOrElse("")
   private lazy val _bodyAsBytes: ByteString      = rawbody
   private lazy val _bodyAsString: String         = rawbody.utf8String
   private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)

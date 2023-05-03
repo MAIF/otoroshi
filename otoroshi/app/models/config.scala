@@ -654,7 +654,7 @@ case class GlobalConfig(
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     env: JsObject = Json.obj(),
-    extensions: Map[String, JsValue] = Map.empty,
+    extensions: Map[String, JsValue] = Map.empty
 ) extends Entity {
 
   def internalId: String               = "global"
@@ -1001,7 +1001,7 @@ case class OtoroshiExport(
     routeCompositions: Seq[NgRouteComposition] = Seq.empty,
     backends: Seq[StoredNgBackend] = Seq.empty,
     wasmPlugins: Seq[WasmPlugin] = Seq.empty,
-    extensions: Map[String, Map[String, Seq[JsValue]]],
+    extensions: Map[String, Map[String, Seq[JsValue]]]
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1202,7 +1202,7 @@ case class OtoroshiExport(
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
       "wasmPlugins"        -> JsArray(wasmPlugins.map(_.json)),
-      "extensions" -> extensions
+      "extensions"         -> extensions
     )
   }
 }

@@ -19,40 +19,44 @@ import scala.util.{Failure, Success, Try}
 
 case class OIDCProfileHeader(send: Boolean = false, headerName: String = "X-OIDC-User")
 case class OIDCIDTokenHeader(
-                              send: Boolean = false,
-                              name: String = "id_token",
-                              headerName: String = "X-OIDC-Id-Token",
-                              jwt: Boolean = true)
-case class OIDCAccessTokenHeader(send: Boolean = false,
-                                 name: String = "access_token",
-                                 headerName: String = "X-OIDC-Access-Token",
-                                 jwt: Boolean = true)
+    send: Boolean = false,
+    name: String = "id_token",
+    headerName: String = "X-OIDC-Id-Token",
+    jwt: Boolean = true
+)
+case class OIDCAccessTokenHeader(
+    send: Boolean = false,
+    name: String = "access_token",
+    headerName: String = "X-OIDC-Access-Token",
+    jwt: Boolean = true
+)
 
-case class OIDCHeadersConfig (
+case class OIDCHeadersConfig(
     profile: OIDCProfileHeader = OIDCProfileHeader(),
     idtoken: OIDCIDTokenHeader = OIDCIDTokenHeader(),
-    accessToken: OIDCAccessTokenHeader = OIDCAccessTokenHeader()) extends NgPluginConfig {
+    accessToken: OIDCAccessTokenHeader = OIDCAccessTokenHeader()
+) extends NgPluginConfig {
   override def json: JsValue = OIDCHeadersConfig.format.writes(this)
 }
 
 object OIDCHeadersConfig {
   val format = new Format[OIDCHeadersConfig] {
     override def writes(o: OIDCHeadersConfig): JsValue = Json.obj(
-      "profile" -> Json.obj(
-        "send" -> o.profile.send,
-        "headerName" -> o.profile.headerName,
+      "profile"     -> Json.obj(
+        "send"       -> o.profile.send,
+        "headerName" -> o.profile.headerName
       ),
-      "idToken" -> Json.obj(
-        "send" -> o.idtoken.send,
-        "name" -> o.idtoken.name,
+      "idToken"     -> Json.obj(
+        "send"       -> o.idtoken.send,
+        "name"       -> o.idtoken.name,
         "headerName" -> o.idtoken.headerName,
-        "jwt" -> o.idtoken.jwt,
+        "jwt"        -> o.idtoken.jwt
       ),
       "accessToken" -> Json.obj(
-        "send" -> o.accessToken.send,
-        "name" -> o.accessToken.name,
+        "send"       -> o.accessToken.send,
+        "name"       -> o.accessToken.name,
         "headerName" -> o.accessToken.headerName,
-        "jwt" -> o.accessToken.jwt,
+        "jwt"        -> o.accessToken.jwt
       )
     )
 
@@ -60,47 +64,48 @@ object OIDCHeadersConfig {
       OIDCHeadersConfig(
         profile = OIDCProfileHeader(
           send = json.at("profile.send").asOpt[Boolean].getOrElse(true),
-          headerName = json.at("profile.headerName").asOpt[String].getOrElse("X-OIDC-User"),
+          headerName = json.at("profile.headerName").asOpt[String].getOrElse("X-OIDC-User")
         ),
         idtoken = OIDCIDTokenHeader(
           send = json.at("idToken.send").asOpt[Boolean].getOrElse(false),
           name = json.at("idToken.name").asOpt[String].getOrElse("id_token"),
           headerName = json.at("idToken.headerName").asOpt[String].getOrElse("X-OIDC-Id-Token"),
-          jwt = json.at("idToken.jwt").asOpt[Boolean].getOrElse(true),
+          jwt = json.at("idToken.jwt").asOpt[Boolean].getOrElse(true)
         ),
         accessToken = OIDCAccessTokenHeader(
           send = json.at("accessToken.send").asOpt[Boolean].getOrElse(false),
           name = json.at("accessToken.name").asOpt[String].getOrElse("access_token"),
           headerName = json.at("accessToken.headerName").asOpt[String].getOrElse("X-OIDC-Access-Token"),
-          jwt = json.at("accessToken.jwt").asOpt[Boolean].getOrElse(true),
+          jwt = json.at("accessToken.jwt").asOpt[Boolean].getOrElse(true)
         )
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
   }
 }
 
 class OIDCHeaders extends NgRequestTransformer {
 
-  override def name: String = "OIDC headers"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def name: String                      = "OIDC headers"
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = false
-  override def isTransformRequestAsync: Boolean = false
+  override def multiInstance: Boolean            = false
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = false
+  override def isTransformRequestAsync: Boolean  = false
   override def isTransformResponseAsync: Boolean = false
-  override def transformsError: Boolean = false
+  override def transformsError: Boolean          = false
 
   override def defaultConfigObject: Option[NgPluginConfig] = OIDCHeadersConfig().some
 
-  override def description: Option[String] = "This plugin injects headers containing tokens and profile from current OIDC provider.".some
+  override def description: Option[String] =
+    "This plugin injects headers containing tokens and profile from current OIDC provider.".some
 
   private def extract(payload: JsValue, name: String, jwt: Boolean): String = {
     (payload \ name).asOpt[String] match {
@@ -111,18 +116,22 @@ class OIDCHeaders extends NgRequestTransformer {
     }
   }
 
-  override def transformRequestSync(ctx: NgTransformerRequestContext)
-                               (implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  override def transformRequestSync(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) =>
-
         val config = ctx.cachedConfig(internalName)(OIDCHeadersConfig.format).getOrElse(OIDCHeadersConfig())
 
-        val profileMap     = if (config.profile.send) Map(config.profile.headerName -> Json.stringify(user.profile)) else Map.empty
+        val profileMap     =
+          if (config.profile.send) Map(config.profile.headerName -> Json.stringify(user.profile)) else Map.empty
         val idTokenMap     =
-          if (config.idtoken.send) Map(config.idtoken.headerName -> extract(user.token, config.idtoken.name, config.idtoken.jwt)) else Map.empty
+          if (config.idtoken.send)
+            Map(config.idtoken.headerName -> extract(user.token, config.idtoken.name, config.idtoken.jwt))
+          else Map.empty
         val accessTokenMap =
-          if (config.accessToken.send) Map(config.accessToken.headerName -> extract(user.token, config.accessToken.name, config.accessToken.jwt))
+          if (config.accessToken.send)
+            Map(config.accessToken.headerName -> extract(user.token, config.accessToken.name, config.accessToken.jwt))
           else Map.empty
 
         Right(
@@ -130,24 +139,22 @@ class OIDCHeaders extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
           )
         )
-      case None => Right(ctx.otoroshiRequest)
+      case None                                                              => Right(ctx.otoroshiRequest)
     }
   }
 }
 
-case class OIDCAccessTokenConfig(
-                                           enabled: Boolean = true,
-                                           atLeastOne: Boolean = false,
-                                           config: Option[JsValue] = None) extends NgPluginConfig {
+case class OIDCAccessTokenConfig(enabled: Boolean = true, atLeastOne: Boolean = false, config: Option[JsValue] = None)
+    extends NgPluginConfig {
   override def json: JsValue = OIDCAccessTokenConfig.format.writes(this)
 }
 
 object OIDCAccessTokenConfig {
   val format = new Format[OIDCAccessTokenConfig] {
     override def writes(o: OIDCAccessTokenConfig): JsValue = Json.obj(
-      "enabled" -> o.enabled,
+      "enabled"    -> o.enabled,
       "atLeastOne" -> o.atLeastOne,
-      "config" -> o.config
+      "config"     -> o.config
     )
 
     override def reads(json: JsValue): JsResult[OIDCAccessTokenConfig] = Try {
@@ -158,48 +165,45 @@ object OIDCAccessTokenConfig {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
   }
 }
 
 class OIDCAccessTokenValidator extends NgAccessValidator {
 
-  override def multiInstance: Boolean = false
-  override def name: String = "OIDC access_token validator"
+  override def multiInstance: Boolean                      = false
+  override def name: String                                = "OIDC access_token validator"
   override def defaultConfigObject: Option[NgPluginConfig] = OIDCAccessTokenConfig(
     config = OIDCThirdPartyApiKeyConfig(
       enabled = true,
       oidcConfigRef = "some-oidc-auth-module-id".some
-    )
-      .toJson
-      .some
-  )
-    .some
+    ).toJson.some
+  ).some
 
   override def description: Option[String] =
-      s"""This plugin will use the third party apikey configuration and apply it while keeping the apikey mecanism of otoroshi.
-           |Use it to combine apikey validation and OIDC access_token validation. """
-        .stripMargin
-        .some
+    s"""This plugin will use the third party apikey configuration and apply it while keeping the apikey mecanism of otoroshi.
+           |Use it to combine apikey validation and OIDC access_token validation. """.stripMargin.some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val pluginConfiguration = ctx.cachedConfig(internalName)(OIDCAccessTokenConfig.format)
+    val pluginConfiguration = ctx
+      .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
 
     if (pluginConfiguration.enabled) {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
-          case Some(r: JsObject) => Seq(r)
+          case Some(r: JsObject)  => Seq(r)
           case Some(arr: JsArray) => arr.value
-          case _    => Seq.empty
+          case _                  => Seq.empty
         })
-          .map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect {
-            case JsSuccess(c, _) => c
+          .map(v => ThirdPartyApiKeyConfig.format.reads(v))
+          .collect { case JsSuccess(c, _) =>
+            c
           }
       }
 
@@ -232,9 +236,10 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
           } else {
             !seq.contains(false)
           }
-        }.flatMap(result => {
+        }
+        .flatMap(result => {
           if (result) {
-              NgAccess.NgAllowed.vfuture
+            NgAccess.NgAllowed.vfuture
           } else {
             Errors
               .craftResponseResult(
@@ -247,7 +252,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
               )
               .map(NgAccess.NgDenied)
           }
-      })
+        })
     } else {
       NgAccess.NgAllowed.vfuture
     }
@@ -264,31 +269,34 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
     config = OIDCThirdPartyApiKeyConfig(
       enabled = true,
       oidcConfigRef = "some-oidc-auth-module-id".some
-    )
-      .toJson
-      .some
+    ).toJson.some
   ).some
 
-  override def description: Option[String] = "This plugin will use the third party apikey configuration to generate an apikey".some
+  override def description: Option[String] =
+    "This plugin will use the third party apikey configuration to generate an apikey".some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext):  Future[Either[NgPreRoutingError, Done]]    = {
-    val pluginConfiguration = ctx.cachedConfig(internalName)(OIDCAccessTokenConfig.format)
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val pluginConfiguration = ctx
+      .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
 
     if (pluginConfiguration.enabled) {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
-          case Some(r: JsObject) => Seq(r)
+          case Some(r: JsObject)  => Seq(r)
           case Some(arr: JsArray) => arr.value
-          case _ => Seq.empty
+          case _                  => Seq.empty
         })
-          .map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect {
-          case JsSuccess(c, _) => c
-        }
+          .map(v => ThirdPartyApiKeyConfig.format.reads(v))
+          .collect { case JsSuccess(c, _) =>
+            c
+          }
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig, ref: AtomicReference[ApiKey]): Future[Unit] = {

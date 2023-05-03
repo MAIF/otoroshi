@@ -61,8 +61,8 @@ object WasmSourceKind       {
   case object Unknown     extends WasmSourceKind {
     def name: String = "Unknown"
     def getWasm(path: String, opts: JsValue)(implicit
-                                             env: Env,
-                                             ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       Left(Json.obj("error" -> "unknown source")).vfuture
     }
@@ -70,8 +70,8 @@ object WasmSourceKind       {
   case object Base64      extends WasmSourceKind {
     def name: String = "Base64"
     def getWasm(path: String, opts: JsValue)(implicit
-                                             env: Env,
-                                             ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       ByteString(path.replace("base64://", "")).decodeBase64.right.future
     }
@@ -79,8 +79,8 @@ object WasmSourceKind       {
   case object Http        extends WasmSourceKind {
     def name: String = "Http"
     def getWasm(path: String, opts: JsValue)(implicit
-                                             env: Env,
-                                             ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       val method         = opts.select("method").asOpt[String].getOrElse("GET")
       val headers        = opts.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -122,8 +122,8 @@ object WasmSourceKind       {
   case object WasmManager extends WasmSourceKind {
     def name: String = "WasmManager"
     def getWasm(path: String, opts: JsValue)(implicit
-                                             env: Env,
-                                             ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
@@ -158,8 +158,8 @@ object WasmSourceKind       {
   case object Local       extends WasmSourceKind {
     def name: String = "Local"
     override def getWasm(path: String, opts: JsValue)(implicit
-                                                      env: Env,
-                                                      ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       env.proxyState.wasmPlugin(path) match {
         case None         => Left(Json.obj("error" -> "resource not found")).vfuture
@@ -167,8 +167,8 @@ object WasmSourceKind       {
       }
     }
     override def getConfig(path: String, opts: JsValue)(implicit
-                                                        env: Env,
-                                                        ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Option[WasmConfig]] = {
       env.proxyState.wasmPlugin(path).map(_.config).vfuture
     }
@@ -176,8 +176,8 @@ object WasmSourceKind       {
   case object File        extends WasmSourceKind {
     def name: String = "File"
     def getWasm(path: String, opts: JsValue)(implicit
-                                             env: Env,
-                                             ec: ExecutionContext
+        env: Env,
+        ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       Right(ByteString(Files.readAllBytes(Paths.get(path.replace("file://", ""))))).vfuture
     }
@@ -234,15 +234,15 @@ object WasmSource                                                               
 }
 
 case class WasmAuthorizations(
-                               httpAccess: Boolean = false,
-                               globalDataStoreAccess: WasmDataRights = WasmDataRights(),
-                               pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
-                               globalMapAccess: WasmDataRights = WasmDataRights(),
-                               pluginMapAccess: WasmDataRights = WasmDataRights(),
-                               proxyStateAccess: Boolean = false,
-                               configurationAccess: Boolean = false,
-                               proxyHttpCallTimeout: Int = 5000
-                             ) {
+    httpAccess: Boolean = false,
+    globalDataStoreAccess: WasmDataRights = WasmDataRights(),
+    pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
+    globalMapAccess: WasmDataRights = WasmDataRights(),
+    pluginMapAccess: WasmDataRights = WasmDataRights(),
+    proxyStateAccess: Boolean = false,
+    configurationAccess: Boolean = false,
+    proxyHttpCallTimeout: Int = 5000
+) {
   def json: JsValue = WasmAuthorizations.format.writes(this)
 }
 
@@ -285,18 +285,18 @@ object WasmAuthorizations {
 }
 
 case class WasmConfig(
-                       source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
-                       memoryPages: Int = 4,
-                       functionName: Option[String] = None,
-                       config: Map[String, String] = Map.empty,
-                       allowedHosts: Seq[String] = Seq.empty,
-                       allowedPaths: Map[String, String] = Map.empty,
-                       ////
-                       preserve: Boolean = true,
-                       wasi: Boolean = false,
-                       opa: Boolean = false,
-                       authorizations: WasmAuthorizations = WasmAuthorizations()
-                     ) extends NgPluginConfig {
+    source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
+    memoryPages: Int = 4,
+    functionName: Option[String] = None,
+    config: Map[String, String] = Map.empty,
+    allowedHosts: Seq[String] = Seq.empty,
+    allowedPaths: Map[String, String] = Map.empty,
+    ////
+    preserve: Boolean = true,
+    wasi: Boolean = false,
+    opa: Boolean = false,
+    authorizations: WasmAuthorizations = WasmAuthorizations()
+) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,
@@ -429,14 +429,14 @@ object WasmUtils {
       }
 
   private def callWasm(
-                        wasm: ByteString,
-                        config: WasmConfig,
-                        defaultFunctionName: String,
-                        input: JsValue,
-                        ctx: Option[NgCachedConfigContext] = None,
-                        pluginId: String,
-                        attrsOpt: Option[TypedMap]
-                      )(implicit env: Env): Either[JsValue, String] = {
+      wasm: ByteString,
+      config: WasmConfig,
+      defaultFunctionName: String,
+      input: JsValue,
+      ctx: Option[NgCachedConfigContext] = None,
+      pluginId: String,
+      attrsOpt: Option[TypedMap]
+  )(implicit env: Env): Either[JsValue, String] = {
     val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
     try {
       def createPlugin(): WasmContextSlot = {
@@ -516,23 +516,23 @@ object WasmUtils {
   }
 
   def executeSync(
-                   config: WasmConfig,
-                   defaultFunctionName: String,
-                   input: JsValue,
-                   ctx: Option[NgCachedConfigContext],
-                   attrs: Option[TypedMap],
-                   atMost: Duration
-                 )(implicit env: Env): Either[JsValue, String] = {
+      config: WasmConfig,
+      defaultFunctionName: String,
+      input: JsValue,
+      ctx: Option[NgCachedConfigContext],
+      attrs: Option[TypedMap],
+      atMost: Duration
+  )(implicit env: Env): Either[JsValue, String] = {
     Await.result(execute(config, defaultFunctionName, input, ctx, attrs)(env), atMost)
   }
 
   def execute(
-               config: WasmConfig,
-               defaultFunctionName: String,
-               input: JsValue,
-               ctx: Option[NgCachedConfigContext],
-               attrs: Option[TypedMap]
-             )(implicit env: Env): Future[Either[JsValue, String]] = {
+      config: WasmConfig,
+      defaultFunctionName: String,
+      input: JsValue,
+      ctx: Option[NgCachedConfigContext],
+      attrs: Option[TypedMap]
+  )(implicit env: Env): Future[Either[JsValue, String]] = {
     val pluginId = config.source.cacheKey
     scriptCache.getIfPresent(pluginId) match {
       case Some(wasm)                                           =>

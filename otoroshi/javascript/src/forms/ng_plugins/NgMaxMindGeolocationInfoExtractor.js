@@ -3,15 +3,12 @@ export default {
   config_schema: {
     path: {
       type: 'string',
-      label: 'Path of the maxmind db'
+      label: 'Path of the maxmind db',
     },
     log: {
       type: 'bool',
-      label: 'log geolocation infos.'
-    }
+      label: 'log geolocation infos.',
+    },
   },
-  config_flow: [
-    'path',
-    'log',
-  ],
+  config_flow: ['path', 'log'],
 };
