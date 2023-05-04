@@ -137,7 +137,7 @@ export function DefaultSidebar(props) {
           {...createTooltip('All features')}
           onClick={clearSidebar}>
           <div
-            className="icon-menu"
+            className="icon-menu icon-svg"
             style={{
               marginRight: openedSidebar ? '1em' : '',
               '-webkit-mask': `url('/assets/images/svgs/menu-icon.svg') no-repeat center`,

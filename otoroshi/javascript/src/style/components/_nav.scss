@@ -21,6 +21,9 @@
 .active *{
   color: var(--color-primary) !important;
 }
+.active .icon-svg{
+  background-color:var(--color-primary) ;
+}
 
 .dashboard-button:hover {
   background-color: $fondGrisclairSurvolMenu;
