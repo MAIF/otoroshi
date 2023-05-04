@@ -7,8 +7,8 @@ If you want to play with Otoroshis code, here are some tips
 You will need
 
 * git
-* JDK 11
-* SBT 1.3.x
+* JDK >= 11
+* SBT >= 1.3.x
 * Node 13 + yarn 1.x
 
 ## Clone the repository
@@ -56,12 +56,6 @@ sbt
 ```
 
 then in the sbt console run the following command
-
-```sh
-~run -Dotoroshi.storage=file -Dotoroshi.liveJs=true -Dhttps.port=9998 -Dotoroshi.privateapps.port=9999 -Dotoroshi.adminPassword=password -Dotoroshi.domain=oto.tools -Dplay.server.https.engineProvider=ssl.DynamicSSLEngineProvider -Dotoroshi.events.maxSize=0
-```
-
-or you can use the [sbt-revolver](https://github.com/spray/sbt-revolver) to run otoroshi locally for a more `prod` alike behavior (on the TLS part for instance)
 
 ```sh
 ~reStart
