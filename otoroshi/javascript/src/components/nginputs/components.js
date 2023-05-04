@@ -226,12 +226,13 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: clickable ? '1px solid var(--bg-color_level1)' : 'none',
+              outline: clickable ? '1px solid var(--bg-color_level2)' : 'none',
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',
               display: 'flex',
               flexDirection: 'column',
-              width: '100%',
+              width: 'calc(100% - 2px)',
+              marginLeft: '1px',
               ...(this.props.style || {}),
               ...(rawSchema.style || {}),
             }}
@@ -281,12 +282,13 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: clickable ? '1px solid var(--bg-color_level1)' : 'none',
+              outline: clickable ? '1px solid var(--bg-color_level2)' : 'none',
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',
               display: 'flex',
               flexDirection: 'column',
-              width: '100%',
+              width: 'calc(100% - 2px)',
+              marginLeft: '1px',
             }}>
             <div
               style={{

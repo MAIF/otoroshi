@@ -1010,10 +1010,10 @@ function LoaderItem({ text, timeout, started }) {
       className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
-          <i className="fas fa-check fa-2x" style={{ color: 'var(--color-primary)' }} />
+          <i className="fas fa-check fa-lg" style={{ color: 'var(--color-primary)' }} />
         </Loader>
       )}
-      {!started && <i className="fas fa-square fa-2x" />}
+      {!started && <i className="fas fa-square fa-lg" />}
       <div
         style={{
           fontWeight: loading ? 'normal' : 'bold',

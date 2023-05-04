@@ -57,3 +57,7 @@
 pre {
   height: 600px;
 }
+
+[data-theme="dark"] .btn-close{
+  filter: brightness(0) invert(1);
+}

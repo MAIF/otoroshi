@@ -286,13 +286,13 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-3' : ''}`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''}`}
                   style={{
                     alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                   }}>
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column nav-sidebar mt-3">
-                    <li className="nav-item mt-0 nav-item--open">
+                    <li className={`nav-item mt-0 ${this.state.openedSidebar ? 'nav-item--open' : ''}`}>
                       <Link
                         to="/"
                         className={`nav-link ${
@@ -305,7 +305,7 @@ class BackOfficeAppContainer extends Component {
                         }}>
                         <i
                           className={`fab fa-fort-awesome ${
-                            this.state.openedSidebar ? 'me-2' : ''
+                            this.state.openedSidebar ? 'me-3' : ''
                           }`}
                         />
                         {this.state.openedSidebar ? 'Dashboard' : ''}
