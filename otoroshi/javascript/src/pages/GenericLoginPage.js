@@ -128,17 +128,20 @@ export class GenericLoginPage extends Component {
 
   render() {
     return (
-      <div className="jumbotron">
-        <h3 style={{ marginBottom: 40 }}>Login</h3>
+      <div className="login-card">
+      <img src={this.props.otoroshiLogo} />
+      <div className="login-card-title">
+      <h1>Login</h1>
+        <p>Log in to Otoroshi to continue</p>
+      </div>
         <form
-          className="form-horizontal"
-          style={{ textAlign: 'left' }}
+          className="login-card-body form-horizontal"
           method={this.props.method}
           action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="row mb-3">
-            <label className="col-sm-2 col-form-label">Username</label>
-            <div className="col-sm-10">
+          <div className="row">
+            <label className="col-12">Username</label>
+            <div className="col-12">
               <input
                 type="text"
                 name="username"
@@ -148,9 +151,9 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="row mb-3">
-            <label className="col-sm-2 col-form-label">Password</label>
-            <div className="col-sm-10">
+          <div className="row">
+            <label className="col-12">Password</label>
+            <div className="col-12">
               <input
                 type="password"
                 name="password"
@@ -160,13 +163,11 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="row mb-3">
-            <label className="col-sm-2 col-form-label" />
-            <div className="col-sm-10">
+          <div className="row">
+            <div className="d-flex justify-content-around">
               <button
                 type="submit"
-                className="btn"
-                style={{ marginLeft: 0 }}
+                className="btn btn-primaryColor btn-lg"
                 onClick={this.simpleLogin}>
                 Login
               </button>
@@ -182,9 +183,6 @@ export class GenericLoginPage extends Component {
             </div>
           </div>
         </form>
-        <p>
-          <img src={this.props.otoroshiLogo} style={{ width: 300 }} />
-        </p>
       </div>
     );
   }
