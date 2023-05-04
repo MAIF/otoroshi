@@ -22,9 +22,10 @@ function Provider({ name, link, type }) {
       justifyContent: 'flex-start',
       alignItems: 'center',
       color: '#fff',
-      textTransform: 'uppercase'
+      textTransform: 'uppercase',
+      borderRadius: 4
     }}>
-      <div style={{
+      {/* <div style={{
         minWidth: 46,
         minHeight: 46,
         background: '#fff',
@@ -34,13 +35,18 @@ function Provider({ name, link, type }) {
         justifyContent: 'center'
       }}>
         {name.substring(0, 1)}
-      </div>
+      </div> */}
       <p style={{
-        margin: 0, padding: '0 .5em 0 1em',
+        margin: 0,
+        padding: '0 .25em 0 1em',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis'
-      }}>LOG IN WITH {name}</p>
+        textOverflow: 'ellipsis',
+        // fontSize: '.85rem'
+      }}>CONTINUE WITH</p>
+      <p className='m-0' style={{
+        fontWeight: 'bold'
+      }}>{name}</p>
     </div>
   </a >
 }
