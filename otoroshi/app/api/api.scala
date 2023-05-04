@@ -394,7 +394,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       "security.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[AuthModuleConfig](
-        AuthModuleConfig._fmt,
+        AuthModuleConfig._fmt(env),
         env.datastores.authConfigsDataStore.key,
         env.datastores.authConfigsDataStore.extractId
       )

@@ -132,8 +132,8 @@ class Env(
   val otoroshiActorSystem: ActorSystem           = ActorSystem(
     "otoroshi-actor-system",
     _configuration
-      .getOptionalWithFileSupport[Configuration]("app.actorsystems.otoroshi")
-      .orElse(_configuration.getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem"))
+      .getOptional[Configuration]("app.actorsystems.otoroshi")
+      .orElse(_configuration.getOptional[Configuration]("otoroshi.analytics.actorsystem"))
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
@@ -143,8 +143,8 @@ class Env(
   val vaults                                     = new Vaults(this)
 
   private val (merged_configuration: Configuration, merged_configuration_json: JsObject) = (for {
-    appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
-    otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
+    appConfig <- _configuration.getOptional[Configuration]("app")
+    otoConfig <- _configuration.getOptional[Configuration]("otoroshi")
   } yield {
     val wholeConfigJson: JsObject     =
       Json
@@ -1371,7 +1371,7 @@ class Env(
                   )
                   .getOrElse(Json.obj())
 
-                val finalConfig = baseExport.customizeWith(initialCustomization)
+                val finalConfig = baseExport.customizeWith(initialCustomization)(this)
 
                 logger.info(
                   s"You can log into the Otoroshi admin console with the following credentials: $login / $password"

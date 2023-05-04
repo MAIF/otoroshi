@@ -1038,7 +1038,7 @@ case class OtoroshiExport(
     already ++ ex ++ add
   }
 
-  def customizeWith(customization: JsObject): OtoroshiExport = {
+  def customizeWith(customization: JsObject)(implicit env: Env): OtoroshiExport = {
     val cconfig     = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(
@@ -1081,7 +1081,7 @@ case class OtoroshiExport(
       authConfigs = customizeAndMergeArray[AuthModuleConfig](
         authConfigs,
         customization.select("authConfigs").asOpt[JsArray].getOrElse(Json.arr()),
-        AuthModuleConfig._fmt,
+        AuthModuleConfig._fmt(env),
         _.select("id").asString,
         _.id
       ),

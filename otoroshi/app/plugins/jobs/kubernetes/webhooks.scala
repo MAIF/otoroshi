@@ -199,7 +199,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
             env.datastores.authConfigsDataStore.findAll().flatMap { entities =>
               val res  = KubernetesOtoroshiResource(obj)
               val json = client.customizeAuthModule(res.spec, res, entities)
-              AuthModuleConfig._fmt.reads(json) match {
+              AuthModuleConfig._fmt(env).reads(json) match {
                 case JsSuccess(_, _) => success(uid)
                 case JsError(errors) => error(uid, errors)
               }

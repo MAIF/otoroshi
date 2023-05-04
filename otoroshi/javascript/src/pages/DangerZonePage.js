@@ -1444,7 +1444,7 @@ export class DangerZonePage extends Component {
       <div>
         <div className="displayGroupBtn">
           <button
-            title="Add item"
+            title="Save changes"
             className="btn btn-success"
             type="button"
             onClick={this.saveGlobalConfig}

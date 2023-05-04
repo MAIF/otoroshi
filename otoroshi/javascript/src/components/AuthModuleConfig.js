@@ -29,6 +29,7 @@ import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Form } from './inputs';
 import isString from 'lodash/isString';
+import { LabelAndInput, NgCodeRenderer, NgForm } from './nginputs';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -1559,6 +1560,20 @@ class LdapUserLoginTest extends Component {
 }
 
 export class AuthModuleConfig extends Component {
+
+  state = {
+    authModuleTypes: []
+  }
+
+  componentDidMount() {
+    BackOfficeServices.getAuthModuleTypes()
+      .then(res => {
+        this.setState({
+          authModuleTypes: res.templates.map(item => ({ value: item.type, label: item.label }))
+        })
+      })
+  }
+
   changeTheValue = (name, value) => {
     if (this.props.onChange) {
       const clone = cloneDeep(this.props.value || this.props.settings);
@@ -1664,20 +1679,22 @@ export class AuthModuleConfig extends Component {
               break;
           }*/
         }}
-        possibleValues={[
-          { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
-          { label: 'In memory auth. provider', value: 'basic' },
-          { label: 'Ldap auth. provider', value: 'ldap' },
-          { label: 'SAML v2 provider', value: 'saml' },
-          { label: 'OAuth1 provider', value: 'oauth1' },
-        ]}
+        possibleValues={this.state.authModuleTypes}
+        //   [
+        //   { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
+        //   { label: 'In memory auth. provider', value: 'basic' },
+        //   { label: 'Ldap auth. provider', value: 'ldap' },
+        //   { label: 'SAML v2 provider', value: 'saml' },
+        //   { label: 'OAuth1 provider', value: 'oauth1' },
+        // ]
+
         help="The type of settings to log into your app."
       />
     );
 
-    if (!['oauth2', 'basic', 'ldap', 'saml', 'oauth1'].includes(settings.type)) {
-      return <h3>Unknown config type ...</h3>;
-    }
+    // if (!['oauth2', 'basic', 'ldap', 'saml', 'oauth1'].includes(settings.type)) {
+    //   return <h3>Unknown config type ...</h3>;
+    // }
 
     return (
       <div>
@@ -1695,6 +1712,7 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
         {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
+        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1'].includes(settings.type) && <CustomModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"
@@ -1760,7 +1778,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({}) => {
+      type: ({ }) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1839,7 +1857,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({}) => {
+      type: ({ }) => {
         const {
           signingKey,
           encryptionKey,
@@ -1889,9 +1907,8 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
-                    config.element
-                  } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
+                    } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -1965,7 +1982,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({}) => {
+      type: ({ }) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2085,6 +2102,43 @@ export class SamlModuleConfig extends Component {
   }
 }
 
+export function CustomModuleConfig({ value, onChange }) {
+  if (value.form && Object.keys(value.form.schema).length > 0) {
+    const { form } = value
+    return <NgForm
+      value={value}
+      onChange={onChange}
+      flow={form.flow}
+      schema={form.schema}
+    />
+  }
+
+  return <LabelAndInput label="Configuration">
+    <span className="d-flex align-items-center" style={{ height: '100%' }}>
+      <NgCodeRenderer
+        ngOptions={{
+          spread: true,
+        }}
+        rawSchema={{
+          props: {
+            ace_config: {
+              maxLines: Infinity,
+              fontSize: 14,
+            },
+            editorOnly: true,
+            height: '100%',
+            mode: 'json',
+          },
+        }}
+        onChange={e => {
+          onChange(JSON.parse(e))
+        }}
+        value={JSON.stringify(value, null, 4)}
+      />
+    </span>
+  </LabelAndInput>
+}
+
 export class OAuth1ModuleConfig extends Component {
   flow = [
     'id',
@@ -2201,7 +2255,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({}) => (
+      type: ({ }) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"

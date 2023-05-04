@@ -4,13 +4,14 @@ import akka.Done
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
 import org.joda.time.DateTime
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
-import otoroshi.utils.infotoken.InfoTokenHelper
+import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -85,6 +86,7 @@ case class NgOtoroshiInfoConfig(
     secComVersion: SecComInfoTokenVersion,
     secComTtl: FiniteDuration,
     headerName: Option[String],
+    addFields: Option[AddFieldsSettings],
     algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
@@ -99,6 +101,7 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
+      lazy val addFields: Option[AddFieldsSettings] = raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
       lazy val algo: AlgoSettings                    = AlgoSettings
         .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
@@ -106,6 +109,7 @@ object NgOtoroshiInfoConfig {
         secComVersion = secComVersion,
         secComTtl = secComTtl,
         headerName = headerName,
+        addFields = addFields,
         algo = algo
       )
     } match {
@@ -116,6 +120,7 @@ object NgOtoroshiInfoConfig {
       "version"     -> o.secComVersion.json,
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
+      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
       "algo"        -> o.algo.asJson
     )
   }
@@ -423,7 +428,19 @@ class OtoroshiInfos extends NgRequestTransformer {
       config.secComTtl,
       ctx.apikey,
       ctx.user,
-      ctx.request.some
+      ctx.request.some,
+      None,
+      None,
+      config.addFields.map(af => AddFieldsSettings(af.fields.mapValues(str => GlobalExpressionLanguage.apply(
+        value = str,
+        req = ctx.request.some,
+        service = ctx.route.legacy.some,
+        apiKey = ctx.apikey,
+        user = ctx.user,
+        context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        attrs = ctx.attrs,
+        env = env,
+      ))))
     )
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)
