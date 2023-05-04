@@ -614,6 +614,12 @@ object WasmUtils {
                 } catch {
                   case e: Throwable => promise.tryFailure(e)
                 }
+                case WasmAction.WasmOpaInvocation(invoke, promise) => try {
+                  val res = invoke()
+                  promise.trySuccess(res)
+                } catch {
+                  case e: Throwable => promise.tryFailure(e)
+                }
                 case WasmAction.WasmUpdate(update) => try {
                   update()
                 } catch {
