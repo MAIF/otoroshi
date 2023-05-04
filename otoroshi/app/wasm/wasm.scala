@@ -432,9 +432,44 @@ class WasmContextSlot(id: String, context: Context, plugin: Plugin, cfg: WasmCon
     }
   }
 
+  def callOpaSync(input: String)(implicit env: Env, ec: ExecutionContext): Either[JsValue, String] = {
+    if (closed.get()) {
+      val plug = WasmUtils.pluginCache.apply(id)
+      plug.callOpaSync(input)
+    } else {
+      try {
+        val res = env.metrics.withTimer("otoroshi.wasm.core.call-opa") {
+          OPA.evaluate(plugin, input)
+        }
+        env.metrics.withTimer("otoroshi.wasm.core.reset") {
+          plugin.reset()
+        }
+        res.right
+      } catch {
+        case e: Throwable if e.getMessage.contains("wasm backtrace") =>
+          WasmUtils.logger.error(s"error while invoking wasm function 'opa'", e)
+          Json
+            .obj(
+              "error" -> "wasm_error",
+              "error_description" -> JsArray(e.getMessage.split("\\n").filter(_.trim.nonEmpty).map(JsString.apply))
+            )
+            .left
+        case e: Throwable =>
+          WasmUtils.logger.error(s"error while invoking wasm function 'opa'", e)
+          Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
+      }
+    }
+  }
+
   def call(functionName: String, input: String)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val promise = Promise.apply[Either[JsValue, String]]()
     WasmUtils.getInvocationQueueFor(id).offer(WasmAction.WasmInvocation(() => callSync(functionName, input), promise))
+    promise.future
+  }
+
+  def callOpa(input: String)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
+    val promise = Promise.apply[Either[JsValue, String]]()
+    WasmUtils.getInvocationQueueFor(id).offer(WasmAction.WasmOpaInvocation(() => callOpaSync(input), promise))
     promise.future
   }
 
@@ -455,11 +490,6 @@ class WasmContextSlot(id: String, context: Context, plugin: Plugin, cfg: WasmCon
         case e: Throwable => e.printStackTrace()
       }
     }
-  }
-
-  def opaPlugin: Plugin = {
-    // TODO: remove this function in the future when opa will support invocation queue
-    plugin
   }
 
   def needsUpdate(wasmConfig: WasmConfig, wasm: ByteString): Boolean = {
@@ -506,6 +536,7 @@ class WasmContext(plugins: TrieMap[String, WasmContextSlot] = new TrieMap[String
 
 sealed trait WasmAction
 object WasmAction {
+  case class WasmOpaInvocation(call: () => Either[JsValue, String], promise: Promise[Either[JsValue, String]]) extends WasmAction
   case class WasmInvocation(call: () => Either[JsValue, String], promise: Promise[Either[JsValue, String]]) extends WasmAction
   case class WasmUpdate(call: () => Unit) extends WasmAction
 }
@@ -664,9 +695,9 @@ object WasmUtils {
       case None        => {
         val slot   = createPlugin()
         if (config.opa) {
-          OPA.evaluate(slot.opaPlugin, input.stringify).vfuture.map { output => // TODO: invoke in queue
+          slot.callOpa(input.stringify).map { output =>
             slot.close(config.lifetime)
-            output.right
+            output
           }
         } else {
           slot.call(functionName, input.stringify).map { output =>
@@ -693,9 +724,9 @@ object WasmUtils {
           case Some(plugin) => plugin
         }
         if (config.opa) {
-          OPA.evaluate(slot.opaPlugin, input.stringify).vfuture.map { output => // TODO: invoke in queue
+          slot.callOpa(input.stringify).map { output =>
             slot.close(config.lifetime)
-            output.right
+            output
           }
         } else {
           slot.call(functionName, input.stringify).map { output =>
