@@ -20,7 +20,7 @@
     "node-fetch": "^2.6.9",
     "pako": "^2.1.0",
     "simple-node-logger": "^21.8.12",
-    "socket.io": "^4.5.4",
+    "socket.io": "^4.6.1",
     "toml": "^3.0.0"
   },
   "devDependencies": {
