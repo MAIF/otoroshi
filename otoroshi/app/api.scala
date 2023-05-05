@@ -443,7 +443,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
 
-  lazy val handlerRef = new AtomicReference[HttpRequestHandler](httpRequestHandler)
+  lazy val handlerRef = new AtomicReference[HttpRequestHandler]()
 
   lazy val metrics              = wire[Metrics]
   lazy val snowMonkey           = wire[SnowMonkey]

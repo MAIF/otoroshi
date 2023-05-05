@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "16.0.0-dev",
+    "version" : "16.3.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -8271,6 +8271,60 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auths/templates" : {
+      "get" : {
+        "tags" : [ "auth-modules" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.findAllTemplates",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "unknown type",
+                  "type" : "object"
                 }
               }
             }
@@ -18172,9 +18226,10 @@
             },
             "description" : "Additionnal headers in the http request"
           },
-          "clusterUri" : {
-            "type" : "string",
-            "description" : "Cluster URL"
+          "maxBulkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "applyTemplate" : {
             "type" : "boolean",
@@ -18227,6 +18282,18 @@
           "mtlsConfig" : {
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig",
             "description" : "TLS settings for the http client"
+          },
+          "sendWorkers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "uris" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "version" : {
             "oneOf" : [ {
@@ -19375,10 +19442,18 @@
             "format" : "int64",
             "description" : "Authorized number of calls per second globally, measured on 10 seconds"
           },
+          "anonymousReporting" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
           "maxWebhookSize" : {
             "type" : "integer",
             "format" : "int32",
             "description" : "Max number of items in webhooks"
+          },
+          "env" : {
+            "type" : "object",
+            "description" : "???"
           },
           "maxConcurrentRequests" : {
             "type" : "integer",
@@ -19523,6 +19598,13 @@
             },
             "description" : "Possibles lines for Otoroshi"
           },
+          "extensions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "???"
+          },
           "middleFingers" : {
             "type" : "boolean",
             "description" : "Use middle finger emoji as a response character for endless HTTP responses"
@@ -19537,6 +19619,16 @@
           "autoCert" : {
             "$ref" : "#/components/schemas/otoroshi.models.AutoCert",
             "description" : "Auto certs settings"
+          },
+          "wasmManagerSettings" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.models.WasmManagerSettings"
+            } ],
+            "description" : "???"
           },
           "maintenanceMode" : {
             "type" : "boolean",
@@ -20438,6 +20530,34 @@
             "type" : "integer",
             "format" : "int32",
             "description" : "The port of the StatsD agent"
+          }
+        }
+      },
+      "otoroshi.models.WasmManagerSettings" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientId" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "pluginsFilter" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
           }
         }
       },

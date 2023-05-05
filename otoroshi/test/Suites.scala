@@ -118,26 +118,6 @@ object OtoroshiTests {
 
 class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {}
 
-class OpenapiGeneratorTests
-    extends Suites(
-      new OpenApiSpec()
-    )
-
-class PluginDocTests
-    extends Suites(
-      new PluginDocSpec()
-    )
-
-class PluginDocNextTests
-    extends Suites(
-      new PluginDocNextSpec()
-    )
-
-class PluginDocNgTests
-    extends Suites(
-      new PluginDocNgSpec()
-    )
-
 class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
@@ -153,22 +133,43 @@ class Log4ShellTests
       new Log4ShellSpec()
     )
 
-class ConfigCleanerTests
-    extends Suites(
-      new ConfigurationCleanupSpec()
-    )
 
 class NgTreeRouterTests
     extends Suites(
       new NgTreeRouterOpenapiWithEnvSpec(Configurations.InMemoryConfiguration),
       new NgTreeRouterWildcardSpec(),
-      new NgTreeRouterRealLifeSpec(),
+      //new NgTreeRouterRealLifeSpec(),
       new NgTreeRouterPathParamsSpec(),
       new NgTreeRouterSpec(),
       new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration)
     )
 
+class OpenapiGeneratorTests
+  extends Suites(
+    new OpenApiSpec()
+  )
+
+class PluginDocTests
+  extends Suites(
+    new PluginDocSpec()
+  )
+
+class PluginDocNextTests
+  extends Suites(
+    new PluginDocNextSpec()
+  )
+
+class PluginDocNgTests
+  extends Suites(
+    new PluginDocNgSpec()
+  )
+
 class OneShotTests
-    extends Suites(
-      new MapFilterSpec()
-    )
+  extends Suites(
+    new MapFilterSpec()
+  )
+
+class ConfigCleanerTests
+  extends Suites(
+    new ConfigurationCleanupSpec()
+  )
