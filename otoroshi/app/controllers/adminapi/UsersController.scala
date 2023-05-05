@@ -256,8 +256,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   def registerSimpleAdmin =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
-        val usernameOpt = (ctx.request.body \ "username").asOpt[String].filter(_.nonEmpty)
-        val passwordOpt = (ctx.request.body \ "password").asOpt[String].filter(_.nonEmpty)
+        val usernameOpt = (ctx.request.body \ "username").asOpt[String].filterNot(_.isBlank)
+        val passwordOpt = (ctx.request.body \ "password").asOpt[String].filterNot(_.isBlank)
         val labelOpt    = (ctx.request.body \ "label").asOpt[String]
         val rights      = if (ctx.userIsSuperAdmin) {
           UserRights(
