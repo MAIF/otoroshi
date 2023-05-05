@@ -365,44 +365,48 @@ object ApiKey {
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
-        val rawEnabled    = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+        val rawEnabled = (json \ "enabled").asOpt[Boolean].getOrElse(true)
         val rawValidUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l))
-        val enabled       = rawValidUntil match {
+        val enabled = rawValidUntil match {
           case Some(date) if date.isBeforeNow => false
-          case _                              => rawEnabled
+          case _ => rawEnabled
         }
-        ApiKey(
+        for(
+          clientId <- (json \ "clientId").asOpt[String].filterNot(_.isBlank);
+          clientSecret <- (json \ "clientSecret").asOpt[String].filterNot(_.isBlank);
+          clientName <- (json \ "clientName").asOpt[String].filterNot(_.isBlank)
+        ) yield ApiKey(
           location = otoroshi.models.EntityLocation.readFromKey(json),
-          clientId = (json \ "clientId").as[String],
-          clientSecret = (json \ "clientSecret").as[String],
-          clientName = (json \ "clientName").as[String],
+          clientId =  clientId,
+          clientSecret = clientSecret,
+          clientName = clientName,
           description = (json \ "description").asOpt[String].getOrElse(""),
           authorizedEntities = {
-            val authorizations: Seq[EntityIdentifier]     = json
-              .select("authorizations")
-              .asOpt[Seq[JsValue]]
-              .map { values =>
-                values
-                  .collect {
-                    case JsString(value)     => EntityIdentifier.apply(value)
-                    case value @ JsObject(_) => EntityIdentifier.applyModern(value)
-                  }
-                  .collect { case Some(id) =>
-                    id
-                  }
-              }
-              .getOrElse(Seq.empty[EntityIdentifier])
-            val authorizedGroup: Seq[EntityIdentifier]    =
+            val authorizations: Seq[EntityIdentifier] = json
+                .select("authorizations")
+                .asOpt[Seq[JsValue]]
+                .map { values =>
+                  values
+                      .collect {
+                        case JsString(value) => EntityIdentifier.apply(value)
+                        case value@JsObject(_) => EntityIdentifier.applyModern(value)
+                      }
+                      .collect { case Some(id) =>
+                        id
+                      }
+                }
+                .getOrElse(Seq.empty[EntityIdentifier])
+            val authorizedGroup: Seq[EntityIdentifier] =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
             val authorizedEntities: Seq[EntityIdentifier] =
               (json \ "authorizedEntities")
-                .asOpt[Seq[String]]
-                .map { identifiers =>
-                  identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
-                    id
+                  .asOpt[Seq[String]]
+                  .map { identifiers =>
+                    identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
+                      id
+                    }
                   }
-                }
-                .getOrElse(Seq.empty[EntityIdentifier])
+                  .getOrElse(Seq.empty[EntityIdentifier])
             (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
           },
           enabled = enabled,
@@ -413,20 +417,20 @@ object ApiKey {
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
           restrictions = Restrictions.format
-            .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Restrictions()),
+              .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
+              .getOrElse(Restrictions()),
           rotation = ApiKeyRotation.fmt
-            .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(ApiKeyRotation()),
+              .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
+              .getOrElse(ApiKeyRotation()),
           validUntil = rawValidUntil,
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
-            .asOpt[Map[String, String]]
-            .map(m => m.filter(_._1.nonEmpty))
-            .getOrElse(Map.empty[String, String])
+              .asOpt[Map[String, String]]
+              .map(m => m.filter(_._1.nonEmpty))
+              .getOrElse(Map.empty[String, String])
         )
       } map { case sd =>
-        JsSuccess(sd)
+        JsSuccess(sd.get)
       } recover { case t =>
         logger.error("Error while reading ApiKey", t)
         JsError(t.getMessage)
