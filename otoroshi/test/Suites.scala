@@ -79,7 +79,7 @@ object OtoroshiTests {
   def getSuites(): Seq[Suite] = {
     val (name, config) = getNameAndConfig()
     val suites         = Seq(
-      new BasicSpec(name, config),
+      new BasicSpec,
       new AdminApiSpec(name, config),
       new ProgrammaticApiSpec(name, config),
       new CircuitBreakerSpec(name, config),

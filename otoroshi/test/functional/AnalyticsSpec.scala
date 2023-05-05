@@ -371,8 +371,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
   }
 
   def setUpEvent(seq: AnalyticEvent*): Unit = {
-    implicit val ec: ExecutionContext = otoroshiComponents.executionContext
-    implicit val env: Env             = otoroshiComponents.env
+    implicit lazy val ec: ExecutionContext = otoroshiComponents.executionContext
+    implicit lazy val env: Env             = otoroshiComponents.env
     analytics.publish(seq.map(_.toJson)).futureValue
   }
 

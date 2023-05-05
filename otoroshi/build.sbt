@@ -203,7 +203,8 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 // publishArtifact in (Compile, packageDoc) := false
 // scalafmtVersion in ThisBuild := "1.2.0"
 
-parallelExecution in Test := false
+Test / parallelExecution := false
+IntegrationTest / testForkedParallel := false
 
 usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))

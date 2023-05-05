@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   implicit val system = ActorSystem("otoroshi-test")
-  implicit val env    = otoroshiComponents.env
+  implicit lazy val env    = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

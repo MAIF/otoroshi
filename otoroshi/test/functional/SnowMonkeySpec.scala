@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "monkey.oto.tools"
-  implicit val mat     = otoroshiComponents.materializer
+  implicit lazy val mat     = otoroshiComponents.materializer
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

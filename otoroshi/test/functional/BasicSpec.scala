@@ -2,7 +2,6 @@ package functional
 
 import java.util.Date
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-
 import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -15,11 +14,15 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import otoroshi.security.IdGenerator
 
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Try}
 
-class BasicSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
+class BasicSpec() extends OtoroshiSpec {
 
   lazy val serviceHost = "basictest.oto.tools"
+
+  def name: String = "--"
+  def configurationSpec: Configuration = Configuration.empty
 
   override def getTestConfiguration(configuration: Configuration) = {
     Configuration(
@@ -68,8 +71,8 @@ class BasicSpec(name: String, configurationSpec: => Configuration) extends Otoro
     }
 
     s"return only one service descriptor after startup (for admin API)" in {
-      val services = getOtoroshiServices().futureValue
-      services.size mustBe 1
+      val routes = getOtoroshiRoutes().futureValue
+      routes.size mustBe 1
     }
 
     s"route a basic http call" in {
@@ -197,10 +200,11 @@ class BasicSpec(name: String, configurationSpec: => Configuration) extends Otoro
         .futureValue
 
       basicTestResponse2.status mustBe 303
-      basicTestResponse2.header("Location") mustBe Some("https://basictest.oto.tools/api")
+      basicTestResponse2.header("Location") mustBe Some("https://basictest.oto.tools:8443/api")
       callCounter.get() mustBe 4
 
       updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
+
 
       val basicTestResponse3 = ws
         .url(s"http://127.0.0.1:$port/api")
