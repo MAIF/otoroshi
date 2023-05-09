@@ -76,6 +76,13 @@ const schema = {
         'Plugin is compiled targeting WASI (checked if you use Go or JS/TS as plugin language).',
     },
   },
+  instances: {
+    type: 'Number',
+    label: 'Instances',
+    props: {
+      help: 'the number of VM instances.',
+    },
+  },
   lifetime: {
     type: 'select',
     label: 'VM lifetime',
