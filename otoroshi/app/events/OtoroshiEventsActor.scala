@@ -1215,7 +1215,6 @@ object Exporters {
   class WasmExporter(_config : DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
     extends DefaultDataExporter(_config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      implicit val mat = env.analyticsMaterializer
       exporter[WasmExporterSettings].flatMap { exporterConfig =>
         exporterConfig.wasmRef
           .flatMap(id => env.proxyState.wasmPlugin(id))
