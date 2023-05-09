@@ -22,7 +22,7 @@ import scala.util.Try
 class Version1410Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   implicit val system = ActorSystem("otoroshi-test")
-  implicit val env    = otoroshiComponents.env
+  implicit lazy val env    = otoroshiComponents.env
 
   import scala.concurrent.duration._
 

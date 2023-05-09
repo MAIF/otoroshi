@@ -502,42 +502,6 @@ This plugin accepts the following configuration:
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.envoy.EnvoyControlPlane }
-
-## Envoy Control Plane (experimental)
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `transformer`
-* configuration root: `EnvoyControlPlane`
-
-### Description
-
-This plugin will expose the otoroshi state to envoy instances using the xDS V3 API`.
-
-Right now, all the features of otoroshi cannot be exposed as is through Envoy.
-
-
-
-### Default configuration
-
-```json
-{
-  "EnvoyControlPlane" : {
-    "enabled" : true
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.geoloc.GeolocationInfoEndpoint }
 
 ## Geolocation endpoint
@@ -1012,97 +976,6 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.metrics.PrometheusServiceMetrics }
-
-## Prometheus Service Metrics
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `transformer`
-* configuration root: `PrometheusServiceMetrics`
-
-### Description
-
-This plugin collects service metrics and can be used with the `Prometheus Endpoint` (in the Danger Zone) plugin to expose those metrics
-
-This plugin can accept the following configuration
-
-```json
-{
-  "PrometheusServiceMetrics": {
-    "includeUri": false // include http uri in metrics. WARNING this could impliess performance issues, use at your own risks
-  }
-}
-```
-
-
-
-### Default configuration
-
-```json
-{
-  "PrometheusServiceMetrics" : {
-    "includeUri" : false
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.metrics.ServiceMetrics }
-
-## Service Metrics
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `transformer`
-* configuration root: `ServiceMetrics`
-
-### Description
-
-This plugin expose service metrics in Otoroshi global metrics or on a special URL of the service `/.well-known/otoroshi/metrics`.
-Metrics are exposed in json or prometheus format depending on the accept header. You can protect it with an access key defined in the configuration
-
-This plugin can accept the following configuration
-
-```json
-{
-  "ServiceMetrics": {
-    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
-    "accessKeyQuery": "access_key"
-  }
-}
-```
-
-
-
-### Default configuration
-
-```json
-{
-  "ServiceMetrics" : {
-    "accessKeyValue" : "${config.app.health.accessKey}",
-    "accessKeyQuery" : "access_key"
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.mirror.MirroringPlugin }
 
 ## Mirroring plugin
@@ -1401,7 +1274,7 @@ This plugin can accept the following configuration
 
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.workflow.WorkflowEndpoint }
 
-## Workflow endpoint
+## [DEPRECATED] Workflow endpoint
 
 <img class="plugin-logo plugin-hidden" src=""></img>
 
@@ -1646,90 +1519,6 @@ Check if a client certificate is present in the request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.external.ExternalHttpValidator }
-
-## External Http Validator
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `validator`
-* configuration root: `ExternalHttpValidator`
-
-### Description
-
-Calls an external http service to know if a user has access or not. Uses cache for performances.
-
-The sent payload is the following:
-
-```json
-{
-  "apikey": {...},
-  "user": {...},
-  "service": : {...},
-  "chain": "...",  // PEM cert chain
-  "fingerprints": [...]
-}
-```
-
-This plugin can accept the following configuration
-
-```json
-{
-  "ExternalHttpValidator": {
-    "url": "...",                      // url for the http call
-    "host": "...",                     // value of the host header for the call. default is host of the url
-    "goodTtl": 600000,                 // ttl in ms for a validated call
-    "badTtl": 60000,                   // ttl in ms for a not validated call
-    "method": "POST",                  // http methode
-    "path": "/certificates/_validate", // http uri path
-    "timeout": 10000,                  // http call timeout
-    "noCache": false,                  // use cache or not
-    "allowNoClientCert": false,        //
-    "headers": {},                      // headers for the http call if needed
-    "mtlsConfig": {
-      "certId": "xxxxx",
-       "mtls": false,
-       "loose": false
-    }
-  }
-}
-```
-
-
-
-### Default configuration
-
-```json
-{
-  "ExternalHttpValidator" : {
-    "url" : "http://foo.bar",
-    "host" : "api.foo.bar",
-    "goodTtl" : 600000,
-    "badTtl" : 60000,
-    "method" : "POST",
-    "path" : "/certificates/_validate",
-    "timeout" : 10000,
-    "noCache" : false,
-    "allowNoClientCert" : false,
-    "headers" : { },
-    "mtlsConfig" : {
-      "certId" : "...",
-      "mtls" : false,
-      "loose" : false
-    }
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
 @@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.hmac.HMACValidator }
 
 ## HMAC access validator
@@ -1874,66 +1663,6 @@ This plugin can accept the following configuration
       "rolesPath" : [ ],
       "roles" : [ ]
     }
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.quotas.InstanceQuotas }
-
-## Instance quotas
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `validator`
-* configuration root: `InstanceQuotas`
-
-### Description
-
-This plugin will enforce global quotas on the current instance
-
-This plugin can accept the following configuration
-
-```json
-{
-  "InstanceQuotas": {
-    "callsPerDay": -1,     // max allowed api calls per day
-    "callsPerMonth": -1,   // max allowed api calls per month
-    "maxDescriptors": -1,  // max allowed service descriptors
-    "maxApiKeys": -1,      // max allowed apikeys
-    "maxGroups": -1,       // max allowed service groups
-    "maxScripts": -1,      // max allowed apikeys
-    "maxCertificates": -1, // max allowed certificates
-    "maxVerifiers": -1,    // max allowed jwt verifiers
-    "maxAuthModules": -1,  // max allowed auth modules
-  }
-}
-```
-
-
-
-### Default configuration
-
-```json
-{
-  "InstanceQuotas" : {
-    "callsPerDay" : -1,
-    "callsPerMonth" : -1,
-    "maxDescriptors" : -1,
-    "maxApiKeys" : -1,
-    "maxGroups" : -1,
-    "maxScripts" : -1,
-    "maxCertificates" : -1,
-    "maxVerifiers" : -1,
-    "maxAuthModules" : -1
   }
 }
 ```
@@ -2620,55 +2349,6 @@ This plugin exposes a webhook to kubernetes to handle manifests validation
 This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
 
 
-
-
-
-
-
-@@@
-
-
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.metrics.PrometheusEndpoint }
-
-## Prometheus Endpoint
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `sink`
-* configuration root: `PrometheusEndpoint`
-
-### Description
-
-This plugin exposes metrics collected by `Prometheus Service Metrics` on a `/prometheus` endpoint.
-You can protect it with an access key defined in the configuration
-
-This plugin can accept the following configuration
-
-```json
-{
-  "PrometheusEndpoint": {
-    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
-    "accessKeyQuery": "access_key",
-    "includeMetrics": false
-  }
-}
-```
-
-
-
-### Default configuration
-
-```json
-{
-  "PrometheusEndpoint" : {
-    "accessKeyValue" : "${config.app.health.accessKey}",
-    "accessKeyQuery" : "access_key",
-    "includeMetrics" : false
-  }
-}
-```
 
 
 
@@ -3396,76 +3076,6 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
       "teams" : { },
       "admins" : { },
       "webhooks" : { }
-    }
-  }
-}
-```
-
-
-
-
-
-@@@
-
-
-@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.workflow.WorkflowJob }
-
-## Workflow job
-
-<img class="plugin-logo plugin-hidden" src=""></img>
-
-### Infos
-
-* plugin type: `job`
-* configuration root: `WorkflowJob`
-
-### Description
-
-Periodically run a custom workflow
-
-
-
-### Default configuration
-
-```json
-{
-  "WorkflowJob" : {
-    "input" : {
-      "namespace" : "otoroshi",
-      "service" : "otoroshi-dns"
-    },
-    "intervalMillis" : "60000",
-    "workflow" : {
-      "name" : "some-workflow",
-      "description" : "a nice workflow",
-      "tasks" : [ {
-        "name" : "call-dns",
-        "type" : "http",
-        "request" : {
-          "method" : "PATCH",
-          "url" : "http://${env.KUBERNETES_SERVICE_HOST}:${env.KUBERNETES_SERVICE_PORT}/apis/v1/namespaces/${input.namespace}/services/${input.service}",
-          "headers" : {
-            "accept" : "application/json",
-            "content-type" : "application/json",
-            "authorization" : "Bearer ${file:///var/run/secrets/kubernetes.io/serviceaccount/token}"
-          },
-          "tls" : {
-            "mtls" : true,
-            "trustAll" : true
-          },
-          "body" : [ {
-            "op" : "replace",
-            "path" : "/spec/selector",
-            "value" : {
-              "app" : "otoroshi",
-              "component" : "dns"
-            }
-          } ]
-        },
-        "success" : {
-          "statuses" : [ 200 ]
-        }
-      } ]
     }
   }
 }

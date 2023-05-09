@@ -7,8 +7,8 @@ import play.api.libs.json.Json
 
 class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val mat = otoroshiComponents.materializer
-  implicit val env = otoroshiComponents.env
+  implicit lazy val mat = otoroshiComponents.materializer
+  implicit lazy val env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

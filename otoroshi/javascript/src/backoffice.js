@@ -44,29 +44,15 @@ window.fetch = function (...params) {
   const doNotPassTenant =
     window.__otoroshi__env__latest.userAdmin ||
     window.__otoroshi__env__latest.bypassUserRightsCheck;
+  let promise = undefined
+
   if (!doNotPassTenant && params.length == 2 && isObject(options)) {
     const currentTenant = window.localStorage.getItem('Otoroshi-Tenant') || 'default';
-    return window
+    promise = window
       ._fetch(url, {
         ...options,
         credentials: 'include',
         headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant },
-      })
-      .then((r) => {
-        if (r.status === 401 || r.status === 403) {
-          if (window.toast) {
-            window.toast('Authorization error', "You're not allowed to do that !", 'error');
-          }
-          if (url.indexOf('/bo/simple/login') === -1) {
-            throw new Error("You're not allowed to do that !");
-          }
-        } else if (r.status > 499 && window.toast) {
-          return r.then((text) => {
-            window.toast('Server error', 'An error occured server side: ' + text, 'error');
-          });
-        } else {
-          return r;
-        }
       });
   } else {
     // console.log('do not pass tenant for', url, {
@@ -76,8 +62,26 @@ window.fetch = function (...params) {
     //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
     // });
     const opts = params[1] || {};
-    return window._fetch(params[0], { ...opts, credentials: 'include' });
+    promise = window._fetch(params[0], { ...opts, credentials: 'include' });
   }
+
+  return promise.then((r) => {
+    if (r.status === 401 || r.status === 403) {
+      if (window.toast) {
+        window.toast('Authorization error', "You're not allowed to do that !", 'error');
+      }
+      if (url.indexOf('/bo/simple/login') === -1) {
+        throw new Error("You're not allowed to do that !");
+      }
+    } else if (r.status > 399 && window.toast) {
+      return r.text().then((text) => {
+        window.toast('Server error', 'An error occured server side: ' + text, 'error');
+        throw new Error(text);
+      });
+    } else {
+      return r;
+    }
+  });
 };
 
 const pattern = '38384040373937396665';

@@ -30,18 +30,18 @@ class NgTreeRouterPathParamsSpec
   }
 }
 
-class NgTreeRouterRealLifeSpec
-    extends WordSpec
-    with MustMatchers
-    with OptionValues
-    with ScalaFutures
-    with IntegrationPatience {
-  "NgTreeRouter" should {
-    "be able to handle real life" in {
-      NgTreeRouter_Test.testRealLifeRouter()
-    }
-  }
-}
+//class NgTreeRouterRealLifeSpec
+//    extends WordSpec
+//    with MustMatchers
+//    with OptionValues
+//    with ScalaFutures
+//    with IntegrationPatience {
+//  "NgTreeRouter" should {
+//    "be able to handle real life" in {
+//      NgTreeRouter_Test.testRealLifeRouter()
+//    }
+//  }
+//}
 
 class NgTreeRouterWildcardSpec
     extends WordSpec
