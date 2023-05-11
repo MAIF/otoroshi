@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import AceEditor from 'react-ace';
+import { PillButton } from '../components/PillButton';
 
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -88,23 +89,23 @@ export function ResourceLoaderPage({ setTitle }) {
   };
 
   const setResources = (resources) => {
-    if (resources) {
-      if (resources.trim().startsWith('[') || resources.trim().startsWith('{')) {
-        if (format !== 'json') {
-          setFormat('json');
-        }
-      } else {
-        if (format !== 'yaml') {
-          setFormat('yaml');
-        }
-      }
-    }
+    // if (resources) {
+    //   if (resources.trim().startsWith('[') || resources.trim().startsWith('{')) {
+    //     if (format !== 'json') {
+    //       setFormat('json');
+    //     }
+    //   } else {
+    //     if (format !== 'yaml') {
+    //       setFormat('yaml');
+    //     }
+    //   }
+    // }
     setRawResources(resources);
   };
 
   const onDrop = (ev) => {
     ev.preventDefault();
-    onDragLeave(ev);
+    onDragLeave();
     if (ev.dataTransfer.items) {
       for (let i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
@@ -126,8 +127,8 @@ export function ResourceLoaderPage({ setTitle }) {
     editor.classList.add("dragEffect");
   }
   const onDragLeave = (ev) => {
-    console.log()
-    ev.preventDefault();
+    if(ev)
+      ev.preventDefault();
     const editor = document.getElementById("resources-loader");
     editor.classList.remove("dragEffect");
   }
@@ -250,19 +251,34 @@ export function ResourceLoaderPage({ setTitle }) {
 
   return (
     <div>
-      <div className="mb-3">
+      <div className="mb-3 d-flex justify-content-between">
+        <div>
+          <PillButton
+            rightEnabled={format === 'yaml' ? false : true}
+            leftText="JSON"
+            rightText="YAML"
+            onChange={() => format === 'yaml' ? setFormat('json') : setFormat('yaml')}
+          />
+          {/* <button
+            type="button"
+            onClick={() => setFormat('json')}
+            className={`btn btn-sm btn-${format === 'json' ? 'success' : 'secondary'}`}>
+            JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormat('yaml')}
+            className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
+            YAML
+          </button> */}
+        </div> 
         <button
-          type="button"
-          onClick={() => setFormat('json')}
-          className={`btn btn-sm btn-${format === 'json' ? 'success' : 'secondary'}`}>
-          JSON
-        </button>
-        <button
-          type="button"
-          onClick={() => setFormat('yaml')}
-          className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
-          YAML
-        </button>
+        type="button"
+        disabled={rawResources.length <= 0}
+        className="btn btn-success"
+        onClick={loadResources}>
+        Load resources
+      </button>
       </div>
       <div className="mb-3">
         <div className="row">
@@ -317,13 +333,6 @@ export function ResourceLoaderPage({ setTitle }) {
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        className="btn btn-success"
-        style={{ marginTop: 12 }}
-        onClick={loadResources}>
-        Load resources
-      </button>
     </div>
   );
 }
