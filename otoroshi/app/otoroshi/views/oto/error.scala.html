@@ -5,9 +5,9 @@
 }
 
 @main("Otoroshi Error", _env, moreStyles = moreStyles) {
-    <div class="jumbotron">
+    <div class="jumbotron mt-5">
         @if(error) {
-            <h2><i class="glyphicon glyphicon-warning-sign"></i> @title</h2>
+            <h2><i class="fas fa-exclamation-triangle"></i> @title</h2>
         } else {
             <h2 style="color:white;">@title</h2>
         }

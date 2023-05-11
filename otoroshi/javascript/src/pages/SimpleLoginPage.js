@@ -46,31 +46,16 @@ export class SimpleLoginPage extends Component {
 
   render() {
     return (
-      <div style={{
-        background: '#494948',
-        border: `5px solid ${this.state.error ? 'var(--color-red)' : '#fff'}`,
-        borderRadius: 12,
-        width: 375,
-        margin: 'auto',
-        padding: '1rem',
-
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center'
+      <div className="login-card" style={{
+        borderColor: `${this.state.error ? 'var(--color-red)' : '#fff'}`
       }}>
-        <img src={this.props.otoroshiLogo} style={{ width: 400 }} />
-        <div style={{ color: '#fff', width: '100%', textAlign: 'center' }}>
-          <h1 style={{ margin: 0 }}>Welcome</h1>
+        <img src={this.props.otoroshiLogo}  />
+        <div className="login-card-title">
+          <h1>Welcome</h1>
           <p>Log in to Otoroshi to continue</p>
         </div>
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          gap: 12
-        }}>
+        <div className="login-card-body">
           <form onSubmit={this.redirect}>
             <input
               type="email"
@@ -89,10 +74,8 @@ export class SimpleLoginPage extends Component {
               fontWeight: 'bold'
             }}>{this.state.error['Otoroshi-Error']}</p>}
 
-            <div style={{
-              display: 'flex'
-            }}>
-              <button className='btn btn-primaryColor mt-3 flex-fill' type="submit">Continue</button>
+            <div className="d-flex justify-content-center">
+              <button className="btn btn-primaryColor mt-3" type="submit">Continue</button>
             </div>
           </form>
         </div>
