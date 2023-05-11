@@ -74,10 +74,8 @@ export class SimpleLoginPage extends Component {
               fontWeight: 'bold'
             }}>{this.state.error['Otoroshi-Error']}</p>}
 
-            <div style={{
-              display: 'flex'
-            }}>
-              <button className='btn btn-primaryColor mt-3 flex-fill' type="submit">Continue</button>
+            <div className="d-flex justify-content-center">
+              <button className="btn btn-primaryColor mt-3" type="submit">Continue</button>
             </div>
           </form>
         </div>
