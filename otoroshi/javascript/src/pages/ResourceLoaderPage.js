@@ -63,6 +63,7 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const aceRef = useRef();
 
+
   useEffect(() => {
     setTitle('Resources loader');
   }, []);
@@ -103,6 +104,7 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const onDrop = (ev) => {
     ev.preventDefault();
+    onDragLeave(ev);
     if (ev.dataTransfer.items) {
       for (let i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
@@ -117,6 +119,18 @@ export function ResourceLoaderPage({ setTitle }) {
       }
     }
   };
+
+  const onDragOver = (ev) => {
+    ev.preventDefault();
+    const editor = document.getElementById("resources-loader");
+    editor.classList.add("dragEffect");
+  }
+  const onDragLeave = (ev) => {
+    console.log()
+    ev.preventDefault();
+    const editor = document.getElementById("resources-loader");
+    editor.classList.remove("dragEffect");
+  }
 
   if (loadedResources.length > 0) {
     return (
@@ -198,15 +212,14 @@ export function ResourceLoaderPage({ setTitle }) {
             ))}
           </tbody>
         </table>
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="btn-group">
+        <div className="d-flex justify-content-end" >
             <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
               Cancel
             </button>
             {loadedResources.find((f) => !f.error) && (
               <button
                 type="button"
-                className="btn btn-success"
+                className="btn btn-success ms-2"
                 onClick={() => {
                   Promise.all(
                     loadedResources
@@ -231,7 +244,6 @@ export function ResourceLoaderPage({ setTitle }) {
               </button>
             )}
           </div>
-        </div>
       </div>
     );
   }
@@ -258,7 +270,8 @@ export function ResourceLoaderPage({ setTitle }) {
             className="col-sm-8"
             style={{ paddingRight: 0 }}
             onDrop={onDrop}
-            onDragOver={(e) => e.preventDefault()}>
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}>
             <AceEditor
               ref={aceRef}
               name="resources-loader"
@@ -273,6 +286,7 @@ export function ResourceLoaderPage({ setTitle }) {
               highlightActiveLine={true}
               tabSize={2}
               enableBasicAutocompletion={true}
+              placeholder= "Write, paste or drag your text here"
             />
           </div>
           <div className="col-sm-4" style={{ paddingLeft: 1 }}>

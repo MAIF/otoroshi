@@ -1,0 +1,17 @@
+#resources-loader {
+  &.dragEffect {
+    background-color: rgba(249, 176, 0, 0.2);
+
+    .ace_gutter,
+    .ace_gutter-active-line,
+    .ace_active-line,
+    .ace_selection {
+        background-color: rgba(249, 176, 0, 0.2);
+
+    }
+  }
+
+  .ace_placeholder {
+    font-size: 20px;
+  }
+}
