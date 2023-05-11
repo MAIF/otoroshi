@@ -1135,6 +1135,13 @@ export class WasmAuthModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.description', v)}
         />
+         <SelectInput
+          label="Wasm plugin"
+          valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+          transformer={i => ({ label: i.name, value: i.id })}
+          value={settings.wasmRef}
+          onChange={(v) => changeTheValue(path + '.wasmRef', v)}
+        />
         <BooleanInput
           label="Client side session"
           value={settings.clientSideSessionEnabled}
@@ -1149,16 +1156,6 @@ export class WasmAuthModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
-          }}
-        />
-        <SelectInput
-          label="Wasm plugin"
-          valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
-          transformer={i => ({ label: i.name, value: i.id })}
-          value={settings.wasmRef}
-          onChange={(v) => {
-            console.log(v)
-            changeTheValue(path + '.wasmRef', v)
           }}
         />
       </div>
