@@ -111,14 +111,15 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
 
   def this() = this(WasmAuthModuleConfig.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, false)
       val input = Json.obj(
         "request" -> JsonHelpers.requestToJson(request),
         "global_config" -> config.json,
         "service" -> descriptor.json,
-        "route" -> route.json
+        "route" -> route.json,
+        "is_route" -> isRoute,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, route)
       WasmUtils.execute(plugin.config, "pa_login_page", input, ctx.some, None).map {

@@ -298,7 +298,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case _                          =>
         if (logger.isDebugEnabled) logger.debug(s"not using pkce flow")
         (
-          s"${authConfig.loginUrl}?&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
         )
     }
