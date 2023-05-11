@@ -192,6 +192,7 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
       case "ldap" => LdapAuthModuleConfig._fmt.reads(json)
       case "saml" => SamlAuthModuleConfig._fmt.reads(json)
       case "oauth1" => Oauth1ModuleConfig._fmt.reads(json)
+      case "wasm" => WasmAuthModuleConfig.format.reads(json)
       case ref       => env.datastores.authConfigsDataStore.templates()(env)
         .find(config => config.`type` == ref) match {
         case Some(config) => config._fmt()(env).reads(json)
