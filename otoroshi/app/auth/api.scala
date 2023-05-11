@@ -2,6 +2,7 @@ package otoroshi.auth
 
 import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
+import otoroshi.next.models.NgRoute
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.{JsonPathValidator, RegexPool}
@@ -30,7 +31,7 @@ trait ValidableUser { self =>
 trait AuthModule {
   def authConfig: AuthModuleConfig
 
-  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result]
@@ -140,6 +141,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def desc: String
   def authModule(config: GlobalConfig): AuthModule
   def cookieSuffix(desc: ServiceDescriptor): String
+  def routeCookieSuffix(route: NgRoute): String = cookieSuffix(route.legacy)
   def sessionMaxAge: Int
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
@@ -292,9 +294,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       .map { template =>
         AuthModuleConfig._fmt(env).reads(defaultModule.json.asObject.deepMerge(template)) match {
           case JsSuccess(value, _) => value
-          case JsError(errors) =>
-            println(errors)
-            defaultModule
+          case JsError(errors) => defaultModule
         }
       }
       .getOrElse {

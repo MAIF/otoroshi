@@ -60,7 +60,7 @@ object ValidatorUtils {
       credentials: List[Credential],
       validateAssertions: Boolean
   ): Either[String, Unit] = {
-    if (response.getAssertions.size() != 1)
+    if (response.getAssertions.size() > 1)
       Left("The response doesn't contain exactly 1 assertion")
     else {
       val assertion = response.getAssertions.get(0)

@@ -42,6 +42,7 @@ import MaintenanceMode from './MaintenanceMode';
 import MissingHeadersIn from './MissingHeadersIn';
 import MissingHeadersOut from './MissingHeadersOut';
 import MockResponses from './MockResponses';
+import MultiAuthModule from './MultiAuthModule';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
@@ -172,6 +173,7 @@ export const Plugins = [
   MissingHeadersIn,
   MissingHeadersOut,
   MockResponses,
+  MultiAuthModule,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
   NgDefaultRequestBody,

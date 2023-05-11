@@ -275,7 +275,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -305,7 +305,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
+                      if (isRoute) {
+                        Results.Redirect(s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&token=$token&hash=$hash")
+                      } else {
+                        Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
+                      }
                     }
                 }
             }
@@ -316,7 +320,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           .Ok(
             otoroshi.views.html.oto
               .login(
-                s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash",
+                if (isRoute) s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&hash=$hash" else
+                  s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash",
                 "POST",
                 token,
                 authConfig.webauthn,
