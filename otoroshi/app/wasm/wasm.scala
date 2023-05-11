@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
-import org.extism.sdk.{Context, Plugin}
+import org.extism.sdk.{Context, HostFunction, HostUserData, Plugin}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
@@ -403,7 +403,7 @@ object WasmConfig {
   }
 }
 
-class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugin, cfg: WasmConfig, wsm: ByteString, closed: AtomicBoolean, updating: AtomicBoolean, instanceId: String) {
+class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugin, cfg: WasmConfig, wsm: ByteString, closed: AtomicBoolean, updating: AtomicBoolean, instanceId: String, functions: Array[HostFunction[_ <: HostUserData]]) {
 
   def callSync(functionName: String, input: String)(implicit env: Env, ec: ExecutionContext): Either[JsValue, String] = {
     if (closed.get()) {
@@ -412,11 +412,15 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
     } else {
       try {
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
+        WasmUtils.debugLog.debug(s"calling instance $id-$instance")
         val res = env.metrics.withTimer("otoroshi.wasm.core.call") {
           plugin.call(functionName, input).right
         }
         env.metrics.withTimer("otoroshi.wasm.core.reset") {
           plugin.reset()
+        }
+        env.metrics.withTimer("otoroshi.wasm.core.count-thunks") {
+          WasmUtils.logger.debug(s"thunks: ${functions.size}")
         }
         res
       } catch {
@@ -503,7 +507,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
     configHasChanged || wasmHasChanged
   }
 
-  def updateIfNeeded(pluginId: String, config: WasmConfig, wasm: ByteString, ctx: Option[NgCachedConfigContext], attrsOpt: Option[TypedMap])(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
+  def updateIfNeeded(pluginId: String, config: WasmConfig, wasm: ByteString, attrsOpt: Option[TypedMap])(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
     if (needsUpdate(config, wasm) && updating.compareAndSet(false, true)) {
 
       if (config.instances < cfg.instances) {
@@ -522,7 +526,6 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
           instance,
           wasm,
           config,
-          ctx,
           pluginId,
           attrsOpt,
         )
@@ -566,6 +569,8 @@ object CacheableWasmScript {
 object WasmUtils {
 
   private[wasm] val logger = Logger("otoroshi-wasm")
+
+  val debugLog = Logger("otoroshi-wasm-debug")
 
   implicit val executor = ExecutionContext.fromExecutorService(
     Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 4) + 1)
@@ -665,7 +670,6 @@ object WasmUtils {
     instance: Int,
     wasm: ByteString,
     config: WasmConfig,
-    ctx: Option[NgCachedConfigContext] = None,
     pluginId: String,
     attrsOpt: Option[TypedMap]
   )(implicit env: Env, ec: ExecutionContext): WasmContextSlot = env.metrics.withTimer("otoroshi.wasm.core.act-create-plugin") {
@@ -673,12 +677,13 @@ object WasmUtils {
       WasmUtils.logger.debug(s"creating wasm plugin instance for ${pluginId}")
     val manifest = internalCreateManifest(config, wasm, env)
     val context = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.context")(new Context())
+    val functions = HostFunctions.getFunctions(config, pluginId, attrsOpt)
     val plugin = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.plugin") {
       context.newPlugin(
         manifest,
         config.wasi,
-        HostFunctions.getFunctions(config, ctx, pluginId, attrsOpt),
-        LinearMemories.getMemories(config, ctx, pluginId)
+        functions,
+        LinearMemories.getMemories(config)
       )
     }
     new WasmContextSlot(
@@ -688,6 +693,7 @@ object WasmUtils {
       plugin,
       config,
       wasm,
+      functions = functions,
       closed = new AtomicBoolean(false),
       updating = new AtomicBoolean(false),
       instanceId = IdGenerator.uuid,
@@ -704,16 +710,18 @@ object WasmUtils {
       attrsOpt: Option[TypedMap]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.call-wasm") {
 
+    WasmUtils.debugLog.debug("callWasm")
+
     val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
     val instance = instancesCounter.incrementAndGet() % config.instances
 
     def createPlugin(): WasmContextSlot = {
       if (config.lifetime == WasmVmLifetime.Forever) {
         pluginCache.getOrUpdate(s"$pluginId-$instance") {
-          actuallyCreatePlugin(instance, wasm, config, ctx, pluginId, attrsOpt)
-        }.seffectOn(_.updateIfNeeded(pluginId, config, wasm, ctx, attrsOpt))
+          actuallyCreatePlugin(instance, wasm, config, pluginId, None)
+        }.seffectOn(_.updateIfNeeded(pluginId, config, wasm, None))
       } else {
-        actuallyCreatePlugin(instance, wasm, config, ctx, pluginId, attrsOpt)
+        actuallyCreatePlugin(instance, wasm, config, pluginId, attrsOpt)
       }
     }
 
@@ -782,6 +790,7 @@ object WasmUtils {
       ctx: Option[NgCachedConfigContext],
       attrs: Option[TypedMap]
   )(implicit env: Env): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.execute") {
+    WasmUtils.debugLog.debug("execute")
     val pluginId = config.source.kind match {
       case WasmSourceKind.Local => {
         env.proxyState.wasmPlugin(config.source.path) match {

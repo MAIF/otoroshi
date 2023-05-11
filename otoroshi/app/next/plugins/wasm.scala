@@ -11,7 +11,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script._
-import otoroshi.utils.TypedMap
+import otoroshi.utils.{ConcurrentMutableTypedMap, TypedMap}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
@@ -51,6 +51,47 @@ object BodyHelper {
   }
 }
 
+object AttrsHelper {
+
+  def updateAttrs(attrs: TypedMap, from: JsValue): Unit = try {
+    from.select("attrs").asOpt[JsObject].foreach { attrsJson =>
+      val setAttrs = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
+      val delAttrs = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
+      if (clearAttrs) {
+        attrs.clear()
+      } else {
+        delAttrs.foreach { key =>
+          attrs match {
+            case at: ConcurrentMutableTypedMap => {
+              at.m.keySet.find(_.displayName.contains(key)).foreach(tk => at.remove(tk))
+            }
+            case _ =>
+          }
+        }
+        setAttrs.value.foreach {
+          case (key, value) => {
+            attrs match {
+              case at: ConcurrentMutableTypedMap => {
+                try {
+                  otoroshi.wasm.Http.possibleAttributes.get(key).foreach { setter =>
+                    at.m.put(setter.key, setter.f(value))
+                  }
+                } catch {
+                  case t: Throwable => t.printStackTrace()
+                }
+              }
+              case _ =>
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    case t: Throwable => t.printStackTrace()
+  }
+}
+
 class WasmRouteMatcher extends NgRouteMatcher {
 
   private val logger = Logger("otoroshi-plugins-wasm-route-matcher")
@@ -74,6 +115,7 @@ class WasmRouteMatcher extends NgRouteMatcher {
     res match {
       case Right(res) => {
         val response = Json.parse(res)
+        AttrsHelper.updateAttrs(ctx.attrs, response)
         (response \ "result").asOpt[Boolean].getOrElse(false)
       }
       case Left(err)  =>
@@ -109,6 +151,7 @@ class WasmPreRoute extends NgPreRouting {
           case Failure(e)        =>
             Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> e.getMessage))))
           case Success(response) => {
+            AttrsHelper.updateAttrs(ctx.attrs, response)
             val error = response.select("error").asOpt[Boolean].getOrElse(false)
             if (error) {
               val body                         = BodyHelper.extractBodyFrom(response)
@@ -161,6 +204,7 @@ class WasmBackend extends NgBackendCall {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
+    WasmUtils.debugLog.debug("callBackend")
     ctx.wasmJson
       .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.some, ctx.attrs.some))
       .map {
@@ -173,6 +217,7 @@ class WasmBackend extends NgBackendCall {
                 logger.error("error during json parsing", e)
                 Json.obj()
             }
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           val body     = BodyHelper.extractBodyFrom(response)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
@@ -292,6 +337,7 @@ class WasmAccessValidator extends NgAccessValidator {
       .flatMap {
         case Right(res) =>
           val response = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
           if (result) {
             NgAccess.NgAllowed.vfuture
@@ -355,6 +401,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                 val status      = response.select("status").asOpt[Int].getOrElse(500)
                 val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -419,6 +466,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                 val status      = response.select("status").asOpt[Int].getOrElse(500)
                 val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -477,6 +525,7 @@ class WasmSink extends NgRequestSink {
         case Left(error) => false
         case Right(res)  => {
           val response = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           (response \ "result").asOpt[Boolean].getOrElse(false)
         }
       }
@@ -508,7 +557,7 @@ class WasmSink extends NgRequestSink {
           case Left(error) => Results.InternalServerError(error)
           case Right(res)  => {
             val response = Json.parse(res)
-
+            AttrsHelper.updateAttrs(ctx.attrs, response)
             val status = response
               .select("status")
               .asOpt[Int]
@@ -837,7 +886,9 @@ class WasmOPA extends NgAccessValidator {
       .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
       .flatMap {
         case Right(res) =>
-          val result    = Json.parse(res).asOpt[JsArray].getOrElse(Json.arr())
+          val response  = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
+          val result    = response.asOpt[JsArray].getOrElse(Json.arr())
           val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           if (canAccess) {
             NgAccess.NgAllowed.vfuture
@@ -891,6 +942,7 @@ class WasmRouter extends NgRouter {
     ) match {
       case Right(res) =>
         val response = Json.parse(res)
+        AttrsHelper.updateAttrs(ctx.attrs, response)
         Try {
           NgMatchedRoute(
             route = NgRoute.fmt.reads(response.select("route").asValue).get,
