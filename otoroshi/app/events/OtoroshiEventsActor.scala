@@ -1224,7 +1224,7 @@ object Exporters {
               "config" -> configUnsafe.json,
             )
             // println(s"call send: ${events.size}")
-            WasmUtils.execute(plugin.config, "export_events", input ++ Json.obj("events" -> JsArray(events)), ctx, attrs)
+            WasmUtils.execute(plugin.config, "export_events", input ++ Json.obj("events" -> JsArray(events)), attrs, None)
               .map {
                 case Left(err) => ExportResult.ExportResultFailure(err.stringify)
                 case Right(res) => res.parseJson.select("error").asOpt[JsValue] match {

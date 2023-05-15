@@ -122,7 +122,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "is_route" -> isRoute,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, route)
-      WasmUtils.execute(plugin.config, "pa_login_page", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "pa_login_page", input, None, None).map {
         case Left(err) => Results.InternalServerError(err)
         case Right(output) => {
           val response =
@@ -161,7 +161,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user" -> user.map(_.json).getOrElse(JsNull).asValue,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, route)
-      WasmUtils.execute(plugin.config, "pa_logout", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "pa_logout", input, None, None).map {
         case Left(err) => Results.InternalServerError(err).left
         case Right(output) => {
           val response =
@@ -191,7 +191,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "route" -> route.json,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, route)
-      WasmUtils.execute(plugin.config, "pa_callback", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "pa_callback", input, None, None).map {
         case Left(err) => err.stringify.left
         case Right(output) => {
           val response = {
@@ -221,7 +221,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmUtils.execute(plugin.config, "bo_login_page", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "bo_login_page", input, None, None).map {
         case Left(err) => Results.InternalServerError(err)
         case Right(output) => {
           val response =
@@ -257,7 +257,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user" -> user.json,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmUtils.execute(plugin.config, "bo_logout", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "bo_logout", input, None, None).map {
         case Left(err) => Results.InternalServerError(err).left
         case Right(output) => {
           val response =
@@ -284,7 +284,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json,
       )
       val ctx = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmUtils.execute(plugin.config, "bo_callback", input, ctx.some, None).map {
+      WasmUtils.execute(plugin.config, "bo_callback", input, None, None).map {
         case Left(err) => err.stringify.left
         case Right(output) => {
           val response = {

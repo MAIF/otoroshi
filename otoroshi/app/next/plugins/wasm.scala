@@ -111,7 +111,7 @@ class WasmRouteMatcher extends NgRouteMatcher {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val res         =
-      Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.some, ctx.attrs.some), 10.seconds)
+      Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.attrs.some, None), 10.seconds)
     res match {
       case Right(res) => {
         val response = Json.parse(res)
@@ -144,7 +144,7 @@ class WasmPreRoute extends NgPreRouting {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val input  = ctx.wasmJson
-    WasmUtils.execute(config, "pre_route", input, ctx.some, ctx.attrs.some).map {
+    WasmUtils.execute(config, "pre_route", input, ctx.attrs.some, None).map {
       case Left(err)     => Left(NgPreRoutingErrorWithResult(Results.InternalServerError(err)))
       case Right(resStr) => {
         Try(Json.parse(resStr)) match {
@@ -206,7 +206,7 @@ class WasmBackend extends NgBackendCall {
       .getOrElse(WasmConfig())
     WasmUtils.debugLog.debug("callBackend")
     ctx.wasmJson
-      .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.some, ctx.attrs.some))
+      .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.attrs.some, None))
       .map {
         case Right(output) =>
           val response =
@@ -333,7 +333,7 @@ class WasmAccessValidator extends NgAccessValidator {
       .getOrElse(WasmConfig())
 
     WasmUtils
-      .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
+      .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
       .flatMap {
         case Right(res) =>
           val response = Json.parse(res)
@@ -397,7 +397,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, "transform_request", input, ctx.some, ctx.attrs.some)
+          .execute(config, "transform_request", input, ctx.attrs.some, None)
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
@@ -462,7 +462,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, "transform_response", input, ctx.some, ctx.attrs.some)
+          .execute(config, "transform_response", input, ctx.attrs.some, None)
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
@@ -518,8 +518,8 @@ class WasmSink extends NgRequestSink {
         config.copy(functionName = "sink_matches".some),
         "matches",
         ctx.wasmJson,
-        FakeWasmContext(ctx.config).some,
-        ctx.attrs.some
+        ctx.attrs.some,
+        None
       )
       .map {
         case Left(error) => false
@@ -552,7 +552,7 @@ class WasmSink extends NgRequestSink {
     requestToWasmJson(ctx.body).flatMap { body =>
       val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
       WasmUtils
-        .execute(config, "sink_handle", input, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+        .execute(config, "sink_handle", input, ctx.attrs.some, None)
         .map {
           case Left(error) => Results.InternalServerError(error)
           case Right(res)  => {
@@ -655,7 +655,7 @@ class WasmRequestHandler extends RequestHandler {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
               WasmUtils
-                .execute(config, "handle_request", Json.obj("request" -> json), fakeCtx.some, None)
+                .execute(config, "handle_request", Json.obj("request" -> json), None, None)
                 .flatMap {
                   case Right(ok) => {
                     val response                     = Json.parse(ok)
@@ -752,8 +752,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
         config.config.copy(functionName = "job_start".some),
         "job_start",
         ctx.wasmJson,
-        FakeWasmContext(config.config.json).some,
-        attrs.some
+        attrs.some,
+        None
       )
       .map {
         case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
@@ -771,8 +771,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
         config.config.copy(functionName = "job_stop".some),
         "job_stop",
         ctx.wasmJson,
-        FakeWasmContext(config.config.json).some,
-        attrs.some
+        attrs.some,
+        None
       )
       .map {
         case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
@@ -786,7 +786,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   }
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
     WasmUtils
-      .execute(config.config, "job_run", ctx.wasmJson, FakeWasmContext(config.config.json).some, attrs.some)
+      .execute(config.config, "job_run", ctx.wasmJson, attrs.some, None)
       .map {
         case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
         case Right(_)  => ()
@@ -883,7 +883,7 @@ class WasmOPA extends NgAccessValidator {
       .getOrElse(WasmConfig())
 
     WasmUtils
-      .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
+      .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
       .flatMap {
         case Right(res) =>
           val response  = Json.parse(res)
@@ -937,7 +937,7 @@ class WasmRouter extends NgRouter {
   override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     Await.result(
-      WasmUtils.execute(config, "find_route", ctx.json, FakeWasmContext(ctx.config).some, ctx.attrs.some),
+      WasmUtils.execute(config, "find_route", ctx.json, ctx.attrs.some, None),
       3.seconds
     ) match {
       case Right(res) =>
