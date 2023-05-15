@@ -7,6 +7,7 @@ import ApikeyAuthModule from './ApikeyAuthModule';
 import AuthModule from './AuthModule';
 import BuildMode from './BuildMode';
 import BasicAuthCaller from './BasicAuthCaller';
+import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
 import ContextValidation from './ContextValidation';
 import Cors from './Cors';
@@ -138,6 +139,7 @@ export const Plugins = [
   AuthModule,
   BasicAuthCaller,
   BuildMode,
+  BrotliResponseCompressor,
   CanaryMode,
   ContextValidation,
   Cors,
