@@ -11,12 +11,6 @@ export default {
       array: true,
       format: null,
     },
-    excluded_patterns: {
-      label: 'excluded_patterns',
-      type: 'array',
-      array: true,
-      format: null,
-    },
     black_list: {
       label: 'black_list',
       type: 'array',
@@ -49,7 +43,6 @@ export default {
   config_flow: [
     'black_list',
     'white_list',
-    'excluded_patterns',
     'chunked_threshold',
     'buffer_size',
     'compression_level',
