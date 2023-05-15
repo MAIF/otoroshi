@@ -19,7 +19,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 case class NgBrotliConfig(
-  excludedPatterns: Seq[String] = Seq.empty[String],
   whiteList: Seq[String] = Seq("text/*", "application/javascript", "application/json"),
   blackList: Seq[String] = Seq.empty[String],
   bufferSize: Int = 8192,
@@ -34,7 +33,6 @@ object NgBrotliConfig {
     override def reads(json: JsValue): JsResult[NgBrotliConfig] =
       Try {
         NgBrotliConfig(
-          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
@@ -48,7 +46,6 @@ object NgBrotliConfig {
 
     override def writes(o: NgBrotliConfig): JsValue =
       Json.obj(
-        "excluded_patterns" -> o.excludedPatterns,
         "allowed_list"      -> o.whiteList,
         "blocked_list"      -> o.blackList,
         "buffer_size"       -> o.bufferSize,
@@ -83,20 +80,16 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgBrotliConfig())
     val request = ctx.request
-    if (!config.excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri))) {
-      if (mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(config, request, ctx.otoroshiResponse)) {
-        BrotliLoader.isBrotliAvailable()
-        val params = new Encoder.Parameters().setQuality(config.compressionLevel)
-        val vary = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
-        ctx.otoroshiResponse.copy(
-          headers = ctx.otoroshiResponse.headers - "Content-Length" ++ Map("Content-Encoding" -> "br", "Transfer-Encoding" -> "chunked", vary._1 -> vary._2),
-          body = ctx.otoroshiResponse.body.map { bs =>
-            ByteString.apply(Encoder.compress(bs.toArray, params))
-          }
-        ).right
-      } else {
-        ctx.otoroshiResponse.right
-      }
+    if (mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(config, request, ctx.otoroshiResponse)) {
+      BrotliLoader.isBrotliAvailable()
+      val params = new Encoder.Parameters().setQuality(config.compressionLevel)
+      val vary = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
+      ctx.otoroshiResponse.copy(
+        headers = ctx.otoroshiResponse.headers - "Content-Length" ++ Map("Content-Encoding" -> "br", "Transfer-Encoding" -> "chunked", vary._1 -> vary._2),
+        body = ctx.otoroshiResponse.body.map { bs =>
+          ByteString.apply(Encoder.compress(bs.toArray, params))
+        }
+      ).right
     } else {
       ctx.otoroshiResponse.right
     }
