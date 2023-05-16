@@ -114,21 +114,18 @@ class AnonymousReportingJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
   private def displayYouCanDisableLog(): Unit = {
-    logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
-    logger.info("  from the 'Danger zone' > 'Send anonymous reports' flag off")
-    logger.info("  with the 'otoroshi.anonymous-reporting.enabled = false' config.")
-    logger.info("  with the 'OTOROSHI_ANONYMOUS_REPORTING_ENABLED=false' env. variable")
+    logger.info("Anonymous reporting is ENABLED. Thank you for your help !")
     logger.info(
-      "you can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
+      "You can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
     )
   }
 
   private def displayPleaseEnableLog(): Unit = {
     logger.info(
-      "anonymous reporting is DISABLED. It will help us a lot to build the future of the product if you enable it from the 'Danger zone' > 'Send anonymous reports' flag on."
+      "Anonymous reporting is DISABLED. It would help us a lot to activate it (Features > Danger zone > Send anonymous reports)."
     )
     logger.info(
-      "you can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
+      "You can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
     )
   }
 
@@ -163,7 +160,6 @@ class AnonymousReportingJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    // TODO: add doc
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config       = AnonymousReportingJobConfig.fromEnv(env)
     if (config.enabled && globalConfig.anonymousReporting) {
@@ -256,7 +252,6 @@ class AnonymousReportingJob extends Job {
             "nodes"         -> JsArray(members.map(_.json).map { json =>
               Json.obj(
                 "id"           -> json.select("id").asValue,
-                "name"         -> json.select("name").asValue,
                 "os"           -> json.select("os").asValue,
                 "java_version" -> json.select("javaVersion").asValue,
                 "version"      -> json.select("version").asValue,

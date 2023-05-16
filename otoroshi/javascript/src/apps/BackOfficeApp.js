@@ -74,20 +74,19 @@ class AnonymousReportingEnabled extends Component {
       <>
         <div className="modal-body">
           <p style={{ textAlign: 'justify' }}>
-            As you may know, Otoroshi is an open-source project. As such, we do not have much
-            feedback from our users. But this feedback is essential for us to shape the future of
-            Otoroshi.
+          As you may know,  Otoroshi is an open-source project.
+          As such, we don't have much  feedback from our users.
+          But this feedback is essential for us to shape the future of Otoroshi.
           </p>
           <p style={{ textAlign: 'justify' }}>
-            If you enable anonymous reporting, we will receive periodical report from this Otoroshi
-            cluster.
+          The best way to help is to enable <span style={{fontWeight: "bold"}}>anonymous reporting</span>.
+          This feature allow Otoroshi to send us periodical reports.
           </p>
           <p style={{ textAlign: 'justify' }}>
-            Don't worry, we won't send sensitive or personnal data, just a bunch of statistics about
-            your usage of otoroshi features.
+          It won't send sensitive or personnal data, just a bunch of statistics about your usage of otoroshi (see <a href="https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html">the documentation</a>).
           </p>
           <p style={{ textAlign: 'justify' }}>
-            At any moment, you can turn off anonymous reporting from the danger zone.
+          At any moment, you can turn off anonymous reporting from the danger zone.
           </p>
           <p style={{ textAlign: 'justify' }}>Thanks for helping us building better products !</p>
         </div>
@@ -158,26 +157,23 @@ class BackOfficeAppContainer extends Component {
   }
 
   triggerAnonymousReportingPopup = (env) => {
-    if (false) {
-      console.log(env.anonymousReporting);
-      if (env.anonymousReporting.should_ask) {
-        if (!env.anonymousReporting.should_enable) {
-          window
-            .popup(
-              'Enable anonymous reporting',
-              (ok, cancel) => <AnonymousReportingEnabled ok={ok} cancel={cancel} />,
-              { style: { width: '100%' } }
-            )
-            .then((enable) => {
-              if (enable) {
-                BackOfficeServices.anonymousReporting({ enabled: true });
-              } else {
-                BackOfficeServices.anonymousReporting({ enabled: false });
-              }
-            });
-        } else {
-          // Do something here as the user disabled it on purpose in static config ???
-        }
+    if (env.anonymousReporting.should_ask) {
+      if (!env.anonymousReporting.should_enable) {
+        window
+          .popup(
+            'Enable anonymous reporting',
+            (ok, cancel) => <AnonymousReportingEnabled ok={ok} cancel={cancel} />,
+            { style: { width: '100%' } }
+          )
+          .then((enable) => {
+            if (enable) {
+              BackOfficeServices.anonymousReporting({ enabled: true });
+            } else {
+              BackOfficeServices.anonymousReporting({ enabled: false });
+            }
+          });
+      } else {
+        // Do something here as the user disabled it on purpose in static config ???
       }
     }
   };
