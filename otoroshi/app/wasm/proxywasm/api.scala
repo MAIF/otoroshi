@@ -157,19 +157,19 @@ trait Api {
 
   def proxyGetProperty(plugin: ExtismCurrentPlugin, data: VmData, keyPtr: Int, keySize: Int, returnValueData: Int, returnValueSize: Int): Result
 
-  def ProxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status
+  def proxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status
 
-  def ProxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Status
+  def proxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Status
 
-  def ProxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status
+  def proxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status
 
-  def ProxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status
+  def proxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status
 
-  def ProxyDone(): Status
+  def proxyDone(): Status
 
-  def ProxySetTickPeriodMilliseconds(data: VmData, period: Int): Status
+  def proxySetTickPeriodMilliseconds(data: VmData, period: Int): Status
 
-  def ProxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Status
+  def proxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Status
 
   def getPluginConfig(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer
 
@@ -207,7 +207,7 @@ trait Api {
 
   def getCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: MapType): Map[String, ByteString]
 
-  def GetMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)]
+  def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)]
 
-  def GetMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer]
+  def getMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer]
 }
