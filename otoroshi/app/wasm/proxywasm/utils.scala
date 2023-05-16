@@ -2,9 +2,6 @@ package otoroshi.wasm.proxywasm
 
 import akka.util.ByteString
 
-import java.io.ByteArrayOutputStream
-import java.nio.charset.StandardCharsets
-
 object WasmUtils {
 
   def traceVmHost(message: String): Unit = {
@@ -26,10 +23,7 @@ class IoBuffer(var buf: ByteString) {
     this(ByteString(buf))
   }
 
-
-
   def length: Int = buf.length
-
 
   def write(p: ByteString): Int = {
     buf.concat(p)
@@ -38,9 +32,9 @@ class IoBuffer(var buf: ByteString) {
 
   // Drain drains a offset length of bytes in buffer.
   // It can be used with Bytes(), after consuming a fixed-length of data
-  def drain(offset: Int, maxSize: Int) = {
+  def drain(offset: Int, maxSize: Int): Unit = {
     if (offset > buf.length)
-      return
+      return ()
     if (maxSize == -1){
       this.buf = buf.slice(offset, buf.length)
     }

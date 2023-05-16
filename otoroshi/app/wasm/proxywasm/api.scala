@@ -7,8 +7,8 @@ import otoroshi.env.Env
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.proxywasm.Types._
 import play.api.mvc.RequestHeader
+import otoroshi.wasm.proxywasm._
 
 object VmData {
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
@@ -157,19 +157,19 @@ trait Api {
 
   def proxyGetProperty(plugin: ExtismCurrentPlugin, data: VmData, keyPtr: Int, keySize: Int, returnValueData: Int, returnValueSize: Int): Result
 
-  def proxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Types.Status
+  def ProxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status
 
-  def proxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Types.Status
+  def ProxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Status
 
-  def proxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Types.Status
+  def ProxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status
 
-  def proxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Types.Status
+  def ProxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status
 
-  def proxyDone(): Types.Status
+  def ProxyDone(): Status
 
-  def proxySetTickPeriodMilliseconds(data: VmData, period: Int): Types.Status
+  def ProxySetTickPeriodMilliseconds(data: VmData, period: Int): Status
 
-  def proxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Types.Status
+  def ProxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Status
 
   def getPluginConfig(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer
 
@@ -207,7 +207,7 @@ trait Api {
 
   def getCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: MapType): Map[String, ByteString]
 
-  def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Types.Error, (Pointer, ByteString)]
+  def GetMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)]
 
-  def getMemory(plugin: ExtismCurrentPlugin): Either[Types.Error, Pointer]
+  def GetMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer]
 }

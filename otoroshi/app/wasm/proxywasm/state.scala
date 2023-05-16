@@ -6,21 +6,21 @@ import org.extism.sdk.ExtismCurrentPlugin
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.wasm.proxywasm.WasmUtils.{DEBUG, traceVmHost}
 import otoroshi.wasm.proxywasm._
-import otoroshi.wasm.proxywasm.Types.BufferType._
-import otoroshi.wasm.proxywasm.Types.MapType._
-import otoroshi.wasm.proxywasm.Types.Result._
-import otoroshi.wasm.proxywasm.Types.Status._
+import otoroshi.wasm.proxywasm.BufferType._
+import otoroshi.wasm.proxywasm.MapType._
+import otoroshi.wasm.proxywasm.Result._
+import otoroshi.wasm.proxywasm.Status._
 
 class ProxyWasmState extends Api {
 
   val u32Len = 4
 
-  override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Types.Result = {
+  override def ProxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result = {
     traceVmHost("proxy_log")
 
     GetMemory(plugin, messageData, messageSize)
       .fold(
-        Types.Error.toResult,
+        Error.toResult,
         r => {
           System.out.println(r._2.utf8String)
           ResultOk
@@ -28,32 +28,32 @@ class ProxyWasmState extends Api {
       )
   }
 
-  override def proxyResumeStream(plugin: ExtismCurrentPlugin, streamType: Types.StreamType): Types.Result = {
+  override def ProxyResumeStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_stream")
     null
   }
 
-  override def proxyCloseStream(plugin: ExtismCurrentPlugin, streamType: Types.StreamType): Types.Result = {
+  override def ProxyCloseStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_close_stream")
     null
   }
 
-  override def proxySendHttpResponse(plugin: ExtismCurrentPlugin, responseCode: Int, responseCodeDetailsData: Int, responseCodeDetailsSize: Int, responseBodyData: Int, responseBodySize: Int, additionalHeadersMapData: Int, additionalHeadersSize: Int, grpcStatus: Int): Types.Result = {
+  override def ProxySendHttpResponse(plugin: ExtismCurrentPlugin, responseCode: Int, responseCodeDetailsData: Int, responseCodeDetailsSize: Int, responseBodyData: Int, responseBodySize: Int, additionalHeadersMapData: Int, additionalHeadersSize: Int, grpcStatus: Int): Result = {
     traceVmHost("proxy_send_http_response")
     null
   }
 
-  override def proxyResumeHttpStream(plugin: ExtismCurrentPlugin, streamType: Types.StreamType): Types.Result = {
+  override def ProxyResumeHttpStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_http_stream")
     null
   }
 
-  override def proxyCloseHttpStream(plugin: ExtismCurrentPlugin, streamType: Types.StreamType): Types.Result = {
+  override def ProxyCloseHttpStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_close_http_stream")
     null
   }
 
-  override def getBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: Types.BufferType): IoBuffer = {
+  override def GetBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: BufferType): IoBuffer = {
     bufferType match {
       case BufferTypeHttpRequestBody =>
         return GetHttpRequestBody(plugin, data)
@@ -76,17 +76,17 @@ class ProxyWasmState extends Api {
     }
   }
 
-  override def proxyGetBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: Int, offset: Int, mSize: Int, returnBufferData: Int, returnBufferSize: Int): Types.Result = {
+  override def ProxyGetBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: Int, offset: Int, mSize: Int, returnBufferData: Int, returnBufferSize: Int): Result = {
     traceVmHost("proxy_get_buffer")
 
     GetMemory(plugin)
       .fold(
         _ => ResultBadArgument,
         memory => {
-          if (bufferType > Types.BufferType.values.length) {
+          if (bufferType > BufferType.last) {
             return ResultBadArgument
           }
-          val bufferTypePluginConfiguration = GetBuffer(plugin, data, Types.BufferType.values()(bufferType))
+          val bufferTypePluginConfiguration = GetBuffer(plugin, data, BufferType.valueToType(bufferType))
 
           var maxSize = mSize
           if (offset > offset + maxSize) {
@@ -98,15 +98,15 @@ class ProxyWasmState extends Api {
 
           bufferTypePluginConfiguration.drain(offset, offset + maxSize)
 
-          System.out.println(String.format("%s, %d,%d, %d, %d,", Types.BufferType.values()(bufferType), offset, maxSize, returnBufferData, returnBufferSize))
+          System.out.println(String.format("%s, %d,%d, %d, %d,", BufferType.valueToType(bufferType), offset, maxSize, returnBufferData, returnBufferSize))
           return copyIntoInstance(plugin, memory, bufferTypePluginConfiguration, returnBufferData, returnBufferSize)
         }
       )
   }
 
-  override def proxySetBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: Int, offset: Int, size: Int, bufferData: Int, bufferSize: Int): Types.Result = {
+  override def ProxySetBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: Int, offset: Int, size: Int, bufferData: Int, bufferSize: Int): Result = {
     traceVmHost("proxy_set_buffer")
-    val buf = GetBuffer(plugin, data, Types.BufferType.values()(bufferType))
+    val buf = GetBuffer(plugin, data, BufferType.valueToType(bufferType))
     if (buf == null) {
       return ResultBadArgument
     }
@@ -119,12 +119,12 @@ class ProxyWasmState extends Api {
     if (offset == 0) {
       if (size == 0 || size >= buf.length) {
         buf.drain(buf.length, -1)
-        buf.write(content)
+        buf.write(ByteString(content))
       } else {
         return ResultBadArgument
       }
     } else if (offset >= buf.length) {
-      buf.write(content)
+      buf.write(ByteString(content))
     } else {
       return ResultBadArgument
     }
@@ -132,7 +132,7 @@ class ProxyWasmState extends Api {
     ResultOk
   }
 
-  override def getMap(plugin: ExtismCurrentPlugin, vmData: VmData, mapType: Types.MapType): Map[String, ByteString] = {
+  override def GetMap(plugin: ExtismCurrentPlugin, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
     System.out.println("CALL MAP: " + mapType)
     mapType match {
       case MapTypeHttpRequestHeaders => GetHttpRequestHeader(plugin, vmData),
@@ -152,10 +152,10 @@ class ProxyWasmState extends Api {
 
   override def proxyGetHeaderMapPairs(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, returnDataPtr: Int, returnDataSize: Int): Int = {
         traceVmHost("proxy_get_map")
-        val header = GetMap(plugin, data, Types.MapType.values()(mapType))
+        val header = GetMap(plugin, data, MapType.valueToType(mapType))
 
         if (header == null) {
-            return ResultNotFound.ordinal()
+            return ResultNotFound.value
         }
 
         var totalBytesLen = u32Len
@@ -215,12 +215,12 @@ class ProxyWasmState extends Api {
 //            return int32(v2.ResultInvalidMemoryAccess)
 //        }
 
-        ResultOk.ordinal()
+        ResultOk.value
   }
 
-  override def proxyGetHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Types.Result = {
+  override def ProxyGetHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Result = {
     traceVmHost("proxy_get_header_map_value")
-    val m = GetMap(plugin, data, Types.MapType.values()(mapType))
+    val m = GetMap(plugin, data, MapType.valueToType(mapType))
 
     if (m == null || keySize == 0) {
         return ResultNotFound
@@ -228,7 +228,7 @@ class ProxyWasmState extends Api {
 
     GetMemory(plugin, keyData, keySize)
       .fold(
-        Types.Error.toResult,
+        Error.toResult,
         mem => {
           val key = mem._2
 
@@ -249,9 +249,9 @@ class ProxyWasmState extends Api {
       )
   }
 
-  override def proxyReplaceHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Types.Result = {
+  override def ProxyReplaceHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Result = {
     traceVmHost("proxy_set_map_value")
-    val m = GetMap(plugin, data, Types.MapType.values()(mapType))
+    val m = GetMap(plugin, data, MapType.valueToType(mapType))
 
     if (m == null || keySize == 0) {
         return ResultNotFound
@@ -262,10 +262,10 @@ class ProxyWasmState extends Api {
 
     memKey
       .fold(
-        Types.Error.toResult,
+        Error.toResult,
         key => {
           memValue.fold(
-            Types.Error.toResult,
+            Error.toResult,
             value => {
               if (key._2.isEmpty) {
                 return ResultBadArgument
@@ -281,57 +281,57 @@ class ProxyWasmState extends Api {
       )
   }
 
-  override def proxyOpenSharedKvstore(plugin: ExtismCurrentPlugin, kvstoreNameData: Int, kvstoreNameSiz: Int, createIfNotExist: Int, kvstoreID: Int): Types.Result = ???
+  override def ProxyOpenSharedKvstore(plugin: ExtismCurrentPlugin, kvstoreNameData: Int, kvstoreNameSiz: Int, createIfNotExist: Int, kvstoreID: Int): Result = ???
 
-  override def proxyGetSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, returnValuesData: Int, returnValuesSize: Int, returnCas: Int): Types.Result = ???
+  override def ProxyGetSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, returnValuesData: Int, returnValuesSize: Int, returnCas: Int): Result = ???
 
-  override def proxySetSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, valuesData: Int, valuesSize: Int, cas: Int): Types.Result = ???
+  override def ProxySetSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, valuesData: Int, valuesSize: Int, cas: Int): Result = ???
 
-  override def proxyAddSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, valuesData: Int, valuesSize: Int, cas: Int): Types.Result = ???
+  override def ProxyAddSharedKvstoreKeyValues(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, valuesData: Int, valuesSize: Int, cas: Int): Result = ???
 
-  override def proxyRemoveSharedKvstoreKey(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, cas: Int): Types.Result = ???
+  override def ProxyRemoveSharedKvstoreKey(plugin: ExtismCurrentPlugin, kvstoreID: Int, keyData: Int, keySize: Int, cas: Int): Result = ???
 
-  override def proxyDeleteSharedKvstore(plugin: ExtismCurrentPlugin, kvstoreID: Int): Types.Result = ???
+  override def ProxyDeleteSharedKvstore(plugin: ExtismCurrentPlugin, kvstoreID: Int): Result = ???
 
-  override def proxyOpenSharedQueue(plugin: ExtismCurrentPlugin, queueNameData: Int, queueNameSize: Int, createIfNotExist: Int, returnQueueID: Int): Types.Result = ???
+  override def ProxyOpenSharedQueue(plugin: ExtismCurrentPlugin, queueNameData: Int, queueNameSize: Int, createIfNotExist: Int, returnQueueID: Int): Result = ???
 
-  override def proxyDequeueSharedQueueItem(plugin: ExtismCurrentPlugin, queueID: Int, returnPayloadData: Int, returnPayloadSize: Int): Types.Result = ???
+  override def ProxyDequeueSharedQueueItem(plugin: ExtismCurrentPlugin, queueID: Int, returnPayloadData: Int, returnPayloadSize: Int): Result = ???
 
-  override def proxyEnqueueSharedQueueItem(plugin: ExtismCurrentPlugin, queueID: Int, payloadData: Int, payloadSize: Int): Types.Result = ???
+  override def ProxyEnqueueSharedQueueItem(plugin: ExtismCurrentPlugin, queueID: Int, payloadData: Int, payloadSize: Int): Result = ???
 
-  override def proxyDeleteSharedQueue(plugin: ExtismCurrentPlugin, queueID: Int): Types.Result = ???
+  override def ProxyDeleteSharedQueue(plugin: ExtismCurrentPlugin, queueID: Int): Result = ???
 
-  override def proxyCreateTimer(plugin: ExtismCurrentPlugin, period: Int, oneTime: Int, returnTimerID: Int): Types.Result = ???
+  override def ProxyCreateTimer(plugin: ExtismCurrentPlugin, period: Int, oneTime: Int, returnTimerID: Int): Result = ???
 
-  override def proxyDeleteTimer(plugin: ExtismCurrentPlugin, timerID: Int): Types.Result = ???
+  override def ProxyDeleteTimer(plugin: ExtismCurrentPlugin, timerID: Int): Result = ???
 
-  override def proxyCreateMetric(plugin: ExtismCurrentPlugin, metricType: Types.MetricType, metricNameData: Int, metricNameSize: Int, returnMetricID: Int): Types.MetricType = ???
+  override def ProxyCreateMetric(plugin: ExtismCurrentPlugin, metricType: MetricType, metricNameData: Int, metricNameSize: Int, returnMetricID: Int): MetricType = ???
 
-  override def proxyGetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, returnValue: Int): Types.Result = ???
+  override def ProxyGetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, returnValue: Int): Result = ???
 
-  override def proxySetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, value: Int): Types.Result = ???
+  override def ProxySetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, value: Int): Result = ???
 
-  override def proxyIncrementMetricValue(plugin: ExtismCurrentPlugin, data: VmData, metricID: Int, offset: Long): Types.Result = ???
+  override def ProxyIncrementMetricValue(plugin: ExtismCurrentPlugin, data: VmData, metricID: Int, offset: Long): Result = ???
 
-  override def proxyDeleteMetric(plugin: ExtismCurrentPlugin, metricID: Int): Types.Result = ???
+  override def ProxyDeleteMetric(plugin: ExtismCurrentPlugin, metricID: Int): Result = ???
 
-  override def proxyDefineMetric(plugin: ExtismCurrentPlugin, metricType: Int, namePtr: Int, nameSize: Int, returnMetricId: Int): Types.Result = ???
+  override def ProxyDefineMetric(plugin: ExtismCurrentPlugin, metricType: Int, namePtr: Int, nameSize: Int, returnMetricId: Int): Result = ???
 
-  override def proxyDispatchHttpCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, headersMapData: Int, headersMapSize: Int, bodyData: Int, bodySize: Int, trailersMapData: Int, trailersMapSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Types.Result = ???
+  override def ProxyDispatchHttpCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, headersMapData: Int, headersMapSize: Int, bodyData: Int, bodySize: Int, trailersMapData: Int, trailersMapSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Result = ???
 
-  override def proxyDispatchGrpcCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, serviceNameData: Int, serviceNameSize: Int, serviceMethodData: Int, serviceMethodSize: Int, initialMetadataMapData: Int, initialMetadataMapSize: Int, grpcMessageData: Int, grpcMessageSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Types.Result = ???
+  override def ProxyDispatchGrpcCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, serviceNameData: Int, serviceNameSize: Int, serviceMethodData: Int, serviceMethodSize: Int, initialMetadataMapData: Int, initialMetadataMapSize: Int, grpcMessageData: Int, grpcMessageSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Result = ???
 
-  override def proxyOpenGrpcStream(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, serviceNameData: Int, serviceNameSize: Int, serviceMethodData: Int, serviceMethodSize: Int, initialMetadataMapData: Int, initialMetadataMapSize: Int, returnCalloutID: Int): Types.Result = ???
+  override def ProxyOpenGrpcStream(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, serviceNameData: Int, serviceNameSize: Int, serviceMethodData: Int, serviceMethodSize: Int, initialMetadataMapData: Int, initialMetadataMapSize: Int, returnCalloutID: Int): Result = ???
 
-  override def proxySendGrpcStreamMessage(plugin: ExtismCurrentPlugin, calloutID: Int, grpcMessageData: Int, grpcMessageSize: Int): Types.Result = ???
+  override def ProxySendGrpcStreamMessage(plugin: ExtismCurrentPlugin, calloutID: Int, grpcMessageData: Int, grpcMessageSize: Int): Result = ???
 
-  override def proxyCancelGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Types.Result = ???
+  override def ProxyCancelGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Result = ???
 
-  override def proxyCloseGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Types.Result = ???
+  override def ProxyCloseGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Result = ???
 
-  override def proxyCallCustomFunction(plugin: ExtismCurrentPlugin, customFunctionID: Int, parametersData: Int, parametersSize: Int, returnResultsData: Int, returnResultsSize: Int): Types.Result = ???
+  override def ProxyCallCustomFunction(plugin: ExtismCurrentPlugin, customFunctionID: Int, parametersData: Int, parametersSize: Int, returnResultsData: Int, returnResultsSize: Int): Result = ???
 
-  override def copyIntoInstance(plugin: ExtismCurrentPlugin, memory: Pointer, value: IoBuffer, retPtr: Int, retSize: Int): Types.Result = {
+  override def copyIntoInstance(plugin: ExtismCurrentPlugin, memory: Pointer, value: IoBuffer, retPtr: Int, retSize: Int): Result = {
     val addr = plugin.alloc(value.length)
 
     memory.write(addr, value.buf.toArray, 0, value.length)
@@ -342,7 +342,7 @@ class ProxyWasmState extends Api {
     ResultOk
   }
 
-  override def proxyGetProperty(plugin: ExtismCurrentPlugin, data: VmData, pathPtr: Int, pathSize: Int, returnValueData: Int, returnValueSize: Int): Types.Result = {
+  override def ProxyGetProperty(plugin: ExtismCurrentPlugin, data: VmData, pathPtr: Int, pathSize: Int, returnValueData: Int, returnValueSize: Int): Result = {
     traceVmHost("proxy_get_property")
     val mem = GetMemory(plugin, pathPtr, pathSize)
 
@@ -369,25 +369,25 @@ class ProxyWasmState extends Api {
     )
   }
 
-  override def proxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Types.Status = ???
+  override def ProxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status = ???
 
-  override def proxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Types.Status = ???
+  override def ProxyResolveSharedQueue(vmIDData: ByteString, vmIDSize: Int, nameData: ByteString, nameSize: Int, returnID: Int): Status = ???
 
-  override def proxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Types.Status = ???
+  override def ProxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status = ???
 
-  override def proxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Types.Status = ???
+  override def ProxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status = ???
 
-  override def proxyDone(): Types.Status = {
+  override def ProxyDone(): Status = {
     StatusOK
   }
 
-  override def proxySetTickPeriodMilliseconds(data: VmData, period: Int): Types.Status = {
+  override def ProxySetTickPeriodMilliseconds(data: VmData, period: Int): Status = {
     // TODO - manage tick period
     // data.setTickPeriod(period)
     StatusOK
   }
 
-  override def proxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Types.Status = {
+  override def ProxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Status = {
     // TODO - manage context id changes
     // this.contextId = contextID
     StatusOK
@@ -409,7 +409,7 @@ class ProxyWasmState extends Api {
 
   override def getVmConfig(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = ???
 
-  override def getCustomBuffer(bufferType: Types.BufferType): IoBuffer = ???
+  override def GetCustomBuffer(bufferType: BufferType): IoBuffer = ???
 
   override def getHttpRequestHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     System.out.println("CALL GetHttpRequestHeader")
@@ -434,27 +434,27 @@ class ProxyWasmState extends Api {
 
   override def getHttpCallResponseMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
 
-  override def getCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: Types.MapType): Map[String, ByteString] = ???
+  override def GetCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: MapType): Map[String, ByteString] = ???
 
-  override def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Types.Error, (Pointer, ByteString)] = {
+  override def GetMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] = {
     val memory: Pointer = plugin.getLinearMemory("memory")
     if (memory == null) {
-        return Types.Error.ErrorExportsNotFound.left
+        return Error.ErrorExportsNotFound.left
     }
 
     // TODO - get memory size from RUST
 //        long memoryLength = 1024 * 64 * 50// plugin.memoryLength(0)
 //        if (addr > memoryLength || (addr+size) > memoryLength) {
-//            return Either.left(Types.Error.ErrAddrOverflow)
+//            return Either.left(Error.ErrAddrOverflow)
 //        }
 
-    (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Types.Error]
+    (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Error]
   }
 
-  override def getMemory(plugin: ExtismCurrentPlugin): Either[Types.Error, Pointer] = {
+  override def GetMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer] = {
      val memory: Pointer = plugin.getLinearMemory("memory")
       if (memory == null) {
-          return Types.Error.ErrorExportsNotFound.left
+          return Error.ErrorExportsNotFound.left
       }
 
       memory.right
