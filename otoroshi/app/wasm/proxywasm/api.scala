@@ -27,7 +27,7 @@ object VmData {
   }
 }
 
-class VmData(configuration: String, properties: Map[String, ByteString], tickPeriod: Int = -1) extends HostUserData
+case class VmData(configuration: String, properties: Map[String, ByteString], tickPeriod: Int = -1) extends HostUserData
 
 trait Api {
 
@@ -180,7 +180,7 @@ trait Api {
 
   def GetCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: MapType): Map[String, ByteString]
 
-  def GetMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Types.Error, java.util.Map.Entry[Pointer, ByteString]]
+  def GetMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Types.Error, (Pointer, ByteString)]
 
   def GetMemory(plugin: ExtismCurrentPlugin): Either[Types.Error, Pointer]
 }
