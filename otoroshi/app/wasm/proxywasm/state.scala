@@ -137,8 +137,8 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
   override def getMap(plugin: ExtismCurrentPlugin, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
     System.out.println("CALL MAP: " + mapType)
     mapType match {
-      case MapTypeHttpRequestHeaders => getHttpRequestHeader(plugin, vmData),
-      case MapTypeHttpRequestTrailers => getHttpRequestTrailer(plugin, vmData),
+      case MapTypeHttpRequestHeaders => getHttpRequestHeader(plugin, vmData)
+      case MapTypeHttpRequestTrailers => getHttpRequestTrailer(plugin, vmData)
       case MapTypeHttpRequestMetadata => getHttpRequestMetadata(plugin, vmData)
       case MapTypeHttpResponseHeaders => getHttpResponseHeader(plugin, vmData)
       case MapTypeHttpResponseTrailers => getHttpResponseTrailer(plugin, vmData)
@@ -205,7 +205,7 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
             dataPtr += v.length
             memory.setByte(dataPtr, 0)
             dataPtr += 1
-        }
+        })
 
         memory.setInt(returnDataPtr, addr)
 //        if err != nil {
