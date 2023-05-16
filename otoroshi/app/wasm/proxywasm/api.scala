@@ -3,25 +3,52 @@ package otoroshi.wasm.proxywasm
 import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk._
+import otoroshi.env.Env
+import otoroshi.utils.TypedMap
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.Types._
+import play.api.mvc.RequestHeader
 
 object VmData {
-
-  def default(request: Map[String, String]): VmData = {
+  def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     new VmData(
       configuration = "",
       tickPeriod = -1,
       properties = Map(
-        "plugin_root_id"-> "proxy-wasm".byteString,
-        "source.address" -> "127.0.0.1".byteString,
-        "source.port" -> "8080".byteString,
-        "destination.address" -> "127.0.0.1".byteString,
-        "destination.port" -> "12345".byteString,
-      ) ++ request.flatMap {
-        case (key, value) => Map(
-          s"request.$key" ->, value.byteString,
-        )
+        "plugin_name" -> "foo".byteString,
+        "plugin_root_id" -> "foo".byteString,
+        "plugin_vm_id" -> "foo".byteString,
+        "cluster_name" -> "foo".byteString,
+        "route_name" -> "foo".byteString,
+        "source.address" -> request.connection.remoteAddress.toString.split(":").apply(0).byteString,
+        "source.port" -> request.connection.remoteAddress.toString.split(":").apply(1).byteString,
+        "destination.address" -> request.remoteAddress.split(":").apply(0).byteString,
+        "destination.port" -> request.remoteAddress.split(":").apply(1).byteString,
+        "request.path" -> request.uri.byteString,
+        "request.url_path" -> request.thePath.byteString,
+        "request.host" -> request.domain.byteString,
+        "request.scheme" -> request.theProtocol.byteString,
+        "request.method" -> request.method.byteString,
+        "request.protocol" -> request.theProtocol.byteString,
+        "request.query" -> request.rawQueryString.byteString,
+      )
+      .applyOnWithOpt(request.headers.get("x-request-id")) {
+        case (props, value) => props ++ Map("request.id" -> value.byteString)
+      }
+      .applyOnWithOpt(request.headers.get("Referer")) {
+        case (props, value) => props ++ Map("request.referer" -> value.byteString)
+      }
+      .applyOnWithOpt(request.headers.get("User-Agent")) {
+        case (props, value) => props ++ Map("request.useragent" -> value.byteString)
+      }
+      .applyOnWithOpt(attrs.get(otoroshi.plugins.Keys.RequestTimestampKey)) {
+        case (props, value) => props ++ Map("request.time" -> value.toDate.getTime.toString.byteString)
+      }
+      .applyOn { props =>
+        props ++ request.headers.toSimpleMap.map {
+          case (key, value) => s"request.headers.${key}" -> value.byteString
+        }
       }
     )
   }

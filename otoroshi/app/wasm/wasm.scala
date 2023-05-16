@@ -15,6 +15,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
@@ -404,19 +405,21 @@ object WasmConfig {
 }
 
 object WasmContextSlot {
-  private[wasm] val currentContext = new ThreadLocal[Map[String, ByteString]]()
-  def getCurrentContext(): Option[Map[String, ByteString]] = Option(currentContext.get())
+  private val _currentContext = new ThreadLocal[Any]()
+  def getCurrentContext(): Option[Any] = Option(_currentContext.get())
+  private def setCurrentContext(value: Any): Unit = _currentContext.set(value)
+  private def clearCurrentContext(): Unit = _currentContext.remove()
 }
 
 class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugin, cfg: WasmConfig, wsm: ByteString, closed: AtomicBoolean, updating: AtomicBoolean, instanceId: String, functions: Array[HostFunction[_ <: HostUserData]]) {
 
-  def callSync(functionName: String, input: String, context: Option[Map[String, ByteString]])(implicit env: Env, ec: ExecutionContext): Either[JsValue, String] = {
+  def callSync(functionName: String, input: String, context: Option[VmData])(implicit env: Env, ec: ExecutionContext): Either[JsValue, String] = {
     if (closed.get()) {
       val plug = WasmUtils.pluginCache.apply(s"$id-$instance")
       plug.callSync(functionName, input, context)
     } else {
       try {
-        context.foreach(ctx => WasmContextSlot.currentContext.set(ctx))
+        context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
         WasmUtils.debugLog.debug(s"calling instance $id-$instance")
         val res = env.metrics.withTimer("otoroshi.wasm.core.call") {
@@ -442,7 +445,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
           WasmUtils.logger.error(s"error while invoking wasm function '${functionName}'", e)
           Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
       } finally {
-        context.foreach(ctx => WasmContextSlot.currentContext.remove())
+        context.foreach(ctx => WasmContextSlot.clearCurrentContext())
       }
     }
   }
@@ -476,7 +479,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
     }
   }
 
-  def call(functionName: String, input: String, context: Option[Map[String, ByteString]])(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  def call(functionName: String, input: String, context: Option[VmData])(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val promise = Promise.apply[Either[JsValue, String]]()
     WasmUtils.getInvocationQueueFor(id, instance).offer(WasmAction.WasmInvocation(() => callSync(functionName, input, context), promise))
     promise.future
@@ -715,7 +718,7 @@ object WasmUtils {
       input: JsValue,
       pluginId: String,
       attrsOpt: Option[TypedMap],
-      ctx: Option[Map[String, ByteString]],
+      ctx: Option[VmData],
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.call-wasm") {
 
     WasmUtils.debugLog.debug("callWasm")
@@ -785,7 +788,7 @@ object WasmUtils {
       defaultFunctionName: String,
       input: JsValue,
       attrs: Option[TypedMap],
-      ctx: Option[Map[String, ByteString]],
+      ctx: Option[VmData],
       atMost: Duration
   )(implicit env: Env): Either[JsValue, String] = {
     Await.result(execute(config, defaultFunctionName, input, attrs, ctx)(env), atMost)
@@ -796,7 +799,7 @@ object WasmUtils {
       defaultFunctionName: String,
       input: JsValue,
       attrs: Option[TypedMap],
-      ctx: Option[Map[String, ByteString]],
+      ctx: Option[VmData],
   )(implicit env: Env): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.execute") {
     WasmUtils.debugLog.debug("execute")
     val pluginId = config.source.kind match {

@@ -11,8 +11,6 @@ import otoroshi.wasm.proxywasm.Types.MapType._
 import otoroshi.wasm.proxywasm.Types.Result._
 import otoroshi.wasm.proxywasm.Types.Status._
 
-import java.nio.charset.StandardCharsets
-
 class ProxyWasmState extends Api {
 
   val u32Len = 4
