@@ -17,7 +17,7 @@ object ProxyWasmFunctions {
     }
   }
 
-  def build(config: WasmConfig, state: ProxyWasmState)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[HostFunction[EnvUserData]]= {
+  def build(state: ProxyWasmState)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[HostFunction[EnvUserData]]= {
     Seq(
       new HostFunction[EnvUserData](
         "proxy_log",

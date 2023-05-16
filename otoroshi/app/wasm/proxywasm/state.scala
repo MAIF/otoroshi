@@ -13,7 +13,7 @@ import otoroshi.wasm.proxywasm.Status._
 
 import java.nio.charset.StandardCharsets
 
-class ProxyWasmState extends Api {
+class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
 
   val u32Len = 4
 

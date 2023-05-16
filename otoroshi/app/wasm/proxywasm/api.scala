@@ -54,7 +54,11 @@ object VmData {
   }
 }
 
-case class VmData(configuration: String, properties: Map[String, ByteString], tickPeriod: Int = -1) extends HostUserData
+case class VmData(configuration: String, properties: Map[String, ByteString], tickPeriod: Int = -1) extends HostUserData {
+  def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
+    VmData.from(request, attrs).copy(configuration = configuration, tickPeriod = tickPeriod)
+  }
+}
 
 trait Api {
 
