@@ -518,7 +518,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
     configHasChanged || wasmHasChanged
   }
 
-  def updateIfNeeded(pluginId: String, config: WasmConfig, wasm: ByteString, attrsOpt: Option[TypedMap])(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
+  def updateIfNeeded(pluginId: String, config: WasmConfig, wasm: ByteString, attrsOpt: Option[TypedMap], addHostFunctions: Seq[HostFunction[_ <: HostUserData]])(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
     if (needsUpdate(config, wasm) && updating.compareAndSet(false, true)) {
 
       if (config.instances < cfg.instances) {
@@ -539,6 +539,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
           config,
           pluginId,
           attrsOpt,
+          addHostFunctions,
         )
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"updating ${instanceId}")
         WasmUtils.pluginCache.put(s"$pluginId-$instance", plugin)
@@ -682,13 +683,14 @@ object WasmUtils {
     wasm: ByteString,
     config: WasmConfig,
     pluginId: String,
-    attrsOpt: Option[TypedMap]
+    attrsOpt: Option[TypedMap],
+    addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
   )(implicit env: Env, ec: ExecutionContext): WasmContextSlot = env.metrics.withTimer("otoroshi.wasm.core.act-create-plugin") {
     if (WasmUtils.logger.isDebugEnabled)
       WasmUtils.logger.debug(s"creating wasm plugin instance for ${pluginId}")
     val manifest = internalCreateManifest(config, wasm, env)
     val context = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.context")(new Context())
-    val functions = HostFunctions.getFunctions(config, pluginId, attrsOpt)
+    val functions: Array[HostFunction[_ <: HostUserData]] = HostFunctions.getFunctions(config, pluginId, attrsOpt) ++ addHostFunctions
     val plugin = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.plugin") {
       context.newPlugin(
         manifest,
@@ -719,6 +721,7 @@ object WasmUtils {
       pluginId: String,
       attrsOpt: Option[TypedMap],
       ctx: Option[VmData],
+      addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.call-wasm") {
 
     WasmUtils.debugLog.debug("callWasm")
@@ -729,10 +732,10 @@ object WasmUtils {
     def createPlugin(): WasmContextSlot = {
       if (config.lifetime == WasmVmLifetime.Forever) {
         pluginCache.getOrUpdate(s"$pluginId-$instance") {
-          actuallyCreatePlugin(instance, wasm, config, pluginId, None)
-        }.seffectOn(_.updateIfNeeded(pluginId, config, wasm, None))
+          actuallyCreatePlugin(instance, wasm, config, pluginId, None, addHostFunctions)
+        }.seffectOn(_.updateIfNeeded(pluginId, config, wasm, None, addHostFunctions))
       } else {
-        actuallyCreatePlugin(instance, wasm, config, pluginId, attrsOpt)
+        actuallyCreatePlugin(instance, wasm, config, pluginId, attrsOpt, addHostFunctions)
       }
     }
 
@@ -789,9 +792,10 @@ object WasmUtils {
       input: JsValue,
       attrs: Option[TypedMap],
       ctx: Option[VmData],
-      atMost: Duration
+      atMost: Duration,
+      addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
   )(implicit env: Env): Either[JsValue, String] = {
-    Await.result(execute(config, defaultFunctionName, input, attrs, ctx)(env), atMost)
+    Await.result(execute(config, defaultFunctionName, input, attrs, ctx, addHostFunctions)(env), atMost)
   }
 
   def execute(
@@ -800,6 +804,7 @@ object WasmUtils {
       input: JsValue,
       attrs: Option[TypedMap],
       ctx: Option[VmData],
+      addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
   )(implicit env: Env): Future[Either[JsValue, String]] = env.metrics.withTimerAsync("otoroshi.wasm.core.execute") {
     WasmUtils.debugLog.debug("execute")
     val pluginId = config.source.kind match {
@@ -813,11 +818,11 @@ object WasmUtils {
     }
     scriptCache.get(pluginId) match {
       case Some(CacheableWasmScript.FetchingWasmScript(fu)) => fu.flatMap { _ =>
-        execute(config, defaultFunctionName, input, attrs, ctx)
+        execute(config, defaultFunctionName, input, attrs, ctx, addHostFunctions)
       }
       case Some(CacheableWasmScript.CachedWasmScript(script, _))                                           => {
         env.metrics.withTimerAsync("otoroshi.wasm.core.get-config")(config.source.getConfig()).flatMap {
-          case None => WasmUtils.callWasm(script, config, defaultFunctionName, input, pluginId, attrs, ctx)
+          case None => WasmUtils.callWasm(script, config, defaultFunctionName, input, pluginId, attrs, ctx, addHostFunctions)
           case Some(finalConfig) =>
             val functionName = config.functionName.filter(_.nonEmpty).orElse(finalConfig.functionName)
             WasmUtils.callWasm(
@@ -827,7 +832,8 @@ object WasmUtils {
               input,
               pluginId,
               attrs,
-              ctx
+              ctx,
+              addHostFunctions,
             )
         }
       }
@@ -837,7 +843,7 @@ object WasmUtils {
           case Left(err)   => err.left.vfuture
           case Right(wasm) => {
             env.metrics.withTimerAsync("otoroshi.wasm.core.get-config")(config.source.getConfig()).flatMap {
-              case None              => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, pluginId, attrs, ctx)
+              case None              => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, pluginId, attrs, ctx, addHostFunctions)
               case Some(finalConfig) =>
                 val functionName = config.functionName.filter(_.nonEmpty).orElse(finalConfig.functionName)
                 WasmUtils.callWasm(
@@ -847,7 +853,8 @@ object WasmUtils {
                   input,
                   pluginId,
                   attrs,
-                  ctx
+                  ctx,
+                  addHostFunctions,
                 )
             }
           }
