@@ -1647,12 +1647,12 @@ class BackOfficeController(
               Ok(CertificateData(content))
             } recover { case e =>
               // e.printStackTrace()
-              BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+              Ok(Json.obj("error" -> s"Bad certificate : $e"))
             } get
           }
         } recover { case e =>
           // e.printStackTrace()
-          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+          Ok(Json.obj("error" -> s"Bad certificate : $e"))
         } get
       }
     }
