@@ -16,7 +16,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.proxywasm.Types.Result
+import otoroshi.wasm.proxywasm.Result
 import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
 import play.api.libs.json._
@@ -416,7 +416,8 @@ object WasmContextSlot {
 
 class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugin, cfg: WasmConfig, wsm: ByteString, closed: AtomicBoolean, updating: AtomicBoolean, instanceId: String, functions: Array[HostFunction[_ <: HostUserData]]) {
 
-  def callSync(functionName: String, input: Option[String], parameters: Option[Parameters], resultSize: Option[Int], context: Option[VmData])(implicit env: Env, ec: ExecutionContext): Either[JsValue, (String, Results)] = {
+  def callSync(functionName: String, input: Option[String], parameters: Option[Parameters], resultSize: Option[Int], context: Option[VmData])
+              (implicit env: Env, ec: ExecutionContext): Either[JsValue, (String, Results)] = {
     if (closed.get()) {
       val plug = WasmUtils.pluginCache.apply(s"$id-$instance")
       plug.callSync(functionName, input, parameters, resultSize, context)
@@ -425,14 +426,17 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
         context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
         WasmUtils.debugLog.debug(s"calling instance $id-$instance")
-        val res = env.metrics.withTimer("otoroshi.wasm.core.call") {
+        val res: Either[JsValue, (String, Results)] = env.metrics.withTimer("otoroshi.wasm.core.call") {
+          // TODO: need to split this !!
           (input, parameters, resultSize) match {
-            case (Some(in), Some(p), Some(s)) => plugin.call(functionName, p, s, in.getBytes(StandardCharsets.UTF_8)).right
-            case (_, Some(p), None) => plugin.callWithoutResults(functionName, p).right
-            case (_, Some(p), Some(s)) => plugin.call(functionName, p, s).right
-            case (_, None, Some(s)) => plugin.callWithoutParams(functionName, s).right
-            case (Some(in), None, None) => plugin.call(functionName, in).right
-            case _ => throw new RuntimeException("bad call combination")
+            case (Some(in), Some(p), Some(s)) => plugin.call(functionName, p, s, in.getBytes(StandardCharsets.UTF_8)).right.map(res => ("", res))
+            case (_, Some(p), None) =>
+              plugin.callWithoutResults(functionName, p)
+              Right[JsValue, (String, Results)](("", new Results(0)))
+            case (_, Some(p), Some(s)) => plugin.call(functionName, p, s).right.map(res => ("", res))
+            case (_, None, Some(s)) => plugin.callWithoutParams(functionName, s).right.map(_ => ("", new Results(0)))
+            case (Some(in), None, None) => plugin.call(functionName, in).right.map(str => (str, new Results(0)))
+            case _ => Left(Json.obj("error" -> "bad call combination"))
           }
         }
         env.metrics.withTimer("otoroshi.wasm.core.reset") {
@@ -757,7 +761,7 @@ object WasmUtils {
         if (config.opa) {
           slot.callOpa(input.get.stringify).map { output =>
             slot.close(config.lifetime)
-            output
+            output.map(str => (str, new Results(0)))
           }
         } else {
           slot.call(functionName, input.map(_.stringify), parameters, resultSize, ctx).map { output =>
@@ -786,7 +790,7 @@ object WasmUtils {
         if (config.opa) {
           slot.callOpa(input.get.stringify).map { output =>
             slot.close(config.lifetime)
-            output
+            output.map(str => (str, new Results(0)))
           }
         } else {
           slot.call(functionName, input.map(_.stringify), parameters, resultSize, ctx).map { output =>
@@ -798,21 +802,31 @@ object WasmUtils {
     }
   }
 
-  def executeSync(
-      config: WasmConfig,
-      defaultFunctionName: String,
-      input: Option[JsValue],
-      parameters: Option[Parameters],
-      resultSize: Option[Int],
-      attrs: Option[TypedMap],
-      ctx: Option[VmData],
-      atMost: Duration,
-      addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
-  )(implicit env: Env): Either[JsValue, (String, Results)] = {
-    Await.result(execute(config, defaultFunctionName, input, parameters, resultSize, attrs, ctx, addHostFunctions)(env), atMost)
-  }
+  // def executeSync(
+  //     config: WasmConfig,
+  //     defaultFunctionName: String,
+  //     input: Option[JsValue],
+  //     parameters: Option[Parameters],
+  //     resultSize: Option[Int],
+  //     attrs: Option[TypedMap],
+  //     ctx: Option[VmData],
+  //     atMost: Duration,
+  //     addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
+  // )(implicit env: Env): Either[JsValue, (String, Results)] = {
+  //   Await.result(execute(config, defaultFunctionName, input, parameters, resultSize, attrs, ctx, addHostFunctions)(env), atMost)
+  // }
 
   def execute(
+    config: WasmConfig,
+    defaultFunctionName: String,
+    input: JsValue,
+    attrs: Option[TypedMap],
+    ctx: Option[VmData],
+  )(implicit env: Env): Future[Either[JsValue, String]] = {
+    rawExecute(config, defaultFunctionName, input.some, None, None, attrs, ctx, Seq.empty).map(r => r.map(_._1))
+  }
+
+  def rawExecute(
       config: WasmConfig,
       defaultFunctionName: String,
       input: Option[JsValue],
@@ -821,7 +835,7 @@ object WasmUtils {
       attrs: Option[TypedMap],
       ctx: Option[VmData],
       addHostFunctions: Seq[HostFunction[_ <: HostUserData]],
-  )(implicit env: Env): Future[Either[JsValue, (String, Results)]] = env.metrics.withTimerAsync("otoroshi.wasm.core.execute") {
+  )(implicit env: Env): Future[Either[JsValue, (String, Results)]] = env.metrics.withTimerAsync("otoroshi.wasm.core.raw-execute") {
     WasmUtils.debugLog.debug("execute")
     val pluginId = config.source.kind match {
       case WasmSourceKind.Local => {
@@ -834,7 +848,7 @@ object WasmUtils {
     }
     scriptCache.get(pluginId) match {
       case Some(CacheableWasmScript.FetchingWasmScript(fu)) => fu.flatMap { _ =>
-        execute(config, defaultFunctionName, input, parameters, resultSize, attrs, ctx, addHostFunctions)
+        rawExecute(config, defaultFunctionName, input, parameters, resultSize, attrs, ctx, addHostFunctions)
       }
       case Some(CacheableWasmScript.CachedWasmScript(script, _))                                           => {
         env.metrics.withTimerAsync("otoroshi.wasm.core.get-config")(config.source.getConfig()).flatMap {

@@ -12,6 +12,8 @@ import otoroshi.wasm.proxywasm._
 
 object VmData {
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
+    // request.connection.remoteAddress.toString.debugPrintln
+    // request.remoteAddress.debugPrintln
     new VmData(
       configuration = "",
       tickPeriod = -1,
@@ -21,17 +23,21 @@ object VmData {
         "plugin_vm_id" -> "foo".byteString,
         "cluster_name" -> "foo".byteString,
         "route_name" -> "foo".byteString,
-        "source.address" -> request.connection.remoteAddress.toString.split(":").apply(0).byteString,
-        "source.port" -> request.connection.remoteAddress.toString.split(":").apply(1).byteString,
-        "destination.address" -> request.remoteAddress.split(":").apply(0).byteString,
-        "destination.port" -> request.remoteAddress.split(":").apply(1).byteString,
+        "source.address" -> "127.0.0.1:80".byteString,
+        "source.port" -> String.valueOf(80).byteString,
+        "destination.address" -> "127.0.0.1:1234".byteString,
+        "destination.port" -> String.valueOf(1234).byteString,
         "request.path" -> request.uri.byteString,
         "request.url_path" -> request.thePath.byteString,
-        "request.host" -> request.domain.byteString,
+        "request.host" -> request.host.byteString,
         "request.scheme" -> request.theProtocol.byteString,
         "request.method" -> request.method.byteString,
         "request.protocol" -> request.theProtocol.byteString,
         "request.query" -> request.rawQueryString.byteString,
+        ":method" -> request.method.byteString,
+        ":path" -> request.thePath.byteString,
+        ":authority" -> request.host.byteString,
+        ":scheme" -> request.theProtocol.byteString,
       )
       .applyOnWithOpt(request.headers.get("x-request-id")) {
         case (props, value) => props ++ Map("request.id" -> value.byteString)

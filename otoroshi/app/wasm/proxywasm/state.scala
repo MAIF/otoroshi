@@ -12,8 +12,9 @@ import otoroshi.wasm.proxywasm.Result._
 import otoroshi.wasm.proxywasm.Status._
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.atomic.AtomicInteger
 
-class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
+class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) extends Api {
 
   val u32Len = 4
 
@@ -100,7 +101,7 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
 
           bufferTypePluginConfiguration.drain(offset, offset + maxSize)
 
-          System.out.println(String.format("%s, %d,%d, %d, %d,", BufferType.valueToType(bufferType), offset, maxSize, returnBufferData, returnBufferSize))
+          //System.out.println(String.format("%s, %d,%d, %d, %d,", BufferType.valueToType(bufferType), offset, maxSize, returnBufferData, returnBufferSize))
           return copyIntoInstance(plugin, memory, bufferTypePluginConfiguration, returnBufferData, returnBufferSize)
         }
       )
@@ -201,7 +202,7 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
             memory.setByte(dataPtr, 0)
             dataPtr += 1
 
-            memory.write(dataPtr, v, 0, v.length)
+            memory.write(dataPtr, v.toArray, 0, v.length)
             dataPtr += v.length
             memory.setByte(dataPtr, 0)
             dataPtr += 1
@@ -222,11 +223,13 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
 
   override def proxyGetHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Result = {
     traceVmHost("proxy_get_header_map_value")
+    // println(data.properties.mapValues(_.utf8String))
     val m = getMap(plugin, data, MapType.valueToType(mapType))
 
     if (m == null || keySize == 0) {
         return ResultNotFound
     }
+    // m.get(":path").map(_.utf8String).debugPrintln
 
     getMemory(plugin, keyData, keySize)
       .fold(
@@ -274,7 +277,7 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
               }
 
               // TODO - not working
-              m ++ (key._2.utf8String -> value._2)
+              m ++ Map(key._2.utf8String -> value._2)
 
               ResultOk
             }
@@ -313,11 +316,17 @@ class ProxyWasmState(val rootContextId: Int, val contextId: Int) extends Api {
 
   override def proxySetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, value: Int): Result = ???
 
-  override def proxyIncrementMetricValue(plugin: ExtismCurrentPlugin, data: VmData, metricID: Int, offset: Long): Result = ???
+  override def proxyIncrementMetricValue(plugin: ExtismCurrentPlugin, data: VmData, metricID: Int, offset: Long): Result = {
+    traceVmHost("proxy_increment_metric")
+    ResultOk
+  }
 
   override def proxyDeleteMetric(plugin: ExtismCurrentPlugin, metricID: Int): Result = ???
 
-  override def proxyDefineMetric(plugin: ExtismCurrentPlugin, metricType: Int, namePtr: Int, nameSize: Int, returnMetricId: Int): Result = ???
+  override def proxyDefineMetric(plugin: ExtismCurrentPlugin, metricType: Int, namePtr: Int, nameSize: Int, returnMetricId: Int): Result = {
+    traceVmHost("proxy_define_metric")
+    ResultOk
+  }
 
   override def proxyDispatchHttpCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, headersMapData: Int, headersMapSize: Int, bodyData: Int, bodySize: Int, trailersMapData: Int, trailersMapSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Result = ???
 

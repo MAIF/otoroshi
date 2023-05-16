@@ -1,4 +1,4 @@
-package otoroshi.wasm.proxywasm;
+package otoroshi.wasm.proxywasm
 
 sealed trait Result {
   def value: Int
@@ -31,6 +31,18 @@ object Result {
   }
   case object ResultUnimplemented extends Result {
     def value: Int = 12
+  }
+
+  def valueToType(value: Int): Result = value match {
+    case 0 => ResultOk
+    case 1 => ResultEmpty
+    case 2 => ResultNotFound
+    case 3 => ResultNotAllowed
+    case 4 => ResultBadArgument
+    case 5 => ResultInvalidMemoryAccess
+    case 6 => ResultInvalidOperation
+    case 7 => ResultCompareAndSwapMismatch
+    case _ => ResultUnimplemented
   }
 }
 
@@ -85,16 +97,15 @@ sealed trait MapType {
 object MapType {
 
   def valueToType(n: Int): MapType = n match {
-    case MapTypeHttpRequestHeaders.value => MapTypeHttpRequestHeaders
-    case MapTypeHttpRequestTrailers.value => MapTypeHttpRequestTrailers
-    case MapTypeHttpRequestMetadata.value => MapTypeHttpRequestMetadata
-    case MapTypeHttpResponseHeaders.value => MapTypeHttpResponseHeaders
-    case MapTypeHttpResponseTrailers.value => MapTypeHttpResponseTrailers
-    case MapTypeHttpResponseMetadata.value => MapTypeHttpResponseMetadata
-    case MapTypeHttpCallResponseHeaders.value => MapTypeHttpCallResponseHeaders
-    case MapTypeHttpCallResponseTrailers.value => MapTypeHttpCallResponseTrailers
-    case MapTypeHttpCallResponseMetadata.value => MapTypeHttpCallResponseMetadata
-    case _ => ???
+    case 0 => MapTypeHttpRequestHeaders
+    case 1 => MapTypeHttpRequestTrailers
+    case 2 => MapTypeHttpRequestMetadata
+    case 3 => MapTypeHttpResponseHeaders
+    case 4 => MapTypeHttpResponseTrailers
+    case 5 => MapTypeHttpResponseMetadata
+    case 6 => MapTypeHttpCallResponseHeaders
+    case 7 => MapTypeHttpCallResponseTrailers
+    case _ => MapTypeHttpCallResponseMetadata
   }
   case object MapTypeHttpRequestHeaders extends MapType {
     def value: Int = 0
@@ -133,16 +144,15 @@ object BufferType {
   val last = 8
 
   def valueToType(v: Int): BufferType = v match {
-    case BufferTypeHttpRequestBody.value => BufferTypeHttpRequestBody
-    case BufferTypeHttpResponseBody.value => BufferTypeHttpResponseBody
-    case BufferTypeDownstreamData.value => BufferTypeDownstreamData
-    case BufferTypeUpstreamData.value => BufferTypeUpstreamData
-    case BufferTypeHttpCallResponseBody.value => BufferTypeHttpCallResponseBody
-    case BufferTypeGrpcReceiveBuffer.value => BufferTypeGrpcReceiveBuffer
-    case BufferTypeVmConfiguration.value => BufferTypeVmConfiguration
-    case BufferTypePluginConfiguration.value => BufferTypePluginConfiguration
-    case BufferTypeCallData.value => BufferTypeCallData
-    case _ => ???
+    case 0 => BufferTypeHttpRequestBody
+    case 1 => BufferTypeHttpResponseBody
+    case 2 => BufferTypeDownstreamData
+    case 3 => BufferTypeUpstreamData
+    case 4 => BufferTypeHttpCallResponseBody
+    case 5 => BufferTypeGrpcReceiveBuffer
+    case 6 => BufferTypeVmConfiguration
+    case 7 => BufferTypePluginConfiguration
+    case _ => BufferTypeCallData
   }
 
   case object BufferTypeHttpRequestBody extends BufferType {

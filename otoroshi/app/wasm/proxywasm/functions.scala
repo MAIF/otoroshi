@@ -136,6 +136,6 @@ object ProxyWasmFunctions {
   }
 
   private def parameters(n: Int): Array[LibExtism.ExtismValType] = {
-    (0 to n).map(_ => LibExtism.ExtismValType.I32).toArray
+    (0 until n).map(_ => LibExtism.ExtismValType.I32).toArray
   }
 }
