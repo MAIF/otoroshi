@@ -338,7 +338,19 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
 
   override def proxyCreateMetric(plugin: ExtismCurrentPlugin, metricType: MetricType, metricNameData: Int, metricNameSize: Int, returnMetricID: Int): MetricType = ???
 
-  override def proxyGetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, returnValue: Int): Result = ???
+  override def proxyGetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, returnValue: Int): Result = {
+    // TODO - get metricID
+    val value = 10
+
+    getMemory(plugin)
+      .fold(
+        _ => ResultBadArgument,
+        mem => {
+          mem.setInt(returnValue, value)
+          ResultOk
+        }
+      )
+}
 
   override def proxySetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, value: Int): Result = ???
 
@@ -351,7 +363,21 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
 
   override def proxyDefineMetric(plugin: ExtismCurrentPlugin, metricType: Int, namePtr: Int, nameSize: Int, returnMetricId: Int): Result = {
     traceVmHost("proxy_define_metric")
-    ResultOk
+    if (metricType > MetricType.last) {
+      ResultBadArgument
+    } else {
+
+      getMemory(plugin, namePtr, nameSize)
+        .fold(
+          _ => ResultBadArgument,
+          mem => {
+              // mid = ih.DefineMetric(v1.MetricType(metricType), mem._2.utf8String)
+
+              val mid = 1
+              mem._1.setInt(returnMetricId, mid)
+              ResultOk
+          }
+        )
   }
 
   override def proxyDispatchHttpCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, headersMapData: Int, headersMapSize: Int, bodyData: Int, bodySize: Int, trailersMapData: Int, trailersMapSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Result = ???

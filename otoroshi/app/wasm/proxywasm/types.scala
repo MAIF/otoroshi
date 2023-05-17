@@ -88,6 +88,8 @@ object MetricType {
   case object MetricTypeHistogram extends MetricType {
     def value: Int = 3
   }
+
+  val last = 3
 }
 
 sealed trait MapType {
