@@ -447,7 +447,7 @@ class BackOfficeController(
                 if (!config.anonymousReporting) {
                   refusedDate match {
                     case None                                                     => (true, false)
-                    case Some(date) if date.plusDays(30).isBefore(DateTime.now()) => (true, false)
+                    case Some(date) if date.plusMonths(6).isBefore(DateTime.now()) => (true, false)
                     case _                                                        => (false, false)
                   }
                 } else {

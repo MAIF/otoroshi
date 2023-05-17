@@ -725,7 +725,7 @@ export class DangerZonePage extends Component {
         label: 'Send anonymous reports',
         placeholder: '-',
         help:
-          'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi teams in order to define the future of the product more accurately',
+          'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi team. Enabling this is the best way to contribute to Otoroshi improvement !',
       },
     },
     maxConcurrentRequests: {
