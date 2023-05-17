@@ -282,3 +282,12 @@ a.navbar-brand:hover {
     border-left-color: currentcolor;
   border-color: #f9b000;
   background-color: #f9b000;
+}
+
+.login-card img{
+  transform: translateY(-30px);
+}
+
+#app {
+  padding-top: 20px !important;
+}
