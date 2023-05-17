@@ -454,11 +454,20 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
       .mapValues(ByteString(_))
   }
 
-  override def getHttpRequestTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
+  override def getHttpRequestTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
+    Map.empty
+  }
 
-  override def getHttpRequestMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
+  override def getHttpRequestMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
+    Map.empty
+  }
 
-  override def getHttpResponseHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
+  override def getHttpResponseHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
+    data
+      .properties
+      .filter(entry => entry._1.startsWith("response.") || entry._1.startsWith(":"))
+      .mapValues(ByteString(_))
+  }
 
   override def getHttpResponseTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
 

@@ -4,6 +4,7 @@ import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk._
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginHttpResponse
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
@@ -16,8 +17,6 @@ import java.util.concurrent.atomic.AtomicReference
 object VmData {
   def withRules(rules: JsValue): VmData = VmData(rules.stringify, Map.empty, -1, new AtomicReference[mvc.Result](null))
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
-    // request.connection.remoteAddress.toString.debugPrintln
-    // request.remoteAddress.debugPrintln
     new VmData(
       configuration = "",
       respRef = new AtomicReference[play.api.mvc.Result](null),
@@ -68,6 +67,21 @@ object VmData {
 case class VmData(configuration: String, properties: Map[String, Array[Byte]], tickPeriod: Int = -1, respRef: AtomicReference[play.api.mvc.Result]) extends HostUserData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData.from(request, attrs).copy(configuration = configuration, tickPeriod = tickPeriod, respRef = respRef)
+  }
+  def withResponse(response: NgPluginHttpResponse, attrs: TypedMap)(implicit env: Env): VmData = {
+    val newProps: Map[String, Array[Byte]] = properties ++ Map(
+      "response.code" -> response.status.bytes,
+      "response.code_details" -> "".bytes,
+      "response.flags" -> (-1).bytes,
+      "response.grpc_status" -> (-1).bytes,
+      //"response.size" -> ,
+      //"response.total_size" -> ,
+    ).applyOn { props =>
+      props ++ response.headers.map {
+        case (key, value) => s"response.headers.${key}" -> value.bytes
+      }
+    }
+    copy(configuration = configuration, properties = newProps, tickPeriod = tickPeriod, respRef = respRef)
   }
   def httpResponse: Option[play.api.mvc.Result] = Option(respRef.get())
 }
