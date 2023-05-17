@@ -1611,4 +1611,30 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  wasm: {
+    flow: ['wasm_ref', 'params'],
+    schema: {
+      wasm_ref: {
+        type: 'select',
+        props: { 
+          label: 'Wasm plugin', 
+          valuesFrom: `/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins`,
+          transformer: i => ({ label: i.name, value: i.id })
+        },
+      },
+      one_by_one: {
+        type: 'bool',
+        props: {
+          label: 'One by one'
+        }
+      },
+      params: {
+        type: 'jsonobjectcode',
+        props: { 
+          label: 'Exporter config.' 
+        },
+      },
+    },
+  },
 };
+

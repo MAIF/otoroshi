@@ -7,8 +7,10 @@ import ApikeyAuthModule from './ApikeyAuthModule';
 import AuthModule from './AuthModule';
 import BuildMode from './BuildMode';
 import BasicAuthCaller from './BasicAuthCaller';
+import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
 import ContextValidation from './ContextValidation';
+import CorazaValidator from './CorazaValidator';
 import Cors from './Cors';
 import DisableHttp10 from './DisableHttp10';
 import EndlessHttpResponse from './EndlessHttpResponse';
@@ -42,6 +44,7 @@ import MaintenanceMode from './MaintenanceMode';
 import MissingHeadersIn from './MissingHeadersIn';
 import MissingHeadersOut from './MissingHeadersOut';
 import MockResponses from './MockResponses';
+import MultiAuthModule from './MultiAuthModule';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
@@ -137,8 +140,10 @@ export const Plugins = [
   AuthModule,
   BasicAuthCaller,
   BuildMode,
+  BrotliResponseCompressor,
   CanaryMode,
   ContextValidation,
+  CorazaValidator,
   Cors,
   DisableHttp10,
   EndlessHttpResponse,
@@ -172,6 +177,7 @@ export const Plugins = [
   MissingHeadersIn,
   MissingHeadersOut,
   MockResponses,
+  MultiAuthModule,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
   NgDefaultRequestBody,

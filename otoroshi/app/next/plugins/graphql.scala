@@ -777,8 +777,8 @@ class GraphQLBackend extends NgBackendCall {
           ),
           "execute",
           input,
-          ctx.some,
-          ctx.attrs.some
+          ctx.attrs.some,
+          None
         )
         .map {
           case Right(output) =>

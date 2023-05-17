@@ -423,6 +423,8 @@ class Env(
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)
   lazy val wasmCacheSize: Int =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.size").getOrElse(100)
+  lazy val wasmQueueBufferSize: Int =
+    configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.queue.buffer.size").getOrElse(2048)
 
   lazy val manualDnsResolve: Boolean         =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)

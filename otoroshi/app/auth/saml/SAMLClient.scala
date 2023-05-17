@@ -64,7 +64,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
   def this() = this(SAMLModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -75,7 +75,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     val relayState = URLEncoder.encode(
       s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirect.getOrElse(
         routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
-      )}",
+      )}&route=$isRoute&ref=${authConfig.id}",
       "UTF-8"
     )
 
@@ -86,7 +86,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env, Some(relayState)))
         else
           Redirect(
-            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=${relayState}"
+            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           )
             .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
     }

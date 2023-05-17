@@ -1,0 +1,31 @@
+@(_env: otoroshi.env.Env, redirect: Option[String], route: String)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Simple Login</title>
+        <meta name="robots" content="noindex, nofollow">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/otoroshiapps.css")">
+        <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
+        <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
+            @_env.providerCssUrlHtml
+    </head>
+    <body style="overflow: hidden">
+        <div id="app"></div>
+        @if(_env.liveJs) {
+            <script src="http://localhost:3040/assets/javascripts/bundle/simplelogin.js" type="text/javascript"></script>
+        } else {
+            <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/simplelogin.js?v=${_env.hash}")"></script>
+        }
+        <script>
+                Otoroshi.simpleLogin({
+                    redirect: '@redirect',
+                    route: '@route',
+                    otoroshiLogo: '@(_env.otoroshiLogo)'
+                }, document.getElementById("app"));
+        </script>
+        @_env.providerJsUrlHtml
+    </body>
+</html>

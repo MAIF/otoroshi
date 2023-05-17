@@ -157,11 +157,7 @@ object OPA extends AwaitCapable {
     Optional.empty()
   )
 
-  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
-      env: Env,
-      executionContext: ExecutionContext,
-      mat: Materializer
-  ): Seq[HostFunctionWithAuthorization] = {
+  def getFunctions(config: WasmConfig): Seq[HostFunctionWithAuthorization] = {
     Seq(
       HostFunctionWithAuthorization(opaAbort(), _ => config.opa),
       HostFunctionWithAuthorization(opaPrintln(), _ => config.opa),
@@ -173,11 +169,7 @@ object OPA extends AwaitCapable {
     )
   }
 
-  def getLinearMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
-      env: Env,
-      executionContext: ExecutionContext,
-      mat: Materializer
-  ): Seq[LinearMemory] = {
+  def getLinearMemories(): Seq[LinearMemory] = {
     Seq(
       new LinearMemory("memory", "env", new LinearMemoryOptions(5, Optional.empty()))
     )
@@ -286,15 +278,11 @@ object LinearMemories {
   private val memories: AtomicReference[Seq[LinearMemory]] =
     new AtomicReference[Seq[LinearMemory]](Seq.empty[LinearMemory])
 
-  def getMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)(implicit
-      env: Env,
-      executionContext: ExecutionContext
-  ): Array[LinearMemory] = {
+  def getMemories(config: WasmConfig): Array[LinearMemory] = {
     if (config.opa) {
-      implicit val mat = env.otoroshiMaterializer
       if (memories.get.isEmpty) {
         memories.set(
-          OPA.getLinearMemories(config, ctx)
+          OPA.getLinearMemories()
         )
       }
       memories.get().toArray

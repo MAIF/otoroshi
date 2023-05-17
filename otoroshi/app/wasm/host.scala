@@ -15,6 +15,7 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
+import play.api.Logger
 import play.api.libs.json._
 
 import java.nio.charset.StandardCharsets
@@ -47,7 +48,6 @@ case class EnvUserData(
     executionContext: ExecutionContext,
     mat: Materializer,
     config: WasmConfig,
-    ctx: Option[NgCachedConfigContext] = None
 ) extends HostUserData
 
 case class StateUserData(
@@ -94,23 +94,21 @@ object HFunction {
       fname: String,
       config: WasmConfig,
       returnType: LibExtism.ExtismValType,
-      maybeContext: Option[NgCachedConfigContext],
       params: LibExtism.ExtismValType*
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
-    val ev = EnvUserData(env, ec, mat, config, maybeContext)
+    val ev = EnvUserData(env, ec, mat, config)
     defineFunction[EnvUserData](fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
   def defineContextualFunction(
       fname: String,
       config: WasmConfig,
-      maybeContext: Option[NgCachedConfigContext]
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
-    val ev = EnvUserData(env, ec, mat, config, maybeContext)
+    val ev = EnvUserData(env, ec, mat, config)
     defineFunction[EnvUserData](
       fname,
       ev.some,
@@ -152,6 +150,8 @@ object HFunction {
 
 object Logging extends AwaitCapable {
 
+  val logger = Logger("otoroshi-wasm-logger")
+
   def proxyLog() = HFunction.defineEmptyFunction(
     "proxy_log",
     LibExtism.ExtismValType.I32,
@@ -163,12 +163,18 @@ object Logging extends AwaitCapable {
 
     val messageData = Utils.rawBytePtrToString(plugin, params(1).v.i64, params(2).v.i64)
 
-    System.out.println(String.format("[%s]: %s", logLevel.toString, messageData))
+    logLevel match {
+      case LogLevel.LogLevelTrace => logger.trace(messageData)
+      case LogLevel.LogLevelDebug => logger.debug(messageData)
+      case LogLevel.LogLevelInfo => logger.info(messageData)
+      case LogLevel.LogLevelWarn => logger.warn(messageData)
+      case _ => logger.error(messageData)
+    }
 
     returns(0).v.i32 = Status.StatusOK.id
   }
 
-  def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
+  def proxyLogWithEvent(config: WasmConfig)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -177,17 +183,17 @@ object Logging extends AwaitCapable {
       "proxy_log_event",
       config,
       LibExtism.ExtismValType.I64,
-      ctx,
       LibExtism.ExtismValType.I64,
       LibExtism.ExtismValType.I64
     ) { (plugin, params, returns, ud) =>
       val data  = Utils.contextParamsToJson(plugin, params: _*)
+      val route = data.select("route_id").asOpt[String].flatMap(env.proxyState.route)
       val event = WasmLogEvent(
         `@id` = ud.env.snowflakeGenerator.nextIdStr(),
-        `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
-        `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
+        `@service` = route.map(_.name).getOrElse(""),
+        `@serviceId` = route.map(_.id).getOrElse(""),
         `@timestamp` = DateTime.now(),
-        route = ud.ctx.map(_.route),
+        route = route,
         fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
         message = (data \ "message").asOpt[String].getOrElse("--"),
         level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString
@@ -197,14 +203,14 @@ object Logging extends AwaitCapable {
     }
   }
 
-  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
+  def getFunctions(config: WasmConfig)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
   ): Seq[HostFunctionWithAuthorization] = {
     Seq(
       HostFunctionWithAuthorization(proxyLog(), _ => true),
-      HostFunctionWithAuthorization(proxyLogWithEvent(config, ctx), _ => true)
+      HostFunctionWithAuthorization(proxyLogWithEvent(config), _ => true)
     )
   }
 }
@@ -212,7 +218,7 @@ object Logging extends AwaitCapable {
 object Http extends AwaitCapable {
 
   def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = {
-    HFunction.defineContextualFunction("proxy_http_call", config, None) {
+    HFunction.defineContextualFunction("proxy_http_call", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -294,7 +300,6 @@ object Http extends AwaitCapable {
       "proxy_get_attrs",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       attrs match {
@@ -309,7 +314,7 @@ object Http extends AwaitCapable {
       ec: ExecutionContext,
       mat: Materializer
   ): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_get_attr", config, None) {
+    HFunction.defineContextualFunction("proxy_get_attr", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -339,7 +344,6 @@ object Http extends AwaitCapable {
       "proxy_clear_attrs",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       attrs match {
@@ -352,7 +356,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  private lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
+  lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.ResponseAddHeadersKey,
       json => json.asObject.value.mapValues(_.asString).toSeq
@@ -390,7 +394,7 @@ object Http extends AwaitCapable {
       ec: ExecutionContext,
       mat: Materializer
   ): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_set_attr", config, None) {
+    HFunction.defineContextualFunction("proxy_set_attr", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -423,7 +427,7 @@ object Http extends AwaitCapable {
       ec: ExecutionContext,
       mat: Materializer
   ): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_del_attr", config, None) {
+    HFunction.defineContextualFunction("proxy_del_attr", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -467,7 +471,7 @@ object DataStore extends AwaitCapable {
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_all_matching", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_all_matching", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -492,7 +496,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_keys", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_keys", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -517,7 +521,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_get", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_get", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -541,7 +545,7 @@ object DataStore extends AwaitCapable {
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_exists", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_exists", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -564,7 +568,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pttl", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pttl", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -586,7 +590,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_setnx", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_setnx", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -616,7 +620,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_set", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_set", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -646,7 +650,7 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_del", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_del", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -672,7 +676,7 @@ object DataStore extends AwaitCapable {
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_incrby", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_incrby", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -697,7 +701,7 @@ object DataStore extends AwaitCapable {
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pexpire", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pexpire", config) {
       (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -789,7 +793,6 @@ object State {
       "proxy_state",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
@@ -826,7 +829,7 @@ object State {
   def proxyStateGetValue(
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_state_value", config, None) { (plugin, params, returns, userData) =>
+    HFunction.defineContextualFunction("proxy_state_value", config) { (plugin, params, returns, userData) =>
       {
         val context = Utils.contextParamsToJson(plugin, params: _*)
 
@@ -892,7 +895,6 @@ object State {
       "proxy_config",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
@@ -909,7 +911,6 @@ object State {
       "proxy_global_config",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
@@ -926,7 +927,6 @@ object State {
       "proxy_cluster_state",
       config,
       LibExtism.ExtismValType.I64,
-      None,
       LibExtism.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
@@ -939,7 +939,7 @@ object State {
   def proxyClusteStateGetValue(
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_cluster_state_value", config, None) {
+    HFunction.defineContextualFunction("proxy_cluster_state_value", config) {
       (plugin, params, returns, userData) =>
         {
           val path = Utils.contextParamsToString(plugin, params: _*)
@@ -1103,7 +1103,7 @@ object State {
 
 object HostFunctions {
 
-  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String, attrs: Option[TypedMap])(
+  def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(
       implicit
       env: Env,
       executionContext: ExecutionContext
@@ -1112,14 +1112,14 @@ object HostFunctions {
     implicit val mat = env.otoroshiMaterializer
 
     val functions =
-      Logging.getFunctions(config, ctx) ++
+      Logging.getFunctions(config) ++
       Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
       DataStore.getFunctions(config, pluginId) ++
-      OPA.getFunctions(config, ctx)
+      OPA.getFunctions(config)
 
     functions.collect {
       case func if func.authorized(config.authorizations) => func.function
-    }.toArray
+    }.seffectOn(_.map(_.name).mkString(", ")).toArray
   }
 }
