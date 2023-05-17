@@ -17,6 +17,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.script._
 import otoroshi.ssl.OcspResponder
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -158,13 +159,15 @@ object GatewayRequestHandler {
 
   lazy val logger = Logger("otoroshi-http-handler")
 
-  def removePrivateAppsCookies(descriptor: ServiceDescriptor, req: RequestHeader, attrs: TypedMap)(implicit
-      env: Env,
-      ec: ExecutionContext
+  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
+                                                                                    env: Env,
+                                                                                    ec: ExecutionContext
   ): Future[Result] = {
+    lazy val routeLegacy = route.legacy
     val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val request      = req
-    withAuthConfig(descriptor, req, attrs) { auth =>
+    val request = req
+
+    withAuthConfig(route, req, attrs) { auth =>
       val u: Future[Option[PrivateAppsUser]] = auth match {
         case _: SamlAuthModuleConfig =>
           request.cookies
@@ -174,47 +177,47 @@ object GatewayRequestHandler {
               env.datastores.privateAppsUserDataStore.findById(_)
             }
             .getOrElse(FastFuture.successful(None))
-        case _                       => FastFuture.successful(None)
+        case _ => FastFuture.successful(None)
       }
 
       u.flatMap { optUser =>
-        auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, descriptor).map {
-          case Left(body)   =>
-            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
+        auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, routeLegacy).map {
+          case Left(body) =>
+            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
             body
           case Right(value) =>
             value match {
-              case None            => {
-                val cookieOpt     = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+              case None => {
+                val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }
                 val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
-                val redirectTo    =
+                val redirectTo =
                   env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                     .confidentialAppLogout()
-                    .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                    .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                 Redirect(redirectTo)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
               case Some(logoutUrl) => {
-                val cookieOpt         = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }
-                val finalRedirect     =
+                val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
-                val redirectTo        =
+                val redirectTo =
                   env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                     .confidentialAppLogout()
-                    .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                    .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
                 val actualRedirectUrl =
                   logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + actualRedirectUrl)
                 Redirect(actualRedirectUrl)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
             }
         }
@@ -222,34 +225,42 @@ object GatewayRequestHandler {
     }
   }
 
-  def withAuthConfig(descriptor: ServiceDescriptor, req: RequestHeader, attrs: TypedMap)(
-      f: AuthModuleConfig => Future[Result]
+  def withAuthConfig(route: NgRoute, req: RequestHeader, attrs: TypedMap)(
+    f: AuthModuleConfig => Future[Result]
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    descriptor.authConfigRef match {
-      case None      =>
-        Errors.craftResponseResult(
-          "Auth. config. ref not found on the descriptor",
-          Results.InternalServerError,
-          req,
-          Some(descriptor),
-          Some("errors.auth.config.ref.not.found"),
-          attrs = attrs
-        )
-      case Some(ref) => {
-        // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+
+    lazy val missingAuthRefError = Errors.craftResponseResult(
+      "Auth. config. ref not found on the route",
+      Results.InternalServerError,
+      req,
+      None,
+      Some("errors.auth.config.ref.not.found"),
+      attrs = attrs,
+      maybeRoute = Some(route)
+    )
+
+    route.legacy.authConfigRef match {
+      case None =>
+        route.plugins.getPluginByClass[MultiAuthModule]
+          .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
+            case JsSuccess(config, _) => req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+              case Nil => missingAuthRefError
+              case cookies if cookies.nonEmpty =>
+                config.modules
+                  .flatMap(module => env.proxyState.authModule(module))
+                  .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")) match {
+                  case Some(authModuleConfig) => f(authModuleConfig)
+                  case None => missingAuthRefError
+                }
+            }
+            case JsError(_) => missingAuthRefError
+          })
+          .getOrElse(missingAuthRefError)
+      case Some(ref) =>
         env.proxyState.authModuleAsync(ref).flatMap {
-          case None       =>
-            Errors.craftResponseResult(
-              "Auth. config. not found on the descriptor",
-              Results.InternalServerError,
-              req,
-              Some(descriptor),
-              Some("errors.auth.config.not.found"),
-              attrs = attrs
-            )
+          case None => missingAuthRefError
           case Some(auth) => f(auth)
         }
-      }
     }
   }
 }
@@ -770,36 +781,36 @@ class GatewayRequestHandler(
     )
   }
 
-  def withServiceDescriptor(request: RequestHeader, attrs: TypedMap)(
-      f: ServiceDescriptor => Future[Result]
+  def withRoute(request: RequestHeader, attrs: TypedMap)(
+      f: NgRoute => Future[Result]
   ): Future[Result] = {
     attrs.put(otoroshi.plugins.Keys.SnowFlakeKey -> env.snowflakeGenerator.nextIdStr())
+
     env.proxyState.findRoute(request, attrs) match {
       case None                                => serviceNotFound(request, attrs)
       case Some(route) if !route.route.enabled => serviceNotFound(request, attrs)
-      case Some(route)                         => f(route.route.legacy)
+      case Some(route)                         => f(route.route)
     }
   }
 
   def myProfile() =
     actionBuilder.async { req =>
-      implicit val request = req
       val attrs            = TypedMap.empty
 
-      withServiceDescriptor(req, attrs) {
-        case descriptor
-            if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor.isUriPublic(
+      withRoute(req, attrs) {
+        case route
+            if !route.legacy.privateApp && route.id != env.backOfficeDescriptor.id && route.legacy.isUriPublic(
               req.path
             ) => {
           // Public service, no profile but no error either ???
           FastFuture.successful(Ok(Json.obj("access_type" -> "public")))
         }
-        case descriptor
-            if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor.isUriPublic(
+        case route
+            if !route.legacy.privateApp && route.id != env.backOfficeDescriptor.id && !route.legacy.isUriPublic(
               req.path
             ) => {
           // ApiKey
-          ApiKeyHelper.extractApiKey(req, descriptor, attrs).flatMap {
+          ApiKeyHelper.extractApiKey(req, route.legacy, attrs).flatMap {
             case None         =>
               Errors
                 .craftResponseResult(
@@ -814,24 +825,27 @@ class GatewayRequestHandler(
               FastFuture.successful(Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")))
           }
         }
-        case descriptor if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-          GatewayRequestHandler.withAuthConfig(descriptor, req, attrs) { auth =>
-            PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
+        case route if route.legacy.privateApp && route.id != env.backOfficeDescriptor.id =>
+          GatewayRequestHandler.withAuthConfig(route, req, attrs) { _ =>
+            PrivateAppsUserHelper.isPrivateAppsSessionValid(req, route.legacy, attrs).flatMap {
               case None          =>
-                Errors.craftResponseResult(
-                  s"Invalid session",
-                  Unauthorized,
-                  req,
-                  None,
-                  Some("errors.invalid.session"),
-                  attrs = attrs
-                )
+                PrivateAppsUserHelper.isPrivateAppsSessionValidWithMultiAuth(req, route).flatMap {
+                  case Some(session) => FastFuture.successful(Ok(session))
+                  case None => Errors.craftResponseResult(
+                    s"Invalid session",
+                    Unauthorized,
+                    req,
+                    None,
+                    Some("errors.invalid.session"),
+                    attrs = attrs,
+                    maybeRoute = Some(route)
+                  )
+                }
               case Some(session) =>
                 FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")))
             }
           }
-        }
-        case _                                                                                   => {
+        case _                                                                                   =>
           Errors.craftResponseResult(
             s"Unauthorized",
             Unauthorized,
@@ -840,39 +854,27 @@ class GatewayRequestHandler(
             Some("errors.unauthorized"),
             attrs = attrs
           )
-        }
       }
     }
 
   def removePrivateAppsCookies() =
     actionBuilder.async { req =>
-      implicit val request = req
-
       val attrs = TypedMap.empty
 
-      withServiceDescriptor(req, attrs) {
-        case descriptor if !descriptor.privateApp                                                => {
-          Errors.craftResponseResult(
-            s"Private apps are not configured",
-            InternalServerError,
-            req,
-            None,
-            Some("errors.service.auth.not.configured"),
-            attrs = attrs
-          )
-        }
-        case descriptor if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id =>
-          GatewayRequestHandler.removePrivateAppsCookies(descriptor, req, attrs)
-        case _                                                                                   => {
-          Errors.craftResponseResult(
-            s"Private apps are not configured",
-            InternalServerError,
-            req,
-            None,
-            Some("errors.service.auth.not.configured"),
-            attrs = attrs
-          )
-        }
+      lazy val privateAppNotConfigure = Errors.craftResponseResult(
+        s"Private apps are not configured",
+        InternalServerError,
+        req,
+        None,
+        Some("errors.service.auth.not.configured"),
+        attrs = attrs
+      )
+
+      withRoute(req, attrs) {
+        case route if !route.legacy.privateApp                                           => privateAppNotConfigure
+        case route if route.legacy.privateApp && route.id != env.backOfficeDescriptor.id =>
+          GatewayRequestHandler.removePrivateAppsCookies(route, req, attrs)
+        case _                                                                           => privateAppNotConfigure
       }
     }
 

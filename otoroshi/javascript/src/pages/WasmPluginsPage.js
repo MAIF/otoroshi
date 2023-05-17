@@ -207,6 +207,7 @@ export class WasmPluginsPage extends Component {
       '<<<Wasm configuration',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
       'config.functionName',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.instances',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.lifetime',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.opa',
@@ -401,6 +402,13 @@ export class WasmPluginsPage extends Component {
       type: 'bool',
       props: {
         label: 'OPA rego policy',
+      },
+    },
+    'config.instances': {
+      type: 'number',
+      props: {
+        label: 'Instances',
+        help: 'the number of VM instances'
       },
     },
     'config.authorizations.httpAccess': {

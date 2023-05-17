@@ -1,0 +1,33 @@
+
+.login-card {
+    background: #494948;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    width: 375px;
+    margin: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    img{
+      width: 400px;
+    }
+    h1 {
+      margin: 0;
+      color: var(--color-primary);
+  
+    }
+    &-title {
+      color: #fff;
+      width: 100%;
+      text-align: center;
+    }
+    &-body{
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 12px;
+    }
+  }
+  

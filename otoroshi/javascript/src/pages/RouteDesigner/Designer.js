@@ -520,7 +520,27 @@ class Designer extends React.Component {
     this.loadData();
     this.injectSaveButton();
     this.injectNavbarMenu();
+    this.mountShortcuts();
   }
+
+  componentWillUnmount() {
+    this.unmountShortcuts();
+  }
+
+  saveShortcut = (e) => {
+    if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      this.saveRoute();
+    }
+  };
+
+  mountShortcuts = () => {
+    document.body.addEventListener('keydown', this.saveShortcut);
+  };
+
+  unmountShortcuts = () => {
+    document.body.removeEventListener('keydown', this.saveShortcut);
+  };
 
   toggleTryIt = () => {
     this.setState({ showTryIt: true });

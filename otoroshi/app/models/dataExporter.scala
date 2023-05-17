@@ -227,6 +227,7 @@ object DataExporterConfig {
             case "console"       => ConsoleSettings()
             case "metrics"       => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
             case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
+            case "wasm"          => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case _               => throw new RuntimeException("Bad config type")
           }
         )
@@ -299,6 +300,10 @@ object DataExporterConfigType {
     def name: String = "custommetrics"
   }
 
+  case object Wasm extends DataExporterConfigType {
+    def name: String = "wasm"
+  }
+
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
       case "kafka"         => Kafka
@@ -315,6 +320,7 @@ object DataExporterConfigType {
       case "console"       => Console
       case "metrics"       => Metrics
       case "custommetrics" => CustomMetrics
+      case "wasm"          => Wasm
       case _               => None
     }
   }
@@ -371,6 +377,7 @@ case class DataExporterConfig(
       case c: ConsoleSettings        => new ConsoleExporter(this)
       case c: MetricsSettings        => new MetricsExporter(this)
       case c: CustomMetricsSettings  => new CustomMetricsExporter(this)
+      case c: WasmExporterSettings   => new WasmExporter(this)
       case _                         => throw new RuntimeException("unsupported exporter type")
     }
   }

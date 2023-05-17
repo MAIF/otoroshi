@@ -266,7 +266,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
   def this() = this(Oauth1AuthModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -292,7 +292,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
      })
       .map { result =>
         if (result.status > 300) {
-          env.logger.error("result.body")
+          env.logger.error(s"error ${result.status}: ${result.body}")
           Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
         } else {
           val parameters = strBodyToMap(result.body)
@@ -303,8 +303,10 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
               .addingToSession(
-                "oauth_token_secret"                                              -> parameters("oauth_token_secret"),
-                s"desc"                                                           -> descriptor.id,
+                "oauth_token_secret"                                      -> parameters("oauth_token_secret"),
+                "desc"                                                            -> descriptor.id,
+                "ref"                                                             -> authConfig.id,
+                "route"                                                           -> s"$isRoute",
                 "hash"                                                            -> hash,
                 s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                   routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)

@@ -1081,6 +1081,88 @@ export class BasicModuleConfig extends Component {
   }
 }
 
+export class WasmAuthModuleConfig extends Component {
+
+  state = {
+    error: null,
+    showRaw: false,
+  };
+
+  componentDidCatch(error) {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    console.log('WasmAuthModuleConfig did catch', error, path, settings);
+    this.setState({ error });
+  }
+
+  changeTheValue = (name, value) => {
+    console.log('changing', name, value)
+    if (this.props.onChange) {
+      const clone = cloneDeep(this.props.value || this.props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      this.props.onChange(newObj);
+    } else {
+      this.props.changeTheValue(name, value);
+    }
+  };
+
+  render() {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    const changeTheValue = this.changeTheValue;
+    if (this.state.error) {
+      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
+    }
+    return (
+      <div>
+        <TextInput
+          label="Id"
+          value={settings.id}
+          disabled
+          help="..."
+          onChange={(v) => changeTheValue(path + '.id', v)}
+        />
+        <TextInput
+          label="Name"
+          value={settings.name}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.name', v)}
+        />
+        <TextInput
+          label="Description"
+          value={settings.description}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.description', v)}
+        />
+         <SelectInput
+          label="Wasm plugin"
+          valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+          transformer={i => ({ label: i.name, value: i.id })}
+          value={settings.wasmRef}
+          onChange={(v) => changeTheValue(path + '.wasmRef', v)}
+        />
+        <BooleanInput
+          label="Client side session"
+          value={settings.clientSideSessionEnabled}
+          help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
+          onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
+        />
+        <ArrayInput
+          label="User validators"
+          component={UserValidator}
+          value={settings.userValidators}
+          onChange={(v) => changeTheValue(path + '.userValidators', v)}
+          defaultValue={{
+            path: '$.profile.admin',
+            value: true,
+          }}
+        />
+      </div>
+    );
+  }
+}
+
 export class LdapModuleConfig extends Component {
   state = {
     error: null,
@@ -1712,7 +1794,8 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
         {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
-        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1'].includes(settings.type) && <CustomModuleConfig {...this.props} />}
+        {settings.type === 'wasm' && <WasmAuthModuleConfig {...this.props} />}
+        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm'].includes(settings.type) && <CustomModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"

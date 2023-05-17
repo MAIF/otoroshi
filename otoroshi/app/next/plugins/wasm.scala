@@ -11,7 +11,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script._
-import otoroshi.utils.TypedMap
+import otoroshi.utils.{ConcurrentMutableTypedMap, TypedMap}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
@@ -51,6 +51,47 @@ object BodyHelper {
   }
 }
 
+object AttrsHelper {
+
+  def updateAttrs(attrs: TypedMap, from: JsValue): Unit = try {
+    from.select("attrs").asOpt[JsObject].foreach { attrsJson =>
+      val setAttrs = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
+      val delAttrs = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
+      if (clearAttrs) {
+        attrs.clear()
+      } else {
+        delAttrs.foreach { key =>
+          attrs match {
+            case at: ConcurrentMutableTypedMap => {
+              at.m.keySet.find(_.displayName.contains(key)).foreach(tk => at.remove(tk))
+            }
+            case _ =>
+          }
+        }
+        setAttrs.value.foreach {
+          case (key, value) => {
+            attrs match {
+              case at: ConcurrentMutableTypedMap => {
+                try {
+                  otoroshi.wasm.Http.possibleAttributes.get(key).foreach { setter =>
+                    at.m.put(setter.key, setter.f(value))
+                  }
+                } catch {
+                  case t: Throwable => t.printStackTrace()
+                }
+              }
+              case _ =>
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    case t: Throwable => t.printStackTrace()
+  }
+}
+
 class WasmRouteMatcher extends NgRouteMatcher {
 
   private val logger = Logger("otoroshi-plugins-wasm-route-matcher")
@@ -70,10 +111,11 @@ class WasmRouteMatcher extends NgRouteMatcher {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val res         =
-      Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.some, ctx.attrs.some), 10.seconds)
+      Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.attrs.some, None), 10.seconds)
     res match {
       case Right(res) => {
         val response = Json.parse(res)
+        AttrsHelper.updateAttrs(ctx.attrs, response)
         (response \ "result").asOpt[Boolean].getOrElse(false)
       }
       case Left(err)  =>
@@ -102,13 +144,14 @@ class WasmPreRoute extends NgPreRouting {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val input  = ctx.wasmJson
-    WasmUtils.execute(config, "pre_route", input, ctx.some, ctx.attrs.some).map {
+    WasmUtils.execute(config, "pre_route", input, ctx.attrs.some, None).map {
       case Left(err)     => Left(NgPreRoutingErrorWithResult(Results.InternalServerError(err)))
       case Right(resStr) => {
         Try(Json.parse(resStr)) match {
           case Failure(e)        =>
             Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> e.getMessage))))
           case Success(response) => {
+            AttrsHelper.updateAttrs(ctx.attrs, response)
             val error = response.select("error").asOpt[Boolean].getOrElse(false)
             if (error) {
               val body                         = BodyHelper.extractBodyFrom(response)
@@ -161,8 +204,9 @@ class WasmBackend extends NgBackendCall {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
+    WasmUtils.debugLog.debug("callBackend")
     ctx.wasmJson
-      .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.some, ctx.attrs.some))
+      .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.attrs.some, None))
       .map {
         case Right(output) =>
           val response =
@@ -173,6 +217,7 @@ class WasmBackend extends NgBackendCall {
                 logger.error("error during json parsing", e)
                 Json.obj()
             }
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           val body     = BodyHelper.extractBodyFrom(response)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
@@ -288,10 +333,11 @@ class WasmAccessValidator extends NgAccessValidator {
       .getOrElse(WasmConfig())
 
     WasmUtils
-      .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
+      .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
       .flatMap {
         case Right(res) =>
           val response = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
           if (result) {
             NgAccess.NgAllowed.vfuture
@@ -351,10 +397,11 @@ class WasmRequestTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, "transform_request", input, ctx.some, ctx.attrs.some)
+          .execute(config, "transform_request", input, ctx.attrs.some, None)
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                 val status      = response.select("status").asOpt[Int].getOrElse(500)
                 val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -415,10 +462,11 @@ class WasmResponseTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, "transform_response", input, ctx.some, ctx.attrs.some)
+          .execute(config, "transform_response", input, ctx.attrs.some, None)
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                 val status      = response.select("status").asOpt[Int].getOrElse(500)
                 val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -470,13 +518,14 @@ class WasmSink extends NgRequestSink {
         config.copy(functionName = "sink_matches".some),
         "matches",
         ctx.wasmJson,
-        FakeWasmContext(ctx.config).some,
-        ctx.attrs.some
+        ctx.attrs.some,
+        None
       )
       .map {
         case Left(error) => false
         case Right(res)  => {
           val response = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
           (response \ "result").asOpt[Boolean].getOrElse(false)
         }
       }
@@ -503,12 +552,12 @@ class WasmSink extends NgRequestSink {
     requestToWasmJson(ctx.body).flatMap { body =>
       val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
       WasmUtils
-        .execute(config, "sink_handle", input, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+        .execute(config, "sink_handle", input, ctx.attrs.some, None)
         .map {
           case Left(error) => Results.InternalServerError(error)
           case Right(res)  => {
             val response = Json.parse(res)
-
+            AttrsHelper.updateAttrs(ctx.attrs, response)
             val status = response
               .select("status")
               .asOpt[Int]
@@ -606,7 +655,7 @@ class WasmRequestHandler extends RequestHandler {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
               WasmUtils
-                .execute(config, "handle_request", Json.obj("request" -> json), fakeCtx.some, None)
+                .execute(config, "handle_request", Json.obj("request" -> json), None, None)
                 .flatMap {
                   case Right(ok) => {
                     val response                     = Json.parse(ok)
@@ -703,8 +752,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
         config.config.copy(functionName = "job_start".some),
         "job_start",
         ctx.wasmJson,
-        FakeWasmContext(config.config.json).some,
-        attrs.some
+        attrs.some,
+        None
       )
       .map {
         case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
@@ -722,8 +771,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
         config.config.copy(functionName = "job_stop".some),
         "job_stop",
         ctx.wasmJson,
-        FakeWasmContext(config.config.json).some,
-        attrs.some
+        attrs.some,
+        None
       )
       .map {
         case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
@@ -737,7 +786,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   }
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
     WasmUtils
-      .execute(config.config, "job_run", ctx.wasmJson, FakeWasmContext(config.config.json).some, attrs.some)
+      .execute(config.config, "job_run", ctx.wasmJson, attrs.some, None)
       .map {
         case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
         case Right(_)  => ()
@@ -834,10 +883,12 @@ class WasmOPA extends NgAccessValidator {
       .getOrElse(WasmConfig())
 
     WasmUtils
-      .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
+      .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
       .flatMap {
         case Right(res) =>
-          val result    = Json.parse(res).asOpt[JsArray].getOrElse(Json.arr())
+          val response  = Json.parse(res)
+          AttrsHelper.updateAttrs(ctx.attrs, response)
+          val result    = response.asOpt[JsArray].getOrElse(Json.arr())
           val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           if (canAccess) {
             NgAccess.NgAllowed.vfuture
@@ -886,11 +937,12 @@ class WasmRouter extends NgRouter {
   override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     Await.result(
-      WasmUtils.execute(config, "find_route", ctx.json, FakeWasmContext(ctx.config).some, ctx.attrs.some),
+      WasmUtils.execute(config, "find_route", ctx.json, ctx.attrs.some, None),
       3.seconds
     ) match {
       case Right(res) =>
         val response = Json.parse(res)
+        AttrsHelper.updateAttrs(ctx.attrs, response)
         Try {
           NgMatchedRoute(
             route = NgRoute.fmt.reads(response.select("route").asValue).get,

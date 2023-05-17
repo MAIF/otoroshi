@@ -25,6 +25,8 @@
     &:hover{
       color: var(--color_level3);
     }
+    display: flex;
+    align-items: center;
   }
   
   .sidebar-container {

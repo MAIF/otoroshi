@@ -3,8 +3,8 @@
 @(thridPartyLoginEnabled: Boolean, userOpt: Option[BackOfficeUser], request: Request[AnyContent], _env: otoroshi.env.Env)
 
 @unauthmain(s"Otoroshi Dashboard", _env) {
-    <div class="jumbotron">
-        <h1><span>おとろし</span></h1>
+    <div class="login-card mt-5">
+        <img src=@(_env.otoroshiLogo) />
         @for(user <- userOpt) {
             <p class="connectOK">
                 <a class="btn" href="@otoroshi.controllers.routes.BackOfficeController.dashboard" role="button">
@@ -16,12 +16,11 @@
             </p>
         }
         @if(userOpt.isEmpty) {
-           <p>
+           <p class="login-card-body">
            @if(thridPartyLoginEnabled) {
-                <a class="btn btn-lg" href="@otoroshi.controllers.routes.AuthController.backOfficeLogin()" role="button">Login using third-party</a>
+               <a class="btn btn-primaryColor btn-lg" href="@otoroshi.controllers.routes.AuthController.backOfficeLogin()" role="button">Login using third-party</a>
             }
-            <a class="btn btn-lg" href="@otoroshi.controllers.routes.U2FController.loginPage()" role="button">Login</a></p>
+            <a class="btn btn-primaryColor btn-lg" href="@otoroshi.controllers.routes.U2FController.loginPage()" role="button">Login</a></p>
         }
-        <p><img class="logoOtoroshi" src="@(_env.otoroshiLogo)" /></p>
     </div>
 }

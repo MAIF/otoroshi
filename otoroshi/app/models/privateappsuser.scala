@@ -14,7 +14,10 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.json.JsonImplicits._
 import otoroshi.cluster._
+import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.utils.TypedMap
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
@@ -198,12 +201,12 @@ object PrivateAppsUserHelper {
       case _                     => {
         desc.authConfigRef match {
           case Some(ref) =>
-            // env.datastores.authConfigsDataStore.findById(ref).flatMap {
             env.proxyState.authModuleAsync(ref).flatMap {
               case None       => FastFuture.successful(None)
               case Some(auth) => isPrivateAppsSessionValidWithAuth(req, desc, auth)
             }
-          case None      => FastFuture.successful(None)
+          case None      =>
+            FastFuture.successful(None)
         }
       }
     }
@@ -248,6 +251,31 @@ object PrivateAppsUserHelper {
       } getOrElse {
       FastFuture.successful(None)
     }
+  }
+
+  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(implicit
+       ec: ExecutionContext,
+       env: Env
+  ) = {
+    route.plugins.getPluginByClass[MultiAuthModule]
+      .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
+        case JsSuccess(config, _) =>
+          req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+            case cookies if cookies.nonEmpty =>
+              val r: Future[Option[JsObject]] = config.modules
+                .flatMap(module => env.proxyState.authModule(module))
+                .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}"))
+                .map(authModuleConfig => PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(req, route.legacy, authModuleConfig).map {
+                    case None => None
+                    case Some(session) => (session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")).some
+                  })
+                .getOrElse(None.vfuture)
+
+              r
+          }
+        case JsError(_) => None.vfuture
+      })
+      .getOrElse(None.vfuture)
   }
 
   def passWithAuth[T](
