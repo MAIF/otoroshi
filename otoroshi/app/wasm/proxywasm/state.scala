@@ -3,29 +3,38 @@ package otoroshi.wasm
 import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk.ExtismCurrentPlugin
-import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.wasm.proxywasm.WasmUtils.{DEBUG, traceVmHost}
+import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
 import otoroshi.wasm.proxywasm._
 import otoroshi.wasm.proxywasm.BufferType._
 import otoroshi.wasm.proxywasm.MapType._
 import otoroshi.wasm.proxywasm.Result._
 import otoroshi.wasm.proxywasm.Status._
+import play.api.Logger
+import play.api.libs.json.Json
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
 class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) extends Api {
 
+  val logger = Logger("otoroshi-proxy-wasm")
+
   val u32Len = 4
 
   override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result = {
-    traceVmHost("proxy_log")
-
     getMemory(plugin, messageData, messageSize)
       .fold(
         Error.toResult,
         r => {
-          System.out.println(r._2.utf8String)
+          logLevel match {
+            case 0 => logger.trace(r._2.utf8String)
+            case 1 => logger.trace(r._2.utf8String)
+            case 2 => logger.debug(r._2.utf8String)
+            case 3 => logger.info(r._2.utf8String)
+            case 4 => logger.warn(r._2.utf8String)
+            case _ => logger.error(r._2.utf8String)
+          }
           ResultOk
         }
       )
@@ -42,8 +51,29 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
   }
 
   override def proxySendHttpResponse(plugin: ExtismCurrentPlugin, responseCode: Int, responseCodeDetailsData: Int, responseCodeDetailsSize: Int, responseBodyData: Int, responseBodySize: Int, additionalHeadersMapData: Int, additionalHeadersSize: Int, grpcStatus: Int): Result = {
-    traceVmHost("proxy_send_http_response")
-    null
+    traceVmHost(s"proxy_send_http_response: ${responseCode} - ${grpcStatus}")
+    for {
+      codeDetails <- getMemory(plugin, responseCodeDetailsData, responseCodeDetailsSize)
+      body <- getMemory(plugin, responseBodyData, responseBodySize)
+      addHeaders <- getMemory(plugin, additionalHeadersMapData, additionalHeadersSize)
+    } yield {
+      WasmContextSlot.getCurrentContext().map(_.asInstanceOf[VmData]).foreach { vmdata =>
+        Json.obj(
+          "http_status" -> responseCode,
+          "grpc_code" -> grpcStatus,
+          "details" -> codeDetails._2.utf8String,
+          "body" -> body._2.utf8String,
+          "headers" -> addHeaders._2.utf8String,
+        ).prettify.debugPrintln
+        vmdata.respRef.set(
+          play.api.mvc.Results
+            .Status(responseCode)(body._2)
+            .withHeaders() // TODO: read it
+            .as("text/plain") // TODO: change it
+        )
+      }
+    }
+    ResultOk
   }
 
   override def proxyResumeHttpStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
@@ -136,7 +166,6 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
   }
 
   override def getMap(plugin: ExtismCurrentPlugin, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
-    System.out.println("CALL MAP: " + mapType)
     mapType match {
       case MapTypeHttpRequestHeaders => getHttpRequestHeader(plugin, vmData)
       case MapTypeHttpRequestTrailers => getHttpRequestTrailer(plugin, vmData)
@@ -223,13 +252,11 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
 
   override def proxyGetHeaderMapValue(plugin: ExtismCurrentPlugin, data: VmData, mapType: Int, keyData: Int, keySize: Int, valueData: Int, valueSize: Int): Result = {
     traceVmHost("proxy_get_header_map_value")
-    // println(data.properties.mapValues(_.utf8String))
     val m = getMap(plugin, data, MapType.valueToType(mapType))
 
     if (m == null || keySize == 0) {
         return ResultNotFound
     }
-    // m.get(":path").map(_.utf8String).debugPrintln
 
     getMemory(plugin, keyData, keySize)
       .fold(
@@ -366,15 +393,13 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
           val path = m._2.utf8String
                   .replace(Character.toString(0), ".")
 
-          val value: ByteString = data.properties.getOrElse(path, ByteString(""))
-
-          DEBUG("proxy_get_property", path + " : " + value)
+          val value: Array[Byte] = data.properties.getOrElse(path, ByteString.empty.toArray)
 
           if (value == null) {
               return ResultNotFound
           }
 
-          copyIntoInstance(plugin, m._1, new IoBuffer(value), returnValueData, returnValueSize)
+          copyIntoInstance(plugin, m._1, new IoBuffer(ByteString(value)), returnValueData, returnValueSize)
         }
       }
     )
@@ -423,10 +448,10 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
   override def getCustomBuffer(bufferType: BufferType): IoBuffer = ???
 
   override def getHttpRequestHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
-    System.out.println("CALL GetHttpRequestHeader")
     data
       .properties
       .filter(entry => entry._1.startsWith("request.") || entry._1.startsWith(":"))
+      .mapValues(ByteString(_))
   }
 
   override def getHttpRequestTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???

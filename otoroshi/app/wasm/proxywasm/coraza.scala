@@ -27,14 +27,13 @@ object CorazaPlugin {
     ],
     "default_directive": "default"
   }""")
-  // "SecRule REMOTE_ADDR \"@rx .*\" \"id:1,phase:1,deny,status:403\""
 }
 
 class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
 
   lazy val vmConfigurationSize = 0
   lazy val pluginConfigurationSize = rules.stringify.byteString.length
-  lazy val rootData = VmData(rules.stringify, Map.empty, -1)
+  lazy val rootData = VmData.withRules(rules)
   lazy val contextId = new AtomicInteger(0)
   lazy val state = new ProxyWasmState(100, contextId)
   lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
@@ -117,15 +116,23 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     callPluginWithoutResults("proxy_abi_version_0_2_0", new Parameters(0), rootData, attrs)
   }
 
-  def proxyOnRequestHeaders(contextId: Int, request: RequestHeader, attrs: TypedMap): Unit = {
+  def proxyOnRequestHeaders(contextId: Int, request: RequestHeader, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
+    val data = rootData.withRequest(request, attrs)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs = new Parameters(3)
-    println(s"context_id: ${contextId}")
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
-    val requestHeadersAction = callPluginWithResults("proxy_on_request_headers", prs, 1, rootData.withRequest(request, attrs)(env), attrs).await(5.seconds)
+    val requestHeadersAction = callPluginWithResults("proxy_on_request_headers", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
     println(s"result: ${result}")
+    if (result != Result.ResultOk) {
+      data.httpResponse match {
+        case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context")))
+        case Some(response) => Left(response)
+      }
+    } else {
+      Right(())
+    }
   }
 
   def start(attrs: TypedMap): Unit = {
@@ -144,17 +151,28 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def stop(attrs: TypedMap): Unit = {
+  def stop(attrs: TypedMap): Unit = {}
 
-  }
-
-  def run(request: RequestHeader, attrs: TypedMap): Unit = {
+  // TODO: avoid blocking calls for wasm calls
+  def run(request: RequestHeader, attrs: TypedMap): NgAccess = {
     contextId.incrementAndGet()
     proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
-    proxyOnRequestHeaders(state.contextId.get(), request, attrs)
-    // TODO: iother calls
+    val res = for {
+      _ <- proxyOnRequestHeaders(state.contextId.get(), request, attrs)
+      // proxy_on_http_request_body
+      // proxy_on_http_request_trailers
+      // proxy_on_http_request_metadata : H2 only
+      // proxy_on_http_response_headers
+      // proxy_on_http_response_body
+      // proxy_on_http_response_trailers
+      // proxy_on_http_response_metadata : H2 only
+    } yield ()
     proxyOnDone(state.contextId.get(), attrs)
     proxyOnDelete(state.contextId.get(), attrs)
+    res match {
+      case Left(errRes) => NgAccess.NgDenied(errRes)
+      case Right(_) => NgAccess.NgAllowed
+    }
   }
 }
 
@@ -180,8 +198,8 @@ class CorazaValidator extends NgAccessValidator {
     if (started.compareAndSet(false, true)) {
       plugin.start(ctx.attrs)
     }
-    plugin.run(ctx.request, ctx.attrs)
+    plugin.run(ctx.request, ctx.attrs).vfuture
     // plugin.stop()
-    NgAccess.NgAllowed.vfuture
+    // NgAccess.NgAllowed.vfuture
   }
 }

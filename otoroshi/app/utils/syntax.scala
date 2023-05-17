@@ -291,9 +291,29 @@ object implicits {
   }
   implicit class BetterInt(private val obj: Int)                       extends AnyVal {
     def json: JsValue = JsNumber(obj)
+    def bytes: Array[Byte] = {
+      Array[Byte](
+        ((obj >> 24) & 0xff).asInstanceOf[Byte],
+        ((obj >> 16) & 0xff).asInstanceOf[Byte],
+        ((obj >> 8) & 0xff).asInstanceOf[Byte],
+        ((obj >> 0) & 0xff).asInstanceOf[Byte],
+      )
+    }
   }
   implicit class BetterLong(private val obj: Long)                     extends AnyVal {
     def json: JsValue = JsNumber(obj)
+    def bytes: Array[Byte] = {
+      Array[Byte](
+        ((obj >> 56) & 0xff).asInstanceOf[Byte],
+        ((obj >> 48) & 0xff).asInstanceOf[Byte],
+        ((obj >> 40) & 0xff).asInstanceOf[Byte],
+        ((obj >> 32) & 0xff).asInstanceOf[Byte],
+        ((obj >> 24) & 0xff).asInstanceOf[Byte],
+        ((obj >> 16) & 0xff).asInstanceOf[Byte],
+        ((obj >> 8)  & 0xff).asInstanceOf[Byte],
+        ((obj >> 0)  & 0xff).asInstanceOf[Byte],
+      )
+    }
   }
   implicit class BetterJsValue(private val obj: JsValue)               extends AnyVal {
     def stringify: String                    = Json.stringify(obj)
