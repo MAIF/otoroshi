@@ -425,7 +425,7 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
       try {
         context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
-        WasmUtils.debugLog.debug(s"calling instance $id-$instance")
+        WasmUtils.debugLog.debug(s"calling '${functionName}' on instance '$id-$instance'")
         val res: Either[JsValue, (String, Results)] = env.metrics.withTimer("otoroshi.wasm.core.call") {
           // TODO: need to split this !!
           (input, parameters, resultSize) match {
@@ -441,6 +441,11 @@ class WasmContextSlot(id: String, instance: Int, context: Context, plugin: Plugi
         }
         env.metrics.withTimer("otoroshi.wasm.core.reset") {
           plugin.reset()
+          // TODO: need to do that at some point
+          // res match {
+          //   case Left(_) =>
+          //   case Right((_, results)) => plugin.freeResults(results)
+          // }
         }
         env.metrics.withTimer("otoroshi.wasm.core.count-thunks") {
           WasmUtils.logger.debug(s"thunks: ${functions.size}")

@@ -20,7 +20,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 object CorazaPlugin {
-  val defaultRules = Json.parse(
+  val testRules = Json.parse(
     """{
     "directives_map": {
       "default": []
@@ -32,6 +32,29 @@ object CorazaPlugin {
     ],
     "default_directive": "default"
   }""")
+  val corazaDefaultRules = """{
+    |  "directives_map": {
+    |      "default": [
+    |        "Include @recommended-conf",
+    |        "Include @ftw-conf",
+    |        "Include @crs-setup-conf",
+    |        "Include @owasp_crs/*.conf",
+    |        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,msg:'no admin',deny\""
+    |      ]
+    |  },
+    |  "_rules": [
+    |        "SecDebugLogLevel 9",
+    |        "SecRuleEngine On",
+    |        "Include @recommended-conf",
+    |        "Include @ftw-conf",
+    |        "Include @crs-setup-conf",
+    |        "Include @owasp_crs/*.conf"
+    |  ],
+    |  "default_directives": "default",
+    |  "metric_labels": {},
+    |  "per_authority_directives": {}
+    |}""".stripMargin.parseJson
+  //        "SecAction \"id:900120,phase:1,nolog,pass,t:none,setvar:tx.early_blocking=1\"",
 }
 
 class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
@@ -104,6 +127,7 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     val prs = new Parameters(1)
     new IntegerParameter().addAll(prs, rootContextId)
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_done", prs, 1, rootData, attrs).await(5.seconds)
+    println(s"data: ${rootData.httpResponse}")
     proxyOnConfigureAction.getValues()(0).v.i32 != 0
   }
 
@@ -111,6 +135,7 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     val prs = new Parameters(1)
     new IntegerParameter().addAll(prs, rootContextId)
     callPluginWithoutResults("proxy_on_done", prs, rootData, attrs)
+    println(s"data: ${rootData.httpResponse}")
   }
 
   def proxyStart(attrs: TypedMap): Unit = {
@@ -129,8 +154,8 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_request_headers", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"result: ${result}")
-    if (result != Result.ResultOk) {
+    // println(s"proxyOnRequestHeaders result: ${result} ${data.httpResponse}")
+    if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
         case Some(response) => Left(response)
@@ -140,17 +165,17 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def proxyOnRequestBody(contextId: Int, request: RequestHeader, req: NgPluginHttpRequest, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
+  def proxyOnRequestBody(contextId: Int, request: RequestHeader, req: NgPluginHttpRequest, body_bytes: ByteString, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
     val data = rootData.withRequest(request, attrs)(env)
+    data.bodyInRef.set(body_bytes)
     val endOfStream = 1
-    val body_bytes = req.body.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer).await(5.seconds)
     val sizeBody = body_bytes.size.bytes.length
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
-    val requestHeadersAction = callPluginWithResults("proxy_on_http_request_body", prs, 1, data, attrs).await(5.seconds)
+    val requestHeadersAction = callPluginWithResults("proxy_on_request_body", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"result: ${result}")
-    if (result != Result.ResultOk) {
+    // println(s"proxyOnRequestBody result: ${result}")
+    if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
         case Some(response) => Left(response)
@@ -169,7 +194,7 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     val requestHeadersAction = callPluginWithResults("proxy_on_response_headers", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
     // println(s"result: ${result}")
-    if (result != Result.ResultOk) {
+    if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
         case Some(response) => Left(response)
@@ -179,25 +204,24 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def proxyOnResponseBody(contextId: Int, response: NgPluginHttpResponse, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
-    // val data = rootData.withResponse(response, attrs)(env)
-    // val endOfStream = 1
-    // val body_bytes = response.body.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer).await(5.seconds)
-    // val sizeBody = body_bytes.size.bytes.length
-    // val prs = new Parameters(3)
-    // new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
-    // val requestHeadersAction = callPluginWithResults("proxy_on_http_response_body", prs, 1, data, attrs).await(5.seconds)
-    // val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // // println(s"result: ${result}")
-    // if (result != Result.ResultOk) {
-    //   data.httpResponse match {
-    //     case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
-    //     case Some(response) => Left(response)
-    //   }
-    // } else {
-    //   Right(())
-    // }
-    Right(()) // because Function not found: proxy_on_http_response_body
+  def proxyOnResponseBody(contextId: Int, response: NgPluginHttpResponse, body_bytes: ByteString, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
+    val data = rootData.withResponse(response, attrs)(env)
+    data.bodyInRef.set(body_bytes)
+    val endOfStream = 1
+    val sizeBody = body_bytes.size.bytes.length
+    val prs = new Parameters(3)
+    new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
+    val requestHeadersAction = callPluginWithResults("proxy_on_response_body", prs, 1, data, attrs).await(5.seconds)
+    val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
+    // println(s"result: ${result}")
+    if (result != Result.ResultOk || data.httpResponse.isDefined) {
+      data.httpResponse match {
+        case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
+        case Some(response) => Left(response)
+      }
+    } else {
+      Right(())
+    }
   }
 
   def start(attrs: TypedMap): Unit = {
@@ -234,10 +258,9 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def runRequestBodyPath(request: RequestHeader, req: NgPluginHttpRequest, attrs: TypedMap): Either[mvc.Result, Unit] = {
-    val hasBody = request.theHasBody
+  def runRequestBodyPath(request: RequestHeader, req: NgPluginHttpRequest, body_bytes: Option[ByteString], attrs: TypedMap): Either[mvc.Result, Unit] = {
     val res = for {
-      _ <- if (hasBody) proxyOnRequestBody(state.contextId.get(), request, req, attrs) else Right(())
+      _ <- if (body_bytes.isDefined) proxyOnRequestBody(state.contextId.get(), request, req, body_bytes.get, attrs) else Right(())
       // proxy_on_http_request_trailers
       // proxy_on_http_request_metadata : H2 only
     } yield ()
@@ -250,10 +273,10 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def runResponsePath(response: NgPluginHttpResponse, attrs: TypedMap): Either[mvc.Result, Unit] = {
+  def runResponsePath(response: NgPluginHttpResponse, body_bytes: Option[ByteString], attrs: TypedMap): Either[mvc.Result, Unit] = {
     val res = for {
       _ <- proxyOnResponseHeaders(state.contextId.get(), response, attrs)
-      _ <- proxyOnResponseBody(state.contextId.get(), response, attrs)
+      _ <- if (body_bytes.isDefined) proxyOnResponseBody(state.contextId.get(), response, body_bytes.get, attrs) else Right(())
       // proxy_on_http_response_trailers
       // proxy_on_http_response_metadata : H2 only
     } yield ()
@@ -265,13 +288,19 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
 
 class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
 
+  // TODO: reference a wasm file in the classpath
+  // TODO: add config in a new extension entity
+  // TODO: instanciate CorazaPlugin based on config id
+  // TODO: add inspect body in config
+  // TODO: rules from config
+
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def name: String = "Coraza"
-  override def description: Option[String] ="Coraza".some
+  override def description: Option[String] = "Coraza".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def isAccessAsync: Boolean = true
@@ -287,8 +316,9 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
 
   override def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     if (ref.get() == null) {
-      // TODO: reference a wasm file on github
-      ref.set(new CorazaPlugin("wasm-plugin_dev_8c854ff2-a571-45bd-93ef-39663c5ab343", CorazaPlugin.defaultRules, env))
+      // TODO: reference a wasm file in the classpath
+      // TODO: rules from config
+      ref.set(new CorazaPlugin("wasm-plugin_dev_8c854ff2-a571-45bd-93ef-39663c5ab343", CorazaPlugin.corazaDefaultRules, env))
     }
     val plugin = ref.get()
     if (started.compareAndSet(false, true)) {
@@ -304,11 +334,33 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
     val plugin = ref.get()
-    plugin.runRequestBodyPath(ctx.request, ctx.otoroshiRequest, ctx.attrs).map(_ => ctx.otoroshiRequest).vfuture
+    val hasBody = ctx.request.theHasBody
+    val inspectBody = true // TODO: from config
+    val bytesf: Future[Option[ByteString]] = if (!inspectBody) None.vfuture else if (!hasBody) None.vfuture else {
+      ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
+    }
+    bytesf.map { bytes =>
+      val req = if (inspectBody && hasBody) ctx.otoroshiRequest.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiRequest
+      plugin.runRequestBodyPath(
+        ctx.request,
+        req,
+        bytes,
+        ctx.attrs,
+      ).map(_ => req)
+    }
   }
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
     val plugin = ref.get()
-    plugin.runResponsePath(ctx.otoroshiResponse, ctx.attrs).map(_ => ctx.otoroshiResponse).vfuture
+    val inspectBody = true // TODO: from config
+    val bytesf: Future[Option[ByteString]] = if (!inspectBody) None.vfuture else ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
+    bytesf.map { bytes =>
+      val res = if (inspectBody) ctx.otoroshiResponse.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiResponse
+      plugin.runResponsePath(
+        res,
+        bytes,
+        ctx.attrs,
+      ).map(_ => res)
+    }
   }
 }

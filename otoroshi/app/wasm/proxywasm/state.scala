@@ -5,7 +5,7 @@ import com.sun.jna.Pointer
 import org.extism.sdk.ExtismCurrentPlugin
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
-import otoroshi.wasm.proxywasm._
+import otoroshi.wasm.proxywasm.{IoBuffer, _}
 import otoroshi.wasm.proxywasm.BufferType._
 import otoroshi.wasm.proxywasm.MapType._
 import otoroshi.wasm.proxywasm.Result._
@@ -29,10 +29,9 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
         r => {
           logLevel match {
             case 0 => logger.trace(r._2.utf8String)
-            case 1 => logger.trace(r._2.utf8String)
-            case 2 => logger.debug(r._2.utf8String)
-            case 3 => logger.info(r._2.utf8String)
-            case 4 => logger.warn(r._2.utf8String)
+            case 1 => logger.debug(r._2.utf8String)
+            case 2 => logger.info(r._2.utf8String)
+            case 3 => logger.warn(r._2.utf8String)
             case _ => logger.error(r._2.utf8String)
           }
           ResultOk
@@ -433,9 +432,19 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
     new IoBuffer(data.configuration)
   }
 
-  override def getHttpRequestBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = ???
+  override def getHttpRequestBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = {
+    data.bodyIn match {
+      case None => new IoBuffer(ByteString.empty)
+      case Some(body) => new IoBuffer(body)
+    }
+  }
 
-  override def getHttpResponseBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = ???
+  override def getHttpResponseBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = {
+    data.bodyOut match {
+      case None => new IoBuffer(ByteString.empty)
+      case Some(body) => new IoBuffer(body)
+    }
+  }
 
   override def getDownStreamData(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = ???
 
@@ -450,8 +459,8 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
   override def getHttpRequestHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     data
       .properties
-      .filter(entry => entry._1.startsWith("request.") || entry._1.startsWith(":"))
-      .mapValues(ByteString(_))
+      .filter(entry => entry._1.startsWith("request.headers.") || entry._1.startsWith(":"))
+      .map(t => (t._1.replace("request.headers.", ""), ByteString(t._2)))
   }
 
   override def getHttpRequestTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
@@ -465,8 +474,8 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
   override def getHttpResponseHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     data
       .properties
-      .filter(entry => entry._1.startsWith("response.") || entry._1.startsWith(":"))
-      .mapValues(ByteString(_))
+      .filter(entry => entry._1.startsWith("response.headers.") || entry._1.startsWith(":"))
+      .map(t => (t._1.replace("response.headers.", ""), ByteString(t._2)))
   }
 
   override def getHttpResponseTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = ???
