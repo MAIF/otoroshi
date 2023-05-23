@@ -212,11 +212,14 @@ case class NgTreeNodePath(
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
             // handling regex path params like /api/contracts/$id<[0-9]+>/items
-            val matchingRegexKeys =
-              regexKeys.map(k => k.split("<").tail.mkString("<").init).filter(reg => RegexPool.regex(reg).matches(head))
-            matchingRegexKeys.map(nk => pathParams.+=(nk.substring(1).split("<").head -> head))
+            val matchingRegexKeys = {
+              regexKeys
+                .map(k => (k, k.split("<").tail.mkString("<").init))
+                .filter(reg => RegexPool.regex(reg._2).matches(head))
+            }
+            matchingRegexKeys.map(nk => pathParams.+=(nk._1.substring(1).split("<").head -> head))
             val rroute            = matchingRegexKeys
-              .map(k => tree.get(k))
+              .map(k => tree.get(k._1))
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
             // merge the tree
