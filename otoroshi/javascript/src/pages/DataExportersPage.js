@@ -116,9 +116,8 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
-                    props?.rootValue?.eventType || 'GatewayEvent'
-                  }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
+                    }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -439,7 +438,7 @@ export class DataExportersPage extends Component {
           showLink={false}
           rowNavigation={true}
           firstSort={0}
-          extractKey={(item) => item.id}
+          extractKey={(item) => item?.id}
           injectTable={(ref) => (this.table = ref)}
           export={true}
           kubernetesKind="DataExporter"
@@ -471,8 +470,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? 'var(--color-green)'
                     : status === 'Not tested'
-                    ? '#f39c12'
-                    : 'var(--color-red)',
+                      ? '#f39c12'
+                      : 'var(--color-red)',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',
@@ -520,7 +519,12 @@ const ExporterTryIt = ({ exporter }) => {
 export class NewExporterForm extends Component {
   updateType = (type) => {
     BackOfficeServices.createNewDataExporterConfig(type).then((config) => {
-      this.props.onChange({ ...this.props.value, type, ...config });
+      this.props.onChange({
+        ...this.props.value,
+        type,
+        ...config,
+        id: this.props.value.id || config.id
+      });
     });
   };
 
@@ -1616,8 +1620,8 @@ const possibleExporterConfigFormValues = {
     schema: {
       wasm_ref: {
         type: 'select',
-        props: { 
-          label: 'Wasm plugin', 
+        props: {
+          label: 'Wasm plugin',
           valuesFrom: `/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins`,
           transformer: i => ({ label: i.name, value: i.id })
         },
@@ -1630,8 +1634,8 @@ const possibleExporterConfigFormValues = {
       },
       params: {
         type: 'jsonobjectcode',
-        props: { 
-          label: 'Exporter config.' 
+        props: {
+          label: 'Exporter config.'
         },
       },
     },
