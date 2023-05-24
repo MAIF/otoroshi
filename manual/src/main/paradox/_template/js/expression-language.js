@@ -282,7 +282,7 @@ document.addEventListener("DOMContentLoaded", function () {
           { expression: '{ "<key>": { "$and": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with two fields with values" },
           { expression: '{ "<key>": { "$or": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with one subfield matching an element of the list" },
           { expression: '{ "<key>": ["<value>", "<value2>"] }', description: "an array field with values" },
-          { expression: '{ "<key>": { "contains": "<value>" } }', description: "an array field containing a specific value" },
+          { expression: '{ "<key>": { "$contains": "<value>" } }', description: "an array field containing a specific value" },
           { expression: '{ "<key>": { "$all": ["<value>", "<value>"] } }', description: "and array field containing all specific values" }
         ],
         values: [
