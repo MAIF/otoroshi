@@ -65,8 +65,9 @@ export class ServiceEventsPage extends Component {
       title: '@timestamp',
       content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
+      filterId: '@timestamp'
     },
-    { title: '@product', content: (item) => item['@product'] },
+    { title: '@product', content: (item) => item['@product'], filterId: '@product' },
     {
       title: 'Content',
       content: (item) => item['@timestamp'],
@@ -126,21 +127,23 @@ export class ServiceEventsPage extends Component {
         </button>
       ),
     },
-    { title: 'protocol', content: (item) => item.protocol },
-    { title: 'from', content: (item) => item.from },
-    { title: 'duration', content: (item) => `${item.duration} ms.` },
-    { title: 'overhead', content: (item) => `${item.overhead} ms.` },
-    { title: 'status', content: (item) => item.status },
-    { title: 'method', content: (item) => item.method },
-    { title: 'Access By', content: (item) => safe(item.identity, (i) => i.identityType) }, // (item.identity ? item.identity.identityType : '--') },
+    { title: 'protocol', content: (item) => item.protocol, filterId: 'protocol' },
+    { title: 'from', content: (item) => item.from, filterId: 'from' },
+    { title: 'duration', content: (item) => `${item.duration} ms.`, filterId: 'duration' },
+    { title: 'overhead', content: (item) => `${item.overhead} ms.`, filterId: 'overhead' },
+    { title: 'status', content: (item) => item.status, filterId: 'status' },
+    { title: 'method', content: (item) => item.method, filterId: 'method' },
+    { title: 'Access By', content: (item) => safe(item.identity, (i) => i.identityType), filterable: false }, // (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
+      filterable: false,
       content: (item) => safe(item.identity, (i) => i.label + ' (' + i.identity + ')'),
     },
-    { title: 'Data In', content: (item) => safe(item.data, (i) => i.dataIn + ' bytes') }, // item.data.dataIn + ' bytes' },
-    { title: 'Data Out', content: (item) => safe(item.data, (i) => i.dataOut + ' bytes') }, // item.data.dataOut + ' bytes' },
+    { title: 'Data In', content: (item) => safe(item.data, (i) => i.dataIn + ' bytes'), filterId: 'data.dataIn' }, // item.data.dataIn + ' bytes' },
+    { title: 'Data Out', content: (item) => safe(item.data, (i) => i.dataOut + ' bytes'), filterId: 'data.dataOut' }, // item.data.dataOut + ' bytes' },
     {
       title: 'uri',
+      filterId: 'url',
       content: (item) => item.url,
       cell: (v, item) => {
         const url = item.url;
@@ -155,10 +158,11 @@ export class ServiceEventsPage extends Component {
         );
       },
     },
-    { title: '@id', content: (item) => item['@id'] },
-    { title: 'reqId', content: (item) => item.reqId },
+    { title: '@id', content: (item) => item['@id'], filterId: '@id' },
+    { title: 'reqId', content: (item) => item.reqId, filterId: 'reqId' },
     {
       title: 'To',
+      filterable: false,
       content: (item) => safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.to.scheme}://${item.to.host}${item.to.uri}`,
       cell: (v, item) => {
         const url = safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`);
@@ -171,6 +175,7 @@ export class ServiceEventsPage extends Component {
     },
     {
       title: 'Target',
+      filterable: false,
       content: (item) => safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.target.scheme}://${item.target.host}${item.target.uri}`,
       cell: (v, item) => {
         const url = safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`);
@@ -190,41 +195,50 @@ export class ServiceEventsPage extends Component {
         </a>
       ),
     },
-    { title: 'Headers Count', content: (item) => item.headers.length },
+    { title: 'Headers Count', content: (item) => item.headers.length, filterable: false },
     {
       title: 'Calls per sec',
+      filterId: 'remainingQuotas.currentCallsPerSec',
       content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerSec),
     },
     {
       title: 'Auth. calls per sec',
+      filterId: 'remainingQuotas.authorizedCallsPerSec',
       content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerSec),
     },
     {
       title: 'Rem. calls per sec',
+      filterId: 'remainingQuotas.remainingCallsPerSec',
       content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerSec),
     },
     {
       title: 'Calls per day',
+      filterId: 'remainingQuotas.currentCallsPerDay',
       content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerDay),
     },
     {
       title: 'Auth. calls per day',
+      filterId: 'remainingQuotas.authorizedCallsPerDay',
       content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerDay),
     },
     {
       title: 'Rem. calls per day',
+      filterId: 'remainingQuotas.remainingCallsPerDay',
       content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerDay),
     },
     {
       title: 'Calls per month',
+      filterId: 'remainingQuotas.currentCallsPerMonth',
       content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerMonth),
     },
     {
       title: 'Auth. calls per month',
+      filterId: 'remainingQuotas.authorizedCallsPerMonth',
       content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerMonth),
     },
     {
       title: 'Rem. calls per month',
+      filterId: 'remainingQuotas.remainingCallsPerMonth',
       content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerMonth),
     },
   ];
@@ -261,10 +275,12 @@ export class ServiceEventsPage extends Component {
     });
   }
 
-  fetchEvents = () => {
+  fetchEvents = paginationState => {
     const query = queryString.parse(window.location.search);
     const limit = query.limit || this.state.limit;
-    return BackOfficeServices.fetchServiceEvents(
+
+    return BackOfficeServices.findAllEvents(
+      paginationState,
       this.state.service.id,
       this.state.from,
       this.state.to,
@@ -285,7 +301,7 @@ export class ServiceEventsPage extends Component {
   render() {
     if (!this.state.service) return null;
     return (
-      <div>
+      <div style={{ width: 'calc(100vw - 52px)', overflowX: 'hidden' }}>
         <div className="row" style={{ marginBottom: 30 }}>
           <div className="col-xs-12 col-4" style={{ display: 'flex', alignItems: 'center' }}>
             <OtoDatePicker
@@ -327,13 +343,13 @@ export class ServiceEventsPage extends Component {
           }
           defaultTitle="Service Events"
           defaultValue={() => ({})}
+          fetchItems={this.fetchEvents}
           defaultSort={this.columns[0].title}
           defaultSortDesc={!this.state.asc}
           itemName="Events"
           formSchema={null}
           formFlow={null}
           columns={this.columns}
-          fetchItems={this.fetchEvents}
           showActions={false}
           showLink={false}
           injectTable={(table) => (this.table = table)}
