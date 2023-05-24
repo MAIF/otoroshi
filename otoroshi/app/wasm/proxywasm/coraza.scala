@@ -1,15 +1,13 @@
 package otoroshi.wasm.proxywasm
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
 import org.extism.sdk.parameters._
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionFrontendExtension, AdminExtensionId, AdminExtensionWellKnownRoute}
-import otoroshi.next.plugins.NgBiscuitConfig
+import otoroshi.next.extensions._
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -17,12 +15,12 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{ProxyWasmState, WasmAuthorizations, WasmConfig, WasmSource, WasmSourceKind}
+import otoroshi.wasm.{ProxyWasmState, WasmConfig, WasmSource, WasmSourceKind}
 import play.api.libs.json._
 import play.api.{Logger, mvc}
-import play.api.mvc.{RequestHeader, Results}
+import play.api.mvc.RequestHeader
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
+import java.util.concurrent.atomic._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
