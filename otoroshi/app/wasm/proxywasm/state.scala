@@ -57,13 +57,13 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
       addHeaders <- getMemory(plugin, additionalHeadersMapData, additionalHeadersSize)
     } yield {
       WasmContextSlot.getCurrentContext().map(_.asInstanceOf[VmData]).foreach { vmdata =>
-        Json.obj(
-          "http_status" -> responseCode,
-          "grpc_code" -> grpcStatus,
-          "details" -> codeDetails._2.utf8String,
-          "body" -> body._2.utf8String,
-          "headers" -> addHeaders._2.utf8String,
-        ).prettify.debugPrintln
+        // Json.obj(
+        //   "http_status" -> responseCode,
+        //   "grpc_code" -> grpcStatus,
+        //   "details" -> codeDetails._2.utf8String,
+        //   "body" -> body._2.utf8String,
+        //   "headers" -> addHeaders._2.utf8String,
+        // ).prettify.debugPrintln
         vmdata.respRef.set(
           play.api.mvc.Results
             .Status(responseCode)(body._2)

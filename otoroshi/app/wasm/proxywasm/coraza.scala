@@ -326,9 +326,9 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   private val plugins = new TrieMap[String, CorazaPlugin]()
 
   private def getPlugin(ref: String)(implicit env: Env): CorazaPlugin = {
-    println(s"get plugin: ${ref}")
+    // println(s"get plugin: ${ref}")
     plugins.getOrUpdate(ref) {
-      println(s"create plugin: ${ref}")
+      // println(s"create plugin: ${ref}")
       new CorazaPlugin(WasmConfig(
         source = WasmSource(
           kind = WasmSourceKind.Http,
