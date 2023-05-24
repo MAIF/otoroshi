@@ -26,7 +26,7 @@ import scala.concurrent._
 import scala.util._
 
 object CorazaPlugin {
-  val contextId = new AtomicInteger(0)
+  val rootContextIds = new AtomicInteger(100)
   val testRules = Json.parse(
     """{
     "directives_map": {
@@ -62,7 +62,8 @@ class CorazaPlugin(wasm: WasmConfig, configRef: String, env: Env) {
   lazy val config = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(configRef).get
   private lazy val rules = config.config
   private lazy val pluginConfigurationSize = rules.stringify.byteString.length
-  private lazy val state = new ProxyWasmState(100, CorazaPlugin.contextId)
+  private val contextId = new AtomicInteger(0)
+  private lazy val state = new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId)
   private lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
 
   def isStarted(): Boolean = started.get()
@@ -236,7 +237,7 @@ class CorazaPlugin(wasm: WasmConfig, configRef: String, env: Env) {
   def stop(attrs: TypedMap): Unit = {}
 
   def runRequestPath(request: RequestHeader, attrs: TypedMap): NgAccess = {
-    CorazaPlugin.contextId.incrementAndGet()
+    contextId.incrementAndGet()
     val data = VmData.withRules(rules)
     proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs, data)
     val res = for {
@@ -303,6 +304,10 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   // TODO: avoid blocking calls for wasm calls
   // TODO: send event on coraza error log
   // TODO: fix the context_id situation
+  // TODO: add job to preinstantiate plugin
+  // TODO: fix [error] otoroshi-proxy-wasm - ProcessResponseHeaders has already been called tx_id="fUMQtGalZkeffptNgxh"
+  // TODO: root [warn] otoroshi-proxy-wasm - ProcessResponseBody should have already been called tx_id="fUMQtGalZkeffptNgxh"
+  // TODO: add coraza.wasm build in the release process
 
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
