@@ -36,32 +36,22 @@ object CorazaPlugin {
     |  "directives_map": {
     |      "default": [
     |        "Include @recommended-conf",
-    |        "Include @ftw-conf",
     |        "Include @crs-setup-conf",
     |        "Include @owasp_crs/*.conf",
-    |        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,msg:'no admin',deny\""
+    |        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,msg:'no admin',deny\"",
+    |        "SecRuleEngine On"
     |      ]
     |  },
-    |  "_rules": [
-    |        "SecDebugLogLevel 9",
-    |        "SecRuleEngine On",
-    |        "Include @recommended-conf",
-    |        "Include @ftw-conf",
-    |        "Include @crs-setup-conf",
-    |        "Include @owasp_crs/*.conf"
-    |  ],
     |  "default_directives": "default",
     |  "metric_labels": {},
     |  "per_authority_directives": {}
     |}""".stripMargin.parseJson
-  //        "SecAction \"id:900120,phase:1,nolog,pass,t:none,setvar:tx.early_blocking=1\"",
 }
 
 class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
 
   lazy val vmConfigurationSize = 0
   lazy val pluginConfigurationSize = rules.stringify.byteString.length
-  lazy val rootData = VmData.withRules(rules)
   lazy val contextId = new AtomicInteger(0)
   lazy val state = new ProxyWasmState(100, contextId)
   lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
@@ -103,20 +93,20 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     }
   }
 
-  def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap): Unit = {
+  def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap, rootData: VmData): Unit = {
     val prs = new Parameters(2)
     new IntegerParameter().addAll(prs, contextId, rootContextId)
     callPluginWithoutResults("proxy_on_context_create", prs, rootData, attrs)
   }
 
-  def proxyOnVmStart(attrs: TypedMap): Boolean = {
+  def proxyOnVmStart(attrs: TypedMap, rootData: VmData): Boolean = {
     val prs = new Parameters(2)
     new IntegerParameter().addAll(prs, 0, vmConfigurationSize)
     val proxyOnVmStartAction = callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).await(5.seconds)
     proxyOnVmStartAction.getValues()(0).v.i32 != 0;
   }
 
-  def proxyOnConfigure(rootContextId: Int, attrs: TypedMap): Boolean = {
+  def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Boolean = {
     val prs = new Parameters(2)
     new IntegerParameter().addAll(prs, rootContextId, pluginConfigurationSize)
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).await(5.seconds)
@@ -126,35 +116,34 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   def proxyOnDone(rootContextId: Int, attrs: TypedMap): Boolean = {
     val prs = new Parameters(1)
     new IntegerParameter().addAll(prs, rootContextId)
+    val rootData = VmData.empty()
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_done", prs, 1, rootData, attrs).await(5.seconds)
-    println(s"data: ${rootData.httpResponse}")
     proxyOnConfigureAction.getValues()(0).v.i32 != 0
   }
 
   def proxyOnDelete(rootContextId: Int, attrs: TypedMap): Unit = {
     val prs = new Parameters(1)
     new IntegerParameter().addAll(prs, rootContextId)
+    val rootData = VmData.empty()
     callPluginWithoutResults("proxy_on_done", prs, rootData, attrs)
-    println(s"data: ${rootData.httpResponse}")
   }
 
-  def proxyStart(attrs: TypedMap): Unit = {
+  def proxyStart(attrs: TypedMap, rootData: VmData): Unit = {
     callPluginWithoutResults("_start", new Parameters(0), rootData, attrs)
   }
 
-  def proxyCheckABIVersion(attrs: TypedMap): Unit = {
+  def proxyCheckABIVersion(attrs: TypedMap, rootData: VmData): Unit = {
     callPluginWithoutResults("proxy_abi_version_0_2_0", new Parameters(0), rootData, attrs)
   }
 
   def proxyOnRequestHeaders(contextId: Int, request: RequestHeader, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
-    val data = rootData.withRequest(request, attrs)(env)
+    val data = VmData.empty().withRequest(request, attrs)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_request_headers", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"proxyOnRequestHeaders result: ${result} ${data.httpResponse}")
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -166,7 +155,7 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   }
 
   def proxyOnRequestBody(contextId: Int, request: RequestHeader, req: NgPluginHttpRequest, body_bytes: ByteString, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
-    val data = rootData.withRequest(request, attrs)(env)
+    val data = VmData.empty().withRequest(request, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody = body_bytes.size.bytes.length
@@ -174,7 +163,6 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_request_body", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"proxyOnRequestBody result: ${result}")
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -186,14 +174,13 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   }
 
   def proxyOnResponseHeaders(contextId: Int, response: NgPluginHttpResponse, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
-    val data = rootData.withResponse(response, attrs)(env)
+    val data = VmData.empty().withResponse(response, attrs)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_response_headers", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"result: ${result}")
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -205,7 +192,7 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   }
 
   def proxyOnResponseBody(contextId: Int, response: NgPluginHttpResponse, body_bytes: ByteString, attrs: TypedMap): Either[play.api.mvc.Result, Unit] = {
-    val data = rootData.withResponse(response, attrs)(env)
+    val data = VmData.empty().withResponse(response, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody = body_bytes.size.bytes.length
@@ -213,7 +200,6 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_response_body", prs, 1, data, attrs).await(5.seconds)
     val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
-    // println(s"result: ${result}")
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -225,12 +211,13 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   }
 
   def start(attrs: TypedMap): Unit = {
-    proxyStart(attrs)
-    proxyCheckABIVersion(attrs)
+    val data = VmData.withRules(rules)
+    proxyStart(attrs, data)
+    proxyCheckABIVersion(attrs, data)
     // according to ABI, we should create a root context id before any operations
-    proxyOnContexCreate(state.rootContextId, 0, attrs)
-    if (proxyOnVmStart(attrs)) {
-      if (proxyOnConfigure(state.rootContextId, attrs)) {
+    proxyOnContexCreate(state.rootContextId, 0, attrs, data)
+    if (proxyOnVmStart(attrs, data)) {
+      if (proxyOnConfigure(state.rootContextId, attrs, data)) {
         //proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
       } else {
         println("failed to configure")
@@ -245,7 +232,8 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   // TODO: avoid blocking calls for wasm calls
   def runRequestPath(request: RequestHeader, attrs: TypedMap): NgAccess = {
     contextId.incrementAndGet()
-    proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
+    val data = VmData.withRules(rules)
+    proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs, data)
     val res = for {
       _ <- proxyOnRequestHeaders(state.contextId.get(), request, attrs)
     } yield ()
@@ -324,6 +312,10 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
     if (started.compareAndSet(false, true)) {
       plugin.start(ctx.attrs)
     }
+    ().vfuture
+  }
+
+  override def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     ().vfuture
   }
 

@@ -15,7 +15,8 @@ import play.api.mvc.RequestHeader
 import java.util.concurrent.atomic.AtomicReference
 
 object VmData {
-  def withRules(rules: JsValue): VmData = VmData(rules.stringify, Map.empty, -1, new AtomicReference[mvc.Result](null), new AtomicReference[ByteString](null), new AtomicReference[ByteString](null))
+  def empty(): VmData = VmData("", Map.empty, -1, new AtomicReference[mvc.Result](null), new AtomicReference[ByteString](null), new AtomicReference[ByteString](null))
+  def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     val remote = request.headers.get("remote-address").getOrElse(s"${request.connection.remoteAddress.toString.substring(1)}:${1234}")
     new VmData(
@@ -77,6 +78,7 @@ case class VmData(configuration: String, properties: Map[String, Array[Byte]], t
       "response.code_details" -> "".bytes,
       "response.flags" -> (-1).bytes,
       "response.grpc_status" -> (-1).bytes,
+      ":status" -> response.status.toString.bytes,
       //"response.size" -> ,
       //"response.total_size" -> ,
     ).applyOn { props =>
