@@ -117,6 +117,8 @@
     return {
       id: extensionId,
       sidebarItems: [],
+      creationItems: [],
+      dangerZoneParts: [],
       features: [
         {
           title: 'Coraza WAF configs.',
@@ -126,12 +128,6 @@
           display: () => true,
           icon: () => 'fa-cubes',
         },
-      ],
-      creationItems: [
-        {
-          title: 'Coraza WAF configs.',
-          path: 'extensions/coraza-waf/coraza-configs/add',
-        }
       ],
       searchItems: [
         {
@@ -163,7 +159,6 @@
           }
         }
       ],
-      dangerZoneParts: []
     }
   });
 })();
