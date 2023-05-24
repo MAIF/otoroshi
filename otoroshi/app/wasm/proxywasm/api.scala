@@ -33,7 +33,7 @@ object VmData {
         "route_name" -> "foo".bytes,
         "source.address" -> remote.bytes,
         //"source.port" -> remote.split(":")(1).toLong.bytes,
-        "destination.address" -> s"0.0.0.0:${env.httpPort}".bytes,
+        "destination.address" -> s"${request.theDomain}:${env.httpPort}".bytes,
         //"destination.port" -> env.httpPort.toLong.bytes,
         "request.path" -> request.uri.bytes,
         "request.url_path" -> request.thePath.bytes,

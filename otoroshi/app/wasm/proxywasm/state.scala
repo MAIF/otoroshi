@@ -3,6 +3,7 @@ package otoroshi.wasm
 import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk.ExtismCurrentPlugin
+import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
 import otoroshi.wasm.proxywasm.{IoBuffer, _}
@@ -16,7 +17,7 @@ import play.api.libs.json.Json
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) extends Api {
+class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger, logCallback: Option[Function2[org.slf4j.event.Level, String, Unit]], env: Env) extends Api {
 
   val logger = Logger("otoroshi-proxy-wasm")
 
@@ -27,12 +28,23 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
       .fold(
         Error.toResult,
         r => {
+          val message = r._2.utf8String
           logLevel match {
-            case 0 => logger.trace(r._2.utf8String)
-            case 1 => logger.debug(r._2.utf8String)
-            case 2 => logger.info(r._2.utf8String)
-            case 3 => logger.warn(r._2.utf8String)
-            case _ => logger.error(r._2.utf8String)
+            case 0 =>
+              logger.trace(message)
+              logCallback.foreach(_.apply(org.slf4j.event.Level.TRACE, message))
+            case 1 =>
+              logger.debug(message)
+              logCallback.foreach(_.apply(org.slf4j.event.Level.DEBUG, message))
+            case 2 =>
+              logger.info(message)
+              logCallback.foreach(_.apply(org.slf4j.event.Level.INFO, message))
+            case 3 =>
+              logger.warn(message)
+              logCallback.foreach(_.apply(org.slf4j.event.Level.WARN, message))
+            case _ =>
+              logger.error(message)
+              logCallback.foreach(_.apply(org.slf4j.event.Level.ERROR, message))
           }
           ResultOk
         }

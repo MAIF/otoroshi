@@ -348,7 +348,7 @@ case class NgContextualPlugins(
       .sortWith((a, b) =>
         a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0
       )
-    plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
+    (plsReq ++ plsResp ++ plsErr).distinct ++ plsWithoutIndex
   }
 
   lazy val (transformerPluginsWithCallbacks, tpwoCallbacks)    = transformerPlugins.partition(_.plugin.usesCallbacks)

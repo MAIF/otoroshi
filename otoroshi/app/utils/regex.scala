@@ -53,12 +53,12 @@ class ReplaceAllWith(regex: String) {
 
   val pattern: Pattern = Pattern.compile(regex, CASE_INSENSITIVE)
 
-  def replaceOn(value: String)(callback: String => String): String = {
+  def replaceOn(value: String, beginIndex: Int = 2)(callback: String => String): String = {
     var str: String      = value
     val matcher: Matcher = pattern.matcher(str)
     while (matcher.find()) {
       val matchResult: MatchResult = matcher.toMatchResult
-      val expression: String       = matchResult.group().substring(2).init
+      val expression: String       = matchResult.group().substring(beginIndex).init
       val replacement: String      = callback(expression)
       str = str.substring(0, matchResult.start) + replacement + str.substring(matchResult.end)
       matcher.reset(str)
@@ -67,14 +67,14 @@ class ReplaceAllWith(regex: String) {
   }
 
   def replaceOnAsync(
-      value: String
+      value: String, beginIndex: Int = 2
   )(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
     var str: String      = value
     val matcher: Matcher = pattern.matcher(str)
     def next(): Future[String] = {
       if (matcher.find()) {
         val matchResult: MatchResult = matcher.toMatchResult
-        val expression: String       = matchResult.group().substring(2).init
+        val expression: String       = matchResult.group().substring(beginIndex).init
         callback(expression).flatMap { replacement =>
           str = str.substring(0, matchResult.start) + replacement + str.substring(matchResult.end)
           matcher.reset(str)
