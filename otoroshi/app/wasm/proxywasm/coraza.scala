@@ -15,16 +15,15 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{ProxyWasmState, WasmConfig, WasmSource, WasmSourceKind}
+import otoroshi.wasm._
 import play.api.libs.json._
-import play.api.{Logger, mvc}
+import play.api._
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic._
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
+import scala.concurrent._
+import scala.util._
 
 object CorazaPlugin {
   val contextId = new AtomicInteger(0)
@@ -303,8 +302,9 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   // TODO: update plugin if config changed !!!
   // TODO: avoid blocking calls for wasm calls
   // TODO: send event on coraza error log
+  // TODO: fix the context_id situation
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean = true
@@ -321,7 +321,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
 
-  private val plugins = new TrieMap[String, CorazaPlugin]()
+  private val plugins = new LegitTrieMap[String, CorazaPlugin]()
 
   private def getPlugin(ref: String)(implicit env: Env): CorazaPlugin = {
     // println(s"get plugin: ${ref}")
