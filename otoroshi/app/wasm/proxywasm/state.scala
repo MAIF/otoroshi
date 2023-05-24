@@ -371,13 +371,14 @@ class ProxyWasmState(val rootContextId: Int, val contextId: AtomicInteger) exten
         .fold(
           _ => ResultBadArgument,
           mem => {
-              // mid = ih.DefineMetric(v1.MetricType(metricType), mem._2.utf8String)
+            // mid = ih.DefineMetric(v1.MetricType(metricType), mem._2.utf8String)
 
-              val mid = 1
-              mem._1.setInt(returnMetricId, mid)
-              ResultOk
+            val mid = 1
+            mem._1.setInt(returnMetricId, mid)
+            ResultOk
           }
         )
+    }
   }
 
   override def proxyDispatchHttpCall(plugin: ExtismCurrentPlugin, upstreamNameData: Int, upstreamNameSize: Int, headersMapData: Int, headersMapSize: Int, bodyData: Int, bodySize: Int, trailersMapData: Int, trailersMapSize: Int, timeoutMilliseconds: Int, returnCalloutID: Int): Result = ???
