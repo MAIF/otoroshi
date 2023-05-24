@@ -5,21 +5,31 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
 import org.extism.sdk.parameters._
+import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
+import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionFrontendExtension, AdminExtensionId, AdminExtensionWellKnownRoute}
+import otoroshi.next.plugins.NgBiscuitConfig
 import otoroshi.next.plugins.api._
+import otoroshi.security.IdGenerator
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.ProxyWasmState
+import otoroshi.wasm.{ProxyWasmState, WasmAuthorizations, WasmConfig, WasmSource, WasmSourceKind}
 import play.api.libs.json._
-import play.api.mvc
-import play.api.mvc.RequestHeader
+import play.api.{Logger, mvc}
+import play.api.mvc.{RequestHeader, Results}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object CorazaPlugin {
+  val contextId = new AtomicInteger(0)
   val testRules = Json.parse(
     """{
     "directives_map": {
@@ -38,7 +48,6 @@ object CorazaPlugin {
     |        "Include @recommended-conf",
     |        "Include @crs-setup-conf",
     |        "Include @owasp_crs/*.conf",
-    |        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,msg:'no admin',deny\"",
     |        "SecRuleEngine On"
     |      ]
     |  },
@@ -48,49 +57,48 @@ object CorazaPlugin {
     |}""".stripMargin.parseJson
 }
 
-class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
+class CorazaPlugin(wasm: WasmConfig, configRef: String, env: Env) {
 
-  lazy val vmConfigurationSize = 0
-  lazy val pluginConfigurationSize = rules.stringify.byteString.length
-  lazy val contextId = new AtomicInteger(0)
-  lazy val state = new ProxyWasmState(100, contextId)
-  lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
+  private lazy val started = new AtomicBoolean(false)
+  private lazy val logger = Logger("otoroshi-plugin-coraza")
+  private lazy val vmConfigurationSize = 0
+  lazy val config = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(configRef).get
+  private lazy val rules = config.config
+  private lazy val pluginConfigurationSize = rules.stringify.byteString.length
+  private lazy val state = new ProxyWasmState(100, CorazaPlugin.contextId)
+  private lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
+
+  def isStarted(): Boolean = started.get()
 
   def callPluginWithoutResults(function: String, params: Parameters, data: VmData, attrs: TypedMap): Unit = {
-    env.proxyState.wasmPlugin(pluginRef) match {
-      case None => throw new RuntimeException("no plugin")
-      case Some(plugin) => otoroshi.wasm.WasmUtils.rawExecute(
-        config = plugin.config,
-        defaultFunctionName = function,
-        input = None,
-        parameters = params.some,
-        resultSize = None,
-        attrs = attrs.some,
-        ctx = Some(data),
-        addHostFunctions = functions,
-      )(env).await(5.seconds)
-    }
+    otoroshi.wasm.WasmUtils.rawExecute(
+      config = wasm,
+      defaultFunctionName = function,
+      input = None,
+      parameters = params.some,
+      resultSize = None,
+      attrs = attrs.some,
+      ctx = Some(data),
+      addHostFunctions = functions,
+    )(env).await(5.seconds)
   }
 
-  def callPluginWithResults(function: String, params: Parameters, results: Int, data: VmData, attrs: TypedMap): Future[Results] = {
-    env.proxyState.wasmPlugin(pluginRef) match {
-      case None => throw new RuntimeException("no plugin")
-      case Some(plugin) => otoroshi.wasm.WasmUtils.rawExecute(
-        config = plugin.config,
-        defaultFunctionName = function,
-        input = None,
-        parameters = params.some,
-        resultSize = results.some,
-        attrs = attrs.some,
-        ctx = Some(data),
-        addHostFunctions = functions,
-      )(env).map {
-        case Left(err) =>
-          println("error", err)
-          throw new RuntimeException(s"callPluginWithResults: ${err.stringify}")
-        case Right((_, results)) => results
-      }(env.otoroshiExecutionContext)
-    }
+  def callPluginWithResults(function: String, params: Parameters, results: Int, data: VmData, attrs: TypedMap): Future[org.extism.sdk.parameters.Results] = {
+    otoroshi.wasm.WasmUtils.rawExecute(
+      config = wasm,
+      defaultFunctionName = function,
+      input = None,
+      parameters = params.some,
+      resultSize = results.some,
+      attrs = attrs.some,
+      ctx = Some(data),
+      addHostFunctions = functions,
+    )(env).flatMap {
+      case Left(err) =>
+        logger.error(s"error while calling plugin: ${err}")
+        Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
+      case Right((_, results)) => results.vfuture
+    }(env.otoroshiExecutionContext)
   }
 
   def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap, rootData: VmData): Unit = {
@@ -218,20 +226,20 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
     proxyOnContexCreate(state.rootContextId, 0, attrs, data)
     if (proxyOnVmStart(attrs, data)) {
       if (proxyOnConfigure(state.rootContextId, attrs, data)) {
+        started.set(true)
         //proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
       } else {
-        println("failed to configure")
+        logger.error("failed to configure coraza")
       }
     } else {
-      println("failed to start vm")
+      logger.error("failed to start coraza vm")
     }
   }
 
   def stop(attrs: TypedMap): Unit = {}
 
-  // TODO: avoid blocking calls for wasm calls
   def runRequestPath(request: RequestHeader, attrs: TypedMap): NgAccess = {
-    contextId.incrementAndGet()
+    CorazaPlugin.contextId.incrementAndGet()
     val data = VmData.withRules(rules)
     proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs, data)
     val res = for {
@@ -274,22 +282,38 @@ class CorazaPlugin(pluginRef: String, rules: JsValue, env: Env) {
   }
 }
 
-class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
+case class NgCorazaWAFConfig(ref: String) extends NgPluginConfig {
+  override def json: JsValue = NgCorazaWAFConfig.format.writes(this)
+}
 
-  // TODO: reference a wasm file in the classpath
-  // TODO: add config in a new extension entity
-  // TODO: instanciate CorazaPlugin based on config id
-  // TODO: add inspect body in config
-  // TODO: rules from config
+object NgCorazaWAFConfig {
+  val format = new Format[NgCorazaWAFConfig] {
+    override def writes(o: NgCorazaWAFConfig): JsValue = Json.obj("ref" -> o.ref)
+    override def reads(json: JsValue): JsResult[NgCorazaWAFConfig] = Try {
+      NgCorazaWAFConfig(
+        ref = json.select("ref").asString
+      )
+    } match {
+      case Success(e) => JsSuccess(e)
+      case Failure(e) => JsError(e.getMessage)
+    }
+  }
+}
+
+class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
+
+  // TODO: update plugin if config changed !!!
+  // TODO: avoid blocking calls for wasm calls
+  // TODO: send event on coraza error log
 
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean = true
   override def core: Boolean = true
-  override def name: String = "Coraza"
-  override def description: Option[String] = "Coraza".some
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def name: String = "Coraza WAF"
+  override def description: Option[String] = "Coraza WAF plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
 
   override def isAccessAsync: Boolean = true
   override def isTransformRequestAsync: Boolean = true
@@ -299,17 +323,28 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
 
-  private val started = new AtomicBoolean(false)
-  private val ref = new AtomicReference[CorazaPlugin](null)
+  private val plugins = new TrieMap[String, CorazaPlugin]()
+
+  private def getPlugin(ref: String)(implicit env: Env): CorazaPlugin = {
+    println(s"get plugin: ${ref}")
+    plugins.getOrUpdate(ref) {
+      println(s"create plugin: ${ref}")
+      new CorazaPlugin(WasmConfig(
+        source = WasmSource(
+          kind = WasmSourceKind.Http,
+          path = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza.wasm"
+        ),
+        memoryPages = 1000,
+        functionName = None,
+        wasi = true
+      ), ref, env)
+    }
+  }
 
   override def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    if (ref.get() == null) {
-      // TODO: reference a wasm file in the classpath
-      // TODO: rules from config
-      ref.set(new CorazaPlugin("wasm-plugin_dev_8c854ff2-a571-45bd-93ef-39663c5ab343", CorazaPlugin.corazaDefaultRules, env))
-    }
-    val plugin = ref.get()
-    if (started.compareAndSet(false, true)) {
+    val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    val plugin = getPlugin(config.ref)
+    if (!plugin.isStarted()) {
       plugin.start(ctx.attrs)
     }
     ().vfuture
@@ -320,19 +355,20 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val plugin = ref.get()
+    val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    val plugin = getPlugin(config.ref)
     plugin.runRequestPath(ctx.request, ctx.attrs).vfuture
   }
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
-    val plugin = ref.get()
+    val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    val plugin = getPlugin(config.ref)
     val hasBody = ctx.request.theHasBody
-    val inspectBody = true // TODO: from config
-    val bytesf: Future[Option[ByteString]] = if (!inspectBody) None.vfuture else if (!hasBody) None.vfuture else {
+    val bytesf: Future[Option[ByteString]] = if (!plugin.config.inspectBody) None.vfuture else if (!hasBody) None.vfuture else {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
     }
     bytesf.map { bytes =>
-      val req = if (inspectBody && hasBody) ctx.otoroshiRequest.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiRequest
+      val req = if (plugin.config.inspectBody && hasBody) ctx.otoroshiRequest.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiRequest
       plugin.runRequestBodyPath(
         ctx.request,
         req,
@@ -343,11 +379,11 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
   }
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
-    val plugin = ref.get()
-    val inspectBody = true // TODO: from config
-    val bytesf: Future[Option[ByteString]] = if (!inspectBody) None.vfuture else ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
+    val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    val plugin = getPlugin(config.ref)
+    val bytesf: Future[Option[ByteString]] = if (!plugin.config.inspectBody) None.vfuture else ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
     bytesf.map { bytes =>
-      val res = if (inspectBody) ctx.otoroshiResponse.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiResponse
+      val res = if (plugin.config.inspectBody) ctx.otoroshiResponse.copy(body = bytes.get.chunks(16 * 1024)) else ctx.otoroshiResponse
       plugin.runResponsePath(
         res,
         bytes,
@@ -356,3 +392,146 @@ class CorazaValidator extends NgAccessValidator with NgRequestTransformer {
     }
   }
 }
+
+case class CorazaWafConfig(
+  location: EntityLocation,
+  id: String,
+  name: String,
+  description: String,
+  tags: Seq[String],
+  metadata: Map[String, String],
+  inspectBody: Boolean,
+  config: JsObject,
+) extends EntityLocationSupport {
+  override def internalId: String               = id
+  override def json: JsValue                    = CorazaWafConfig.format.writes(this)
+  override def theName: String                  = name
+  override def theDescription: String           = description
+  override def theTags: Seq[String]             = tags
+  override def theMetadata: Map[String, String] = metadata
+}
+
+object CorazaWafConfig {
+  def template(): CorazaWafConfig = CorazaWafConfig(
+    location = EntityLocation.default,
+    id = s"coraza-waf-config_${IdGenerator.uuid}",
+    name = "New WAF",
+    description = "New WAF",
+    metadata = Map.empty,
+    tags = Seq.empty,
+    config = CorazaPlugin.corazaDefaultRules.asObject,
+    inspectBody = true,
+  )
+  val format = new Format[CorazaWafConfig] {
+    override def writes(o: CorazaWafConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
+      "id"          -> o.id,
+      "name"        -> o.name,
+      "description" -> o.description,
+      "metadata"    -> o.metadata,
+      "tags"        -> JsArray(o.tags.map(JsString.apply)),
+      "config"      -> o.config,
+      "inspect_body" -> o.inspectBody,
+    )
+    override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
+      CorazaWafConfig(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = (json \ "id").as[String],
+        name = (json \ "name").as[String],
+        description = (json \ "description").as[String],
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
+        inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+trait CorazaWafConfigDataStore extends BasicStore[CorazaWafConfig]
+
+class KvCorazaWafConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
+  extends CorazaWafConfigDataStore
+    with RedisLikeStore[CorazaWafConfig] {
+  override def fmt: Format[CorazaWafConfig]                        = CorazaWafConfig.format
+  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:configs:$id"
+  override def extractId(value: CorazaWafConfig): String           = value.id
+}
+
+class CorazaWafConfigAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
+  val corazaConfigsDatastore: CorazaWafConfigDataStore = new KvCorazaWafConfigDataStore(extensionId, env.datastores.redis, env)
+}
+
+class CorazaWafConfigAdminExtensionState(env: Env) {
+
+  private val configs = new LegitTrieMap[String, CorazaWafConfig]()
+
+  def config(id: String): Option[CorazaWafConfig] = configs.get(id)
+  def allConfigs(): Seq[CorazaWafConfig]          = configs.values.toSeq
+
+  private[proxywasm] def updateConfigs(values: Seq[CorazaWafConfig]): Unit = {
+    configs.addAll(values.map(v => (v.id, v))).remAll(configs.keySet.toSeq.diff(values.map(_.id)))
+  }
+}
+
+class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
+
+  private[proxywasm] lazy val datastores = new CorazaWafConfigAdminExtensionDatastores(env, id)
+  private[proxywasm] lazy val states     = new CorazaWafConfigAdminExtensionState(env)
+
+  override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.CorazaWAF")
+
+  override def name: String = "Coraza WAF extension"
+
+  override def description: Option[String] = "Coraza WAF extension".some
+
+  override def enabled: Boolean = true
+
+  override def start(): Unit = ()
+
+  override def stop(): Unit = ()
+
+  override def syncStates(): Future[Unit] = {
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev = env
+    for {
+      configs <- datastores.corazaConfigsDatastore.findAll()
+    } yield {
+      states.updateConfigs(configs)
+      ()
+    }
+  }
+
+  override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
+    Seq(
+      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/coraza-extension.js")
+    )
+  }
+
+  override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
+    Seq(
+      AdminExtensionEntity(
+        Resource(
+          "CorazaConfig",
+          "coraza-configs",
+          "coraza-config",
+          "coraza-waf.extensions.otoroshi.io",
+          ResourceVersion("v1", true, false, true),
+          GenericResourceAccessApiWithState[CorazaWafConfig](
+            CorazaWafConfig.format,
+            id => datastores.corazaConfigsDatastore.key(id),
+            c => datastores.corazaConfigsDatastore.extractId(c),
+            tmpl = () => CorazaWafConfig.template().json,
+            stateAll = () => states.allConfigs(),
+            stateOne = id => states.config(id),
+            stateUpdate = values => states.updateConfigs(values)
+          )
+        )
+      )
+    )
+  }
+}
+

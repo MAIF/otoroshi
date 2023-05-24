@@ -10,7 +10,7 @@ import BasicAuthCaller from './BasicAuthCaller';
 import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
 import ContextValidation from './ContextValidation';
-import CorazaValidator from './CorazaValidator';
+import NgCorazaWAF from './NgCorazaWAF';
 import Cors from './Cors';
 import DisableHttp10 from './DisableHttp10';
 import EndlessHttpResponse from './EndlessHttpResponse';
@@ -143,7 +143,7 @@ export const Plugins = [
   BrotliResponseCompressor,
   CanaryMode,
   ContextValidation,
-  CorazaValidator,
+  NgCorazaWAF,
   Cors,
   DisableHttp10,
   EndlessHttpResponse,
