@@ -102,6 +102,64 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoro
 
 Now you can create a new route that will use your WAF configuration. Let say we want a route on `http://wouf.oto.tools:8080` to goes to `https://www.otoroshi.io`. Now add the `Coraza WAF` plugin to your route and in the configuration select the configuration you created previously.
 
+the corresponding admin api call is the following :
+
+```sh
+curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
+{
+  "id": "route_demo",
+  "name": "WAF route",
+  "description": "A new route with a WAF enabled",
+  "tags": [],
+  "metadata": {},
+  "enabled": true,
+  "frontend": {
+    "domains": [
+      "wouf.oto.tools"
+    ]
+  },
+  "backend": {
+    "targets": [
+      {
+        "id": "target_1",
+        "hostname": "www.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ],
+    "root": "/"
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "debug": false,
+      "plugin": "cp:otoroshi.wasm.proxywasm.NgCorazaWAF",
+      "include": [],
+      "exclude": [],
+      "config": {
+        "ref": "coraza-waf-demo"
+      },
+      "plugin_index": {
+        "validate_access": 0,
+        "transform_request": 1,
+        "transform_response": 0
+      }
+    },
+    {
+      "enabled": true,
+      "debug": false,
+      "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+      "include": [],
+      "exclude": [],
+      "config": {},
+      "plugin_index": {
+        "transform_request": 2
+      }
+    }
+  ]
+}'
+```
+
 ### Try to use an exploit ;)
 
 let try to trigger Coraza with a Log4Shell creafted request:
