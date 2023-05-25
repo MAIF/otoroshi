@@ -15,7 +15,8 @@ Now create a new configuration, give it a name and a description, ensure that yo
 The corresponding admin api call is the following :
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs' -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
+curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs' \
+  -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
 {
   "id": "coraza-waf-demo",
   "name": "My blocking WAF",
@@ -74,7 +75,8 @@ You can also provide multiple profile of rules in the `directives_map` with diff
 the corresponding admin api call is the following :
 
 ```sh
-curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/coraza-waf-demo' -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
+curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/coraza-waf-demo' \
+  -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
 {
   "id": "coraza-waf-demo",
   "name": "My blocking WAF",
@@ -105,7 +107,9 @@ Now you can create a new route that will use your WAF configuration. Let say we 
 the corresponding admin api call is the following :
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
+curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -H 'Content-Type: application/json' -d '
 {
   "id": "route_demo",
   "name": "WAF route",
@@ -165,7 +169,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' -u admin-api-apikey
 let try to trigger Coraza with a Log4Shell creafted request:
 
 ```sh
-curl http://wouf.oto.tools:9999 -H 'foo: ${jndi:rmi://foo/bar}' --include
+curl 'http://wouf.oto.tools:9999' -H 'foo: ${jndi:rmi://foo/bar}' --include
 
 HTTP/1.1 403 Forbidden
 Date: Thu, 25 May 2023 09:47:04 GMT
@@ -177,7 +181,7 @@ Content-Length: 0
 or access to `/admin`
 
 ```sh
-curl http://wouf.oto.tools:9999/admin --include
+curl 'http://wouf.oto.tools:9999/admin' --include
 
 HTTP/1.1 403 Forbidden
 Date: Thu, 25 May 2023 09:47:04 GMT
