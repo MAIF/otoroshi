@@ -132,14 +132,14 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
       },
       "plugin_index": {
         "validate_access": 0,
-        "transform_request": 1,
+        "transform_request": 0,
         "transform_response": 0
       }
     },
     {
       "plugin": "cp:otoroshi.next.plugins.OverrideHost",
       "plugin_index": {
-        "transform_request": 2
+        "transform_request": 1
       }
     }
   ]
