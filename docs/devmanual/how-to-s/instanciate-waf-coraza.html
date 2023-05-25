@@ -330,7 +330,8 @@ EOF
 <p>first, go on <a href="http://otoroshi.oto.tools:8080/bo/dashboard/features">the features page of otoroshi</a> and then click on the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/extensions/coraza-waf/coraza-configs">Coraza WAF configs. item</a>. </p>
 <p>Now create a new configuration, give it a name and a description, ensure that you enabled the <code>Inspect req/res body</code> flag and save your configuration.</p>
 <p>The corresponding admin api call is the following :</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs&#39; -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
 {
   &quot;id&quot;: &quot;coraza-waf-demo&quot;,
   &quot;name&quot;: &quot;My blocking WAF&quot;,
@@ -374,7 +375,8 @@ EOF
 </code></pre>
 <p>You can also provide multiple profile of rules in the <code>directives_map</code> with different names and use the <code>per_authority_directives</code> object to map hostnames to a specific profile.</p>
 <p>the corresponding admin api call is the following :</p>
-<pre class="prettyprint"><code class="language-sh">curl -X PUT &#39;http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/coraza-waf-demo&#39; -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
+<pre class="prettyprint"><code class="language-sh">curl -X PUT &#39;http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/coraza-waf-demo&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
 {
   &quot;id&quot;: &quot;coraza-waf-demo&quot;,
   &quot;name&quot;: &quot;My blocking WAF&quot;,
@@ -400,7 +402,9 @@ EOF
 <h3><a href="#add-the-waf-plugin-on-your-route" name="add-the-waf-plugin-on-your-route" class="anchor"><span class="anchor-link"></span></a>Add the WAF plugin on your route</h3>
 <p>Now you can create a new route that will use your WAF configuration. Let say we want a route on <code>http://wouf.oto.tools:8080</code> to goes to <code>https://www.otoroshi.io</code>. Now add the <code>Coraza WAF</code> plugin to your route and in the configuration select the configuration you created previously.</p>
 <p>the corresponding admin api call is the following :</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:9999/api/routes&#39; -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:9999/api/routes&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -H &#39;Content-Type: application/json&#39; -d &#39;
 {
   &quot;id&quot;: &quot;route_demo&quot;,
   &quot;name&quot;: &quot;WAF route&quot;,
@@ -456,7 +460,7 @@ EOF
 </code></pre>
 <h3><a href="#try-to-use-an-exploit-" name="try-to-use-an-exploit-" class="anchor"><span class="anchor-link"></span></a>Try to use an exploit ;)</h3>
 <p>let try to trigger Coraza with a Log4Shell creafted request:</p>
-<pre class="prettyprint"><code class="language-sh">curl http://wouf.oto.tools:9999 -H &#39;foo: ${jndi:rmi://foo/bar}&#39; --include
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://wouf.oto.tools:9999&#39; -H &#39;foo: ${jndi:rmi://foo/bar}&#39; --include
 
 HTTP/1.1 403 Forbidden
 Date: Thu, 25 May 2023 09:47:04 GMT
@@ -465,7 +469,7 @@ Content-Length: 0
 
 </code></pre>
 <p>or access to <code>/admin</code></p>
-<pre class="prettyprint"><code class="language-sh">curl http://wouf.oto.tools:9999/admin --include
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://wouf.oto.tools:9999/admin&#39; --include
 
 HTTP/1.1 403 Forbidden
 Date: Thu, 25 May 2023 09:47:04 GMT
