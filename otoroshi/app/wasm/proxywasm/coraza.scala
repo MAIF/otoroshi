@@ -61,7 +61,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private implicit val ev = env
   private implicit val ec = env.otoroshiExecutionContext
 
-  private lazy val timeout = 5.seconds
+  private lazy val timeout = 10.seconds
   private lazy val started = new AtomicBoolean(false)
   private lazy val logger = Logger("otoroshi-plugin-coraza")
   private lazy val vmConfigurationSize = 0
