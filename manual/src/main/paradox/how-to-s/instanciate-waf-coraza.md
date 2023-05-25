@@ -186,6 +186,29 @@ Content-Length: 0
 
 ```
 
+if you look at otoroshi logs you will find something like :
+
+```log
+[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell 
+  [file "@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf"] [line "10608"] [id "944150"] [rev ""] 
+  [msg "Potential Remote Command Execution: Log4j / Log4shell"] [data ""] [severity "critical"] 
+  [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] [tag "application-multi"] 
+  [tag "language-java"] [tag "platform-multi"] [tag "attack-rce"] [tag "OWASP_CRS"] 
+  [tag "capec/1000/152/137/6"] [tag "PCI/6.5.2"] [tag "paranoia-level/1"] [hostname "wwwwouf.oto.tools"] 
+  [uri "/"] [unique_id "uTYakrlgMBydVGLodbz"]
+[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning. Inbound Anomaly Score Exceeded (Total Score: 5) 
+  [file "@owasp_crs/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "11029"] [id "949110"] [rev ""] 
+  [msg "Inbound Anomaly Score Exceeded (Total Score: 5)"] 
+  [data ""] [severity "emergency"] [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] 
+  [tag "anomaly-evaluation"] [hostname "wwwwouf.oto.tools"] [uri "/"] [unique_id "uTYakrlgMBydVGLodbz"]
+[info] otoroshi-proxy-wasm - Transaction interrupted tx_id="uTYakrlgMBydVGLodbz" context_id=3 action="deny" phase="http_response_headers"
+...
+[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning.  [file ""] [line "12914"] 
+  [id "101"] [rev ""] [msg ""] [data ""] [severity "emergency"] [ver ""] [maturity "0"] [accuracy "0"] 
+  [hostname "wwwwouf.oto.tools"] [uri "/admin"] [unique_id "mqXZeMdzRaVAqIiqvHf"]
+[info] otoroshi-proxy-wasm - Transaction interrupted tx_id="mqXZeMdzRaVAqIiqvHf" context_id=2 action="deny" phase="http_request_headers"
+```
+
 ### Generated events
 
 each time Coraza will generate log about vunerability detection, an event will be generated in otoroshi and exporter through the usual data exporter way. The event will look like :
