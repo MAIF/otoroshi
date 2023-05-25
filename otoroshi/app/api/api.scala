@@ -245,7 +245,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     format: Format[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: JsValue = Json.obj(),
+    tmpl: () => JsValue = () => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -257,7 +257,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl
+  override def template(version: String): JsValue = tmpl()
   override def all(): Seq[T]                      = stateAll()
   override def one(id: String): Option[T]         = stateOne(id)
   override def update(values: Seq[T]): Unit       = stateUpdate(values)

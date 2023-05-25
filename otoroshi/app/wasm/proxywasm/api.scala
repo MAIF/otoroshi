@@ -4,66 +4,93 @@ import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk._
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginHttpResponse
 import otoroshi.utils.TypedMap
-import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.JsValue
+import play.api.mvc
 import play.api.mvc.RequestHeader
-import otoroshi.wasm.proxywasm._
+
+import java.util.concurrent.atomic.AtomicReference
 
 object VmData {
+  def empty(): VmData = VmData("", Map.empty, -1, new AtomicReference[mvc.Result](null), new AtomicReference[ByteString](null), new AtomicReference[ByteString](null))
+  def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
-    // request.connection.remoteAddress.toString.debugPrintln
-    // request.remoteAddress.debugPrintln
+    val remote = request.headers.get("remote-address").getOrElse(s"${request.connection.remoteAddress.toString.substring(1)}:${1234}")
     new VmData(
       configuration = "",
+      respRef = new AtomicReference[play.api.mvc.Result](null),
+      bodyInRef = new AtomicReference[ByteString](null),
+      bodyOutRef = new AtomicReference[ByteString](null),
       tickPeriod = -1,
       properties = Map(
-        "plugin_name" -> "foo".byteString,
-        "plugin_root_id" -> "foo".byteString,
-        "plugin_vm_id" -> "foo".byteString,
-        "cluster_name" -> "foo".byteString,
-        "route_name" -> "foo".byteString,
-        "source.address" -> "127.0.0.1:80".byteString,
-        "source.port" -> String.valueOf(80).byteString,
-        "destination.address" -> "127.0.0.1:1234".byteString,
-        "destination.port" -> String.valueOf(1234).byteString,
-        "request.path" -> request.uri.byteString,
-        "request.url_path" -> request.thePath.byteString,
-        "request.host" -> request.host.byteString,
-        "request.scheme" -> request.theProtocol.byteString,
-        "request.method" -> request.method.byteString,
-        "request.protocol" -> request.theProtocol.byteString,
-        "request.query" -> request.rawQueryString.byteString,
-        ":method" -> request.method.byteString,
-        ":path" -> request.thePath.byteString,
-        ":authority" -> request.host.byteString,
-        ":scheme" -> request.theProtocol.byteString,
+        "plugin_name" -> "foo".bytes,
+        "plugin_root_id" -> "foo".bytes,
+        "plugin_vm_id" -> "foo".bytes,
+        "cluster_name" -> "foo".bytes,
+        "route_name" -> "foo".bytes,
+        "source.address" -> remote.bytes,
+        //"source.port" -> remote.split(":")(1).toLong.bytes,
+        "destination.address" -> s"${request.theDomain}:${env.httpPort}".bytes,
+        //"destination.port" -> env.httpPort.toLong.bytes,
+        "request.path" -> request.uri.bytes,
+        "request.url_path" -> request.thePath.bytes,
+        "request.host" -> request.host.bytes,
+        "request.scheme" -> request.theProtocol.bytes,
+        "request.method" -> request.method.bytes,
+        "request.protocol" -> request.version.bytes,
+        "request.query" -> request.rawQueryString.bytes,
+        ":method" -> request.method.bytes,
+        ":path" -> request.thePath.bytes,
+        ":authority" -> request.host.bytes,
+        ":scheme" -> request.theProtocol.bytes,
       )
       .applyOnWithOpt(request.headers.get("x-request-id")) {
-        case (props, value) => props ++ Map("request.id" -> value.byteString)
+        case (props, value) => props ++ Map("request.id" -> value.bytes)
       }
       .applyOnWithOpt(request.headers.get("Referer")) {
-        case (props, value) => props ++ Map("request.referer" -> value.byteString)
+        case (props, value) => props ++ Map("request.referer" -> value.bytes)
       }
       .applyOnWithOpt(request.headers.get("User-Agent")) {
-        case (props, value) => props ++ Map("request.useragent" -> value.byteString)
+        case (props, value) => props ++ Map("request.useragent" -> value.bytes)
       }
       .applyOnWithOpt(attrs.get(otoroshi.plugins.Keys.RequestTimestampKey)) {
-        case (props, value) => props ++ Map("request.time" -> value.toDate.getTime.toString.byteString)
+        case (props, value) => props ++ Map("request.time" -> value.toDate.getTime.toString.bytes)
       }
       .applyOn { props =>
-        props ++ request.headers.toSimpleMap.map {
-          case (key, value) => s"request.headers.${key}" -> value.byteString
+        props ++ request.headers.toSimpleMap.filterNot(_._1.toLowerCase() == "tls-session-info").filterNot(_._1.toLowerCase() == "timeout-access").map {
+          case (key, value) => s"request.headers.${key.toLowerCase()}" -> value.bytes
         }
       }
     )
   }
 }
 
-case class VmData(configuration: String, properties: Map[String, ByteString], tickPeriod: Int = -1) extends HostUserData {
+case class VmData(configuration: String, properties: Map[String, Array[Byte]], tickPeriod: Int = -1, respRef: AtomicReference[play.api.mvc.Result], bodyInRef: AtomicReference[ByteString], bodyOutRef: AtomicReference[ByteString]) extends HostUserData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
-    VmData.from(request, attrs).copy(configuration = configuration, tickPeriod = tickPeriod)
+    VmData.from(request, attrs).copy(configuration = configuration, tickPeriod = tickPeriod, respRef = respRef, bodyInRef = bodyInRef, bodyOutRef = bodyOutRef)
   }
+  def withResponse(response: NgPluginHttpResponse, attrs: TypedMap)(implicit env: Env): VmData = {
+    val newProps: Map[String, Array[Byte]] = properties ++ Map(
+      "response.code" -> response.status.bytes,
+      "response.code_details" -> "".bytes,
+      "response.flags" -> (-1).bytes,
+      "response.grpc_status" -> (-1).bytes,
+      ":status" -> response.status.toString.bytes,
+      //"response.size" -> ,
+      //"response.total_size" -> ,
+    ).applyOn { props =>
+      props ++ response.headers.map {
+        case (key, value) => s"response.headers.${key.toLowerCase()}" -> value.bytes
+      }
+    }
+    copy(configuration = configuration, properties = newProps, tickPeriod = tickPeriod, respRef = respRef, bodyInRef = bodyInRef, bodyOutRef = bodyOutRef)
+  }
+  def httpResponse: Option[play.api.mvc.Result] = Option(respRef.get())
+  def bodyIn: Option[ByteString] = Option(bodyInRef.get())
+  def bodyOut: Option[ByteString] = Option(bodyOutRef.get())
 }
 
 trait Api {

@@ -13,7 +13,7 @@ import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.extensions.KubernetesHelper
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.models.{NgDomainAndPath, NgRoute, NgRouteComposition, NgTarget, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -910,32 +910,188 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
+  private def handleTargetFromRoute(res: KubernetesOtoroshiResource, obj: JsObject, route: JsValue, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint]): JsValue = {
+    val serviceName = (obj \ "service_name").asOpt[String]
+    val servicePort = (obj \ "service_port").asOpt[JsValue]
+    val finalTargets: JsArray = (serviceName, servicePort) match {
+      case (Some(sn), Some(sp)) => {
+        val path = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
+        val service = services.find(s => s.path == path)
+        val endpoint = endpoints.find(s => s.path == path)
+        (service, endpoint) match {
+          case (Some(s), p) => {
+            val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
+            val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger).map(NgTarget.fromTarget)
+            JsArray(targets.map(_.json))
+          }
+          case _ => Json.arr()
+        }
+      }
+      case _ => Json.arr()
+    }
+    route.as[JsObject].deepMerge(Json.obj("backend" -> Json.obj("targets" -> finalTargets)))
+  }
+
   private[kubernetes] def customizeRoute(
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
-      entities: Seq[NgRoute]
+      entities: Seq[NgRoute],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      conf: KubernetesConfig,
   ): JsValue = {
+    val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
+    val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
+    val additionalHosts = Seq(
+      s"${globalName}.global.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
+    )
     val spec = findAndMerge[NgRoute](_spec, res, "route", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
+      .applyOn { s =>
+        val enabledAdditionalHosts = (s \ "frontend" \ "enable_additional_hosts").asOpt[Boolean].getOrElse(true)
+        (s \ "frontend" \ "domains").asOpt[JsArray] match {
+          case None if enabledAdditionalHosts =>
+            s.as[JsObject].deepMerge(Json.obj("frontend" -> Json.obj("domains" -> JsArray(additionalHosts.map(JsString.apply)))))
+          case Some(arr) if enabledAdditionalHosts =>
+            val add = JsArray(arr.value.flatMap { d =>
+              val dp = NgDomainAndPath(d.asString)
+              additionalHosts.map(ah => JsString(ah + dp.path))
+            })
+            s.as[JsObject].deepMerge(Json.obj("frontend" -> Json.obj("domains" -> JsArray((arr ++ add).value.distinct))))
+          case _ => s.as[JsObject]
+        }
+      }
+      .applyOn { s =>
+        (s \ "backend" \ "targets").asOpt[JsValue] match {
+          case Some(JsArray(targets))  => {
+            s.as[JsObject].deepMerge(Json.obj("backend" -> Json.obj(
+              "targets" -> JsArray(
+                targets.map(item =>
+                  item.applyOn(target =>
+                    ((target \ "url").asOpt[String] match {
+                      case None     => target
+                      case Some(tv) =>
+                        val uri = Uri(tv)
+                        target.as[JsObject] ++ Json.obj(
+                          "hostname"   -> uri.authority.host.toString(),
+                          "port"   -> uri.effectivePort,
+                          "tls" -> (uri.scheme.toLowerCase == "https")
+                        )
+                    })
+                  )
+                )
+              )
+            )))
+          }
+          case Some(obj @ JsObject(_)) => handleTargetFromRoute(res, obj, s, services, endpoints)
+          case _                       => s
+        }
+      }
   }
 
   private[kubernetes] def customizeRouteComposition(
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
-      entities: Seq[NgRouteComposition]
+      entities: Seq[NgRouteComposition],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      conf: KubernetesConfig,
   ): JsValue = {
+    val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
+    val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
+    val additionalHosts = Seq(
+      s"${globalName}.global.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
+    )
     val spec =
       findAndMerge[NgRouteComposition](_spec, res, "route-composition", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
+      .applyOn { ss =>
+        ss.as[JsObject] ++ Json.obj("routes" -> ss.select("routes").as[Seq[JsObject]].map { s =>
+          val enabledAdditionalHosts = (s \ "frontend" \ "enable_additional_hosts").asOpt[Boolean].getOrElse(true)
+          (s \ "frontend" \ "domains").asOpt[JsArray] match {
+            case None if enabledAdditionalHosts =>
+              s.as[JsObject].deepMerge(Json.obj("frontend" -> Json.obj("domains" -> JsArray(additionalHosts.map(JsString.apply)))))
+            case Some(arr) if enabledAdditionalHosts =>
+              val add = JsArray(arr.value.flatMap { d =>
+                val dp = NgDomainAndPath(d.asString)
+                additionalHosts.map(ah => JsString(ah + dp.path))
+              })
+              s.as[JsObject].deepMerge(Json.obj("frontend" -> Json.obj("domains" -> JsArray((arr ++ add).value.distinct))))
+            case _ => s.as[JsObject]
+          }
+        })
+      }
+      .applyOn { ss =>
+        ss.as[JsObject] ++ Json.obj("routes" -> ss.select("routes").as[Seq[JsObject]].map { s =>
+          (s \ "backend" \ "targets").asOpt[JsValue] match {
+            case Some(JsArray(targets)) => {
+              s.as[JsObject].deepMerge(Json.obj("backend" -> Json.obj(
+                "targets" -> JsArray(
+                  targets.map(item =>
+                    item.applyOn(target =>
+                      ((target \ "url").asOpt[String] match {
+                        case None => target
+                        case Some(tv) =>
+                          val uri = Uri(tv)
+                          target.as[JsObject] ++ Json.obj(
+                            "hostname" -> uri.authority.host.toString(),
+                            "port" -> uri.effectivePort,
+                            "tls" -> (uri.scheme.toLowerCase == "https")
+                          )
+                      })
+                    )
+                  )
+                )
+              )))
+            }
+            case Some(obj@JsObject(_)) => handleTargetFromRoute(res, obj, s, services, endpoints)
+            case _ => s
+          }
+        })
+      }
   }
 
   private[kubernetes] def customizeBackend(
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
-      entities: Seq[StoredNgBackend]
+      entities: Seq[StoredNgBackend],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
   ): JsValue = {
     val spec = findAndMerge[StoredNgBackend](_spec, res, "backend", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
+      .applyOn { s =>
+        (s \ "backend" \ "targets").asOpt[JsValue] match {
+          case Some(JsArray(targets)) => {
+            s.as[JsObject].deepMerge(Json.obj("backend" -> Json.obj(
+              "targets" -> JsArray(
+                targets.map(item =>
+                  item.applyOn(target =>
+                    ((target \ "url").asOpt[String] match {
+                      case None => target
+                      case Some(tv) =>
+                        val uri = Uri(tv)
+                        target.as[JsObject] ++ Json.obj(
+                          "hostname" -> uri.authority.host.toString(),
+                          "port" -> uri.effectivePort,
+                          "tls" -> (uri.scheme.toLowerCase == "https")
+                        )
+                    })
+                  )
+                )
+              )
+            )))
+          }
+          case Some(obj@JsObject(_)) => handleTargetFromRoute(res, obj, s, services, endpoints)
+          case _ => s
+        }
+      }
   }
 
   private[kubernetes] def customizeTcpService(
@@ -997,20 +1153,33 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]]                                                =
     client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
-  def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]]                                        =
-    client.fetchOtoroshiResources[NgRoute]("routes", NgRoute.fmt, (a, b) => customizeRoute(a, b, routes))
-  def crdsFetchRouteCompositions(compositions: Seq[NgRouteComposition]): Future[Seq[OtoResHolder[NgRouteComposition]]] =
+  def crdsFetchRoutes(
+    routes: Seq[NgRoute],
+    services: Seq[KubernetesService],
+    endpoints: Seq[KubernetesEndpoint],
+    conf: KubernetesConfig,
+  ): Future[Seq[OtoResHolder[NgRoute]]]                                        =
+    client.fetchOtoroshiResources[NgRoute]("routes", NgRoute.fmt, (a, b) => customizeRoute(a, b, routes, services, endpoints, conf))
+  def crdsFetchRouteCompositions(
+    compositions: Seq[NgRouteComposition],
+    services: Seq[KubernetesService],
+    endpoints: Seq[KubernetesEndpoint],
+    conf: KubernetesConfig,
+  ): Future[Seq[OtoResHolder[NgRouteComposition]]] =
     client.fetchOtoroshiResources[NgRouteComposition](
       "route-compositions",
       NgRouteComposition.fmt,
-      (a, b) => customizeRouteComposition(a, b, compositions)
+      (a, b) => customizeRouteComposition(a, b, compositions, services, endpoints, conf)
     )
-
-  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
+  def crdsFetchBackends(
+    backends: Seq[StoredNgBackend],
+    services: Seq[KubernetesService],
+    endpoints: Seq[KubernetesEndpoint],
+  ): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
     client.fetchOtoroshiResources[StoredNgBackend](
       "backends",
       StoredNgBackend.format,
-      (a, b) => customizeBackend(a, b, backends)
+      (a, b) => customizeBackend(a, b, backends, services, endpoints)
     )
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                =
     client.fetchOtoroshiResources[ServiceGroup](
@@ -1290,9 +1459,9 @@ object KubernetesCRDsJob {
       dataExporters      <- clientSupport.crdsFetchDataExporters(otodataexporters)
       teams              <- clientSupport.crdsFetchTeams(ototeams)
       tenants            <- clientSupport.crdsFetchTenants(ototenants)
-      routes             <- clientSupport.crdsFetchRoutes(otoroutes)
-      routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps)
-      backends           <- clientSupport.crdsFetchBackends(otobackends)
+      routes             <- clientSupport.crdsFetchRoutes(otoroutes, services, endpoints, conf)
+      routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps, services, endpoints, conf)
+      backends           <- clientSupport.crdsFetchBackends(otobackends, services, endpoints)
       extres             <- clientSupport.crdsFetchExtensionResources(otoextres)
 
     } yield {

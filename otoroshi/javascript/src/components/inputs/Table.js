@@ -232,7 +232,7 @@ export class Table extends Component {
       routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    console.log(window.location.pathname, routeTo);
+    // console.log(window.location.pathname, routeTo);
     if (window.location.pathname !== routeTo) {
       window.location.href = routeTo;
     } else {
@@ -601,7 +601,7 @@ export class Table extends Component {
                   }
                 }}
               />
-              <div
+              {!!!window.location.pathname.match(/routes\/([^\s]+)\/events/) && <div
                 className="d-flex align-items-center"
                 style={{
                   position: 'absolute',
@@ -620,7 +620,7 @@ export class Table extends Component {
                     options={[5, 15, 20, 50, 100]}
                   />
                 </div>
-              </div>
+              </div>}
             </div>
           </div>
         )}

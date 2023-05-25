@@ -114,7 +114,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 
   override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
     Seq(
-      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extension.js")
+      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/foos.js")
     )
   }
 

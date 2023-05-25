@@ -1,19 +1,22 @@
 package otoroshi.wasm.proxywasm
 
 import akka.util.ByteString
+import play.api.Logger
 
 object WasmUtils {
 
+  val logger = Logger("otoroshi-proxy-wasm-utils")
+
   def traceVmHost(message: String): Unit = {
-    System.out.println("[vm->host]: " + message)
+    if (logger.isTraceEnabled) logger.trace("[vm->host]: " + message)
   }
 
   def  traceHostVm(message: String) {
-    System.out.println("[host->vm]: " + message)
+    if (logger.isTraceEnabled) logger.trace("[host->vm]: " + message)
   }
 
   def DEBUG(functionName: String, str: String) {
-    System.out.println("[DEBUG](" + functionName + "): " + str)
+    if (logger.isDebugEnabled) logger.debug("[DEBUG](" + functionName + "): " + str)
   }
 }
 

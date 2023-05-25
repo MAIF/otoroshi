@@ -1223,6 +1223,7 @@ export class DangerZonePage extends Component {
   syncFlow = ['host', 'port', 'password'];
 
   componentDidMount() {
+    this.props.setSidebarContent(null);
     this.props.setTitle(`Danger Zone`);
     BackOfficeServices.getGlobalConfig().then((value) =>
       this.setState({ value, originalValue: value })
