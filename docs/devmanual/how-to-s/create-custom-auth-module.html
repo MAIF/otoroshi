@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Scripts · Otoroshi</title>
+<title>Create your Authentication module · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -63,7 +63,7 @@
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="active page">Scripts</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -113,7 +113,7 @@
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
-    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="active page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
@@ -195,7 +195,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="active page">Scripts</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -245,7 +245,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
-    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="active page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
@@ -280,8 +280,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Scripts</li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Create your Authentication module</li>
 </ul>
 </div>
 </div>
@@ -289,42 +289,217 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#scripts" name="scripts" class="anchor"><span class="anchor-link"></span></a>Scripts</h1>
-<p>Script are a way to create plugins for otoroshi without deploying them as jar files. With scripts, you just have to store the scala code of your plugins inside the otoroshi datastore and otoroshi will compile and deploy them at startup. You can find all your scripts in the UI at <code>cog icon / Plugins</code>. You can find all the documentation about plugins <a href="../plugins/index.html">here</a></p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>The compilation of your plugins can be pretty long and resources consuming. As the compilation happens during otoroshi boot sequence, your instance will be blocked until all plugins have compiled. This behavior can be disabled. If so, the plugins will not work until they have been compiled. Any service using a plugin that is not compiled yet will fail</p></div>
-<p>Like any entity, the script has has the following properties</p>
-<ul>
-  <li><code>id</code></li>
-  <li><code>plugin name</code></li>
-  <li><code>plugin description</code></li>
-  <li><code>tags</code></li>
-  <li><code>metadata</code></li>
-</ul>
-<p>And you also have</p>
-<ul>
-  <li><code>type</code>: the kind of plugin you are building with this script</li>
-  <li><code>plugin code</code>: the code for your plugin</li>
-</ul>
-<h2><a href="#compile" name="compile" class="anchor"><span class="anchor-link"></span></a>Compile</h2>
-<p>You can use the compile button to check if the code you write in <code>plugin code</code> is valid. It will automatically save your script and try to compile. As mentionned earlier, script compilation is quite resource intensive. It will affect your CPU load and your memory consumption. Don&rsquo;t forget to adjust your VM settings accordingly.</p>
+<h1><a href="#create-your-authentication-module" name="create-your-authentication-module" class="anchor"><span class="anchor-link"></span></a>Create your Authentication module</h1>
+<p>Authentication modules can be used to protect routes. In some cases, you need to create your own custom authentication module to create a new one or simply inherit and extend an exiting module.</p>
+<p>You can write your own authentication using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
+<pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
+  settings(
+    inThisBuild(List(
+      organization := &quot;com.example&quot;,
+      scalaVersion := &quot;2.12.7&quot;,
+      version      := &quot;0.1.0-SNAPSHOT&quot;
+    )),
+    name := &quot;my-custom-auth-module&quot;,
+    libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;1x.x.x&quot;
+  )
+</code></pre>
+<p>Just below, you can find an example of Custom Auth. module. </p>
+<pre class="prettyprint"><code class="language-scala">package auth.custom
+
+import akka.http.scaladsl.util.FastFuture
+import otoroshi.auth.{AuthModule, AuthModuleConfig, Form, SessionCookieValues}
+import otoroshi.controllers.routes
+import otoroshi.env.Env
+import otoroshi.models._
+import otoroshi.security.IdGenerator
+import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.http.MimeTypes
+import play.api.libs.json._
+import play.api.mvc._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+case class CustomModuleConfig(
+                               id: String,
+                               name: String,
+                               desc: String,
+                               clientSideSessionEnabled: Boolean,
+                               sessionMaxAge: Int = 86400,
+                               userValidators: Seq[JsonPathValidator] = Seq.empty,
+                               tags: Seq[String],
+                               metadata: Map[String, String],
+                               sessionCookieValues: SessionCookieValues,
+                               location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+                               form: Option[Form] = None,
+                               foo: String = &quot;bar&quot;
+                             ) extends AuthModuleConfig {
+  def `type`: String = &quot;custom&quot;
+  def humanName: String = &quot;Custom Authentication&quot;
+
+  override def authModule(config: GlobalConfig): AuthModule = CustomAuthModule(this)
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
+
+  lazy val format = new Format[CustomModuleConfig] {
+    override def writes(o: CustomModuleConfig): JsValue = o.asJson
+
+    override def reads(json: JsValue): JsResult[CustomModuleConfig] = Try {
+      CustomModuleConfig(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = (json \ &quot;id&quot;).as[String],
+        name = (json \ &quot;name&quot;).as[String],
+        desc = (json \ &quot;desc&quot;).asOpt[String].getOrElse(&quot;--&quot;),
+        clientSideSessionEnabled = (json \ &quot;clientSideSessionEnabled&quot;).asOpt[Boolean].getOrElse(true),
+        sessionMaxAge = (json \ &quot;sessionMaxAge&quot;).asOpt[Int].getOrElse(86400),
+        metadata = (json \ &quot;metadata&quot;).asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ &quot;tags&quot;).asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        sessionCookieValues =
+          (json \ &quot;sessionCookieValues&quot;).asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+        userValidators = (json \ &quot;userValidators&quot;)
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v =&gt; JsonPathValidator.format.reads(v).asOpt))
+          .getOrElse(Seq.empty),
+        form = (json \ &quot;form&quot;).asOpt[JsValue].flatMap(json =&gt; Form._fmt.reads(json) match {
+          case JsSuccess(value, _) =&gt; Some(value)
+          case JsError(_) =&gt; None
+        }),
+        foo = (json \ &quot;foo&quot;).asOpt[String].getOrElse(&quot;bar&quot;)
+      )
+    } match {
+      case Failure(exception) =&gt; JsError(exception.getMessage)
+      case Success(value) =&gt; JsSuccess(value)
+    }
+  }.asInstanceOf[Format[AuthModuleConfig]]
+
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = format
+
+  override def asJson =
+    location.jsonWithKey ++ Json.obj(
+      &quot;type&quot; -&gt; &quot;custom&quot;,
+      &quot;id&quot; -&gt; this.id,
+      &quot;name&quot; -&gt; this.name,
+      &quot;desc&quot; -&gt; this.desc,
+      &quot;clientSideSessionEnabled&quot; -&gt; this.clientSideSessionEnabled,
+      &quot;sessionMaxAge&quot; -&gt; this.sessionMaxAge,
+      &quot;metadata&quot; -&gt; this.metadata,
+      &quot;tags&quot; -&gt; JsArray(tags.map(JsString.apply)),
+      &quot;sessionCookieValues&quot; -&gt; SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      &quot;userValidators&quot; -&gt; JsArray(userValidators.map(_.json)),
+      &quot;form&quot; -&gt; this.form.map(Form._fmt.writes),
+      &quot;foo&quot; -&gt; foo
+    )
+
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+
+  override def cookieSuffix(desc: ServiceDescriptor) = s&quot;custom-auth-$id&quot;
+  def theDescription: String = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
+}
+
+object CustomAuthModule {
+  def defaultConfig = CustomModuleConfig(
+    id = IdGenerator.namedId(&quot;auth_mod&quot;, IdGenerator.uuid),
+    name = &quot;My custom auth. module&quot;,
+    desc = &quot;My custom auth. module&quot;,
+    tags = Seq.empty,
+    metadata = Map.empty,
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true,
+    form = None)
+}
+
+case class CustomAuthModule(authConfig: CustomModuleConfig) extends AuthModule {
+  def this() = this(CustomAuthModule.defaultConfig)
+
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)
+                          (implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    val redirect = request.getQueryString(&quot;redirect&quot;)
+    val hash = env.sign(s&quot;${authConfig.id}:::${descriptor.id}&quot;)
+    env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =&gt;
+      Results
+        .Ok(auth.custom.views.html.login(s&quot;/privateapps/generic/callback?desc=${descriptor.id}&amp;hash=$hash&amp;route=${isRoute}&quot;, token))
+        .as(MimeTypes.HTML)
+        .addingToSession(
+          &quot;ref&quot;                                                     -&gt; authConfig.id,
+          s&quot;pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}&quot; -&gt; redirect.getOrElse(
+            routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)(request)
+          )
+        )(request)
+        .future
+    }
+  }
+
+  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)
+                       (implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
+
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)
+                         (implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+      PrivateAppsUser(
+        randomId = IdGenerator.token(64),
+        name = &quot;foo&quot;,
+        email = s&quot;foo@oto.tools&quot;,
+        profile = Json.obj(
+          &quot;name&quot; -&gt; &quot;foo&quot;,
+          &quot;email&quot; -&gt; s&quot;foo@oto.tools&quot;
+        ),
+        realm = authConfig.cookieSuffix(descriptor),
+        otoroshiData = None,
+        authConfigId = authConfig.id,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        location = authConfig.location
+      )
+        .validate(authConfig.userValidators)
+        .vfuture
+  }
+
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result] = ???
+
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = ???
+
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = ???
+}
+</code></pre>
+<p>This custom Auth. module inherits from AuthModule (the Auth module have to inherit from the AuthModule trait to be found by Otoroshi). It exposes a simple UI to login, and create an user for each callback request without any verification. Methods starting with bo will be called in case that the auth. module is used on the back office and in other cases, the pa methods (pa for Private App) will be called to protect a route.</p>
+<p>This custom Auth. module uses a <a href="https://www.playframework.com/documentation/2.8.x/ScalaTemplates">Play template</a> to display the login page. It&rsquo;s not required by Otoroshi but it&rsquo;s a easy way to create a login form.</p>
+<pre class="prettyprint"><code class="language-html ">@import otoroshi.env.Env
+
+@(action: String, token: String)
+
+&lt;div id=&quot;app&quot;&gt;
+    &lt;h2&gt;Login page&lt;/h2&gt;
+
+    &lt;form method=&quot;POST&quot; action=&quot;@Html(action)&quot;&gt;
+    &lt;input type=&quot;hidden&quot; name=&quot;token&quot; className=&quot;form-control&quot; value=&quot;@token&quot; /&gt;
+    &lt;button
+        type=&quot;submit&quot;&gt;
+        Login
+    &lt;/button&gt;
+    &lt;/form&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Your hierarchy files should be something like:</p>
+<pre><code>auth
+| custom
+    |customModule.scala
+    | views
+      | login.scala.html
+</code></pre>
+<p>When your code is ready, create a jar file </p>
+<pre><code>sbt package
+</code></pre>
+<p>and add the jar file to the Otoroshi classpath</p>
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/customModule.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>then, in the authentication modules, you can chose your custom module in the list.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/tcp-services.html">TCP services</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/working-with-eureka.html">Working with Eureka</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
-<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
-<div class="page-nav">
-<div class="nav-title">On this page:</div>
-<div class="nav-toc">
-<ul>
-  <li><a href="../entities/scripts.html#scripts" class="header">Scripts</a>
-  <ul>
-    <li><a href="../entities/scripts.html#compile" class="header">Compile</a></li>
-  </ul></li>
-</ul>
-</div>
-</div>
-</nav>
 </div>
 </div>
 
