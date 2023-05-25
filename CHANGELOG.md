@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.4.0] - 2023-05-25
+
+https://github.com/MAIF/otoroshi/milestone/63?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.3.2...v16.4.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.4.0
+
+### Added
+
+- provide a Brotli compression plugin (#1289)
+- support OWASP Coraza as WASM go plugin (#1497)
+- support wasm data exporters (#1565)
+- support wasm auth. modules (#1598)
+- handle ctrl+s shortcut to save route (#1594)
+- enable anonymous reporting (#1595)
+
+### Fixed
+
+- add the ability to extract informations from apikeys as jwt tokens (#1584)
+- avoid creating linear memory instance when non OPA plugin (#1586)
+- discard invitation link expired (#1587)
+- config. validation happens before configuration merge (#1588)
+- better concurrency handling when fetching wasm sources (#1589)
+- better handling of wasm resources to enhance performances at scale (#1590)
+- route events view does not allow filtering (#1591)
+- prohibit creation of new User with empty informations (#1596)
+- Content-Length missing due to akka-http-client model (#1597)
+- bad conversion of service descriptor to route for info. token (#1600)
+- host functions around attributes does not work when lifetime is forever (#1604)
+- data exporter duplication (#1610)
+- regex routing is broken (#1611)
+- handle target from service name and port in kubernetes crds for a route (#1612)
+- add otoroshi.mesh domains on route in kubernetes crds (#1613)
 
 ## [16.3.2] - 2023-04-26
 
