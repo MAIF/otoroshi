@@ -166,7 +166,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' \
 
 ### Try to use an exploit ;)
 
-let try to trigger Coraza with a Log4Shell creafted request:
+let try to trigger Coraza with a Log4Shell crafted request:
 
 ```sh
 curl 'http://wouf.oto.tools:9999' -H 'foo: ${jndi:rmi://foo/bar}' --include
