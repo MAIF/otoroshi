@@ -336,8 +336,7 @@ EOF
   &quot;id&quot;: &quot;coraza-waf-demo&quot;,
   &quot;name&quot;: &quot;My blocking WAF&quot;,
   &quot;description&quot;: &quot;An awesome WAF&quot;,
-  &quot;metadata&quot;: {},
-  &quot;tags&quot;: [],
+  &quot;inspect_body&quot;: true,
   &quot;config&quot;: {
     &quot;directives_map&quot;: {
       &quot;default&quot;: [
@@ -349,8 +348,7 @@ EOF
     },
     &quot;default_directives&quot;: &quot;default&quot;,
     &quot;per_authority_directives&quot;: {}
-  },
-  &quot;inspect_body&quot;: true
+  }
 }&#39;
 </code></pre>
 <h3><a href="#configure-coraza-and-the-owasp-core-rule-set" name="configure-coraza-and-the-owasp-core-rule-set" class="anchor"><span class="anchor-link"></span></a>Configure Coraza and the OWASP Core Rule Set</h3>
@@ -381,8 +379,7 @@ EOF
   &quot;id&quot;: &quot;coraza-waf-demo&quot;,
   &quot;name&quot;: &quot;My blocking WAF&quot;,
   &quot;description&quot;: &quot;An awesome WAF&quot;,
-  &quot;metadata&quot;: {},
-  &quot;tags&quot;: [],
+  &quot;inspect_body&quot;: true,
   &quot;config&quot;: {
     &quot;directives_map&quot;: {
       &quot;default&quot;: [
@@ -395,23 +392,19 @@ EOF
     },
     &quot;default_directives&quot;: &quot;default&quot;,
     &quot;per_authority_directives&quot;: {}
-  },
-  &quot;inspect_body&quot;: true
+  }
 }&#39;
 </code></pre>
 <h3><a href="#add-the-waf-plugin-on-your-route" name="add-the-waf-plugin-on-your-route" class="anchor"><span class="anchor-link"></span></a>Add the WAF plugin on your route</h3>
 <p>Now you can create a new route that will use your WAF configuration. Let say we want a route on <code>http://wouf.oto.tools:8080</code> to goes to <code>https://www.otoroshi.io</code>. Now add the <code>Coraza WAF</code> plugin to your route and in the configuration select the configuration you created previously.</p>
 <p>the corresponding admin api call is the following :</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:9999/api/routes&#39; \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
   -u admin-api-apikey-id:admin-api-apikey-secret \
   -H &#39;Content-Type: application/json&#39; -d &#39;
 {
   &quot;id&quot;: &quot;route_demo&quot;,
   &quot;name&quot;: &quot;WAF route&quot;,
   &quot;description&quot;: &quot;A new route with a WAF enabled&quot;,
-  &quot;tags&quot;: [],
-  &quot;metadata&quot;: {},
-  &quot;enabled&quot;: true,
   &quot;frontend&quot;: {
     &quot;domains&quot;: [
       &quot;wouf.oto.tools&quot;
@@ -420,21 +413,15 @@ EOF
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;id&quot;: &quot;target_1&quot;,
         &quot;hostname&quot;: &quot;www.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
-    ],
-    &quot;root&quot;: &quot;/&quot;
+    ]
   },
   &quot;plugins&quot;: [
     {
-      &quot;enabled&quot;: true,
-      &quot;debug&quot;: false,
       &quot;plugin&quot;: &quot;cp:otoroshi.wasm.proxywasm.NgCorazaWAF&quot;,
-      &quot;include&quot;: [],
-      &quot;exclude&quot;: [],
       &quot;config&quot;: {
         &quot;ref&quot;: &quot;coraza-waf-demo&quot;
       },
@@ -445,12 +432,7 @@ EOF
       }
     },
     {
-      &quot;enabled&quot;: true,
-      &quot;debug&quot;: false,
       &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
-      &quot;include&quot;: [],
-      &quot;exclude&quot;: [],
-      &quot;config&quot;: {},
       &quot;plugin_index&quot;: {
         &quot;transform_request&quot;: 2
       }
@@ -459,7 +441,7 @@ EOF
 }&#39;
 </code></pre>
 <h3><a href="#try-to-use-an-exploit-" name="try-to-use-an-exploit-" class="anchor"><span class="anchor-link"></span></a>Try to use an exploit ;)</h3>
-<p>let try to trigger Coraza with a Log4Shell creafted request:</p>
+<p>let try to trigger Coraza with a Log4Shell crafted request:</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://wouf.oto.tools:9999&#39; -H &#39;foo: ${jndi:rmi://foo/bar}&#39; --include
 
 HTTP/1.1 403 Forbidden
@@ -508,7 +490,6 @@ Content-Length: 0
   &quot;@service&quot; : &quot;--&quot;,
   &quot;@env&quot; : &quot;prod&quot;,
   &quot;level&quot; : &quot;ERROR&quot;,
-  &quot;raw&quot; : &quot;[client \&quot;127.0.0.1\&quot;] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell [file \&quot;@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\&quot;] [line \&quot;10608\&quot;] [id \&quot;944150\&quot;] [rev \&quot;\&quot;] [msg \&quot;Potential Remote Command Execution: Log4j / Log4shell\&quot;] [data \&quot;\&quot;] [severity \&quot;critical\&quot;] [ver \&quot;OWASP_CRS/4.0.0-rc1\&quot;] [maturity \&quot;0\&quot;] [accuracy \&quot;0\&quot;] [tag \&quot;application-multi\&quot;] [tag \&quot;language-java\&quot;] [tag \&quot;platform-multi\&quot;] [tag \&quot;attack-rce\&quot;] [tag \&quot;OWASP_CRS\&quot;] [tag \&quot;capec/1000/152/137/6\&quot;] [tag \&quot;PCI/6.5.2\&quot;] [tag \&quot;paranoia-level/1\&quot;] [hostname \&quot;wouf.oto.tools\&quot;] [uri \&quot;/\&quot;] [unique_id \&quot;oNbisKlXWaCdXntaUpq\&quot;]\n&quot;,
   &quot;msg&quot; : &quot;Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell&quot;,
   &quot;fields&quot; : {
     &quot;hostname&quot; : &quot;wouf.oto.tools&quot;,
@@ -526,7 +507,8 @@ Content-Length: 0
     &quot;file&quot; : &quot;@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf&quot;,
     &quot;msg&quot; : &quot;Potential Remote Command Execution: Log4j / Log4shell&quot;,
     &quot;severity&quot; : &quot;critical&quot;
-  }
+  },
+  &quot;raw&quot; : &quot;[client \&quot;127.0.0.1\&quot;] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell [file \&quot;@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\&quot;] [line \&quot;10608\&quot;] [id \&quot;944150\&quot;] [rev \&quot;\&quot;] [msg \&quot;Potential Remote Command Execution: Log4j / Log4shell\&quot;] [data \&quot;\&quot;] [severity \&quot;critical\&quot;] [ver \&quot;OWASP_CRS/4.0.0-rc1\&quot;] [maturity \&quot;0\&quot;] [accuracy \&quot;0\&quot;] [tag \&quot;application-multi\&quot;] [tag \&quot;language-java\&quot;] [tag \&quot;platform-multi\&quot;] [tag \&quot;attack-rce\&quot;] [tag \&quot;OWASP_CRS\&quot;] [tag \&quot;capec/1000/152/137/6\&quot;] [tag \&quot;PCI/6.5.2\&quot;] [tag \&quot;paranoia-level/1\&quot;] [hostname \&quot;wouf.oto.tools\&quot;] [uri \&quot;/\&quot;] [unique_id \&quot;oNbisKlXWaCdXntaUpq\&quot;]\n&quot;,
 }
 </code></pre>
 <div class="nav-next">
