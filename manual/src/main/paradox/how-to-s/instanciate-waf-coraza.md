@@ -1,6 +1,6 @@
 # Instanciate a WAF with Coraza
 
-Sometimes you may want to secure an app with a [Web Appplication Firewall (WAF)](https://en.wikipedia.org/wiki/Web_application_firewall) and apply the security rules from the [OWASP Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/). To allow that, we integrated [the Coraza WAF](https://coraza.io/) in Otoroshi through a plugin.
+Sometimes you may want to secure an app with a [Web Appplication Firewall (WAF)](https://en.wikipedia.org/wiki/Web_application_firewall) and apply the security rules from the [OWASP Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/). To allow that, we integrated [the Coraza WAF](https://coraza.io/) in Otoroshi through a plugin that uses the WASM version of Coraza.
 
 ### Before you start
 

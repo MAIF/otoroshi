@@ -88,10 +88,10 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs = attrs.some,
       ctx = Some(data),
       addHostFunctions = functions,
-    )(env).await(timeout)
+    )(env).await(timeout).map(_._2.free())
   }
 
-  def callPluginWithResults(function: String, params: Parameters, results: Int, data: VmData, attrs: TypedMap): Future[org.extism.sdk.parameters.Results] = {
+  def callPluginWithResults(function: String, params: Parameters, results: Int, data: VmData, attrs: TypedMap): Future[ResultsWrapper] = {
     otoroshi.wasm.WasmUtils.rawExecute(
       config = wasm,
       defaultFunctionName = function,
@@ -119,14 +119,18 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val prs = new Parameters(2)
     new IntegerParameter().addAll(prs, 0, vmConfigurationSize)
     val proxyOnVmStartAction = callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).await(timeout)
-    proxyOnVmStartAction.getValues()(0).v.i32 != 0;
+    val res = proxyOnVmStartAction.results.getValues()(0).v.i32 != 0
+    proxyOnVmStartAction.free()
+    res
   }
 
   def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Boolean = {
     val prs = new Parameters(2)
     new IntegerParameter().addAll(prs, rootContextId, pluginConfigurationSize)
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).await(timeout)
-    proxyOnConfigureAction.getValues()(0).v.i32 != 0
+    val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
+    proxyOnConfigureAction.free()
+    res
   }
 
   def proxyOnDone(rootContextId: Int, attrs: TypedMap): Boolean = {
@@ -134,7 +138,9 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     new IntegerParameter().addAll(prs, rootContextId)
     val rootData = VmData.empty()
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_done", prs, 1, rootData, attrs).await(timeout)
-    proxyOnConfigureAction.getValues()(0).v.i32 != 0
+    val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
+    proxyOnConfigureAction.free()
+    res
   }
 
   def proxyOnDelete(rootContextId: Int, attrs: TypedMap): Unit = {
@@ -159,7 +165,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_request_headers", prs, 1, data, attrs).await(timeout)
-    val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
+    val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
+    requestHeadersAction.free()
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -178,7 +185,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_request_body", prs, 1, data, attrs).await(timeout)
-    val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
+    val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
+    requestHeadersAction.free()
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -196,7 +204,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeHeaders, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_response_headers", prs, 1, data, attrs).await(timeout)
-    val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
+    val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
+    requestHeadersAction.free()
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
@@ -215,7 +224,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val prs = new Parameters(3)
     new IntegerParameter().addAll(prs, contextId, sizeBody, endOfStream)
     val requestHeadersAction = callPluginWithResults("proxy_on_response_body", prs, 1, data, attrs).await(timeout)
-    val result = Result.valueToType(requestHeadersAction.getValues()(0).v.i32)
+    val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
+    requestHeadersAction.free()
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None => Left(play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))) // TODO: not sure if okay
