@@ -60,6 +60,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   private implicit val ev = env
   private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ma = env.otoroshiMaterializer
 
   private lazy val timeout = 10.seconds
   private lazy val started = new AtomicBoolean(false)
@@ -69,7 +70,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val pluginConfigurationSize = rules.stringify.byteString.length
   private lazy val contextId = new AtomicInteger(0)
   private lazy val state = new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val functions = ProxyWasmFunctions.build(state)(env.otoroshiExecutionContext, env, env.otoroshiMaterializer)
+  private lazy val functions = ProxyWasmFunctions.build(state)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -590,9 +591,9 @@ case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String) extends A
       "@service"   -> `@service`,
       "@env"       -> "prod",
       "level"      -> level.name(),
-      "msg"        -> msg,
-      "txt"        -> txt,
-      "parsed"     -> JsObject(fields.mapValues(JsString.apply))
+      "raw"        -> msg,
+      "msg"        -> txt,
+      "fields"     -> JsObject(fields.mapValues(JsString.apply))
     )
   }
 }
