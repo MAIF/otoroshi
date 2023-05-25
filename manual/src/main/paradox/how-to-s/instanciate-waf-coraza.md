@@ -21,8 +21,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otor
   "id": "coraza-waf-demo",
   "name": "My blocking WAF",
   "description": "An awesome WAF",
-  "metadata": {},
-  "tags": [],
+  "inspect_body": true,
   "config": {
     "directives_map": {
       "default": [
@@ -34,8 +33,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otor
     },
     "default_directives": "default",
     "per_authority_directives": {}
-  },
-  "inspect_body": true
+  }
 }'
 ```
 
@@ -81,8 +79,7 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoro
   "id": "coraza-waf-demo",
   "name": "My blocking WAF",
   "description": "An awesome WAF",
-  "metadata": {},
-  "tags": [],
+  "inspect_body": true,
   "config": {
     "directives_map": {
       "default": [
@@ -95,8 +92,7 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoro
     },
     "default_directives": "default",
     "per_authority_directives": {}
-  },
-  "inspect_body": true
+  }
 }'
 ```
 
@@ -107,16 +103,13 @@ Now you can create a new route that will use your WAF configuration. Let say we 
 the corresponding admin api call is the following :
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
   -u admin-api-apikey-id:admin-api-apikey-secret \
   -H 'Content-Type: application/json' -d '
 {
   "id": "route_demo",
   "name": "WAF route",
   "description": "A new route with a WAF enabled",
-  "tags": [],
-  "metadata": {},
-  "enabled": true,
   "frontend": {
     "domains": [
       "wouf.oto.tools"
@@ -125,21 +118,15 @@ curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' \
   "backend": {
     "targets": [
       {
-        "id": "target_1",
         "hostname": "www.otoroshi.io",
         "port": 443,
         "tls": true
       }
-    ],
-    "root": "/"
+    ]
   },
   "plugins": [
     {
-      "enabled": true,
-      "debug": false,
       "plugin": "cp:otoroshi.wasm.proxywasm.NgCorazaWAF",
-      "include": [],
-      "exclude": [],
       "config": {
         "ref": "coraza-waf-demo"
       },
@@ -150,12 +137,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:9999/api/routes' \
       }
     },
     {
-      "enabled": true,
-      "debug": false,
       "plugin": "cp:otoroshi.next.plugins.OverrideHost",
-      "include": [],
-      "exclude": [],
-      "config": {},
       "plugin_index": {
         "transform_request": 2
       }
@@ -227,7 +209,6 @@ each time Coraza will generate log about vunerability detection, an event will b
   "@service" : "--",
   "@env" : "prod",
   "level" : "ERROR",
-  "raw" : "[client \"127.0.0.1\"] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell [file \"@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\"] [line \"10608\"] [id \"944150\"] [rev \"\"] [msg \"Potential Remote Command Execution: Log4j / Log4shell\"] [data \"\"] [severity \"critical\"] [ver \"OWASP_CRS/4.0.0-rc1\"] [maturity \"0\"] [accuracy \"0\"] [tag \"application-multi\"] [tag \"language-java\"] [tag \"platform-multi\"] [tag \"attack-rce\"] [tag \"OWASP_CRS\"] [tag \"capec/1000/152/137/6\"] [tag \"PCI/6.5.2\"] [tag \"paranoia-level/1\"] [hostname \"wouf.oto.tools\"] [uri \"/\"] [unique_id \"oNbisKlXWaCdXntaUpq\"]\n",
   "msg" : "Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell",
   "fields" : {
     "hostname" : "wouf.oto.tools",
@@ -245,6 +226,7 @@ each time Coraza will generate log about vunerability detection, an event will b
     "file" : "@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf",
     "msg" : "Potential Remote Command Execution: Log4j / Log4shell",
     "severity" : "critical"
-  }
+  },
+  "raw" : "[client \"127.0.0.1\"] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell [file \"@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\"] [line \"10608\"] [id \"944150\"] [rev \"\"] [msg \"Potential Remote Command Execution: Log4j / Log4shell\"] [data \"\"] [severity \"critical\"] [ver \"OWASP_CRS/4.0.0-rc1\"] [maturity \"0\"] [accuracy \"0\"] [tag \"application-multi\"] [tag \"language-java\"] [tag \"platform-multi\"] [tag \"attack-rce\"] [tag \"OWASP_CRS\"] [tag \"capec/1000/152/137/6\"] [tag \"PCI/6.5.2\"] [tag \"paranoia-level/1\"] [hostname \"wouf.oto.tools\"] [uri \"/\"] [unique_id \"oNbisKlXWaCdXntaUpq\"]\n",
 }
 ```
