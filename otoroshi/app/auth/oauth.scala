@@ -168,17 +168,17 @@ case class GenericOauth2ModuleConfig(
     dataOverride: Map[String, JsObject] = Map.empty,
     otoroshiRightsField: String = "otoroshi_rights"
 ) extends OAuth2ModuleConfig {
-  def theDescription: String                                           = desc
-  def theMetadata: Map[String, String]                                 = metadata
-  def theName: String                                                  = name
-  def theTags: Seq[String]                                             = tags
-  def `type`: String                                                   = "oauth2"
-  def humanName: String                                                = "OAuth2 / OIDC provider"
-  override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
+  def theDescription: String                                            = desc
+  def theMetadata: Map[String, String]                                  = metadata
+  def theName: String                                                   = name
+  def theTags: Seq[String]                                              = tags
+  def `type`: String                                                    = "oauth2"
+  def humanName: String                                                 = "OAuth2 / OIDC provider"
+  override def authModule(config: GlobalConfig): AuthModule             = GenericOauth2Module(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
-  override def form: Option[Form]                                      = None
-  override def asJson                                                  =
+  override def form: Option[Form]                                       = None
+  override def asJson                                                   =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "oauth2",
       "id"                       -> this.id,
@@ -223,8 +223,8 @@ case class GenericOauth2ModuleConfig(
       "dataOverride"             -> JsObject(dataOverride),
       "otoroshiRightsField"      -> this.otoroshiRightsField
     )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
+  override def cookieSuffix(desc: ServiceDescriptor)                    = s"global-oauth-$id"
 }
 
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
@@ -247,7 +247,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     java.util.Base64.getUrlEncoder.encodeToString(bytes)
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  override def paLoginPage(
+      request: RequestHeader,
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor,
+      isRoute: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {

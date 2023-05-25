@@ -1082,7 +1082,6 @@ export class BasicModuleConfig extends Component {
 }
 
 export class WasmAuthModuleConfig extends Component {
-
   state = {
     error: null,
     showRaw: false,
@@ -1096,7 +1095,7 @@ export class WasmAuthModuleConfig extends Component {
   }
 
   changeTheValue = (name, value) => {
-    console.log('changing', name, value)
+    console.log('changing', name, value);
     if (this.props.onChange) {
       const clone = cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -1135,10 +1134,10 @@ export class WasmAuthModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.description', v)}
         />
-         <SelectInput
+        <SelectInput
           label="Wasm plugin"
           valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
-          transformer={i => ({ label: i.name, value: i.id })}
+          transformer={(i) => ({ label: i.name, value: i.id })}
           value={settings.wasmRef}
           onChange={(v) => changeTheValue(path + '.wasmRef', v)}
         />
@@ -1642,18 +1641,16 @@ class LdapUserLoginTest extends Component {
 }
 
 export class AuthModuleConfig extends Component {
-
   state = {
-    authModuleTypes: []
-  }
+    authModuleTypes: [],
+  };
 
   componentDidMount() {
-    BackOfficeServices.getAuthModuleTypes()
-      .then(res => {
-        this.setState({
-          authModuleTypes: res.templates.map(item => ({ value: item.type, label: item.label }))
-        })
-      })
+    BackOfficeServices.getAuthModuleTypes().then((res) => {
+      this.setState({
+        authModuleTypes: res.templates.map((item) => ({ value: item.type, label: item.label })),
+      });
+    });
   }
 
   changeTheValue = (name, value) => {
@@ -1795,7 +1792,9 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
         {settings.type === 'wasm' && <WasmAuthModuleConfig {...this.props} />}
-        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm'].includes(settings.type) && <CustomModuleConfig {...this.props} />}
+        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm'].includes(settings.type) && (
+          <CustomModuleConfig {...this.props} />
+        )}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"
@@ -1861,7 +1860,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({ }) => {
+      type: ({}) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1940,7 +1939,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({ }) => {
+      type: ({}) => {
         const {
           signingKey,
           encryptionKey,
@@ -1990,8 +1989,9 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
-                    } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
+                    config.element
+                  } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -2065,7 +2065,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({ }) => {
+      type: ({}) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2187,39 +2187,36 @@ export class SamlModuleConfig extends Component {
 
 export function CustomModuleConfig({ value, onChange }) {
   if (value.form && Object.keys(value.form.schema).length > 0) {
-    const { form } = value
-    return <NgForm
-      value={value}
-      onChange={onChange}
-      flow={form.flow}
-      schema={form.schema}
-    />
+    const { form } = value;
+    return <NgForm value={value} onChange={onChange} flow={form.flow} schema={form.schema} />;
   }
 
-  return <LabelAndInput label="Configuration">
-    <span className="d-flex align-items-center" style={{ height: '100%' }}>
-      <NgCodeRenderer
-        ngOptions={{
-          spread: true,
-        }}
-        rawSchema={{
-          props: {
-            ace_config: {
-              maxLines: Infinity,
-              fontSize: 14,
+  return (
+    <LabelAndInput label="Configuration">
+      <span className="d-flex align-items-center" style={{ height: '100%' }}>
+        <NgCodeRenderer
+          ngOptions={{
+            spread: true,
+          }}
+          rawSchema={{
+            props: {
+              ace_config: {
+                maxLines: Infinity,
+                fontSize: 14,
+              },
+              editorOnly: true,
+              height: '100%',
+              mode: 'json',
             },
-            editorOnly: true,
-            height: '100%',
-            mode: 'json',
-          },
-        }}
-        onChange={e => {
-          onChange(JSON.parse(e))
-        }}
-        value={JSON.stringify(value, null, 4)}
-      />
-    </span>
-  </LabelAndInput>
+          }}
+          onChange={(e) => {
+            onChange(JSON.parse(e));
+          }}
+          value={JSON.stringify(value, null, 4)}
+        />
+      </span>
+    </LabelAndInput>
+  );
 }
 
 export class OAuth1ModuleConfig extends Component {
@@ -2338,7 +2335,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({ }) => (
+      type: ({}) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"

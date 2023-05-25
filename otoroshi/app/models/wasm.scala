@@ -126,13 +126,13 @@ class WasmPluginsCacheManager extends Job {
     env.proxyState.allWasmPlugins().foreach { plugin =>
       val now = System.currentTimeMillis()
       WasmUtils.scriptCache(env).get(plugin.config.source.cacheKey) match {
-        case None                                                                       => plugin.config.source.getWasm()
+        case None                                                                                           => plugin.config.source.getWasm()
         case Some(CacheableWasmScript.CachedWasmScript(_, createAt)) if (createAt + env.wasmCacheTtl) < now =>
           plugin.config.source.getWasm()
         case Some(CacheableWasmScript.CachedWasmScript(_, createAt))
             if (createAt + env.wasmCacheTtl) > now && (createAt + env.wasmCacheTtl + 1000) < now =>
           plugin.config.source.getWasm()
-        case _                                                                          => ()
+        case _                                                                                              => ()
       }
     }
     funit

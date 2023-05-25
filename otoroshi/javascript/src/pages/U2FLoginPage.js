@@ -237,7 +237,7 @@ export class U2FLoginPage extends Component {
       <div className="login-card">
         <img src={this.props.otoroshiLogo} />
         <div className="login-card-title">
-        <h1>Admin login</h1>
+          <h1>Admin login</h1>
           <p>Log in to Otoroshi to continue</p>
         </div>
         <form className="login-card-body form-horizontal" onSubmit={this.simpleLogin}>
@@ -268,17 +268,29 @@ export class U2FLoginPage extends Component {
           <div className="row">
             <div className="col-12">
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'var(--color-red)', width: '100%', textAlign: 'center', fontSize:'18px' }}>
+              <p
+                style={{
+                  color: 'var(--color-red)',
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: '18px',
+                }}>
                 {!!this.state.error && this.state.error}
               </p>
             </div>
           </div>
           <div className="row">
             <div className="d-flex justify-content-around">
-              <button type="submit" className="btn btn-primaryColor btn-lg" onClick={this.simpleLogin}>
+              <button
+                type="submit"
+                className="btn btn-primaryColor btn-lg"
+                onClick={this.simpleLogin}>
                 Login
               </button>
-              <button type="button" className="btn btn-primaryColor btn-lg hide" onClick={this.webAuthnLogin}>
+              <button
+                type="button"
+                className="btn btn-primaryColor btn-lg hide"
+                onClick={this.webAuthnLogin}>
                 Login with WebAuthn
               </button>
             </div>

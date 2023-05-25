@@ -5,31 +5,31 @@ sealed trait Result {
 }
 
 object Result {
-  case object ResultOk extends Result {
+  case object ResultOk                     extends Result {
     def value: Int = 0
   }
-  case object ResultEmpty extends Result {
+  case object ResultEmpty                  extends Result {
     def value: Int = 1
   }
-  case object ResultNotFound extends Result {
+  case object ResultNotFound               extends Result {
     def value: Int = 2
   }
-  case object ResultNotAllowed extends Result {
+  case object ResultNotAllowed             extends Result {
     def value: Int = 3
   }
-  case object ResultBadArgument extends Result {
+  case object ResultBadArgument            extends Result {
     def value: Int = 4
   }
-  case object ResultInvalidMemoryAccess extends Result {
+  case object ResultInvalidMemoryAccess    extends Result {
     def value: Int = 5
   }
-  case object ResultInvalidOperation extends Result {
+  case object ResultInvalidOperation       extends Result {
     def value: Int = 6
   }
   case object ResultCompareAndSwapMismatch extends Result {
     def value: Int = 7
   }
-  case object ResultUnimplemented extends Result {
+  case object ResultUnimplemented          extends Result {
     def value: Int = 12
   }
 
@@ -51,25 +51,25 @@ sealed trait Action {
 }
 
 object Action {
-  case object ActionContinue extends Action {
+  case object ActionContinue         extends Action {
     def value: Int = 1
   }
-  case object ActionEndStream extends Action {
+  case object ActionEndStream        extends Action {
     def value: Int = 2
   }
-  case object ActionDone extends Action {
+  case object ActionDone             extends Action {
     def value: Int = 3
   }
-  case object ActionPause extends Action {
+  case object ActionPause            extends Action {
     def value: Int = 4
   }
-  case object ActionWaitForMoreData extends Action {
+  case object ActionWaitForMoreData  extends Action {
     def value: Int = 5
   }
   case object ActionWaitForEndOrFull extends Action {
     def value: Int = 6
   }
-  case object ActionClose extends Action {
+  case object ActionClose            extends Action {
     def value: Int = 7
   }
 }
@@ -79,10 +79,10 @@ sealed trait MetricType {
 }
 
 object MetricType {
-  case object MetricTypeCounter extends MetricType {
+  case object MetricTypeCounter   extends MetricType {
     def value: Int = 1
   }
-  case object MetricTypeGauge extends MetricType {
+  case object MetricTypeGauge     extends MetricType {
     def value: Int = 2
   }
   case object MetricTypeHistogram extends MetricType {
@@ -157,31 +157,31 @@ object BufferType {
     case _ => BufferTypeCallData
   }
 
-  case object BufferTypeHttpRequestBody extends BufferType {
+  case object BufferTypeHttpRequestBody      extends BufferType {
     def value: Int = 0
   }
-  case object BufferTypeHttpResponseBody extends BufferType {
+  case object BufferTypeHttpResponseBody     extends BufferType {
     def value: Int = 1
   }
-  case object BufferTypeDownstreamData extends BufferType {
+  case object BufferTypeDownstreamData       extends BufferType {
     def value: Int = 2
   }
-  case object BufferTypeUpstreamData extends BufferType {
+  case object BufferTypeUpstreamData         extends BufferType {
     def value: Int = 3
   }
   case object BufferTypeHttpCallResponseBody extends BufferType {
     def value: Int = 4
   }
-  case object BufferTypeGrpcReceiveBuffer extends BufferType {
+  case object BufferTypeGrpcReceiveBuffer    extends BufferType {
     def value: Int = 5
   }
-  case object BufferTypeVmConfiguration extends BufferType {
+  case object BufferTypeVmConfiguration      extends BufferType {
     def value: Int = 6
   }
-  case object BufferTypePluginConfiguration extends BufferType {
+  case object BufferTypePluginConfiguration  extends BufferType {
     def value: Int = 7
   }
-  case object BufferTypeCallData extends BufferType {
+  case object BufferTypeCallData             extends BufferType {
     def value: Int = 8
   }
 }
@@ -191,13 +191,13 @@ sealed trait StreamType {
 }
 
 object StreamType {
-  case object StreamTypeDownstream extends StreamType {
+  case object StreamTypeDownstream   extends StreamType {
     def value: Int = 1
   }
-  case object StreamTypeUpstream extends StreamType {
+  case object StreamTypeUpstream     extends StreamType {
     def value: Int = 2
   }
-  case object StreamTypeHttpRequest extends StreamType {
+  case object StreamTypeHttpRequest  extends StreamType {
     def value: Int = 3
   }
   case object StreamTypeHttpResponse extends StreamType {
@@ -210,7 +210,7 @@ sealed trait ContextType {
 }
 
 object ContextType {
-  case object ContextTypeVmContext extends ContextType {
+  case object ContextTypeVmContext     extends ContextType {
     def value: Int = 1
   }
   case object ContextTypePluginContext extends ContextType {
@@ -219,7 +219,7 @@ object ContextType {
   case object ContextTypeStreamContext extends ContextType {
     def value: Int = 3
   }
-  case object ContextTypeHttpContext extends ContextType {
+  case object ContextTypeHttpContext   extends ContextType {
     def value: Int = 4
   }
 }
@@ -229,22 +229,22 @@ sealed trait LogLevel {
 }
 
 object LogLevel {
-  case object LogLevelTrace extends LogLevel {
+  case object LogLevelTrace    extends LogLevel {
     def value: Int = 1
   }
-  case object LogLevelDebug extends LogLevel {
+  case object LogLevelDebug    extends LogLevel {
     def value: Int = 2
   }
-  case object LogLevelWarning extends LogLevel {
+  case object LogLevelWarning  extends LogLevel {
     def value: Int = 3
   }
-  case object LogLevelInfo extends LogLevel {
+  case object LogLevelInfo     extends LogLevel {
     def value: Int = 4
   }
-  case object LogLevelWarn extends LogLevel {
+  case object LogLevelWarn     extends LogLevel {
     def value: Int = 5
   }
-  case object LogLevelError extends LogLevel {
+  case object LogLevelError    extends LogLevel {
     def value: Int = 6
   }
   case object LogLevelCritical extends LogLevel {
@@ -257,7 +257,7 @@ sealed trait CloseSourceType {
 }
 
 object CloseSourceType {
-  case object CloseSourceTypeLocal extends CloseSourceType {
+  case object CloseSourceTypeLocal  extends CloseSourceType {
     def value: Int = 1
   }
   case object CloseSourceTypeRemote extends CloseSourceType {
@@ -270,95 +270,94 @@ sealed trait Error {
 }
 
 object Error {
-  case object ErrorStatusNotFound extends Error {
+  case object ErrorStatusNotFound    extends Error {
     def value: String = "error status returned by host: not found"
   }
   case object ErrorStatusBadArgument extends Error {
     def value: String = "error status returned by host: bad argument"
   }
-  case object ErrorStatusEmpty extends Error {
+  case object ErrorStatusEmpty       extends Error {
     def value: String = "error status returned by host: empty"
   }
   case object ErrorStatusCasMismatch extends Error {
     def value: String = "error status returned by host: cas mismatch"
   }
-  case object ErrorInternalFailure extends Error {
+  case object ErrorInternalFailure   extends Error {
     def value: String = "error status returned by host: internal failure"
   }
-  case object ErrorUnimplemented extends Error {
+  case object ErrorUnimplemented     extends Error {
     def value: String = "error status returned by host: unimplemented"
   }
-  case object ErrorUnknownStatus extends Error {
+  case object ErrorUnknownStatus     extends Error {
     def value: String = "unknown status code"
   }
-  case object ErrorExportsNotFound extends Error {
+  case object ErrorExportsNotFound   extends Error {
     def value: String = "exports not found"
   }
-  case object ErrAddrOverflow extends Error {
+  case object ErrAddrOverflow        extends Error {
     def value: String = "addr overflow"
   }
 
   def toResult(error: Error): Result = error match {
     case ErrorStatusNotFound | ErrorUnknownStatus | ErrorExportsNotFound =>
       Result.ResultNotFound
-    case ErrorStatusBadArgument =>
+    case ErrorStatusBadArgument                                          =>
       Result.ResultBadArgument
-    case ErrorStatusEmpty =>
+    case ErrorStatusEmpty                                                =>
       Result.ResultEmpty
-    case ErrorStatusCasMismatch =>
+    case ErrorStatusCasMismatch                                          =>
       Result.ResultCompareAndSwapMismatch
-    case ErrorInternalFailure | ErrAddrOverflow =>
+    case ErrorInternalFailure | ErrAddrOverflow                          =>
       Result.ResultInvalidOperation
-    case ErrorUnimplemented =>
+    case ErrorUnimplemented                                              =>
       Result.ResultUnimplemented
-    case _ =>
+    case _                                                               =>
       Result.ResultInvalidOperation
   }
 }
-
 
 sealed trait Status {
   def value: Int
 }
 
 object Status {
-  case object StatusOK extends Status {
+  case object StatusOK              extends Status {
     def value: Int = 0
   }
-  case object StatusNotFound extends Status {
+  case object StatusNotFound        extends Status {
     def value: Int = 1
   }
-  case object StatusBadArgument extends Status {
+  case object StatusBadArgument     extends Status {
     def value: Int = 2
   }
-  case object StatusEmpty extends Status {
+  case object StatusEmpty           extends Status {
     def value: Int = 7
   }
-  case object StatusCasMismatch extends Status {
+  case object StatusCasMismatch     extends Status {
     def value: Int = 8
   }
   case object StatusInternalFailure extends Status {
     def value: Int = 10
   }
-  case object StatusUnimplemented extends Status {
+  case object StatusUnimplemented   extends Status {
     def value: Int = 12
   }
 
   def StatusToError(status: Status): Error = status match {
-    case StatusOK =>
+    case StatusOK              =>
       null
-    case StatusNotFound =>
+    case StatusNotFound        =>
       Error.ErrorStatusNotFound
-    case StatusBadArgument =>
+    case StatusBadArgument     =>
       Error.ErrorStatusBadArgument
-    case StatusEmpty =>
+    case StatusEmpty           =>
       Error.ErrorStatusEmpty
-    case StatusCasMismatch =>
+    case StatusCasMismatch     =>
       Error.ErrorStatusCasMismatch
     case StatusInternalFailure =>
       Error.ErrorInternalFailure
-    case StatusUnimplemented =>
+    case StatusUnimplemented   =>
       Error.ErrorUnimplemented
-    case _ => Error.ErrorUnknownStatus
+    case _                     => Error.ErrorUnknownStatus
   }
 }

@@ -601,26 +601,28 @@ export class Table extends Component {
                   }
                 }}
               />
-              {!!!window.location.pathname.match(/routes\/([^\s]+)\/events/) && <div
-                className="d-flex align-items-center"
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  padding: '6px',
-                }}>
-                <p className="m-0 me-2">Rows per page</p>
-                <div style={{ minWidth: '80px' }}>
-                  <NgSelectRenderer
-                    id="rows-per-page"
-                    value={this.state.rowsPerPage}
-                    label={' '}
-                    ngOptions={{ spread: true }}
-                    onChange={(rowsPerPage) => this.setState({ rowsPerPage }, this.update)}
-                    options={[5, 15, 20, 50, 100]}
-                  />
+              {!!!window.location.pathname.match(/routes\/([^\s]+)\/events/) && (
+                <div
+                  className="d-flex align-items-center"
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    padding: '6px',
+                  }}>
+                  <p className="m-0 me-2">Rows per page</p>
+                  <div style={{ minWidth: '80px' }}>
+                    <NgSelectRenderer
+                      id="rows-per-page"
+                      value={this.state.rowsPerPage}
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      onChange={(rowsPerPage) => this.setState({ rowsPerPage }, this.update)}
+                      options={[5, 15, 20, 50, 100]}
+                    />
+                  </div>
                 </div>
-              </div>}
+              )}
             </div>
           </div>
         )}

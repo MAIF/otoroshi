@@ -64,7 +64,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
   def this() = this(SAMLModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  override def paLoginPage(
+      request: RequestHeader,
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor,
+      isRoute: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -665,19 +670,19 @@ case class SamlAuthModuleConfig(
     emailAttributeName: Option[String] = Some("Email"),
     sessionCookieValues: SessionCookieValues
 ) extends AuthModuleConfig {
-  def theDescription: String                                = desc
-  def theMetadata: Map[String, String]                      = metadata
-  def theName: String                                       = name
-  def theTags: Seq[String]                                  = tags
-  def `type`: String                                        = "saml"
-  def humanName: String                                     = "SAML v2 provider"
+  def theDescription: String           = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
+  def `type`: String                   = "saml"
+  def humanName: String                = "SAML v2 provider"
 
-  override def form: Option[Form]                           = None
-  override def authModule(config: GlobalConfig): AuthModule = new SAMLModule(this)
+  override def form: Option[Form]                                       = None
+  override def authModule(config: GlobalConfig): AuthModule             = new SAMLModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
-  override def cookieSuffix(desc: ServiceDescriptor)        = s"saml-auth-$id"
-  override def asJson                                       = location.jsonWithKey ++ Json.obj(
+  override def cookieSuffix(desc: ServiceDescriptor)                    = s"saml-auth-$id"
+  override def asJson                                                   = location.jsonWithKey ++ Json.obj(
     "type"                        -> "saml",
     "id"                          -> this.id,
     "name"                        -> this.name,

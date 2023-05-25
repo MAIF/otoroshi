@@ -11,7 +11,7 @@ object WasmUtils {
     if (logger.isTraceEnabled) logger.trace("[vm->host]: " + message)
   }
 
-  def  traceHostVm(message: String) {
+  def traceHostVm(message: String) {
     if (logger.isTraceEnabled) logger.trace("[host->vm]: " + message)
   }
 
@@ -38,10 +38,9 @@ class IoBuffer(var buf: ByteString) {
   def drain(offset: Int, maxSize: Int): Unit = {
     if (offset > buf.length)
       return ()
-    if (maxSize == -1){
+    if (maxSize == -1) {
       this.buf = buf.slice(offset, buf.length)
-    }
-    else {
+    } else {
       this.buf = buf.slice(offset, offset + maxSize)
     }
   }

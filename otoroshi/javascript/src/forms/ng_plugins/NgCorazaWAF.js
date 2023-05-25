@@ -9,9 +9,9 @@ export default {
         optionsTransformer: {
           label: 'name',
           value: 'id',
-        }
-      }
+        },
+      },
     },
   },
-  config_flow: ["ref"],
+  config_flow: ['ref'],
 };

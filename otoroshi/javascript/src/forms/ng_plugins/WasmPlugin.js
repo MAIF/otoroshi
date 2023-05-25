@@ -90,11 +90,7 @@ const schema = {
       label: 'VM lifetime',
       description: 'Doesnt stop the wasm vm during a request',
       help: 'Doesnt stop the wasm vm during a request',
-      options: [
-        'Invocation',
-        'Request',
-        'Forever',
-      ].map((v) => ({ label: v, value: v }))
+      options: ['Invocation', 'Request', 'Forever'].map((v) => ({ label: v, value: v })),
     },
   },
   opa: {

@@ -38,9 +38,9 @@ object RegexPool {
 
   def theRegex(originalPattern: String): Option[Regex] = {
     originalPattern match {
-      case value if value.startsWith("Regex(") => regex(value.substring(6).init).some
+      case value if value.startsWith("Regex(")    => regex(value.substring(6).init).some
       case value if value.startsWith("Wildcard(") => apply(value.substring(9).init).some
-      case _ => None
+      case _                                      => None
     }
   }
 }
@@ -67,7 +67,8 @@ class ReplaceAllWith(regex: String) {
   }
 
   def replaceOnAsync(
-      value: String, beginIndex: Int = 2
+      value: String,
+      beginIndex: Int = 2
   )(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
     var str: String      = value
     val matcher: Matcher = pattern.matcher(str)

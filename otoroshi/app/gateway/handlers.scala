@@ -160,12 +160,12 @@ object GatewayRequestHandler {
   lazy val logger = Logger("otoroshi-http-handler")
 
   def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
-                                                                                    env: Env,
-                                                                                    ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Result] = {
     lazy val routeLegacy = route.legacy
-    val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val request = req
+    val globalConfig     = env.datastores.globalConfigDataStore.latest()
+    val request          = req
 
     withAuthConfig(route, req, attrs) { auth =>
       val u: Future[Option[PrivateAppsUser]] = auth match {
@@ -177,24 +177,24 @@ object GatewayRequestHandler {
               env.datastores.privateAppsUserDataStore.findById(_)
             }
             .getOrElse(FastFuture.successful(None))
-        case _ => FastFuture.successful(None)
+        case _                       => FastFuture.successful(None)
       }
 
       u.flatMap { optUser =>
         auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, routeLegacy).map {
-          case Left(body) =>
+          case Left(body)   =>
             body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
             body
           case Right(value) =>
             value match {
-              case None => {
-                val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+              case None            => {
+                val cookieOpt     = request.cookies.find(c => c.name.startsWith("oto-papps-"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }
                 val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
-                val redirectTo =
+                val redirectTo    =
                   env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                     .confidentialAppLogout()
                     .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
@@ -203,13 +203,13 @@ object GatewayRequestHandler {
                   .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
               case Some(logoutUrl) => {
-                val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt         = request.cookies.find(c => c.name.startsWith("oto-papps-"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }
-                val finalRedirect =
+                val finalRedirect     =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
-                val redirectTo =
+                val redirectTo        =
                   env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                     .confidentialAppLogout()
                     .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
@@ -226,7 +226,7 @@ object GatewayRequestHandler {
   }
 
   def withAuthConfig(route: NgRoute, req: RequestHeader, attrs: TypedMap)(
-    f: AuthModuleConfig => Future[Result]
+      f: AuthModuleConfig => Future[Result]
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
 
     lazy val missingAuthRefError = Errors.craftResponseResult(
@@ -240,25 +240,31 @@ object GatewayRequestHandler {
     )
 
     route.legacy.authConfigRef match {
-      case None =>
-        route.plugins.getPluginByClass[MultiAuthModule]
-          .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
-            case JsSuccess(config, _) => req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
-              case Nil => missingAuthRefError
-              case cookies if cookies.nonEmpty =>
-                config.modules
-                  .flatMap(module => env.proxyState.authModule(module))
-                  .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")) match {
-                  case Some(authModuleConfig) => f(authModuleConfig)
-                  case None => missingAuthRefError
+      case None      =>
+        route.plugins
+          .getPluginByClass[MultiAuthModule]
+          .map(multiAuth =>
+            NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
+              case JsSuccess(config, _) =>
+                req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+                  case Nil                         => missingAuthRefError
+                  case cookies if cookies.nonEmpty =>
+                    config.modules
+                      .flatMap(module => env.proxyState.authModule(module))
+                      .find(module =>
+                        cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")
+                      ) match {
+                      case Some(authModuleConfig) => f(authModuleConfig)
+                      case None                   => missingAuthRefError
+                    }
                 }
+              case JsError(_)           => missingAuthRefError
             }
-            case JsError(_) => missingAuthRefError
-          })
+          )
           .getOrElse(missingAuthRefError)
       case Some(ref) =>
         env.proxyState.authModuleAsync(ref).flatMap {
-          case None => missingAuthRefError
+          case None       => missingAuthRefError
           case Some(auth) => f(auth)
         }
     }
@@ -795,7 +801,7 @@ class GatewayRequestHandler(
 
   def myProfile() =
     actionBuilder.async { req =>
-      val attrs            = TypedMap.empty
+      val attrs = TypedMap.empty
 
       withRoute(req, attrs) {
         case route
@@ -831,21 +837,22 @@ class GatewayRequestHandler(
               case None          =>
                 PrivateAppsUserHelper.isPrivateAppsSessionValidWithMultiAuth(req, route).flatMap {
                   case Some(session) => FastFuture.successful(Ok(session))
-                  case None => Errors.craftResponseResult(
-                    s"Invalid session",
-                    Unauthorized,
-                    req,
-                    None,
-                    Some("errors.invalid.session"),
-                    attrs = attrs,
-                    maybeRoute = Some(route)
-                  )
+                  case None          =>
+                    Errors.craftResponseResult(
+                      s"Invalid session",
+                      Unauthorized,
+                      req,
+                      None,
+                      Some("errors.invalid.session"),
+                      attrs = attrs,
+                      maybeRoute = Some(route)
+                    )
                 }
               case Some(session) =>
                 FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")))
             }
           }
-        case _                                                                                   =>
+        case _                                                                           =>
           Errors.craftResponseResult(
             s"Unauthorized",
             Unauthorized,

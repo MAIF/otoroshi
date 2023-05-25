@@ -533,7 +533,11 @@ object Errors {
             user = attrs.get(otoroshi.plugins.Keys.UserKey),
             config = Json.obj(),
             attrs = attrs,
-            report = attrs.get(otoroshi.next.plugins.Keys.ReportKey).getOrElse(NgExecutionReport(s"${DateTime.now()}-error", false)) // TODO - when logout failed, ReportKey is undefined
+            report = attrs
+              .get(otoroshi.next.plugins.Keys.ReportKey)
+              .getOrElse(
+                NgExecutionReport(s"${DateTime.now()}-error", false)
+              ) // TODO - when logout failed, ReportKey is undefined
           )
           route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }

@@ -21,7 +21,7 @@ class BasicSpec() extends OtoroshiSpec {
 
   lazy val serviceHost = "basictest.oto.tools"
 
-  def name: String = "--"
+  def name: String                     = "--"
   def configurationSpec: Configuration = Configuration.empty
 
   override def getTestConfiguration(configuration: Configuration) = {
@@ -204,7 +204,6 @@ class BasicSpec() extends OtoroshiSpec {
       callCounter.get() mustBe 4
 
       updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
-
 
       val basicTestResponse3 = ws
         .url(s"http://127.0.0.1:$port/api")

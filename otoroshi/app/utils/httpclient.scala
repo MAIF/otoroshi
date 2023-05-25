@@ -961,11 +961,13 @@ case class AkkWsClientStreamedResponse(
         case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
         case _                                                                                     => false
       }
-    val addContentLengthHeaderZero = isContentLengthZero && !noContentLengthHeader
+    val addContentLengthHeaderZero     = isContentLengthZero && !noContentLengthHeader
     headz
       .applyOnIf(isChunked)(_ + ("Transfer-Encoding" -> Seq("chunked")))
       .applyOnIf(addContentLengthHeaderZero)(_ + ("Content-Length" -> Seq("0")))
-      .applyOnIf(!addContentLengthHeaderZero && httpResponse.entity.contentLengthOption.isDefined)(_ + ("Content-Length" -> httpResponse.entity.contentLengthOption.toSeq.map(_.toString)))
+      .applyOnIf(!addContentLengthHeaderZero && httpResponse.entity.contentLengthOption.isDefined)(
+        _ + ("Content-Length" -> httpResponse.entity.contentLengthOption.toSeq.map(_.toString))
+      )
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption

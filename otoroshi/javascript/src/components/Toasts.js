@@ -21,7 +21,7 @@ class Toast extends Component {
           backgroundColor,
           height: 140,
           border: '1px solid #444',
-          borderRadius:'5px'
+          borderRadius: '5px',
         }}>
         <div
           style={{
@@ -47,9 +47,9 @@ class Toast extends Component {
             width: '100%',
             height: 80,
             display: 'flex',
-            color:'var(--color_level3)',
-            flexDirection:'column',
-            marginTop:'10px'
+            color: 'var(--color_level3)',
+            flexDirection: 'column',
+            marginTop: '10px',
           }}>
           {this.props.toast.body}
           <small>{moment().format('YYYY-MM-DD HH:mm:ss')}</small>{' '}

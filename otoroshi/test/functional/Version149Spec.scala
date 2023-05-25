@@ -22,8 +22,8 @@ import otoroshi.utils.syntax.implicits._
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system = ActorSystem("otoroshi-test")
-  implicit lazy val env    = otoroshiComponents.env
+  implicit val system   = ActorSystem("otoroshi-test")
+  implicit lazy val env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 

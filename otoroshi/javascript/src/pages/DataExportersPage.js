@@ -116,8 +116,9 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
-                    }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -470,8 +471,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? 'var(--color-green)'
                     : status === 'Not tested'
-                      ? '#f39c12'
-                      : 'var(--color-red)',
+                    ? '#f39c12'
+                    : 'var(--color-red)',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',
@@ -523,7 +524,7 @@ export class NewExporterForm extends Component {
         ...this.props.value,
         type,
         ...config,
-        id: this.props.value.id || config.id
+        id: this.props.value.id || config.id,
       });
     });
   };
@@ -1623,22 +1624,21 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'Wasm plugin',
           valuesFrom: `/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins`,
-          transformer: i => ({ label: i.name, value: i.id })
+          transformer: (i) => ({ label: i.name, value: i.id }),
         },
       },
       one_by_one: {
         type: 'bool',
         props: {
-          label: 'One by one'
-        }
+          label: 'One by one',
+        },
       },
       params: {
         type: 'jsonobjectcode',
         props: {
-          label: 'Exporter config.'
+          label: 'Exporter config.',
         },
       },
     },
   },
 };
-

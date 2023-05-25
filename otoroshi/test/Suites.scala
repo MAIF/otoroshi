@@ -133,7 +133,6 @@ class Log4ShellTests
       new Log4ShellSpec()
     )
 
-
 class NgTreeRouterTests
     extends Suites(
       new NgTreeRouterOpenapiWithEnvSpec(Configurations.InMemoryConfiguration),
@@ -145,31 +144,31 @@ class NgTreeRouterTests
     )
 
 class OpenapiGeneratorTests
-  extends Suites(
-    new OpenApiSpec()
-  )
+    extends Suites(
+      new OpenApiSpec()
+    )
 
 class PluginDocTests
-  extends Suites(
-    new PluginDocSpec()
-  )
+    extends Suites(
+      new PluginDocSpec()
+    )
 
 class PluginDocNextTests
-  extends Suites(
-    new PluginDocNextSpec()
-  )
+    extends Suites(
+      new PluginDocNextSpec()
+    )
 
 class PluginDocNgTests
-  extends Suites(
-    new PluginDocNgSpec()
-  )
+    extends Suites(
+      new PluginDocNgSpec()
+    )
 
 class OneShotTests
-  extends Suites(
-    new MapFilterSpec()
-  )
+    extends Suites(
+      new MapFilterSpec()
+    )
 
 class ConfigCleanerTests
-  extends Suites(
-    new ConfigurationCleanupSpec()
-  )
+    extends Suites(
+      new ConfigurationCleanupSpec()
+    )

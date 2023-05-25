@@ -162,14 +162,14 @@ case class BasicAuthModuleConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {
-  def `type`: String                                                   = "basic"
-  def humanName: String                                                = "In memory auth. provider"
-  override def form: Option[Form]                                      = None
+  def `type`: String                                                    = "basic"
+  def humanName: String                                                 = "In memory auth. provider"
+  override def form: Option[Form]                                       = None
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def authModule(config: GlobalConfig): AuthModule            = BasicAuthModule(this)
-  override def asJson                                                  =
+  override def authModule(config: GlobalConfig): AuthModule             = BasicAuthModule(this)
+  override def asJson                                                   =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "basic",
       "id"                       -> this.id,
@@ -185,12 +185,12 @@ case class BasicAuthModuleConfig(
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "userValidators"           -> JsArray(userValidators.map(_.json))
     )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"
-  def theDescription: String                                           = desc
-  def theMetadata: Map[String, String]                                 = metadata
-  def theName: String                                                  = name
-  def theTags: Seq[String]                                             = tags
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
+  override def cookieSuffix(desc: ServiceDescriptor)                    = s"basic-auth-$id"
+  def theDescription: String                                            = desc
+  def theMetadata: Map[String, String]                                  = metadata
+  def theName: String                                                   = name
+  def theTags: Seq[String]                                              = tags
 
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
 }
@@ -275,7 +275,12 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  override def paLoginPage(
+      request: RequestHeader,
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor,
+      isRoute: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -306,7 +311,9 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       if (isRoute) {
-                        Results.Redirect(s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&token=$token&hash=$hash")
+                        Results.Redirect(
+                          s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&token=$token&hash=$hash"
+                        )
                       } else {
                         Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
                       }
@@ -320,7 +327,9 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           .Ok(
             otoroshi.views.html.oto
               .login(
-                if (isRoute) s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&hash=$hash" else
+                if (isRoute)
+                  s"/privateapps/generic/callback?route=true&ref=${authConfig.id}&desc=${descriptor.id}&hash=$hash"
+                else
                   s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash",
                 "POST",
                 token,

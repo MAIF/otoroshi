@@ -254,27 +254,34 @@ object PrivateAppsUserHelper {
   }
 
   def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(implicit
-       ec: ExecutionContext,
-       env: Env
+      ec: ExecutionContext,
+      env: Env
   ) = {
-    route.plugins.getPluginByClass[MultiAuthModule]
-      .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
-        case JsSuccess(config, _) =>
-          req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
-            case cookies if cookies.nonEmpty =>
-              val r: Future[Option[JsObject]] = config.modules
-                .flatMap(module => env.proxyState.authModule(module))
-                .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}"))
-                .map(authModuleConfig => PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(req, route.legacy, authModuleConfig).map {
-                    case None => None
-                    case Some(session) => (session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")).some
-                  })
-                .getOrElse(None.vfuture)
+    route.plugins
+      .getPluginByClass[MultiAuthModule]
+      .map(multiAuth =>
+        NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
+          case JsSuccess(config, _) =>
+            req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+              case cookies if cookies.nonEmpty =>
+                val r: Future[Option[JsObject]] = config.modules
+                  .flatMap(module => env.proxyState.authModule(module))
+                  .find(module =>
+                    cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")
+                  )
+                  .map(authModuleConfig =>
+                    PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(req, route.legacy, authModuleConfig).map {
+                      case None          => None
+                      case Some(session) => (session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")).some
+                    }
+                  )
+                  .getOrElse(None.vfuture)
 
-              r
-          }
-        case JsError(_) => None.vfuture
-      })
+                r
+            }
+          case JsError(_)           => None.vfuture
+        }
+      )
       .getOrElse(None.vfuture)
   }
 

@@ -24,8 +24,9 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
   "Array operators" should {
     "match objects in array" in {
-      otoroshi.utils.Match.matches(source.as[JsObject] ++ Json.parse(
-        """{
+      otoroshi.utils.Match.matches(
+        source.as[JsObject] ++ Json
+          .parse("""{
           |"headers": [
           |    {
           |      "key": "foo",
@@ -33,16 +34,19 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           |    }
           |  ]
           |}
-          |""".stripMargin).as[JsObject], Json.obj("headers" -> Json.obj("$contains" -> Json.obj("key" -> "foo", "value" -> "bar")))) mustBe true
+          |""".stripMargin)
+          .as[JsObject],
+        Json.obj("headers" -> Json.obj("$contains" -> Json.obj("key" -> "foo", "value" -> "bar")))
+      ) mustBe true
     }
   }
 
   "Projection" should {
     "spread and filter" in {
       val res = otoroshi.utils.Projection.project(
-        Json.obj("a" -> "a", "b" -> "b", "c" -> "c", "d" -> Json.obj("a" -> "a", "b" -> "b", "c" -> "c")),
+        Json.obj("a"       -> "a", "b"  -> "b", "c" -> "c", "d" -> Json.obj("a" -> "a", "b" -> "b", "c" -> "c")),
         Json.obj("$spread" -> true, "d" -> Json.obj("$spread" -> true, "c" -> false)),
-        identity,
+        identity
       )
       (res == Json.obj("a" -> "a", "b" -> "b", "c" -> "c", "d" -> Json.obj("a" -> "a", "b" -> "b"))) mustBe true
     }
@@ -50,7 +54,10 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
   "Match and Project utils" should {
     "match objects" in {
-      otoroshi.utils.Match.matches(source, Json.obj("headers" -> Json.obj("$contains" -> Json.obj("key" -> "foo", "value" -> "bar")))) mustBe true
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("headers" -> Json.obj("$contains" -> Json.obj("key" -> "foo", "value" -> "bar")))
+      ) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("foo" -> "bar")) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("foo" -> "baz")) mustBe false
       otoroshi.utils.Match

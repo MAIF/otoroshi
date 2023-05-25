@@ -110,20 +110,32 @@ object GlobalExpressionLanguage {
             case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
             case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
 
-            case r"apikeyjwt.$field@(.*)" if field.contains(".")                => {
-              attrs.get(otoroshi.plugins.Keys.ApiKeyJwtKey).flatMap(_.at(field).strConvert()).getOrElse(s"no-path-at-$field")
+            case r"apikeyjwt.$field@(.*)" if field.contains(".")    => {
+              attrs
+                .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
+                .flatMap(_.at(field).strConvert())
+                .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)" if field.contains("/") => {
-              attrs.get(otoroshi.plugins.Keys.ApiKeyJwtKey).flatMap(_.atPointer(field).strConvert()).getOrElse(s"no-path-at-$field")
+            case r"apikeyjwt.$field@(.*)" if field.contains("/")    => {
+              attrs
+                .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
+                .flatMap(_.atPointer(field).strConvert())
+                .getOrElse(s"no-path-at-$field")
             }
             case r"apikeyjwt.$field@(.*)" if field.startsWith("$.") => {
-              attrs.get(otoroshi.plugins.Keys.ApiKeyJwtKey).flatMap(_.atPath(field).strConvert()).getOrElse(s"no-path-at-$field")
+              attrs
+                .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
+                .flatMap(_.atPath(field).strConvert())
+                .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)" => {
-              attrs.get(otoroshi.plugins.Keys.ApiKeyJwtKey).flatMap(_.select(field).strConvert()).getOrElse(s"no-path-at-$field")
+            case r"apikeyjwt.$field@(.*)"                           => {
+              attrs
+                .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
+                .flatMap(_.select(field).strConvert())
+                .getOrElse(s"no-path-at-$field")
             }
-            case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"env.$field@(.*):$dv@(.*)"                        => Option(System.getenv(field)).getOrElse(dv)
+            case r"env.$field@(.*)"                                 => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
             case r"config.$field@(.*):$dv@(.*)" =>
               env.configuration

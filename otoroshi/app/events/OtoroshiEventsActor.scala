@@ -8,7 +8,14 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import akka.stream.alpakka.s3.{
+  ApiVersion,
+  ListBucketResultContents,
+  MemoryBufferType,
+  MetaHeaders,
+  S3Attributes,
+  S3Settings
+}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -30,7 +37,20 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json
+}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -1185,9 +1205,8 @@ object Exporters {
     }
   }
 
-  case class WasmExporterSettings(params: JsObject, wasmRef: Option[String])
-    extends Exporter {
-    def json: JsValue = WasmExporterSettings.format.writes(this)
+  case class WasmExporterSettings(params: JsObject, wasmRef: Option[String]) extends Exporter {
+    def json: JsValue   = WasmExporterSettings.format.writes(this)
     def toJson: JsValue = json
   }
 
@@ -1196,7 +1215,7 @@ object Exporters {
       override def reads(json: JsValue): JsResult[WasmExporterSettings] = Try {
         WasmExporterSettings(
           params = json.select("params").asOpt[JsObject].getOrElse(Json.obj()),
-          wasmRef = json.select("wasm_ref").asOpt[String].filter(_.trim.nonEmpty),
+          wasmRef = json.select("wasm_ref").asOpt[String].filter(_.trim.nonEmpty)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -1204,41 +1223,44 @@ object Exporters {
       }
 
       override def writes(o: WasmExporterSettings): JsValue = Json.obj(
-        "params" -> o.params,
+        "params"   -> o.params,
         "wasm_ref" -> o.wasmRef.map(JsString.apply).getOrElse(JsNull).asValue
       )
     }
   }
 
-  class WasmExporter(_config : DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(_config)(ec, env) {
+  class WasmExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      exporter[WasmExporterSettings].flatMap { exporterConfig =>
-        exporterConfig.wasmRef
-          .flatMap(id => env.proxyState.wasmPlugin(id))
-          .map { plugin =>
-            val attrs = TypedMap.empty.some
-            val ctx = FakeWasmContext(exporterConfig.params).some
-            val input = Json.obj(
-              "params" -> exporterConfig.params,
-              "config" -> configUnsafe.json,
-            )
-            // println(s"call send: ${events.size}")
-            WasmUtils.execute(plugin.config, "export_events", input ++ Json.obj("events" -> JsArray(events)), attrs, None)
-              .map {
-                case Left(err) => ExportResult.ExportResultFailure(err.stringify)
-                case Right(res) => res.parseJson.select("error").asOpt[JsValue] match {
-                  case None => ExportResult.ExportResultSuccess
-                  case Some(error) => ExportResult.ExportResultFailure(error.stringify)
+      exporter[WasmExporterSettings]
+        .flatMap { exporterConfig =>
+          exporterConfig.wasmRef
+            .flatMap(id => env.proxyState.wasmPlugin(id))
+            .map { plugin =>
+              val attrs = TypedMap.empty.some
+              val ctx   = FakeWasmContext(exporterConfig.params).some
+              val input = Json.obj(
+                "params" -> exporterConfig.params,
+                "config" -> configUnsafe.json
+              )
+              // println(s"call send: ${events.size}")
+              WasmUtils
+                .execute(plugin.config, "export_events", input ++ Json.obj("events" -> JsArray(events)), attrs, None)
+                .map {
+                  case Left(err)  => ExportResult.ExportResultFailure(err.stringify)
+                  case Right(res) =>
+                    res.parseJson.select("error").asOpt[JsValue] match {
+                      case None        => ExportResult.ExportResultSuccess
+                      case Some(error) => ExportResult.ExportResultFailure(error.stringify)
+                    }
                 }
-              }
-              .recover {
-                case e =>
+                .recover { case e =>
                   e.printStackTrace()
                   ExportResult.ExportResultFailure(e.getMessage)
-              }
-          }
-      }.getOrElse(ExportResult.ExportResultSuccess.vfuture)
+                }
+            }
+        }
+        .getOrElse(ExportResult.ExportResultSuccess.vfuture)
     }
   }
 }

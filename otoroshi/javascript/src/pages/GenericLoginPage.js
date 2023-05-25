@@ -129,11 +129,11 @@ export class GenericLoginPage extends Component {
   render() {
     return (
       <div className="login-card">
-      <img src={this.props.otoroshiLogo} />
-      <div className="login-card-title">
-      <h1>Login</h1>
-        <p>Log in to Otoroshi to continue</p>
-      </div>
+        <img src={this.props.otoroshiLogo} />
+        <div className="login-card-title">
+          <h1>Login</h1>
+          <p>Log in to Otoroshi to continue</p>
+        </div>
         <form
           className="login-card-body form-horizontal"
           method={this.props.method}

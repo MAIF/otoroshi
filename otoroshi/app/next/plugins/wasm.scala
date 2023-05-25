@@ -55,8 +55,8 @@ object AttrsHelper {
 
   def updateAttrs(attrs: TypedMap, from: JsValue): Unit = try {
     from.select("attrs").asOpt[JsObject].foreach { attrsJson =>
-      val setAttrs = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
-      val delAttrs = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val setAttrs   = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
+      val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
       val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
       if (clearAttrs) {
         attrs.clear()
@@ -66,7 +66,7 @@ object AttrsHelper {
             case at: ConcurrentMutableTypedMap => {
               at.m.keySet.find(_.displayName.contains(key)).foreach(tk => at.remove(tk))
             }
-            case _ =>
+            case _                             =>
           }
         }
         setAttrs.value.foreach {
@@ -81,7 +81,7 @@ object AttrsHelper {
                   case t: Throwable => t.printStackTrace()
                 }
               }
-              case _ =>
+              case _                             =>
             }
           }
         }
@@ -558,7 +558,7 @@ class WasmSink extends NgRequestSink {
           case Right(res)  => {
             val response = Json.parse(res)
             AttrsHelper.updateAttrs(ctx.attrs, response)
-            val status = response
+            val status   = response
               .select("status")
               .asOpt[Int]
               .getOrElse(200)

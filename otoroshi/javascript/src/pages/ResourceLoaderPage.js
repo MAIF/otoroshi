@@ -64,7 +64,6 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const aceRef = useRef();
 
-
   useEffect(() => {
     setTitle('Resources loader');
   }, []);
@@ -123,15 +122,14 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const onDragOver = (ev) => {
     ev.preventDefault();
-    const editor = document.getElementById("resources-loader");
-    editor.classList.add("dragEffect");
-  }
+    const editor = document.getElementById('resources-loader');
+    editor.classList.add('dragEffect');
+  };
   const onDragLeave = (ev) => {
-    if(ev)
-      ev.preventDefault();
-    const editor = document.getElementById("resources-loader");
-    editor.classList.remove("dragEffect");
-  }
+    if (ev) ev.preventDefault();
+    const editor = document.getElementById('resources-loader');
+    editor.classList.remove('dragEffect');
+  };
 
   if (loadedResources.length > 0) {
     return (
@@ -213,38 +211,38 @@ export function ResourceLoaderPage({ setTitle }) {
             ))}
           </tbody>
         </table>
-        <div className="d-flex justify-content-end" >
-            <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
-              Cancel
-            </button>
-            {loadedResources.find((f) => !f.error) && (
-              <button
-                type="button"
-                className="btn btn-success ms-2"
-                onClick={() => {
-                  Promise.all(
+        <div className="d-flex justify-content-end">
+          <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
+            Cancel
+          </button>
+          {loadedResources.find((f) => !f.error) && (
+            <button
+              type="button"
+              className="btn btn-success ms-2"
+              onClick={() => {
+                Promise.all(
+                  loadedResources
+                    .filter((r) => r.enabled)
+                    .map((resource) => {
+                      const content = resource.resource;
+                      const k = resource.kind;
+                      return UPDATE_ENTITIES[k](content);
+                    })
+                ).then(() => {
+                  setLoadedResources(
                     loadedResources
                       .filter((r) => r.enabled)
-                      .map((resource) => {
-                        const content = resource.resource;
-                        const k = resource.kind;
-                        return UPDATE_ENTITIES[k](content);
+                      .map((r) => {
+                        if (!r.error) return { ...r, status: 'done' };
+                        return r;
                       })
-                  ).then(() => {
-                    setLoadedResources(
-                      loadedResources
-                        .filter((r) => r.enabled)
-                        .map((r) => {
-                          if (!r.error) return { ...r, status: 'done' };
-                          return r;
-                        })
-                    );
-                  });
-                }}>
-                Import selected resources
-              </button>
-            )}
-          </div>
+                  );
+                });
+              }}>
+              Import selected resources
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -257,7 +255,7 @@ export function ResourceLoaderPage({ setTitle }) {
             rightEnabled={format === 'yaml' ? false : true}
             leftText="JSON"
             rightText="YAML"
-            onChange={() => format === 'yaml' ? setFormat('json') : setFormat('yaml')}
+            onChange={() => (format === 'yaml' ? setFormat('json') : setFormat('yaml'))}
           />
           {/* <button
             type="button"
@@ -271,14 +269,14 @@ export function ResourceLoaderPage({ setTitle }) {
             className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
             YAML
           </button> */}
-        </div> 
+        </div>
         <button
-        type="button"
-        disabled={rawResources.length <= 0}
-        className="btn btn-success"
-        onClick={loadResources}>
-        Load resources
-      </button>
+          type="button"
+          disabled={rawResources.length <= 0}
+          className="btn btn-success"
+          onClick={loadResources}>
+          Load resources
+        </button>
       </div>
       <div className="mb-3">
         <div className="row">
@@ -302,7 +300,7 @@ export function ResourceLoaderPage({ setTitle }) {
               highlightActiveLine={true}
               tabSize={2}
               enableBasicAutocompletion={true}
-              placeholder= "Write, paste or drag your text here"
+              placeholder="Write, paste or drag your text here"
             />
           </div>
           <div className="col-sm-4" style={{ paddingLeft: 1 }}>

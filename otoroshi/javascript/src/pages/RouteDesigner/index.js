@@ -601,43 +601,45 @@ class RouteDesigner extends React.Component {
 
     const entity = entityFromURI(location);
 
-    return <Switch>
-      {[
-        { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
-        { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
-        { path: `${match.url}/:routeId/apikeys/:taction/:titem`, component: ServiceApiKeysPage },
-        { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
-        { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
-        { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
-        {
-          path: `${match.url}/:routeId`,
-          component: (p) => (
-            <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />
-          ),
-        },
-      ].map(({ path, component }) => {
-        const Component = component;
-        return (
-          <Route
-            exact
-            key={path}
-            path={path}
-            component={(p) => {
-              return (
-                <Component
-                  setSidebarContent={this.props.setSidebarContent}
-                  setTitle={this.props.setTitle}
-                  {...p}
-                  {...p.match}
-                  env={this.props.env}
-                />
-              );
-            }}
-          />
-        );
-      })}
-      <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
-    </Switch>
+    return (
+      <Switch>
+        {[
+          { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
+          { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
+          { path: `${match.url}/:routeId/apikeys/:taction/:titem`, component: ServiceApiKeysPage },
+          { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
+          { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
+          { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
+          {
+            path: `${match.url}/:routeId`,
+            component: (p) => (
+              <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />
+            ),
+          },
+        ].map(({ path, component }) => {
+          const Component = component;
+          return (
+            <Route
+              exact
+              key={path}
+              path={path}
+              component={(p) => {
+                return (
+                  <Component
+                    setSidebarContent={this.props.setSidebarContent}
+                    setTitle={this.props.setTitle}
+                    {...p}
+                    {...p.match}
+                    env={this.props.env}
+                  />
+                );
+              }}
+            />
+          );
+        })}
+        <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
+      </Switch>
+    );
   }
 }
 

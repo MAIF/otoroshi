@@ -91,7 +91,7 @@ trait OneServerPerSuiteWithMyComponents
 
   def getTestConfiguration(configuration: Configuration): Configuration
 }
-*/
+ */
 /*
 trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
   this: TestSuite =>
@@ -104,7 +104,7 @@ trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents wi
 
   override def components: BuiltInComponents = otoroshiComponents
 }
-*/
+ */
 /*
 trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
@@ -539,7 +539,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 }
-*/
+ */
 
 trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
 
@@ -960,29 +960,34 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         port = Some(httpPort),
         rootDir = Files.createTempDirectory("otoroshi-test-helper").toFile
       ),
-      getTestConfiguration(Configuration(ConfigFactory.parseString(
-        s"""
+      getTestConfiguration(
+        Configuration(
+          ConfigFactory
+            .parseString(s"""
            |otoroshi.next.state-sync-interval=5
-           |""".stripMargin).resolve())).underlying
+           |""".stripMargin)
+            .resolve()
+        )
+      ).underlying
     )
     otoroshi.env.logger.debug("Starting !!!")
     otoroshiRef.set(otoroshi.startAndStopOnShutdown())
-      Source
-        .tick(1.second, 1.second, ())
-        .mapAsync(1) { _ =>
-          wsClientInstance
-            .url(s"http://127.0.0.1:$port/health")
-            .withRequestTimeout(1.second)
-            .get()
-            .map(r => r.status)
-            .recover { case e =>
-              0
-            }
-        }
-        .filter(_ == 200)
-        .take(1)
-        .runForeach(_ => ())
-        .futureValue
+    Source
+      .tick(1.second, 1.second, ())
+      .mapAsync(1) { _ =>
+        wsClientInstance
+          .url(s"http://127.0.0.1:$port/health")
+          .withRequestTimeout(1.second)
+          .get()
+          .map(r => r.status)
+          .recover { case e =>
+            0
+          }
+      }
+      .filter(_ == 200)
+      .take(1)
+      .runForeach(_ => ())
+      .futureValue
   }
 
   private def stopOtoroshi() = {
@@ -1050,7 +1055,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
             logger.error(response.status + " - " + response.body)
           }
           (response.json, response.status)
-        }.andWait(1000.millis)
+        }
+        .andWait(1000.millis)
     } else {
       wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
@@ -1064,7 +1070,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
             logger.error(response.status + " - " + response.body)
           }
           (response.json, response.status)
-        }.andWait(1000.millis)
+        }
+        .andWait(1000.millis)
     }
   }
 
@@ -1098,7 +1105,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post(Json.stringify(config.json))
       .map { response =>
         DataExporterConfig.fromJsons(response.json)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
   def deleteExporterConfig(id: String, customPort: Option[Int] = None, ws: WSClient = wsClient): Future[Unit] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/data-exporter-configs/$id")
@@ -1129,7 +1137,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         //  println(response.body)
         //}
         GlobalConfig.fromJsons(response.json)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def getOtoroshiServices(customPort: Option[Int] = None, ws: WSClient = wsClient): Future[Seq[ServiceDescriptor]] = {
@@ -1161,14 +1170,14 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     def fetch() =
       ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/routes")
         .withHttpHeaders(
-          "Host" -> "otoroshi-api.oto.tools",
+          "Host"   -> "otoroshi-api.oto.tools",
           "Accept" -> "application/json"
         )
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .get()
 
     for {
-      _ <- fetch().recoverWith { case _ => FastFuture.successful(()) }
+      _        <- fetch().recoverWith { case _ => FastFuture.successful(()) }
       response <- fetch()
     } yield {
       // if (response.status != 200) {
@@ -1193,7 +1202,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post("")
       .map { response =>
         ()
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def stopSnowMonkey(customPort: Option[Int] = None): Future[Unit] = {
@@ -1207,7 +1217,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post("")
       .map { response =>
         ()
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def updateSnowMonkey(
@@ -1238,7 +1249,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
             val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
             awaitF(100.millis)(actorSystem).map(_ => r)
           }
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def getSnowMonkeyOutages(customPort: Option[Int] = None): Future[Seq[Outage]] = {
@@ -1297,7 +1309,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post(Json.stringify(service.toJson))
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def createOtoroshiVerifier(
@@ -1314,7 +1327,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post(Json.stringify(verifier.asJson))
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def createOtoroshiApiKey(
@@ -1331,7 +1345,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .post(Json.stringify(apiKey.toJson))
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def deleteOtoroshiApiKey(
@@ -1348,7 +1363,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .delete()
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1362,7 +1378,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .put(Json.stringify(service.toJson))
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 
   def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
@@ -1376,14 +1393,13 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .delete()
       .map { resp =>
         (resp.json, resp.status)
-      }.andWait(1000.millis)
+      }
+      .andWait(1000.millis)
   }
 }
 
 object Implicits {
-  implicit class BetterAny[A](val any: A) {
-
-  }
+  implicit class BetterAny[A](val any: A) {}
   implicit class BetterFuture[A](val fu: Future[A])      extends AnyVal {
     def await(): A = {
       Await.result(fu, 60.seconds)

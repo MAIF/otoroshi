@@ -74,19 +74,25 @@ class AnonymousReportingEnabled extends Component {
       <>
         <div className="modal-body">
           <p style={{ textAlign: 'justify' }}>
-          As you may know,  Otoroshi is an open-source project.
-          As such, we don't have much  feedback from our users.
-          But this feedback is essential for us to shape the future of Otoroshi.
+            As you may know, Otoroshi is an open-source project. As such, we don't have much
+            feedback from our users. But this feedback is essential for us to shape the future of
+            Otoroshi.
           </p>
           <p style={{ textAlign: 'justify' }}>
-          The best way to help is to enable <span style={{fontWeight: "bold"}}>anonymous reporting</span>.
-          This feature allow Otoroshi to send us periodical reports.
+            The best way to help is to enable{' '}
+            <span style={{ fontWeight: 'bold' }}>anonymous reporting</span>. This feature allow
+            Otoroshi to send us periodical reports.
           </p>
           <p style={{ textAlign: 'justify' }}>
-          It won't send sensitive or personnal data, just a bunch of statistics about your usage of otoroshi (see <a href="https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html">the documentation</a>).
+            It won't send sensitive or personnal data, just a bunch of statistics about your usage
+            of otoroshi (see{' '}
+            <a href="https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html">
+              the documentation
+            </a>
+            ).
           </p>
           <p style={{ textAlign: 'justify' }}>
-          At any moment, you can turn off anonymous reporting from the danger zone.
+            At any moment, you can turn off anonymous reporting from the danger zone.
           </p>
           <p style={{ textAlign: 'justify' }}>Thanks for helping us building better products !</p>
         </div>
@@ -288,7 +294,10 @@ class BackOfficeAppContainer extends Component {
                   }}>
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column nav-sidebar mt-3">
-                    <li className={`nav-item mt-0 ${this.state.openedSidebar ? 'nav-item--open' : ''}`}>
+                    <li
+                      className={`nav-item mt-0 ${
+                        this.state.openedSidebar ? 'nav-item--open' : ''
+                      }`}>
                       <Link
                         to="/"
                         className={`nav-link ${

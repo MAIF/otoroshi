@@ -1005,7 +1005,7 @@ class ScriptManager(env: Env) {
     Try(env.environment.classLoader.loadClass(ref))
       .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
       case Success(tr) => tr.asInstanceOf[AuthModule].authConfig.some
-      case Failure(_) => None
+      case Failure(_)  => None
     }
   })
 
