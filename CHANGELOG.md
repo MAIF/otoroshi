@@ -18,6 +18,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.4.0
 - support wasm auth. modules (#1598)
 - handle ctrl+s shortcut to save route (#1594)
 - enable anonymous reporting (#1595)
+- make authentication modules pluggable (#1285)
 
 ### Fixed
 
