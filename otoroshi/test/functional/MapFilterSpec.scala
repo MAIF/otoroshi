@@ -40,11 +40,11 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
   "Projection" should {
     "spread and filter" in {
       val res = otoroshi.utils.Projection.project(
-        Json.obj("a" -> "a", "b" -> "b", "c" -> "c", "d" -> "d"),
-        Json.obj("$spread" -> true, "d" -> false),
+        Json.obj("a" -> "a", "b" -> "b", "c" -> "c", "d" -> Json.obj("a" -> "a", "b" -> "b", "c" -> "c")),
+        Json.obj("$spread" -> true, "d" -> Json.obj("$spread" -> true, "c" -> false)),
         identity,
       )
-      (res == Json.obj("a" -> "a", "b" -> "b", "c" -> "c")) mustBe true
+      (res == Json.obj("a" -> "a", "b" -> "b", "c" -> "c", "d" -> Json.obj("a" -> "a", "b" -> "b"))) mustBe true
     }
   }
 
