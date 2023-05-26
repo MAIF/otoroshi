@@ -164,7 +164,13 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
-  // using a custom one right now as current build is broken
+
+  // gprc
+  "io.grpc"                          % "grpc-netty-shaded"                         % "1.55.1",
+  "io.grpc"                          % "grpc-protobuf"                             % "1.55.1",
+  "io.grpc"                          % "grpc-stub"                                 % "1.55.1",
+
+// using a custom one right now as current build is broken
 //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"

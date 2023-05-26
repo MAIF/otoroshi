@@ -24,6 +24,7 @@ import GlobalThrottling from './GlobalThrottling';
 import GraphQLBackend from './GraphQLBackend';
 import GraphQLProxy from './GraphQLProxy';
 import GraphQLQuery from './GraphQLQuery';
+import GrpcCall from './NgGrpcCall';
 import GzipResponseCompressor from './GzipResponseCompressor';
 import HMACCaller from './HMACCaller';
 import HMACValidator from './HMACValidator';
@@ -157,6 +158,7 @@ export const Plugins = [
   GraphQLBackend,
   GraphQLProxy,
   GraphQLQuery,
+  GrpcCall,
   GzipResponseCompressor,
   HMACCaller,
   HMACValidator,
