@@ -154,6 +154,7 @@ class GraphQLQuery extends NgBackendCall {
       value = config.query,
       req = ctx.rawRequest.some,
       service = ctx.route.legacy.some,
+      route = ctx.route.some,
       apiKey = ctx.apikey,
       user = ctx.user,
       context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -956,6 +957,7 @@ class GraphQLBackend extends NgBackendCall {
 
     GlobalExpressionLanguage.apply(
       c.arg(urlArg),
+      None,
       None,
       None,
       None,

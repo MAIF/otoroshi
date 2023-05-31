@@ -235,6 +235,7 @@ class W3CTracing extends NgRequestTransformer {
               value = value,
               req = ctx.request.some,
               service = ctx.route.serviceDescriptor.some,
+              route = ctx.route.some,
               apiKey = ctx.apikey,
               user = ctx.user,
               context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),

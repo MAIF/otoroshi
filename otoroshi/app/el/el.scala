@@ -10,6 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.Keys
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
@@ -27,6 +28,7 @@ object GlobalExpressionLanguage {
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -47,6 +49,7 @@ object GlobalExpressionLanguage {
               context.getOrElse(s"params.$field", s"no-params-$field")
             case "date"                                                             => DateTime.now().toString()
             case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
+
             case "service.domain" if service.isDefined                              => service.get._domain
             case "service.subdomain" if service.isDefined                           => service.get.subdomain
             case "service.tld" if service.isDefined                                 => service.get.domain
@@ -61,6 +64,17 @@ object GlobalExpressionLanguage {
               service.get.metadata.get(field).getOrElse(dv)
             case r"service.metadata.$field@(.*)" if service.isDefined               =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
+
+            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
+              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
+            case r"route.domains\['$field@(.*)'\]" if route.isDefined =>
+              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
+            case "route.id" if route.isDefined => route.get.id
+            case "route.name" if route.isDefined => route.get.name
+            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined =>
+              route.get.metadata.get(field).getOrElse(dv)
+            case r"route.metadata.$field@(.*)" if route.isDefined =>
+              route.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
             case "req.fullUrl" if req.isDefined                                             =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
@@ -302,6 +316,7 @@ object HeadersExpressionLanguage {
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -312,6 +327,7 @@ object HeadersExpressionLanguage {
       value = value,
       req = req,
       service = service,
+      route = route,
       apiKey = apiKey,
       user = user,
       context = context,
@@ -327,6 +343,7 @@ object RedirectionExpressionLanguage {
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -337,6 +354,7 @@ object RedirectionExpressionLanguage {
       value = value,
       req = req,
       service = service,
+      route = route,
       apiKey = apiKey,
       user = user,
       context = context,
@@ -352,6 +370,7 @@ object TargetExpressionLanguage {
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -362,6 +381,7 @@ object TargetExpressionLanguage {
       value = value,
       req = req,
       service = service,
+      route = route,
       apiKey = apiKey,
       user = user,
       context = context,
@@ -377,6 +397,7 @@ object JwtExpressionLanguage {
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -387,6 +408,7 @@ object JwtExpressionLanguage {
       value = value,
       req = req,
       service = service,
+      route = route,
       apiKey = apiKey,
       user = user,
       context = context,
@@ -399,6 +421,7 @@ object JwtExpressionLanguage {
       value: JsValue,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
@@ -408,20 +431,20 @@ object JwtExpressionLanguage {
     value match {
       case JsObject(map)   =>
         new JsObject(map.toSeq.map {
-          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context, attrs, env)))
-          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context, attrs, env))
-          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context, attrs, env))
+          case (key, JsString(str))     => (key, JsString(apply(str, req, service, route, apiKey, user, context, attrs, env)))
+          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, route, apiKey, user, context, attrs, env))
+          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, route, apiKey, user, context, attrs, env))
           case (key, v)                 => (key, v)
         }.toMap)
       case JsArray(values) =>
         new JsArray(values.map {
-          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context, attrs, env))
-          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context, attrs, env)
-          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context, attrs, env)
+          case JsString(str) => JsString(apply(str, req, service, route, apiKey, user, context, attrs, env))
+          case obj: JsObject => fromJson(obj, req, service, route, apiKey, user, context, attrs, env)
+          case arr: JsArray  => fromJson(arr, req, service, route, apiKey, user, context, attrs, env)
           case v             => v
         })
       case JsString(str)   => {
-        apply(str, req, service, apiKey, user, context, attrs, env) match {
+        apply(str, req, service, route, apiKey, user, context, attrs, env) match {
           case "true"               => JsBoolean(true)
           case "false"              => JsBoolean(false)
           case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)

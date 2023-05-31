@@ -154,6 +154,7 @@ class WebSocketHandler()(implicit env: Env) {
       s"${if (_target.scheme == "https") "wss" else "ws"}://$host$root$uri",
       Some(req),
       Some(descriptor),
+      None,
       apiKey,
       paUsr,
       elCtx,
@@ -408,7 +409,7 @@ class WebSocketHandler()(implicit env: Env) {
           val (theHost: String, thePort: Int) =
             (
               target.scheme,
-              TargetExpressionLanguage(target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+              TargetExpressionLanguage(target.host, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
             ) match {
               case (_, host) if host.contains(":")            =>
                 (host.split(":").apply(0), host.split(":").apply(1).toInt)

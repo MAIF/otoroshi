@@ -223,7 +223,7 @@ object ReverseProxyActionHelper {
       f
     } else {
       val inputHeaders = req.headers.toSimpleMap
-        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), None, apiKey, paUsr, ctx, attrs, env))
         .filterNot(h => h._2 == "null")
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>

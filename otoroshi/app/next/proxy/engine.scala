@@ -2414,6 +2414,7 @@ class ProxyEngine() extends RequestHandler {
       targetUrlRaw,
       request.some,
       route.serviceDescriptor.some,
+      route.some,
       attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
       attrs.get(otoroshi.plugins.Keys.UserKey),
       attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,

@@ -439,6 +439,7 @@ class OtoroshiInfos extends NgRequestTransformer {
               value = str,
               req = ctx.request.some,
               service = ctx.route.legacy.some,
+              route = ctx.route.some,
               apiKey = ctx.apikey,
               user = ctx.user,
               context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),

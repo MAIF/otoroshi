@@ -84,6 +84,7 @@ class Redirection extends NgPreRouting {
         config.to,
         ctx.request.some,
         ctx.route.serviceDescriptor.some,
+        ctx.route.some,
         None,
         None,
         ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
