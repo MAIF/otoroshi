@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
-import otoroshi.el.HeadersExpressionLanguage
+import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
@@ -81,7 +81,17 @@ class OverrideHost extends NgRequestTransformer {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => Right(ctx.otoroshiRequest)
       case Some(backend) =>
-        val host    = backend.hostname
+        val host = TargetExpressionLanguage(
+          backend.hostname,
+          Some(ctx.request),
+          ctx.route.serviceDescriptor.some,
+          ctx.route.some,
+          ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+          ctx.attrs.get(otoroshi.plugins.Keys.UserKey),
+          ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+          ctx.attrs,
+          env
+        )
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
         Right(request)
