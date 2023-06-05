@@ -1,5 +1,6 @@
 package otoroshi.storage.stores
 
+import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.storage.{RawDataStore, RedisLike}
@@ -26,7 +27,13 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
   ): Future[Boolean] =
     redis.setBS(key, value, pxMilliseconds = ttl)
 
-  override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.del(keys: _*)
+  override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    if (keys.nonEmpty) {
+      redis.del(keys: _*)
+    } else {
+      FastFuture.successful(0L)
+    }
+  }
 
   override def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redis.incrby(key, incr)

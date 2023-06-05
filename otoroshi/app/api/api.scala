@@ -190,7 +190,11 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
-    env.datastores.rawDataStore.del(ids.map(id => key(id))).map(_ => ())
+    if (ids.nonEmpty) {
+      env.datastores.rawDataStore.del(ids.map(id => key(id))).map(_ => ())
+    } else {
+      ().vfuture
+    }
   }
 
   def findOne(version: String, id: String)(implicit
