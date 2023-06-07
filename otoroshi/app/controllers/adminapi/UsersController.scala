@@ -33,7 +33,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights.superAdmin,
-    location = EntityLocation()
+    location = EntityLocation(),
+    adminEntityValidators = Map.empty
   )
 
   def sessions() =
@@ -272,23 +273,26 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           (usernameOpt, passwordOpt, labelOpt) match {
             case (Some(username), Some(password), Some(label)) => {
               val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-              env.datastores.simpleAdminDataStore
-                .registerUser(
-                  SimpleOtoroshiAdmin(
-                    username = username,
-                    password = saltedPassword,
-                    label = label,
-                    createdAt = DateTime.now(),
-                    typ = OtoroshiAdminType.SimpleAdmin,
-                    metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-                    rights = rights,
-                    location =
-                      EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
-                  )
-                )
-                .map { _ =>
-                  Ok(Json.obj("username" -> username))
-                }
+              val user = SimpleOtoroshiAdmin(
+                username = username,
+                password = saltedPassword,
+                label = label,
+                createdAt = DateTime.now(),
+                typ = OtoroshiAdminType.SimpleAdmin,
+                metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+                rights = rights,
+                adminEntityValidators = Map.empty,
+                location =
+                  EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
+              )
+              ctx.validateEntity(user.json, "simple-admin-user") match {
+                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                case Right(_) => env.datastores.simpleAdminDataStore
+                  .registerUser(user)
+                  .map { _ =>
+                    Ok(Json.obj("username" -> username))
+                  }
+              }
             }
             case _                                             => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
           }
@@ -350,12 +354,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               => {
-            val _newUser = SimpleOtoroshiAdmin.fmt.reads(ctx.request.body).get
-            checkNewUserRights(ctx, _newUser.rights) {
-              val newUser = _newUser.copy(username = username)
-              env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
-                Ok(newUser.json)
-              }
+            val body = ctx.request.body
+            ctx.validateEntity(body, "simple-admin-user") match {
+              case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+              case Right(_) =>
+                val _newUser = SimpleOtoroshiAdmin.fmt.reads(body).get
+                checkNewUserRights(ctx, _newUser.rights) {
+                  val newUser = _newUser.copy(username = username)
+                  env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
+                    Ok(newUser.json)
+                  }
+                }
             }
           }
         }
@@ -369,12 +378,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               => {
-            val _newUser = WebAuthnOtoroshiAdmin.fmt.reads(ctx.request.body).get
-            checkNewUserRights(ctx, _newUser.rights) {
-              val newUser = _newUser.copy(username = username)
-              env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
-                Ok(newUser.json)
-              }
+            val body = ctx.request.body
+            ctx.validateEntity(body, "simple-admin-user") match {
+              case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+              case Right(_) =>
+                val _newUser = WebAuthnOtoroshiAdmin.fmt.reads(body).get
+                checkNewUserRights(ctx, _newUser.rights) {
+                  val newUser = _newUser.copy(username = username)
+                  env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
+                    Ok(newUser.json)
+                  }
+                }
             }
           }
         }
@@ -408,26 +422,29 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           (usernameOpt, passwordOpt, labelOpt, handleOpt) match {
             case (Some(username), Some(password), Some(label), Some(handle)) => {
               val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-              env.datastores.webAuthnAdminDataStore
-                .registerUser(
-                  WebAuthnOtoroshiAdmin(
-                    username = username,
-                    password = saltedPassword,
-                    label = label,
-                    handle = handle,
-                    credentials =
-                      credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
-                    createdAt = DateTime.now(),
-                    typ = OtoroshiAdminType.WebAuthnAdmin,
-                    metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-                    rights = rights,
-                    location =
-                      EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
-                  )
-                )
-                .map { _ =>
-                  Ok(Json.obj("username" -> username))
-                }
+              val user = WebAuthnOtoroshiAdmin(
+                username = username,
+                password = saltedPassword,
+                label = label,
+                handle = handle,
+                credentials =
+                  credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
+                createdAt = DateTime.now(),
+                typ = OtoroshiAdminType.WebAuthnAdmin,
+                metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+                rights = rights,
+                adminEntityValidators = Map.empty,
+                location =
+                  EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
+              )
+              ctx.validateEntity(user.json, "simple-admin-user") match {
+                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                case Right(_) => env.datastores.webAuthnAdminDataStore
+                  .registerUser(user)
+                  .map { _ =>
+                    Ok(Json.obj("username" -> username))
+                  }
+              }
             }
             case _                                                           => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
           }

@@ -4,18 +4,9 @@ import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.UpdateExporters
 import otoroshi.models.DataExporterConfig
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,14 +21,16 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
 
   lazy val logger = Logger("otoroshi-data-exporter-api")
 
+  override def singularName: String = "data-exporter"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: DataExporterConfig): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, DataExporterConfig] =
+  override def readEntity(json: JsValue): Either[JsValue, DataExporterConfig] =
     DataExporterConfig.format.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

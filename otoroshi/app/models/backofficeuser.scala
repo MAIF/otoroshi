@@ -6,6 +6,7 @@ import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
@@ -33,6 +34,7 @@ case class BackOfficeUser(
     tags: Seq[String],
     metadata: Map[String, String],
     rights: UserRights,
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends RefreshableUser
     with ValidableUser
@@ -44,6 +46,19 @@ case class BackOfficeUser(
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = name
   def theTags: Seq[String]             = tags
+  // def adminEntityValidators: Map[String, Seq[JsonPathValidator]] = Map(
+  //   "all" -> Seq(
+  //     JsonPathValidator("$.*", "JsonContainsNot(${env.)".json, "no el env".some),
+  //     JsonPathValidator("$.*", "JsonContainsNot(${config.)".json, "no el config".some),
+  //     JsonPathValidator("$.*", "JsonContainsNot(${vault://env/)".json, "no vault value".some),
+  //   ),
+  //   "route" -> Seq(
+  //     JsonPathValidator("$.frontend.domains[*]", "StartsWith(fifoufou.oto.tools)".json, "bad exposition domain".some),
+  //     JsonPathValidator("$.frontend.domains[?(@ =~ /^((?!fifoufou\\.oto\\.tools.*).)*$/i)]", "Size(0)".json, "bad exposition domain 2".some),
+  //     JsonPathValidator("[?(@.enabled == true)]", JsBoolean(true), "route not enabled".some),
+  //     JsonPathValidator("$.plugins[?(@.plugin == 'cp:otoroshi.next.plugins.OverrideHost')]", "Size(0)".json, "no override host".some),
+  //   )
+  // )
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))
@@ -95,7 +110,16 @@ object BackOfficeUser {
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            rights = UserRights.readFromObject(json)
+            rights = UserRights.readFromObject(json),
+            adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
+              obj.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
           )
         )
       } recover { case e =>
@@ -116,7 +140,8 @@ object BackOfficeUser {
         "lastRefresh"  -> o.lastRefresh.getMillis,
         "metadata"     -> o.metadata,
         "tags"         -> JsArray(o.tags.map(JsString.apply)),
-        "rights"       -> o.rights.json
+        "rights"       -> o.rights.json,
+        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
       )
   }
 }

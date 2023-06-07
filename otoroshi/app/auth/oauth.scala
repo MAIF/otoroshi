@@ -10,6 +10,7 @@ import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
@@ -94,7 +95,18 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.mapValues(UserRights.readFromArray))
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
-          otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights")
+          otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights"),
+          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
+            o.value.mapValues { obj =>
+              obj.asObject.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.toMap
+          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -166,7 +178,8 @@ case class GenericOauth2ModuleConfig(
     superAdmins: Boolean = false,
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
-    otoroshiRightsField: String = "otoroshi_rights"
+    otoroshiRightsField: String = "otoroshi_rights",
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
@@ -221,7 +234,10 @@ case class GenericOauth2ModuleConfig(
       "superAdmins"              -> superAdmins,
       "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"             -> JsObject(dataOverride),
-      "otoroshiRightsField"      -> this.otoroshiRightsField
+      "otoroshiRightsField"      -> this.otoroshiRightsField,
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+      })
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"global-oauth-$id"
@@ -740,6 +756,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   simpleLogin = false,
                   tags = Seq.empty,
                   metadata = Map.empty,
+                  adminEntityValidators = authConfig.adminEntityValidatorsOverride.getOrElse(email, Map.empty),
                   rights =
                     if (authConfig.superAdmins) UserRights.superAdmin
                     else {

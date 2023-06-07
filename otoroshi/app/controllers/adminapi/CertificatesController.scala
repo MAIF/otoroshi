@@ -30,6 +30,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   lazy val logger = Logger("otoroshi-certificates-api")
 
+  override def singularName: String = "certificate"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
@@ -43,9 +45,9 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def extractId(entity: Cert): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, Cert] =
+  override def readEntity(json: JsValue): Either[JsValue, Cert] =
     Cert._fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

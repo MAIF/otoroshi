@@ -171,6 +171,7 @@ export class Oauth2ModuleConfig extends Component {
     extraMetadata: {},
     dataOverride: {},
     rightsOverride: {},
+    adminEntityValidatorsOverride: {},
     mtlsConfig: {
       mtls: false,
       loose: false,
@@ -525,6 +526,25 @@ export class Oauth2ModuleConfig extends Component {
                 teams: ['*:r'],
               },
             ],
+          }}
+        />
+        <JsonObjectAsCodeInput
+          label="Admin entity validators override"
+          mode="json"
+          value={settings.adminEntityValidatorsOverride || {}}
+          onChange={(e) => {
+            changeTheValue(path + '.adminEntityValidatorsOverride', e);
+          }}
+          example={{
+            'john@otoroshi.tools': {
+              'route': [
+                {
+                  path: '$.*',
+                  value: 'JsonContainsNot(${env.)',
+                  error: 'You cannot use expression with env. variables'
+                }
+              ],
+            },
           }}
         />
         <TextInput
@@ -1560,6 +1580,25 @@ export class LdapModuleConfig extends Component {
             ],
           }}
         />
+        <JsonObjectAsCodeInput
+          label="Admin entity validators override"
+          mode="json"
+          value={settings.adminEntityValidatorsOverride || {}}
+          onChange={(e) => {
+            this.changeTheValue(path + '.adminEntityValidatorsOverride', e);
+          }}
+          example={{
+            'john@otoroshi.tools': {
+              'route': [
+                {
+                  path: '$.*',
+                  value: 'JsonContainsNot(${env.)',
+                  error: 'You cannot use expression with env. variables'
+                }
+              ],
+            },
+          }}
+        />
       </div>
     );
   }
@@ -1833,6 +1872,7 @@ export class SamlModuleConfig extends Component {
     'validateAssertions',
     'validatingCertificates',
     'userValidators',
+    'adminEntityValidatorsOverride',
   ];
 
   changeTheValue = (name, value) => {
@@ -2113,6 +2153,32 @@ export class SamlModuleConfig extends Component {
         help: 'The certificate in PEM format that must be used to check for signatures.',
       },
     },
+    adminEntityValidatorsOverride: {
+      type: ({}) => (
+        <JsonObjectAsCodeInput
+          label="Admin entity validators override"
+          mode="json"
+          value={this.props.value.adminEntityValidatorsOverride || {}}
+          onChange={(e) => {
+            this.changeTheValue('adminEntityValidatorsOverride', e);
+          }}
+          example={{
+            'john@otoroshi.tools': {
+              'route': [
+                {
+                  path: '$.*',
+                  value: 'JsonContainsNot(${env.)',
+                  error: 'You cannot use expression with env. variables'
+                }
+              ],
+            },
+          }}
+        />
+      ),
+      props: {
+        label: 'Admin entity validators override',
+      },
+    },
   };
 
   fetchFromURL = () => {
@@ -2236,6 +2302,7 @@ export class OAuth1ModuleConfig extends Component {
     'callbackURL',
     'userValidators',
     'rightsOverride',
+    'adminEntityValidatorsOverride',
   ];
 
   changeTheValue = (name, value) => {
@@ -2353,6 +2420,32 @@ export class OAuth1ModuleConfig extends Component {
       ),
       props: {
         label: 'Override rights',
+      },
+    },
+    adminEntityValidatorsOverride: {
+      type: ({}) => (
+        <JsonObjectAsCodeInput
+          label="Admin entity validators override"
+          mode="json"
+          value={this.props.value.adminEntityValidatorsOverride || {}}
+          onChange={(e) => {
+            this.changeTheValue('adminEntityValidatorsOverride', e);
+          }}
+          example={{
+            'john@otoroshi.tools': {
+              'route': [
+                {
+                  path: '$.*',
+                  value: 'JsonContainsNot(${env.)',
+                  error: 'You cannot use expression with env. variables'
+                }
+              ],
+            },
+          }}
+        />
+      ),
+      props: {
+        label: 'Admin entity validators override',
       },
     },
   };

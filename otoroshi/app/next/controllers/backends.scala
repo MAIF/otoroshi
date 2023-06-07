@@ -23,14 +23,16 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   lazy val logger = Logger("otoroshi-backends-api")
 
+  override def singularName: String = "backend"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: StoredNgBackend): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, StoredNgBackend] =
+  override def readEntity(json: JsValue): Either[JsValue, StoredNgBackend] =
     StoredNgBackend.format.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

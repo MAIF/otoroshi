@@ -783,6 +783,13 @@ export class AdminEditionModal extends Component {
         height: '200px',
       },
     },
+    adminEntityValidators: {
+      type: JsonObjectAsCodeInput,
+      props: {
+        label: 'Admin entity validators',
+        height: '200px',
+      },
+    },
     _loc: {
       type: 'location',
       props: {
@@ -791,7 +798,7 @@ export class AdminEditionModal extends Component {
     },
   };
 
-  flow = ['_loc', 'username', 'label', 'password', 'type', 'createdAt', 'metadata', 'rights'];
+  flow = ['_loc', 'username', 'label', 'password', 'type', 'createdAt', 'metadata', 'rights', 'adminEntityValidators'];
 
   onChange = (user) => {
     this.setState({ user });

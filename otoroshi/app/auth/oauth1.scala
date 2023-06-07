@@ -7,6 +7,7 @@ import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.crypto.Signatures
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
@@ -82,7 +83,18 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty),
+          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
+            o.value.mapValues { obj =>
+              obj.asObject.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.toMap
+          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -141,7 +153,8 @@ case class Oauth1ModuleConfig(
     sessionCookieValues: SessionCookieValues,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
   def humanName: String                = "OAuth1 provider"
@@ -176,7 +189,10 @@ case class Oauth1ModuleConfig(
       "tags"                     -> JsArray(tags.map(JsString.apply)),
       "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
       "httpMethod"               -> httpMethod.name,
-      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+      })
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -481,16 +497,18 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             })
               .map { data =>
                 FastFuture.successful(
-                  if (isBoLogin)
+                  if (isBoLogin) {
+                    val email = data("email").toString
                     BackOfficeUser(
                       randomId = IdGenerator.token(64),
                       name = data("name").toString,
-                      email = data("email").toString,
+                      email = email,
                       profile = data("profile").asInstanceOf[JsObject],
                       simpleLogin = false,
                       authConfigId = authConfig.id,
                       tags = Seq.empty,
                       metadata = Map.empty,
+                      adminEntityValidators = authConfig.adminEntityValidatorsOverride.getOrElse(email, Map.empty),
                       rights = authConfig.rightsOverride.getOrElse(
                         data("email").toString,
                         UserRights(
@@ -504,7 +522,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                       ),
                       location = authConfig.location
                     ).validate(authConfig.userValidators)
-                  else {
+                  } else {
                     PrivateAppsUser(
                       randomId = IdGenerator.token(64),
                       name = data("name").toString,

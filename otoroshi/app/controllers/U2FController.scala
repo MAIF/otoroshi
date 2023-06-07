@@ -82,7 +82,8 @@ class U2FController(
                   tags = Seq.empty,
                   metadata = Map.empty,
                   rights = user.rights,
-                  location = user.location
+                  location = user.location,
+                  adminEntityValidators = user.adminEntityValidators
                 ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                   env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                     case false => {
@@ -352,6 +353,7 @@ class U2FController(
                             typ = OtoroshiAdminType.WebAuthnAdmin,
                             metadata = Map.empty,
                             rights = rights,
+                            adminEntityValidators = Map.empty,
                             location = EntityLocation(
                               ctx.currentTenant,
                               Seq(TeamId.all)
@@ -511,7 +513,8 @@ class U2FController(
                             tags = Seq.empty,
                             metadata = Map.empty,
                             rights = user.rights,
-                            location = user.location
+                            location = user.location,
+                            adminEntityValidators = user.adminEntityValidators
                           ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                             env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                               case false => {

@@ -28,14 +28,16 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  override def singularName: String = "service-group"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: ServiceGroup): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, ServiceGroup] =
+  override def readEntity(json: JsValue): Either[JsValue, ServiceGroup] =
     ServiceGroup._fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

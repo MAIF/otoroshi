@@ -3,18 +3,9 @@ package otoroshi.controllers.adminapi
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.Tenant
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,14 +20,16 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   lazy val logger = Logger("otoroshi-tenants-api")
 
+  override def singularName: String = "organization"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: Tenant): String = entity.id.value
 
-  override def readEntity(json: JsValue): Either[String, Tenant] =
+  override def readEntity(json: JsValue): Either[JsValue, Tenant] =
     Tenant.format.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

@@ -351,6 +351,9 @@ object implicits {
       }
     }
   }
+  implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
+    def orJsNull: JsValue = obj.getOrElse(JsNull)
+  }
   implicit class BetterJsLookupResult(private val obj: JsLookupResult) extends AnyVal {
     def select(name: String): JsLookupResult = obj \ name
     def select(index: Int): JsLookupResult   = obj \ index

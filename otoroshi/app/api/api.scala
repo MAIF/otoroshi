@@ -13,6 +13,7 @@ import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
@@ -71,10 +72,30 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def canDelete: Boolean
   def canBulk: Boolean
 
-  def validateToJson(json: JsValue): JsResult[JsValue] = {
-    format.reads(json) match {
-      case e: JsError             => e
+  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit env: Env): JsResult[JsValue] = {
+    def readEntity(): JsResult[JsValue] = format.reads(json) match {
+      case e: JsError => e
       case JsSuccess(value, path) => JsSuccess(value.json, path)
+    }
+    f match {
+      case Left(err) => JsError(err)
+      case Right(None) => readEntity()
+      case Right(Some(user)) => {
+        val envValidators: Seq[JsonPathValidator] = env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val userValidators: Seq[JsonPathValidator] = user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val validators = envValidators ++ userValidators
+        val failedValidators = validators.filterNot(_.validate(json))
+        if (failedValidators.isEmpty) {
+          readEntity()
+        } else {
+          val errors = failedValidators.flatMap(_.error)
+          if (errors.isEmpty) {
+            JsError("entity validation failed")
+          } else {
+            JsError(errors.mkString(". "))
+          }
+        }
+      }
     }
   }
 
@@ -415,6 +436,21 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         env.datastores.backOfficeUserDataStore.extractId,
         canCreate = false,
         canUpdate = false
+      )
+    ),
+    Resource(
+      "SimpleAdminUser",
+      "simple-admin-users",
+      "simple-admin-user",
+      "security.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApi[SimpleOtoroshiAdmin](
+        SimpleOtoroshiAdmin.fmt,
+        env.datastores.simpleAdminDataStore.key,
+        env.datastores.simpleAdminDataStore.extractId,
+        canCreate = true,
+        canUpdate = false,
+        canDelete = true
       )
     ),
     Resource(
@@ -877,24 +913,33 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   .future
               case Right((patchBody, entity)) => {
                 val patchedEntity = patchJson(Json.parse(patchBody), entity)
-                resource.access
-                  .create(version, resource.singularName, extractId(patchedEntity).some, patchedEntity)
-                  .map {
-                    case Left(error)          =>
-                      error.stringify.byteString
-                    case Right(createdEntity) =>
-                      adminApiEvent(
-                        ctx,
-                        s"BULK_PATCH_${resource.singularName.toUpperCase()}",
-                        s"User bulk patched a ${resource.singularName}",
-                        createdEntity,
-                        s"${resource.singularName}Patched".some
-                      )
-                      Json
-                        .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
-                        .stringify
-                        .byteString
-                  }
+                resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
+                  case JsError(errs) => Json.obj(
+                    "status" -> 400,
+                    "error" -> "bad_request",
+                    "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply)),
+                    "entity" -> entity
+                  ).stringify.byteString.vfuture
+                  case JsSuccess(_, _) =>
+                    resource.access
+                      .create(version, resource.singularName, extractId(patchedEntity).some, patchedEntity)
+                      .map {
+                        case Left(error) =>
+                          error.stringify.byteString
+                        case Right(createdEntity) =>
+                          adminApiEvent(
+                            ctx,
+                            s"BULK_PATCH_${resource.singularName.toUpperCase()}",
+                            s"User bulk patched a ${resource.singularName}",
+                            createdEntity,
+                            s"${resource.singularName}Patched".some
+                          )
+                          Json
+                            .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
+                            .stringify
+                            .byteString
+                      }
+                }
               }
             }
           Ok.sendEntity(
@@ -944,21 +989,30 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     .byteString
                     .future
                 case Right((_, entity))  => {
-                  resource.access.create(version, resource.singularName, None, entity).map {
-                    case Left(error)          =>
-                      error.stringify.byteString
-                    case Right(createdEntity) =>
-                      adminApiEvent(
-                        ctx,
-                        s"BULK_CREATE_${resource.singularName.toUpperCase()}",
-                        s"User bulk created a ${resource.singularName}",
-                        createdEntity,
-                        s"${resource.singularName}Created".some
-                      )
-                      Json
-                        .obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity))
-                        .stringify
-                        .byteString
+                  resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser) match {
+                    case JsError(errs) => Json.obj(
+                      "status" -> 400,
+                      "error" -> "bad_request",
+                      "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply)),
+                      "entity" -> entity
+                    ).stringify.byteString.vfuture
+                    case JsSuccess(_, _) =>
+                      resource.access.create(version, resource.singularName, None, entity).map {
+                        case Left(error) =>
+                          error.stringify.byteString
+                        case Right(createdEntity) =>
+                          adminApiEvent(
+                            ctx,
+                            s"BULK_CREATE_${resource.singularName.toUpperCase()}",
+                            s"User bulk created a ${resource.singularName}",
+                            createdEntity,
+                            s"${resource.singularName}Created".some
+                          )
+                          Json
+                            .obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity))
+                            .stringify
+                            .byteString
+                      }
                   }
                 }
               }
@@ -987,7 +1041,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
             val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
-            val src      = ctx.request.body
+            val src: Source[ByteString, _] = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
               .map(bs => Try(Json.parse(bs.utf8String)))
               .collect { case Success(e) => e }
@@ -1009,24 +1063,33 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     .byteString
                     .future
                 case Right((_, entity))  => {
-                  resource.access
-                    .create(version, resource.singularName, extractId(entity).some, entity)
-                    .map {
-                      case Left(error)          =>
-                        error.stringify.byteString
-                      case Right(createdEntity) =>
-                        adminApiEvent(
-                          ctx,
-                          s"BULK_UPDATE_${resource.singularName.toUpperCase()}",
-                          s"User bulk updated a ${resource.singularName}",
-                          createdEntity,
-                          s"${resource.singularName}Updated".some
-                        )
-                        Json
-                          .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
-                          .stringify
-                          .byteString
-                    }
+                  resource.access.validateToJson(entity, resource.singularName, ctx.backOfficeUser) match {
+                    case JsError(errs) => Json.obj(
+                      "status" -> 400,
+                      "error" -> "bad_request",
+                      "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply)),
+                      "entity" -> entity
+                    ).stringify.byteString.vfuture
+                    case JsSuccess(_, _) =>
+                      resource.access
+                        .create(version, resource.singularName, extractId(entity).some, entity)
+                        .map {
+                          case Left(error) =>
+                            error.stringify.byteString
+                          case Right(createdEntity) =>
+                            adminApiEvent(
+                              ctx,
+                              s"BULK_UPDATE_${resource.singularName.toUpperCase()}",
+                              s"User bulk updated a ${resource.singularName}",
+                              createdEntity,
+                              s"${resource.singularName}Updated".some
+                            )
+                            Json
+                              .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
+                              .stringify
+                              .byteString
+                        }
+                  }
                 }
               }
             Ok.sendEntity(
@@ -1152,17 +1215,26 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             resource.some
           ).vfuture
         case Right(body)                                => {
-          resource.access.create(version, resource.singularName, None, body).map {
-            case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
-            case Right(res) =>
-              adminApiEvent(
-                ctx,
-                s"CREATE_${resource.singularName.toUpperCase()}",
-                s"User bulk created a ${resource.singularName}",
-                body,
-                s"${resource.singularName}Created".some
-              )
-              result(Results.Created, res, ctx.request, resource.some)
+          resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
+            case JsError(errs) => result(
+              Results.BadRequest,
+              Json.obj("error" -> "bad_request", "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))),
+              ctx.request,
+              resource.some
+            ).vfuture
+            case JsSuccess(_, _) =>
+              resource.access.create(version, resource.singularName, None, body).map {
+                case Left(err) => result(Results.InternalServerError, err, ctx.request, resource.some)
+                case Right(res) =>
+                  adminApiEvent(
+                    ctx,
+                    s"CREATE_${resource.singularName.toUpperCase()}",
+                    s"User bulk created a ${resource.singularName}",
+                    body,
+                    s"${resource.singularName}Created".some
+                  )
+                  result(Results.Created, res, ctx.request, resource.some)
+              }
           }
         }
       }
@@ -1250,7 +1322,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       bodyIn(ctx.request) flatMap {
         case Left(err)    => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(_body) => {
-          resource.access.validateToJson(_body) match {
+          resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
             case err @ JsError(_)                                => result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
             case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
               result(
@@ -1301,7 +1373,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       bodyIn(ctx.request) flatMap {
         case Left(err)    => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(_body) => {
-          resource.access.validateToJson(_body) match {
+          resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
             case err @ JsError(_)                                => result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
             case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
               result(
@@ -1312,10 +1384,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               ).vfuture
             case JsSuccess(body, _)                              => {
               resource.access.findOne(version, id).flatMap {
-                case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
+                case None => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
                 case Some(_) =>
                   resource.access.create(version, resource.singularName, id.some, body).map {
-                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                    case Left(err) => result(Results.InternalServerError, err, ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
                         ctx,
@@ -1352,17 +1424,25 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               ).vfuture
             case Some(current)                                   => {
               val patchedBody = patchJson(body, current)
-              resource.access.create(version, resource.singularName, id.some, patchedBody).map {
-                case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
-                case Right(res) =>
-                  adminApiEvent(
-                    ctx,
-                    s"PATCHED_${resource.singularName.toUpperCase()}",
-                    s"User bulk patched a ${resource.singularName}",
-                    body,
-                    s"${resource.singularName}Patched".some
-                  )
-                  result(Results.Ok, res, ctx.request, resource.some)
+              resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
+                case JsError(errs) => result(
+                  Results.BadRequest,
+                  Json.obj("error" -> "bad_request", "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))),
+                  ctx.request,
+                  resource.some
+                ).vfuture
+                case JsSuccess(_, _) => resource.access.create(version, resource.singularName, id.some, patchedBody).map {
+                  case Left(err) => result(Results.InternalServerError, err, ctx.request, resource.some)
+                  case Right(res) =>
+                    adminApiEvent(
+                      ctx,
+                      s"PATCHED_${resource.singularName.toUpperCase()}",
+                      s"User bulk patched a ${resource.singularName}",
+                      body,
+                      s"${resource.singularName}Patched".some
+                    )
+                    result(Results.Ok, res, ctx.request, resource.some)
+                }
               }
             }
           }

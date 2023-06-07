@@ -257,6 +257,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def rightsOverride: Map[String, UserRights]
   def dataOverride: Map[String, JsObject]
   def otoroshiRightsField: String
+  def adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]]
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

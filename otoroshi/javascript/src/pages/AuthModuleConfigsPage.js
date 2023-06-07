@@ -75,7 +75,7 @@ export class AuthModuleConfigsPage extends Component {
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={(paginationState) =>
-            BackOfficeServices.findAllAuthConfigs({
+            BackOfficeServices.findAllAuthConfigs({ // findAuthConfigs
               ...paginationState,
               fields: ['id', 'name', 'desc'],
             })

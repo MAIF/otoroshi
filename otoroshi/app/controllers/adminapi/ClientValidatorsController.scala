@@ -2,17 +2,8 @@ package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
-import play.api.libs.json.{JsObject, JsValue, Json}
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import otoroshi.ssl.ClientCertificateValidator
 
@@ -26,14 +17,16 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
+  override def singularName: String = "client-validator"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: ClientCertificateValidator): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, ClientCertificateValidator] =
+  override def readEntity(json: JsValue): Either[JsValue, ClientCertificateValidator] =
     ClientCertificateValidator.fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

@@ -26,14 +26,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   lazy val logger = Logger("otoroshi-routes-api")
 
+  override def singularName: String = "route"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: NgRoute): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, NgRoute] =
+  override def readEntity(json: JsValue): Either[JsValue, NgRoute] =
     NgRoute.fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

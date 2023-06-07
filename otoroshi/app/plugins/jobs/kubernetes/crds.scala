@@ -1334,7 +1334,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         client
           .fetchOtoroshiResources[JsValue](
             resource.pluralName,
-            KubernetesHelper.reader(resource.access.validateToJson),
+            KubernetesHelper.reader(jsv => resource.access.validateToJson(jsv, resource.singularName, Right(None))),
             (a, b) => customizeExtensionResource(a, b, values, resource)
           )
           .map(holders => (resource, holders))

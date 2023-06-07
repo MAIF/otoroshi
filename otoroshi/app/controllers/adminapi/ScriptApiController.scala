@@ -39,6 +39,8 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  override def singularName: String = "script"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
@@ -224,9 +226,9 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   override def extractId(entity: Script): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, Script] =
+  override def readEntity(json: JsValue): Either[JsValue, Script] =
     Script._fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

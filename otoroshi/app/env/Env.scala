@@ -36,13 +36,14 @@ import otoroshi.storage.drivers.lettuce._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.metrics.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
 import play.api._
 import play.api.http.HttpConfiguration
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
@@ -577,6 +578,16 @@ class Env(
     .getOrElse(Seq.empty)
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
+
+  lazy val adminEntityValidators: Map[String, Seq[JsonPathValidator]] = configurationJson.select("otoroshi").select("adminapi").select("entity_validators").asOpt[JsObject].map { obj =>
+    obj.value.mapValues { arr =>
+      arr.asArray.value.map { item =>
+        JsonPathValidator.format.reads(item)
+      }.collect {
+        case JsSuccess(v, _) => v
+      }
+    }.toMap
+  }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
 
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
@@ -1332,7 +1343,8 @@ class Env(
                   typ = OtoroshiAdminType.SimpleAdmin,
                   metadata = Map.empty,
                   rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))),
-                  location = EntityLocation()
+                  location = EntityLocation(),
+                  adminEntityValidators = Map.empty,
                 )
 
                 val defaultTenant = Tenant(

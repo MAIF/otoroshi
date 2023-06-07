@@ -17,6 +17,7 @@ import play.api.libs.json.{JsArray, JsObject, _}
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, RegexPool}
+import otoroshi.utils.syntax.implicits._
 
 import javax.naming.ldap.{Control, InitialLdapContext}
 import scala.annotation.tailrec
@@ -28,7 +29,8 @@ case class LdapAuthUser(
     email: String,
     metadata: JsObject = Json.obj(),
     userRights: Option[UserRights],
-    ldapProfile: Option[JsValue]
+    ldapProfile: Option[JsValue],
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
 ) {
   def asJson: JsValue = LdapAuthUser.fmt.writes(this)
 }
@@ -42,7 +44,8 @@ object LdapAuthUser {
           "email"       -> o.email,
           "metadata"    -> o.metadata,
           "ldapProfile" -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
-          "userRights"  -> o.userRights.map(UserRights.format.writes)
+          "userRights"  -> o.userRights.map(UserRights.format.writes),
+          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))),
         )
       override def reads(json: JsValue)    =
         Try {
@@ -52,7 +55,16 @@ object LdapAuthUser {
               email = (json \ "email").as[String],
               ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              userRights = (json \ "userRights").asOpt[UserRights](UserRights.format)
+              userRights = (json \ "userRights").asOpt[UserRights](UserRights.format),
+              adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
+              obj.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.getOrElse(Map.empty[String, Seq[JsonPathValidator]]),
             )
           )
         } recover { case e =>
@@ -142,7 +154,18 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty),
+          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
+            o.value.mapValues { obj =>
+              obj.asObject.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.toMap
+          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -234,6 +257,7 @@ case class LdapAuthModuleConfig(
     extractProfileFilterNot: Seq[String] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
@@ -280,7 +304,10 @@ case class LdapAuthModuleConfig(
       "extractProfileFilterNot"  -> extractProfileFilterNot,
       "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"             -> JsObject(dataOverride),
-      "groupRights"              -> JsObject(groupRights.mapValues(GroupRights._fmt.writes))
+      "groupRights"              -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+      })
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -449,6 +476,7 @@ case class LdapAuthModuleConfig(
                     .map(v => metadata.deepMerge(v))
                     .getOrElse(metadata),
                   ldapProfile = profile,
+                  adminEntityValidators = adminEntityValidatorsOverride.getOrElse(email, Map.empty),
                   userRights = Some(
                     UserRights(
                       UserRights.default.rights
@@ -518,6 +546,7 @@ case class LdapAuthModuleConfig(
                       .getOrElse(Json.obj())
                   ),
                   ldapProfile = profile,
+                  adminEntityValidators = adminEntityValidatorsOverride.getOrElse(email, Map.empty),
                   userRights = Some(
                     UserRights(
                       (
@@ -611,7 +640,7 @@ object LdapAuthModule {
     tags = Seq.empty,
     metadata = Map.empty,
     sessionCookieValues = SessionCookieValues(),
-    clientSideSessionEnabled = true
+    clientSideSessionEnabled = true,
   )
 }
 
@@ -707,7 +736,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   )
               }
             },
-          location = authConfig.location
+          location = authConfig.location,
+          adminEntityValidators = user.adminEntityValidators,
         ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }
@@ -737,15 +767,15 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
-            .future
+            .vfuture
 
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
               case Some((username, password)) =>
                 bindUser(username, password, descriptor) match {
-                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(
@@ -773,7 +803,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
-          .future
+          .vfuture
       }
     }
   }
@@ -844,15 +874,15 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
-            .future
+            .vfuture
 
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
               case Some((username, password)) =>
                 bindAdminUser(username, password) match {
-                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(s"/backoffice/auth0/callback?token=$token&hash=$hash")
@@ -869,7 +899,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
-          .future
+          .vfuture
       }
     }
   }

@@ -26,14 +26,16 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  override def singularName: String = "jwt-verifier"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: GlobalJwtVerifier): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, GlobalJwtVerifier] =
+  override def readEntity(json: JsValue): Either[JsValue, GlobalJwtVerifier] =
     GlobalJwtVerifier._fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

@@ -5,7 +5,7 @@ import otoroshi.env.Env
 import otoroshi.models.ErrorTemplate
 import otoroshi.utils.controllers._
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,14 +20,16 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
 
   val logger = Logger("otoroshi-error-templates-api")
 
+  override def singularName: String = "error-template"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
   override def extractId(entity: ErrorTemplate): String = entity.serviceId
 
-  override def readEntity(json: JsValue): Either[String, ErrorTemplate] =
+  override def readEntity(json: JsValue): Either[JsValue, ErrorTemplate] =
     ErrorTemplate.fmt.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

@@ -3,18 +3,9 @@ package otoroshi.controllers.adminapi
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.models.Team
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,6 +20,8 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
 
   lazy val logger = Logger("otoroshi-teams-api")
 
+  override def singularName: String = "team"
+
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
@@ -38,9 +31,9 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
     s"${ctx.currentTenant.value}:$rawId"
   }
 
-  override def readEntity(json: JsValue): Either[String, Team] =
+  override def readEntity(json: JsValue): Either[JsValue, Team] =
     Team.format.reads(json).asEither match {
-      case Left(e)  => Left(e.toString())
+      case Left(e)  => Left(JsError.toJson(e))
       case Right(r) => Right(r)
     }
 

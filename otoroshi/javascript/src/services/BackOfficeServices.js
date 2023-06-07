@@ -1100,6 +1100,16 @@ export function findAuthConfigById(id) {
   }).then((r) => r.json());
 }
 
+export function findAuthConfigs() {
+  return fetch(`/bo/api/proxy/api/auths`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
 export function deleteAuthConfig(ak) {
   return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
     method: 'DELETE',

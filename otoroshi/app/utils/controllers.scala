@@ -6,7 +6,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import org.joda.time.DateTime
-import otoroshi.models.EntityLocationSupport
+import otoroshi.models.{BackOfficeUser, EntityLocationSupport}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
@@ -15,6 +15,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Ok
 import play.api.mvc._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.json.JsonOperationsHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -210,6 +211,7 @@ trait AdminApiHelper {
 }
 
 trait EntityHelper[Entity <: EntityLocationSupport, Error] {
+  def singularName: String
   def readId(json: JsValue): Either[String, String] = {
     (json \ "id").asOpt[String] match {
       case Some(id) => Right(id)
@@ -217,7 +219,29 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
     }
   }
   def extractId(entity: Entity): String
-  def readEntity(json: JsValue): Either[String, Entity]
+  def readEntity(json: JsValue): Either[JsValue, Entity]
+  def readAndValidateEntity(json: JsValue, f: => Either[String, Option[BackOfficeUser]])(implicit env: Env): Either[JsValue, Entity] = {
+    f match {
+      case Left(err) => Left(err.json)
+      case Right(None) => readEntity(json)
+      case Right(Some(user)) => {
+        val envValidators: Seq[JsonPathValidator] = env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val userValidators: Seq[JsonPathValidator] = user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val validators = envValidators ++ userValidators
+        val failedValidators = validators.filterNot(_.validate(json))
+        if (failedValidators.isEmpty) {
+          readEntity(json)
+        } else {
+          val errors = failedValidators.flatMap(_.error).map(_.json)
+          if (errors.isEmpty) {
+            Left("entity validation failed".json)
+          } else {
+            Left(JsArray(errors))
+          }
+        }
+      }
+    }
+  }
   def writeEntity(entity: Entity): JsValue
   def findByIdOps(
       id: String,
@@ -266,7 +290,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           .map(bs => Try(Json.parse(bs.utf8String)))
           .collect { case Success(e) => e }
           .map(e =>
-            readEntity(e) match {
+            readAndValidateEntity(e, ctx.backOfficeUser) match {
               case Left(err)     => Left((err, e))
               case Right(entity) => Right(("--", entity))
             }
@@ -349,7 +373,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           .map(bs => Try(Json.parse(bs.utf8String)))
           .collect { case Success(e) => e }
           .map(e =>
-            readEntity(e) match {
+            readAndValidateEntity(e, ctx.backOfficeUser) match {
               case Left(err)     => Left((err, e))
               case Right(entity) => Right(("--", entity))
             }
@@ -470,7 +494,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                     case Some(entity)                              => {
                       val currentJson = writeEntity(entity)
                       val newJson     = patchJson(patch, currentJson)
-                      readEntity(newJson) match {
+                      readAndValidateEntity(newJson, ctx.backOfficeUser) match {
                         case Left(e)          =>
                           Json
                             .obj(
@@ -673,7 +697,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("id" -> IdGenerator.token(64))
       case Some(b) => ctx.request.body.as[JsObject]
     }
-    readEntity(body) match {
+    readAndValidateEntity(body, ctx.backOfficeUser) match {
       case Left(e)                                    => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
       case Right(entity) if !ctx.canUserWrite(entity) =>
         Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
@@ -940,7 +964,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    readEntity(ctx.request.body) match {
+    readAndValidateEntity(ctx.request.body, ctx.backOfficeUser) match {
       case Left(error)                                =>
         BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
       case Right(entity) if !ctx.canUserWrite(entity) =>
@@ -985,6 +1009,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
+
+
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) =>
@@ -995,7 +1021,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           case Some(entity)                              => {
             val currentJson = writeEntity(entity)
             val newJson     = patchJson(ctx.request.body, currentJson)
-            readEntity(newJson) match {
+            readAndValidateEntity(newJson, ctx.backOfficeUser) match {
               case Left(e)          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
               case Right(newEntity) => {
                 updateEntityOps(newEntity, ctx.request).map {

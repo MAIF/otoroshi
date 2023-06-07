@@ -3403,6 +3403,7 @@
     "otoroshi.tcp.TcpTarget.ip": "Target ip",
     "otoroshi.tcp.TcpTarget.port": "Target port",
     "otoroshi.tcp.TcpTarget.tls": "Use tls",
+    "otoroshi.utils.JsonPathValidator.error": "???",
     "otoroshi.utils.JsonPathValidator.path": "???",
     "otoroshi.utils.JsonPathValidator.value": "???",
     "otoroshi.utils.gzip.GzipConfig.blackList": "???",

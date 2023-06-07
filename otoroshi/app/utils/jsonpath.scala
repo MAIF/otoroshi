@@ -7,21 +7,7 @@ import com.jayway.jsonpath.{Configuration, JsonPath}
 import net.minidev.json.{JSONArray, JSONObject}
 import otoroshi.api.OtoroshiEnvHolder
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json,
-  Reads,
-  Writes
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json, Reads, Writes}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.jackson.JacksonJson
 
@@ -119,17 +105,29 @@ object JsonPathUtils {
 case class JsonPathReadError(message: String, path: String, payload: String, err: Option[Throwable])
 case class JsonPathReadErrorException(err: JsonPathReadError) extends RuntimeException with NoStackTrace
 
-case class JsonPathValidator(path: String, value: JsValue) {
+case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) {
   def json: JsValue = JsonPathValidator.format.writes(this)
   def validate(ctx: JsValue): Boolean = {
     ctx.atPath(path).asOpt[JsValue] match {
       case None                                                     => false
       case Some(JsNumber(v)) if value.isInstanceOf[JsString]        => v.toString == value.asString
       case Some(JsBoolean(v)) if value.isInstanceOf[JsString]       => v.toString == value.asString
-      case Some(JsArray(seq)) if !value.isInstanceOf[JsArray]       => seq.contains(value)
+      case Some(JsArray(seq)) if path.startsWith("[?(") && path.endsWith(")]") && ctx.isInstanceOf[JsObject] && value.isInstanceOf[JsBoolean] => seq.nonEmpty
       case Some(arr @ JsArray(seq)) if value.isInstanceOf[JsString] => {
         val expected = value.asString
-        if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
+        if (expected.trim.startsWith("Size(") && expected.trim.endsWith(")")) {
+          seq.size == expected.substring(5).init.toInt
+        } else if (expected.trim.startsWith("SizeNot(") && expected.trim.endsWith(")")) {
+          seq.size != expected.substring(8).init.toInt
+        } else if (expected.trim.startsWith("SizeLt(") && expected.trim.endsWith(")")) {
+          seq.size < expected.substring(7).init.toInt
+        } else if (expected.trim.startsWith("SizeGt(") && expected.trim.endsWith(")")) {
+          seq.size > expected.substring(7).init.toInt
+        } else if (expected.trim.startsWith("SizeLte(") && expected.trim.endsWith(")")) {
+          seq.size <= expected.substring(8).init.toInt
+        } else if (expected.trim.startsWith("SizeGte(") && expected.trim.endsWith(")")) {
+          seq.size >= expected.substring(8).init.toInt
+        } else if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
           seq.contains(JsString(expected.substring(9).init))
         } else if (expected.trim.startsWith("ContainsNot(") && expected.trim.endsWith(")")) {
           !seq.contains(JsString(expected.substring(12).init))
@@ -161,10 +159,45 @@ case class JsonPathValidator(path: String, value: JsValue) {
             case JsString(str) => r.matches(str)
             case _             => false
           }
+        } ///////
+        else if (expected.trim.startsWith("JsonContains(") && expected.trim.endsWith(")")) {
+          seq.exists(_.stringify.contains(expected.substring(13).init))
+        } else if (expected.trim.startsWith("JsonContainsNot(") && expected.trim.endsWith(")")) {
+          !seq.exists(_.stringify.contains(expected.substring(16).init))
+        } else if (expected.trim.startsWith("JsonContains(Regex(") && expected.trim.endsWith("))")) {
+          val regex = expected.substring(19).init.init
+          val r = RegexPool.regex(regex)
+          seq.exists(s => r.matches(s.stringify))
+        } else if (expected.trim.startsWith("JsonContains(Wildcard(") && expected.trim.endsWith("))")) {
+          val regex = expected.substring(23).init.init
+          val r = RegexPool.apply(regex)
+          seq.exists(s => r.matches(s.stringify))
+        } else if (expected.trim.startsWith("JsonContainsNot(Regex(") && expected.trim.endsWith("))")) {
+          val regex = expected.substring(23).init.init
+          val r = RegexPool.regex(regex)
+          !seq.exists(s => r.matches(s.stringify))
+        } else if (expected.trim.startsWith("JsonContainsNot(Wildcard(") && expected.trim.endsWith("))")) {
+          val regex = expected.substring(25).init.init
+          val r = RegexPool.apply(regex)
+          !seq.exists(s => r.matches(s.stringify))
+        } /////////
+        else if (expected.trim.startsWith("StartsWith(") && expected.trim.endsWith(")")) {
+          val v = expected.substring(11).init
+          seq.forall {
+            case JsString(str) => str.startsWith(v)
+            case _ => false
+          }
+        } else if (expected.trim.startsWith("DontStartsWith(") && expected.trim.endsWith(")")) {
+          val v = expected.substring(15).init
+          seq.forall {
+            case JsString(str) => !str.startsWith(v)
+            case _ => false
+          }
         } else {
           arr.stringify == expected
         }
       }
+      case Some(JsArray(seq)) if !value.isInstanceOf[JsArray]       => seq.contains(value)
       case Some(JsString(v)) if value.isInstanceOf[JsString]        => {
         val expected = value.asString
         if (expected.trim.startsWith("Regex(") && expected.trim.endsWith(")")) {
@@ -201,12 +234,14 @@ object JsonPathValidator {
   val format = new Format[JsonPathValidator] {
     override def writes(o: JsonPathValidator): JsValue             = Json.obj(
       "path"  -> o.path,
-      "value" -> o.value
+      "value" -> o.value,
+      "error" -> o.error.map(JsString.apply).orJsNull
     )
     override def reads(json: JsValue): JsResult[JsonPathValidator] = Try {
       JsonPathValidator(
         path = json.select("path").as[String],
-        value = json.select("value").asValue
+        value = json.select("value").asValue,
+        error = json.select("error").asOpt[String].filter(_.trim.nonEmpty)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

@@ -21408,6 +21408,16 @@
           "value" : {
             "type" : "object",
             "description" : "???"
+          },
+          "error" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
           }
         }
       },

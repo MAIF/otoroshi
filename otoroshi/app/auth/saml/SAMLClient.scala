@@ -20,11 +20,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -37,8 +33,9 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
 import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
@@ -276,6 +273,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
                 simpleLogin = false,
                 tags = Seq.empty,
                 metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
+                adminEntityValidators = authConfig.adminEntityValidatorsOverride.getOrElse(email, Map.empty),
                 rights = UserRights(
                   Seq(
                     UserRight(
@@ -348,7 +346,18 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty),
+          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
+            o.value.mapValues { obj =>
+              obj.asObject.value.mapValues { arr =>
+                arr.asArray.value.map { item =>
+                  JsonPathValidator.format.reads(item)
+                }.collect {
+                  case JsSuccess(v, _) => v
+                }
+              }.toMap
+            }.toMap
+          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -668,7 +677,8 @@ case class SamlAuthModuleConfig(
     validateAssertions: Boolean = false,
     usedNameIDAsEmail: Boolean = true,
     emailAttributeName: Option[String] = Some("Email"),
-    sessionCookieValues: SessionCookieValues
+    sessionCookieValues: SessionCookieValues,
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
 ) extends AuthModuleConfig {
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata
@@ -706,7 +716,10 @@ case class SamlAuthModuleConfig(
     "singleLogoutProtocolBinding" -> this.singleLogoutProtocolBinding.name,
     "usedNameIDAsEmail"           -> this.usedNameIDAsEmail,
     "emailAttributeName"          -> this.emailAttributeName,
-    "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+    "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+      JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+    })
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {

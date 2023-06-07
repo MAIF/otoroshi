@@ -69,4 +69,6 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
 
   override def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.sadd(s"${env.storageRoot}:users:alreadyloggedin", email)
+
+  override def extractId(value: SimpleOtoroshiAdmin): String = value.theId
 }

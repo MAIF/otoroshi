@@ -15,6 +15,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -88,7 +89,8 @@ trait ApiActionContextCapable {
                     tags = Seq.empty,
                     metadata = Map.empty,
                     rights = userRights,
-                    location = EntityLocation(currentTenant, teams = Seq(TeamId.all))
+                    location = EntityLocation(currentTenant, teams = Seq(TeamId.all)),
+                    adminEntityValidators = Map.empty
                   )
                   Right(user.some)
                 case _                => Left("You're not authorized here (invalid setup) ! ")
@@ -252,6 +254,29 @@ trait ApiActionContextCapable {
     env.proxyState.authModuleAsync(id).flatMap {
       case Some(mod) if canUserWrite(mod) => f
       case _                              => fforbidden
+    }
+  }
+
+  def validateEntity(json: JsValue, singularName: String)(implicit env: Env): Either[JsValue, JsValue] = {
+    backOfficeUser match {
+      case Left(err) => Left(err.json)
+      case Right(None) => Right(json)
+      case Right(Some(user)) => {
+        val envValidators: Seq[JsonPathValidator] = env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val userValidators: Seq[JsonPathValidator] = user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val validators = envValidators ++ userValidators
+        val failedValidators = validators.filterNot(_.validate(json))
+        if (failedValidators.isEmpty) {
+          Right(json)
+        } else {
+          val errors = failedValidators.flatMap(_.error).map(_.json)
+          if (errors.isEmpty) {
+            Left("entity validation failed".json)
+          } else {
+            Left(JsArray(errors))
+          }
+        }
+      }
     }
   }
 }
