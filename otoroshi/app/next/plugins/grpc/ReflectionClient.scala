@@ -3,7 +3,6 @@ package otoroshi.next.plugins.grpc;
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 
-import java.util.concurrent.TimeUnit
 import scala.concurrent.Promise
 import scala.util.Try;
 
