@@ -169,6 +169,8 @@ libraryDependencies ++= Seq(
   "io.grpc"                          % "grpc-netty-shaded"                         % "1.55.1",
   "io.grpc"                          % "grpc-protobuf"                             % "1.55.1",
   "io.grpc"                          % "grpc-stub"                                 % "1.55.1",
+  "com.google.protobuf"              % "protobuf-java-util"                        % "3.23.2",
+
 
 // using a custom one right now as current build is broken
 //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
