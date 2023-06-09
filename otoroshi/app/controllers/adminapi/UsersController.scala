@@ -243,7 +243,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               }
             }
           }
-          !(badTenantAccess && badTeamAccess)
+          !(badTenantAccess || badTeamAccess)
         }
       }
       if (pass) {
@@ -285,13 +285,19 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 location =
                   EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
               )
-              ctx.validateEntity(user.json, "simple-admin-user") match {
-                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                case Right(_) => env.datastores.simpleAdminDataStore
-                  .registerUser(user)
-                  .map { _ =>
-                    Ok(Json.obj("username" -> username))
+
+              env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+                case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
+                case None => {
+                  ctx.validateEntity(user.json, "simple-admin-user") match {
+                    case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                    case Right(_) => env.datastores.simpleAdminDataStore
+                      .registerUser(user)
+                      .map { _ =>
+                        Ok(Json.obj("username" -> username))
+                      }
                   }
+                }
               }
             }
             case _                                             => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
@@ -437,13 +443,18 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 location =
                   EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
               )
-              ctx.validateEntity(user.json, "simple-admin-user") match {
-                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                case Right(_) => env.datastores.webAuthnAdminDataStore
-                  .registerUser(user)
-                  .map { _ =>
-                    Ok(Json.obj("username" -> username))
+              env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
+                case None => {
+                  ctx.validateEntity(user.json, "simple-admin-user") match {
+                    case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                    case Right(_) => env.datastores.webAuthnAdminDataStore
+                      .registerUser(user)
+                      .map { _ =>
+                        Ok(Json.obj("username" -> username))
+                      }
                   }
+                }
               }
             }
             case _                                                           => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
