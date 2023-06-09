@@ -456,22 +456,28 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
             ErrorTemplate.fromJsonSafe(body) match {
               case JsError(e)                  => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
               case JsSuccess(errorTemplate, _) =>
-                env.datastores.errorTemplateDataStore.set(errorTemplate).map {
-                  case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-                  case true  => {
-                    val event: AdminApiEvent = AdminApiEvent(
-                      env.snowflakeGenerator.nextIdStr(),
-                      env.env,
-                      Some(ctx.apiKey),
-                      ctx.user,
-                      "UPDATE_ERROR_TEMPLATE",
-                      s"User updated an error template",
-                      ctx.from,
-                      ctx.ua,
-                      errorTemplate.toJson
-                    )
-                    Audit.send(event)
-                    Ok(errorTemplate.toJson)
+                env.datastores.errorTemplateDataStore.findById(errorTemplate.serviceId).flatMap {
+                  case None => NotFound(Json.obj("error" -> "ErrorTemplate does not exists")).asFuture
+                  case Some(oldEntity) if !ctx.canUserWrite(oldEntity) => BadRequest(Json.obj("error" -> "You cant access this ErrorTemplate")).asFuture
+                  case Some(_) => {
+                    env.datastores.errorTemplateDataStore.set(errorTemplate.copy(serviceId = serviceId)).map {
+                      case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
+                      case true => {
+                        val event: AdminApiEvent = AdminApiEvent(
+                          env.snowflakeGenerator.nextIdStr(),
+                          env.env,
+                          Some(ctx.apiKey),
+                          ctx.user,
+                          "UPDATE_ERROR_TEMPLATE",
+                          s"User updated an error template",
+                          ctx.from,
+                          ctx.ua,
+                          errorTemplate.toJson
+                        )
+                        Audit.send(event)
+                        Ok(errorTemplate.toJson)
+                      }
+                    }
                   }
                 }
             }
@@ -495,22 +501,27 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
             ErrorTemplate.fromJsonSafe(body) match {
               case JsError(e)                  => BadRequest(Json.obj("error" -> s"Bad ErrorTemplate format $e")).asFuture
               case JsSuccess(errorTemplate, _) =>
-                env.datastores.errorTemplateDataStore.set(errorTemplate).map {
-                  case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-                  case true  => {
-                    val event: AdminApiEvent = AdminApiEvent(
-                      env.snowflakeGenerator.nextIdStr(),
-                      env.env,
-                      Some(ctx.apiKey),
-                      ctx.user,
-                      "CREATE_ERROR_TEMPLATE",
-                      s"User created an error template",
-                      ctx.from,
-                      ctx.ua,
-                      errorTemplate.toJson
-                    )
-                    Audit.send(event)
-                    Ok(errorTemplate.toJson)
+                env.datastores.errorTemplateDataStore.findById(errorTemplate.serviceId).flatMap {
+                  case Some(_) => BadRequest(Json.obj("error" -> "ErrorTemplate already exists")).asFuture
+                  case None => {
+                    env.datastores.errorTemplateDataStore.set(errorTemplate).map {
+                      case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
+                      case true => {
+                        val event: AdminApiEvent = AdminApiEvent(
+                          env.snowflakeGenerator.nextIdStr(),
+                          env.env,
+                          Some(ctx.apiKey),
+                          ctx.user,
+                          "CREATE_ERROR_TEMPLATE",
+                          s"User created an error template",
+                          ctx.from,
+                          ctx.ua,
+                          errorTemplate.toJson
+                        )
+                        Audit.send(event)
+                        Ok(errorTemplate.toJson)
+                      }
+                    }
                   }
                 }
             }

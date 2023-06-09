@@ -111,26 +111,31 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
             case JsSuccess(apiKey, _)                              =>
-              ctx.validateEntity(body, "apikey") match {
-                case Left(errs) => BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
-                case Right(_) => {
-                  apiKey.save().map {
-                    case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
-                    case true => {
-                      sendAuditAndAlert(
-                        "CREATE_APIKEY",
-                        s"User created an ApiKey",
-                        "ApiKeyCreatedAlert",
-                        Json.obj(
-                          "desc" -> desc.json,
-                          "apikey" -> apiKey.toJson
-                        ),
-                        ctx
-                      )
-                      env.datastores.apiKeyDataStore.addFastLookupByService(routeId, apiKey).map { _ =>
-                        env.datastores.apiKeyDataStore.findAll()
+              env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
+                case Some(_) => BadRequest(Json.obj("error" -> "resource already exists")).asFuture
+                case None => {
+                  ctx.validateEntity(body, "apikey") match {
+                    case Left(errs) => BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
+                    case Right(_) => {
+                      apiKey.save().map {
+                        case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
+                        case true => {
+                          sendAuditAndAlert(
+                            "CREATE_APIKEY",
+                            s"User created an ApiKey",
+                            "ApiKeyCreatedAlert",
+                            Json.obj(
+                              "desc" -> desc.json,
+                              "apikey" -> apiKey.toJson
+                            ),
+                            ctx
+                          )
+                          env.datastores.apiKeyDataStore.addFastLookupByService(routeId, apiKey).map { _ =>
+                            env.datastores.apiKeyDataStore.findAll()
+                          }
+                          Created(apiKey.toJson)
+                        }
                       }
-                      Created(apiKey.toJson)
                     }
                   }
                 }
@@ -157,29 +162,35 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                 ).asFuture
               case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) => {
                 val body = ctx.request.body
-                ctx.validateEntity(body, "apikey") match {
-                  case Left(errs) => BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
-                  case Right(_) => {
-                    ApiKey.fromJsonSafe(body) match {
-                      case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                      case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
-                        BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                      case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
-                        sendAuditAndAlert(
-                          "UPDATE_APIKEY",
-                          s"User updated an ApiKey",
-                          "ApiKeyUpdatedAlert",
-                          Json.obj(
-                            "desc" -> desc.json,
-                            "apikey" -> apiKey.toJson
-                          ),
-                          ctx
-                        )
-                        newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
+                  case None => BadRequest(Json.obj("error" -> "resource does no exists")).asFuture
+                  case Some(old) if !ctx.canUserWrite(old) => BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                  case Some(old) => {
+                      ctx.validateEntity(body, "apikey") match {
+                        case Left(errs) => BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
+                        case Right(_) => {
+                          ApiKey.fromJsonSafe(body) match {
+                            case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                            case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
+                              BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                            case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
+                              sendAuditAndAlert(
+                                "UPDATE_APIKEY",
+                                s"User updated an ApiKey",
+                                "ApiKeyUpdatedAlert",
+                                Json.obj(
+                                  "desc" -> desc.json,
+                                  "apikey" -> apiKey.toJson
+                                ),
+                                ctx
+                              )
+                              newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                            }
+                          }
+                        }
                       }
                     }
                   }
-                }
               }
             }
         }

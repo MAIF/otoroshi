@@ -111,23 +111,28 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
             case JsSuccess(apiKey, _)                              =>
-              apiKey.save().map {
-                case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
-                case true  => {
-                  sendAuditAndAlert(
-                    "CREATE_APIKEY",
-                    s"User created an ApiKey",
-                    "ApiKeyCreatedAlert",
-                    Json.obj(
-                      "desc"   -> desc.toJson,
-                      "apikey" -> apiKey.toJson
-                    ),
-                    ctx
-                  )
-                  env.datastores.apiKeyDataStore.addFastLookupByService(serviceId, apiKey).map { _ =>
-                    env.datastores.apiKeyDataStore.findAll()
+              env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
+                case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
+                case None => {
+                  apiKey.save().map {
+                    case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
+                    case true => {
+                      sendAuditAndAlert(
+                        "CREATE_APIKEY",
+                        s"User created an ApiKey",
+                        "ApiKeyCreatedAlert",
+                        Json.obj(
+                          "desc" -> desc.toJson,
+                          "apikey" -> apiKey.toJson
+                        ),
+                        ctx
+                      )
+                      env.datastores.apiKeyDataStore.addFastLookupByService(serviceId, apiKey).map { _ =>
+                        env.datastores.apiKeyDataStore.findAll()
+                      }
+                      Created(apiKey.toJson)
+                    }
                   }
-                  Created(apiKey.toJson)
                 }
               }
           }
@@ -156,17 +161,23 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                   case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
-                    sendAuditAndAlert(
-                      "UPDATE_APIKEY",
-                      s"User updated an ApiKey",
-                      "ApiKeyUpdatedAlert",
-                      Json.obj(
-                        "desc"   -> desc.toJson,
-                        "apikey" -> apiKey.toJson
-                      ),
-                      ctx
-                    )
-                    newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                      case None => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                      case Some(oldApik) if !ctx.canUserWrite(oldApik) => BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                      case Some(_) => {
+                        sendAuditAndAlert(
+                          "UPDATE_APIKEY",
+                          s"User updated an ApiKey",
+                          "ApiKeyUpdatedAlert",
+                          Json.obj(
+                            "desc" -> desc.toJson,
+                            "apikey" -> apiKey.toJson
+                          ),
+                          ctx
+                        )
+                        newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                      }
+                    }
                   }
                 }
               }
@@ -508,23 +519,28 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
             case JsSuccess(apiKey, _)                              =>
-              apiKey.save().map {
-                case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
-                case true  => {
-                  sendAuditAndAlert(
-                    "CREATE_APIKEY",
-                    s"User created an ApiKey",
-                    "ApiKeyCreatedAlert",
-                    Json.obj(
-                      "group"  -> group.toJson,
-                      "apikey" -> apiKey.toJson
-                    ),
-                    ctx
-                  )
-                  env.datastores.apiKeyDataStore.addFastLookupByGroup(groupId, apiKey).map { _ =>
-                    env.datastores.apiKeyDataStore.findAll()
+              env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
+                case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
+                case None => {
+                  apiKey.save().map {
+                    case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
+                    case true => {
+                      sendAuditAndAlert(
+                        "CREATE_APIKEY",
+                        s"User created an ApiKey",
+                        "ApiKeyCreatedAlert",
+                        Json.obj(
+                          "group" -> group.toJson,
+                          "apikey" -> apiKey.toJson
+                        ),
+                        ctx
+                      )
+                      env.datastores.apiKeyDataStore.addFastLookupByGroup(groupId, apiKey).map { _ =>
+                        env.datastores.apiKeyDataStore.findAll()
+                      }
+                      Created(apiKey.toJson)
+                    }
                   }
-                  Created(apiKey.toJson)
                 }
               }
           }
@@ -551,17 +567,23 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
-                  sendAuditAndAlert(
-                    "UPDATE_APIKEY",
-                    s"User updated an ApiKey",
-                    "ApiKeyUpdatedAlert",
-                    Json.obj(
-                      "group"  -> group.toJson,
-                      "apikey" -> apiKey.toJson
-                    ),
-                    ctx
-                  )
-                  newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                  env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                    case None => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                    case Some(oldApik) if !ctx.canUserWrite(oldApik) => BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                    case Some(_) => {
+                      sendAuditAndAlert(
+                        "UPDATE_APIKEY",
+                        s"User updated an ApiKey",
+                        "ApiKeyUpdatedAlert",
+                        Json.obj(
+                          "group" -> group.toJson,
+                          "apikey" -> apiKey.toJson
+                        ),
+                        ctx
+                      )
+                      newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                    }
+                  }
                 }
               }
             }

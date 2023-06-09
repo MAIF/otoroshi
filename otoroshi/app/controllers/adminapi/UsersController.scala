@@ -285,7 +285,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 location =
                   EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
               )
-
+              
               env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
                 case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
                 case None => {
