@@ -1,6 +1,7 @@
 package otoroshi.next.plugins.grpc
 
 import akka.stream.Materializer
+import akka.util.ByteString
 import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.protobuf.util.JsonFormat
@@ -14,22 +15,41 @@ import play.api.libs.json._
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-case class GrpcConfig(
-
-) extends NgPluginConfig {
+case class GrpcConfig(address: String = "",
+                      port: Int = 80,
+                      secured: Boolean = false,
+                      fullServiceName: String = "",
+                      methodName: String = "",
+                      packageName: String = "",
+                      serviceName: String = "",
+                      clientKind: GRPCClientKind = GRPCClientKind.AsyncUnary) extends NgPluginConfig {
   override def json: JsValue = GrpcConfig.format.writes(this)
 }
 object GrpcConfig {
   val format  = new Format[GrpcConfig] {
     override def writes(o: GrpcConfig): JsValue             = Json.obj(
-
+      "address" -> o.address,
+      "port" -> o.port,
+      "secured" -> o.secured,
+      "fullServiceName" -> o.fullServiceName,
+      "methodName" -> o.methodName,
+      "packageName" -> o.packageName,
+      "serviceName" -> o.serviceName,
+      "clientKind" -> o.clientKind.value
     )
     override def reads(json: JsValue): JsResult[GrpcConfig] = Try {
       GrpcConfig(
-
+        address = json.select("address").asOpt[String].getOrElse(""),
+        port = json.select("port").asOpt[Int].getOrElse(80),
+        secured = json.select("secured").asOpt[Boolean].getOrElse(false),
+        fullServiceName = json.select("fullServiceName").asOpt[String].getOrElse(""),
+        methodName = json.select("methodName").asOpt[String].getOrElse(""),
+        packageName = json.select("packageName").asOpt[String].getOrElse(""),
+        serviceName = json.select("serviceName").asOpt[String].getOrElse(""),
+        clientKind = json.select("clientKind").asOpt[Int].map(GRPCClientKind.fromValue)
+          .getOrElse(GRPCClientKind.AsyncUnary)
       )
     } match {
       case Failure(e)     => JsError(e.getMessage)
@@ -60,8 +80,8 @@ class NgGrpcCall extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def useDelegates: Boolean                       = false
   override def core: Boolean                               = true
-  override def name: String                                = "Grpc caller"
-  override def description: Option[String]                 = "grpc".some
+  override def name: String                                = "GRPC caller"
+  override def description: Option[String]                 = "GRPC".some
   override def defaultConfigObject: Option[NgPluginConfig] = GrpcConfig().some
 
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
@@ -74,7 +94,7 @@ class NgGrpcCall extends NgBackendCall {
     val method = ctx.request.method
     val headers = ctx.request.headers.toSeq
 
-    val channelRef = GRPCChannelRef("127.0.0.1", 5000, secured = false)
+    val channelRef = GRPCChannelRef(config.address, config.port, secured = config.secured)
     val channel = NgGrpcCall.channelsCache.getIfPresent(channelRef.id) match {
       case Some(value) => value
       case None =>
@@ -86,28 +106,26 @@ class NgGrpcCall extends NgBackendCall {
     val client = new ReflectionClient(channel)
     val messagesPromise = Promise[Seq[DynamicMessage]]()
 
-    val service = GRPCService("UserService", "GetUser", packageName = "", "UserService")
-    client.call(service, GRPCClientKind.asyncClientStreaming, None, messagesPromise)
+    val service = GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
 
-//    client.call("UserService", "SetUser", "", "UserService",
-//      Json.stringify(Json.obj(
-//        "name" -> "Etienne",
-//        "age" -> 132
-//      )), test)
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      val body = bodyRaw.utf8String //.parseJson.asObject
+      client.call(service, config.clientKind, if(body.isEmpty) None else Some(body), messagesPromise)
 
-    messagesPromise
-      .future
-      .flatMap(messages => {
-        val jsonMessages: Seq[JsValue] = messages.map(message => Json.parse(JsonFormat.printer().print(message)))
-        bodyResponse(
-          200,
-          Map("Content-Type" -> "application/json"),
-          JsArray(jsonMessages)
-            .stringify
-            .byteString
-            .singleSource
-        ).vfuture
-      });
+      messagesPromise
+        .future
+        .flatMap(messages => {
+          val jsonMessages: Seq[JsValue] = messages.map(message => Json.parse(JsonFormat.printer().print(message)))
+          bodyResponse(
+            200,
+            Map("Content-Type" -> "application/json"),
+            JsArray(jsonMessages)
+              .stringify
+              .byteString
+              .singleSource
+          ).vfuture
+        });
+    }
 
     //client.listService(servicesPromise)
 
@@ -136,10 +154,5 @@ class NgGrpcCall extends NgBackendCall {
 //          Json.obj().stringify.byteString.singleSource
 //        ).vfuture
 //      })
-
-//    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-//      val body = bodyRaw.utf8String.parseJson.asObject
-//
-//    }
   }
 }

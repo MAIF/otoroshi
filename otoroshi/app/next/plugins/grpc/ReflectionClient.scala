@@ -6,13 +6,15 @@ import com.google.protobuf.Descriptors.FileDescriptor
 import com.google.protobuf._
 import io.grpc.protobuf.ProtoUtils
 import io.grpc.stub.{ClientCalls, StreamObserver}
-import io.grpc.{CallOptions, ManagedChannel, ManagedChannelBuilder, MethodDescriptor}
+import io.grpc.{CallOptions, Grpc, InsecureChannelCredentials, ManagedChannel, ManagedChannelBuilder, MethodDescriptor, TlsChannelCredentials}
 import otoroshi.env.Env
+import otoroshi.ssl.DynamicSSLEngineProvider
 import play.api.Logger
 
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 sealed trait GRPCClientKind {
   def value: Int
@@ -28,8 +30,16 @@ object GRPCClientKind {
   case object AsyncBidiStreaming   extends GRPCClientKind {
     def value: Int = 3
   }
-  case object asyncClientStreaming extends GRPCClientKind {
+  case object AsyncClientStreaming extends GRPCClientKind {
     def value: Int = 4
+  }
+
+  def fromValue(n: Int): GRPCClientKind = n match {
+    case 1 => GRPCClientKind.AsyncUnary
+    case 2 => GRPCClientKind.BlockingUnary
+    case 3 => GRPCClientKind.AsyncClientStreaming
+    case 4 => GRPCClientKind.AsyncBidiStreaming
+    case _ => GRPCClientKind.AsyncUnary
   }
 }
 
@@ -46,15 +56,27 @@ object GRPCChannelRef {
       secured)
   }
 
-  def convertToManagedChannel(channelRef: GRPCChannelRef): ManagedChannel = {
+  def convertToManagedChannel(channelRef: GRPCChannelRef)(implicit env: Env): ManagedChannel = {
     if (channelRef.secured) {
-      ManagedChannelBuilder.forAddress(channelRef.address, channelRef.port).build()
-    } else {
-      ManagedChannelBuilder
-        .forAddress(channelRef.address, channelRef.port)
-        .usePlaintext()
-        .asInstanceOf[ManagedChannelBuilder[_]]
+//      ManagedChannelBuilder.forAddress(channelRef.address, channelRef.port).build()
+      // TODO - add list of trusted certificates
+      val creds = TlsChannelCredentials.newBuilder()
+        .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
         .build()
+      Grpc.newChannelBuilderForAddress(
+        channelRef.address, channelRef.port, creds
+      )
+        .build()
+    } else {
+      Grpc.newChannelBuilderForAddress(
+        channelRef.address, channelRef.port, InsecureChannelCredentials.create()
+      )
+        .build()
+//      ManagedChannelBuilder
+//        .forAddress(channelRef.address, channelRef.port)
+//        .usePlaintext()
+//        .asInstanceOf[ManagedChannelBuilder[_]]
+//        .build()
     }
   }
 }
@@ -125,7 +147,7 @@ class ReflectionClient(channel: ManagedChannel) {
           requestContent,
           streamingResponseObserver(promise)
         )
-      case GRPCClientKind.asyncClientStreaming =>
+      case GRPCClientKind.AsyncClientStreaming =>
         asyncClientStreamingCall(channel, fileDescriptor, methodDescriptor, requestContent, promise)
     }
   }
@@ -238,6 +260,7 @@ class ReflectionClient(channel: ManagedChannel) {
       ClientCalls.asyncBidiStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
 
     clientObserver.onNext(buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent))
+    clientObserver.onCompleted()
   }
 
   private def blockingUnaryCall(
@@ -270,7 +293,12 @@ class ReflectionClient(channel: ManagedChannel) {
 
     requestContent.foreach(content => {
       val parser = com.google.protobuf.util.JsonFormat.parser.usingTypeRegistry(registry)
-      parser.merge(content, messageBuilder)
+
+      Try {
+        parser.merge(content, messageBuilder)
+      } recover {
+        case e: Exception => logger.error("Error merging incoming body to message", e)
+      }
     })
 
     messageBuilder.build()
