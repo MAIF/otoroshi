@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.3.2
+16.4.0
 </div>
 </div>
 <div class="nav-toc">
@@ -113,7 +113,9 @@
     <li><a href="how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
   <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -165,7 +167,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.3.2
+16.4.0
 </div>
 </div>
 <div class="nav-toc">
@@ -243,7 +245,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
   <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -290,8 +294,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You will need</p>
 <ul>
   <li>git</li>
-  <li>JDK 11</li>
-  <li>SBT 1.3.x</li>
+  <li>JDK &gt;= 11</li>
+  <li>SBT &gt;= 1.3.x</li>
   <li>Node 13 + yarn 1.x</li>
 </ul>
 <h2><a href="#clone-the-repository" name="clone-the-repository" class="anchor"><span class="anchor-link"></span></a>Clone the repository</h2>
@@ -319,9 +323,6 @@ npm run start
 <pre class="prettyprint"><code class="language-sh">sbt
 </code></pre>
 <p>then in the sbt console run the following command</p>
-<pre class="prettyprint"><code class="language-sh">~run -Dotoroshi.storage=file -Dotoroshi.liveJs=true -Dhttps.port=9998 -Dotoroshi.privateapps.port=9999 -Dotoroshi.adminPassword=password -Dotoroshi.domain=oto.tools -Dplay.server.https.engineProvider=ssl.DynamicSSLEngineProvider -Dotoroshi.events.maxSize=0
-</code></pre>
-<p>or you can use the <a href="https://github.com/spray/sbt-revolver">sbt-revolver</a> to run otoroshi locally for a more <code>prod</code> alike behavior (on the TLS part for instance)</p>
 <pre class="prettyprint"><code class="language-sh">~reStart
 # to pass jvm args, you can use: ~reStart --- -Dotoroshi.storage=memory ...
 </code></pre>

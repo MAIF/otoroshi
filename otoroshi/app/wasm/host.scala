@@ -47,7 +47,7 @@ case class EnvUserData(
     env: Env,
     executionContext: ExecutionContext,
     mat: Materializer,
-    config: WasmConfig,
+    config: WasmConfig
 ) extends HostUserData
 
 case class StateUserData(
@@ -104,7 +104,7 @@ object HFunction {
 
   def defineContextualFunction(
       fname: String,
-      config: WasmConfig,
+      config: WasmConfig
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
@@ -166,9 +166,9 @@ object Logging extends AwaitCapable {
     logLevel match {
       case LogLevel.LogLevelTrace => logger.trace(messageData)
       case LogLevel.LogLevelDebug => logger.debug(messageData)
-      case LogLevel.LogLevelInfo => logger.info(messageData)
-      case LogLevel.LogLevelWarn => logger.warn(messageData)
-      case _ => logger.error(messageData)
+      case LogLevel.LogLevelInfo  => logger.info(messageData)
+      case LogLevel.LogLevelWarn  => logger.warn(messageData)
+      case _                      => logger.error(messageData)
     }
 
     returns(0).v.i32 = Status.StatusOK.id
@@ -939,14 +939,13 @@ object State {
   def proxyClusteStateGetValue(
       config: WasmConfig
   )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
-    HFunction.defineContextualFunction("proxy_cluster_state_value", config) {
-      (plugin, params, returns, userData) =>
-        {
-          val path = Utils.contextParamsToString(plugin, params: _*)
+    HFunction.defineContextualFunction("proxy_cluster_state_value", config) { (plugin, params, returns, userData) =>
+      {
+        val path = Utils.contextParamsToString(plugin, params: _*)
 
-          val cc = userData.env.clusterConfig
-          plugin.returnString(returns(0), JsonOperationsHelper.getValueAtPath(path, getClusterState(cc))._2.stringify)
-        }
+        val cc = userData.env.clusterConfig
+        plugin.returnString(returns(0), JsonOperationsHelper.getValueAtPath(path, getClusterState(cc))._2.stringify)
+      }
     }
   }
 
@@ -1103,8 +1102,7 @@ object State {
 
 object HostFunctions {
 
-  def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(
-      implicit
+  def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(implicit
       env: Env,
       executionContext: ExecutionContext
   ): Array[HostFunction[_ <: HostUserData]] = {
@@ -1118,8 +1116,11 @@ object HostFunctions {
       DataStore.getFunctions(config, pluginId) ++
       OPA.getFunctions(config)
 
-    functions.collect {
-      case func if func.authorized(config.authorizations) => func.function
-    }.seffectOn(_.map(_.name).mkString(", ")).toArray
+    functions
+      .collect {
+        case func if func.authorized(config.authorizations) => func.function
+      }
+      .seffectOn(_.map(_.name).mkString(", "))
+      .toArray
   }
 }

@@ -236,18 +236,18 @@ case class LdapAuthModuleConfig(
     dataOverride: Map[String, JsObject] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
 ) extends AuthModuleConfig {
-  def `type`: String                   = "ldap"
-  def humanName: String                = "Ldap auth. provider"
+  def `type`: String    = "ldap"
+  def humanName: String = "Ldap auth. provider"
 
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  override def form: Option[Form]                           = None
-  override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
+  override def form: Option[Form]                                       = None
+  override def authModule(config: GlobalConfig): AuthModule             = LdapAuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
@@ -713,7 +713,12 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  override def paLoginPage(
+      request: RequestHeader,
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor,
+      isRoute: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -743,7 +748,9 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/privateapps/generic/callback?route=$isRoute&desc=${descriptor.id}&token=$token&hash=$hash&ref=${authConfig.id}")
+                      Results.Redirect(
+                        s"/privateapps/generic/callback?route=$isRoute&desc=${descriptor.id}&token=$token&hash=$hash&ref=${authConfig.id}"
+                      )
                     }
                 }
             }
@@ -753,7 +760,13 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         Results
           .Ok(
             otoroshi.views.html.oto
-              .login(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&hash=$hash&ref=${authConfig.id}", "POST", token, false, env)
+              .login(
+                s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&hash=$hash&ref=${authConfig.id}",
+                "POST",
+                token,
+                false,
+                env
+              )
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(

@@ -4,13 +4,13 @@ import { v4 as uuid } from 'uuid';
 
 class Toast extends Component {
   render() {
-    const backgroundColor = '#5A5A5A';
-    let color = null;
+    let backgroundColor = 'var(--color-primary)';
+    let color = 'var(--color_level3)';
     if (this.props.toast.kind === 'error') {
-      color = 'rgb(213, 68, 63)';
+      backgroundColor = 'var(--color-red)';
     }
     if (this.props.toast.kind === 'warn') {
-      color = 'var(--color-primary)';
+      backgroundColor = 'orange';
     }
     return (
       <div
@@ -21,6 +21,7 @@ class Toast extends Component {
           backgroundColor,
           height: 140,
           border: '1px solid #444',
+          borderRadius: '5px',
         }}>
         <div
           style={{
@@ -34,7 +35,6 @@ class Toast extends Component {
             borderBottom: '1px solid #444',
           }}>
           {this.props.toast.title}{' '}
-          <small style={{ color: '#fff' }}>{moment().format('YYYY-MM-DD HH:mm:ss')}</small>{' '}
           <button
             type="button"
             className="btn btn-sm btn-danger"
@@ -47,10 +47,12 @@ class Toast extends Component {
             width: '100%',
             height: 80,
             display: 'flex',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
+            color: 'var(--color_level3)',
+            flexDirection: 'column',
+            marginTop: '10px',
           }}>
           {this.props.toast.body}
+          <small>{moment().format('YYYY-MM-DD HH:mm:ss')}</small>{' '}
         </div>
       </div>
     );
@@ -60,7 +62,7 @@ class Toast extends Component {
 export class Toasts extends Component {
   state = { toasts: [] };
 
-  toast = (title, body, kind = 'normal', duration = 2000) => {
+  toast = (title, body, kind = 'normal', duration = 3000) => {
     const toast = {
       id: uuid(),
       title: title,
@@ -98,8 +100,8 @@ export class Toasts extends Component {
           justifyContent: 'flex-end',
           alignItems: 'center',
           position: 'fixed',
-          right: 0,
-          bottom: 0,
+          right: 10,
+          top: 10,
           width: '30vw',
         }}>
         {this.state.toasts.map((toast) => (

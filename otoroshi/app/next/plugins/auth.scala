@@ -115,11 +115,12 @@ object NgAuthModuleConfig {
   }
 }
 
-case class NgMultiAuthModuleConfig(modules: Seq[String] = Seq.empty,
-                                   passWithApikey: Boolean = false,
-                                   useEmailPrompt: Boolean = false,
-                                   usersGroups: JsObject = Json.obj()
-                                  ) extends NgPluginConfig {
+case class NgMultiAuthModuleConfig(
+    modules: Seq[String] = Seq.empty,
+    passWithApikey: Boolean = false,
+    useEmailPrompt: Boolean = false,
+    usersGroups: JsObject = Json.obj()
+) extends NgPluginConfig {
   def json: JsValue = NgMultiAuthModuleConfig.format.writes(this)
 }
 
@@ -127,17 +128,22 @@ object NgMultiAuthModuleConfig {
   val format = new Format[NgMultiAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgMultiAuthModuleConfig] = Try {
       NgMultiAuthModuleConfig(
-        modules = json.select("auth_modules").asOpt[Seq[String]]
+        modules = json
+          .select("auth_modules")
+          .asOpt[Seq[String]]
           .orElse(json.select("modules").asOpt[Seq[String]])
           .getOrElse(Seq.empty[String])
           .filter(_.nonEmpty),
-        passWithApikey = json.select("pass_with_apikey")
+        passWithApikey = json
+          .select("pass_with_apikey")
           .asOpt[Boolean]
           .getOrElse(false),
-        useEmailPrompt = json.select("use_email_prompt")
+        useEmailPrompt = json
+          .select("use_email_prompt")
           .asOpt[Boolean]
           .getOrElse(false),
-        usersGroups = json.select("users_groups")
+        usersGroups = json
+          .select("users_groups")
           .asOpt[JsObject]
           .getOrElse(Json.obj())
       )
@@ -148,14 +154,14 @@ object NgMultiAuthModuleConfig {
 
     override def writes(o: NgMultiAuthModuleConfig): JsValue = Json.obj(
       "pass_with_apikey" -> o.passWithApikey,
-      "auth_modules" -> o.modules
+      "auth_modules"     -> o.modules
     )
   }
 }
 
 class MultiAuthModule extends NgAccessValidator {
 
-  private val logger = Logger("otoroshi-next-plugins-multi-auth-module")
+  private val logger                                      = Logger("otoroshi-next-plugins-multi-auth-module")
   private val configReads: Reads[NgMultiAuthModuleConfig] = NgMultiAuthModuleConfig.format
 
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
@@ -170,7 +176,8 @@ class MultiAuthModule extends NgAccessValidator {
 
   override def name: String = "Multi Authentication"
 
-  override def description: Option[String] = "This plugin applies an authentication module from a list of selected modules".some
+  override def description: Option[String] =
+    "This plugin applies an authentication module from a list of selected modules".some
 
   override def defaultConfigObject: Option[NgPluginConfig] = NgMultiAuthModuleConfig().some
 
@@ -181,8 +188,8 @@ class MultiAuthModule extends NgAccessValidator {
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgMultiAuthModuleConfig())
 
     val maybeApikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-    val pass = passWithApikey match {
-      case true => maybeApikey.isDefined
+    val pass        = passWithApikey match {
+      case true  => maybeApikey.isDefined
       case false => false
     }
 
@@ -207,42 +214,49 @@ class MultiAuthModule extends NgAccessValidator {
             case cookies if cookies.nonEmpty =>
               modules
                 .flatMap(module => env.proxyState.authModule(module))
-                .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(ctx.route)}")) match {
+                .find(module =>
+                  cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(ctx.route)}")
+                ) match {
                 case Some(module) => passWithAuthModule(module.id, ctx)
-                case None => redirectToAuthModule(ctx, useEmailPrompt)
+                case None         => redirectToAuthModule(ctx, useEmailPrompt)
               }
-            case _ => redirectToAuthModule(ctx, useEmailPrompt)
+            case _                           => redirectToAuthModule(ctx, useEmailPrompt)
           }
         }
-      case _ => NgAccess.NgAllowed.vfuture
+      case _             => NgAccess.NgAllowed.vfuture
     }
   }
 
-  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)
-                                  (implicit env: Env) = {
+  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(implicit env: Env) = {
     val redirect = ctx.request
       .getQueryString("redirect")
       .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
 
     if (useEmailPrompt) {
-      NgAccess.NgDenied(
-        Results.Redirect(
-          s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${redirect}"
+      NgAccess
+        .NgDenied(
+          Results.Redirect(
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${redirect}"
+          )
         )
-      ).vfuture
+        .vfuture
     } else {
       NgAccess
-        .NgDenied(Results.Redirect(
-          s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${redirect}"
+        .NgDenied(
+          Results.Redirect(
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${redirect}"
+          )
         )
-      ).vfuture
+        .vfuture
     }
   }
 
-  private def passWithAuthModule(authModuleId: String, ctx: NgAccessContext)
-                                (implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  private def passWithAuthModule(authModuleId: String, ctx: NgAccessContext)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
     env.proxyState.authModule(authModuleId) match {
-      case None =>
+      case None       =>
         Errors
           .craftResponseResult(
             "Auth. config. not found on the descriptor",
@@ -260,8 +274,8 @@ class MultiAuthModule extends NgAccessValidator {
           case Some(paUsr) =>
             ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
             NgAccess.NgAllowed.vfuture
-          case None => {
-            val redirect = ctx.request
+          case None        => {
+            val redirect   = ctx.request
               .getQueryString("redirect")
               .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
             val redirectTo =
@@ -289,7 +303,7 @@ class MultiAuthModule extends NgAccessValidator {
   }
 }
 
-  class AuthModule extends NgAccessValidator {
+class AuthModule extends NgAccessValidator {
 
   private val logger                                 = Logger("otoroshi-next-plugins-auth-module")
   private val configReads: Reads[NgAuthModuleConfig] = NgAuthModuleConfig.format

@@ -332,8 +332,7 @@ class PluginDocumentationGenerator(docPath: String) {
   def runOnePage(): Unit = {
     val root                  = ensureRootDir()
     val plugins               =
-      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames)
-        .distinct
+      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
         .filterNot(_ == "otoroshi.next.plugins.WasmJob")
     val contents: Seq[String] = plugins
       .map { pl =>

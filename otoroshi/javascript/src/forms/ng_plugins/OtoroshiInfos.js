@@ -22,7 +22,7 @@ export default {
     },
     add_fields: {
       type: 'object',
-      label: 'add fields'
+      label: 'add fields',
     },
     algo: {
       type: 'form',

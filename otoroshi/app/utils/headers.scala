@@ -98,13 +98,13 @@ object HeadersHelper {
 
       val missingOnlyHeaders: Seq[(String, String)] = descriptor.missingOnlyHeadersIn
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeaders: Seq[(String, String)] = descriptor.additionalHeaders
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
@@ -225,13 +225,13 @@ object HeadersHelper {
 
       val missingOnlyHeadersOut = descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeadersOut = descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
@@ -239,7 +239,7 @@ object HeadersHelper {
         .asHeaders(req)
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .map(v =>
-          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         )
         .filterNot(h => h._2 == "null")
 
@@ -340,13 +340,13 @@ object HeadersHelper {
 
       val missingOnlyHeadersOut = descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeadersOut = descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         .filterNot(h => h._2 == "null")
         .toSeq
 
@@ -354,7 +354,7 @@ object HeadersHelper {
         .asHeaders(req)
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .map(v =>
-          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
         )
         .filterNot(h => h._2 == "null")
 
@@ -418,7 +418,7 @@ object HeadersHelper {
       (descriptor.missingOnlyHeadersIn
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null") ++
       req.headers.toMap.toSeq
@@ -466,7 +466,7 @@ object HeadersHelper {
       descriptor.additionalHeaders
         .filter(t => t._1.trim.nonEmpty)
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null") ++ fromOtoroshi
         .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
@@ -500,7 +500,7 @@ object HeadersHelper {
       descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq ++
@@ -533,7 +533,7 @@ object HeadersHelper {
                                                                                             }) ++ descriptor.cors
         .asHeaders(req) ++ descriptor.additionalHeadersOut
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq
@@ -563,7 +563,7 @@ object HeadersHelper {
       descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq ++
@@ -599,7 +599,7 @@ object HeadersHelper {
         .asHeaders(req) ++ descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
         .mapValues(v =>
-          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq

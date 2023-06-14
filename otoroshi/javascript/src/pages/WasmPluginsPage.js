@@ -385,11 +385,7 @@ export class WasmPluginsPage extends Component {
       type: 'select',
       props: {
         label: 'VM Lifetime',
-        possibleValues: [
-          'Invocation',
-          'Request',
-          'Forever',
-        ].map((v) => ({ label: v, value: v }))
+        possibleValues: ['Invocation', 'Request', 'Forever'].map((v) => ({ label: v, value: v })),
       },
     },
     'config.wasi': {
@@ -408,7 +404,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Instances',
-        help: 'the number of VM instances'
+        help: 'the number of VM instances',
       },
     },
     'config.authorizations.httpAccess': {

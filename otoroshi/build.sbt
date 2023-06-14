@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.3.0-dev"
+version := "16.4.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -339,7 +339,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
   "-Dotoroshi.loggers.otoroshi-wasm-debug=INFO",
-  "-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE",
+  "-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE"
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",

@@ -365,41 +365,42 @@ object ApiKey {
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
-        val rawEnabled = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+        val rawEnabled    = (json \ "enabled").asOpt[Boolean].getOrElse(true)
         val rawValidUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l))
-        val enabled = rawValidUntil match {
+        val enabled       = rawValidUntil match {
           case Some(date) if date.isBeforeNow => false
-          case _ => rawEnabled
+          case _                              => rawEnabled
         }
-        for(
-          clientId <- (json \ "clientId").asOpt[String].filterNot(_.isBlank);
+        for (
+          clientId     <- (json \ "clientId").asOpt[String].filterNot(_.isBlank);
           clientSecret <- (json \ "clientSecret").asOpt[String].filterNot(_.isBlank);
-          clientName <- (json \ "clientName").asOpt[String].filterNot(_.isBlank)
-        ) yield ApiKey(
-          location = otoroshi.models.EntityLocation.readFromKey(json),
-          clientId =  clientId,
-          clientSecret = clientSecret,
-          clientName = clientName,
-          description = (json \ "description").asOpt[String].getOrElse(""),
-          authorizedEntities = {
-            val authorizations: Seq[EntityIdentifier] = json
+          clientName   <- (json \ "clientName").asOpt[String].filterNot(_.isBlank)
+        )
+          yield ApiKey(
+            location = otoroshi.models.EntityLocation.readFromKey(json),
+            clientId = clientId,
+            clientSecret = clientSecret,
+            clientName = clientName,
+            description = (json \ "description").asOpt[String].getOrElse(""),
+            authorizedEntities = {
+              val authorizations: Seq[EntityIdentifier]     = json
                 .select("authorizations")
                 .asOpt[Seq[JsValue]]
                 .map { values =>
                   values
-                      .collect {
-                        case JsString(value) => EntityIdentifier.apply(value)
-                        case value@JsObject(_) => EntityIdentifier.applyModern(value)
-                      }
-                      .collect { case Some(id) =>
-                        id
-                      }
+                    .collect {
+                      case JsString(value)     => EntityIdentifier.apply(value)
+                      case value @ JsObject(_) => EntityIdentifier.applyModern(value)
+                    }
+                    .collect { case Some(id) =>
+                      id
+                    }
                 }
                 .getOrElse(Seq.empty[EntityIdentifier])
-            val authorizedGroup: Seq[EntityIdentifier] =
-              (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
-            val authorizedEntities: Seq[EntityIdentifier] =
-              (json \ "authorizedEntities")
+              val authorizedGroup: Seq[EntityIdentifier]    =
+                (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
+              val authorizedEntities: Seq[EntityIdentifier] =
+                (json \ "authorizedEntities")
                   .asOpt[Seq[String]]
                   .map { identifiers =>
                     identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
@@ -407,28 +408,28 @@ object ApiKey {
                     }
                   }
                   .getOrElse(Seq.empty[EntityIdentifier])
-            (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
-          },
-          enabled = enabled,
-          readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
-          allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
-          throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-          restrictions = Restrictions.format
+              (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
+            },
+            enabled = enabled,
+            readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
+            allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
+            throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+            dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+            monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+            constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+            restrictions = Restrictions.format
               .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(Restrictions()),
-          rotation = ApiKeyRotation.fmt
+            rotation = ApiKeyRotation.fmt
               .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(ApiKeyRotation()),
-          validUntil = rawValidUntil,
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          metadata = (json \ "metadata")
+            validUntil = rawValidUntil,
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            metadata = (json \ "metadata")
               .asOpt[Map[String, String]]
               .map(m => m.filter(_._1.nonEmpty))
               .getOrElse(Map.empty[String, String])
-        )
+          )
       } map { case sd =>
         JsSuccess(sd.get)
       } recover { case t =>
@@ -909,7 +910,10 @@ object ApiKeyHelper {
                           }
                         } match {
                         case Success(_) =>
-                          attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
+                          attrs.put(
+                            otoroshi.plugins.Keys.ApiKeyJwtKey -> Json
+                              .parse(jwt.getPayload.byteString.decodeBase64.utf8String)
+                          )
                           FastFuture.successful(Some(apiKey))
                         case Failure(e) => FastFuture.successful(None)
                       }
@@ -1446,7 +1450,10 @@ object ApiKeyHelper {
                               rotationInfos.foreach { i =>
                                 attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                               }
-                              attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
+                              attrs.put(
+                                otoroshi.plugins.Keys.ApiKeyJwtKey                     -> Json
+                                  .parse(jwt.getPayload.byteString.decodeBase64.utf8String)
+                              )
                               attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
                               sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
@@ -1821,7 +1828,11 @@ object ApiKeyHelper {
                         }
                       } match {
                       case Success(_) =>
-                        attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
+                        attrs.put(
+                          otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(
+                            jwt.getPayload.byteString.decodeBase64.utf8String
+                          )
+                        )
                         apikey.right
                       case Failure(e) => apikey.some.left
                     }

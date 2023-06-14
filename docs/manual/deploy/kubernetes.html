@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.3.2
+16.4.0
 </div>
 </div>
 <div class="nav-toc">
@@ -113,7 +113,9 @@
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -165,7 +167,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.3.2
+16.4.0
 </div>
 </div>
 <div class="nav-toc">
@@ -243,7 +245,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instanciate-waf-coraza.html" class="page">Instanciate a WAF with Coraza</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -297,7 +301,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay.</p>
 <p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
 <pre class="prettyprint"><code class="language-yaml">bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.3.2
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.4.0
 </code></pre>
 <p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
 <p>You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster</p>
@@ -350,7 +354,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.3.2
+      - image: maif/otoroshi:16.4.0
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: [&#39;-Dconfig.file=/usr/app/otoroshi/conf/oto.conf&#39;]
@@ -566,6 +570,36 @@ spec:
     kind: &quot;ServiceDescriptor&quot;
     plural: &quot;service-descriptors&quot;
     singular: &quot;service-descriptor&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;wasm-plugins.proxy.otoroshi.io&quot;
+  creationTimestamp: null
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;WasmPlugin&quot;
+    plural: &quot;wasm-plugins&quot;
+    singular: &quot;wasm-plugin&quot;
   scope: &quot;Namespaced&quot;
   versions:
   - name: &quot;v1alpha1&quot;
@@ -943,28 +977,6 @@ spec:
     schema:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;wasm-plugins.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;WasmPlugin&quot;
-    plural: &quot;wasm-plugins&quot;
-    singular: &quot;wasm-plugin&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
         type: &quot;object&quot;</code></pre></dd>
   <dt>redis.yaml
   </dt>
@@ -1132,7 +1144,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1373,7 +1385,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1688,7 +1700,7 @@ spec:
       restartPolicy: Always
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1983,7 +1995,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2160,7 +2172,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.3.2-rc.1-dev
+      - image: maif/otoroshi:16.4.0-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2372,7 +2384,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2549,7 +2561,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.3.2-rc.1-dev
+      - image: maif/otoroshi:16.4.0-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2814,7 +2826,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.3.2-jdk11
+      - image: maif/otoroshi:16.4.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -3005,7 +3017,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.3.2-rc.1-dev
+      - image: maif/otoroshi:16.4.0-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

@@ -65,7 +65,7 @@ export class ServiceEventsPage extends Component {
       title: '@timestamp',
       content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
-      filterId: '@timestamp'
+      filterId: '@timestamp',
     },
     { title: '@product', content: (item) => item['@product'], filterId: '@product' },
     {
@@ -133,14 +133,26 @@ export class ServiceEventsPage extends Component {
     { title: 'overhead', content: (item) => `${item.overhead} ms.`, filterId: 'overhead' },
     { title: 'status', content: (item) => item.status, filterId: 'status' },
     { title: 'method', content: (item) => item.method, filterId: 'method' },
-    { title: 'Access By', content: (item) => safe(item.identity, (i) => i.identityType), filterable: false }, // (item.identity ? item.identity.identityType : '--') },
+    {
+      title: 'Access By',
+      content: (item) => safe(item.identity, (i) => i.identityType),
+      filterable: false,
+    }, // (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
       filterable: false,
       content: (item) => safe(item.identity, (i) => i.label + ' (' + i.identity + ')'),
     },
-    { title: 'Data In', content: (item) => safe(item.data, (i) => i.dataIn + ' bytes'), filterId: 'data.dataIn' }, // item.data.dataIn + ' bytes' },
-    { title: 'Data Out', content: (item) => safe(item.data, (i) => i.dataOut + ' bytes'), filterId: 'data.dataOut' }, // item.data.dataOut + ' bytes' },
+    {
+      title: 'Data In',
+      content: (item) => safe(item.data, (i) => i.dataIn + ' bytes'),
+      filterId: 'data.dataIn',
+    }, // item.data.dataIn + ' bytes' },
+    {
+      title: 'Data Out',
+      content: (item) => safe(item.data, (i) => i.dataOut + ' bytes'),
+      filterId: 'data.dataOut',
+    }, // item.data.dataOut + ' bytes' },
     {
       title: 'uri',
       filterId: 'url',
@@ -275,7 +287,7 @@ export class ServiceEventsPage extends Component {
     });
   }
 
-  fetchEvents = paginationState => {
+  fetchEvents = (paginationState) => {
     const query = queryString.parse(window.location.search);
     const limit = query.limit || this.state.limit;
 

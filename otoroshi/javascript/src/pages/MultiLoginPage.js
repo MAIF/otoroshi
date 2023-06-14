@@ -7,25 +7,28 @@ const COLORS = {
   oauth2: '#f39c12',
   ldap: '#27ae60',
   custom: '#f9b000',
-}
+};
 
 function Provider({ name, link, type }) {
-
-  return <a style={{
-    textDecoration: 'none',
-    cursor: 'pointer'
-  }} href={link}>
-    <div style={{
-      background: COLORS[type] || '#f9b000',
-      minHeight: 46,
-      display: 'flex',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      color: '#fff',
-      textTransform: 'uppercase',
-      borderRadius: 4
-    }}>
-      {/* <div style={{
+  return (
+    <a
+      style={{
+        textDecoration: 'none',
+        cursor: 'pointer',
+      }}
+      href={link}>
+      <div
+        style={{
+          background: COLORS[type] || '#f9b000',
+          minHeight: 46,
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          color: '#fff',
+          textTransform: 'uppercase',
+          borderRadius: 4,
+        }}>
+        {/* <div style={{
         minWidth: 46,
         minHeight: 46,
         background: '#fff',
@@ -36,30 +39,37 @@ function Provider({ name, link, type }) {
       }}>
         {name.substring(0, 1)}
       </div> */}
-      <p style={{
-        margin: 0,
-        padding: '0 .25em 0 1em',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        // fontSize: '.85rem'
-      }}>CONTINUE WITH</p>
-      <p className='m-0' style={{
-        fontWeight: 'bold'
-      }}>{name}</p>
-    </div>
-  </a >
+        <p
+          style={{
+            margin: 0,
+            padding: '0 .25em 0 1em',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            // fontSize: '.85rem'
+          }}>
+          CONTINUE WITH
+        </p>
+        <p
+          className="m-0"
+          style={{
+            fontWeight: 'bold',
+          }}>
+          {name}
+        </p>
+      </div>
+    </a>
+  );
 }
 
 export class MultiLoginPage extends Component {
-
-  getLink = id => {
+  getLink = (id) => {
     if (this.props.redirect.length <= 0) {
-      return `/privateapps/generic/login?ref=${id}&route=${this.props.route}`
+      return `/privateapps/generic/login?ref=${id}&route=${this.props.route}`;
     } else {
-      return `/privateapps/generic/login?ref=${id}&redirect=${this.props.redirect}&route=${this.props.route}`
+      return `/privateapps/generic/login?ref=${id}&redirect=${this.props.redirect}&route=${this.props.route}`;
     }
-  }
+  };
 
   render() {
     const auths = JSON.parse(this.props.auths);
@@ -76,7 +86,7 @@ export class MultiLoginPage extends Component {
 
         <div className="login-card-body">
           {Object.entries(authenticationModules).map(([id, name]) => {
-            return <Provider name={name} link={this.getLink(id)} key={id} type={types[id]} />
+            return <Provider name={name} link={this.getLink(id)} key={id} type={types[id]} />;
           })}
         </div>
       </div>

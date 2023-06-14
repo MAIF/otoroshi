@@ -194,8 +194,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -1015,35 +1015,31 @@ export function findAllJwtVerifiers(paginationState) {
 }
 
 export function findAllEvents(paginationState, serviceId, from, to, limit = 500, order = 'asc') {
-
   function getValueAtPath(path, obj) {
     return path.split('.').reduce((acc, key) => {
-      if (acc[key])
-        return acc[key]
-      return {}
-    }, obj)
+      if (acc[key]) return acc[key];
+      return {};
+    }, obj);
   }
 
   return findAllWithPagination(
     `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
-    paginationState)
-    .then(events => {
-      const filters = (paginationState.filtered || []).map(field => ([field.id, field.value]))
-      const hasFilters = filters.length > 0;
+    paginationState
+  ).then((events) => {
+    const filters = (paginationState.filtered || []).map((field) => [field.id, field.value]);
+    const hasFilters = filters.length > 0;
 
-      if (events.data && hasFilters) {
-        return {
-          ...events,
-          data: events.data.filter(event => {
-            return filters.every(([filterKey, filterValue]) => {
-              return (""+getValueAtPath(filterKey, event)).includes(filterValue+"");
-            })
-          })
-        }
-      }
-      else
-        return events
-    })
+    if (events.data && hasFilters) {
+      return {
+        ...events,
+        data: events.data.filter((event) => {
+          return filters.every(([filterKey, filterValue]) => {
+            return ('' + getValueAtPath(filterKey, event)).includes(filterValue + '');
+          });
+        }),
+      };
+    } else return events;
+  });
 }
 
 export function findJwtVerifierById(id) {

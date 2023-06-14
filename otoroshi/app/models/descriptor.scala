@@ -981,7 +981,7 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
       attrs: TypedMap,
       env: Env
   ): String        =
-    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs, env)
+    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, None, ctx, attrs, env)
 }
 
 object RedirectionSettings {
@@ -1908,7 +1908,7 @@ case class ServiceDescriptor(
       requestHeader,
       issuer,
       sub,
-      None,
+      None
     )(env)
   }
 

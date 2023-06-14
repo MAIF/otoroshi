@@ -101,7 +101,8 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
-      lazy val addFields: Option[AddFieldsSettings] = raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
+      lazy val addFields: Option[AddFieldsSettings]  =
+        raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
       lazy val algo: AlgoSettings                    = AlgoSettings
         .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
@@ -431,16 +432,23 @@ class OtoroshiInfos extends NgRequestTransformer {
       ctx.request.some,
       None,
       None,
-      config.addFields.map(af => AddFieldsSettings(af.fields.mapValues(str => GlobalExpressionLanguage.apply(
-        value = str,
-        req = ctx.request.some,
-        service = ctx.route.legacy.some,
-        apiKey = ctx.apikey,
-        user = ctx.user,
-        context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-        attrs = ctx.attrs,
-        env = env,
-      ))))
+      config.addFields.map(af =>
+        AddFieldsSettings(
+          af.fields.mapValues(str =>
+            GlobalExpressionLanguage.apply(
+              value = str,
+              req = ctx.request.some,
+              service = ctx.route.legacy.some,
+              route = ctx.route.some,
+              apiKey = ctx.apikey,
+              user = ctx.user,
+              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+              attrs = ctx.attrs,
+              env = env
+            )
+          )
+        )
+      )
     )
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)

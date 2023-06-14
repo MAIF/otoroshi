@@ -306,6 +306,7 @@ class SOAPAction extends NgBackendCall {
       value = envelope,
       req = ctx.rawRequest.some,
       service = ctx.route.serviceDescriptor.some,
+      route = ctx.route.some,
       apiKey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
       user = ctx.attrs.get(otoroshi.plugins.Keys.UserKey),
       context = context,

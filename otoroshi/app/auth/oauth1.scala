@@ -266,7 +266,12 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
   def this() = this(Oauth1AuthModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  override def paLoginPage(
+      request: RequestHeader,
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor,
+      isRoute: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -303,7 +308,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
               .addingToSession(
-                "oauth_token_secret"                                      -> parameters("oauth_token_secret"),
+                "oauth_token_secret"                                              -> parameters("oauth_token_secret"),
                 "desc"                                                            -> descriptor.id,
                 "ref"                                                             -> authConfig.id,
                 "route"                                                           -> s"$isRoute",

@@ -159,11 +159,20 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def findAllTemplates() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        Ok(process(Json.obj("templates" -> env.datastores.authConfigsDataStore.templates()
-          .map(template => Json.obj(
-            "type"  -> template.`type`,
-            "label" -> template.humanName
-          ))), ctx.request)
+        Ok(
+          process(
+            Json.obj(
+              "templates" -> env.datastores.authConfigsDataStore
+                .templates()
+                .map(template =>
+                  Json.obj(
+                    "type"  -> template.`type`,
+                    "label" -> template.humanName
+                  )
+                )
+            ),
+            ctx.request
+          )
         ).future
       }
     }
@@ -358,7 +367,9 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             patchTemplate[AuthModuleConfig](
               env.datastores.authConfigsDataStore
                 .template(ctx.request.getQueryString("mod-type"), env)
-                .applyOn(c => c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
+                .applyOn(c =>
+                  c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+                )
                 .asJson,
               patch,
               AuthModuleConfig._fmt(env),

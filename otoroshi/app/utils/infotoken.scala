@@ -23,7 +23,7 @@ object InfoTokenHelper {
       requestHeader: Option[RequestHeader],
       issuer: Option[String] = None,
       sub: Option[String] = None,
-      addFields: Option[AddFieldsSettings],
+      addFields: Option[AddFieldsSettings]
   )(implicit env: Env): OtoroshiClaim = {
     import otoroshi.ssl.SSLImplicits._
     val clientCertChain = requestHeader
@@ -92,9 +92,9 @@ object InfoTokenHelper {
           }
         ).withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
           .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
-          .applyOnWithOpt(addFields) {
-            case (token, addFieldsSettings) => addFieldsSettings.fields.foldLeft(token) {
-              case (t, (key, value)) => t.withClaim(key, value)
+          .applyOnWithOpt(addFields) { case (token, addFieldsSettings) =>
+            addFieldsSettings.fields.foldLeft(token) { case (t, (key, value)) =>
+              t.withClaim(key, value)
             }
           }
       }

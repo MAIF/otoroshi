@@ -19,17 +19,17 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 case class NgBrotliConfig(
-  whiteList: Seq[String] = Seq("text/*", "application/javascript", "application/json"),
-  blackList: Seq[String] = Seq.empty[String],
-  bufferSize: Int = 8192,
-  chunkedThreshold: Int = 102400,
-  compressionLevel: Int = 5
+    whiteList: Seq[String] = Seq("text/*", "application/javascript", "application/json"),
+    blackList: Seq[String] = Seq.empty[String],
+    bufferSize: Int = 8192,
+    chunkedThreshold: Int = 102400,
+    compressionLevel: Int = 5
 ) extends NgPluginConfig {
   def json: JsValue = NgBrotliConfig.format.writes(this)
 }
 
 object NgBrotliConfig {
-  val format: Format[NgBrotliConfig]                   = new Format[NgBrotliConfig] {
+  val format: Format[NgBrotliConfig] = new Format[NgBrotliConfig] {
     override def reads(json: JsValue): JsResult[NgBrotliConfig] =
       Try {
         NgBrotliConfig(
@@ -76,20 +76,32 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = NgGzipConfig().some
 
   override def transformResponseSync(
-    ctx: NgTransformerResponseContext
+      ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
-    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgBrotliConfig())
+    val config  = ctx.cachedConfig(internalName)(configReads).getOrElse(NgBrotliConfig())
     val request = ctx.request
-    if (mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(config, request, ctx.otoroshiResponse)) {
+    if (
+      mayCompress(request) && shouldCompress(ctx.otoroshiResponse) && shouldBrotli(
+        config,
+        request,
+        ctx.otoroshiResponse
+      )
+    ) {
       BrotliLoader.isBrotliAvailable()
       val params = new Encoder.Parameters().setQuality(config.compressionLevel)
-      val vary = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
-      ctx.otoroshiResponse.copy(
-        headers = ctx.otoroshiResponse.headers - "Content-Length" ++ Map("Content-Encoding" -> "br", "Transfer-Encoding" -> "chunked", vary._1 -> vary._2),
-        body = ctx.otoroshiResponse.body.map { bs =>
-          ByteString.apply(Encoder.compress(bs.toArray, params))
-        }
-      ).right
+      val vary   = varyWith(ctx.otoroshiResponse.headers, ACCEPT_ENCODING)
+      ctx.otoroshiResponse
+        .copy(
+          headers = ctx.otoroshiResponse.headers - "Content-Length" ++ Map(
+            "Content-Encoding"  -> "br",
+            "Transfer-Encoding" -> "chunked",
+            vary._1             -> vary._2
+          ),
+          body = ctx.otoroshiResponse.body.map { bs =>
+            ByteString.apply(Encoder.compress(bs.toArray, params))
+          }
+        )
+        .right
     } else {
       ctx.otoroshiResponse.right
     }
@@ -102,11 +114,11 @@ class BrotliResponseCompressor extends NgRequestTransformer {
     for {
       header <- headers.get(headerName).toList
       value0 <- header.split(',')
-      value = value0.trim
+      value   = value0.trim
     } yield {
       RequestHeader.qPattern.findFirstMatchIn(value) match {
         case Some(m) => (m.group(1).toDouble, m.before.toString)
-        case None => (1.0, value) // “The default value is q=1.”
+        case None    => (1.0, value) // “The default value is q=1.”
       }
     }
   }
@@ -129,15 +141,16 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   private def isAllowedContent(header: NgPluginHttpResponse) =
     header.status != Status.NO_CONTENT && header.status != Status.NOT_MODIFIED
 
-  private def isNotAlreadyCompressed(header: NgPluginHttpResponse) = header.headers.getIgnoreCase(CONTENT_ENCODING).isEmpty
+  private def isNotAlreadyCompressed(header: NgPluginHttpResponse) =
+    header.headers.getIgnoreCase(CONTENT_ENCODING).isEmpty
 
   private def varyWith(rh: Map[String, String], headerValues: String*): (String, String) = {
     val newValue = rh.getIgnoreCase(VARY) match {
       case Some(existing) if existing.nonEmpty =>
         val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
-        val newValuesToAdd = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
+        val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
-      case _ =>
+      case _                                   =>
         headerValues.mkString(",")
     }
     VARY -> newValue
@@ -145,15 +158,15 @@ class BrotliResponseCompressor extends NgRequestTransformer {
 
   private def parseConfigMediaTypes(types: Seq[String]): Seq[MediaType] = {
     val mediaTypes = types.flatMap {
-      case "*" => Some(MediaType("*", "*", Seq.empty))
+      case "*"                        => Some(MediaType("*", "*", Seq.empty))
       case MediaType.parse(mediaType) => Some(mediaType)
-      case invalid =>
+      case invalid                    =>
         GzipConfig.logger.error(s"Failed to parse the configured MediaType mask '$invalid'")
         None
     }
     mediaTypes.foreach {
       case MediaType("*", "*", _) =>
-      case _ => () // the configured MediaType mask is valid
+      case _                      => () // the configured MediaType mask is valid
     }
     mediaTypes
   }
@@ -177,16 +190,15 @@ class BrotliResponseCompressor extends NgRequestTransformer {
         // The blacklist is defined, so we brotli the result if it's not blacklisted.
         res.contentType match {
           case Some(MediaType.parse(outgoing)) => blackListParsed.forall(mask => !matches(outgoing, mask))
-          case _ => true // Fail open (to brotling), since blacklists have a tendency to fail open.
+          case _                               => true // Fail open (to brotling), since blacklists have a tendency to fail open.
         }
       }
     } else {
       // The whitelist is defined. We brotli the result IFF there is a matching whitelist entry.
       res.contentType match {
         case Some(MediaType.parse(outgoing)) => whiteListParsed.exists(mask => matches(outgoing, mask))
-        case _ => false // Fail closed (to not brotling), since whitelists are intentionally strict.
+        case _                               => false // Fail closed (to not brotling), since whitelists are intentionally strict.
       }
     }
   }
 }
-

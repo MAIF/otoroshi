@@ -44,16 +44,15 @@ window.fetch = function (...params) {
   const doNotPassTenant =
     window.__otoroshi__env__latest.userAdmin ||
     window.__otoroshi__env__latest.bypassUserRightsCheck;
-  let promise = undefined
+  let promise = undefined;
 
   if (!doNotPassTenant && params.length == 2 && isObject(options)) {
     const currentTenant = window.localStorage.getItem('Otoroshi-Tenant') || 'default';
-    promise = window
-      ._fetch(url, {
-        ...options,
-        credentials: 'include',
-        headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant },
-      });
+    promise = window._fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant },
+    });
   } else {
     // console.log('do not pass tenant for', url, {
     //   plength: params.length,

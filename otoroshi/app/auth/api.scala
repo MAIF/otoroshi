@@ -31,7 +31,8 @@ trait ValidableUser { self =>
 trait AuthModule {
   def authConfig: AuthModuleConfig
 
-  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(
+      implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result]
@@ -149,13 +150,12 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def userValidators: Seq[JsonPathValidator]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def withLocation(location: EntityLocation): AuthModuleConfig
-  override def internalId: String = id
-  override def json: JsValue      = asJson
+  override def internalId: String               = id
+  override def json: JsValue                    = asJson
 
   def form: Option[Form]
   def loginHTMLPage: String = "otoroshi.view.oto.login.scala.html"
 }
-
 
 case class Form(schema: JsValue, flow: Seq[String] = Seq.empty) extends AsJson {
   def asJson: JsValue = Json.obj(
@@ -170,17 +170,16 @@ object Form {
 
     override def reads(json: JsValue): JsResult[Form] = Try {
 
-        Form(
-          flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
-          schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj()),
-        )
-      } match {
-        case Failure(exception) => JsError(exception.getMessage)
-        case Success(value) => JsSuccess(value)
-      }
+      Form(
+        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+        schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj())
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
   }
 }
-
 
 case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
 
@@ -188,18 +187,20 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
 
   override def reads(json: JsValue): JsResult[AuthModuleConfig] = {
     (json \ "type").as[String] match {
-      case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
       case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
-      case "basic" => BasicAuthModuleConfig._fmt.reads(json)
-      case "ldap" => LdapAuthModuleConfig._fmt.reads(json)
-      case "saml" => SamlAuthModuleConfig._fmt.reads(json)
-      case "oauth1" => Oauth1ModuleConfig._fmt.reads(json)
-      case "wasm" => WasmAuthModuleConfig.format.reads(json)
-      case ref       => env.datastores.authConfigsDataStore.templates()(env)
-        .find(config => config.`type` == ref) match {
-        case Some(config) => config._fmt()(env).reads(json)
-        case None => unknownConfigTypeError
-      }
+      case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
+      case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
+      case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
+      case "oauth1"        => Oauth1ModuleConfig._fmt.reads(json)
+      case "wasm"          => WasmAuthModuleConfig.format.reads(json)
+      case ref             =>
+        env.datastores.authConfigsDataStore
+          .templates()(env)
+          .find(config => config.`type` == ref) match {
+          case Some(config) => config._fmt()(env).reads(json)
+          case None         => unknownConfigTypeError
+        }
     }
   }
 
@@ -281,10 +282,11 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
     )
 
     val defaultModule = modType match {
-      case Some(ref)             => templates()(env)
-        .find(config => config.`type` == ref)
-        .getOrElse(defaultValue)
-      case _                     => defaultValue
+      case Some(ref) =>
+        templates()(env)
+          .find(config => config.`type` == ref)
+          .getOrElse(defaultValue)
+      case _         => defaultValue
     }
 
     env.datastores.globalConfigDataStore
@@ -294,7 +296,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       .map { template =>
         AuthModuleConfig._fmt(env).reads(defaultModule.json.asObject.deepMerge(template)) match {
           case JsSuccess(value, _) => value
-          case JsError(errors) => defaultModule
+          case JsError(errors)     => defaultModule
         }
       }
       .getOrElse {

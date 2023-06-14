@@ -8,7 +8,7 @@ When this feature is active, Otoroshi perdiodically send anonymous information a
 
 This information helps us to know how Otoroshi is used, it's a precious hint to prioritise our roadmap.
 
-Below is an example of what is send by Otoroshi. You can find more information about these fields either on [entities documentation](../entities/index.md) or [by reading the source code](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/jobs/reporting.scala#L174-L458).
+Below is an example of what is send by Otoroshi. You can find more information about these fields either on @ref:[entities documentation](../entities/index.md) or [by reading the source code](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/jobs/reporting.scala#L174-L458).
 
 ```json
 {

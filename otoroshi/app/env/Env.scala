@@ -419,9 +419,9 @@ class Env(
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
-  lazy val wasmCacheTtl: Int  =
+  lazy val wasmCacheTtl: Int        =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)
-  lazy val wasmCacheSize: Int =
+  lazy val wasmCacheSize: Int       =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.size").getOrElse(100)
   lazy val wasmQueueBufferSize: Int =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.queue.buffer.size").getOrElse(2048)
@@ -1133,7 +1133,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.3.0-dev"
+  lazy val otoroshiVersion    = "16.4.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

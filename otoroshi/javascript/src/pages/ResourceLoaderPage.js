@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import AceEditor from 'react-ace';
+import { PillButton } from '../components/PillButton';
 
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -87,22 +88,23 @@ export function ResourceLoaderPage({ setTitle }) {
   };
 
   const setResources = (resources) => {
-    if (resources) {
-      if (resources.trim().startsWith('[') || resources.trim().startsWith('{')) {
-        if (format !== 'json') {
-          setFormat('json');
-        }
-      } else {
-        if (format !== 'yaml') {
-          setFormat('yaml');
-        }
-      }
-    }
+    // if (resources) {
+    //   if (resources.trim().startsWith('[') || resources.trim().startsWith('{')) {
+    //     if (format !== 'json') {
+    //       setFormat('json');
+    //     }
+    //   } else {
+    //     if (format !== 'yaml') {
+    //       setFormat('yaml');
+    //     }
+    //   }
+    // }
     setRawResources(resources);
   };
 
   const onDrop = (ev) => {
     ev.preventDefault();
+    onDragLeave();
     if (ev.dataTransfer.items) {
       for (let i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
@@ -116,6 +118,17 @@ export function ResourceLoaderPage({ setTitle }) {
         file.text().then(setRawResources);
       }
     }
+  };
+
+  const onDragOver = (ev) => {
+    ev.preventDefault();
+    const editor = document.getElementById('resources-loader');
+    editor.classList.add('dragEffect');
+  };
+  const onDragLeave = (ev) => {
+    if (ev) ev.preventDefault();
+    const editor = document.getElementById('resources-loader');
+    editor.classList.remove('dragEffect');
   };
 
   if (loadedResources.length > 0) {
@@ -198,39 +211,37 @@ export function ResourceLoaderPage({ setTitle }) {
             ))}
           </tbody>
         </table>
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="btn-group">
-            <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
-              Cancel
-            </button>
-            {loadedResources.find((f) => !f.error) && (
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={() => {
-                  Promise.all(
+        <div className="d-flex justify-content-end">
+          <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
+            Cancel
+          </button>
+          {loadedResources.find((f) => !f.error) && (
+            <button
+              type="button"
+              className="btn btn-success ms-2"
+              onClick={() => {
+                Promise.all(
+                  loadedResources
+                    .filter((r) => r.enabled)
+                    .map((resource) => {
+                      const content = resource.resource;
+                      const k = resource.kind;
+                      return UPDATE_ENTITIES[k](content);
+                    })
+                ).then(() => {
+                  setLoadedResources(
                     loadedResources
                       .filter((r) => r.enabled)
-                      .map((resource) => {
-                        const content = resource.resource;
-                        const k = resource.kind;
-                        return UPDATE_ENTITIES[k](content);
+                      .map((r) => {
+                        if (!r.error) return { ...r, status: 'done' };
+                        return r;
                       })
-                  ).then(() => {
-                    setLoadedResources(
-                      loadedResources
-                        .filter((r) => r.enabled)
-                        .map((r) => {
-                          if (!r.error) return { ...r, status: 'done' };
-                          return r;
-                        })
-                    );
-                  });
-                }}>
-                Import selected resources
-              </button>
-            )}
-          </div>
+                  );
+                });
+              }}>
+              Import selected resources
+            </button>
+          )}
         </div>
       </div>
     );
@@ -238,18 +249,33 @@ export function ResourceLoaderPage({ setTitle }) {
 
   return (
     <div>
-      <div className="mb-3">
+      <div className="mb-3 d-flex justify-content-between">
+        <div>
+          <PillButton
+            rightEnabled={format === 'yaml' ? false : true}
+            leftText="JSON"
+            rightText="YAML"
+            onChange={() => (format === 'yaml' ? setFormat('json') : setFormat('yaml'))}
+          />
+          {/* <button
+            type="button"
+            onClick={() => setFormat('json')}
+            className={`btn btn-sm btn-${format === 'json' ? 'success' : 'secondary'}`}>
+            JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormat('yaml')}
+            className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
+            YAML
+          </button> */}
+        </div>
         <button
           type="button"
-          onClick={() => setFormat('json')}
-          className={`btn btn-sm btn-${format === 'json' ? 'success' : 'secondary'}`}>
-          JSON
-        </button>
-        <button
-          type="button"
-          onClick={() => setFormat('yaml')}
-          className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
-          YAML
+          disabled={rawResources.length <= 0}
+          className="btn btn-success"
+          onClick={loadResources}>
+          Load resources
         </button>
       </div>
       <div className="mb-3">
@@ -258,7 +284,8 @@ export function ResourceLoaderPage({ setTitle }) {
             className="col-sm-8"
             style={{ paddingRight: 0 }}
             onDrop={onDrop}
-            onDragOver={(e) => e.preventDefault()}>
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}>
             <AceEditor
               ref={aceRef}
               name="resources-loader"
@@ -273,6 +300,7 @@ export function ResourceLoaderPage({ setTitle }) {
               highlightActiveLine={true}
               tabSize={2}
               enableBasicAutocompletion={true}
+              placeholder="Write, paste or drag your text here"
             />
           </div>
           <div className="col-sm-4" style={{ paddingLeft: 1 }}>
@@ -303,13 +331,6 @@ export function ResourceLoaderPage({ setTitle }) {
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        className="btn btn-success"
-        style={{ marginTop: 12 }}
-        onClick={loadResources}>
-        Load resources
-      </button>
     </div>
   );
 }

@@ -280,8 +280,8 @@ object implicits {
   }
   implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
-    def sha256: String = Hex.encodeHexString(BetterString.digest256.digest(obj.toArray))
-    def sha512: String = Hex.encodeHexString(BetterString.digest512.digest(obj.toArray))
+    def sha256: String                                 = Hex.encodeHexString(BetterString.digest256.digest(obj.toArray))
+    def sha512: String                                 = Hex.encodeHexString(BetterString.digest512.digest(obj.toArray))
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
     def json: JsValue = JsBoolean(obj)
@@ -296,7 +296,7 @@ object implicits {
         ((obj >> 24) & 0xff).asInstanceOf[Byte],
         ((obj >> 16) & 0xff).asInstanceOf[Byte],
         ((obj >> 8) & 0xff).asInstanceOf[Byte],
-        ((obj >> 0) & 0xff).asInstanceOf[Byte],
+        ((obj >> 0) & 0xff).asInstanceOf[Byte]
       )
     }
   }
@@ -310,8 +310,8 @@ object implicits {
         ((obj >> 32) & 0xff).asInstanceOf[Byte],
         ((obj >> 24) & 0xff).asInstanceOf[Byte],
         ((obj >> 16) & 0xff).asInstanceOf[Byte],
-        ((obj >> 8)  & 0xff).asInstanceOf[Byte],
-        ((obj >> 0)  & 0xff).asInstanceOf[Byte],
+        ((obj >> 8) & 0xff).asInstanceOf[Byte],
+        ((obj >> 0) & 0xff).asInstanceOf[Byte]
       )
     }
   }
@@ -356,13 +356,13 @@ object implicits {
     def select(index: Int): JsLookupResult   = obj \ index
     def strConvert(): Option[String] = {
       obj.asOpt[JsValue].getOrElse(JsNull) match {
-        case JsNull => "null".some
-        case JsNumber(v) => v.toString().some
-        case JsString(v) => v.some
-        case JsBoolean(v) => v.toString.some
+        case JsNull          => "null".some
+        case JsNumber(v)     => v.toString().some
+        case JsString(v)     => v.some
+        case JsBoolean(v)    => v.toString.some
         case o @ JsObject(_) => o.stringify.some
-        case a @ JsArray(_) => a.stringify.some
-        case _ => None
+        case a @ JsArray(_)  => a.stringify.some
+        case _               => None
       }
     }
   }
@@ -634,7 +634,7 @@ object implicits {
     def containsIgnoreCase(key: String): Boolean                            = theMap.contains(key) || theMap.contains(key.toLowerCase())
     def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
-    def getOrUpdate(k: String)(op: => B): B = theMap.getOrElseUpdate(k, op)
+    def getOrUpdate(k: String)(op: => B): B                                 = theMap.getOrElseUpdate(k, op)
   }
   implicit class BetterSeqOfA[A](val seq: Seq[A])                             extends AnyVal {
     def avgBy(f: A => Int): Double = {

@@ -207,7 +207,7 @@ case class NgTreeNodePath(
             // - /api/contracts/:contract-id/items
             // - /api/contracts/:contract/fifou
             namedKeys.map(nk => pathParams.+=(nk.replaceFirst(":", "") -> head))
-            val nroute            = namedKeys
+            val nroute = namedKeys
               .map(k => tree.get(k))
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
@@ -218,7 +218,7 @@ case class NgTreeNodePath(
                 .filter(reg => RegexPool.regex(reg._2).matches(head))
             }
             matchingRegexKeys.map(nk => pathParams.+=(nk._1.substring(1).split("<").head -> head))
-            val rroute            = matchingRegexKeys
+            val rroute = matchingRegexKeys
               .map(k => tree.get(k._1))
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
