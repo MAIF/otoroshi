@@ -369,6 +369,7 @@ export class NgStringRenderer extends Component {
               {...inputProps}
             />
             {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
+            {props.description && <p>{props.description}</p>}
           </>
         )}
       </LabelAndInput>
@@ -426,6 +427,7 @@ export class NgNumberRenderer extends Component {
           />
         )}
         {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
+        {props.description && <p>{props.description}</p>}
       </LabelAndInput>
     );
   }

@@ -23,6 +23,21 @@ export default {
         })),
       }
     },
+    transcodingRequestToGRPC: {
+      type: 'box-boolean',
+      label: 'Transcoding',
+      props: {
+        description: 'Transcoding HTTP request informations (path, method, body) to GRPC request'
+      }
+    },
+    httpRuleBody: {
+      type: 'string',
+      label: 'HttpRuleBody',
+      props: {
+        description: `If the value is *, there is no URL query parameter, all fields are passed via URL path and HTTP request body. 
+        If is omitted, there is no HTTP request body, all fields are passed via URL path and URL query parameters.`
+      }
+    },
     fullServiceName: {
       label: 'Full service name',
       type: 'string'
@@ -48,7 +63,17 @@ export default {
     },
     {
       type: 'group',
-      name: 'GRPC service',
+      name: 'Transcoding',
+      collapsable: false,
+      fields: [
+        'transcodingRequestToGRPC',
+        'httpRuleBody'
+      ]
+    },
+    {
+      type: 'group',
+      name: 'GRPC service (only use if transcoding is disabled)',
+      visible: (props) => !props?.transcodingRequestToGRPC,
       fields: ['fullServiceName', 'methodName', 'packageName', 'serviceName'],
     }
   ],

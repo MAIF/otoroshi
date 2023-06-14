@@ -1,18 +1,17 @@
 package otoroshi.next.plugins.grpc
 
-import com.github.benmanes.caffeine
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto
 import com.google.protobuf.Descriptors.FileDescriptor
 import com.google.protobuf._
 import io.grpc.protobuf.ProtoUtils
 import io.grpc.stub.{ClientCalls, StreamObserver}
-import io.grpc.{CallOptions, Grpc, InsecureChannelCredentials, ManagedChannel, ManagedChannelBuilder, MethodDescriptor, TlsChannelCredentials}
+import io.grpc._
 import otoroshi.env.Env
 import otoroshi.ssl.DynamicSSLEngineProvider
 import play.api.Logger
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
@@ -72,11 +71,6 @@ object GRPCChannelRef {
         channelRef.address, channelRef.port, InsecureChannelCredentials.create()
       )
         .build()
-//      ManagedChannelBuilder
-//        .forAddress(channelRef.address, channelRef.port)
-//        .usePlaintext()
-//        .asInstanceOf[ManagedChannelBuilder[_]]
-//        .build()
     }
   }
 }
@@ -90,7 +84,7 @@ class ReflectionClient(channel: ManagedChannel) {
       service: GRPCService,
       clientKind: GRPCClientKind,
       requestContent: scala.Option[String],
-      promise: Promise[Seq[DynamicMessage]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]]
   ) = {
     val observer = new StreamObserver[ServerReflectionResponse]() {
       override def onNext(response: ServerReflectionResponse) {
@@ -127,7 +121,7 @@ class ReflectionClient(channel: ManagedChannel) {
       service: GRPCService,
       clientKind: GRPCClientKind,
       requestContent: scala.Option[String],
-      promise: Promise[Seq[DynamicMessage]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
     val fileDescriptor: Descriptors.FileDescriptor =
       getFileDescriptor(fileDescriptorProtoList, service.packageName, service.serviceName)
@@ -170,6 +164,8 @@ class ReflectionClient(channel: ManagedChannel) {
     val fileDescriptorProto: DescriptorProtos.FileDescriptorProto =
       findServiceFileDescriptorProto(packageName, serviceName, fileDescriptorProtoMap)
 
+    // Descriptors.FileDescriptor.buildFrom(FileDescriptorProto.parseFrom(customProto.getBytes(StandardCharsets.UTF_8)), Array.empty[FileDescriptor])
+
     Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, Array.empty[FileDescriptor])
   }
 
@@ -195,28 +191,37 @@ class ReflectionClient(channel: ManagedChannel) {
       fileDescriptor: Descriptors.FileDescriptor,
       originMethodDescriptor: Descriptors.MethodDescriptor,
       requestContent: scala.Option[String],
-      promise: Promise[Seq[DynamicMessage]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
     val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
 
     val observer = streamingResponseObserver(promise)
 
-    ClientCalls.asyncUnaryCall(
-      channel.newCall(methodDescriptor, CallOptions.DEFAULT),
-      buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent),
-      observer
-    )
+    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+      case Left(error) => promise.success(Left(error.getMessage))
+      case Right(message) =>
+        ClientCalls.asyncUnaryCall(
+          channel.newCall(methodDescriptor, CallOptions.DEFAULT),
+          message,
+          observer
+        )
+    }
   }
 
-  private def streamingResponseObserver(promise: Promise[Seq[DynamicMessage]]): StreamObserver[DynamicMessage] =
+  private def streamingResponseObserver(promise: Promise[Either[String, Seq[DynamicMessage]]]): StreamObserver[DynamicMessage] =
     new StreamObserver[DynamicMessage]() {
       var responses = Seq.empty[DynamicMessage]
 
       override def onNext(response: DynamicMessage): Unit = responses = responses :+ response
 
-      override def onError(t: Throwable): Unit = logger.error("Error while streaming response", t)
+      override def onError(t: Throwable): Unit = {
+        if (!promise.isCompleted) {
+          promise.success(Left(t.getMessage))
+        }
+        logger.error("Error while streaming response", t)
+      }
 
-      override def onCompleted(): Unit = promise.success(responses)
+      override def onCompleted(): Unit = promise.success(Right(responses))
     }
 
   private def asyncClientStreamingCall(
@@ -224,7 +229,7 @@ class ReflectionClient(channel: ManagedChannel) {
       fileDescriptor: Descriptors.FileDescriptor,
       originMethodDescriptor: Descriptors.MethodDescriptor,
       requestContent: scala.Option[String],
-      promise: Promise[Seq[DynamicMessage]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
     val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
 
@@ -233,8 +238,13 @@ class ReflectionClient(channel: ManagedChannel) {
     val clientObserver =
       ClientCalls.asyncClientStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
 
-    clientObserver.onNext(buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent))
-    clientObserver.onCompleted()
+    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+      case Left(error) => promise.success(Left(error.getMessage))
+      case Right(message) =>
+        clientObserver.onNext(message)
+        clientObserver.onCompleted()
+    }
+
   }
 
   private def asyncBidiStreamingCall(
@@ -259,8 +269,12 @@ class ReflectionClient(channel: ManagedChannel) {
     val clientObserver =
       ClientCalls.asyncBidiStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
 
-    clientObserver.onNext(buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent))
-    clientObserver.onCompleted()
+    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+      case Left(value) => responseObserver.onError(value)
+      case Right(message) =>
+        clientObserver.onNext(message)
+        clientObserver.onCompleted()
+    }
   }
 
   private def blockingUnaryCall(
@@ -268,25 +282,28 @@ class ReflectionClient(channel: ManagedChannel) {
       fileDescriptor: Descriptors.FileDescriptor,
       originMethodDescriptor: Descriptors.MethodDescriptor,
       requestContent: scala.Option[String],
-      promise: Promise[Seq[DynamicMessage]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
     val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
 
-    promise.success(
-      Seq(
-        ClientCalls.blockingUnaryCall(
-          channel.newCall(methodDescriptor, CallOptions.DEFAULT),
-          buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent)
-        )
+    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+      case Left(error) => promise.success(Left(error.getMessage))
+      case Right(dynamicMessage) => promise.success(
+        Right(Seq(
+          ClientCalls.blockingUnaryCall(
+            channel.newCall(methodDescriptor, CallOptions.DEFAULT),
+            dynamicMessage
+          )
+        ))
       )
-    )
+    }
   }
 
   private def buildDynamicMessage(
       fileDescriptor: Descriptors.FileDescriptor,
       originMethodDescriptor: Descriptors.MethodDescriptor,
       requestContent: scala.Option[String]
-  ): DynamicMessage = {
+  ): Either[Exception, DynamicMessage] = {
     val registry = TypeRegistry.newBuilder.add(fileDescriptor.getMessageTypes).build
 
     val messageBuilder = DynamicMessage.newBuilder(originMethodDescriptor.getInputType)
@@ -297,11 +314,13 @@ class ReflectionClient(channel: ManagedChannel) {
       Try {
         parser.merge(content, messageBuilder)
       } recover {
-        case e: Exception => logger.error("Error merging incoming body to message", e)
+        case e: Exception =>
+          logger.error("Error merging incoming body to message", e)
+          return Left(e)
       }
     })
 
-    messageBuilder.build()
+    Right(messageBuilder.build())
   }
 
   private def generateMethodDescriptor(

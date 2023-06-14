@@ -24,7 +24,8 @@ case class GrpcConfig(address: String = "",
                       methodName: String = "",
                       packageName: String = "",
                       serviceName: String = "",
-                      clientKind: GRPCClientKind = GRPCClientKind.AsyncUnary) extends NgPluginConfig {
+                      clientKind: GRPCClientKind = GRPCClientKind.AsyncUnary,
+                      transcodingRequestToGRPC: Boolean = true) extends NgPluginConfig {
   override def json: JsValue = GrpcConfig.format.writes(this)
 }
 object GrpcConfig {
@@ -37,7 +38,8 @@ object GrpcConfig {
       "methodName" -> o.methodName,
       "packageName" -> o.packageName,
       "serviceName" -> o.serviceName,
-      "clientKind" -> o.clientKind.value
+      "clientKind" -> o.clientKind.value,
+      "transcodingRequestToGRPC" -> o.transcodingRequestToGRPC
     )
     override def reads(json: JsValue): JsResult[GrpcConfig] = Try {
       GrpcConfig(
@@ -49,7 +51,8 @@ object GrpcConfig {
         packageName = json.select("packageName").asOpt[String].getOrElse(""),
         serviceName = json.select("serviceName").asOpt[String].getOrElse(""),
         clientKind = json.select("clientKind").asOpt[Int].map(GRPCClientKind.fromValue)
-          .getOrElse(GRPCClientKind.AsyncUnary)
+          .getOrElse(GRPCClientKind.AsyncUnary),
+        transcodingRequestToGRPC = json.select("transcodingRequestToGRPC").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e)     => JsError(e.getMessage)
@@ -84,15 +87,30 @@ class NgGrpcCall extends NgBackendCall {
   override def description: Option[String]                 = "GRPC".some
   override def defaultConfigObject: Option[NgPluginConfig] = GrpcConfig().some
 
+  private def transcodeHttpContentToGRPC(request: NgPluginHttpRequest): Either[String, GRPCService] = {
+    val path    = request.path
+    val method  = request.method
+    val headers = request.headers.toSeq
+
+    if (Seq("GET", "PUT", "POST", "DELETE", "PATHC").contains(method.toUpperCase)) {
+      Left("Fail to transcoding http method to grpc")
+    } else {
+      // `GET   /v1/messages/123456`                             | `GetMessage(name: "messages/123456")`
+      // `GET   /v1/messages/123456?revision=2&sub.subfield=foo` | `GetMessage(message_id: "123456" revision: 2 sub: SubMessage(subfield: "foo"))`
+      // `PATCH /v1/messages/123456 { "text": "Hi!" }`           | `UpdateMessage(message_id: "123456" message { text: "Hi!" })`
+      // `PATCH /v1/messages/123456 { "text": "Hi!" }`           | `UpdateMessage(message_id: "123456" text: "Hi!")`
+      // `GET   /v1/messages/123456`                             | `GetMessage(message_id: "123456")`
+      // `GET   /v1/users/me/messages/123456`                    | `GetMessage(user_id: "me" message_id: "123456")`
+
+      Right(GRPCService("", "", "", ""))
+    }
+  }
+
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
                           (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx
       .cachedConfig(internalName)(GrpcConfig.format)
       .getOrElse(GrpcConfig())
-
-    val path = ctx.request.path
-    val method = ctx.request.method
-    val headers = ctx.request.headers.toSeq
 
     val channelRef = GRPCChannelRef(config.address, config.port, secured = config.secured)
     val channel = NgGrpcCall.channelsCache.getIfPresent(channelRef.id) match {
@@ -104,27 +122,49 @@ class NgGrpcCall extends NgBackendCall {
     }
 
     val client = new ReflectionClient(channel)
-    val messagesPromise = Promise[Seq[DynamicMessage]]()
+    val messagesPromise = Promise[Either[String, Seq[DynamicMessage]]]()
 
-    val service = GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
+    val service = if (config.transcodingRequestToGRPC) {
+      transcodeHttpContentToGRPC(ctx.request) match {
+        case Left(error) => return bodyResponse(
+          400,
+          Map("Content-Type" -> "application/json"),
+          Json.obj("error" -> error)
+            .stringify
+            .byteString
+            .singleSource
+        ).vfuture
+        case Right(value) => value
+      }
+    } else {
+      GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
+    }
 
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      val body = bodyRaw.utf8String //.parseJson.asObject
+      val body = bodyRaw.utf8String
       client.call(service, config.clientKind, if(body.isEmpty) None else Some(body), messagesPromise)
 
       messagesPromise
         .future
-        .flatMap(messages => {
-          val jsonMessages: Seq[JsValue] = messages.map(message => Json.parse(JsonFormat.printer().print(message)))
-          bodyResponse(
-            200,
+        .flatMap {
+          case Left(error) => bodyResponse(
+            400,
             Map("Content-Type" -> "application/json"),
-            JsArray(jsonMessages)
+            Json.obj("error" -> error)
               .stringify
               .byteString
               .singleSource
           ).vfuture
-        });
+          case Right(messages) => val jsonMessages: Seq[JsValue] = messages.map(message => Json.parse(JsonFormat.printer().print(message)))
+            bodyResponse(
+              200,
+              Map("Content-Type" -> "application/json"),
+              JsArray(jsonMessages)
+                .stringify
+                .byteString
+                .singleSource
+            ).vfuture
+        };
     }
 
     //client.listService(servicesPromise)
