@@ -1,13 +1,18 @@
 package otoroshi.next.plugins.grpc
 
 import akka.stream.Materializer
+import com.github.benmanes.caffeine.cache.RemovalCause
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.protobuf.util.JsonFormat
 import com.google.protobuf.{DescriptorProtos, Descriptors, DynamicMessage}
+import io.grpc.ManagedChannel
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
@@ -33,6 +38,19 @@ object GrpcConfig {
   }
 }
 
+object NgGrpcCall {
+  val channelsCache: Cache[String, ManagedChannel] = Scaffeine()
+    .recordStats()
+    .expireAfterWrite(1.days)
+    .removalListener((_: String, value: ManagedChannel, cause: RemovalCause) => {
+      if (cause == RemovalCause.EXPIRED) {
+        value.shutdown()
+      }
+    })
+    .maximumSize(1000)
+    .build()
+}
+
 class NgGrpcCall extends NgBackendCall {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
@@ -56,24 +74,38 @@ class NgGrpcCall extends NgBackendCall {
     val method = ctx.request.method
     val headers = ctx.request.headers.toSeq
 
-    val client = new ReflectionClient("127.0.0.1", 5000, false)
-    val test = Promise[DynamicMessage]()
+    val channelRef = GRPCChannelRef("127.0.0.1", 5000, secured = false)
+    val channel = NgGrpcCall.channelsCache.getIfPresent(channelRef.id) match {
+      case Some(value) => value
+      case None =>
+        val newChannel = GRPCChannelRef.convertToManagedChannel(channelRef)
+        NgGrpcCall.channelsCache.put(channelRef.id, newChannel)
+        newChannel
+    }
 
-    // client.call("UserService", "GetUser", "", "UserService", "", test)
-    client.call("UserService", "SetUser", "", "UserService",
-      Json.stringify(Json.obj(
-        "name" -> "Etienne",
-        "age" -> 132
-      )), test)
+    val client = new ReflectionClient(channel)
+    val messagesPromise = Promise[Seq[DynamicMessage]]()
 
-    test
+    val service = GRPCService("UserService", "GetUser", packageName = "", "UserService")
+    client.call(service, GRPCClientKind.asyncClientStreaming, None, messagesPromise)
+
+//    client.call("UserService", "SetUser", "", "UserService",
+//      Json.stringify(Json.obj(
+//        "name" -> "Etienne",
+//        "age" -> 132
+//      )), test)
+
+    messagesPromise
       .future
-      .flatMap(res => {
-        println(res.toString)
+      .flatMap(messages => {
+        val jsonMessages: Seq[JsValue] = messages.map(message => Json.parse(JsonFormat.printer().print(message)))
         bodyResponse(
           200,
           Map("Content-Type" -> "application/json"),
-          Json.obj("result" -> "done").stringify.byteString.singleSource
+          JsArray(jsonMessages)
+            .stringify
+            .byteString
+            .singleSource
         ).vfuture
       });
 
