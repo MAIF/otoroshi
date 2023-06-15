@@ -25,9 +25,9 @@ export default {
     },
     transcodingRequestToGRPC: {
       type: 'box-boolean',
-      label: 'Transcoding',
+      label: 'Use body',
       props: {
-        description: 'Transcoding HTTP request informations (path, method, body) to GRPC request'
+        description: 'Using body as GRPC service information'
       }
     },
     fullServiceName: {
@@ -51,19 +51,13 @@ export default {
     {
       type: 'group',
       name: 'GRPC server',
+      collapsable: false,
       fields: ['address', 'port', 'secured', 'clientKind'],
     },
+    'transcodingRequestToGRPC',
     {
       type: 'group',
-      name: 'Transcoding',
-      collapsable: false,
-      fields: [
-        'transcodingRequestToGRPC',
-      ]
-    },
-    {
-      type: 'group',
-      name: 'GRPC service (only use if transcoding is disabled)',
+      name: 'GRPC service',
       visible: (props) => !props?.transcodingRequestToGRPC,
       fields: ['fullServiceName', 'methodName', 'packageName', 'serviceName'],
     }
