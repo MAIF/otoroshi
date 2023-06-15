@@ -4,8 +4,8 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.protobuf.DynamicMessage
 import com.google.protobuf.util.JsonFormat
-import com.google.protobuf.{DescriptorProtos, Descriptors, DynamicMessage}
 import io.grpc.ManagedChannel
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -89,7 +89,6 @@ class NgGrpcCall extends NgBackendCall {
 
   private def transcodeHttpContentToGRPC(body: String): Either[String, GRPCService] = {
     // TODO - support grpc-httpjson-transcoding https://github.com/grpc-ecosystem/grpc-httpjson-transcoding
-
     val data = body.parseJson
     Right(GRPCService(
       data.select("fullServiceName").asOpt[String].getOrElse(""),
@@ -170,33 +169,5 @@ class NgGrpcCall extends NgBackendCall {
             ).vfuture
         };
     }
-
-    //client.listService(servicesPromise)
-
-//    servicesPromise
-//      .future
-//      .flatMap(services => {
-//        println(s"Services: $services")
-//
-//        val filePromise = Promise[DescriptorProtos.FileDescriptorProto]()
-//        client.getFile(filePromise, services.toSeq.head.replace(".", ""))
-//
-//        filePromise
-//          .future
-//          .map(file => {
-//            val methods = file.getServiceList.asScala.head.getMethodList.asScala
-//
-//            val method = methods.head
-//
-//            // file.getMessageTypeList
-//            client.callMethod(method)
-//          })
-//
-//        bodyResponse(
-//          200,
-//          Map("Content-Type" -> "application/json"),
-//          Json.obj().stringify.byteString.singleSource
-//        ).vfuture
-//      })
   }
 }

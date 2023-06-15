@@ -57,7 +57,6 @@ object GRPCChannelRef {
 
   def convertToManagedChannel(channelRef: GRPCChannelRef)(implicit env: Env): ManagedChannel = {
     if (channelRef.secured) {
-      // TODO - add list of trusted certificates
       val creds = TlsChannelCredentials.newBuilder()
         .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
         .build()
@@ -83,7 +82,7 @@ class ReflectionClient(channel: ManagedChannel) {
       service: GRPCService,
       clientKind: GRPCClientKind,
       requestContent: scala.Option[String],
-      promise: Promise[Either[String, Seq[DynamicMessage]]]
+      promise: Promise[Either[String, Seq[DynamicMessage]]],
   ) = {
     val observer = new StreamObserver[ServerReflectionResponse]() {
       override def onNext(response: ServerReflectionResponse) {
@@ -122,8 +121,7 @@ class ReflectionClient(channel: ManagedChannel) {
       requestContent: scala.Option[String],
       promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
-    val fileDescriptor: Descriptors.FileDescriptor =
-      getFileDescriptor(fileDescriptorProtoList, service.packageName, service.serviceName)
+    val fileDescriptor: Descriptors.FileDescriptor = getFileDescriptor(fileDescriptorProtoList, service.packageName, service.serviceName)
 
     val serviceDescriptor = fileDescriptor.getFile.findServiceByName(service.serviceName)
     val methodDescriptor  = serviceDescriptor.findMethodByName(service.methodName)
@@ -163,8 +161,6 @@ class ReflectionClient(channel: ManagedChannel) {
 
     val fileDescriptorProto: DescriptorProtos.FileDescriptorProto =
       findServiceFileDescriptorProto(packageName, serviceName, fileDescriptorProtoMap)
-
-    // Descriptors.FileDescriptor.buildFrom(FileDescriptorProto.parseFrom(customProto.getBytes(StandardCharsets.UTF_8)), Array.empty[FileDescriptor])
 
     Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, Array.empty[FileDescriptor])
   }
