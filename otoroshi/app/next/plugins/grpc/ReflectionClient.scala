@@ -139,6 +139,7 @@ class ReflectionClient(channel: ManagedChannel) {
           fileDescriptor,
           methodDescriptor,
           requestContent,
+          promise,
           streamingResponseObserver(promise)
         )
       case GRPCClientKind.AsyncClientStreaming =>
@@ -193,18 +194,20 @@ class ReflectionClient(channel: ManagedChannel) {
       requestContent: scala.Option[String],
       promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
-    val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
+    generateMethodDescriptor(originMethodDescriptor) match {
+      case Left(error) => promise.success(Left(error))
+      case Right(methodDescriptor) =>
+        val observer = streamingResponseObserver(promise)
 
-    val observer = streamingResponseObserver(promise)
-
-    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
-      case Left(error) => promise.success(Left(error.getMessage))
-      case Right(message) =>
-        ClientCalls.asyncUnaryCall(
-          channel.newCall(methodDescriptor, CallOptions.DEFAULT),
-          message,
-          observer
-        )
+        buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+          case Left(error) => promise.success(Left(error.getMessage))
+          case Right(message) =>
+            ClientCalls.asyncUnaryCall(
+              channel.newCall(methodDescriptor, CallOptions.DEFAULT),
+              message,
+              observer
+            )
+        }
     }
   }
 
@@ -221,7 +224,11 @@ class ReflectionClient(channel: ManagedChannel) {
         logger.error("Error while streaming response", t)
       }
 
-      override def onCompleted(): Unit = promise.success(Right(responses))
+      override def onCompleted(): Unit = {
+        if (!promise.isCompleted) {
+          promise.success(Right(responses))
+        }
+      }
     }
 
   private def asyncClientStreamingCall(
@@ -231,20 +238,21 @@ class ReflectionClient(channel: ManagedChannel) {
       requestContent: scala.Option[String],
       promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
-    val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
+    generateMethodDescriptor(originMethodDescriptor) match {
+      case Left(error) => promise.success(Left(error))
+      case Right(methodDescriptor) =>
+        val observer = streamingResponseObserver(promise)
 
-    val observer = streamingResponseObserver(promise)
+        val clientObserver =
+          ClientCalls.asyncClientStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
 
-    val clientObserver =
-      ClientCalls.asyncClientStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
-
-    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
-      case Left(error) => promise.success(Left(error.getMessage))
-      case Right(message) =>
-        clientObserver.onNext(message)
-        clientObserver.onCompleted()
+        buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+          case Left(error) => promise.success(Left(error.getMessage))
+          case Right(message) =>
+            clientObserver.onNext(message)
+            clientObserver.onCompleted()
+        }
     }
-
   }
 
   private def asyncBidiStreamingCall(
@@ -252,28 +260,31 @@ class ReflectionClient(channel: ManagedChannel) {
       fileDescriptor: Descriptors.FileDescriptor,
       originMethodDescriptor: Descriptors.MethodDescriptor,
       requestContent: scala.Option[String],
+      promise: Promise[Either[String, Seq[DynamicMessage]]],
       responseObserver: StreamObserver[DynamicMessage]
   ): Unit = {
-    val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
+    generateMethodDescriptor(originMethodDescriptor) match {
+      case Left(error) => promise.success(Left(error))
+      case Right(methodDescriptor) =>
+        val observer = new StreamObserver[DynamicMessage]() {
+          override def onNext(response: DynamicMessage): Unit = {
+            responseObserver.onNext(response)
+          }
 
-    val observer = new StreamObserver[DynamicMessage]() {
-      override def onNext(response: DynamicMessage): Unit = {
-        responseObserver.onNext(response)
-      }
+          override def onError(t: Throwable): Unit = logger.error("Error while streaming bidi response", t)
 
-      override def onError(t: Throwable): Unit = logger.error("Error while streaming bidi response", t)
+          override def onCompleted(): Unit = responseObserver.onCompleted()
+        }
 
-      override def onCompleted(): Unit = responseObserver.onCompleted()
-    }
+        val clientObserver =
+          ClientCalls.asyncBidiStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
 
-    val clientObserver =
-      ClientCalls.asyncBidiStreamingCall(channel.newCall(methodDescriptor, CallOptions.DEFAULT), observer)
-
-    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
-      case Left(value) => responseObserver.onError(value)
-      case Right(message) =>
-        clientObserver.onNext(message)
-        clientObserver.onCompleted()
+        buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+          case Left(value) => responseObserver.onError(value)
+          case Right(message) =>
+            clientObserver.onNext(message)
+            clientObserver.onCompleted()
+        }
     }
   }
 
@@ -284,18 +295,20 @@ class ReflectionClient(channel: ManagedChannel) {
       requestContent: scala.Option[String],
       promise: Promise[Either[String, Seq[DynamicMessage]]]
   ): Unit = {
-    val methodDescriptor = generateMethodDescriptor(originMethodDescriptor)
-
-    buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
-      case Left(error) => promise.success(Left(error.getMessage))
-      case Right(dynamicMessage) => promise.success(
-        Right(Seq(
-          ClientCalls.blockingUnaryCall(
-            channel.newCall(methodDescriptor, CallOptions.DEFAULT),
-            dynamicMessage
+    generateMethodDescriptor(originMethodDescriptor) match {
+      case Left(error) => promise.success(Left(error))
+      case Right(methodDescriptor) =>
+        buildDynamicMessage(fileDescriptor, originMethodDescriptor, requestContent) match {
+          case Left(error) => promise.success(Left(error.getMessage))
+          case Right(dynamicMessage) => promise.success(
+            Right(Seq(
+              ClientCalls.blockingUnaryCall(
+                channel.newCall(methodDescriptor, CallOptions.DEFAULT),
+                dynamicMessage
+              )
+            ))
           )
-        ))
-      )
+        }
     }
   }
 
@@ -325,24 +338,28 @@ class ReflectionClient(channel: ManagedChannel) {
 
   private def generateMethodDescriptor(
       originMethodDescriptor: Descriptors.MethodDescriptor
-  ): MethodDescriptor[DynamicMessage, DynamicMessage] = {
+  ): Either[String, MethodDescriptor[DynamicMessage, DynamicMessage]] = {
 
-    val fullMethodName = MethodDescriptor.generateFullMethodName(
-      originMethodDescriptor.getService.getFullName,
-      originMethodDescriptor.getName
-    )
+    if (originMethodDescriptor == null || originMethodDescriptor.getService == null) {
+        Left("GRPC service or method not found")
+    } else {
+      val fullMethodName = MethodDescriptor.generateFullMethodName(
+        originMethodDescriptor.getService.getFullName,
+        originMethodDescriptor.getName
+      )
 
-    val inputTypeMarshaller  =
-      ProtoUtils.marshaller(DynamicMessage.newBuilder(originMethodDescriptor.getInputType).buildPartial)
-    val outputTypeMarshaller =
-      ProtoUtils.marshaller(DynamicMessage.newBuilder(originMethodDescriptor.getOutputType).buildPartial)
+      val inputTypeMarshaller  =
+        ProtoUtils.marshaller(DynamicMessage.newBuilder(originMethodDescriptor.getInputType).buildPartial)
+      val outputTypeMarshaller =
+        ProtoUtils.marshaller(DynamicMessage.newBuilder(originMethodDescriptor.getOutputType).buildPartial)
 
-    MethodDescriptor
-      .newBuilder[DynamicMessage, DynamicMessage]
-      .setFullMethodName(fullMethodName)
-      .setRequestMarshaller(inputTypeMarshaller)
-      .setResponseMarshaller(outputTypeMarshaller)
-      .setType(MethodDescriptor.MethodType.UNKNOWN)
-      .build
+      Right(MethodDescriptor
+        .newBuilder[DynamicMessage, DynamicMessage]
+        .setFullMethodName(fullMethodName)
+        .setRequestMarshaller(inputTypeMarshaller)
+        .setResponseMarshaller(outputTypeMarshaller)
+        .setType(MethodDescriptor.MethodType.UNKNOWN)
+        .build)
+    }
   }
 }

@@ -87,23 +87,16 @@ class NgGrpcCall extends NgBackendCall {
   override def description: Option[String]                 = "GRPC".some
   override def defaultConfigObject: Option[NgPluginConfig] = GrpcConfig().some
 
-  private def transcodeHttpContentToGRPC(request: NgPluginHttpRequest, body: String): Either[String, GRPCService] = {
-    val path    = request.path
-    val method  = request.method
-    val headers = request.headers.toSeq
+  private def transcodeHttpContentToGRPC(body: String): Either[String, GRPCService] = {
+    // TODO - support grpc-httpjson-transcoding https://github.com/grpc-ecosystem/grpc-httpjson-transcoding
 
-    if (Seq("GET", "PUT", "POST", "DELETE", "PATCH").contains(method.toUpperCase)) {
-      Left("Fail to transcoding http method to grpc")
-    } else {
-      // `GET   /v1/messages/123456`                             | `GetMessage(name: "messages/123456")`
-      // `GET   /v1/messages/123456?revision=2&sub.subfield=foo` | `GetMessage(message_id: "123456" revision: 2 sub: SubMessage(subfield: "foo"))`
-      // `PATCH /v1/messages/123456 { "text": "Hi!" }`           | `UpdateMessage(message_id: "123456" message { text: "Hi!" })`
-      // `PATCH /v1/messages/123456 { "text": "Hi!" }`           | `UpdateMessage(message_id: "123456" text: "Hi!")`
-      // `GET   /v1/messages/123456`                             | `GetMessage(message_id: "123456")`
-      // `GET   /v1/users/me/messages/123456`                    | `GetMessage(user_id: "me" message_id: "123456")`
-
-      Right(GRPCService("", "", "", ""))
-    }
+    val data = body.parseJson
+    Right(GRPCService(
+      data.select("fullServiceName").asOpt[String].getOrElse(""),
+      data.select("methodName").asOpt[String].getOrElse(""),
+      data.select("packageName").asOpt[String].getOrElse(""),
+      data.select("serviceName").asOpt[String].getOrElse("")
+    ))
   }
 
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
@@ -128,7 +121,7 @@ class NgGrpcCall extends NgBackendCall {
       val messagesPromise = Promise[Either[String, Seq[DynamicMessage]]]()
 
       val service = if (config.transcodingRequestToGRPC) {
-        transcodeHttpContentToGRPC(ctx.request, body) match {
+        transcodeHttpContentToGRPC(body) match {
           case Left(error) => return bodyResponse(
             400,
             Map("Content-Type" -> "application/json"),
@@ -143,7 +136,17 @@ class NgGrpcCall extends NgBackendCall {
         GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
       }
 
-      client.call(service, config.clientKind, if(body.isEmpty) None else Some(body), messagesPromise)
+      def formatBody(body: String): Option[String] = {
+        if (body.isEmpty) {
+          None
+        } else if(config.transcodingRequestToGRPC) {
+            Some((body.parseJson.as[JsObject] - "fullServiceName" - "packageName" - "methodName" - "serviceName").stringify)
+        } else {
+          Some(body)
+        }
+      }
+
+      client.call(service, config.clientKind, formatBody(body), messagesPromise)
 
       messagesPromise
         .future
