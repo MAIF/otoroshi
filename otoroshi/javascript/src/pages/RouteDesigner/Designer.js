@@ -654,7 +654,7 @@ class Designer extends React.Component {
           ),
       getCategories(),
       Promise.resolve(
-        Plugins.map((plugin) => {
+        Plugins('Designer').map((plugin) => {
           return {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)

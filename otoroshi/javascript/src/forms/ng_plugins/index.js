@@ -130,7 +130,7 @@ import WasmOPA from './WasmOPA';
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
 
-export const Plugins = [
+const pluginsArray = [
   AdditionalHeadersIn,
   AdditionalHeadersOut,
   AllowHttpMethods,
@@ -258,3 +258,15 @@ export const Plugins = [
   WasmPreRoute,
   WasmRouter,
 ];
+
+export function addPluginForm(plugin) {
+  pluginsArray.push(plugin);
+}
+
+export function getPluginForm(id) {
+  pluginsArray.find(p => p.id === id);
+}
+
+export function Plugins() {
+  return pluginsArray;
+}

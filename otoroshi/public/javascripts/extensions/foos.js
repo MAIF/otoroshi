@@ -86,6 +86,27 @@
     
     return {
       id: extensionId,
+      plugins: [
+        {
+          id: 'cp:otoroshi.next.extensions.FooPlugin',
+          config_schema: {
+            filter: {
+              label: 'filter',
+              type: 'string',
+            },
+            hi: {
+              renderer: (props) => {
+                return React.createElement('button', {
+                  type: "button",
+                  className: "btn btn-sm btn-primary mb-3",
+                  onClick: () => console.log('hi')
+                }, 'Say hi')
+              }
+            },
+          },
+          config_flow: ['filter', 'hi'],
+        }
+      ],
       features: [
         {
           title: 'Foos',

@@ -3,13 +3,14 @@ package otoroshi.next.extensions
 import otoroshi.api._
 import otoroshi.env.Env
 import otoroshi.models._
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.storage._
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Results
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class Foo(
@@ -170,3 +171,24 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     )
   }
 }
+
+/*
+case class FooPluginConfig(filter: String) extends NgPluginConfig {
+  def json: JsValue = Json.obj("filter" -> filter)
+}
+
+class FooPlugin extends NgAccessValidator {
+
+  override def core: Boolean = false
+  override def name: String = "Foo"
+  override def description: Option[String] = "foo foo".some
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def isAccessAsync: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(FooPluginConfig("--"))
+  override def multiInstance: Boolean = true
+
+  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
+}
+ */

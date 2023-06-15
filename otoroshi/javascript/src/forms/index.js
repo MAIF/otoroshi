@@ -2,7 +2,7 @@ import { Plugins } from './ng_plugins';
 import { Wizards } from './wizards';
 
 const ClassifiedForms = {
-  plugins: Plugins.reduce((acc, c) => {
+  plugins: Plugins('ClassifiedForms').reduce((acc, c) => {
     return {
       ...acc,
       [c.id.split('.').slice(-1)]: c,

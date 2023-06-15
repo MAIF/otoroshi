@@ -27,6 +27,8 @@ import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
+import * as Forms from './forms/ng_plugins/index'
+
 if (!window.Symbol) {
   window.Symbol = Symbol;
 }
@@ -195,8 +197,9 @@ export function selfUpdate(opts, node) {
 
 const _extensions = {};
 
-export function registerExtension(name, thunk) {
+function mkCtx(more = {}) {
   const ctx = {
+    ...more,
     dependencies: {
       react: React,
       'react-dom': ReactDOM,
@@ -211,7 +214,23 @@ export function registerExtension(name, thunk) {
       uuid,
     },
   };
+  return ctx;
+}
+
+export function registerExtension(name, thunk) {
+  const ctx = mkCtx({
+    registerPlugins: (pgs) => pgs(ctx).forEach(plugin => Forms.addPluginForm(plugin))
+  });
   _extensions[name] = thunk(ctx);
+  if (_extensions[name].plugins) {
+    console.log(_extensions[name].plugins)
+    registerPlugins(() => _extensions[name].plugins);
+  }
+}
+
+export function registerPlugins(plugins) {
+  const ctx = mkCtx();
+  plugins(ctx).forEach(plugin => Forms.addPluginForm(plugin))
 }
 
 export function extensions() {
