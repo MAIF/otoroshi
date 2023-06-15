@@ -87,12 +87,12 @@ class NgGrpcCall extends NgBackendCall {
   override def description: Option[String]                 = "GRPC".some
   override def defaultConfigObject: Option[NgPluginConfig] = GrpcConfig().some
 
-  private def transcodeHttpContentToGRPC(request: NgPluginHttpRequest): Either[String, GRPCService] = {
+  private def transcodeHttpContentToGRPC(request: NgPluginHttpRequest, body: String): Either[String, GRPCService] = {
     val path    = request.path
     val method  = request.method
     val headers = request.headers.toSeq
 
-    if (Seq("GET", "PUT", "POST", "DELETE", "PATHC").contains(method.toUpperCase)) {
+    if (Seq("GET", "PUT", "POST", "DELETE", "PATCH").contains(method.toUpperCase)) {
       Left("Fail to transcoding http method to grpc")
     } else {
       // `GET   /v1/messages/123456`                             | `GetMessage(name: "messages/123456")`
@@ -112,36 +112,37 @@ class NgGrpcCall extends NgBackendCall {
       .cachedConfig(internalName)(GrpcConfig.format)
       .getOrElse(GrpcConfig())
 
-    val channelRef = GRPCChannelRef(config.address, config.port, secured = config.secured)
-    val channel = NgGrpcCall.channelsCache.getIfPresent(channelRef.id) match {
-      case Some(value) => value
-      case None =>
-        val newChannel = GRPCChannelRef.convertToManagedChannel(channelRef)
-        NgGrpcCall.channelsCache.put(channelRef.id, newChannel)
-        newChannel
-    }
-
-    val client = new ReflectionClient(channel)
-    val messagesPromise = Promise[Either[String, Seq[DynamicMessage]]]()
-
-    val service = if (config.transcodingRequestToGRPC) {
-      transcodeHttpContentToGRPC(ctx.request) match {
-        case Left(error) => return bodyResponse(
-          400,
-          Map("Content-Type" -> "application/json"),
-          Json.obj("error" -> error)
-            .stringify
-            .byteString
-            .singleSource
-        ).vfuture
-        case Right(value) => value
-      }
-    } else {
-      GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
-    }
-
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val body = bodyRaw.utf8String
+
+      val channelRef = GRPCChannelRef(config.address, config.port, secured = config.secured)
+      val channel = NgGrpcCall.channelsCache.getIfPresent(channelRef.id) match {
+        case Some(value) => value
+        case None =>
+          val newChannel = GRPCChannelRef.convertToManagedChannel(channelRef)
+          NgGrpcCall.channelsCache.put(channelRef.id, newChannel)
+          newChannel
+      }
+
+      val client = new ReflectionClient(channel)
+      val messagesPromise = Promise[Either[String, Seq[DynamicMessage]]]()
+
+      val service = if (config.transcodingRequestToGRPC) {
+        transcodeHttpContentToGRPC(ctx.request, body) match {
+          case Left(error) => return bodyResponse(
+            400,
+            Map("Content-Type" -> "application/json"),
+            Json.obj("error" -> error)
+              .stringify
+              .byteString
+              .singleSource
+          ).vfuture
+          case Right(value) => value
+        }
+      } else {
+        GRPCService(config.fullServiceName, config.methodName, config.packageName, config.serviceName)
+      }
+
       client.call(service, config.clientKind, if(body.isEmpty) None else Some(body), messagesPromise)
 
       messagesPromise
