@@ -57,7 +57,6 @@ object GRPCChannelRef {
 
   def convertToManagedChannel(channelRef: GRPCChannelRef)(implicit env: Env): ManagedChannel = {
     if (channelRef.secured) {
-//      ManagedChannelBuilder.forAddress(channelRef.address, channelRef.port).build()
       // TODO - add list of trusted certificates
       val creds = TlsChannelCredentials.newBuilder()
         .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
