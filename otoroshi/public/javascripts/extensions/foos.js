@@ -86,7 +86,7 @@
     
     return {
       id: extensionId,
-      plugins: [
+      pluginForms: [
         {
           id: 'cp:otoroshi.next.extensions.FooPlugin',
           config_schema: {

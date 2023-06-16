@@ -222,9 +222,8 @@ export function registerExtension(name, thunk) {
     registerPlugins: (pgs) => pgs(ctx).forEach(plugin => Forms.addPluginForm(plugin))
   });
   _extensions[name] = thunk(ctx);
-  if (_extensions[name].plugins) {
-    console.log(_extensions[name].plugins)
-    registerPlugins(() => _extensions[name].plugins);
+  if (_extensions[name].pluginForms) {
+    registerPlugins(() => _extensions[name].pluginForms);
   }
 }
 

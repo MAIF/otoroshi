@@ -173,6 +173,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 }
 
 /*
+
 case class FooPluginConfig(filter: String) extends NgPluginConfig {
   def json: JsValue = Json.obj("filter" -> filter)
 }
@@ -191,4 +192,5 @@ class FooPlugin extends NgAccessValidator {
 
   override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
 }
+
  */
