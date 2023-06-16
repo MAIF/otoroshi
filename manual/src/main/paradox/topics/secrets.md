@@ -150,6 +150,12 @@ vaults {
 
 you should define your references like `${vault://azure_vault/secret_name/secret_version}`. `secret_version` is mandatory
 
+If you want to use certificates and keys objects from the azure key vault, you will have to specify an option in the reference named `azure_secret_kind` with possible value `certificate`, `privkey`, `pubkey` like the following :
+
+```
+${vault://azure_vault/myprivatekey/secret_version?azure_secret_kind=privkey}
+```
+
 ### AWS Secrets Manager
 
 a backend for [AWS Secrets Manager](https://aws.amazon.com/en/secrets-manager/)

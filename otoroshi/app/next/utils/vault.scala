@@ -9,9 +9,11 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
 import com.amazonaws.services.secretsmanager.model.{GetSecretValueRequest, GetSecretValueResult}
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.base.Charsets
+import com.nimbusds.jose.jwk.JWK
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
+import otoroshi.ssl.SSLImplicits._
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.LegitTrieMap
@@ -28,6 +30,62 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+
+sealed trait AzureSecretKind {
+  def path: String
+  def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus
+}
+
+object AzureSecretKind {
+  case object AzureSecretCertificate extends AzureSecretKind { 
+    def path: String = "certificates" 
+    def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus = {
+      CachedVaultSecretStatus.SecretReadSuccess(
+        otoroshi.ssl.PemHeaders.BeginCertificate + "\n" +
+        json.select("cer").asString.decodeBase64.grouped(64).mkString("\n") +
+        otoroshi.ssl.PemHeaders.EndCertificate + "\n"
+      )
+    }
+  }
+  case object AzureSecretPrivateKey extends AzureSecretKind {
+    def path: String = "keys" 
+    def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus = {
+      val jwk = JWK.parse(json.select("key").asObject.stringify)
+      jwk.getKeyType.getValue match {
+        case "EC" => CachedVaultSecretStatus.SecretReadSuccess(jwk.toECKey.toPrivateKey.encoded)
+        case "RSA" => CachedVaultSecretStatus.SecretReadSuccess(jwk.toRSAKey.toPrivateKey.encoded)
+        case t => CachedVaultSecretStatus.SecretReadError(s"bad jwk type: ${t}")
+      }
+    }
+  }
+  case object AzureSecretPublicKey extends AzureSecretKind {
+    def path: String = "keys"
+
+    def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus = {
+      val jwk = JWK.parse(json.select("key").asObject.stringify)
+      jwk.getKeyType.getValue match {
+        case "EC" => CachedVaultSecretStatus.SecretReadSuccess(jwk.toECKey.toPublicKey.encoded)
+        case "RSA" => CachedVaultSecretStatus.SecretReadSuccess(jwk.toRSAKey.toPublicKey.encoded)
+        case t => CachedVaultSecretStatus.SecretReadError(s"bad jwk type: ${t}")
+      }
+    }
+  }
+  case object AzureSecret extends AzureSecretKind { 
+    def path: String = "secrets" 
+    def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus = {
+      json.select("value").asOpt[JsValue] match {
+        case Some(JsString(value)) if base64 => CachedVaultSecretStatus.SecretReadSuccess(value.decodeBase64)
+        case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+        case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+        case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
+        case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+        case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+        case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+        case _                      => CachedVaultSecretStatus.SecretValueNotFound
+      }
+    }
+  }
+}
 
 sealed trait CachedVaultSecretStatus {
   def value: String
@@ -231,24 +289,18 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
   private val baseUrl                    = configuration
     .getOptionalWithFileSupport[String]("url")
     .getOrElse("https://myvault.vault.azure.net")
-  // env.configuration
-  //   .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
-  //   .getOrElse("https://myvault.vault.azure.net")
   private val apiVersion                 = configuration.getOptionalWithFileSupport[String]("api-version").getOrElse("7.2")
-  // env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
   private val maybetoken: Option[String] = configuration
     .getOptionalWithFileSupport[String]("token")
-  //env.configuration
-  //  .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
   private val tokenKey                   = "token"
 
   private val tokenCache = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
 
-  private def dataUrl(path: String, options: Map[String, String]) = {
+  private def dataUrl(path: String, kind: AzureSecretKind, options: Map[String, String]) = {
     val opts =
       if (options.nonEmpty) s"?api-version=${apiVersion}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
       else s"?api-version=${apiVersion}"
-    s"${baseUrl}/secrets${path}${opts}"
+    s"${baseUrl}/${kind.path}${path}${opts}"
   }
 
   private def getToken(): Future[Either[String, String]] = {
@@ -307,7 +359,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
     }
   }
 
-  def fetchSecret(url: String, token: String)(implicit
+  def fetchSecret(url: String, token: String, base64: Boolean, kind: AzureSecretKind)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
@@ -322,15 +374,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
         if (response.status == 200) {
           if (logger.isDebugEnabled)
             logger.debug(s"found secret at '${url}'") // with value '${response.json.select("value").asOpt[JsValue]}'")
-          response.json.select("value").asOpt[JsValue] match {
-            case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
-            case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
-            case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-            case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-            case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-            case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
-            case _                      => CachedVaultSecretStatus.SecretValueNotFound
-          }
+          kind.get(response.json, base64)
         } else if (response.status == 401) {
           if (logger.isDebugEnabled) logger.debug(s"secret at '$url' not found because of 401: ${response.body}")
           tokenCache.invalidate(tokenKey)
@@ -352,14 +396,22 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
       env: Env,
       ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    val url = dataUrl(path, options)
+    val finalOpts = options - "azure_secret_base_64" - "azure_secret_kind"
+    val base64 = options.get("azure_secret_base_64").contains("true")
+    val kind: AzureSecretKind = options.get("azure_secret_kind") match {
+      case Some("privkey") => AzureSecretKind.AzureSecretPrivateKey
+      case Some("pubkey") => AzureSecretKind.AzureSecretPublicKey
+      case Some("certificate") => AzureSecretKind.AzureSecretCertificate
+      case _ => AzureSecretKind.AzureSecret
+    }
+    val url = dataUrl(path, kind, finalOpts)
     for {
       token  <- getToken()
       status <- token match {
                   case Left(err)          =>
                     if (logger.isDebugEnabled) logger.debug(s"unable to get access_token: ${err}")
                     CachedVaultSecretStatus.SecretReadError(s"unable to get access_token: ${err}").future
-                  case Right(accessToken) => fetchSecret(url, accessToken)
+                  case Right(accessToken) => fetchSecret(url, accessToken, base64, kind)
                 }
     } yield {
       status
