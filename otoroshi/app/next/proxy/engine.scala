@@ -3216,6 +3216,18 @@ class ProxyEngine() extends RequestHandler {
       counterOut.addAndGet(bs.length)
       bs
     }*/
+    // TODO: should we enforce it as specified in rfc7230 ?
+    // * https://datatracker.ietf.org/doc/html/rfc7230#section-3.3
+    // * https://datatracker.ietf.org/doc/html/rfc7230#section-3.3.1
+    // * https://datatracker.ietf.org/doc/html/rfc7230#section-3.3.2
+    // * https://datatracker.ietf.org/doc/html/rfc7230#section-3.3.3
+    // if (response.status == 204) {
+    //   FEither.right(Results
+    //     .Status(status)
+    //     .sendEntity(HttpEntity.NoEntity)
+    //     .withHeaders(headers: _*)
+    //     .withCookies(cookies: _*))
+    // } else
     if (isHttp10) {
       logger.warn(
         s"HTTP/1.0 request, storing temporary result in memory :( (${rawRequest.theProtocol}://${rawRequest.theHost}${rawRequest.relativeUri})"
