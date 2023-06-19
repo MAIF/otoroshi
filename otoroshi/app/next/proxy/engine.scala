@@ -27,7 +27,7 @@ import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.HttpEntity
+import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
@@ -3232,9 +3232,14 @@ class ProxyEngine() extends RequestHandler {
             Sink.reduce[ByteString]((bs, n) => bs.concat(n))
           )
           .map { body =>
-            val response: Result = Status(status)(body)
+            val response: Result = Results
+              .Status(status)
+              .sendEntity(HttpEntity.Strict(body, contentType))
               .withHeaders(headers: _*)
               .withCookies(cookies: _*)
+            //Status(status)(body)
+              //.withHeaders(headers: _*)
+              //.withCookies(cookies: _*)
             contentType match {
               case None      => Right(response)
               case Some(ctp) => Right(response.as(ctp))
@@ -3245,8 +3250,19 @@ class ProxyEngine() extends RequestHandler {
       isChunked match {
         case true  => {
           // stream out
-          val res = Status(status)
-            .chunked(theBody)
+          // val res = Status(status)
+          //   .chunked(theBody)
+          //   .withHeaders(headers: _*)
+          //   .withCookies(cookies: _*)
+          val res = Results
+            .Status(status)
+            .sendEntity(
+              HttpEntity.Chunked(
+                theBody.map(bs => HttpChunk.Chunk(bs))
+                  .concat(Source.single(HttpChunk.LastChunk(Headers.create()))),
+                contentType
+              )
+            )
             .withHeaders(headers: _*)
             .withCookies(cookies: _*)
           contentType match {
