@@ -81,7 +81,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def callPluginWithoutResults(function: String, params: Parameters, data: VmData, attrs: TypedMap): Unit = {
     otoroshi.wasm.WasmUtils
       .rawExecute(
-        config = wasm,
+        _config = wasm,
         defaultFunctionName = function,
         input = None,
         parameters = params.some,
@@ -103,7 +103,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   ): Future[ResultsWrapper] = {
     otoroshi.wasm.WasmUtils
       .rawExecute(
-        config = wasm,
+        _config = wasm,
         defaultFunctionName = function,
         input = None,
         parameters = params.some,
