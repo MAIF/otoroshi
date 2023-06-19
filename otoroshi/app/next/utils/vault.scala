@@ -60,7 +60,6 @@ object AzureSecretKind {
   }
   case object AzureSecretPublicKey extends AzureSecretKind {
     def path: String = "keys"
-
     def get(json: JsValue, base64: Boolean): CachedVaultSecretStatus = {
       val jwk = JWK.parse(json.select("key").asObject.stringify)
       jwk.getKeyType.getValue match {
