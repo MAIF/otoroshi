@@ -32,6 +32,7 @@ class OtoroshiLoader extends ApplicationLoader {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
+    otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
     components.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
