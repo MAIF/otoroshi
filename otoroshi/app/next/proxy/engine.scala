@@ -2349,9 +2349,6 @@ class ProxyEngine() extends RequestHandler {
     } else {
       rawUri
     }
-  }.seffectOn { str =>
-    attrs.get(otoroshi.plugins.Keys.StrippedPathKey).debugPrintln
-    str
   }
 
   def callRequestTransformer(
