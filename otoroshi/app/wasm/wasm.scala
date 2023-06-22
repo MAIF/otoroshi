@@ -665,7 +665,7 @@ object WasmUtils {
   val debugLog = Logger("otoroshi-wasm-debug")
 
   implicit val executor = ExecutionContext.fromExecutorService(
-    Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 4) + 1)
+    Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
   )
 
   // TODO: handle env.wasmCacheSize based on creation date ?
