@@ -2323,6 +2323,7 @@ class ProxyEngine() extends RequestHandler {
             } else {
               // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons
               val mpath = mroute.path.substring(1)
+              attrs.put(otoroshi.plugins.Keys.StrippedPathKey -> mroute.path)
               rawUri.replaceFirst(mpath, "") // handles wildcard
             }
           } else {
@@ -2337,13 +2338,20 @@ class ProxyEngine() extends RequestHandler {
           }
           rootMatched
             .filter(m => route.frontend.stripPath && root.startsWith(m))
-            .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
+            .map { m =>
+              val replaced = m.replace(".", "\\.")
+              attrs.put(otoroshi.plugins.Keys.StrippedPathKey -> replaced)
+              root.replaceFirst(replaced, "")
+            }
             .getOrElse(rawUri)
         }
       }
     } else {
       rawUri
     }
+  }.seffectOn { str =>
+    attrs.get(otoroshi.plugins.Keys.StrippedPathKey).debugPrintln
+    str
   }
 
   def callRequestTransformer(
