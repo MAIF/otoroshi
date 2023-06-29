@@ -26,7 +26,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Communicate with Kafka](./communicate-with-kafka.md)
 * @ref:[Create your custom Authentication module](./create-custom-auth-module.md)
 * @ref:[Working with Eureka](./working-with-eureka.md)
-* @ref:[Instanciate a WAF with Coraza](./instanciate-waf-coraza.md)
+* @ref:[Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
 
 @@@ index
 
@@ -55,5 +55,5 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Communicate with Kafka](./communicate-with-kafka.md)
 * [Create your custom Authentication module](./create-custom-auth-module.md)
 * [Working with Eureka](./working-with-eureka.md)
-* [Instanciate a WAF with Coraza](./instanciate-waf-coraza.md)
+* [Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
 @@@

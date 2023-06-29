@@ -97,7 +97,7 @@ you MUST provide plugins that lies in the `otoroshi_plugins` package or in a sub
 package otoroshi_plugins.com.my.company.myplugin
 ```
 
-also you don't have to instanciate your plugin at the end of the file like in the Otoroshi UI
+also you don't have to instantiate your plugin at the end of the file like in the Otoroshi UI
 @@@
 
 When your code is ready, create a jar file 
