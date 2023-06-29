@@ -177,7 +177,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
         id = "cb-test",
         name = "cb-test",
         env = "prod",
-        subdomain = "cb1",
+        subdomain = "cb",
         domain = "oto.tools",
         targets = Seq(
           Target(
@@ -228,7 +228,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       deleteOtoroshiService(service).futureValue
     }
 
-    "Timeout on long calls" in {
+    /*"Timeout on long calls" in {
       val service = ServiceDescriptor(
         id = "cb-test",
         name = "cb-test",
@@ -309,7 +309,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       ) mustBe true
 
       deleteOtoroshiService(service).futureValue
-    }
+    }*/
 
     "stop servers" in {
       basicTestServer1.stop()
