@@ -99,7 +99,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       getOtoroshiServices().futureValue // WARM UP
     }
 
-    s"return only one service descriptor after startup (for admin API)" in {
+    s"return only one route after startup (for admin API)" in {
       val routes = getOtoroshiRoutes().futureValue
       routes.size mustBe 1
     }
