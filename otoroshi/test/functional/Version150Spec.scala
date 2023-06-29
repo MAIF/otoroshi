@@ -609,7 +609,8 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
           Seq(TeamAccess("*"))
         )
       )
-    )
+    ),
+    adminEntityValidators= Map()
   )
   val tenantAdminUser = BackOfficeUser(
     randomId = "tenantadmin@otoroshi.io",
@@ -627,7 +628,8 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
           Seq(TeamAccess("*"))
         )
       )
-    )
+    ),
+    adminEntityValidators = Map()
   )
 
   val team1User     = BackOfficeUser(
@@ -646,7 +648,8 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
           Seq(TeamAccess("team1"))
         )
       )
-    )
+    ),
+    adminEntityValidators = Map()
   )
   val team2User     = BackOfficeUser(
     randomId = "team2@otoroshi.io",
@@ -664,7 +667,8 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
           Seq(TeamAccess("team2"))
         )
       )
-    )
+    ),
+    adminEntityValidators = Map()
   )
   val team1and2User = BackOfficeUser(
     randomId = "team1and2@otoroshi.io",
@@ -682,7 +686,8 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
           Seq(TeamAccess("team1"), TeamAccess("team2"))
         )
       )
-    )
+    ),
+    adminEntityValidators = Map()
   )
 
   def service(team: String): ServiceDescriptor = {
