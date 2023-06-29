@@ -883,7 +883,7 @@ class BasicSpec() extends OtoroshiSpec {
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
         matchingHeaders = Map(
-          "User-Agent" -> "^.*(bot|Bot|BOT|bots|Bots|robot|Robot|index|spider|Craw|crawl|wget|Slurp|slurp|BingPreview|Mediapartners-Google|Feedfetcher-Google|APIs-Google|grabber|Grabber).*$"
+          "User-Agent" -> "Regex(^.*(bot|Bot|BOT|bots|Bots|robot|Robot|index|spider|Craw|crawl|wget|Slurp|slurp|BingPreview|Mediapartners-Google|Feedfetcher-Google|APIs-Google|grabber|Grabber).*$)"
         )
       )
       val service2 = ServiceDescriptor(
@@ -929,6 +929,9 @@ class BasicSpec() extends OtoroshiSpec {
           println(s"Not supported: $userAgent")
         }
         resp.status mustBe 200
+        if(!resp.body.equals(body1)) {
+          println("Failed for " + userAgent)
+        }
         resp.body mustBe body1
       }
 
@@ -965,7 +968,7 @@ class BasicSpec() extends OtoroshiSpec {
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        matchingHeaders = Map("X-Session" -> "^(.*?;)?(user=jason)(;.*)?$")
+        matchingHeaders = Map("X-Session" -> "Regex(^(.*?;)?(user=jason)(;.*)?$)")
       )
       createOtoroshiService(service).futureValue
 
@@ -1205,6 +1208,7 @@ class BasicSpec() extends OtoroshiSpec {
       server.stop()
     }
 
+    // FIXME there seem to be a side effect between the above test and this one, therefore we use a different subdomain
     "Validate sec. communication in V2" in {
       import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
       val counter = new AtomicInteger(0)
@@ -1233,10 +1237,10 @@ class BasicSpec() extends OtoroshiSpec {
         )
         .await()
       val service = ServiceDescriptor(
-        id = "seccom-v1-test",
-        name = "seccom-v1-test",
+        id = "seccom-v2-test",
+        name = "seccom-v2-test",
         env = "prod",
-        subdomain = "seccom",
+        subdomain = "seccom2",
         domain = "oto.tools",
         targets = Seq(
           Target(
@@ -1249,12 +1253,12 @@ class BasicSpec() extends OtoroshiSpec {
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
-      createOtoroshiService(service).futureValue
+      val res = createOtoroshiService(service).futureValue
 
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.oto.tools"
+          "Host" -> "seccom2.oto.tools"
         )
         .get()
         .futureValue
@@ -1282,10 +1286,10 @@ class BasicSpec() extends OtoroshiSpec {
         )
         .await()
       val service = ServiceDescriptor(
-        id = "seccom-v1-test",
-        name = "seccom-v1-test",
+        id = "seccom-v22-test",
+        name = "seccom-v22-test",
         env = "prod",
-        subdomain = "seccom",
+        subdomain = "seccom22",
         domain = "oto.tools",
         targets = Seq(
           Target(
@@ -1303,7 +1307,7 @@ class BasicSpec() extends OtoroshiSpec {
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.oto.tools"
+          "Host" -> "seccom22.oto.tools"
         )
         .get()
         .futureValue

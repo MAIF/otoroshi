@@ -151,7 +151,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("No ApiKey provided") mustBe true
+      resp.body.contains("no apikey") mustBe true
 
       deleteOtoroshiService(privateByDefaultService).futureValue
     }
@@ -168,7 +168,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("No ApiKey provided") mustBe true
+      resp.body.contains("no apikey") mustBe true
 
       deleteOtoroshiService(privateByPatternService).futureValue
     }
@@ -185,7 +185,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("No ApiKey provided") mustBe true
+      resp.body.contains("no apikey") mustBe true
 
       deleteOtoroshiService(notPublicByPatternService).futureValue
     }
@@ -330,8 +330,8 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .get()
         .futureValue
 
-      resp.status mustBe 400
-      resp.body.contains("Bad API key") mustBe true
+      resp.status mustBe 401
+      resp.body.contains("bad apikey") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -402,7 +402,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .get()
         .futureValue
 
-      resp.status mustBe 400
+      resp.status mustBe 401
 
       deleteOtoroshiService(service).futureValue
     }
