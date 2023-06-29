@@ -100,8 +100,8 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
     }
 
     s"return only one service descriptor after startup (for admin API)" in {
-      val services = getOtoroshiServices().futureValue
-      services.size mustBe 1
+      val routes = getOtoroshiRoutes().futureValue
+      routes.size mustBe 1
     }
 
     "provide templates for the main entities" in {
