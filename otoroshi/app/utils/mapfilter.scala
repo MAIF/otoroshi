@@ -1,5 +1,6 @@
 package otoroshi.utils
 
+import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
 import play.api.libs.json._
@@ -62,7 +63,16 @@ object Match {
       case ("$in", JsArray(value))           => value.exists(singleMatches(source.select(key).as[JsValue], true))
       case ("$nin", JsArray(value))          => !value.exists(singleMatches(source.select(key).as[JsValue], true))
       case ("$size", JsNumber(number))       => source.select(key).asOpt[JsArray].exists(_.value.size == number.intValue())
-      case ("$contains", value: JsValue)     => source.select(key).asOpt[JsArray].exists(arr => arr.value.contains(value))
+      case ("$contains", value: JsValue)     => JsonOperationsHelper.getValueAtPath(key, source) match {
+        case (_, obj@JsObject(_)) =>
+          (for (
+            key <- value.select("key").asOpt[String];
+            value <- value.select("value").asOpt[JsValue];
+            input <- obj.select(key).toOption
+          ) yield value.equals(input)).getOrElse(false)
+        case (_, arr@JsArray(_)) => arr.value.contains(value)
+        case _ => false
+      }
       case ("$all", JsArray(value))          =>
         source.select(key).asOpt[JsArray].exists(arr => arr.value.intersect(value).toSet.size == value.size)
       case ("$not", o @ JsObject(_))         => !matchesOperator(o, key, source)
