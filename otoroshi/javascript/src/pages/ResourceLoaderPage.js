@@ -37,22 +37,22 @@ kind: ServiceDescriptor
 `;
 
 const UPDATE_ENTITIES = {
-  ApiKey: (content) => BackOfficeServices.updateRawApiKey(content),
-  ServiceDescriptor: (content) => BackOfficeServices.updateRawService(content),
-  DataExporter: (content) => BackOfficeServices.updateDataExporterConfig(content),
-  ServiceGroup: (content) => BackOfficeServices.updateGroup(content),
-  Certificate: (content) => BackOfficeServices.updateCertificate(content),
-  Tenant: (content) => BackOfficeServices.updateTenant(content),
+  ApiKey: (content) => BackOfficeServices.createRawApiKey(content),
+  ServiceDescriptor: (content) => BackOfficeServices.saveService(content),
+  DataExporter: (content) => BackOfficeServices.createDataExporterConfig(content),
+  ServiceGroup: (content) => BackOfficeServices.createGroup(content),
+  Certificate: (content) => BackOfficeServices.createCertificate(content),
+  Tenant: (content) => BackOfficeServices.createTenant(content),
   GlobalConfig: (content) => BackOfficeServices.updateGlobalConfig(content),
-  Team: (content) => BackOfficeServices.updateTeam(content),
-  TcpService: (content) => BackOfficeServices.updateTcpService(content),
-  AuthModule: (content) => BackOfficeServices.updateAuthConfig(content),
-  JwtVerifier: (content) => BackOfficeServices.updateJwtVerifier(content),
-  ClientValidator: (content) => BackOfficeServices.updateClientValidator(content),
-  Script: (content) => BackOfficeServices.updateScript(content),
-  ErrorTemplate: (content) => BackOfficeServices.updateTemplate(content),
-  Route: (content) =>
-    BackOfficeServices.nextClient.update(BackOfficeServices.nextClient.ENTITIES.ROUTES, content),
+  Team: (content) => BackOfficeServices.createTeam(content),
+  TcpService: (content) => BackOfficeServices.createTcpService(content),
+  AuthModule: (content) => BackOfficeServices.createAuthConfig(content),
+  JwtVerifier: (content) => BackOfficeServices.createJwtVerifier(content),
+  ClientValidator: (content) => BackOfficeServices.createClientValidator(content),
+  Script: (content) => BackOfficeServices.createScript(content),
+  ErrorTemplate: (content) => BackOfficeServices.createTemplate(content),
+  Route: (content) => BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.ROUTES, content),
+  Backend: (content) => BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.BACKENDS, content),
 };
 
 export function ResourceLoaderPage({ setTitle }) {
