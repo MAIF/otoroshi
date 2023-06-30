@@ -58,7 +58,7 @@ case class SimpleOtoroshiAdmin(
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
 ) extends OtoroshiAdmin {
   val isSimple                         = true
   val isWebAuthn                       = false
@@ -69,14 +69,14 @@ case class SimpleOtoroshiAdmin(
   def theTags: Seq[String]             = tags
   def json: JsValue                    =
     location.jsonWithKey ++ Json.obj(
-      "username"  -> username,
-      "password"  -> password,
-      "label"     -> label,
-      "createdAt" -> createdAt.getMillis,
-      "type"      -> typ.json,
-      "metadata"  -> metadata,
-      "tags"      -> JsArray(tags.map(JsString.apply)),
-      "rights"    -> rights.json,
+      "username"              -> username,
+      "password"              -> password,
+      "label"                 -> label,
+      "createdAt"             -> createdAt.getMillis,
+      "type"                  -> typ.json,
+      "metadata"              -> metadata,
+      "tags"                  -> JsArray(tags.map(JsString.apply)),
+      "rights"                -> rights.json,
       "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
     )
 }
@@ -99,15 +99,21 @@ object SimpleOtoroshiAdmin {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         rights = UserRights.readFromObject(json),
-        adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
-          obj.value.mapValues { arr =>
-            arr.asArray.value.map { item =>
-              JsonPathValidator.format.reads(item)
-            }.collect {
-              case JsSuccess(v, _) => v
-            }
-          }.toMap
-        }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+        adminEntityValidators = json
+          .select("adminEntityValidators")
+          .asOpt[JsObject]
+          .map { obj =>
+            obj.value.mapValues { arr =>
+              arr.asArray.value
+                .map { item =>
+                  JsonPathValidator.format.reads(item)
+                }
+                .collect { case JsSuccess(v, _) =>
+                  v
+                }
+            }.toMap
+          }
+          .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -128,7 +134,7 @@ case class WebAuthnOtoroshiAdmin(
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
 ) extends OtoroshiAdmin {
   val isSimple                         = false
   val isWebAuthn                       = true
@@ -139,16 +145,16 @@ case class WebAuthnOtoroshiAdmin(
   def theTags: Seq[String]             = tags
   def json: JsValue                    =
     location.jsonWithKey ++ Json.obj(
-      "username"    -> username,
-      "password"    -> password,
-      "label"       -> label,
-      "handle"      -> handle,
-      "credentials" -> JsObject(credentials),
-      "createdAt"   -> createdAt.getMillis,
-      "type"        -> typ.json,
-      "metadata"    -> metadata,
-      "tags"        -> JsArray(tags.map(JsString.apply)),
-      "rights"      -> rights.json,
+      "username"              -> username,
+      "password"              -> password,
+      "label"                 -> label,
+      "handle"                -> handle,
+      "credentials"           -> JsObject(credentials),
+      "createdAt"             -> createdAt.getMillis,
+      "type"                  -> typ.json,
+      "metadata"              -> metadata,
+      "tags"                  -> JsArray(tags.map(JsString.apply)),
+      "rights"                -> rights.json,
       "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
     )
 }
@@ -176,15 +182,21 @@ object WebAuthnOtoroshiAdmin {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         rights = UserRights.readFromObject(json),
-        adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
-          obj.value.mapValues { arr =>
-            arr.asArray.value.map { item =>
-              JsonPathValidator.format.reads(item)
-            }.collect {
-              case JsSuccess(v, _) => v
-            }
-          }.toMap
-        }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+        adminEntityValidators = json
+          .select("adminEntityValidators")
+          .asOpt[JsObject]
+          .map { obj =>
+            obj.value.mapValues { arr =>
+              arr.asArray.value
+                .map { item =>
+                  JsonPathValidator.format.reads(item)
+                }
+                .collect { case JsSuccess(v, _) =>
+                  v
+                }
+            }.toMap
+          }
+          .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -225,7 +237,7 @@ trait SimpleAdminDataStore {
       typ = OtoroshiAdminType.SimpleAdmin,
       metadata = Map.empty,
       rights = UserRights.default,
-      adminEntityValidators = Map.empty,
+      adminEntityValidators = Map.empty
     )
   }
 }

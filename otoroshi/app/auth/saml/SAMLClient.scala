@@ -20,7 +20,11 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
+import org.opensaml.xmlsec.keyinfo.impl.{
+  ChainingKeyInfoCredentialResolver,
+  StaticKeyInfoCredentialResolver,
+  X509KeyInfoGeneratorFactory
+}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -347,17 +351,23 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
-          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
-            o.value.mapValues { obj =>
-              obj.asObject.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
-                }
+          adminEntityValidatorsOverride = json
+            .select("adminEntityValidatorsOverride")
+            .asOpt[JsObject]
+            .map { o =>
+              o.value.mapValues { obj =>
+                obj.asObject.value.mapValues { arr =>
+                  arr.asArray.value
+                    .map { item =>
+                      JsonPathValidator.format.reads(item)
+                    }
+                    .collect { case JsSuccess(v, _) =>
+                      v
+                    }
+                }.toMap
               }.toMap
-            }.toMap
-          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            }
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -693,30 +703,30 @@ case class SamlAuthModuleConfig(
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"saml-auth-$id"
   override def asJson                                                   = location.jsonWithKey ++ Json.obj(
-    "type"                        -> "saml",
-    "id"                          -> this.id,
-    "name"                        -> this.name,
-    "desc"                        -> this.desc,
-    "sessionMaxAge"               -> this.sessionMaxAge,
-    "clientSideSessionEnabled"    -> this.clientSideSessionEnabled,
-    "userValidators"              -> JsArray(userValidators.map(_.json)),
-    "singleSignOnUrl"             -> this.singleSignOnUrl,
-    "singleLogoutUrl"             -> this.singleLogoutUrl,
-    "credentials"                 -> SAMLCredentials.fmt.writes(this.credentials),
-    "tags"                        -> JsArray(tags.map(JsString.apply)),
-    "metadata"                    -> this.metadata,
-    "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "issuer"                      -> this.issuer,
-    "validatingCertificates"      -> this.validatingCertificates,
-    "validateSignature"           -> this.validateSignature,
-    "validateAssertions"          -> this.validateAssertions,
-    "signature"                   -> SAMLSignature.fmt.writes(this.signature),
-    "nameIDFormat"                -> this.nameIDFormat.name,
-    "ssoProtocolBinding"          -> this.ssoProtocolBinding.name,
-    "singleLogoutProtocolBinding" -> this.singleLogoutProtocolBinding.name,
-    "usedNameIDAsEmail"           -> this.usedNameIDAsEmail,
-    "emailAttributeName"          -> this.emailAttributeName,
-    "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+    "type"                          -> "saml",
+    "id"                            -> this.id,
+    "name"                          -> this.name,
+    "desc"                          -> this.desc,
+    "sessionMaxAge"                 -> this.sessionMaxAge,
+    "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
+    "userValidators"                -> JsArray(userValidators.map(_.json)),
+    "singleSignOnUrl"               -> this.singleSignOnUrl,
+    "singleLogoutUrl"               -> this.singleLogoutUrl,
+    "credentials"                   -> SAMLCredentials.fmt.writes(this.credentials),
+    "tags"                          -> JsArray(tags.map(JsString.apply)),
+    "metadata"                      -> this.metadata,
+    "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+    "issuer"                        -> this.issuer,
+    "validatingCertificates"        -> this.validatingCertificates,
+    "validateSignature"             -> this.validateSignature,
+    "validateAssertions"            -> this.validateAssertions,
+    "signature"                     -> SAMLSignature.fmt.writes(this.signature),
+    "nameIDFormat"                  -> this.nameIDFormat.name,
+    "ssoProtocolBinding"            -> this.ssoProtocolBinding.name,
+    "singleLogoutProtocolBinding"   -> this.singleLogoutProtocolBinding.name,
+    "usedNameIDAsEmail"             -> this.usedNameIDAsEmail,
+    "emailAttributeName"            -> this.emailAttributeName,
+    "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
     "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
       JsObject(o.mapValues(v => JsArray(v.map(_.json))))
     })

@@ -220,15 +220,21 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   }
   def extractId(entity: Entity): String
   def readEntity(json: JsValue): Either[JsValue, Entity]
-  def readAndValidateEntity(json: JsValue, f: => Either[String, Option[BackOfficeUser]])(implicit env: Env): Either[JsValue, Entity] = {
+  def readAndValidateEntity(json: JsValue, f: => Either[String, Option[BackOfficeUser]])(implicit
+      env: Env
+  ): Either[JsValue, Entity] = {
     f match {
-      case Left(err) => Left(err.json)
-      case Right(None) => readEntity(json)
+      case Left(err)         => Left(err.json)
+      case Right(None)       => readEntity(json)
       case Right(Some(user)) => {
-        val envValidators: Seq[JsonPathValidator] = env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val userValidators: Seq[JsonPathValidator] = user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val validators = envValidators ++ userValidators
-        val failedValidators = validators.filterNot(_.validate(json))
+        val envValidators: Seq[JsonPathValidator]  =
+          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val userValidators: Seq[JsonPathValidator] =
+          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val validators                             = envValidators ++ userValidators
+        val failedValidators                       = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {
           readEntity(json)
         } else {
@@ -693,9 +699,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    val rawBody = ctx.request.body.asObject
-    val dev = if (env.isDev) "_dev" else ""
-    val id = rawBody.select("client_id").asOpt[String]
+    val rawBody        = ctx.request.body.asObject
+    val dev            = if (env.isDev) "_dev" else ""
+    val id             = rawBody
+      .select("client_id")
+      .asOpt[String]
       .orElse(rawBody.select("clientId").asOpt[String])
       .orElse(rawBody.select("id").asOpt[String])
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
@@ -704,15 +712,17 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Left(e)                                    => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
       case Right(entity) if !ctx.canUserWrite(entity) =>
         Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
-      case Right(newentity)                              => {
+      case Right(newentity)                           => {
         findByIdOps(processId(id, ctx), ctx.request).flatMap {
-          case Left(error) => Status(error.status)(Json.obj("error" -> "not_found", "error_description" -> error.bodyAsJson)).future
+          case Left(error)                                         =>
+            Status(error.status)(Json.obj("error" -> "not_found", "error_description" -> error.bodyAsJson)).future
           case Right(OptionalEntityAndContext(option, _, _, _, _)) => {
             option match {
-              case Some(_) => BadRequest(Json.obj("error" -> "not_found", "error_description" -> "Entity already exists")).future
-              case None => {
+              case Some(_) =>
+                BadRequest(Json.obj("error" -> "not_found", "error_description" -> "Entity already exists")).future
+              case None    => {
                 createEntityOps(newentity, ctx.request).map {
-                  case Left(error) =>
+                  case Left(error)                                                   =>
                     Status(error.status)(Json.obj("error" -> "creation_error", "error_description" -> error.bodyAsJson))
                   case Right(EntityAndContext(entity, action, message, meta, alert)) =>
                     val event: AdminApiEvent = AdminApiEvent(
@@ -980,50 +990,59 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
     val body = ctx.request.body.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
-      case Left(error) => Status(error.status)(Json.obj("error" -> "internal_server_error", "error_description" -> error.bodyAsJson)).future
-      case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
-        case None => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
-        case Some(oldEntity) if !ctx.canUserWrite(oldEntity) => Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
-        case Some(oldEntity) => {
-          readAndValidateEntity(body, ctx.backOfficeUser) match {
-            case Left(error) =>
-              BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
-            case Right(entity) if !ctx.canUserWrite(entity) =>
-              Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
-            case Right(entity) => {
-              updateEntityOps(entity, ctx.request).map {
-                case Left(error) =>
-                  Status(error.status)(Json.obj("error" -> "update_error", "error_description" -> error.bodyAsJson))
-                case Right(EntityAndContext(_, action, message, meta, alert)) =>
-                  val event: AdminApiEvent = AdminApiEvent(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    Some(ctx.apiKey),
-                    ctx.user,
-                    action,
-                    message,
-                    ctx.from,
-                    ctx.ua,
-                    meta
-                  )
-                  Audit.send(event)
-                  Alerts.send(
-                    GenericAlert(
+      case Left(error)                                         =>
+        Status(error.status)(
+          Json.obj("error" -> "internal_server_error", "error_description" -> error.bodyAsJson)
+        ).future
+      case Right(OptionalEntityAndContext(option, _, _, _, _)) =>
+        option match {
+          case None                                            => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
+          case Some(oldEntity) if !ctx.canUserWrite(oldEntity) =>
+            Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
+          case Some(oldEntity)                                 => {
+            readAndValidateEntity(body, ctx.backOfficeUser) match {
+              case Left(error)                                =>
+                BadRequest(
+                  Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)
+                ).future
+              case Right(entity) if !ctx.canUserWrite(entity) =>
+                Forbidden(
+                  Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")
+                ).future
+              case Right(entity)                              => {
+                updateEntityOps(entity, ctx.request).map {
+                  case Left(error)                                              =>
+                    Status(error.status)(Json.obj("error" -> "update_error", "error_description" -> error.bodyAsJson))
+                  case Right(EntityAndContext(_, action, message, meta, alert)) =>
+                    val event: AdminApiEvent = AdminApiEvent(
                       env.snowflakeGenerator.nextIdStr(),
                       env.env,
-                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                      alert,
-                      event,
+                      Some(ctx.apiKey),
+                      ctx.user,
+                      action,
+                      message,
                       ctx.from,
-                      ctx.ua
+                      ctx.ua,
+                      meta
                     )
-                  )
-                  Ok(writeEntity(entity))
+                    Audit.send(event)
+                    Alerts.send(
+                      GenericAlert(
+                        env.snowflakeGenerator.nextIdStr(),
+                        env.env,
+                        ctx.user.getOrElse(ctx.apiKey.toJson),
+                        alert,
+                        event,
+                        ctx.from,
+                        ctx.ua
+                      )
+                    )
+                    Ok(writeEntity(entity))
+                }
               }
             }
           }
         }
-      }
     }
   }
 
@@ -1034,20 +1053,27 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implMat = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
-      case Left(error)                                         => Status(error.status)(Json.obj("error" -> "not_found", "error_description" -> error.bodyAsJson)).future
+      case Left(error)                                         =>
+        Status(error.status)(Json.obj("error" -> "not_found", "error_description" -> error.bodyAsJson)).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) =>
         option match {
-          case None                                      => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
+          case None                                            => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
           case Some(oldEntity) if !ctx.canUserWrite(oldEntity) =>
             Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
-          case Some(oldEntity)                              => {
+          case Some(oldEntity)                                 => {
             val currentJson = writeEntity(oldEntity)
-            val newJson     = patchJson(ctx.request.body, currentJson).asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+            val newJson     = patchJson(ctx.request.body, currentJson).asObject ++ Json.obj(
+              "id"        -> id,
+              "client_id" -> id,
+              "clientId"  -> id
+            )
             readAndValidateEntity(newJson, ctx.backOfficeUser) match {
-              case Left(e)          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
+              case Left(e)                                          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
               case Right(newEntity) if !ctx.canUserWrite(newEntity) =>
-                Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
-              case Right(newEntity) => {
+                Forbidden(
+                  Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")
+                ).future
+              case Right(newEntity)                                 => {
                 updateEntityOps(newEntity, ctx.request).map {
                   case Left(error)                                              =>
                     Status(error.status)(Json.obj("error" -> "update_error", "error_description" -> error.bodyAsJson))

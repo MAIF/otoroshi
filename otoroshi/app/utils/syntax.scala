@@ -261,7 +261,7 @@ object implicits {
     def bytes: Array[Byte]                         = obj.getBytes(StandardCharsets.UTF_8)
     def json: JsValue                              = JsString(obj)
     def parseJson: JsValue                         = Json.parse(obj)
-    def encodeBase64: String                             = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
+    def encodeBase64: String                       = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
     def base64: String                             = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
     def base64UrlSafe: String                      = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String                         = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)

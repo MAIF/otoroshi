@@ -2805,8 +2805,8 @@ object SSLImplicits {
       s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
   implicit class EnhancedPublicKey(val key: PublicKey)                                   extends AnyVal {
-    def encoded: String          = Base64.getEncoder.encodeToString(key.getEncoded)
-    def asPem: String =
+    def encoded: String = Base64.getEncoder.encodeToString(key.getEncoded)
+    def asPem: String   =
       s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
   }
   implicit class EnhancedPrivateKey(val key: PrivateKey)                                 extends AnyVal {

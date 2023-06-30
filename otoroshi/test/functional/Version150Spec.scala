@@ -610,7 +610,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
         )
       )
     ),
-    adminEntityValidators= Map()
+    adminEntityValidators = Map()
   )
   val tenantAdminUser = BackOfficeUser(
     randomId = "tenantadmin@otoroshi.io",

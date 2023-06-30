@@ -929,7 +929,7 @@ class BasicSpec() extends OtoroshiSpec {
           println(s"Not supported: $userAgent")
         }
         resp.status mustBe 200
-        if(!resp.body.equals(body1)) {
+        if (!resp.body.equals(body1)) {
           println("Failed for " + userAgent)
         }
         resp.body mustBe body1
@@ -1253,7 +1253,7 @@ class BasicSpec() extends OtoroshiSpec {
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
-      val res = createOtoroshiService(service).futureValue
+      val res     = createOtoroshiService(service).futureValue
 
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")

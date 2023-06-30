@@ -96,17 +96,23 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights"),
-          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
-            o.value.mapValues { obj =>
-              obj.asObject.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
-                }
+          adminEntityValidatorsOverride = json
+            .select("adminEntityValidatorsOverride")
+            .asOpt[JsObject]
+            .map { o =>
+              o.value.mapValues { obj =>
+                obj.asObject.value.mapValues { arr =>
+                  arr.asArray.value
+                    .map { item =>
+                      JsonPathValidator.format.reads(item)
+                    }
+                    .collect { case JsSuccess(v, _) =>
+                      v
+                    }
+                }.toMap
               }.toMap
-            }.toMap
-          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            }
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -179,7 +185,7 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     otoroshiRightsField: String = "otoroshi_rights",
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
@@ -193,48 +199,48 @@ case class GenericOauth2ModuleConfig(
   override def form: Option[Form]                                       = None
   override def asJson                                                   =
     location.jsonWithKey ++ Json.obj(
-      "type"                     -> "oauth2",
-      "id"                       -> this.id,
-      "name"                     -> this.name,
-      "desc"                     -> this.desc,
-      "clientSideSessionEnabled" -> this.clientSideSessionEnabled,
-      "sessionMaxAge"            -> this.sessionMaxAge,
-      "userValidators"           -> JsArray(userValidators.map(_.json)),
-      "clientId"                 -> this.clientId,
-      "clientSecret"             -> this.clientSecret,
-      "authorizeUrl"             -> this.authorizeUrl,
-      "tokenUrl"                 -> this.tokenUrl,
-      "userInfoUrl"              -> this.userInfoUrl,
-      "introspectionUrl"         -> this.introspectionUrl,
-      "loginUrl"                 -> this.loginUrl,
-      "logoutUrl"                -> this.logoutUrl,
-      "scope"                    -> this.scope,
-      "claims"                   -> this.claims,
-      "useCookie"                -> this.useCookie,
-      "useJson"                  -> this.useJson,
-      "pkce"                     -> this.pkce.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "noWildcardRedirectURI"    -> this.noWildcardRedirectURI,
-      "readProfileFromToken"     -> this.readProfileFromToken,
-      "accessTokenField"         -> this.accessTokenField,
-      "jwtVerifier"              -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "nameField"                -> this.nameField,
-      "emailField"               -> this.emailField,
-      "apiKeyMetaField"          -> this.apiKeyMetaField,
-      "apiKeyTagsField"          -> this.apiKeyTagsField,
-      "otoroshiDataField"        -> this.otoroshiDataField,
-      "callbackUrl"              -> this.callbackUrl,
-      "oidConfig"                -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "mtlsConfig"               -> this.mtlsConfig.json,
-      "proxy"                    -> WSProxyServerJson.maybeProxyToJson(this.proxy),
-      "extraMetadata"            -> this.extraMetadata,
-      "metadata"                 -> this.metadata,
-      "tags"                     -> JsArray(tags.map(JsString.apply)),
-      "refreshTokens"            -> this.refreshTokens,
-      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "superAdmins"              -> superAdmins,
-      "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
-      "dataOverride"             -> JsObject(dataOverride),
-      "otoroshiRightsField"      -> this.otoroshiRightsField,
+      "type"                          -> "oauth2",
+      "id"                            -> this.id,
+      "name"                          -> this.name,
+      "desc"                          -> this.desc,
+      "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
+      "sessionMaxAge"                 -> this.sessionMaxAge,
+      "userValidators"                -> JsArray(userValidators.map(_.json)),
+      "clientId"                      -> this.clientId,
+      "clientSecret"                  -> this.clientSecret,
+      "authorizeUrl"                  -> this.authorizeUrl,
+      "tokenUrl"                      -> this.tokenUrl,
+      "userInfoUrl"                   -> this.userInfoUrl,
+      "introspectionUrl"              -> this.introspectionUrl,
+      "loginUrl"                      -> this.loginUrl,
+      "logoutUrl"                     -> this.logoutUrl,
+      "scope"                         -> this.scope,
+      "claims"                        -> this.claims,
+      "useCookie"                     -> this.useCookie,
+      "useJson"                       -> this.useJson,
+      "pkce"                          -> this.pkce.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "noWildcardRedirectURI"         -> this.noWildcardRedirectURI,
+      "readProfileFromToken"          -> this.readProfileFromToken,
+      "accessTokenField"              -> this.accessTokenField,
+      "jwtVerifier"                   -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "nameField"                     -> this.nameField,
+      "emailField"                    -> this.emailField,
+      "apiKeyMetaField"               -> this.apiKeyMetaField,
+      "apiKeyTagsField"               -> this.apiKeyTagsField,
+      "otoroshiDataField"             -> this.otoroshiDataField,
+      "callbackUrl"                   -> this.callbackUrl,
+      "oidConfig"                     -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "mtlsConfig"                    -> this.mtlsConfig.json,
+      "proxy"                         -> WSProxyServerJson.maybeProxyToJson(this.proxy),
+      "extraMetadata"                 -> this.extraMetadata,
+      "metadata"                      -> this.metadata,
+      "tags"                          -> JsArray(tags.map(JsString.apply)),
+      "refreshTokens"                 -> this.refreshTokens,
+      "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "superAdmins"                   -> superAdmins,
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "dataOverride"                  -> JsObject(dataOverride),
+      "otoroshiRightsField"           -> this.otoroshiRightsField,
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
       })

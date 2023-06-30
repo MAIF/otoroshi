@@ -3255,8 +3255,8 @@ class ProxyEngine() extends RequestHandler {
               .withHeaders(headers: _*)
               .withCookies(cookies: _*)
             //Status(status)(body)
-              //.withHeaders(headers: _*)
-              //.withCookies(cookies: _*)
+            //.withHeaders(headers: _*)
+            //.withCookies(cookies: _*)
             contentType match {
               case None      => Right(response)
               case Some(ctp) => Right(response.as(ctp))
@@ -3275,7 +3275,8 @@ class ProxyEngine() extends RequestHandler {
             .Status(status)
             .sendEntity(
               HttpEntity.Chunked(
-                theBody.map(bs => HttpChunk.Chunk(bs))
+                theBody
+                  .map(bs => HttpChunk.Chunk(bs))
                   .concat(Source.single(HttpChunk.LastChunk(Headers.create()))),
                 contentType
               )

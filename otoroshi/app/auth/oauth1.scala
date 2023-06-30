@@ -84,17 +84,23 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
-          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
-            o.value.mapValues { obj =>
-              obj.asObject.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
-                }
+          adminEntityValidatorsOverride = json
+            .select("adminEntityValidatorsOverride")
+            .asOpt[JsObject]
+            .map { o =>
+              o.value.mapValues { obj =>
+                obj.asObject.value.mapValues { arr =>
+                  arr.asArray.value
+                    .map { item =>
+                      JsonPathValidator.format.reads(item)
+                    }
+                    .collect { case JsSuccess(v, _) =>
+                      v
+                    }
+                }.toMap
               }.toMap
-            }.toMap
-          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            }
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -154,7 +160,7 @@ case class Oauth1ModuleConfig(
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
   def humanName: String                = "OAuth1 provider"
@@ -170,26 +176,26 @@ case class Oauth1ModuleConfig(
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
-      "type"                     -> "oauth1",
-      "id"                       -> id,
-      "name"                     -> name,
-      "desc"                     -> desc,
-      "consumerKey"              -> consumerKey,
-      "consumerSecret"           -> consumerSecret,
+      "type"                          -> "oauth1",
+      "id"                            -> id,
+      "name"                          -> name,
+      "desc"                          -> desc,
+      "consumerKey"                   -> consumerKey,
+      "consumerSecret"                -> consumerSecret,
       //"signatureMethod"     -> signatureMethod,
-      "requestTokenURL"          -> requestTokenURL,
-      "authorizeURL"             -> authorizeURL,
-      "profileURL"               -> profileURL,
-      "accessTokenURL"           -> accessTokenURL,
-      "callbackURL"              -> callbackURL,
-      "clientSideSessionEnabled" -> clientSideSessionEnabled,
-      "sessionMaxAge"            -> sessionMaxAge,
-      "userValidators"           -> JsArray(userValidators.map(_.json)),
-      "metadata"                 -> metadata,
-      "tags"                     -> JsArray(tags.map(JsString.apply)),
-      "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
-      "httpMethod"               -> httpMethod.name,
-      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "requestTokenURL"               -> requestTokenURL,
+      "authorizeURL"                  -> authorizeURL,
+      "profileURL"                    -> profileURL,
+      "accessTokenURL"                -> accessTokenURL,
+      "callbackURL"                   -> callbackURL,
+      "clientSideSessionEnabled"      -> clientSideSessionEnabled,
+      "sessionMaxAge"                 -> sessionMaxAge,
+      "userValidators"                -> JsArray(userValidators.map(_.json)),
+      "metadata"                      -> metadata,
+      "tags"                          -> JsArray(tags.map(JsString.apply)),
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "httpMethod"                    -> httpMethod.name,
+      "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
       })

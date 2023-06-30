@@ -259,13 +259,17 @@ trait ApiActionContextCapable {
 
   def validateEntity(json: JsValue, singularName: String)(implicit env: Env): Either[JsValue, JsValue] = {
     backOfficeUser match {
-      case Left(err) => Left(err.json)
-      case Right(None) => Right(json)
+      case Left(err)         => Left(err.json)
+      case Right(None)       => Right(json)
       case Right(Some(user)) => {
-        val envValidators: Seq[JsonPathValidator] = env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val userValidators: Seq[JsonPathValidator] = user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators.getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val validators = envValidators ++ userValidators
-        val failedValidators = validators.filterNot(_.validate(json))
+        val envValidators: Seq[JsonPathValidator]  =
+          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val userValidators: Seq[JsonPathValidator] =
+          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val validators                             = envValidators ++ userValidators
+        val failedValidators                       = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {
           Right(json)
         } else {

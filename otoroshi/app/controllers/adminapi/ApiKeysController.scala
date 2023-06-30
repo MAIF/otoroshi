@@ -113,16 +113,16 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
             case JsSuccess(apiKey, _)                              =>
               env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
                 case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
-                case None => {
+                case None    => {
                   apiKey.save().map {
                     case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
-                    case true => {
+                    case true  => {
                       sendAuditAndAlert(
                         "CREATE_APIKEY",
                         s"User created an ApiKey",
                         "ApiKeyCreatedAlert",
                         Json.obj(
-                          "desc" -> desc.toJson,
+                          "desc"   -> desc.toJson,
                           "apikey" -> apiKey.toJson
                         ),
                         ctx
@@ -162,15 +162,16 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                      case None => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
-                      case Some(oldApik) if !ctx.canUserWrite(oldApik) => BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
-                      case Some(_) => {
+                      case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                      case Some(oldApik) if !ctx.canUserWrite(oldApik) =>
+                        BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                      case Some(_)                                     => {
                         sendAuditAndAlert(
                           "UPDATE_APIKEY",
                           s"User updated an ApiKey",
                           "ApiKeyUpdatedAlert",
                           Json.obj(
-                            "desc" -> desc.toJson,
+                            "desc"   -> desc.toJson,
                             "apikey" -> apiKey.toJson
                           ),
                           ctx
@@ -521,16 +522,16 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
             case JsSuccess(apiKey, _)                              =>
               env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
                 case Some(_) => BadRequest(Json.obj("error" -> "Apikey already exists")).asFuture
-                case None => {
+                case None    => {
                   apiKey.save().map {
                     case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
-                    case true => {
+                    case true  => {
                       sendAuditAndAlert(
                         "CREATE_APIKEY",
                         s"User created an ApiKey",
                         "ApiKeyCreatedAlert",
                         Json.obj(
-                          "group" -> group.toJson,
+                          "group"  -> group.toJson,
                           "apikey" -> apiKey.toJson
                         ),
                         ctx
@@ -568,15 +569,16 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                   BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                 case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                   env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                    case None => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
-                    case Some(oldApik) if !ctx.canUserWrite(oldApik) => BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
-                    case Some(_) => {
+                    case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                    case Some(oldApik) if !ctx.canUserWrite(oldApik) =>
+                      BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                    case Some(_)                                     => {
                       sendAuditAndAlert(
                         "UPDATE_APIKEY",
                         s"User updated an ApiKey",
                         "ApiKeyUpdatedAlert",
                         Json.obj(
-                          "group" -> group.toJson,
+                          "group"  -> group.toJson,
                           "apikey" -> apiKey.toJson
                         ),
                         ctx

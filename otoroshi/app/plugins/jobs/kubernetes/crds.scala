@@ -1049,37 +1049,36 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           "routes" -> ss
             .select("routes")
             .as[Seq[JsObject]]
-            .map {
-              s =>
-                (s \ "backend" \ "targets").asOpt[JsValue] match {
-                  case Some(JsArray(targets))  => {
-                    s.as[JsObject]
-                      .deepMerge(
-                        Json.obj(
-                          "backend" -> Json.obj(
-                            "targets" -> JsArray(
-                              targets.map(item =>
-                                item.applyOn(target =>
-                                  ((target \ "url").asOpt[String] match {
-                                    case None     => target
-                                    case Some(tv) =>
-                                      val uri = Uri(tv)
-                                      target.as[JsObject] ++ Json.obj(
-                                        "hostname" -> uri.authority.host.toString(),
-                                        "port"     -> uri.effectivePort,
-                                        "tls"      -> (uri.scheme.toLowerCase == "https")
-                                      )
-                                  })
-                                )
+            .map { s =>
+              (s \ "backend" \ "targets").asOpt[JsValue] match {
+                case Some(JsArray(targets))  => {
+                  s.as[JsObject]
+                    .deepMerge(
+                      Json.obj(
+                        "backend" -> Json.obj(
+                          "targets" -> JsArray(
+                            targets.map(item =>
+                              item.applyOn(target =>
+                                ((target \ "url").asOpt[String] match {
+                                  case None     => target
+                                  case Some(tv) =>
+                                    val uri = Uri(tv)
+                                    target.as[JsObject] ++ Json.obj(
+                                      "hostname" -> uri.authority.host.toString(),
+                                      "port"     -> uri.effectivePort,
+                                      "tls"      -> (uri.scheme.toLowerCase == "https")
+                                    )
+                                })
                               )
                             )
                           )
                         )
                       )
-                  }
-                  case Some(obj @ JsObject(_)) => handleTargetFromRoute(res, obj, s, services, endpoints)
-                  case _                       => s
+                    )
                 }
+                case Some(obj @ JsObject(_)) => handleTargetFromRoute(res, obj, s, services, endpoints)
+                case _                       => s
+              }
             }
         )
       }

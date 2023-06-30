@@ -58,11 +58,12 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
         val user = ctx.user.getOrElse(ctx.apiKey.toJson)
         val body = ctx.request.body
         GlobalConfig.fromJsonSafe(body) match {
-          case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
+          case JsError(e)       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
           case JsSuccess(ak, _) => {
             ctx.validateEntity(body, "global-config") match {
-              case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
-              case Right(_) => {
+              case Left(errs) =>
+                FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
+              case Right(_)   => {
                 env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
                   val admEvt = AdminApiEvent(
                     env.snowflakeGenerator.nextIdStr(),
@@ -105,10 +106,11 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
           val currentConfigJson = conf.toJson
           val newConfigJson     = patchJson(ctx.request.body, currentConfigJson)
           ctx.validateEntity(newConfigJson, "global-config") match {
-            case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
-            case Right(_) => {
+            case Left(errs) =>
+              FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
+            case Right(_)   => {
               GlobalConfig.fromJsonSafe(newConfigJson) match {
-                case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
+                case JsError(e)       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
                 case JsSuccess(ak, _) => {
                   val admEvt = AdminApiEvent(
                     env.snowflakeGenerator.nextIdStr(),

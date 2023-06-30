@@ -264,7 +264,7 @@ export function addPluginForm(plugin) {
 }
 
 export function getPluginForm(id) {
-  pluginsArray.find(p => p.id === id);
+  pluginsArray.find((p) => p.id === id);
 }
 
 export function Plugins() {

@@ -537,12 +537,12 @@ export class Oauth2ModuleConfig extends Component {
           }}
           example={{
             'john@otoroshi.tools': {
-              'route': [
+              route: [
                 {
                   path: '$.*',
                   value: 'JsonContainsNot(${env.)',
-                  error: 'You cannot use expression with env. variables'
-                }
+                  error: 'You cannot use expression with env. variables',
+                },
               ],
             },
           }}
@@ -1589,12 +1589,12 @@ export class LdapModuleConfig extends Component {
           }}
           example={{
             'john@otoroshi.tools': {
-              'route': [
+              route: [
                 {
                   path: '$.*',
                   value: 'JsonContainsNot(${env.)',
-                  error: 'You cannot use expression with env. variables'
-                }
+                  error: 'You cannot use expression with env. variables',
+                },
               ],
             },
           }}
@@ -2164,12 +2164,12 @@ export class SamlModuleConfig extends Component {
           }}
           example={{
             'john@otoroshi.tools': {
-              'route': [
+              route: [
                 {
                   path: '$.*',
                   value: 'JsonContainsNot(${env.)',
-                  error: 'You cannot use expression with env. variables'
-                }
+                  error: 'You cannot use expression with env. variables',
+                },
               ],
             },
           }}
@@ -2433,12 +2433,12 @@ export class OAuth1ModuleConfig extends Component {
           }}
           example={{
             'john@otoroshi.tools': {
-              'route': [
+              route: [
                 {
                   path: '$.*',
                   value: 'JsonContainsNot(${env.)',
-                  error: 'You cannot use expression with env. variables'
-                }
+                  error: 'You cannot use expression with env. variables',
+                },
               ],
             },
           }}

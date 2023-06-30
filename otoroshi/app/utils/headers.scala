@@ -98,13 +98,17 @@ object HeadersHelper {
 
       val missingOnlyHeaders: Seq[(String, String)] = descriptor.missingOnlyHeadersIn
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeaders: Seq[(String, String)] = descriptor.additionalHeaders
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 
@@ -225,13 +229,17 @@ object HeadersHelper {
 
       val missingOnlyHeadersOut = descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeadersOut = descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 
@@ -340,13 +348,17 @@ object HeadersHelper {
 
       val missingOnlyHeadersOut = descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 
       val additionalHeadersOut = descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(v => HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env))
+        .mapValues(v =>
+          HeadersExpressionLanguage(v, Some(req), Some(descriptor), None, apiKey, paUsr, elCtx, attrs, env)
+        )
         .filterNot(h => h._2 == "null")
         .toSeq
 

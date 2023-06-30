@@ -30,7 +30,7 @@ case class LdapAuthUser(
     metadata: JsObject = Json.obj(),
     userRights: Option[UserRights],
     ldapProfile: Option[JsValue],
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
 ) {
   def asJson: JsValue = LdapAuthUser.fmt.writes(this)
 }
@@ -40,12 +40,12 @@ object LdapAuthUser {
     new Format[LdapAuthUser] {
       override def writes(o: LdapAuthUser) =
         Json.obj(
-          "name"        -> o.name,
-          "email"       -> o.email,
-          "metadata"    -> o.metadata,
-          "ldapProfile" -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
-          "userRights"  -> o.userRights.map(UserRights.format.writes),
-          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))),
+          "name"                  -> o.name,
+          "email"                 -> o.email,
+          "metadata"              -> o.metadata,
+          "ldapProfile"           -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
+          "userRights"            -> o.userRights.map(UserRights.format.writes),
+          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
         )
       override def reads(json: JsValue)    =
         Try {
@@ -56,15 +56,21 @@ object LdapAuthUser {
               ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
               userRights = (json \ "userRights").asOpt[UserRights](UserRights.format),
-              adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
-              obj.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
+              adminEntityValidators = json
+                .select("adminEntityValidators")
+                .asOpt[JsObject]
+                .map { obj =>
+                  obj.value.mapValues { arr =>
+                    arr.asArray.value
+                      .map { item =>
+                        JsonPathValidator.format.reads(item)
+                      }
+                      .collect { case JsSuccess(v, _) =>
+                        v
+                      }
+                  }.toMap
                 }
-              }.toMap
-            }.getOrElse(Map.empty[String, Seq[JsonPathValidator]]),
+                .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
             )
           )
         } recover { case e =>
@@ -155,17 +161,23 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
-          adminEntityValidatorsOverride = json.select("adminEntityValidatorsOverride").asOpt[JsObject].map { o =>
-            o.value.mapValues { obj =>
-              obj.asObject.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
-                }
+          adminEntityValidatorsOverride = json
+            .select("adminEntityValidatorsOverride")
+            .asOpt[JsObject]
+            .map { o =>
+              o.value.mapValues { obj =>
+                obj.asObject.value.mapValues { arr =>
+                  arr.asArray.value
+                    .map { item =>
+                      JsonPathValidator.format.reads(item)
+                    }
+                    .collect { case JsSuccess(v, _) =>
+                      v
+                    }
+                }.toMap
               }.toMap
-            }.toMap
-          }.getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            }
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
         )
       )
     } recover { case e =>
@@ -275,36 +287,36 @@ case class LdapAuthModuleConfig(
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
-      "type"                     -> "ldap",
-      "id"                       -> id,
-      "name"                     -> name,
-      "desc"                     -> desc,
-      "basicAuth"                -> basicAuth,
-      "allowEmptyPassword"       -> allowEmptyPassword,
-      "clientSideSessionEnabled" -> clientSideSessionEnabled,
-      "sessionMaxAge"            -> sessionMaxAge,
-      "userValidators"           -> JsArray(userValidators.map(_.json)),
-      "serverUrls"               -> serverUrls,
-      "searchBase"               -> searchBase,
-      "userBase"                 -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "groupFilters"             -> JsArray(groupFilters.map(o => GroupFilter._fmt.writes(o))),
-      "searchFilter"             -> searchFilter,
-      "adminUsername"            -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "adminPassword"            -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "nameField"                -> nameField,
-      "emailField"               -> emailField,
-      "metadataField"            -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "extraMetadata"            -> extraMetadata,
-      "metadata"                 -> metadata,
-      "tags"                     -> JsArray(tags.map(JsString.apply)),
-      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "superAdmins"              -> superAdmins,
-      "extractProfile"           -> extractProfile,
-      "extractProfileFilter"     -> extractProfileFilter,
-      "extractProfileFilterNot"  -> extractProfileFilterNot,
-      "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
-      "dataOverride"             -> JsObject(dataOverride),
-      "groupRights"              -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
+      "type"                          -> "ldap",
+      "id"                            -> id,
+      "name"                          -> name,
+      "desc"                          -> desc,
+      "basicAuth"                     -> basicAuth,
+      "allowEmptyPassword"            -> allowEmptyPassword,
+      "clientSideSessionEnabled"      -> clientSideSessionEnabled,
+      "sessionMaxAge"                 -> sessionMaxAge,
+      "userValidators"                -> JsArray(userValidators.map(_.json)),
+      "serverUrls"                    -> serverUrls,
+      "searchBase"                    -> searchBase,
+      "userBase"                      -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "groupFilters"                  -> JsArray(groupFilters.map(o => GroupFilter._fmt.writes(o))),
+      "searchFilter"                  -> searchFilter,
+      "adminUsername"                 -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "adminPassword"                 -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "nameField"                     -> nameField,
+      "emailField"                    -> emailField,
+      "metadataField"                 -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "extraMetadata"                 -> extraMetadata,
+      "metadata"                      -> metadata,
+      "tags"                          -> JsArray(tags.map(JsString.apply)),
+      "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "superAdmins"                   -> superAdmins,
+      "extractProfile"                -> extractProfile,
+      "extractProfileFilter"          -> extractProfileFilter,
+      "extractProfileFilterNot"       -> extractProfileFilterNot,
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "dataOverride"                  -> JsObject(dataOverride),
+      "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
       })
@@ -640,7 +652,7 @@ object LdapAuthModule {
     tags = Seq.empty,
     metadata = Map.empty,
     sessionCookieValues = SessionCookieValues(),
-    clientSideSessionEnabled = true,
+    clientSideSessionEnabled = true
   )
 }
 
@@ -737,7 +749,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               }
             },
           location = authConfig.location,
-          adminEntityValidators = user.adminEntityValidators,
+          adminEntityValidators = user.adminEntityValidators
         ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }

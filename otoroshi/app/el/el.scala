@@ -43,12 +43,12 @@ object GlobalExpressionLanguage {
         val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         Try {
           expressionReplacer.replaceOn(value) {
-            case r"item.$field@(.*)"                                                =>
+            case r"item.$field@(.*)"              =>
               context.getOrElse(s"item.$field", s"no-item-$field")
-            case r"params.$field@(.*)"                                              =>
+            case r"params.$field@(.*)"            =>
               context.getOrElse(s"params.$field", s"no-params-$field")
-            case "date"                                                             => DateTime.now().toString()
-            case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
+            case "date"                           => DateTime.now().toString()
+            case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
 
             case "service.domain" if service.isDefined                              => service.get._domain
             case "service.subdomain" if service.isDefined                           => service.get.subdomain
@@ -67,13 +67,13 @@ object GlobalExpressionLanguage {
 
             case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
               Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
-            case r"route.domains\['$field@(.*)'\]" if route.isDefined =>
+            case r"route.domains\['$field@(.*)'\]" if route.isDefined            =>
               Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
-            case "route.id" if route.isDefined => route.get.id
-            case "route.name" if route.isDefined => route.get.name
-            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined =>
+            case "route.id" if route.isDefined                                   => route.get.id
+            case "route.name" if route.isDefined                                 => route.get.name
+            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
               route.get.metadata.get(field).getOrElse(dv)
-            case r"route.metadata.$field@(.*)" if route.isDefined =>
+            case r"route.metadata.$field@(.*)" if route.isDefined                =>
               route.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
             case "req.fullUrl" if req.isDefined                                             =>
@@ -431,7 +431,8 @@ object JwtExpressionLanguage {
     value match {
       case JsObject(map)   =>
         new JsObject(map.toSeq.map {
-          case (key, JsString(str))     => (key, JsString(apply(str, req, service, route, apiKey, user, context, attrs, env)))
+          case (key, JsString(str))     =>
+            (key, JsString(apply(str, req, service, route, apiKey, user, context, attrs, env)))
           case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, route, apiKey, user, context, attrs, env))
           case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, route, apiKey, user, context, attrs, env))
           case (key, v)                 => (key, v)

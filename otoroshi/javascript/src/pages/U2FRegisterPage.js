@@ -798,7 +798,17 @@ export class AdminEditionModal extends Component {
     },
   };
 
-  flow = ['_loc', 'username', 'label', 'password', 'type', 'createdAt', 'metadata', 'rights', 'adminEntityValidators'];
+  flow = [
+    '_loc',
+    'username',
+    'label',
+    'password',
+    'type',
+    'createdAt',
+    'metadata',
+    'rights',
+    'adminEntityValidators',
+  ];
 
   onChange = (user) => {
     this.setState({ user });

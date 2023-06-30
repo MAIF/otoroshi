@@ -111,15 +111,21 @@ object BackOfficeUser {
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
             rights = UserRights.readFromObject(json),
-            adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
-              obj.value.mapValues { arr =>
-                arr.asArray.value.map { item =>
-                  JsonPathValidator.format.reads(item)
-                }.collect {
-                  case JsSuccess(v, _) => v
-                }
-              }.toMap
-            }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+            adminEntityValidators = json
+              .select("adminEntityValidators")
+              .asOpt[JsObject]
+              .map { obj =>
+                obj.value.mapValues { arr =>
+                  arr.asArray.value
+                    .map { item =>
+                      JsonPathValidator.format.reads(item)
+                    }
+                    .collect { case JsSuccess(v, _) =>
+                      v
+                    }
+                }.toMap
+              }
+              .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
           )
         )
       } recover { case e =>
@@ -128,19 +134,19 @@ object BackOfficeUser {
 
     override def writes(o: BackOfficeUser): JsValue =
       o.location.jsonWithKey ++ Json.obj(
-        "randomId"     -> o.randomId,
-        "name"         -> o.name,
-        "email"        -> o.email,
-        "authConfigId" -> o.authConfigId,
-        "profile"      -> o.profile,
-        "token"        -> o.token,
-        "simpleLogin"  -> o.simpleLogin,
-        "createdAt"    -> o.createdAt.getMillis,
-        "expiredAt"    -> o.expiredAt.getMillis,
-        "lastRefresh"  -> o.lastRefresh.getMillis,
-        "metadata"     -> o.metadata,
-        "tags"         -> JsArray(o.tags.map(JsString.apply)),
-        "rights"       -> o.rights.json,
+        "randomId"              -> o.randomId,
+        "name"                  -> o.name,
+        "email"                 -> o.email,
+        "authConfigId"          -> o.authConfigId,
+        "profile"               -> o.profile,
+        "token"                 -> o.token,
+        "simpleLogin"           -> o.simpleLogin,
+        "createdAt"             -> o.createdAt.getMillis,
+        "expiredAt"             -> o.expiredAt.getMillis,
+        "lastRefresh"           -> o.lastRefresh.getMillis,
+        "metadata"              -> o.metadata,
+        "tags"                  -> JsArray(o.tags.map(JsString.apply)),
+        "rights"                -> o.rights.json,
         "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
       )
   }

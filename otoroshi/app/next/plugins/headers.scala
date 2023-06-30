@@ -81,7 +81,7 @@ class OverrideHost extends NgRequestTransformer {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => Right(ctx.otoroshiRequest)
       case Some(backend) =>
-        val host = TargetExpressionLanguage(
+        val host    = TargetExpressionLanguage(
           backend.hostname,
           Some(ctx.request),
           ctx.route.serviceDescriptor.some,

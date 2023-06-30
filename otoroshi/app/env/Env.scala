@@ -579,15 +579,23 @@ class Env(
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val adminEntityValidators: Map[String, Seq[JsonPathValidator]] = configurationJson.select("otoroshi").select("adminapi").select("entity_validators").asOpt[JsObject].map { obj =>
-    obj.value.mapValues { arr =>
-      arr.asArray.value.map { item =>
-        JsonPathValidator.format.reads(item)
-      }.collect {
-        case JsSuccess(v, _) => v
-      }
-    }.toMap
-  }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+  lazy val adminEntityValidators: Map[String, Seq[JsonPathValidator]] = configurationJson
+    .select("otoroshi")
+    .select("adminapi")
+    .select("entity_validators")
+    .asOpt[JsObject]
+    .map { obj =>
+      obj.value.mapValues { arr =>
+        arr.asArray.value
+          .map { item =>
+            JsonPathValidator.format.reads(item)
+          }
+          .collect { case JsSuccess(v, _) =>
+            v
+          }
+      }.toMap
+    }
+    .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
 
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
@@ -1344,7 +1352,7 @@ class Env(
                   metadata = Map.empty,
                   rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))),
                   location = EntityLocation(),
-                  adminEntityValidators = Map.empty,
+                  adminEntityValidators = Map.empty
                 )
 
                 val defaultTenant = Tenant(

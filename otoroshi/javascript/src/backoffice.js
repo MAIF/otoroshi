@@ -27,7 +27,7 @@ import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
-import * as Forms from './forms/ng_plugins/index'
+import * as Forms from './forms/ng_plugins/index';
 
 if (!window.Symbol) {
   window.Symbol = Symbol;
@@ -219,7 +219,7 @@ function mkCtx(more = {}) {
 
 export function registerExtension(name, thunk) {
   const ctx = mkCtx({
-    registerPlugins: (pgs) => pgs(ctx).forEach(plugin => Forms.addPluginForm(plugin))
+    registerPlugins: (pgs) => pgs(ctx).forEach((plugin) => Forms.addPluginForm(plugin)),
   });
   _extensions[name] = thunk(ctx);
   if (_extensions[name].pluginForms) {
@@ -229,7 +229,7 @@ export function registerExtension(name, thunk) {
 
 export function registerPlugins(plugins) {
   const ctx = mkCtx();
-  plugins(ctx).forEach(plugin => Forms.addPluginForm(plugin))
+  plugins(ctx).forEach((plugin) => Forms.addPluginForm(plugin));
 }
 
 export function extensions() {

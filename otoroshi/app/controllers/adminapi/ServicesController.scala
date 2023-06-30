@@ -457,12 +457,13 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
               case JsError(e)                  => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
               case JsSuccess(errorTemplate, _) =>
                 env.datastores.errorTemplateDataStore.findById(errorTemplate.serviceId).flatMap {
-                  case None => NotFound(Json.obj("error" -> "ErrorTemplate does not exists")).asFuture
-                  case Some(oldEntity) if !ctx.canUserWrite(oldEntity) => BadRequest(Json.obj("error" -> "You cant access this ErrorTemplate")).asFuture
-                  case Some(_) => {
+                  case None                                            => NotFound(Json.obj("error" -> "ErrorTemplate does not exists")).asFuture
+                  case Some(oldEntity) if !ctx.canUserWrite(oldEntity) =>
+                    BadRequest(Json.obj("error" -> "You cant access this ErrorTemplate")).asFuture
+                  case Some(_)                                         => {
                     env.datastores.errorTemplateDataStore.set(errorTemplate.copy(serviceId = serviceId)).map {
                       case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-                      case true => {
+                      case true  => {
                         val event: AdminApiEvent = AdminApiEvent(
                           env.snowflakeGenerator.nextIdStr(),
                           env.env,
@@ -503,10 +504,10 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
               case JsSuccess(errorTemplate, _) =>
                 env.datastores.errorTemplateDataStore.findById(errorTemplate.serviceId).flatMap {
                   case Some(_) => BadRequest(Json.obj("error" -> "ErrorTemplate already exists")).asFuture
-                  case None => {
+                  case None    => {
                     env.datastores.errorTemplateDataStore.set(errorTemplate).map {
                       case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-                      case true => {
+                      case true  => {
                         val event: AdminApiEvent = AdminApiEvent(
                           env.snowflakeGenerator.nextIdStr(),
                           env.env,

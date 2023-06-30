@@ -3,7 +3,15 @@ package otoroshi.next.extensions
 import otoroshi.api._
 import otoroshi.env.Env
 import otoroshi.models._
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgAccessContext,
+  NgAccessValidator,
+  NgPluginCategory,
+  NgPluginConfig,
+  NgPluginVisibility,
+  NgStep
+}
 import otoroshi.storage._
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._

@@ -54,18 +54,21 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
   "Match and Project utils" should {
     "match objects" in {
-      otoroshi.utils.Match.matches(Json.parse(
-        """
+      otoroshi.utils.Match.matches(
+        Json
+          .parse("""
           |{
           |  "headers": {
           |    "foo": "baz"
           |  }
           |}
-          |""".stripMargin).as[JsObject],
+          |""".stripMargin)
+          .as[JsObject],
         Json.obj("headers" -> Json.obj("$contains" -> Json.obj("key" -> "foo", "value" -> "baz")))
       ) mustBe true
-      otoroshi.utils.Match.matches(Json.parse(
-        """
+      otoroshi.utils.Match.matches(
+        Json
+          .parse("""
           |{
           |  "headers": {
           |    "foo": {
@@ -73,7 +76,8 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           |    }
           |  }
           |}
-          |""".stripMargin).as[JsObject],
+          |""".stripMargin)
+          .as[JsObject],
         Json.obj("headers.foo" -> Json.obj("$contains" -> Json.obj("key" -> "subfoo", "value" -> "bar")))
       ) mustBe true
       otoroshi.utils.Match.matches(

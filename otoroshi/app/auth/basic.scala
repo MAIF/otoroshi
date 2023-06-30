@@ -60,7 +60,7 @@ case class BasicAuthUser(
     metadata: JsObject = Json.obj(),
     tags: Seq[String],
     rights: UserRights,
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
+    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
 ) {
   def asJson: JsValue = BasicAuthUser.fmt.writes(this)
 }
@@ -70,13 +70,13 @@ object BasicAuthUser {
     new Format[BasicAuthUser] {
       override def writes(o: BasicAuthUser) =
         Json.obj(
-          "name"     -> o.name,
-          "password" -> o.password,
-          "email"    -> o.email,
-          "metadata" -> o.metadata,
-          "tags"     -> o.tags,
-          "webauthn" -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
-          "rights"   -> o.rights.json,
+          "name"                  -> o.name,
+          "password"              -> o.password,
+          "email"                 -> o.email,
+          "metadata"              -> o.metadata,
+          "tags"                  -> o.tags,
+          "webauthn"              -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
+          "rights"                -> o.rights.json,
           "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
         )
       override def reads(json: JsValue)     =
@@ -90,15 +90,21 @@ object BasicAuthUser {
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
               tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
               rights = UserRights.readFromObject(json),
-              adminEntityValidators = json.select("adminEntityValidators").asOpt[JsObject].map { obj =>
-                obj.value.mapValues { arr =>
-                  arr.asArray.value.map { item =>
-                    JsonPathValidator.format.reads(item)
-                  }.collect {
-                    case JsSuccess(v, _) => v
-                  }
-                }.toMap
-              }.getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+              adminEntityValidators = json
+                .select("adminEntityValidators")
+                .asOpt[JsObject]
+                .map { obj =>
+                  obj.value.mapValues { arr =>
+                    arr.asArray.value
+                      .map { item =>
+                        JsonPathValidator.format.reads(item)
+                      }
+                      .collect { case JsSuccess(v, _) =>
+                        v
+                      }
+                  }.toMap
+                }
+                .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
             )
           )
         } recover { case e =>
@@ -561,7 +567,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
@@ -630,7 +636,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
@@ -702,7 +708,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
@@ -787,7 +793,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
@@ -870,7 +876,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
@@ -941,7 +947,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         metadata = Map.empty,
         rights = usr.rights,
         location = authConfig.location,
-        adminEntityValidators = usr.adminEntityValidators,
+        adminEntityValidators = usr.adminEntityValidators
       )
     }
 
