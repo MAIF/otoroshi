@@ -394,9 +394,9 @@ case class NgContextualPlugins(
               if (!latestAsync) {
                 coll.last match {
                   case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
-                    (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
-                  case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
-                    (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
+                    (false, coll.init :+ NgPluginWrapper.NgMergedResponseTransformerPluginWrapper(Seq(wrap, plug)))
+                  case NgPluginWrapper.NgMergedResponseTransformerPluginWrapper(plugins) =>
+                    (false, coll.init :+ NgPluginWrapper.NgMergedResponseTransformerPluginWrapper(plugins :+ plug))
                   case _                                                                => (true, coll :+ plug)
                 }
               } else {
