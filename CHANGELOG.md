@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.5.0] - 2023-06-30
+
+https://github.com/MAIF/otoroshi/milestone/66?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.4.0...v16.5.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.5.0
+
+- enhance gRPC support (#1299)
+- support entity validators per admin api consumer (user or apikey) using opa rules (#1629)
+- use wasm-gc in the wasm manager to cleanup produced wasm (#1630)
+- support plugins thats ships their own custom UI (#1300)
+- Externals vault - Support getting certificates (#1364)
+- support entity validators per admin api consumer (user or apikey) (#1617)
+- user rights check is broken on the admin api (#1618)
+- add more validation to avoid data override in the admin api (#1619)
+- upgrade netty dependencies (#1620)
+- update coraza version (#1622)
+- fix opa execution crash on second invocation (#1623)
+- play framework add default content-type on response with no content-type (#1624)
+- otoroshi does not support `application/json` mediatype with open charset  (#1625)
+
+
 ## [16.4.0] - 2023-05-25
 
 https://github.com/MAIF/otoroshi/milestone/63?closed=1
