@@ -103,25 +103,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
       plugins = NgPlugins(
         Seq(
           NgPluginInstance(
-            plugin= NgPluginHelper.pluginId[SnowMonkeyChaos],
-            config= NgPluginInstanceConfig(toJson(SnowMonkeyConfig(
-              enabled = true,
-              dryRun = false,
-              timesPerDay = 1000,
-              includeUserFacingDescriptors = true,
-              outageDurationFrom = 3600000.millis,
-              outageDurationTo = 3600000.millis,
-              startTime = LocalTime.now(), // parse("00:00:00.000"),
-              stopTime = LocalTime.now().plusMillis(10000), //.parse("23:59:59.999"),
-              targetGroups = Seq("default"),
-              chaosConfig = ChaosConfig(
-                enabled = true,
-                badResponsesFaultConfig = None,
-                largeRequestFaultConfig = None,
-                largeResponseFaultConfig = None,
-                latencyInjectionFaultConfig = None
-              )
-            )).as[JsObject])
+            plugin= NgPluginHelper.pluginId[SnowMonkeyChaos]
           )
         )
       )
@@ -139,7 +121,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
                  outageDurationFrom = 3600000.millis,
                  outageDurationTo = 3600000.millis,
                  startTime = LocalTime.now(),                  // parse("00:00:00.000"),
-                 stopTime = LocalTime.now().plusMillis(10000), //.parse("23:59:59.999"),
+                 stopTime = LocalTime.now().plusMillis(100000), //.parse("23:59:59.999"),
                  targetGroups = Seq("default"),
                  chaosConfig = ChaosConfig(
                    enabled = true,
@@ -251,6 +233,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
         )
         .get()
         .futureValue
+
       res.bodyAsBytes.size > 1024 mustBe true
       updateSnowMonkey(c =>
         c.copy(

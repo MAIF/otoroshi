@@ -172,3 +172,6 @@ class ConfigCleanerTests
     extends Suites(
       new ConfigurationCleanupSpec()
     )
+class JWTTests extends Suites(
+    new SnowMonkeySpec("InMemory", Configurations.InMemoryConfiguration)
+)

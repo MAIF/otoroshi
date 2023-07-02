@@ -264,7 +264,7 @@ class SnowMonkeyChaos extends NgRequestTransformer {
       ctx.attrs.put(SnowMonkeyChaos.ContextKey -> snowMonkeyCtx)
       ctx.otoroshiRequest
         .copy(
-          headers = ctx.otoroshiRequest.headers + ("Content-Length" -> snowMonkeyCtx.trailingRequestBodySize.toString),
+          headers = ctx.otoroshiRequest.headers + ("Content-Length" -> (ctx.otoroshiRequest.header("Content-Length").getOrElse("0").toInt + snowMonkeyCtx.trailingRequestBodySize).toString),
           body = ctx.otoroshiRequest.body.concat(snowMonkeyCtx.trailingRequestBodyStream)
         )
         .right
@@ -282,7 +282,7 @@ class SnowMonkeyChaos extends NgRequestTransformer {
         ctx.otoroshiResponse
           .copy(
             headers =
-              ctx.otoroshiResponse.headers + ("Content-Length" -> snowMonkeyCtx.trailingResponseBodySize.toString),
+              ctx.otoroshiResponse.headers + ("Content-Length" -> (ctx.otoroshiResponse.header("Content-Length").getOrElse("0").toInt + snowMonkeyCtx.trailingResponseBodySize).toString),
             body = ctx.otoroshiResponse.body.concat(snowMonkeyCtx.trailingResponseBodyStream)
           )
           .right
