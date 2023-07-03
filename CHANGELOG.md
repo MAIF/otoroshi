@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.5.1] - 2023-07-03
+
+https://github.com/MAIF/otoroshi/milestone/68?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.5.0...v16.5.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.5.1
+
+### Fixed
+
+- Plugins that synchronously transform response are not merged correctly (#1632)
+
+
 ## [16.5.0] - 2023-06-30
 
 https://github.com/MAIF/otoroshi/milestone/66?closed=1
