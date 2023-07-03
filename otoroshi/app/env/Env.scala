@@ -1152,7 +1152,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.5.0-dev"
+  lazy val otoroshiVersion    = "16.5.1"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
