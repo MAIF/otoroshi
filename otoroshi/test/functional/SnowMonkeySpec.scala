@@ -8,7 +8,17 @@ import org.joda.time.LocalTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.models.SnowMonkeyConfig.toJson
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.models.{
+  NgBackend,
+  NgClientConfig,
+  NgDomainAndPath,
+  NgFrontend,
+  NgPluginInstance,
+  NgPluginInstanceConfig,
+  NgPlugins,
+  NgRoute,
+  NgTarget
+}
 import otoroshi.next.plugins.{NgChaosConfig, OverrideHost, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.Configuration
@@ -48,7 +58,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
     //     })
     //   basicTestExpectedBody
     // }).await()
-    val basicTestServer   = new BodySizeService()
+    val basicTestServer = new BodySizeService()
     /*val initialDescriptor = ServiceDescriptor(
       id = "basic-sm-test",
       name = "basic-sm-test",
@@ -103,7 +113,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
       plugins = NgPlugins(
         Seq(
           NgPluginInstance(
-            plugin= NgPluginHelper.pluginId[SnowMonkeyChaos]
+            plugin = NgPluginHelper.pluginId[SnowMonkeyChaos]
           )
         )
       )
@@ -120,7 +130,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
                  includeUserFacingDescriptors = true,
                  outageDurationFrom = 3600000.millis,
                  outageDurationTo = 3600000.millis,
-                 startTime = LocalTime.now(),                  // parse("00:00:00.000"),
+                 startTime = LocalTime.now(),                   // parse("00:00:00.000"),
                  stopTime = LocalTime.now().plusMillis(100000), //.parse("23:59:59.999"),
                  targetGroups = Seq("default"),
                  chaosConfig = ChaosConfig(

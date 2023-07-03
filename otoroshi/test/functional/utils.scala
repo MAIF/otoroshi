@@ -1296,21 +1296,21 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   }
 
   def createOtoroshiRoute(
-     route: NgRoute,
-     customPort: Option[Int] = None,
-     ws: WSClient = wsClient
+      route: NgRoute,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/routes")
-        .withHttpHeaders(
-          "Host" -> "otoroshi-api.oto.tools",
-          "Content-Type" -> "application/json"
-        )
-        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-        .post(Json.stringify(route.json))
-        .map { resp =>
-          (resp.json, resp.status)
-        }
-        .andWait(1000.millis)
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(route.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
   }
 
   def createOtoroshiService(
@@ -1402,16 +1402,16 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
 
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
-        .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
-        .withHttpHeaders(
-          "Host" -> "otoroshi-api.oto.tools"
-        )
-        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-        .delete()
-        .map { resp =>
-          (resp.json, resp.status)
-        }
-        .andWait(1000.millis)
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.oto.tools"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
   }
 
   def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
