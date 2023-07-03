@@ -13,6 +13,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.5.1
 ### Fixed
 
 - Plugins that synchronously transform response are not merged correctly (#1632)
+- Chaos monkey body length related faults does not work propertly (#1634)
 
 
 ## [16.5.0] - 2023-06-30
