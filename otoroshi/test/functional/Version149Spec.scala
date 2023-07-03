@@ -31,10 +31,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     Configuration(
       ConfigFactory
         .parseString(s"""
-           |{
-           |  app.instance.region=eu-west-1
-           |  app.instance.zone=dc1
-           |}
+           |otoroshi.cluster.relay.location.region=eu-west-1
+           |otoroshi.cluster.relay.location.zone=dc1
        """.stripMargin)
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
@@ -430,6 +428,20 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         }
       ).await()
 
+      createOtoroshiVerifier(GlobalJwtVerifier(
+        id = "verifier1",
+        name = "verifier1",
+        desc = "verifier1",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(
+          verificationSettings = VerificationSettings(
+            arrayFields = Map("roles" -> "user")
+          )
+        )
+      ))
+
       val service = ServiceDescriptor(
         id = "array-jwt-test",
         name = "array-jwt-test",
@@ -445,17 +457,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = LocalJwtVerifier(
-          enabled = true,
-          strict = true,
-          source = InHeader(name = "X-JWT-Token"),
-          algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = PassThrough(
-            verificationSettings = VerificationSettings(
-              arrayFields = Map("roles" -> "user")
-            )
-          )
-        )
+        jwtVerifier = RefJwtVerifier(ids=Seq("verifier1"), enabled=true)
       )
 
       createOtoroshiService(service).futureValue
@@ -1404,17 +1406,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc1")
+            predicate = NetworkLocationMatch(zone = "dc1".option)
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc2")
+            predicate = NetworkLocationMatch(zone = "dc2".option)
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc3")
+            predicate = NetworkLocationMatch(zone = "dc3".option)
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1427,7 +1429,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter2.get() mustBe 0
       counter3.get() mustBe 0
       (0 to 9).foreach { _ =>
-        call1(Map.empty)
+        val response = call1(Map.empty)
+        println("response", response.status, response.headers, response.body)
         await(100.millis)
       }
       // println(counter1.get(), counter2.get(), counter3.get())
@@ -1452,17 +1455,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-1")
+            predicate = NetworkLocationMatch(region = "eu-west-1".option)
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-2")
+            predicate = NetworkLocationMatch(region = "eu-west-2".option)
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-3")
+            predicate = NetworkLocationMatch(region = "eu-west-3".option)
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1503,32 +1506,32 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc1".option)
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc2")
+            predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc2".option)
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc3")
+            predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc3".option)
           ),
           Target(
             host = s"127.0.0.1:${port4}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-2", zone = "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-2".option, zone = "dc1".option)
           ),
           Target(
             host = s"127.0.0.1:${port5}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-3", zone = "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-3".option, zone = "dc1".option)
           ),
           Target(
             host = s"127.0.0.1:${port6}",
             scheme = "http",
-            predicate = NetworkLocationMatch(region = "eu-west-4", zone = "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-4".option, zone = "dc1".option)
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1566,7 +1569,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         "/api",
         "application/json",
         { r =>
-          if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
+          if (r.getHeader("Host").get().value().startsWith("www.google.fr")) {
             counter.incrementAndGet()
           }
           counter.incrementAndGet()
@@ -1707,6 +1710,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       deleteOtoroshiService(service1).futureValue
       stopServers()
     }
+
+
     "allow whitelisted ip addresses (#318)" in {
       val (_, port1, counter1, call1) = testServer("allowwhiteip.oto.tools", port)
       val service1                    = ServiceDescriptor(

@@ -948,7 +948,7 @@ object NgRoute {
           .applyOnIf(service.ipFiltering.whitelist.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressAllowedList],
-              config = NgPluginInstanceConfig(NgIpAddressesConfig(service.ipFiltering.blacklist).json.asObject)
+              config = NgPluginInstanceConfig(NgIpAddressesConfig(service.ipFiltering.whitelist).json.asObject)
             )
           }
           .applyOnIf(service.redirection.enabled) { seq =>
