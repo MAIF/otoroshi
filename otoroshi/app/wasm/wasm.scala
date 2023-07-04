@@ -4,9 +4,8 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
-import org.extism.sdk.parameters.{Parameters, Results}
+import org.extism.sdk.otoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
-import org.extism.sdk.{Context, HostFunction, HostUserData, Plugin}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
@@ -16,20 +15,18 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.proxywasm.Result
 import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.Cookie
 
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{Duration, DurationLong, FiniteDuration, MILLISECONDS}
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -416,17 +413,17 @@ object WasmConfig {
 object WasmContextSlot                                                 {
   private val _currentContext                     = new ThreadLocal[Any]()
   def getCurrentContext(): Option[Any]            = Option(_currentContext.get())
-  private def setCurrentContext(value: Any): Unit = _currentContext.set(value)
-  private def clearCurrentContext(): Unit         = _currentContext.remove()
+  private[wasm] def setCurrentContext(value: Any): Unit = _currentContext.set(value)
+  private[wasm] def clearCurrentContext(): Unit         = _currentContext.remove()
 }
 object ResultsWrapper                                                  {
-  def apply(results: Results): ResultsWrapper                 = new ResultsWrapper(results, None)
-  def apply(results: Results, plugin: Plugin): ResultsWrapper = new ResultsWrapper(results, Some(plugin))
+  def apply(results: OtoroshiResults): ResultsWrapper                 = new ResultsWrapper(results, None)
+  def apply(results: OtoroshiResults, plugin: OtoroshiInstance): ResultsWrapper = new ResultsWrapper(results, Some(plugin))
 }
-case class ResultsWrapper(results: Results, pluginOpt: Option[Plugin]) {
+case class ResultsWrapper(results: OtoroshiResults, pluginOpt: Option[OtoroshiInstance]) {
   def free(): Unit = try {
     if (results.getLength > 0) {
-      pluginOpt.foreach(_.freeResults(results))
+      results.close()
     }
   } catch {
     case t: Throwable =>
@@ -438,50 +435,29 @@ case class ResultsWrapper(results: Results, pluginOpt: Option[Plugin]) {
 class WasmContextSlot(
     id: String,
     instance: Int,
-    context: Context,
-    plugin: Plugin,
+    plugin: OtoroshiInstance,
     cfg: WasmConfig,
     wsm: ByteString,
     closed: AtomicBoolean,
     updating: AtomicBoolean,
     instanceId: String,
-    functions: Array[HostFunction[_ <: HostUserData]]
+    functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
 ) {
 
   def callSync(
-      functionName: String,
-      input: Option[String],
-      parameters: Option[Parameters],
-      resultSize: Option[Int],
+      wasmFunctionParameters: WasmFunctionParameters,
       context: Option[VmData]
   )(implicit env: Env, ec: ExecutionContext): Either[JsValue, (String, ResultsWrapper)] = {
     if (closed.get()) {
       val plug = WasmUtils.pluginCache.apply(s"$id-$instance")
-      plug.callSync(functionName, input, parameters, resultSize, context)
+      plug.callSync(wasmFunctionParameters, context)
     } else {
       try {
         context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
-        WasmUtils.debugLog.debug(s"calling '${functionName}' on instance '$id-$instance'")
+        WasmUtils.debugLog.debug(s"calling '${wasmFunctionParameters.functionName}' on instance '$id-$instance'")
         val res: Either[JsValue, (String, ResultsWrapper)] = env.metrics.withTimer("otoroshi.wasm.core.call") {
-          // TODO: need to split this !!
-          (input, parameters, resultSize) match {
-            case (Some(in), Some(p), Some(s)) =>
-              plugin
-                .call(functionName, p, s, in.getBytes(StandardCharsets.UTF_8))
-                .right
-                .map(res => ("", ResultsWrapper(res, plugin)))
-            case (_, Some(p), None)           =>
-              plugin.callWithoutResults(functionName, p)
-              Right[JsValue, (String, ResultsWrapper)](("", ResultsWrapper(new Results(0), plugin)))
-            case (_, Some(p), Some(s))        =>
-              plugin.call(functionName, p, s).right.map(res => ("", ResultsWrapper(res, plugin)))
-            case (_, None, Some(s))           =>
-              plugin.callWithoutParams(functionName, s).right.map(_ => ("", ResultsWrapper(new Results(0), plugin)))
-            case (Some(in), None, None)       =>
-              plugin.call(functionName, in).right.map(str => (str, ResultsWrapper(new Results(0), plugin)))
-            case _                            => Left(Json.obj("error" -> "bad call combination"))
-          }
+          wasmFunctionParameters.call(plugin)
         }
         env.metrics.withTimer("otoroshi.wasm.core.reset") {
           plugin.reset()
@@ -492,7 +468,7 @@ class WasmContextSlot(
         res
       } catch {
         case e: Throwable if e.getMessage.contains("wasm backtrace") =>
-          WasmUtils.logger.error(s"error while invoking wasm function '${functionName}'", e)
+          WasmUtils.logger.error(s"error while invoking wasm function '${wasmFunctionParameters.functionName}'", e)
           Json
             .obj(
               "error"             -> "wasm_error",
@@ -500,7 +476,7 @@ class WasmContextSlot(
             )
             .left
         case e: Throwable                                            =>
-          WasmUtils.logger.error(s"error while invoking wasm function '${functionName}'", e)
+          WasmUtils.logger.error(s"error while invoking wasm function '${wasmFunctionParameters.functionName}'", e)
           Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
       } finally {
         context.foreach(ctx => WasmContextSlot.clearCurrentContext())
@@ -520,7 +496,7 @@ class WasmContextSlot(
         // env.metrics.withTimer("otoroshi.wasm.core.reset") {
         //   plugin.reset()
         // }
-        res.right
+        res
       } catch {
         case e: Throwable if e.getMessage.contains("wasm backtrace") =>
           WasmUtils.logger.error(s"error while invoking wasm function 'opa'", e)
@@ -538,16 +514,13 @@ class WasmContextSlot(
   }
 
   def call(
-      functionName: String,
-      input: Option[String],
-      parameters: Option[Parameters],
-      resultSize: Option[Int],
+      wasmFunctionParameters: WasmFunctionParameters,
       context: Option[VmData]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     val promise = Promise.apply[Either[JsValue, (String, ResultsWrapper)]]()
     WasmUtils
       .getInvocationQueueFor(id, instance)
-      .offer(WasmAction.WasmInvocation(() => callSync(functionName, input, parameters, resultSize, context), promise))
+      .offer(WasmAction.WasmInvocation(() => callSync(wasmFunctionParameters, context), promise))
     promise.future
   }
 
@@ -569,7 +542,6 @@ class WasmContextSlot(
     if (closed.compareAndSet(false, true)) {
       try {
         plugin.close()
-        context.free()
       } catch {
         case e: Throwable => e.printStackTrace()
       }
@@ -591,7 +563,7 @@ class WasmContextSlot(
       config: WasmConfig,
       wasm: ByteString,
       attrsOpt: Option[TypedMap],
-      addHostFunctions: Seq[HostFunction[_ <: HostUserData]]
+      addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
   )(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
     if (needsUpdate(config, wasm) && updating.compareAndSet(false, true)) {
 
@@ -769,27 +741,31 @@ object WasmUtils {
       config: WasmConfig,
       pluginId: String,
       attrsOpt: Option[TypedMap],
-      addHostFunctions: Seq[HostFunction[_ <: HostUserData]]
+      addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
   )(implicit env: Env, ec: ExecutionContext): WasmContextSlot =
     env.metrics.withTimer("otoroshi.wasm.core.act-create-plugin") {
       if (WasmUtils.logger.isDebugEnabled)
         WasmUtils.logger.debug(s"creating wasm plugin instance for ${pluginId}")
+      val engine = WasmVmPool.engine
       val manifest                                          = internalCreateManifest(config, wasm, env)
-      val context                                           = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.context")(new Context())
-      val functions: Array[HostFunction[_ <: HostUserData]] =
+      val hash = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(wasm.toArray)
+        .map("%02x".format(_)).mkString
+      val template = new OtoroshiTemplate(engine, hash, manifest)
+      // val context                                           = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.context")(new Context())
+      val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] =
         HostFunctions.getFunctions(config, pluginId, attrsOpt) ++ addHostFunctions
       val plugin                                            = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.plugin") {
-        context.newPlugin(
-          manifest,
-          config.wasi,
+        template.instantiate(
+          engine,
           functions,
-          LinearMemories.getMemories(config)
+          LinearMemories.getMemories(config),
+          config.wasi,
         )
       }
       new WasmContextSlot(
         pluginId,
         instance,
-        context,
         plugin,
         config,
         wasm,
@@ -803,20 +779,17 @@ object WasmUtils {
   private def callWasm(
       wasm: ByteString,
       config: WasmConfig,
-      defaultFunctionName: String,
-      input: Option[JsValue],
-      parameters: Option[Parameters],
-      resultSize: Option[Int],
+      wasmFunctionParameters: WasmFunctionParameters,
       pluginId: String,
       attrsOpt: Option[TypedMap],
       ctx: Option[VmData],
-      addHostFunctions: Seq[HostFunction[_ <: HostUserData]]
+      addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] =
     env.metrics.withTimerAsync("otoroshi.wasm.core.call-wasm") {
 
       WasmUtils.debugLog.debug("callWasm")
 
-      val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
+      val functionName = config.functionName.filter(_.nonEmpty).getOrElse(wasmFunctionParameters.functionName)
       val instance     = instancesCounter.incrementAndGet() % config.instances
 
       def createPlugin(): WasmContextSlot = {
@@ -835,12 +808,12 @@ object WasmUtils {
         case None        => {
           val slot = createPlugin()
           if (config.opa) {
-            slot.callOpa(input.get.stringify).map { output =>
+            slot.callOpa(wasmFunctionParameters.input.get).map { output =>
               slot.close(config.lifetime)
-              output.map(str => (str, ResultsWrapper(new Results(0))))
+              output.map(str => (str, ResultsWrapper(new OtoroshiResults(0))))
             }
           } else {
-            slot.call(functionName, input.map(_.stringify), parameters, resultSize, ctx).map { output =>
+            slot.call(wasmFunctionParameters, ctx).map { output =>
               slot.close(config.lifetime)
               output
             }
@@ -864,12 +837,12 @@ object WasmUtils {
             case Some(plugin) => plugin
           }
           if (config.opa) {
-            slot.callOpa(input.get.stringify).map { output =>
+            slot.callOpa(wasmFunctionParameters.input.get).map { output =>
               slot.close(config.lifetime)
-              output.map(str => (str, ResultsWrapper(new Results(0))))
+              output.map(str => (str, ResultsWrapper(new OtoroshiResults(0))))
             }
           } else {
-            slot.call(functionName, input.map(_.stringify), parameters, resultSize, ctx).map { output =>
+            slot.call(wasmFunctionParameters, ctx).map { output =>
               slot.close(config.lifetime)
               output
             }
@@ -885,18 +858,15 @@ object WasmUtils {
       attrs: Option[TypedMap],
       ctx: Option[VmData]
   )(implicit env: Env): Future[Either[JsValue, String]] = {
-    rawExecute(config, defaultFunctionName, input.some, None, None, attrs, ctx, Seq.empty).map(r => r.map(_._1))
+    rawExecute(config, WasmFunctionParameters.ExtismFuntionCall(config.functionName.getOrElse(defaultFunctionName), input.stringify), attrs, ctx, Seq.empty).map(r => r.map(_._1))
   }
 
   def rawExecute(
       _config: WasmConfig,
-      defaultFunctionName: String,
-      input: Option[JsValue],
-      parameters: Option[Parameters],
-      resultSize: Option[Int],
+      wasmFunctionParameters: WasmFunctionParameters,
       attrs: Option[TypedMap],
       ctx: Option[VmData],
-      addHostFunctions: Seq[HostFunction[_ <: HostUserData]]
+      addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
   )(implicit env: Env): Future[Either[JsValue, (String, ResultsWrapper)]] =
     env.metrics.withTimerAsync("otoroshi.wasm.core.raw-execute") {
       val config   = if (_config.opa) _config.copy(lifetime = WasmVmLifetime.Invocation) else _config
@@ -913,7 +883,7 @@ object WasmUtils {
       scriptCache.get(pluginId) match {
         case Some(CacheableWasmScript.FetchingWasmScript(fu))      =>
           fu.flatMap { _ =>
-            rawExecute(config, defaultFunctionName, input, parameters, resultSize, attrs, ctx, addHostFunctions)
+            rawExecute(config, wasmFunctionParameters, attrs, ctx, addHostFunctions)
           }
         case Some(CacheableWasmScript.CachedWasmScript(script, _)) => {
           env.metrics.withTimerAsync("otoroshi.wasm.core.get-config")(config.source.getConfig()).flatMap {
@@ -921,10 +891,7 @@ object WasmUtils {
               WasmUtils.callWasm(
                 script,
                 config,
-                defaultFunctionName,
-                input,
-                parameters,
-                resultSize,
+                wasmFunctionParameters,
                 pluginId,
                 attrs,
                 ctx,
@@ -935,10 +902,7 @@ object WasmUtils {
               WasmUtils.callWasm(
                 script,
                 finalConfig.copy(functionName = functionName),
-                defaultFunctionName,
-                input,
-                parameters,
-                resultSize,
+                wasmFunctionParameters.withFunctionName(functionName.getOrElse(wasmFunctionParameters.functionName)),
                 pluginId,
                 attrs,
                 ctx,
@@ -956,10 +920,7 @@ object WasmUtils {
                   WasmUtils.callWasm(
                     wasm,
                     config,
-                    defaultFunctionName,
-                    input,
-                    parameters,
-                    resultSize,
+                    wasmFunctionParameters,
                     pluginId,
                     attrs,
                     ctx,
@@ -970,10 +931,7 @@ object WasmUtils {
                   WasmUtils.callWasm(
                     wasm,
                     finalConfig.copy(functionName = functionName),
-                    defaultFunctionName,
-                    input,
-                    parameters,
-                    resultSize,
+                    wasmFunctionParameters.withFunctionName(functionName.getOrElse(wasmFunctionParameters.functionName)),
                     pluginId,
                     attrs,
                     ctx,

@@ -1,10 +1,11 @@
 package otoroshi.wasm;
 
 import akka.stream.Materializer
-import org.extism.sdk.parameters.{IntegerParameter, Parameters}
-import org.extism.sdk._
+import org.extism.sdk.otoroshi._
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgCachedConfigContext
+import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.libs.json.{JsString, JsValue}
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
@@ -13,146 +14,146 @@ import scala.concurrent.ExecutionContext;
 
 object OPA extends AwaitCapable {
 
-  def opaAbortFunction: ExtismFunction[EmptyUserData] =
+  def opaAbortFunction: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaAbortFunction");
     }
 
-  def opaPrintlnFunction: ExtismFunction[EmptyUserData] =
+  def opaPrintlnFunction: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaPrintlnFunction");
     }
 
-  def opaBuiltin0Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin0Function: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin0Function");
     }
 
-  def opaBuiltin1Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin1Function: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin1Function");
     }
 
-  def opaBuiltin2Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin2Function: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin2Function");
     }
 
-  def opaBuiltin3Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin3Function: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin3Function");
     };
 
-  def opaBuiltin4Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin4Function: OtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: OtoroshiInternal,
+        params: Array[Bridge.ExtismVal],
+        returns: Array[Bridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin4Function");
     }
 
-  def opaAbort() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaAbort() = new OtoroshiHostFunction[EmptyUserData](
     "opa_abort",
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     Array(),
     opaAbortFunction,
     Optional.empty()
   )
 
-  def opaPrintln() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaPrintln() = new OtoroshiHostFunction[EmptyUserData](
     "opa_println",
-    Array(LibExtism.ExtismValType.I64),
-    Array(LibExtism.ExtismValType.I64),
+    Array(Bridge.ExtismValType.I64),
+    Array(Bridge.ExtismValType.I64),
     opaPrintlnFunction,
     Optional.empty()
   )
 
-  def opaBuiltin0() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin0() = new OtoroshiHostFunction[EmptyUserData](
     "opa_builtin0",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32, Bridge.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     opaBuiltin0Function,
     Optional.empty()
   )
 
-  def opaBuiltin1() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin1() = new OtoroshiHostFunction[EmptyUserData](
     "opa_builtin1",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32, Bridge.ExtismValType.I32, Bridge.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     opaBuiltin1Function,
     Optional.empty()
   )
 
-  def opaBuiltin2() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin2() = new OtoroshiHostFunction[EmptyUserData](
     "opa_builtin2",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     opaBuiltin2Function,
     Optional.empty()
   )
 
-  def opaBuiltin3() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin3() = new OtoroshiHostFunction[EmptyUserData](
     "opa_builtin3",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     opaBuiltin3Function,
     Optional.empty()
   )
 
-  def opaBuiltin4() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin4() = new OtoroshiHostFunction[EmptyUserData](
     "opa_builtin4",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32,
+      Bridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(Bridge.ExtismValType.I32),
     opaBuiltin4Function,
     Optional.empty()
   )
@@ -169,38 +170,34 @@ object OPA extends AwaitCapable {
     )
   }
 
-  def getLinearMemories(): Seq[LinearMemory] = {
+  def getLinearMemories(): Seq[OtoroshiLinearMemory] = {
     Seq(
-      new LinearMemory("memory", "env", new LinearMemoryOptions(5, Optional.empty()))
+      new OtoroshiLinearMemory("memory", "env", new OtoroshiLinearMemoryOptions(5, Optional.empty()))
     )
   }
 
-  def loadJSON(plugin: Plugin, value: Array[Byte]): Int = {
+  def loadJSON(plugin: OtoroshiInstance, value: Array[Byte]): Either[JsValue, Int] = {
     if (value.length == 0) {
-      return 0
+      0.right
     } else {
       val value_buf_len = value.length
-      var parameters    = new Parameters(1)
-      val parameter     = new IntegerParameter()
-      parameter.add(parameters, value_buf_len, 0)
+      var parameters    = new OtoroshiParameters(1)
+        .pushInt(value_buf_len)
 
-      val raw_addr = plugin.call("opa_malloc", parameters, 1, "".getBytes())
+      val raw_addr = plugin.call("opa_malloc", parameters, 1)
 
       if (
-        LibExtism.INSTANCE.extism_memory_write_bytes(
-          plugin.getPointer(),
-          plugin.getIndex(),
+        plugin.writeBytes(
           value,
           value_buf_len,
           raw_addr.getValue(0).v.i32
         ) == -1
       ) {
-        throw new ExtismException("Cant' write in memory")
+        return JsString("Cant' write in memory").left
       }
 
-      parameters = new Parameters(2)
-      parameter.add(parameters, raw_addr.getValue(0).v.i32, 0)
-      parameter.add(parameters, value_buf_len, 1)
+      parameters = new OtoroshiParameters(2)
+        .pushInts(raw_addr.getValue(0).v.i32, value_buf_len)
       val parsed_addr = plugin.call(
         "opa_json_parse",
         parameters,
@@ -208,59 +205,50 @@ object OPA extends AwaitCapable {
       )
 
       if (parsed_addr.getValue(0).v.i32 == 0) {
-        throw new ExtismException("failed to parse json value")
+        return JsString("failed to parse json value").left
       }
 
-      parsed_addr.getValue(0).v.i32
+      parsed_addr.getValue(0).v.i32.right
     }
   }
 
-  def evaluate(plugin: Plugin, input: String): String = {
+  def evaluate(plugin: OtoroshiInstance, input: String): Either[JsValue, String] = {
     val entrypoint = 0
 
     // TODO - read and load builtins functions by calling dumpJSON
 
-    val data_addr = loadJSON(plugin, "{}".getBytes(StandardCharsets.UTF_8))
+    loadJSON(plugin, "{}".getBytes(StandardCharsets.UTF_8))
+      .map(data_addr => {
+        val base_heap_ptr = plugin.call(
+          "opa_heap_ptr_get",
+          new OtoroshiParameters(0),
+          1
+        )
 
-    val parameter = new IntegerParameter()
+        val data_heap_ptr = base_heap_ptr.getValue(0).v.i32
 
-    val base_heap_ptr = plugin.call(
-      "opa_heap_ptr_get",
-      new Parameters(0),
-      1
-    )
+        val input_len = input.getBytes(StandardCharsets.UTF_8).length
+        plugin.writeBytes(
+          input.getBytes(StandardCharsets.UTF_8),
+          input_len,
+          data_heap_ptr
+        )
 
-    val data_heap_ptr = base_heap_ptr.getValue(0).v.i32
+        val heap_ptr   = data_heap_ptr + input_len
+        val input_addr = data_heap_ptr
 
-    val input_len = input.getBytes(StandardCharsets.UTF_8).length
-    LibExtism.INSTANCE.extism_memory_write_bytes(
-      plugin.getPointer(),
-      plugin.getIndex(),
-      input.getBytes(StandardCharsets.UTF_8),
-      input_len,
-      data_heap_ptr
-    )
+        val ptr = new OtoroshiParameters(7)
+          .pushInts(0 , entrypoint, data_addr, input_addr, input_len, heap_ptr, 0)
 
-    val heap_ptr   = data_heap_ptr + input_len
-    val input_addr = data_heap_ptr
+        val ret = plugin.call("opa_eval", ptr, 1)
 
-    val ptr = new Parameters(7)
-    parameter.add(ptr, 0, 0)
-    parameter.add(ptr, entrypoint, 1)
-    parameter.add(ptr, data_addr, 2)
-    parameter.add(ptr, input_addr, 3)
-    parameter.add(ptr, input_len, 4)
-    parameter.add(ptr, heap_ptr, 5)
-    parameter.add(ptr, 0, 6)
+        val memory = plugin.getMemory("memory")
 
-    val ret = plugin.call("opa_eval", ptr, 1)
+        val mem: Array[Byte] = memory.getByteArray(ret.getValue(0).v.i32, 65356)
+        val size: Int        = lastValidByte(mem)
 
-    val memory = LibExtism.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory")
-
-    val mem: Array[Byte] = memory.getByteArray(ret.getValue(0).v.i32, 65356)
-    val size: Int        = lastValidByte(mem)
-
-    new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8)
+        new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8)
+      })
   }
 
   def lastValidByte(arr: Array[Byte]): Int = {
@@ -275,10 +263,10 @@ object OPA extends AwaitCapable {
 
 object LinearMemories {
 
-  private val memories: AtomicReference[Seq[LinearMemory]] =
-    new AtomicReference[Seq[LinearMemory]](Seq.empty[LinearMemory])
+  private val memories: AtomicReference[Seq[OtoroshiLinearMemory]] =
+    new AtomicReference[Seq[OtoroshiLinearMemory]](Seq.empty[OtoroshiLinearMemory])
 
-  def getMemories(config: WasmConfig): Array[LinearMemory] = {
+  def getMemories(config: WasmConfig): Array[OtoroshiLinearMemory] = {
     if (config.opa) {
       if (memories.get.isEmpty) {
         memories.set(
@@ -294,15 +282,15 @@ object LinearMemories {
 
 /*
     String dumpJSON() {
-        Results addr = plugin.call("builtins",  new Parameters(0), 1);
+        Results addr = plugin.call("builtins",  new OtoroshiParameters(0), 1);
 
-        Parameters parameters = new Parameters(1);
+        Parameters parameters = new OtoroshiParameters(1);
         IntegerParameter builder = new IntegerParameter();
         builder.add(parameters, addr.getValue(0).v.i32, 0);
 
         Results rawAddr = plugin.call("opa_json_dump", parameters, 1);
 
-        Pointer memory = LibExtism.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory");
+        Pointer memory = Bridge.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory");
         byte[] mem = memory.getByteArray(rawAddr.getValue(0).v.i32, 65356);
         int size = lastValidByte(mem);
 
