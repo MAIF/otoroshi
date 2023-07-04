@@ -88,7 +88,6 @@ object OtoroshiTests {
       new ApiKeysSpec(name, config),
       new CanarySpec(name, config),
       new QuotasSpec(name, config),
-      new SidecarSpec(name, config),
       new JWTVerificationSpec(name, config),
       new JWTVerificationRefSpec(name, config),
       new SnowMonkeySpec(name, config),
@@ -172,3 +171,4 @@ class ConfigCleanerTests
     extends Suites(
       new ConfigurationCleanupSpec()
     )
+

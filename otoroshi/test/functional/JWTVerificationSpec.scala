@@ -125,6 +125,17 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         }
       ).await()
 
+      val jwtVerifier = GlobalJwtVerifier(
+        id = "verifier1",
+        name = "verifier1",
+        desc = "verifier1",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))
+      )
+      createOtoroshiVerifier(jwtVerifier).futureValue
+
       val service = ServiceDescriptor(
         id = "jwt-test",
         name = "jwt-test",
@@ -140,13 +151,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = LocalJwtVerifier(
-          enabled = true,
-          strict = true,
-          source = InHeader(name = "X-JWT-Token"),
-          algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))
-        )
+        jwtVerifier = RefJwtVerifier(ids = Seq("verifier1"), enabled = true)
       )
 
       createOtoroshiService(service).futureValue
@@ -227,6 +232,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       body3.contains("error.bad.token") mustBe true
 
       deleteOtoroshiService(service).futureValue
+      deleteOtoroshiVerifier(jwtVerifier).futureValue
 
       basicTestServer1.stop()
     }
@@ -272,6 +278,19 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         }
       ).await()
 
+      val jwtVerifier = GlobalJwtVerifier(
+        id = "verifier2",
+        name = "verifier2",
+        desc = "verifier2",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = Sign(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")),
+        algoSettings = HSAlgoSettings(512, key))
+      )
+      createOtoroshiVerifier(jwtVerifier).futureValue
+
       val service = ServiceDescriptor(
         id = "jwt-test",
         name = "jwt-test",
@@ -287,15 +306,9 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = LocalJwtVerifier(
+        jwtVerifier = RefJwtVerifier(
+          ids= Seq("verifier2"),
           enabled = true,
-          strict = true,
-          source = InHeader(name = "X-JWT-Token"),
-          algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = Sign(
-            verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")),
-            algoSettings = HSAlgoSettings(512, key)
-          )
         )
       )
 
@@ -367,6 +380,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       body3.contains("error.bad.token") mustBe true
 
       deleteOtoroshiService(service).futureValue
+      deleteOtoroshiVerifier(jwtVerifier).futureValue
 
       basicTestServer1.stop()
     }
@@ -421,6 +435,40 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         }
       ).await()
 
+      val jwtVerifier = GlobalJwtVerifier(
+        id = "verifier3",
+        name = "verifier3",
+        desc = "verifier3",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = Transform(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")),
+          algoSettings = HSAlgoSettings(512, key),
+          transformSettings = TransformSettings(
+            location = InHeader("X-Barrr"),
+            mappingSettings = MappingSettings(
+              map = Map(
+                "fakebar" -> "x-bar",
+                "bar" -> "x-bar",
+                "superfakebar" -> "x-bar"
+              ),
+              values = Json.obj(
+                "x-yo" -> "foo",
+                "the-date-1" -> "the-${date}",
+                "the-date-2" -> "the-${date.format('dd-MM-yyyy')}",
+                "the-var-1" -> "the-${token.var1}",
+                "the-var-2" -> "the-${token.var2}",
+                "the-var-1-2" -> "the-${token.var1}-${token.var2}",
+                "the-host" -> "${req.host}"
+              ),
+              remove = Seq("foo")
+            )
+          )
+        )
+      )
+      createOtoroshiVerifier(jwtVerifier).futureValue
+
       val service = ServiceDescriptor(
         id = "jwt-test",
         name = "jwt-test",
@@ -436,35 +484,9 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = LocalJwtVerifier(
-          enabled = true,
-          strict = true,
-          source = InHeader(name = "X-JWT-Token"),
-          algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = Transform(
-            verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")),
-            algoSettings = HSAlgoSettings(512, key),
-            transformSettings = TransformSettings(
-              location = InHeader("X-Barrr"),
-              mappingSettings = MappingSettings(
-                map = Map(
-                  "fakebar"      -> "x-bar",
-                  "bar"          -> "x-bar",
-                  "superfakebar" -> "x-bar"
-                ),
-                values = Json.obj(
-                  "x-yo"        -> "foo",
-                  "the-date-1"  -> "the-${date}",
-                  "the-date-2"  -> "the-${date.format('dd-MM-yyyy')}",
-                  "the-var-1"   -> "the-${token.var1}",
-                  "the-var-2"   -> "the-${token.var2}",
-                  "the-var-1-2" -> "the-${token.var1}-${token.var2}",
-                  "the-host"    -> "${req.host}"
-                ),
-                remove = Seq("foo")
-              )
-            )
-          )
+        jwtVerifier = RefJwtVerifier(
+          ids = Seq("verifier3"),
+          enabled = true
         )
       )
 
@@ -538,6 +560,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       body3.contains("error.bad.token") mustBe true
 
       deleteOtoroshiService(service).futureValue
+      deleteOtoroshiVerifier(jwtVerifier).futureValue
 
       basicTestServer1.stop()
     }
