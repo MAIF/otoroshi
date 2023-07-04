@@ -1,0 +1,3 @@
+package wasm class types {
+
+}
