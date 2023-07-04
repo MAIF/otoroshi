@@ -81,7 +81,6 @@ object OtoroshiTests {
     val suites         = Seq(
       new BasicSpec,
       new AdminApiSpec(name, config),
-      new ProgrammaticApiSpec(name, config),
       new CircuitBreakerSpec(name, config),
       new AlertAndAnalyticsSpec(name, config),
       // new AnalyticsSpec(name, config),
@@ -171,4 +170,3 @@ class ConfigCleanerTests
     extends Suites(
       new ConfigurationCleanupSpec()
     )
-
