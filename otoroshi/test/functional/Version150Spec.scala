@@ -209,7 +209,7 @@ class AuthModuleConfigApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): AuthModuleConfig                                   = env.datastores.authConfigsDataStore.template("basic".some, env)
+  override def singleEntity(): AuthModuleConfig                                   = env.datastores.authConfigsDataStore.template(None, env)
   override def entityName: String                                                 = "AuthModuleConfig"
   override def route(): String                                                    = "/api/auths"
   override def readEntityFromJson(json: JsValue): AuthModuleConfig                = AuthModuleConfig._fmt(env).reads(json).get
