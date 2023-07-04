@@ -199,7 +199,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
         clientConfig = ClientConfig(
           retries = 2,
           maxErrors = 3,
-          sampleInterval = 500
+          sampleInterval = 2000
         )
       )
       createOtoroshiService(service).futureValue

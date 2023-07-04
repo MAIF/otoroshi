@@ -170,3 +170,11 @@ class ConfigCleanerTests
     extends Suites(
       new ConfigurationCleanupSpec()
     )
+
+class CircuitBreakerTests extends Suites(
+    new CircuitBreakerSpec("InMemory", Configurations.InMemoryConfiguration)
+)
+
+class AnalyticsTests extends Suites(
+    new AlertAndAnalyticsSpec("InMemory", Configurations.InMemoryConfiguration)
+)

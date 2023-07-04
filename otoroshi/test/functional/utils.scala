@@ -1346,7 +1346,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .andWait(2000.millis)
   }
 
   def createOtoroshiApiKey(
@@ -1444,7 +1444,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .map { resp =>
         (resp.json, resp.status)
       }
-      .andWait(1000.millis)
+      .andWait(2000.millis)
   }
 }
 

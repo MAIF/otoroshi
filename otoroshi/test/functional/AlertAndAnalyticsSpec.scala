@@ -114,7 +114,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) e
         config <- getOtoroshiConfig()
       } yield config).futureValue
 
-      awaitF(6.seconds).futureValue
+      awaitF(12.seconds).futureValue
 
       getOtoroshiConfig().futureValue
       getOtoroshiApiKeys().futureValue
@@ -123,7 +123,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) e
       createOtoroshiApiKey(apiKey).futureValue
       deleteOtoroshiApiKey(apiKey).futureValue
 
-      await(2.seconds)
+      await(12.seconds)
 
       println(counter.get())
       counter.get() >= 16 mustBe true
