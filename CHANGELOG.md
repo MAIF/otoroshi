@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.5.2] - 2023-07-04
+
+https://github.com/MAIF/otoroshi/milestone/69?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.5.1...v16.5.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.5.2
+
+### Fixed
+
+- ServiceDescriptor to route conversion does not copy IP whitelist (#1639)
+- fix bad value resolution in cluster config (#1640)
+
+
 ## [16.5.1] - 2023-07-03
 
 https://github.com/MAIF/otoroshi/milestone/68?closed=1
