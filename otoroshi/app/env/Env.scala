@@ -267,9 +267,7 @@ class Env(
 
   lazy val maxWebhookSize: Int = configuration.getOptionalWithFileSupport[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val clusterConfig: ClusterConfig           = ClusterConfig(
-    configuration.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
-  )
+  lazy val clusterConfig: ClusterConfig           = ClusterConfig.fromRoot(configuration)
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 

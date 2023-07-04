@@ -352,7 +352,13 @@ case class ClusterConfig(
 
 object ClusterConfig {
   lazy val clusterNodeId = s"node_${IdGenerator.uuid}"
-  def apply(configuration: Configuration): ClusterConfig = {
+  def fromRoot(rootConfig: Configuration): ClusterConfig = {
+    apply(
+      rootConfig.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty),
+      rootConfig,
+    )
+  }
+  def apply(configuration: Configuration, rootConfig: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
       mode =
@@ -365,11 +371,26 @@ object ClusterConfig {
         enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.enabled").getOrElse(false),
         leaderOnly = configuration.getOptionalWithFileSupport[Boolean]("relay.leaderOnly").getOrElse(false),
         location = InstanceLocation(
-          provider = configuration.getOptionalWithFileSupport[String]("relay.location.provider").getOrElse("local"),
-          zone = configuration.getOptionalWithFileSupport[String]("relay.location.zone").getOrElse("local"),
-          region = configuration.getOptionalWithFileSupport[String]("relay.location.region").getOrElse("local"),
-          datacenter = configuration.getOptionalWithFileSupport[String]("relay.location.datacenter").getOrElse("local"),
-          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack").getOrElse("local")
+          provider = configuration.getOptionalWithFileSupport[String]("relay.location.provider")
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.provider"))
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.provider"))
+            .getOrElse("local"),
+          zone = configuration.getOptionalWithFileSupport[String]("relay.location.zone")
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.zone"))
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.zone"))
+            .getOrElse("local"),
+          region = configuration.getOptionalWithFileSupport[String]("relay.location.region")
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.region"))
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.region"))
+            .getOrElse("local"),
+          datacenter = configuration.getOptionalWithFileSupport[String]("relay.location.datacenter")
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.dc"))
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.dc"))
+            .getOrElse("local"),
+          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack")
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.rack"))
+            .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.rack"))
+            .getOrElse("local")
         ),
         exposition = InstanceExposition(
           urls = configuration.getOptionalWithFileSupport[String]("relay.exposition.url").map(v => Seq(v)).orElse {
