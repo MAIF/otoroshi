@@ -428,19 +428,21 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         }
       ).await()
 
-      createOtoroshiVerifier(GlobalJwtVerifier(
-        id = "verifier1",
-        name = "verifier1",
-        desc = "verifier1",
-        strict = true,
-        source = InHeader(name = "X-JWT-Token"),
-        algoSettings = HSAlgoSettings(512, "secret"),
-        strategy = PassThrough(
-          verificationSettings = VerificationSettings(
-            arrayFields = Map("roles" -> "user")
+      createOtoroshiVerifier(
+        GlobalJwtVerifier(
+          id = "verifier1",
+          name = "verifier1",
+          desc = "verifier1",
+          strict = true,
+          source = InHeader(name = "X-JWT-Token"),
+          algoSettings = HSAlgoSettings(512, "secret"),
+          strategy = PassThrough(
+            verificationSettings = VerificationSettings(
+              arrayFields = Map("roles" -> "user")
+            )
           )
         )
-      ))
+      )
 
       val service = ServiceDescriptor(
         id = "array-jwt-test",
@@ -457,7 +459,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = RefJwtVerifier(ids=Seq("verifier1"), enabled=true)
+        jwtVerifier = RefJwtVerifier(ids = Seq("verifier1"), enabled = true)
       )
 
       createOtoroshiService(service).futureValue
@@ -1710,7 +1712,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       deleteOtoroshiService(service1).futureValue
       stopServers()
     }
-
 
     "allow whitelisted ip addresses (#318)" in {
       val (_, port1, counter1, call1) = testServer("allowwhiteip.oto.tools", port)

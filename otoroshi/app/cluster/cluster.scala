@@ -355,7 +355,7 @@ object ClusterConfig {
   def fromRoot(rootConfig: Configuration): ClusterConfig = {
     apply(
       rootConfig.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty),
-      rootConfig,
+      rootConfig
     )
   }
   def apply(configuration: Configuration, rootConfig: Configuration): ClusterConfig = {
@@ -371,23 +371,28 @@ object ClusterConfig {
         enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.enabled").getOrElse(false),
         leaderOnly = configuration.getOptionalWithFileSupport[Boolean]("relay.leaderOnly").getOrElse(false),
         location = InstanceLocation(
-          provider = configuration.getOptionalWithFileSupport[String]("relay.location.provider")
+          provider = configuration
+            .getOptionalWithFileSupport[String]("relay.location.provider")
             .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.provider"))
             .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.provider"))
             .getOrElse("local"),
-          zone = configuration.getOptionalWithFileSupport[String]("relay.location.zone")
+          zone = configuration
+            .getOptionalWithFileSupport[String]("relay.location.zone")
             .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.zone"))
             .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.zone"))
             .getOrElse("local"),
-          region = configuration.getOptionalWithFileSupport[String]("relay.location.region")
+          region = configuration
+            .getOptionalWithFileSupport[String]("relay.location.region")
             .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.region"))
             .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.region"))
             .getOrElse("local"),
-          datacenter = configuration.getOptionalWithFileSupport[String]("relay.location.datacenter")
+          datacenter = configuration
+            .getOptionalWithFileSupport[String]("relay.location.datacenter")
             .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.dc"))
             .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.dc"))
             .getOrElse("local"),
-          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack")
+          rack = configuration
+            .getOptionalWithFileSupport[String]("relay.location.rack")
             .orElse(rootConfig.getOptionalWithFileSupport[String]("otoroshi.instance.rack"))
             .orElse(rootConfig.getOptionalWithFileSupport[String]("app.instance.rack"))
             .getOrElse("local")

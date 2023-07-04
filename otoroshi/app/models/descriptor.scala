@@ -498,17 +498,27 @@ case class NetworkLocationMatch(
       "rack"     -> rack.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    provider.forall(p => otoroshi.utils
+    provider.forall(p =>
+      otoroshi.utils
         .RegexPool(p.trim.toLowerCase)
-        .matches(env.clusterConfig.relay.location.provider.trim.toLowerCase)) &&
-    region.forall(r => otoroshi.utils
-      .RegexPool(r.trim.toLowerCase)
-      .matches(env.clusterConfig.relay.location.region.trim.toLowerCase)) &&
-    zone.forall(z => otoroshi.utils.RegexPool(z.trim.toLowerCase).matches(env.clusterConfig.relay.location.zone.trim.toLowerCase)) &&
-    dataCenter.forall(d => otoroshi.utils
-      .RegexPool(d.trim.toLowerCase)
-      .matches(env.clusterConfig.relay.location.datacenter.trim.toLowerCase)) &&
-    rack.forall(r => otoroshi.utils.RegexPool(r.trim.toLowerCase).matches(env.clusterConfig.relay.location.rack.trim.toLowerCase))
+        .matches(env.clusterConfig.relay.location.provider.trim.toLowerCase)
+    ) &&
+    region.forall(r =>
+      otoroshi.utils
+        .RegexPool(r.trim.toLowerCase)
+        .matches(env.clusterConfig.relay.location.region.trim.toLowerCase)
+    ) &&
+    zone.forall(z =>
+      otoroshi.utils.RegexPool(z.trim.toLowerCase).matches(env.clusterConfig.relay.location.zone.trim.toLowerCase)
+    ) &&
+    dataCenter.forall(d =>
+      otoroshi.utils
+        .RegexPool(d.trim.toLowerCase)
+        .matches(env.clusterConfig.relay.location.datacenter.trim.toLowerCase)
+    ) &&
+    rack.forall(r =>
+      otoroshi.utils.RegexPool(r.trim.toLowerCase).matches(env.clusterConfig.relay.location.rack.trim.toLowerCase)
+    )
   }
 }
 
