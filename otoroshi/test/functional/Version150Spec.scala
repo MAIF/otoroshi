@@ -519,7 +519,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
       .initiateNewApiKey("admin-api-group", env)
       .copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("admin-api-service")))
   override def entityName: String                             = "ApiKey"
-  override def route(): String                                = "/api/services/admin-api-service/apikeys"
+  override def route(): String                                = "/api/routes/admin-api-service/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey      = ApiKey._fmt.reads(json).get
   override def writeEntityToJson(entity: ApiKey): JsValue     = ApiKey._fmt.writes(entity)
   override def updateEntity(entity: ApiKey): ApiKey           = entity.copy(clientName = entity.clientName + " - updated")
