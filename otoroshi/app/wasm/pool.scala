@@ -6,9 +6,10 @@ import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.otoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
-import otoroshi.models.WasmPlugin
+import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
 import otoroshi.wasm.proxywasm.VmData
+import play.api.Logger
 import play.api.libs.json.JsValue
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
@@ -22,6 +23,10 @@ case class WasmVmAction(
   context: Option[VmData],
   promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
 )
+
+object WasmVm {
+  val logger = Logger("otoroshi-wasm-vm")
+}
 
 case class WasmVm(index: Int, instance: OtoroshiInstance, pool: WasmVmPool) {
 
@@ -38,7 +43,7 @@ case class WasmVm(index: Int, instance: OtoroshiInstance, pool: WasmVmPool) {
     Future.apply {
       try {
         action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
-        println(s"call vm ${index} with methode ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
+        if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"call vm ${index} with method ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
         val res = action.parameters.call(instance)
         action.promise.trySuccess(res)
       } catch {
@@ -51,7 +56,6 @@ case class WasmVm(index: Int, instance: OtoroshiInstance, pool: WasmVmPool) {
   }
 
   def destroy(): Unit = {
-    println(s"destroy vm ${index}")
     instance.close()
   }
 
@@ -60,7 +64,6 @@ case class WasmVm(index: Int, instance: OtoroshiInstance, pool: WasmVmPool) {
   def initialized(): Boolean = initializedRef.get()
   def initialize(f: => Any): Unit = {
     if (initializedRef.compareAndSet(false, true)) {
-      println("vm initialize")
       f
     }
   }
@@ -88,8 +91,6 @@ object WasmVmPool {
 
 class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) {
 
-  println(s"new WasmVmPool ${pluginId}")
-
   private val counter = new AtomicInteger(0)
   private val templateRef = new AtomicReference[OtoroshiTemplate](null)
   private val allVms = new TrieMap[Int, WasmVm]()
@@ -108,33 +109,25 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) 
   }
 
   private def handleAction(action: WasmVmPoolAction): Unit = {
-    println("handleAction")
     wasmConfig() match {
       case None =>
-        println("handleAction: None")
         destroyCurrent()
         WasmVmPool.removePlugin(pluginId)
         Future.failed(new RuntimeException(s"No more plugin ${pluginId}"))
       case Some(wcfg) => {
-        println("handleAction: Some")
         if (hasChanged(wcfg)) {
-          println("handleAction: hasChanged")
+          println("plugin has changed")
           destroyCurrent()
           createVm(wcfg, action.importDefaultHostFunctions, action.addHostFunctions)
         }
         if (!hasAvailableVm(wcfg)) {
-          println("handleAction: vm available")
           if (isVmCreating()) {
-            println("handleAction: is vm creating")
             priorityQueue.offer(action)
             Future.successful(())
           } else {
-            println("handleAction: is not vm creating")
             if (atMaxPoolCapacity(wcfg)) {
-              println("handleAction: at max")
               priorityQueue.offer(action)
             } else {
-              println("handleAction: creating and provide")
               // create on
               createVm(wcfg, action.importDefaultHostFunctions, action.addHostFunctions)
               val vm = acquireVm()
@@ -142,9 +135,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) 
             }
           }
         } else {
-          println("handleAction: vm available provide")
           val vm = acquireVm()
-          println(s"vm: $vm")
           action.provideVm(vm)
         }
       }
@@ -152,10 +143,9 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) 
   }
 
   private def createVm(config: WasmConfig, importDefaultHostFunctions: Boolean, addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]): WasmVm = synchronized {
-    println("createVm")
     creating.set(true)
     if (templateRef.get() == null) {
-      println("createVm: create template")
+      // TODO: fix it
       Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 10.seconds)
       val wasm = WasmUtils.scriptCache(env).apply(config.source.cacheKey).asInstanceOf[CachedWasmScript].script
       val hash = java.security.MessageDigest.getInstance("SHA-256")
@@ -173,38 +163,32 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) 
       )))
     }
     val template = templateRef.get()
-    println("createVm: create host funcs")
     val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = if (importDefaultHostFunctions) { // config.importDefaultHostFunctions) { // TODO
       HostFunctions.getFunctions(config, pluginId, None)(env, env.otoroshiExecutionContext) ++ addHostFunctions
     } else {
       addHostFunctions.toArray[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
     }
-    println("createVm: create memories")
     val memories = LinearMemories.getMemories(config)
     val instance = template.instantiate(WasmVmPool.engine, functions, memories, config.wasi)
     val index = counter.incrementAndGet()
     val vm = WasmVm(index, instance, this)
     allVms.put(index, vm)
-    // TODO: init
     creating.set(false)
     vm
   }
 
   private def acquireVm(): WasmVm = synchronized {
-    println("acquireVm")
     if (allVms.nonEmpty) {
       val (index, vm) = allVms.head
       allVms.remove(index)
       inUseVms.put(index, vm)
       vm
     } else {
-      println("no instances available")
       throw new RuntimeException("no instances available")
     }
   }
 
   private[wasm] def release(vm: WasmVm, index: Int): Unit = synchronized {
-    println("releaseVm")
     allVms.put(index, vm)
     inUseVms.remove(index)
   }
@@ -229,7 +213,13 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], val env: Env) 
   }
 
   private def hasChanged(plugin: WasmConfig): Boolean = {
-    // TODO: test plugin hash
+    var oldHash = lastPluginVersion.get()
+    if (oldHash == null) {
+      oldHash = plugin.json.stringify.sha512
+      lastPluginVersion.set(oldHash)
+    }
+    val currentHash = plugin.json.stringify.sha512
+    oldHash != currentHash
     false
   }
 
