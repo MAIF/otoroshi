@@ -33,7 +33,91 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       getOtoroshiServices().futureValue // WARM UP
     }
 
-    /*"Open if too many failures" in {
+    "Retry on failures" in {
+
+      val callCounter1 = new AtomicInteger(0)
+      val basicTestExpectedBody = """{"message":"hello world"}"""
+      val basicTestServer1 = TargetService(
+        "cbr.oto.tools".option,
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody
+        }
+      ).await()
+
+      val callCounter2 = new AtomicInteger(0)
+      val basicTestServer2 = TargetService(
+        "cbr.oto.tools".option,
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter2.incrementAndGet()
+          basicTestExpectedBody
+        }
+      ).await()
+
+      val fakePort = TargetService.freePort
+      val service = ServiceDescriptor(
+        id = "cbr-test",
+        name = "cbr-test",
+        env = "prod",
+        subdomain = "cbr",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:$fakePort",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${basicTestServer1.port}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${basicTestServer2.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        clientConfig = ClientConfig(
+          retries = 2,
+          maxErrors = 3,
+          sampleInterval = 500,
+          connectionTimeout = 500
+        )
+      )
+      createOtoroshiService(service).futureValue
+
+      def callServer() = {
+        ws.url(s"http://127.0.0.1:$port/api")
+            .withHttpHeaders(
+              "Host" -> "cbr.oto.tools"
+            )
+            .get()
+            .futureValue
+      }
+
+      val basicTestResponse1 = callServer()
+
+      basicTestResponse1.status mustBe 200
+      callCounter1.get() mustBe 1
+
+      callServer().status mustBe 200
+      callServer().status mustBe 200
+      callServer().status mustBe 200
+
+      callCounter1.get() mustBe 2
+      callCounter2.get() mustBe 2
+
+      deleteOtoroshiService(service).futureValue
+      basicTestServer1.stop()
+      basicTestServer2.stop()
+    }
+
+    "Open if too many failures" in {
       val fakePort = TargetService.freePort
       val service  = ServiceDescriptor(
         id = "cb-test",
@@ -134,93 +218,9 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       basicTestResponse3.body.contains("the connection to backend service was refused") mustBe true
 
       deleteOtoroshiService(service).futureValue
-    }*/
-
-    "Retry on failures" in {
-
-      val callCounter1 = new AtomicInteger(0)
-      val basicTestExpectedBody = """{"message":"hello world"}"""
-      val basicTestServer1 = TargetService(
-        "cbr.oto.tools".option,
-        "/api",
-        "application/json",
-        { _ =>
-          callCounter1.incrementAndGet()
-          basicTestExpectedBody
-        }
-      ).await()
-
-      val callCounter2 = new AtomicInteger(0)
-      val basicTestServer2 = TargetService(
-        "cbr.oto.tools".option,
-        "/api",
-        "application/json",
-        { _ =>
-          callCounter2.incrementAndGet()
-          basicTestExpectedBody
-        }
-      ).await()
-
-      val fakePort = TargetService.freePort
-      val service  = ServiceDescriptor(
-        id = "cbr-test",
-        name = "cbr-test",
-        env = "prod",
-        subdomain = "cbr",
-        domain = "oto.tools",
-        targets = Seq(
-          Target(
-            host = s"127.0.0.1:$fakePort",
-            scheme = "http"
-          ),
-          Target(
-            host = s"127.0.0.1:${basicTestServer1.port}",
-            scheme = "http"
-          ),
-          Target(
-            host = s"127.0.0.1:${basicTestServer2.port}",
-            scheme = "http"
-          )
-        ),
-        forceHttps = false,
-        enforceSecureCommunication = false,
-        publicPatterns = Seq("/.*"),
-        clientConfig = ClientConfig(
-          retries = 2,
-          maxErrors = 3,
-          sampleInterval = 500,
-          connectionTimeout=500
-        )
-      )
-      createOtoroshiService(service).futureValue
-
-      def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api")
-          .withHttpHeaders(
-            "Host" -> "cbr.oto.tools"
-          )
-          .get()
-          .futureValue
-      }
-
-      val basicTestResponse1 = callServer()
-
-      basicTestResponse1.status mustBe 200
-      callCounter1.get() mustBe 1
-
-      callServer().status mustBe 200
-      callServer().status mustBe 200
-      callServer().status mustBe 200
-
-      callCounter1.get() mustBe 2
-      callCounter2.get() mustBe 2
-
-      deleteOtoroshiService(service).futureValue
-      basicTestServer1.stop()
-      basicTestServer2.stop()
     }
 
-    /*"Timeout on long calls" in {
+    "Timeout on long calls" in {
       val basicTestExpectedBody = """{"message":"hello world"}"""
       val callCounter3 = new AtomicInteger(0)
       val basicTestServer3 = TargetService(
@@ -330,7 +330,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       deleteOtoroshiService(service).futureValue
       basicTestServer3.stop()
 
-    }*/
+    }
 
     "stop servers" in {
       system.terminate()
