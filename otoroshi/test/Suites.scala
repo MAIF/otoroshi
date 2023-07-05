@@ -80,8 +80,8 @@ object OtoroshiTests {
     val (name, config) = getNameAndConfig()
     val suites         = Seq(
       new BasicSpec,
-      //new AdminApiSpec(name, config),
-      new CircuitBreakerSpec(name, config)/*,
+      new AdminApiSpec(name, config),
+      new CircuitBreakerSpec(name, config),
       new AlertAndAnalyticsSpec(name, config),
       // new AnalyticsSpec(name, config),
       new ApiKeysSpec(name, config),
@@ -105,7 +105,7 @@ object OtoroshiTests {
       new ApikeyGroupApiSpec(name, config),
       new ApikeyServiceApiSpec(name, config),
       new ApikeyApiSpec(name, config),
-      new Log4ShellSpec()*/
+      new Log4ShellSpec()
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
       case Some("true") => suites :+ new AnalyticsSpec(name, config)
@@ -116,7 +116,7 @@ object OtoroshiTests {
 
 class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {}
 
-/*class DevOtoroshiTests
+class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
     )
@@ -177,4 +177,4 @@ class CircuitBreakerTests extends Suites(
 
 class AnalyticsTests extends Suites(
     new AlertAndAnalyticsSpec("InMemory", Configurations.InMemoryConfiguration)
-)*/
+)
