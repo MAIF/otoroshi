@@ -58,6 +58,8 @@ object CorazaPlugin {
 
 class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) {
 
+  println("new CorazaPlugin")
+
   private implicit val ev = env
   private implicit val ec = env.otoroshiExecutionContext
   private implicit val ma = env.otoroshiMaterializer
@@ -181,7 +183,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 1: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -209,7 +211,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 2: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -234,7 +236,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 3: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -261,7 +263,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 4: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -272,7 +274,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   def start(attrs: TypedMap): Unit = {
 
-    val vm = pool.getVm(false, functions).await(timeout)
+    val vm = pool.getPooledVm(WasmVmInitOptions(false, functions)).await(timeout)
+    // println(s"vm ${vm.index}")
     val data = VmData.withRules(rules).copy(vm = vm.some)
     attrs.put(otoroshi.next.plugins.Keys.CorazaWasmVmKey -> vm)
 
@@ -378,6 +381,8 @@ object NgCorazaWAFConfig {
 
 class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
+  println("new NgCorazaWAF")
+
   // TODO: avoid blocking calls for wasm calls
   // TODO: add job to preinstantiate plugin
   // TODO: add coraza.wasm build in the release process
@@ -420,7 +425,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = 3
+          instances = 1
         ),
         config,
         url,

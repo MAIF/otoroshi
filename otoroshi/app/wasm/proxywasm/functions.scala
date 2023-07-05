@@ -13,7 +13,10 @@ object ProxyWasmFunctions {
   private def getCurrentVmData(): VmData = {
     WasmContextSlot.getCurrentContext() match {
       case Some(data: VmData) => data
-      case _                  => throw new RuntimeException("missing vm data")
+      case _                  =>
+        println("missing vm data")
+        new RuntimeException("missing vm data").printStackTrace()
+        throw new RuntimeException("missing vm data")
     }
   }
 

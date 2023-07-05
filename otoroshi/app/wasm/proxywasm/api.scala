@@ -16,14 +16,14 @@ import play.api.mvc.RequestHeader
 import java.util.concurrent.atomic.AtomicReference
 
 object VmData {
-  def empty(): VmData                   = VmData(
-    "",
-    Map.empty,
-    -1,
-    new AtomicReference[mvc.Result](null),
-    new AtomicReference[ByteString](null),
-    new AtomicReference[ByteString](null),
-    None
+  def empty(): VmData = VmData(
+    configuration = "",
+    properties = Map.empty,
+    tickPeriod = -1,
+    respRef = new AtomicReference[mvc.Result](null),
+    bodyInRef = new AtomicReference[ByteString](null),
+    bodyOutRef = new AtomicReference[ByteString](null),
+    vm = None
   )
   def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
