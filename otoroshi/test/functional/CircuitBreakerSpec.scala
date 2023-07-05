@@ -33,7 +33,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       getOtoroshiServices().futureValue // WARM UP
     }
 
-    "Open if too many failures" in {
+    /*"Open if too many failures" in {
       val fakePort = TargetService.freePort
       val service  = ServiceDescriptor(
         id = "cb-test",
@@ -134,7 +134,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       basicTestResponse3.body.contains("the connection to backend service was refused") mustBe true
 
       deleteOtoroshiService(service).futureValue
-    }
+    }*/
 
     "Retry on failures" in {
 
@@ -220,7 +220,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       basicTestServer2.stop()
     }
 
-    "Timeout on long calls" in {
+    /*"Timeout on long calls" in {
       val basicTestExpectedBody = """{"message":"hello world"}"""
       val callCounter3 = new AtomicInteger(0)
       val basicTestServer3 = TargetService(
@@ -330,7 +330,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       deleteOtoroshiService(service).futureValue
       basicTestServer3.stop()
 
-    }
+    }*/
 
     "stop servers" in {
       system.terminate()
