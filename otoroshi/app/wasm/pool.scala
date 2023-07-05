@@ -38,6 +38,7 @@ case class WasmVm(index: Int, instance: OtoroshiInstance, pool: WasmVmPool) {
     Future.apply {
       try {
         action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
+        println(s"call vm ${index} with methode ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
         val res = action.parameters.call(instance)
         action.promise.trySuccess(res)
       } catch {

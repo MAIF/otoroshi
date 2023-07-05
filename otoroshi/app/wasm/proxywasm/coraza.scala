@@ -114,6 +114,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap, rootData: VmData) = {
+    println("proxyOnContexCreate")
+    // new Throwable().printStackTrace()
     val prs = new OtoroshiParameters(2)
       .pushInts(contextId, rootContextId)
     callPluginWithoutResults("proxy_on_context_create", prs, rootData, attrs) //, shouldBeCallOnce = true)
@@ -152,7 +154,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def proxyOnDelete(rootContextId: Int, attrs: TypedMap): Unit = {
     val prs      = new OtoroshiParameters(1).pushInt(rootContextId)
     val rootData = VmData.empty()
-    callPluginWithoutResults("proxy_on_done", prs, rootData, attrs)
+    callPluginWithoutResults("proxy_on_delete", prs, rootData, attrs)
   }
 
   def proxyStart(attrs: TypedMap, rootData: VmData): ResultsWrapper = {
@@ -181,7 +183,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -209,7 +211,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -234,7 +236,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -261,7 +263,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       data.httpResponse match {
         case None           =>
           Left(
-            play.api.mvc.Results.InternalServerError(Json.obj("error" -> "no http response in context"))
+            play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context: ${result.value}"))
           ) // TODO: not sure if okay
         case Some(response) => Left(response)
       }
@@ -276,27 +278,20 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val data = VmData.withRules(rules).copy(vm = vm.some)
     attrs.put(otoroshi.next.plugins.Keys.WasmVmKey -> vm)
 
-    proxyStart(attrs, data)
-
-    if (vm.initialized()) {
-      println("Let's reuse a pre configured slot")
+    vm.initialize {
+      proxyStart(attrs, data)
+      proxyCheckABIVersion(attrs, data)
+      // according to ABI, we should create a root context id before any operations
       proxyOnContexCreate(state.rootContextId, 0, attrs, data)
-      started.set(true)
-    } else {
-      vm.initialize {
-        proxyCheckABIVersion(attrs, data)
-        // according to ABI, we should create a root context id before any operations
-        proxyOnContexCreate(state.rootContextId, 0, attrs, data)
-        if (proxyOnVmStart(attrs, data)) {
-          if (proxyOnConfigure(state.rootContextId, attrs, data)) {
-            started.set(true)
-            //proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
-          } else {
-            logger.error("failed to configure coraza")
-          }
+      if (proxyOnVmStart(attrs, data)) {
+        if (proxyOnConfigure(state.rootContextId, attrs, data)) {
+          started.set(true)
+          //proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs)
         } else {
-          logger.error("failed to start coraza vm")
+          logger.error("failed to configure coraza")
         }
+      } else {
+        logger.error("failed to start coraza vm")
       }
     }
   }
@@ -408,12 +403,10 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   private val plugins = new LegitTrieMap[String, CorazaPlugin]()
 
-  println("NgCorazaWAF")
-
   private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = {
     val config          = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash      = config.json.stringify.sha512
-    val key             = "oto"//s"ref=${ref}&hash=${configHash}"
+    val key             = s"ref=${ref}&hash=${configHash}"
 
     val plugin = if (plugins.contains(key)) {
       plugins(key)
@@ -454,7 +447,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin = getPlugin(config.ref, ctx.attrs)
     //if (!plugin.isStarted()) {
-      plugin.start(ctx.attrs)
+    plugin.start(ctx.attrs)
     //}
     ().vfuture
   }
@@ -462,21 +455,17 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   override def afterRequest(
       ctx: NgAfterRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    val config          = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val ref: String     = config.ref
-    val extensionConfig = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
-    val configHash      = extensionConfig.json.stringify.sha512
-    val key             = s"ref=${ref}&hash=${configHash}"
-
-    plugins.get(key)
-      .map(plugin => {
-      plugin.stop(ctx.attrs)
-      plugins.remove(key)
-    })
-
-    val instance = ctx.attrs.get(otoroshi.next.plugins.Keys.WasmVmKey).get
-    instance.release()
-
+    //val config          = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    //val ref: String     = config.ref
+    //val extensionConfig = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
+    //val configHash      = extensionConfig.json.stringify.sha512
+    //val key             = s"ref=${ref}&hash=${configHash}"
+    //plugins.get(key)
+    //  .map(plugin => {
+    //  plugin.stop(ctx.attrs)
+    //  plugins.remove(key)
+    //})
+    ctx.attrs.get(otoroshi.next.plugins.Keys.WasmVmKey).foreach(_.release())
     ().vfuture
   }
 
