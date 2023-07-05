@@ -18,7 +18,6 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
-import scala.util.Try
 
 sealed trait WasmVmAction
 
@@ -137,9 +136,10 @@ object WasmVmPool {
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new OtoroshiEngine()
   private val instances = new TrieMap[String, WasmVmPool]()
-  def forPlugin(id: String)(implicit env: Env): WasmVmPool = {
-    // TODO: change hardcoded
-    instances.getOrElseUpdate(id, new WasmVmPool(id, None, 100, env))
+  def forPlugin(id: String, maxCalls: Int = Int.MaxValue)(implicit env: Env): WasmVmPool = {
+    instances.getOrUpdate(id) {
+      new WasmVmPool(id, None, maxCalls, env)
+    }
   }
   private[wasm] def removePlugin(id: String): Unit = instances.remove(id)
 }
@@ -151,11 +151,9 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   private val engine = new OtoroshiEngine()
   private val counter = new AtomicInteger(-1)
   private val templateRef = new AtomicReference[OtoroshiTemplate](null)
-  //private val allVms = new TrieMap[Int, WasmVm]()
-  //private val inUseVms = new TrieMap[Int, WasmVm]()
-  private val allVms = new ConcurrentLinkedQueue[WasmVm]()
+  private val availableVms = new ConcurrentLinkedQueue[WasmVm]()
   private val inUseVms = new ConcurrentLinkedQueue[WasmVm]()
-  private val creating = new AtomicBoolean(false)
+  private val creatingRef = new AtomicBoolean(false)
   private val lastPluginVersion = new AtomicReference[String](null)
   private val requestsSource = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
   private val prioritySource = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
@@ -167,7 +165,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       .run()(env.otoroshiMaterializer)._1
   }
 
-  private def handleAction(action: WasmVmPoolAction): Unit = {
+  private def handleAction(action: WasmVmPoolAction): Unit = try {
     wasmConfig() match {
       case None =>
         destroyCurrent()
@@ -176,15 +174,15 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       case Some(wcfg) => {
         val changed = hasChanged(wcfg)
         val available = hasAvailableVm(wcfg)
-        val create = isVmCreating()
+        val creating = isVmCreating()
         val atMax = atMaxPoolCapacity(wcfg)
         if (changed) {
-          WasmVmPool.logger.debug("plugin has changed, destroying old instances")
+          WasmVmPool.logger.warn("plugin has changed, destroying old instances")
           destroyCurrent()
           createVm(wcfg, action.options, "has changed")
         }
         if (!available) {
-          if (create) {
+          if (creating) {
             priorityQueue.offer(action)
             Future.successful(())
           } else {
@@ -192,7 +190,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
               priorityQueue.offer(action)
             } else {
               // create on
-              createVm(wcfg, action.options, s"create - changed: ${changed} - available: ${available} - create: ${create} - atMax: $atMax - ${wcfg.instances} - ${inUseVms.size()}")
+              createVm(wcfg, action.options, s"create - changed: ${changed} - available: ${available} - creating: ${creating} - atMax: $atMax - ${wcfg.instances} - ${inUseVms.size()}")
               val vm = acquireVm()
               action.provideVm(vm)
             }
@@ -203,16 +201,22 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
         }
       }
     }
+  } catch {
+    case t: Throwable => t.printStackTrace()
   }
 
   private def createVm(config: WasmConfig, options: WasmVmInitOptions, from: String): Unit = synchronized {
-    if (creating.compareAndSet(false, true)) {
+    if (creatingRef.compareAndSet(false, true)) {
       val index = counter.incrementAndGet()
       WasmVmPool.logger.debug(s"creating vm: ${index} - $from")
       if (templateRef.get() == null) {
-        // TODO: fix it
-        Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 10.seconds)
-        val wasm = WasmUtils.scriptCache(env).apply(config.source.cacheKey).asInstanceOf[CachedWasmScript].script
+        val cache = WasmUtils.scriptCache(env)
+        val key = config.source.cacheKey
+        if (!cache.contains(key)) {
+          WasmVmPool.logger.warn("fetching missing source")
+          Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds) // TODO: fix it
+        }
+        val wasm = cache(key).asInstanceOf[CachedWasmScript].script
         val hash = java.security.MessageDigest.getInstance("SHA-256")
           .digest(wasm.toArray)
           .map("%02x".format(_))
@@ -236,16 +240,16 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
       val vm = WasmVm(index, maxCalls, instance, memories, functions, this)
-      allVms.offer(vm)
-      creating.compareAndSet(true, false)
+      availableVms.offer(vm)
+      creatingRef.compareAndSet(true, false)
     }
   }
 
   private def acquireVm(): WasmVm = synchronized {
-    if (allVms.size() > 0) {
-      allVms.synchronized {
-        val vm = allVms.poll()
-        allVms.remove(vm)
+    if (availableVms.size() > 0) {
+      availableVms.synchronized {
+        val vm = availableVms.poll()
+        availableVms.remove(vm)
         inUseVms.offer(vm)
         vm
       }
@@ -255,14 +259,14 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 
   private[wasm] def release(vm: WasmVm, index: Int): Unit = synchronized {
-    allVms.synchronized {
-      allVms.offer(vm)
+    availableVms.synchronized {
+      availableVms.offer(vm)
       inUseVms.remove(vm)
     }
   }
 
   private[wasm] def ignore(vm: WasmVm): Unit = synchronized {
-    allVms.synchronized {
+    availableVms.synchronized {
       inUseVms.remove(vm)
     }
   }
@@ -271,18 +275,18 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
     optConfig.orElse(env.proxyState.wasmPlugin(pluginId).map(_.config))
   }
 
-  private def hasAvailableVm(plugin: WasmConfig): Boolean = allVms.size() > 0 && (inUseVms.size < plugin.instances)
+  private def hasAvailableVm(plugin: WasmConfig): Boolean = availableVms.size() > 0 && (inUseVms.size < plugin.instances)
 
-  private def isVmCreating(): Boolean = creating.get()
+  private def isVmCreating(): Boolean = creatingRef.get()
 
-  private def atMaxPoolCapacity(plugin: WasmConfig): Boolean = (allVms.size + inUseVms.size) >= plugin.instances
+  private def atMaxPoolCapacity(plugin: WasmConfig): Boolean = (availableVms.size + inUseVms.size) >= plugin.instances
 
-  private def destroyCurrent(): Unit = allVms.synchronized {
-    allVms.asScala.foreach(_.destroy())
-    allVms.clear()
+  private def destroyCurrent(): Unit = availableVms.synchronized {
+    availableVms.asScala.foreach(_.destroy())
+    availableVms.clear()
     inUseVms.clear()
     //counter.set(0)
-    creating.set(false)
+    creatingRef.set(false)
     lastPluginVersion.set(null)
   }
 
@@ -293,8 +297,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       lastPluginVersion.set(oldHash)
     }
     val currentHash = plugin.json.stringify.sha512
-    oldHash != currentHash // TODO: fix it
-    false
+    oldHash != currentHash
   }
 
   def getPooledVm(options: WasmVmInitOptions = WasmVmInitOptions.empty()): Future[WasmVm] = {

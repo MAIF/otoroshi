@@ -86,7 +86,9 @@ object WasmFunctionParameters {
     override def call(plugin: OtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
       plugin.extismCall(functionName, input.get.getBytes(StandardCharsets.UTF_8))
         .right
-        .map(str => (str, ResultsWrapper(new OtoroshiResults(0), plugin)))
+        .map { str =>
+          (str, ResultsWrapper(new OtoroshiResults(0), plugin))
+        }
     }
 
     override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(in = input.get)

@@ -438,7 +438,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = 1 
+          instances = 1
         ),
         config,
         url,
