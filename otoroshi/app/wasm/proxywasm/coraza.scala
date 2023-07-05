@@ -58,7 +58,7 @@ object CorazaPlugin {
 
 class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) {
 
-  println("new CorazaPlugin")
+  WasmVmPool.logger.debug("new CorazaPlugin")
 
   private implicit val ev = env
   private implicit val ec = env.otoroshiExecutionContext
@@ -74,7 +74,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
   private lazy val functions               = ProxyWasmFunctions.build(state)
-  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, env)
+  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, 500, env)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -89,6 +89,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                                attrs: TypedMap,
                                shouldBeCallOnce: Boolean = false): Either[JsValue, ResultsWrapper] = {
     val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
     vm.call(WasmFunctionParameters.NoResult(function, params), Some(data))
       .await(timeout)
       .map(res => {
@@ -106,6 +107,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                              shouldBeCallOnce: Boolean = false
   ): Future[ResultsWrapper] = {
     val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
     vm.call(WasmFunctionParameters.BothParamsResults(function, params, results), Some(data))
       .flatMap {
         case Left(err)           =>
@@ -132,7 +134,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Boolean = {
-    WasmUtils.traceHostVm("proxy_on_configure")
     val prs                    = new OtoroshiParameters(2)
       .pushInts(rootContextId, pluginConfigurationSize)
     val proxyOnConfigureAction = callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs, shouldBeCallOnce = true).await(timeout)
@@ -167,11 +168,16 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     callPluginWithoutResults("proxy_abi_version_0_2_0", new OtoroshiParameters(0), rootData, attrs, shouldBeCallOnce = true)
   }
 
+  def reportError(result: Result, vm: WasmVm): Unit = {
+    //println(s"[${vm.index}] error: ${result.value} - ${vm.calls} / ${vm.current}")
+  }
+
   def proxyOnRequestHeaders(
       contextId: Int,
       request: RequestHeader,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
+    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withRequest(request, attrs)(env)
     val endOfStream          = 1
     val sizeHeaders          = 0
@@ -182,6 +188,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
+          reportError(result, vm)
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 1: ${result.value}"))
           ) // TODO: not sure if okay
@@ -199,6 +206,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: ByteString,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
+    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withRequest(request, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream          = 1
@@ -210,6 +218,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
+          reportError(result, vm)
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 2: ${result.value}"))
           ) // TODO: not sure if okay
@@ -225,6 +234,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       response: NgPluginHttpResponse,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
+    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withResponse(response, attrs)(env)
     val endOfStream          = 1
     val sizeHeaders          = 0
@@ -235,6 +245,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
+          reportError(result, vm)
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 3: ${result.value}"))
           ) // TODO: not sure if okay
@@ -251,6 +262,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: ByteString,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
+    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withResponse(response, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream          = 1
@@ -262,6 +274,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
+          reportError(result, vm)
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 4: ${result.value}"))
           ) // TODO: not sure if okay
@@ -276,7 +289,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
     val vm = pool.getPooledVm(WasmVmInitOptions(false, functions)).await(timeout)
     // println(s"vm ${vm.index}")
-    val data = VmData.withRules(rules).copy(vm = vm.some)
+    val data = VmData.withRules(rules)
     attrs.put(otoroshi.next.plugins.Keys.CorazaWasmVmKey -> vm)
 
     vm.initialize {
@@ -307,7 +320,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
     val instance = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
 
-    val data = VmData.withRules(rules).copy(vm = instance.some)
+    val data = VmData.withRules(rules)
 
     proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs, data)
     val res  = for {
@@ -381,7 +394,7 @@ object NgCorazaWAFConfig {
 
 class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
-  println("new NgCorazaWAF")
+  WasmVmPool.logger.debug("new NgCorazaWAF")
 
   // TODO: avoid blocking calls for wasm calls
   // TODO: add job to preinstantiate plugin
@@ -425,7 +438,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = 1
+          instances = 1 
         ),
         config,
         url,

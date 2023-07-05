@@ -22,8 +22,7 @@ object VmData {
     tickPeriod = -1,
     respRef = new AtomicReference[mvc.Result](null),
     bodyInRef = new AtomicReference[ByteString](null),
-    bodyOutRef = new AtomicReference[ByteString](null),
-    vm = None
+    bodyOutRef = new AtomicReference[ByteString](null)
   )
   def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
   def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
@@ -35,7 +34,6 @@ object VmData {
       respRef = new AtomicReference[play.api.mvc.Result](null),
       bodyInRef = new AtomicReference[ByteString](null),
       bodyOutRef = new AtomicReference[ByteString](null),
-      vm = None,
       tickPeriod = -1,
       properties = Map(
         "plugin_name"         -> "foo".bytes,
@@ -90,7 +88,6 @@ case class VmData(
     respRef: AtomicReference[play.api.mvc.Result],
     bodyInRef: AtomicReference[ByteString],
     bodyOutRef: AtomicReference[ByteString],
-    vm: Option[WasmVm],
 ) extends OtoroshiHostUserData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
