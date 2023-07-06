@@ -94,4 +94,21 @@ object WasmFunctionParameters {
     override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(in = input.get)
     override def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
+
+  case class OPACall(functionName: String, pointers: Option[OPAWasmVm] = None, in: String) extends WasmFunctionParameters {
+    override def input: Option[String] = Some(in)
+
+    override def call(plugin: OtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
+      if (functionName == "initialize")
+        OPA.initialize(plugin)
+      else
+        OPA.evaluate(plugin, pointers.get.opaDataAddr, pointers.get.opaBaseHeapPtr, in)
+    }
+
+    override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(in = input.get)
+
+    override def withFunctionName(functionName: String): WasmFunctionParameters = this
+    override def parameters: Option[OtoroshiParameters] = None
+    override def resultSize: Option[Int] = None
+  }
 }

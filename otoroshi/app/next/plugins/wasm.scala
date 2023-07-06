@@ -924,47 +924,91 @@ class WasmOPA extends NgAccessValidator {
     opa = true
   ).some
 
+  private def onError(error: String, ctx: NgAccessContext, status: Option[Int] = Some(400))(implicit env: Env, ec: ExecutionContext) = Errors
+    .craftResponseResult(
+      error,
+      Results.Status(status.get),
+      ctx.request,
+      None,
+      None,
+      attrs = ctx.attrs,
+      maybeRoute = ctx.route.some
+    )
+    .map(r => NgAccess.NgDenied(r))
+
+  private def execute(vm: WasmVm, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext) = {
+    vm.call(WasmFunctionParameters.OPACall("execute", vm.opaPointers, ctx.wasmJson.stringify), None)
+      .flatMap {
+        case Right((rawResult, _)) =>
+          val response = Json.parse(rawResult)
+          val result = response.asOpt[JsArray].getOrElse(Json.arr())
+          val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
+          if (canAccess)
+            NgAccess.NgAllowed.vfuture
+          else
+            onError("Forbidden access", ctx, 403.some)
+        case Left(err) => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+      }
+      .andThen {
+        case _ => vm.release()
+      }
+  }
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    WasmUtils
-      .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
-      .flatMap {
-        case Right(res) =>
-          val response  = Json.parse(res)
-          AttrsHelper.updateAttrs(ctx.attrs, response)
-          val result    = response.asOpt[JsArray].getOrElse(Json.arr())
-          val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
-          if (canAccess) {
-            NgAccess.NgAllowed.vfuture
-          } else {
-            Errors
-              .craftResponseResult(
-                "Forbidden access",
-                Results.Status(403),
-                ctx.request,
-                None,
-                None,
-                attrs = ctx.attrs,
-                maybeRoute = ctx.route.some
-              )
-              .map(r => NgAccess.NgDenied(r))
-          }
-        case Left(err)  =>
-          Errors
-            .craftResponseResult(
-              (err \ "error").asOpt[String].getOrElse("An error occured"),
-              Results.Status(400),
-              ctx.request,
-              None,
-              None,
-              attrs = ctx.attrs,
-              maybeRoute = ctx.route.some
-            )
-            .map(r => NgAccess.NgDenied(r))
-      }
+    if (config.source.kind == WasmSourceKind.Local) {
+      val localPlugin = env.proxyState.wasmPlugin(config.source.path).get
+
+      localPlugin.pool()
+        .getPooledVm(WasmVmInitOptions.empty().copy(resetMemory = false))
+        .flatMap { vm =>
+          if (!vm.initialized()) {
+              vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
+                .flatMap {
+                  case Left(error) => onError(error.stringify, ctx)
+                  case Right(value) =>
+                    vm.initialize {
+                      val pointers = Json.parse(value._1)
+                      vm.opaPointers = OPAWasmVm(
+                        opaDataAddr = (pointers \"dataAddr").as[Int],
+                        opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
+                      ).some
+                    }
+                    execute(vm, ctx)
+                }
+          } else
+            execute(vm, ctx)
+        }
+      } else {
+        WasmUtils
+          .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
+          .flatMap {
+            case Right(res) =>
+              val response = Json.parse(res)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
+              val result = response.asOpt[JsArray].getOrElse(Json.arr())
+              val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
+              if (canAccess) {
+                NgAccess.NgAllowed.vfuture
+              } else {
+                Errors
+                  .craftResponseResult(
+                    "Forbidden access",
+                    Results.Status(403),
+                    ctx.request,
+                    None,
+                    None,
+                    attrs = ctx.attrs,
+                    maybeRoute = ctx.route.some
+                  )
+                  .map(r => NgAccess.NgDenied(r))
+              }
+            case Left(err) => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+        }
+    }
   }
 }
 

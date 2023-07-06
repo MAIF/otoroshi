@@ -34,7 +34,18 @@ object WasmVm {
   val logger = Logger("otoroshi-wasm-vm")
 }
 
-case class WasmVm(index: Int, maxCalls: Int, resetMemory: Boolean, instance: OtoroshiInstance, vmDataRef: AtomicReference[VmData], memories: Array[OtoroshiLinearMemory], functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]], pool: WasmVmPool) {
+case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
+
+case class WasmVm(index: Int,
+                  maxCalls: Int,
+                  resetMemory: Boolean,
+                  instance: OtoroshiInstance,
+                  vmDataRef: AtomicReference[VmData],
+                  memories: Array[OtoroshiLinearMemory],
+                  functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]],
+                  pool: WasmVmPool,
+
+                  var opaPointers: Option[OPAWasmVm] = None) {
 
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
   private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
@@ -73,7 +84,10 @@ case class WasmVm(index: Int, maxCalls: Int, resetMemory: Boolean, instance: Oto
           } catch {
             case t: Throwable => action.promise.tryFailure(t)
           } finally {
-            if (resetMemory) instance.reset()
+            if (resetMemory) {
+              println("RESET MEMORY")
+              instance.reset()
+            }
             WasmVm.logger.debug(s"functions: ${functions.size}")
             WasmVm.logger.debug(s"memories: ${memories.size}")
             // WasmContextSlot.clearCurrentContext()
@@ -96,6 +110,7 @@ case class WasmVm(index: Int, maxCalls: Int, resetMemory: Boolean, instance: Oto
 
   def destroy(): Unit = {
     if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"destroy vm: ${index}")
+    println("DESTROY VM")
     instance.close()
   }
 

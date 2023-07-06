@@ -491,11 +491,12 @@ class WasmContextSlot(
     } else {
       try {
         val res = env.metrics.withTimer("otoroshi.wasm.core.call-opa") {
-          OPA.evaluate(plugin, input)
+          val result = OPA.initialize(plugin).right
+          val str = result.get._1
+          val parts = str.split("@")
+          OPA.evaluate(plugin, parts(0).toInt, parts(1).toInt, input)
+            .map(r => r._1)
         }
-        // env.metrics.withTimer("otoroshi.wasm.core.reset") {
-        //   plugin.reset()
-        // }
         res
       } catch {
         case e: Throwable if e.getMessage.contains("wasm backtrace") =>

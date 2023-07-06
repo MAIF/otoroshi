@@ -1,16 +1,13 @@
 package otoroshi.wasm;
 
-import akka.stream.Materializer
 import org.extism.sdk.otoroshi._
-import otoroshi.env.Env
-import otoroshi.next.plugins.api.NgCachedConfigContext
-import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json.{JsString, JsValue}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import play.api.libs.json.{JsString, JsValue, Json}
 
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Optional
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext;
+import java.util.concurrent.atomic.AtomicReference;
 
 object OPA extends AwaitCapable {
 
@@ -193,32 +190,28 @@ object OPA extends AwaitCapable {
           raw_addr.getValue(0).v.i32
         ) == -1
       ) {
-        return JsString("Cant' write in memory").left
+        JsString("Cant' write in memory").left
+      } else {
+        parameters = new OtoroshiParameters(2)
+          .pushInts(raw_addr.getValue(0).v.i32, value_buf_len)
+        val parsed_addr = plugin.call(
+          "opa_json_parse",
+          parameters,
+          1
+        )
+
+        if (parsed_addr.getValue(0).v.i32 == 0) {
+          JsString("failed to parse json value").left
+        } else {
+          parsed_addr.getValue(0).v.i32.right
+        }
       }
-
-      parameters = new OtoroshiParameters(2)
-        .pushInts(raw_addr.getValue(0).v.i32, value_buf_len)
-      val parsed_addr = plugin.call(
-        "opa_json_parse",
-        parameters,
-        1
-      )
-
-      if (parsed_addr.getValue(0).v.i32 == 0) {
-        return JsString("failed to parse json value").left
-      }
-
-      parsed_addr.getValue(0).v.i32.right
     }
   }
 
-  def evaluate(plugin: OtoroshiInstance, input: String): Either[JsValue, String] = {
-    val entrypoint = 0
-
-    // TODO - read and load builtins functions by calling dumpJSON
-
+  def initialize(plugin: OtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
     loadJSON(plugin, "{}".getBytes(StandardCharsets.UTF_8))
-      .map(data_addr => {
+      .flatMap(dataAddr => {
         val base_heap_ptr = plugin.call(
           "opa_heap_ptr_get",
           new OtoroshiParameters(0),
@@ -226,29 +219,41 @@ object OPA extends AwaitCapable {
         )
 
         val data_heap_ptr = base_heap_ptr.getValue(0).v.i32
-
-        val input_len = input.getBytes(StandardCharsets.UTF_8).length
-        plugin.writeBytes(
-          input.getBytes(StandardCharsets.UTF_8),
-          input_len,
-          data_heap_ptr
-        )
-
-        val heap_ptr   = data_heap_ptr + input_len
-        val input_addr = data_heap_ptr
-
-        val ptr = new OtoroshiParameters(7)
-          .pushInts(0 , entrypoint, data_addr, input_addr, input_len, heap_ptr, 0)
-
-        val ret = plugin.call("opa_eval", ptr, 1)
-
-        val memory = plugin.getMemory("memory")
-
-        val mem: Array[Byte] = memory.getByteArray(ret.getValue(0).v.i32, 65356)
-        val size: Int        = lastValidByte(mem)
-
-        new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8)
+        (
+          Json.obj("dataAddr" -> dataAddr, "baseHeapPtr" -> data_heap_ptr).stringify,
+          ResultsWrapper(new OtoroshiResults(0))
+        ).right
       })
+  }
+
+  def evaluate(plugin: OtoroshiInstance, dataAddr: Int, baseHeapPtr: Int,  input: String): Either[JsValue, (String, ResultsWrapper)] = {
+    val entrypoint = 0
+    // TODO - read and load builtins functions by calling dumpJSON
+
+    val input_len = input.getBytes(StandardCharsets.UTF_8).length
+    plugin.writeBytes(
+      input.getBytes(StandardCharsets.UTF_8),
+      input_len,
+      baseHeapPtr
+    )
+
+    val heap_ptr   = baseHeapPtr + input_len
+    val input_addr = baseHeapPtr
+
+    val ptr = new OtoroshiParameters(7)
+      .pushInts(0 , entrypoint, dataAddr, input_addr, input_len, heap_ptr, 0)
+
+    val ret = plugin.call("opa_eval", ptr, 1)
+
+    val memory = plugin.getMemory("memory")
+
+    val offset: Int = ret.getValue(0).v.i32
+    val arraySize: Int = 65356
+
+    val mem: Array[Byte] = memory.getByteArray(offset, arraySize)
+    val size: Int        = lastValidByte(mem)
+
+    (new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8), ResultsWrapper(new OtoroshiResults(0))).right
   }
 
   def lastValidByte(arr: Array[Byte]): Int = {
