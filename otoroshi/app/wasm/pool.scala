@@ -34,7 +34,7 @@ object WasmVm {
   val logger = Logger("otoroshi-wasm-vm")
 }
 
-case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, vmDataRef: AtomicReference[VmData], memories: Array[OtoroshiLinearMemory], functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]], pool: WasmVmPool) {
+case class WasmVm(index: Int, maxCalls: Int, resetMemory: Boolean, instance: OtoroshiInstance, vmDataRef: AtomicReference[VmData], memories: Array[OtoroshiLinearMemory], functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]], pool: WasmVmPool) {
 
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
   private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
@@ -73,11 +73,11 @@ case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, vmDataR
           } catch {
             case t: Throwable => action.promise.tryFailure(t)
           } finally {
-            instance.reset()
+            if (resetMemory) instance.reset()
             WasmVm.logger.debug(s"functions: ${functions.size}")
             WasmVm.logger.debug(s"memories: ${memories.size}")
             // WasmContextSlot.clearCurrentContext()
-            vmDataRef.set(null)
+            // vmDataRef.set(null)
             val count = callCounter.incrementAndGet()
             if (count >= maxCalls) {
               callCounter.set(0)
@@ -241,7 +241,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       }
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
-      val vm = WasmVm(index, maxCalls, instance, vmDataRef, memories, functions, this)
+      val vm = WasmVm(index, maxCalls, options.resetMemory, instance, vmDataRef, memories, functions, this)
       availableVms.offer(vm)
       creatingRef.compareAndSet(true, false)
     }
@@ -309,8 +309,12 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 }
 
-case class WasmVmInitOptions(importDefaultHostFunctions: Boolean, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]])
+case class WasmVmInitOptions(importDefaultHostFunctions: Boolean, resetMemory: Boolean, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]])
 
 object WasmVmInitOptions {
-  def empty(): WasmVmInitOptions = WasmVmInitOptions(importDefaultHostFunctions = true, addHostFunctions = _ => Seq.empty)
+  def empty(): WasmVmInitOptions = WasmVmInitOptions(
+    importDefaultHostFunctions = true,
+    resetMemory = true,
+    addHostFunctions = _ => Seq.empty
+  )
 }

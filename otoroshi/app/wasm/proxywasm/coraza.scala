@@ -290,7 +290,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   def start(attrs: TypedMap): Unit = {
 
-    val vm = pool.getPooledVm(WasmVmInitOptions(false, createFunctions)).await(timeout)
+    val vm = pool.getPooledVm(WasmVmInitOptions(false, true, createFunctions)).await(timeout)
     // println(s"vm ${vm.index}")
     val data = VmData.withRules(rules)
     attrs.put(otoroshi.next.plugins.Keys.CorazaWasmVmKey -> vm)
@@ -441,7 +441,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = 1
+          instances = if (env.isDev) 4 else 1
         ),
         config,
         url,
