@@ -117,6 +117,14 @@ case class WasmVm(index: Int, maxCalls: Int, resetMemory: Boolean, instance: Oto
     }
   }
 
+  def finitialize[A](f: => Future[A]): Future[Unit] = {
+    if (initializedRef.compareAndSet(false, true)) {
+      f.map(_ => ())(pool.env.otoroshiExecutionContext)
+    } else {
+      ().vfuture
+    }
+  }
+
   def call(
     parameters: WasmFunctionParameters,
     context: Option[VmData],
