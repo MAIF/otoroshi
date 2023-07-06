@@ -7,7 +7,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.{NgMatchedRoute, NgRoute}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.{NgPreRoutingError, _}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script._
@@ -110,11 +110,14 @@ class WasmRouteMatcher extends NgRouteMatcher {
     val config      = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-    val res         =
-      Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.attrs.some, None), 10.seconds)
+    val fu = WasmVm.fromConfig(config).flatMap {
+      case None => Left(Json.obj("error" -> "plugin not found")).vfuture
+      case Some((vm, localConfig)) => vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("matches_route"), ctx.wasmJson.stringify), None)
+    }
+    val res = Await.result(fu, 10.seconds)
     res match {
       case Right(res) => {
-        val response = Json.parse(res)
+        val response = Json.parse(res._1)
         AttrsHelper.updateAttrs(ctx.attrs, response)
         (response \ "result").asOpt[Boolean].getOrElse(false)
       }
@@ -144,37 +147,52 @@ class WasmPreRoute extends NgPreRouting {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val input  = ctx.wasmJson
-    WasmUtils.execute(config, "pre_route", input, ctx.attrs.some, None).map {
-      case Left(err)     => Left(NgPreRoutingErrorWithResult(Results.InternalServerError(err)))
-      case Right(resStr) => {
-        Try(Json.parse(resStr)) match {
-          case Failure(e)        =>
-            Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> e.getMessage))))
-          case Success(response) => {
-            AttrsHelper.updateAttrs(ctx.attrs, response)
-            val error = response.select("error").asOpt[Boolean].getOrElse(false)
-            if (error) {
-              val body                         = BodyHelper.extractBodyFrom(response)
-              val headers: Map[String, String] = response
-                .select("headers")
-                .asOpt[Map[String, String]]
-                .getOrElse(Map("Content-Type" -> "application/json"))
-              val contentType                  = headers.getIgnoreCase("Content-Type").getOrElse("application/json")
-              Left(
-                NgPreRoutingErrorRaw(
-                  code = response.select("status").asOpt[Int].getOrElse(200),
-                  headers = headers,
-                  contentType = contentType,
-                  body = body
-                )
-              )
-            } else {
-              // TODO: handle attrs
-              Right(Done)
+    WasmVm.fromConfig(config).flatMap {
+      case None => Errors
+        .craftResponseResult(
+          "plugin not found !",
+          Results.Status(500),
+          ctx.request,
+          None,
+          None,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgPreRoutingErrorWithResult(r).left)
+      case Some((vm, localConfig)) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("pre_route"), input.stringify), None)
+          .map {
+            case Left(err) => Left(NgPreRoutingErrorWithResult(Results.InternalServerError(err)))
+            case Right(resStr) => {
+              Try(Json.parse(resStr._1)) match {
+                case Failure(e) =>
+                  Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> e.getMessage))))
+                case Success(response) => {
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  val error = response.select("error").asOpt[Boolean].getOrElse(false)
+                  if (error) {
+                    val body = BodyHelper.extractBodyFrom(response)
+                    val headers: Map[String, String] = response
+                      .select("headers")
+                      .asOpt[Map[String, String]]
+                      .getOrElse(Map("Content-Type" -> "application/json"))
+                    val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/json")
+                    Left(
+                      NgPreRoutingErrorRaw(
+                        code = response.select("status").asOpt[Int].getOrElse(200),
+                        headers = headers,
+                        contentType = contentType,
+                        body = body
+                      )
+                    )
+                  } else {
+                    // TODO: handle attrs
+                    Right(Done)
+                  }
+                }
+              }
             }
           }
-        }
-      }
     }
   }
 }
@@ -206,33 +224,49 @@ class WasmBackend extends NgBackendCall {
       .getOrElse(WasmConfig())
     WasmUtils.debugLog.debug("callBackend")
     ctx.wasmJson
-      .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.attrs.some, None))
-      .map {
-        case Right(output) =>
-          val response =
-            try {
-              Json.parse(output)
-            } catch {
-              case e: Exception =>
-                logger.error("error during json parsing", e)
-                Json.obj()
-            }
-          AttrsHelper.updateAttrs(ctx.attrs, response)
-          val body     = BodyHelper.extractBodyFrom(response)
-          bodyResponse(
-            status = response.select("status").asOpt[Int].getOrElse(200),
-            headers = response
-              .select("headers")
-              .asOpt[Map[String, String]]
-              .getOrElse(Map("Content-Type" -> "application/json")),
-            body = body.chunks(16 * 1024)
-          )
-        case Left(value)   =>
-          bodyResponse(
-            status = 400,
-            headers = Map.empty,
-            body = Json.stringify(value).byteString.chunks(16 * 1024)
-          )
+      .flatMap { input =>
+        WasmVm.fromConfig(config).flatMap {
+          case None => Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              ctx.rawRequest,
+              None,
+              None,
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
+          case Some((vm, localConfig)) =>
+            vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("call_backend"), input.stringify), None)
+              .map {
+                case Right(output) =>
+                  val response =
+                    try {
+                      Json.parse(output._1)
+                    } catch {
+                      case e: Exception =>
+                        logger.error("error during json parsing", e)
+                        Json.obj()
+                    }
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  val body = BodyHelper.extractBodyFrom(response)
+                  bodyResponse(
+                    status = response.select("status").asOpt[Int].getOrElse(200),
+                    headers = response
+                      .select("headers")
+                      .asOpt[Map[String, String]]
+                      .getOrElse(Map("Content-Type" -> "application/json")),
+                    body = body.chunks(16 * 1024)
+                  )
+                case Left(value) =>
+                  bodyResponse(
+                    status = 400,
+                    headers = Map.empty,
+                    body = Json.stringify(value).byteString.chunks(16 * 1024)
+                  )
+              }
+        }
       }
   }
 }
@@ -333,16 +367,19 @@ class WasmAccessValidator extends NgAccessValidator {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    val vmfc = if (config.source.kind == WasmSourceKind.Local) {
-      val localPlugin = env.proxyState.wasmPlugin(config.source.path).get
-      val localConfig = localPlugin.config
-      localPlugin.pool().getPooledVm().map(vm => (vm, localConfig))
-    } else {
-      config.pool().getPooledVm().map(vm => (vm, config))
-    }
-
-    vmfc.flatMap {
-      case (vm, localConfig) =>
+    WasmVm.fromConfig(config).flatMap {
+      case None => Errors
+        .craftResponseResult(
+          "plugin not found !",
+          Results.Status(500),
+          ctx.request,
+          None,
+          None,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgAccess.NgDenied(r))
+      case Some((vm, localConfig)) =>
         vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("access"), ctx.wasmJson.stringify), None)
           .flatMap {
             case Right(res) =>
@@ -448,40 +485,53 @@ class WasmRequestTransformer extends NgRequestTransformer {
       .getOrElse(WasmConfig())
     ctx.wasmJson
       .flatMap(input => {
-        WasmUtils
-          .execute(config, "transform_request", input, ctx.attrs.some, None)
-          .map {
-            case Right(res)  =>
-              val response = Json.parse(res)
-              AttrsHelper.updateAttrs(ctx.attrs, response)
-              if (response.select("error").asOpt[Boolean].getOrElse(false)) {
-                val status      = response.select("status").asOpt[Int].getOrElse(500)
-                val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
-                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
-                val body        = BodyHelper.extractBodyFrom(response)
-                Left(
-                  Results
-                    .Status(status)(body)
-                    .withCookies(cookies: _*)
-                    .withHeaders(headers.toSeq: _*)
-                    .as(contentType)
-                )
-              } else {
-                val body = BodyHelper.extractBodyFromOpt(response)
-                Right(
-                  ctx.otoroshiRequest.copy(
-                    // TODO: handle client cert chain and backend
-                    method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
-                    url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
-                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
-                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
-                  )
-                )
+        WasmVm.fromConfig(config).flatMap {
+          case None => Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => Left(r))
+          case Some((vm, localConfig)) =>
+            vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("transform_request"), input.stringify), None)
+              .map {
+                case Right(res) =>
+                  val response = Json.parse(res._1)
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  if (response.select("error").asOpt[Boolean].getOrElse(false)) {
+                    val status = response.select("status").asOpt[Int].getOrElse(500)
+                    val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                    val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                    val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
+                    val body = BodyHelper.extractBodyFrom(response)
+                    Left(
+                      Results
+                        .Status(status)(body)
+                        .withCookies(cookies: _*)
+                        .withHeaders(headers.toSeq: _*)
+                        .as(contentType)
+                    )
+                  } else {
+                    val body = BodyHelper.extractBodyFromOpt(response)
+                    Right(
+                      ctx.otoroshiRequest.copy(
+                        // TODO: handle client cert chain and backend
+                        method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
+                        url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
+                        headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
+                        cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
+                        body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
+                      )
+                    )
+                  }
+                case Left(value) => Left(Results.BadRequest(value))
               }
-            case Left(value) => Left(Results.BadRequest(value))
-          }
+        }
       })
   }
 }
@@ -513,38 +563,51 @@ class WasmResponseTransformer extends NgRequestTransformer {
       .getOrElse(WasmConfig())
     ctx.wasmJson
       .flatMap(input => {
-        WasmUtils
-          .execute(config, "transform_response", input, ctx.attrs.some, None)
-          .map {
-            case Right(res)  =>
-              val response = Json.parse(res)
-              AttrsHelper.updateAttrs(ctx.attrs, response)
-              if (response.select("error").asOpt[Boolean].getOrElse(false)) {
-                val status      = response.select("status").asOpt[Int].getOrElse(500)
-                val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
-                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
-                val body        = BodyHelper.extractBodyFrom(response)
-                Left(
-                  Results
-                    .Status(status)(body)
-                    .withCookies(cookies: _*)
-                    .withHeaders(headers.toSeq: _*)
-                    .as(contentType)
-                )
-              } else {
-                val body = BodyHelper.extractBodyFromOpt(response)
-                ctx.otoroshiResponse
-                  .copy(
-                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
-                    status = (response \ "status").asOpt[Int].getOrElse(200),
-                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
-                  )
-                  .right
+        WasmVm.fromConfig(config).flatMap {
+          case None => Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => Left(r))
+          case Some((vm, localConfig)) =>
+            vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("transform_response"), input.stringify), None)
+              .map {
+                case Right(res) =>
+                  val response = Json.parse(res._1)
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  if (response.select("error").asOpt[Boolean].getOrElse(false)) {
+                    val status = response.select("status").asOpt[Int].getOrElse(500)
+                    val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                    val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                    val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
+                    val body = BodyHelper.extractBodyFrom(response)
+                    Left(
+                      Results
+                        .Status(status)(body)
+                        .withCookies(cookies: _*)
+                        .withHeaders(headers.toSeq: _*)
+                        .as(contentType)
+                    )
+                  } else {
+                    val body = BodyHelper.extractBodyFromOpt(response)
+                    ctx.otoroshiResponse
+                      .copy(
+                        headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
+                        status = (response \ "status").asOpt[Int].getOrElse(200),
+                        cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
+                        body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
+                      )
+                      .right
+                  }
+                case Left(value) => Left(Results.BadRequest(value))
               }
-            case Left(value) => Left(Results.BadRequest(value))
-          }
+        }
       })
   }
 }
@@ -565,22 +628,19 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_)          => WasmConfig()
     }
-    val fu     = WasmUtils
-      .execute(
-        config.copy(functionName = "sink_matches".some),
-        "matches",
-        ctx.wasmJson,
-        ctx.attrs.some,
-        None
-      )
-      .map {
-        case Left(error) => false
-        case Right(res)  => {
-          val response = Json.parse(res)
-          AttrsHelper.updateAttrs(ctx.attrs, response)
-          (response \ "result").asOpt[Boolean].getOrElse(false)
-        }
-      }
+    val fu = WasmVm.fromConfig(config).flatMap {
+      case None => false.vfuture
+      case Some((vm, localConfig)) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall("sink_matches", ctx.wasmJson.stringify), None)
+          .map {
+            case Left(error) => false
+            case Right(res) => {
+              val response = Json.parse(res._1)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
+              (response \ "result").asOpt[Boolean].getOrElse(false)
+            }
+          }
+    }
     Await.result(fu, 10.seconds)
   }
 
@@ -603,39 +663,52 @@ class WasmSink extends NgRequestSink {
     }
     requestToWasmJson(ctx.body).flatMap { body =>
       val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
-      WasmUtils
-        .execute(config, "sink_handle", input, ctx.attrs.some, None)
-        .map {
-          case Left(error) => Results.InternalServerError(error)
-          case Right(res)  => {
-            val response = Json.parse(res)
-            AttrsHelper.updateAttrs(ctx.attrs, response)
-            val status   = response
-              .select("status")
-              .asOpt[Int]
-              .getOrElse(200)
 
-            val _headers    = response
-              .select("headers")
-              .asOpt[Map[String, String]]
-              .getOrElse(Map("Content-Type" -> "application/json"))
+      WasmVm.fromConfig(config).flatMap {
+        case None => Errors
+          .craftResponseResult(
+            "plugin not found !",
+            Results.Status(500),
+            ctx.request,
+            None,
+            None,
+            maybeRoute = None,
+            attrs = ctx.attrs
+          )
+        case Some((vm, localConfig)) =>
+          vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("sink_handle"), input.stringify), None)
+            .map {
+              case Left(error) => Results.InternalServerError(error)
+              case Right(res) => {
+                val response = Json.parse(res._1)
+                AttrsHelper.updateAttrs(ctx.attrs, response)
+                val status = response
+                  .select("status")
+                  .asOpt[Int]
+                  .getOrElse(200)
 
-            val contentType = _headers
-              .get("Content-Type")
-              .orElse(_headers.get("content-type"))
-              .getOrElse("application/json")
+                val _headers = response
+                  .select("headers")
+                  .asOpt[Map[String, String]]
+                  .getOrElse(Map("Content-Type" -> "application/json"))
 
-            val headers = _headers
-              .filterNot(_._1.toLowerCase() == "content-type")
+                val contentType = _headers
+                  .get("Content-Type")
+                  .orElse(_headers.get("content-type"))
+                  .getOrElse("application/json")
 
-            val body = BodyHelper.extractBodyFrom(response)
+                val headers = _headers
+                  .filterNot(_._1.toLowerCase() == "content-type")
 
-            Results
-              .Status(status)(body)
-              .withHeaders(headers.toSeq: _*)
-              .as(contentType)
-          }
-        }
+                val body = BodyHelper.extractBodyFrom(response)
+
+                Results
+                  .Status(status)(body)
+                  .withHeaders(headers.toSeq: _*)
+                  .as(contentType)
+              }
+            }
+      }
     }
   }
 }
@@ -706,37 +779,49 @@ class WasmRequestHandler extends RequestHandler {
           case Some(config) => {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
-              WasmUtils
-                .execute(config, "handle_request", Json.obj("request" -> json), None, None)
-                .flatMap {
-                  case Right(ok) => {
-                    val response                     = Json.parse(ok)
-                    val headers: Map[String, String] =
-                      response.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                    val contentLength: Option[Long]  = headers.getIgnoreCase("Content-Length").map(_.toLong)
-                    val contentType: Option[String]  = headers.getIgnoreCase("Content-Type")
-                    val status: Int                  = (response \ "status").asOpt[Int].getOrElse(200)
-                    val cookies: Seq[WSCookie]       = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty)
-                    val body: Source[ByteString, _]  =
-                      response.select("body").asOpt[String].map(b => ByteString(b)) match {
-                        case None    => ByteString.empty.singleSource
-                        case Some(b) => Source.single(b)
+              WasmVm.fromConfig(config).flatMap {
+                case None => Errors
+                  .craftResponseResult(
+                    "plugin not found !",
+                    Results.Status(500),
+                    request,
+                    None,
+                    None,
+                    maybeRoute = None,
+                    attrs = TypedMap.empty
+                  )
+                case Some((vm, localConfig)) =>
+                  vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("handle_request"), Json.obj("request" -> json).stringify), None)
+                    .flatMap {
+                      case Right(ok) => {
+                        val response = Json.parse(ok._1)
+                        val headers: Map[String, String] =
+                          response.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                        val contentLength: Option[Long] = headers.getIgnoreCase("Content-Length").map(_.toLong)
+                        val contentType: Option[String] = headers.getIgnoreCase("Content-Type")
+                        val status: Int = (response \ "status").asOpt[Int].getOrElse(200)
+                        val cookies: Seq[WSCookie] = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty)
+                        val body: Source[ByteString, _] =
+                          response.select("body").asOpt[String].map(b => ByteString(b)) match {
+                            case None => ByteString.empty.singleSource
+                            case Some(b) => Source.single(b)
+                          }
+                        Results
+                          .Status(status)
+                          .sendEntity(
+                            HttpEntity.Streamed(
+                              data = body,
+                              contentLength = contentLength,
+                              contentType = contentType
+                            )
+                          )
+                          .withHeaders(headers.toSeq: _*)
+                          .withCookies(cookies.map(_.toCookie): _*)
+                          .vfuture
                       }
-                    Results
-                      .Status(status)
-                      .sendEntity(
-                        HttpEntity.Streamed(
-                          data = body,
-                          contentLength = contentLength,
-                          contentType = contentType
-                        )
-                      )
-                      .withHeaders(headers.toSeq: _*)
-                      .withCookies(cookies.map(_.toCookie): _*)
-                      .vfuture
-                  }
-                  case Left(bad) => Results.InternalServerError(bad).vfuture
-                }
+                      case Left(bad) => Results.InternalServerError(bad).vfuture
+                    }
+              }
             }
           }
         }
@@ -799,18 +884,15 @@ class WasmJob(config: WasmJobsConfig) extends Job {
     None // TODO: make it configurable base on global env ???
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
-    WasmUtils
-      .execute(
-        config.config.copy(functionName = "job_start".some),
-        "job_start",
-        ctx.wasmJson,
-        attrs.some,
-        None
-      )
-      .map {
-        case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
-        case Right(_)  => ()
-      }
+    WasmVm.fromConfig(config.config).flatMap {
+      case None => Future.failed(new RuntimeException("no plugin found"))
+      case Some((vm, _)) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall("job_start", ctx.wasmJson.stringify), None)
+          .map {
+            case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
+            case Right(_) => ()
+          }
+    }
   } match {
     case Failure(e) =>
       logger.error("error during wasm job start", e)
@@ -818,31 +900,31 @@ class WasmJob(config: WasmJobsConfig) extends Job {
     case Success(s) => s
   }
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = Try {
-    WasmUtils
-      .execute(
-        config.config.copy(functionName = "job_stop".some),
-        "job_stop",
-        ctx.wasmJson,
-        attrs.some,
-        None
-      )
-      .map {
-        case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
-        case Right(_)  => ()
-      }
+    WasmVm.fromConfig(config.config).flatMap {
+      case None => Future.failed(new RuntimeException("no plugin found"))
+      case Some((vm, _)) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall("job_stop", ctx.wasmJson.stringify), None)
+          .map {
+            case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
+            case Right(_) => ()
+          }
+    }
   } match {
     case Failure(e) =>
       logger.error("error during wasm job stop", e)
       funit
     case Success(s) => s
   }
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
-    WasmUtils
-      .execute(config.config, "job_run", ctx.wasmJson, attrs.some, None)
-      .map {
-        case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
-        case Right(_)  => ()
-      }
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+    WasmVm.fromConfig(config.config).flatMap {
+      case None => Future.failed(new RuntimeException("no plugin found"))
+      case Some((vm, localConfig)) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall(config.config.functionName.orElse(localConfig.functionName).getOrElse("job_run"), ctx.wasmJson.stringify), None)
+          .map {
+            case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
+            case Right(_) => ()
+          }
+    }
   } match {
     case Failure(e) =>
       logger.error("error during wasm job run", e)
@@ -1033,11 +1115,17 @@ class WasmRouter extends NgRouter {
   override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     Await.result(
-      WasmUtils.execute(config, "find_route", ctx.json, ctx.attrs.some, None),
+      WasmVm.fromConfig(config).flatMap {
+        case None => Left(Json.obj("error" -> "plugin not found")).vfuture
+        case Some((vm, localConfig)) =>
+          val ret = vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("find_route"), ctx.json.stringify), None)
+          vm.release()
+          ret
+      },
       3.seconds
     ) match {
       case Right(res) =>
-        val response = Json.parse(res)
+        val response = Json.parse(res._1)
         AttrsHelper.updateAttrs(ctx.attrs, response)
         Try {
           NgMatchedRoute(

@@ -33,6 +33,19 @@ object WasmVmAction {
 
 object WasmVm {
   val logger = Logger("otoroshi-wasm-vm")
+  def fromConfig(config: WasmConfig)(implicit env: Env, ec: ExecutionContext): Future[Option[(WasmVm, WasmConfig)]] = {
+    if (config.source.kind == WasmSourceKind.Local) {
+      env.proxyState.wasmPlugin(config.source.path) match {
+        case None => None.vfuture
+        case Some(localPlugin) => {
+          val localConfig = localPlugin.config
+          localPlugin.pool().getPooledVm().map(vm => Some((vm, localConfig)))
+        }
+      }
+    } else {
+      config.pool().getPooledVm().map(vm => Some((vm, config)))
+    }
+  }
 }
 
 case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
