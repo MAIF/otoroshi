@@ -79,7 +79,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, 2000, env)
+  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, env)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -313,7 +313,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def start(attrs: TypedMap): Future[Unit] = {
-    pool.getPooledVm(WasmVmInitOptions(false, true, createFunctions)).flatMap { vm =>
+    pool.getPooledVm(WasmVmInitOptions(false, true, 2000, createFunctions)).flatMap { vm =>
       val data = VmData.withRules(rules)
       attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
       vm.finitialize {

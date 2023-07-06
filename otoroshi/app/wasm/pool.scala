@@ -6,6 +6,7 @@ import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.otoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
+import otoroshi.models.WasmPlugin
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
 import otoroshi.wasm.proxywasm.VmData
@@ -118,7 +119,7 @@ case class WasmVm(index: Int,
     if (killAtRelease.get()) {
       queue.offer(WasmVmAction.WasmVmKillAction)
     } else {
-      pool.release(this, index)
+      pool.release(this)
     }
   }
 
@@ -156,18 +157,28 @@ case class WasmVmPoolAction(promise: Promise[WasmVm], options: WasmVmInitOptions
 }
 
 object WasmVmPool {
+
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new OtoroshiEngine()
   private val instances = new TrieMap[String, WasmVmPool]()
-  def forPlugin(id: String, maxCalls: Int = Int.MaxValue)(implicit env: Env): WasmVmPool = {
-    instances.getOrUpdate(id) {
-      new WasmVmPool(id, None, maxCalls, env)
+
+  def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = {
+    instances.getOrUpdate(plugin.id) {
+      new WasmVmPool(plugin.id, None, env)
     }
   }
+
+  def forConfig(config: => WasmConfig)(implicit env: Env): WasmVmPool = {
+    // TODO: not sure if it works well with updated config
+    instances.getOrUpdate(config.source.cacheKey) {
+      new WasmVmPool(config.source.cacheKey, config.some, env)
+    }
+  }
+
   private[wasm] def removePlugin(id: String): Unit = instances.remove(id)
 }
 
-class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int, val env: Env) {
+class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env: Env) {
 
   WasmVmPool.logger.debug("new WasmVmPool")
 
@@ -192,8 +203,8 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
     wasmConfig() match {
       case None =>
         destroyCurrent()
-        WasmVmPool.removePlugin(pluginId)
-        Future.failed(new RuntimeException(s"No more plugin ${pluginId}"))
+        WasmVmPool.removePlugin(stableId)
+        Future.failed(new RuntimeException(s"No more plugin ${stableId}"))
       case Some(wcfg) => {
         val changed = hasChanged(wcfg)
         val available = hasAvailableVm(wcfg)
@@ -259,13 +270,13 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
       val vmDataRef = new AtomicReference[VmData](null)
       val addedFunctions =  options.addHostFunctions(vmDataRef)
       val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
-        HostFunctions.getFunctions(config, pluginId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
+        HostFunctions.getFunctions(config, stableId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
       } else {
         addedFunctions.toArray[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
       }
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
-      val vm = WasmVm(index, maxCalls, options.resetMemory, instance, vmDataRef, memories, functions, this)
+      val vm = WasmVm(index, options.maxCalls, options.resetMemory, instance, vmDataRef, memories, functions, this)
       availableVms.offer(vm)
       creatingRef.compareAndSet(true, false)
     }
@@ -284,7 +295,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
     }
   }
 
-  private[wasm] def release(vm: WasmVm, index: Int): Unit = synchronized {
+  private[wasm] def release(vm: WasmVm): Unit = synchronized {
     availableVms.synchronized {
       availableVms.offer(vm)
       inUseVms.remove(vm)
@@ -298,7 +309,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 
   private def wasmConfig(): Option[WasmConfig] = {
-    optConfig.orElse(env.proxyState.wasmPlugin(pluginId).map(_.config))
+    optConfig.orElse(env.proxyState.wasmPlugin(stableId).map(_.config))
   }
 
   private def hasAvailableVm(plugin: WasmConfig): Boolean = availableVms.size() > 0 && (inUseVms.size < plugin.instances)
@@ -333,12 +344,18 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 }
 
-case class WasmVmInitOptions(importDefaultHostFunctions: Boolean = true, resetMemory: Boolean = true, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = _ => Seq.empty)
+case class WasmVmInitOptions(
+  importDefaultHostFunctions: Boolean = true,
+  resetMemory: Boolean = true,
+  maxCalls: Int = Int.MaxValue,
+  addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = _ => Seq.empty
+)
 
 object WasmVmInitOptions {
   def empty(): WasmVmInitOptions = WasmVmInitOptions(
     importDefaultHostFunctions = true,
     resetMemory = true,
+    maxCalls = Int.MaxValue,
     addHostFunctions = _ => Seq.empty
   )
 }

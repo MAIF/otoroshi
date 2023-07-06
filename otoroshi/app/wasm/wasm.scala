@@ -331,6 +331,7 @@ case class WasmConfig(
     instances: Int = 1,
     authorizations: WasmAuthorizations = WasmAuthorizations()
 ) extends NgPluginConfig {
+  def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
   def json: JsValue = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,

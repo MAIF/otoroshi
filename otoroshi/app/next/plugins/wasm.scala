@@ -328,43 +328,35 @@ class WasmAccessValidator extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    if (config.source.kind == WasmSourceKind.Local) {
+    val vmfc = if (config.source.kind == WasmSourceKind.Local) {
       val localPlugin = env.proxyState.wasmPlugin(config.source.path).get
       val localConfig = localPlugin.config
-      localPlugin.pool()
-        .getPooledVm()
-        .flatMap { vm =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("access"), ctx.wasmJson.stringify), None)
-            .flatMap {
-              case Right(res) =>
-                val response = Json.parse(res._1)
-                AttrsHelper.updateAttrs(ctx.attrs, response)
-                val result = (response \ "result").asOpt[Boolean].getOrElse(false)
-                if (result) {
-                  NgAccess.NgAllowed.vfuture
-                } else {
-                  val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
-                  Errors
-                    .craftResponseResult(
-                      (error \ "message").asOpt[String].getOrElse("An error occured"),
-                      Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
-                      ctx.request,
-                      None,
-                      None,
-                      attrs = ctx.attrs,
-                      maybeRoute = ctx.route.some
-                    )
-                    .map(r => NgAccess.NgDenied(r))
-                }
-              case Left(err) =>
+      localPlugin.pool().getPooledVm().map(vm => (vm, localConfig))
+    } else {
+      config.pool().getPooledVm().map(vm => (vm, config))
+    }
+
+    vmfc.flatMap {
+      case (vm, localConfig) =>
+        vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("access"), ctx.wasmJson.stringify), None)
+          .flatMap {
+            case Right(res) =>
+              val response = Json.parse(res._1)
+              AttrsHelper.updateAttrs(ctx.attrs, response)
+              val result = (response \ "result").asOpt[Boolean].getOrElse(false)
+              if (result) {
+                NgAccess.NgAllowed.vfuture
+              } else {
+                val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
                 Errors
                   .craftResponseResult(
-                    (err \ "error").asOpt[String].getOrElse("An error occured"),
-                    Results.Status(400),
+                    (error \ "message").asOpt[String].getOrElse("An error occured"),
+                    Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
                     ctx.request,
                     None,
                     None,
@@ -372,27 +364,12 @@ class WasmAccessValidator extends NgAccessValidator {
                     maybeRoute = ctx.route.some
                   )
                   .map(r => NgAccess.NgDenied(r))
-            }
-            .andThen {
-              case _ => vm.release()
-            }
-        }
-    } else {
-      WasmUtils
-        .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
-        .flatMap {
-          case Right(res) =>
-            val response = Json.parse(res)
-            AttrsHelper.updateAttrs(ctx.attrs, response)
-            val result = (response \ "result").asOpt[Boolean].getOrElse(false)
-            if (result) {
-              NgAccess.NgAllowed.vfuture
-            } else {
-              val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
+              }
+            case Left(err) =>
               Errors
                 .craftResponseResult(
-                  (error \ "message").asOpt[String].getOrElse("An error occured"),
-                  Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
+                  (err \ "error").asOpt[String].getOrElse("An error occured"),
+                  Results.Status(400),
                   ctx.request,
                   None,
                   None,
@@ -400,21 +377,49 @@ class WasmAccessValidator extends NgAccessValidator {
                   maybeRoute = ctx.route.some
                 )
                 .map(r => NgAccess.NgDenied(r))
-            }
-          case Left(err) =>
-            Errors
-              .craftResponseResult(
-                (err \ "error").asOpt[String].getOrElse("An error occured"),
-                Results.Status(400),
-                ctx.request,
-                None,
-                None,
-                attrs = ctx.attrs,
-                maybeRoute = ctx.route.some
-              )
-              .map(r => NgAccess.NgDenied(r))
+          }
+          .andThen {
+            case _ => vm.release()
+          }
         }
-    }
+    //} else {
+    //  WasmUtils
+    //    .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
+    //    .flatMap {
+    //      case Right(res) =>
+    //        val response = Json.parse(res)
+    //        AttrsHelper.updateAttrs(ctx.attrs, response)
+    //        val result = (response \ "result").asOpt[Boolean].getOrElse(false)
+    //        if (result) {
+    //          NgAccess.NgAllowed.vfuture
+    //        } else {
+    //          val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
+    //          Errors
+    //            .craftResponseResult(
+    //              (error \ "message").asOpt[String].getOrElse("An error occured"),
+    //              Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
+    //              ctx.request,
+    //              None,
+    //              None,
+    //              attrs = ctx.attrs,
+    //              maybeRoute = ctx.route.some
+    //            )
+    //            .map(r => NgAccess.NgDenied(r))
+    //        }
+    //      case Left(err) =>
+    //        Errors
+    //          .craftResponseResult(
+    //            (err \ "error").asOpt[String].getOrElse("An error occured"),
+    //            Results.Status(400),
+    //            ctx.request,
+    //            None,
+    //            None,
+    //            attrs = ctx.attrs,
+    //            maybeRoute = ctx.route.some
+    //          )
+    //          .map(r => NgAccess.NgDenied(r))
+    //    }
+    //}
   }
 }
 
