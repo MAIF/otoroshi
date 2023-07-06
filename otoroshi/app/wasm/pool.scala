@@ -22,21 +22,19 @@ import scala.jdk.CollectionConverters._
 sealed trait WasmVmAction
 
 object WasmVmAction {
+  case object WasmVmKillAction extends WasmVmAction
   case class WasmVmCallAction(
     parameters: WasmFunctionParameters,
     context: Option[VmData],
     promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
   ) extends WasmVmAction
-  case object WasmVmKillAction extends WasmVmAction
 }
-
-
 
 object WasmVm {
   val logger = Logger("otoroshi-wasm-vm")
 }
 
-case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, memories: Array[OtoroshiLinearMemory], functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]], pool: WasmVmPool) {
+case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, vmDataRef: AtomicReference[VmData], memories: Array[OtoroshiLinearMemory], functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]], pool: WasmVmPool) {
 
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
   private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
@@ -60,7 +58,8 @@ case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, memorie
         case action: WasmVmAction.WasmVmCallAction => {
           try {
             inFlight.decrementAndGet()
-            action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
+            // action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
+            action.context.foreach(ctx => vmDataRef.set(ctx))
             if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"call vm ${index} with method ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
             val res = action.parameters.call(instance)
             if (res.isRight && res.right.get._2.results.getValues() != null) {
@@ -77,7 +76,8 @@ case class WasmVm(index: Int, maxCalls: Int, instance: OtoroshiInstance, memorie
             instance.reset()
             WasmVm.logger.debug(s"functions: ${functions.size}")
             WasmVm.logger.debug(s"memories: ${memories.size}")
-            WasmContextSlot.clearCurrentContext()
+            // WasmContextSlot.clearCurrentContext()
+            vmDataRef.set(null)
             val count = callCounter.incrementAndGet()
             if (count >= maxCalls) {
               callCounter.set(0)
@@ -232,14 +232,16 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
         )))
       }
       val template = templateRef.get()
+      val vmDataRef = new AtomicReference[VmData](null)
+      val addedFunctions =  options.addHostFunctions(vmDataRef)
       val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
-        HostFunctions.getFunctions(config, pluginId, None)(env, env.otoroshiExecutionContext) ++ options.addHostFunctions
+        HostFunctions.getFunctions(config, pluginId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
       } else {
-        options.addHostFunctions.toArray[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+        addedFunctions.toArray[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
       }
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
-      val vm = WasmVm(index, maxCalls, instance, memories, functions, this)
+      val vm = WasmVm(index, maxCalls, instance, vmDataRef, memories, functions, this)
       availableVms.offer(vm)
       creatingRef.compareAndSet(true, false)
     }
@@ -307,8 +309,8 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 }
 
-case class WasmVmInitOptions(importDefaultHostFunctions: Boolean, addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]])
+case class WasmVmInitOptions(importDefaultHostFunctions: Boolean, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]])
 
 object WasmVmInitOptions {
-  def empty(): WasmVmInitOptions = WasmVmInitOptions(importDefaultHostFunctions = true, addHostFunctions = Seq.empty)
+  def empty(): WasmVmInitOptions = WasmVmInitOptions(importDefaultHostFunctions = true, addHostFunctions = _ => Seq.empty)
 }

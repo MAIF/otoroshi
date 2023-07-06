@@ -145,7 +145,8 @@ trait Api {
       responseBodySize: Int,
       additionalHeadersMapData: Int,
       additionalHeadersSize: Int,
-      grpcStatus: Int
+      grpcStatus: Int,
+      vmData: VmData,
   ): Result
 
   def proxyResumeHttpStream(plugin: OtoroshiInternal, streamType: StreamType): Result

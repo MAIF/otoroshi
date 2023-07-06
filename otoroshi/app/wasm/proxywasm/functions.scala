@@ -6,23 +6,34 @@ import otoroshi.env.Env
 import otoroshi.wasm._
 
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 
 object ProxyWasmFunctions {
 
-  private def getCurrentVmData(): VmData = {
-    WasmContextSlot.getCurrentContext() match {
-      case Some(data: VmData) => data
-      case _                  =>
-        println("missing vm data")
-        new RuntimeException("missing vm data").printStackTrace()
-        throw new RuntimeException("missing vm data")
-    }
-  }
+  //private def getCurrentVmData(): VmData = {
+  //  WasmContextSlot.getCurrentContext() match {
+  //    case Some(data: VmData) => data
+  //    case _                  =>
+  //      println("missing vm data")
+  //      new RuntimeException("missing vm data").printStackTrace()
+  //      throw new RuntimeException("missing vm data")
+  //  }
+  //}
 
   def build(
-      state: ProxyWasmState
+      state: ProxyWasmState,
+      vmDataRef: AtomicReference[VmData],
   )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[OtoroshiHostFunction[EnvUserData]] = {
+    def getCurrentVmData(): VmData = {
+      Option(vmDataRef.get()) match {
+        case Some(data: VmData) => data
+        case _ =>
+          println("missing vm data")
+          new RuntimeException("missing vm data").printStackTrace()
+          throw new RuntimeException("missing vm data")
+      }
+    }
     Seq(
       new OtoroshiHostFunction[EnvUserData](
         "proxy_log",
@@ -220,7 +231,8 @@ object ProxyWasmFunctions {
             params(4).v.i32,
             params(5).v.i32,
             params(6).v.i32,
-            params(7).v.i32
+            params(7).v.i32,
+            getCurrentVmData(),
           ),
         Optional.empty[EnvUserData]()
       )

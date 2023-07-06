@@ -411,10 +411,10 @@ object WasmConfig {
 }
 
 object WasmContextSlot                                                 {
-  private val _currentContext                     = new ThreadLocal[Any]()
-  def getCurrentContext(): Option[Any]            = Option(_currentContext.get())
-  private[wasm] def setCurrentContext(value: Any): Unit = _currentContext.set(value)
-  private[wasm] def clearCurrentContext(): Unit         = _currentContext.remove()
+  // private val _currentContext                     = new ThreadLocal[Any]()
+  // def getCurrentContext(): Option[Any]            = Option(_currentContext.get())
+  // private[wasm] def setCurrentContext(value: Any): Unit = _currentContext.set(value)
+  // private[wasm] def clearCurrentContext(): Unit         = _currentContext.remove()
 }
 object ResultsWrapper                                                  {
   def apply(results: OtoroshiResults): ResultsWrapper                 = new ResultsWrapper(results, None)
@@ -453,7 +453,7 @@ class WasmContextSlot(
       plug.callSync(wasmFunctionParameters, context)
     } else {
       try {
-        context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
+        // context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"calling instance $id-$instance")
         WasmUtils.debugLog.debug(s"calling '${wasmFunctionParameters.functionName}' on instance '$id-$instance'")
         val res: Either[JsValue, (String, ResultsWrapper)] = env.metrics.withTimer("otoroshi.wasm.core.call") {
@@ -479,7 +479,7 @@ class WasmContextSlot(
           WasmUtils.logger.error(s"error while invoking wasm function '${wasmFunctionParameters.functionName}'", e)
           Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
       } finally {
-        context.foreach(ctx => WasmContextSlot.clearCurrentContext())
+        // context.foreach(ctx => WasmContextSlot.clearCurrentContext())
       }
     }
   }

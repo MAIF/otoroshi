@@ -15,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 class ProxyWasmState(
     val rootContextId: Int,
@@ -75,7 +75,8 @@ class ProxyWasmState(
       responseBodySize: Int,
       additionalHeadersMapData: Int,
       additionalHeadersSize: Int,
-      grpcStatus: Int
+      grpcStatus: Int,
+      vmData: VmData,
   ): Result = {
     traceVmHost(s"proxy_send_http_response: ${responseCode} - ${grpcStatus}")
     for {
@@ -83,7 +84,7 @@ class ProxyWasmState(
       body        <- getMemory(plugin, responseBodyData, responseBodySize)
       addHeaders  <- getMemory(plugin, additionalHeadersMapData, additionalHeadersSize)
     } yield {
-      WasmContextSlot.getCurrentContext().map(_.asInstanceOf[VmData]).foreach { vmdata =>
+      //WasmContextSlot.getCurrentContext().map(_.asInstanceOf[VmData]).foreach { vmdata =>
         // Json.obj(
         //   "http_status" -> responseCode,
         //   "grpc_code" -> grpcStatus,
@@ -91,13 +92,13 @@ class ProxyWasmState(
         //   "body" -> body._2.utf8String,
         //   "headers" -> addHeaders._2.utf8String,
         // ).prettify.debugPrintln
-        vmdata.respRef.set(
+      vmData.respRef.set(
           play.api.mvc.Results
             .Status(responseCode)(body._2)
             .withHeaders()    // TODO: read it
             .as("text/plain") // TODO: change it
         )
-      }
+      //}
     }
     ResultOk
   }

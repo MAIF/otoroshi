@@ -73,7 +73,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val functions               = ProxyWasmFunctions.build(state)
   private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, 500, env)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
@@ -81,6 +80,10 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def isStarted(): Boolean = started.get()
+
+  def createFunctions(ref: AtomicReference[VmData]): Seq[OtoroshiHostFunction[EnvUserData]] = {
+    ProxyWasmFunctions.build(state, ref)
+  }
 
   def callPluginWithoutResults(
                                function: String,
@@ -168,8 +171,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     callPluginWithoutResults("proxy_abi_version_0_2_0", new OtoroshiParameters(0), rootData, attrs, shouldBeCallOnce = true)
   }
 
-  def reportError(result: Result, vm: WasmVm): Unit = {
-    //println(s"[${vm.index}] error: ${result.value} - ${vm.calls} / ${vm.current}")
+  def reportError(result: Result, vm: WasmVm, from: String): Unit = {
+    println(s"[${vm.index}] from: $from - error: ${result.value} - ${vm.calls} / ${vm.current}")
   }
 
   def proxyOnRequestHeaders(
@@ -188,7 +191,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
-          reportError(result, vm)
+          reportError(result, vm, "proxyOnRequestHeaders")
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 1: ${result.value}"))
           ) // TODO: not sure if okay
@@ -218,7 +221,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
-          reportError(result, vm)
+          reportError(result, vm, "proxyOnRequestBody")
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 2: ${result.value}"))
           ) // TODO: not sure if okay
@@ -245,7 +248,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
-          reportError(result, vm)
+          reportError(result, vm, "proxyOnResponseHeaders")
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 3: ${result.value}"))
           ) // TODO: not sure if okay
@@ -274,7 +277,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     if (result != Result.ResultOk || data.httpResponse.isDefined) {
       data.httpResponse match {
         case None           =>
-          reportError(result, vm)
+          reportError(result, vm, "proxyOnResponseBody")
           Left(
             play.api.mvc.Results.InternalServerError(Json.obj("error" -> s"no http response in context 4: ${result.value}"))
           ) // TODO: not sure if okay
@@ -287,7 +290,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   def start(attrs: TypedMap): Unit = {
 
-    val vm = pool.getPooledVm(WasmVmInitOptions(false, functions)).await(timeout)
+    val vm = pool.getPooledVm(WasmVmInitOptions(false, createFunctions)).await(timeout)
     // println(s"vm ${vm.index}")
     val data = VmData.withRules(rules)
     attrs.put(otoroshi.next.plugins.Keys.CorazaWasmVmKey -> vm)
