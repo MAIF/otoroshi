@@ -6,7 +6,7 @@ import com.sksamuel.exts.concurrent.Futures.RichFuture
 import org.extism.sdk.otoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
-import org.extism.sdk.otoroshi.{OtoroshiTemplate}
+import org.extism.sdk.otoroshi.OtoroshiTemplate
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
@@ -21,6 +21,7 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
 import play.api.libs.json._
 import play.api._
+import play.api.libs.typedmap.TypedKey
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic._
@@ -54,6 +55,11 @@ object CorazaPlugin {
     |  "metric_labels": {},
     |  "per_authority_directives": {}
     |}""".stripMargin.parseJson
+}
+
+object CorazaPluginKeys {
+  val CorazaContextIdKey = TypedKey[Int]("otoroshi.next.plugins.CorazaContextId")
+  val CorazaWasmVmKey = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 }
 
 class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) {
@@ -91,7 +97,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                                data: VmData,
                                attrs: TypedMap,
                                shouldBeCallOnce: Boolean = false): Either[JsValue, ResultsWrapper] = {
-    attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey) match {
+    attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None =>
         logger.error("no vm found in attrs")
         Left(Json.obj("error" -> "no vm found in attrs"))
@@ -115,7 +121,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                              attrs: TypedMap,
                              shouldBeCallOnce: Boolean = false
   ): Future[ResultsWrapper] = {
-    attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey) match {
+    attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None =>
         logger.error("no vm found in attrs")
         Future.failed(new RuntimeException("no vm found in attrs"))
@@ -192,7 +198,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       request: RequestHeader,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    val vm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withRequest(request, attrs)(env)
     val endOfStream          = 1
     val sizeHeaders          = 0
@@ -221,7 +227,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: ByteString,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    val vm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withRequest(request, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream          = 1
@@ -249,7 +255,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       response: NgPluginHttpResponse,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    val vm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withResponse(response, attrs)(env)
     val endOfStream          = 1
     val sizeHeaders          = 0
@@ -277,7 +283,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: ByteString,
       attrs: TypedMap
   ): Either[play.api.mvc.Result, Unit] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    val vm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data                 = VmData.empty().withResponse(response, attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream          = 1
@@ -305,7 +311,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     val vm = pool.getPooledVm(WasmVmInitOptions(false, true, createFunctions)).await(timeout)
     // println(s"vm ${vm.index}")
     val data = VmData.withRules(rules)
-    attrs.put(otoroshi.next.plugins.Keys.CorazaWasmVmKey -> vm)
+    attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
 
     vm.initialize {
       proxyStart(attrs, data)
@@ -332,8 +338,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   // TODO - need to save VmData in attrs to get it from the start function and reuse the same slotId
   def runRequestPath(request: RequestHeader, attrs: TypedMap): NgAccess = {
     val contId = contextId.incrementAndGet()
-    attrs.put(otoroshi.next.plugins.Keys.CorazaContextIdKey -> contId)
-    val instance = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
+    attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey -> contId)
+    val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
 
     val data = VmData.withRules(rules)
 
@@ -356,7 +362,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: Option[ByteString],
       attrs: TypedMap
   ): Either[mvc.Result, Unit] = {
-    val contId = attrs.get(otoroshi.next.plugins.Keys.CorazaContextIdKey).get
+    val contId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).get
     val res = for {
       _ <- if (body_bytes.isDefined) proxyOnRequestBody(contId, request, req, body_bytes.get, attrs)
            else Right(())
@@ -377,7 +383,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: Option[ByteString],
       attrs: TypedMap
   ): Either[mvc.Result, Unit] = {
-    val contId = attrs.get(otoroshi.next.plugins.Keys.CorazaContextIdKey).get
+    val contId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).get
     val res = for {
       _ <- proxyOnResponseHeaders(contId, response, attrs)
       _ <- if (body_bytes.isDefined) proxyOnResponseBody(contId, response, body_bytes.get, attrs)
@@ -485,7 +491,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   override def afterRequest(
       ctx: NgAfterRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    ctx.attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).foreach(_.release())
+    ctx.attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).foreach(_.release())
     ().vfuture
   }
 

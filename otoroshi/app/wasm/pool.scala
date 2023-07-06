@@ -310,7 +310,7 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
   }
 }
 
-case class WasmVmInitOptions(importDefaultHostFunctions: Boolean, resetMemory: Boolean, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]])
+case class WasmVmInitOptions(importDefaultHostFunctions: Boolean = true, resetMemory: Boolean = true, addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = _ => Seq.empty)
 
 object WasmVmInitOptions {
   def empty(): WasmVmInitOptions = WasmVmInitOptions(
