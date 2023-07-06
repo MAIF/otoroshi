@@ -338,7 +338,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def stop(attrs: TypedMap): Future[Unit] = {
     ().vfuture
   }
-
   // TODO - need to save VmData in attrs to get it from the start function and reuse the same slotId
   def runRequestPath(request: RequestHeader, attrs: TypedMap): Future[NgAccess] = {
     val contId = contextId.incrementAndGet()
@@ -416,10 +415,6 @@ object NgCorazaWAFConfig {
 class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   WasmVmPool.logger.debug("new NgCorazaWAF")
-
-  // TODO: avoid blocking calls for wasm calls
-  // TODO: add job to preinstantiate plugin
-  // TODO: add coraza.wasm build in the release process
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
