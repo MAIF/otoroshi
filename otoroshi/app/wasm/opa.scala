@@ -229,7 +229,6 @@ object OPA extends AwaitCapable {
   def evaluate(plugin: OtoroshiInstance, dataAddr: Int, baseHeapPtr: Int,  input: String): Either[JsValue, (String, ResultsWrapper)] = {
     val entrypoint = 0
     // TODO - read and load builtins functions by calling dumpJSON
-
     val input_len = input.getBytes(StandardCharsets.UTF_8).length
     plugin.writeBytes(
       input.getBytes(StandardCharsets.UTF_8),
