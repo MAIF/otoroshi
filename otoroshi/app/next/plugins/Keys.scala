@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 
 object Keys {
-  val CorazaWasmVmKey            = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVmKey")
+  val CorazaContextIdKey          = TypedKey[Int]("otoroshi.next.plugins.CorazaContextId")
+  val CorazaWasmVmKey            = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
   val MatchedRoutesKey           = TypedKey[Seq[String]]("otoroshi.next.core.MatchedRoutes")
   val ContextualPluginsKey       = TypedKey[NgContextualPlugins]("otoroshi.next.core.ContextualPlugins")
   val ReportKey                  = TypedKey[NgExecutionReport]("otoroshi.next.core.Report")

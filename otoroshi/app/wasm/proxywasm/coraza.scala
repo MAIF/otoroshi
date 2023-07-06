@@ -91,14 +91,20 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                                data: VmData,
                                attrs: TypedMap,
                                shouldBeCallOnce: Boolean = false): Either[JsValue, ResultsWrapper] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
-    WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-    vm.call(WasmFunctionParameters.NoResult(function, params), Some(data))
-      .await(timeout)
-      .map(res => {
-        res._2.free()
-        res._2
-      })
+    attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey) match {
+      case None =>
+        logger.error("no vm found in attrs")
+        Left(Json.obj("error" -> "no vm found in attrs"))
+      case Some(vm) => {
+        WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
+        vm.call(WasmFunctionParameters.NoResult(function, params), Some(data))
+          .await(timeout)
+          .map(res => {
+            res._2.free()
+            res._2
+          })
+      }
+    }
   }
 
   def callPluginWithResults(
@@ -109,15 +115,21 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
                              attrs: TypedMap,
                              shouldBeCallOnce: Boolean = false
   ): Future[ResultsWrapper] = {
-    val vm = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
-    WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-    vm.call(WasmFunctionParameters.BothParamsResults(function, params, results), Some(data))
-      .flatMap {
-        case Left(err)           =>
-          logger.error(s"error while calling plugin: ${err}")
-          Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
-        case Right((_, results)) => results.vfuture
+    attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey) match {
+      case None =>
+        logger.error("no vm found in attrs")
+        Future.failed(new RuntimeException("no vm found in attrs"))
+      case Some(vm) => {
+        WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
+        vm.call(WasmFunctionParameters.BothParamsResults(function, params, results), Some(data))
+          .flatMap {
+            case Left(err) =>
+              logger.error(s"error while calling plugin: ${err}")
+              Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
+            case Right((_, results)) => results.vfuture
+          }
       }
+    }
   }
 
   def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap, rootData: VmData) = {
@@ -319,20 +331,20 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   // TODO - need to save VmData in attrs to get it from the start function and reuse the same slotId
   def runRequestPath(request: RequestHeader, attrs: TypedMap): NgAccess = {
-    contextId.incrementAndGet()
-
+    val contId = contextId.incrementAndGet()
+    attrs.put(otoroshi.next.plugins.Keys.CorazaContextIdKey -> contId)
     val instance = attrs.get(otoroshi.next.plugins.Keys.CorazaWasmVmKey).get
 
     val data = VmData.withRules(rules)
 
-    proxyOnContexCreate(state.contextId.get(), state.rootContextId, attrs, data)
+    proxyOnContexCreate(contId, state.rootContextId, attrs, data)
     val res  = for {
-      _ <- proxyOnRequestHeaders(state.contextId.get(), request, attrs)
+      _ <- proxyOnRequestHeaders(contId, request, attrs)
     } yield ()
     res match {
       case Left(errRes) =>
-        proxyOnDone(state.contextId.get(), attrs)
-        proxyOnDelete(state.contextId.get(), attrs)
+        proxyOnDone(contId, attrs)
+        proxyOnDelete(contId, attrs)
         NgAccess.NgDenied(errRes)
       case Right(_)     => NgAccess.NgAllowed
     }
@@ -344,16 +356,17 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: Option[ByteString],
       attrs: TypedMap
   ): Either[mvc.Result, Unit] = {
+    val contId = attrs.get(otoroshi.next.plugins.Keys.CorazaContextIdKey).get
     val res = for {
-      _ <- if (body_bytes.isDefined) proxyOnRequestBody(state.contextId.get(), request, req, body_bytes.get, attrs)
+      _ <- if (body_bytes.isDefined) proxyOnRequestBody(contId, request, req, body_bytes.get, attrs)
            else Right(())
       // proxy_on_http_request_trailers
       // proxy_on_http_request_metadata : H2 only
     } yield ()
     res match {
       case Left(errRes) =>
-        proxyOnDone(state.contextId.get(), attrs)
-        proxyOnDelete(state.contextId.get(), attrs)
+        proxyOnDone(contId, attrs)
+        proxyOnDelete(contId, attrs)
         Left(errRes)
       case Right(_)     => Right(())
     }
@@ -364,15 +377,16 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       body_bytes: Option[ByteString],
       attrs: TypedMap
   ): Either[mvc.Result, Unit] = {
+    val contId = attrs.get(otoroshi.next.plugins.Keys.CorazaContextIdKey).get
     val res = for {
-      _ <- proxyOnResponseHeaders(state.contextId.get(), response, attrs)
-      _ <- if (body_bytes.isDefined) proxyOnResponseBody(state.contextId.get(), response, body_bytes.get, attrs)
+      _ <- proxyOnResponseHeaders(contId, response, attrs)
+      _ <- if (body_bytes.isDefined) proxyOnResponseBody(contId, response, body_bytes.get, attrs)
            else Right(())
       // proxy_on_http_response_trailers
       // proxy_on_http_response_metadata : H2 only
     } yield ()
-    proxyOnDone(state.contextId.get(), attrs)
-    proxyOnDelete(state.contextId.get(), attrs)
+    proxyOnDone(contId, attrs)
+    proxyOnDelete(contId, attrs)
     res
   }
 }
@@ -441,7 +455,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = if (env.isDev) 4 else 1
+          instances = 100 //if (env.isDev) 20 else 20
         ),
         config,
         url,

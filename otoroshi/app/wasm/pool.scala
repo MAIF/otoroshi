@@ -191,8 +191,9 @@ class WasmVmPool(pluginId: String, optConfig: Option[WasmConfig], maxCalls: Int,
             } else {
               // create on
               createVm(wcfg, action.options, s"create - changed: ${changed} - available: ${available} - creating: ${creating} - atMax: $atMax - ${wcfg.instances} - ${inUseVms.size()}")
-              val vm = acquireVm()
-              action.provideVm(vm)
+              priorityQueue.offer(action)
+              // val vm = acquireVm()
+              // action.provideVm(vm)
             }
           }
         } else {
