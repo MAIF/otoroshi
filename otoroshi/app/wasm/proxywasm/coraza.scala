@@ -73,7 +73,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, 500, env)
+  private lazy val pool: WasmVmPool = new WasmVmPool(key, wasm.some, 2000, env)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -455,7 +455,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           functionName = None,
           wasi = true,
           lifetime = WasmVmLifetime.Forever,
-          instances = 100 //if (env.isDev) 20 else 20
+          instances = config.poolCapacity
         ),
         config,
         url,
@@ -553,7 +553,8 @@ case class CorazaWafConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     inspectBody: Boolean,
-    config: JsObject
+    config: JsObject,
+    poolCapacity: Int,
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = CorazaWafConfig.format.writes(this)
@@ -572,7 +573,8 @@ object CorazaWafConfig {
     metadata = Map.empty,
     tags = Seq.empty,
     config = CorazaPlugin.corazaDefaultRules.asObject,
-    inspectBody = true
+    inspectBody = true,
+    poolCapacity = 2,
   )
   val format                      = new Format[CorazaWafConfig] {
     override def writes(o: CorazaWafConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
@@ -582,7 +584,8 @@ object CorazaWafConfig {
       "metadata"     -> o.metadata,
       "tags"         -> JsArray(o.tags.map(JsString.apply)),
       "config"       -> o.config,
-      "inspect_body" -> o.inspectBody
+      "inspect_body" -> o.inspectBody,
+      "pool_capacity" -> o.poolCapacity,
     )
     override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
       CorazaWafConfig(
@@ -593,7 +596,8 @@ object CorazaWafConfig {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
-        inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true)
+        inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
+        poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
