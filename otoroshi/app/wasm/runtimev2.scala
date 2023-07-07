@@ -98,7 +98,6 @@ case class WasmVm(index: Int,
             case t: Throwable => action.promise.tryFailure(t)
           } finally {
             if (resetMemory) {
-              println("RESET MEMORY")
               instance.reset()
             }
             WasmVm.logger.debug(s"functions: ${functions.size}")
@@ -123,7 +122,7 @@ case class WasmVm(index: Int,
 
   def destroy(): Unit = {
     if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"destroy vm: ${index}")
-    WasmVm.logger.info(s"destroy vm: ${index}")
+    WasmVm.logger.debug(s"destroy vm: ${index}")
     instance.close()
   }
 
@@ -174,13 +173,13 @@ object WasmVmPool {
   private[wasm] val engine = new OtoroshiEngine()
   private val instances = new TrieMap[String, WasmVmPool]()
 
-  def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = {
+  def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = instances.synchronized {
     instances.getOrUpdate(plugin.id) {
       new WasmVmPool(plugin.id, None, env)
     }
   }
 
-  def forConfig(config: => WasmConfig)(implicit env: Env): WasmVmPool = {
+  def forConfig(config: => WasmConfig)(implicit env: Env): WasmVmPool = instances.synchronized {
     // TODO: not sure if it works well with updated config
     instances.getOrUpdate(config.source.cacheKey) {
       new WasmVmPool(config.source.cacheKey, config.some, env)
@@ -255,7 +254,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   private def createVm(config: WasmConfig, options: WasmVmInitOptions, from: String): Unit = synchronized {
     if (creatingRef.compareAndSet(false, true)) {
       val index = counter.incrementAndGet()
-      WasmVmPool.logger.info(s"creating vm: ${index}")// - $from")
+      WasmVmPool.logger.debug(s"creating vm: ${index}")// - $from")
       if (templateRef.get() == null) {
         val cache = WasmUtils.scriptCache(env)
         val key = config.source.cacheKey
@@ -264,10 +263,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
           Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds) // TODO: fix it
         }
         val wasm = cache(key).asInstanceOf[CachedWasmScript].script
-        val hash = java.security.MessageDigest.getInstance("SHA-256")
-          .digest(wasm.toArray)
-          .map("%02x".format(_))
-          .mkString
+        val hash = wasm.sha256
         val resolver = new WasmSourceResolver()
         val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
         templateRef.set(new OtoroshiTemplate(engine, hash, new Manifest(
@@ -340,17 +336,24 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     lastPluginVersion.set(null)
   }
 
-  private def hasChanged(plugin: WasmConfig): Boolean = {
+  private def hasChanged(config: WasmConfig): Boolean = {
     var oldHash = lastPluginVersion.get()
     if (oldHash == null) {
-      oldHash = plugin.json.stringify.sha512
+      oldHash = config.json.stringify.sha512
       lastPluginVersion.set(oldHash)
     }
-    val currentHash = plugin.json.stringify.sha512
+    val currentHash = config.json.stringify.sha512
     oldHash != currentHash
   }
 
   def getPooledVm(options: WasmVmInitOptions = WasmVmInitOptions.empty()): Future[WasmVm] = {
+    // println("-----------------")
+    // println("\nscript-cache: \n");
+    // println(WasmUtils.scriptCache(env).keySet.mkString("\n"))
+    // println("\n-----------------")
+    // println("\npool-cache: \n");
+    // println(WasmVmPool.instances.keySet.mkString("\n"))
+    // println("\n-----------------")
     val p = Promise[WasmVm]()
     requestsQueue.offer(WasmVmPoolAction(p, options))
     p.future

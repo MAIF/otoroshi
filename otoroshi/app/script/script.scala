@@ -1155,7 +1155,7 @@ class ScriptManager(env: Env) {
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
     ref match {
-      case r if r.startsWith("cp:")  => {
+      case r if r.startsWith("cp:")  => cpTryCache.synchronized {
         if (!cpTryCache.contains(ref)) {
           Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
             .map(clazz => clazz.newInstance()) match {

@@ -441,7 +441,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   private val plugins = new LegitTrieMap[String, CorazaPlugin]()
 
-  private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = {
+  private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
     val config          = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash      = config.json.stringify.sha512
     val key             = s"ref=${ref}&hash=${configHash}"
