@@ -853,17 +853,17 @@ object WasmUtils {
       }
     }
 
-  def execute(
+  def _execute(
       config: WasmConfig,
       defaultFunctionName: String,
       input: JsValue,
       attrs: Option[TypedMap],
       ctx: Option[VmData]
   )(implicit env: Env): Future[Either[JsValue, String]] = {
-    rawExecute(config, WasmFunctionParameters.ExtismFuntionCall(config.functionName.getOrElse(defaultFunctionName), input.stringify), attrs, ctx, Seq.empty).map(r => r.map(_._1))
+    _rawExecute(config, WasmFunctionParameters.ExtismFuntionCall(config.functionName.getOrElse(defaultFunctionName), input.stringify), attrs, ctx, Seq.empty).map(r => r.map(_._1))
   }
 
-  def rawExecute(
+  def _rawExecute(
       _config: WasmConfig,
       wasmFunctionParameters: WasmFunctionParameters,
       attrs: Option[TypedMap],
@@ -885,7 +885,7 @@ object WasmUtils {
       scriptCache.get(pluginId) match {
         case Some(CacheableWasmScript.FetchingWasmScript(fu))      =>
           fu.flatMap { _ =>
-            rawExecute(config, wasmFunctionParameters, attrs, ctx, addHostFunctions)
+            _rawExecute(config, wasmFunctionParameters, attrs, ctx, addHostFunctions)
           }
         case Some(CacheableWasmScript.CachedWasmScript(script, _)) => {
           env.metrics.withTimerAsync("otoroshi.wasm.core.get-config")(config.source.getConfig()).flatMap {

@@ -58,7 +58,6 @@ case class WasmVm(index: Int,
                   memories: Array[OtoroshiLinearMemory],
                   functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]],
                   pool: WasmVmPool,
-
                   var opaPointers: Option[OPAWasmVm] = None) {
 
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
@@ -124,7 +123,7 @@ case class WasmVm(index: Int,
 
   def destroy(): Unit = {
     if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"destroy vm: ${index}")
-    println("DESTROY VM")
+    WasmVm.logger.info(s"destroy vm: ${index}")
     instance.close()
   }
 
@@ -215,7 +214,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   private def handleAction(action: WasmVmPoolAction): Unit = try {
     wasmConfig() match {
       case None =>
-        destroyCurrent()
+        destroyCurrentVms()
         WasmVmPool.removePlugin(stableId)
         Future.failed(new RuntimeException(s"No more plugin ${stableId}"))
       case Some(wcfg) => {
@@ -225,7 +224,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
         val atMax = atMaxPoolCapacity(wcfg)
         if (changed) {
           WasmVmPool.logger.warn("plugin has changed, destroying old instances")
-          destroyCurrent()
+          destroyCurrentVms()
           createVm(wcfg, action.options, "has changed")
         }
         if (!available) {
@@ -256,7 +255,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   private def createVm(config: WasmConfig, options: WasmVmInitOptions, from: String): Unit = synchronized {
     if (creatingRef.compareAndSet(false, true)) {
       val index = counter.incrementAndGet()
-      WasmVmPool.logger.debug(s"creating vm: ${index} - $from")
+      WasmVmPool.logger.info(s"creating vm: ${index}")// - $from")
       if (templateRef.get() == null) {
         val cache = WasmUtils.scriptCache(env)
         val key = config.source.cacheKey
@@ -331,7 +330,8 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 
   private def atMaxPoolCapacity(plugin: WasmConfig): Boolean = (availableVms.size + inUseVms.size) >= plugin.instances
 
-  private def destroyCurrent(): Unit = availableVms.synchronized {
+  private def destroyCurrentVms(): Unit = availableVms.synchronized {
+    WasmVmPool.logger.info("destroying all vms")
     availableVms.asScala.foreach(_.destroy())
     availableVms.clear()
     inUseVms.clear()

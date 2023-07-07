@@ -109,6 +109,9 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
             res._2
           }
         }
+        .andThen {
+          case _ => vm.release()
+        }
       }
     }
   }
@@ -133,6 +136,9 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
               logger.error(s"error while calling plugin: ${err}")
               Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
             case Right((_, results)) => results.vfuture
+          }
+          .andThen {
+            case _ => vm.release()
           }
       }
     }

@@ -744,53 +744,53 @@ class GraphQLBackend extends NgBackendCall {
         "route"   -> ctx.route.json,
         "request" -> ctx.request.json
       )
-      WasmUtils
-        .execute(
-          WasmConfig(
-            source = WasmSource(WasmSourceKind(wasmSourceKind.getOrElse("")), wasmSourcePath.getOrElse("")),
-            memoryPages = wasmMemoryPages.getOrElse(30),
-            functionName = wasmFunctionName,
-            config = Map.empty,
-            allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
-            wasi = wasmWasi,
-            authorizations = WasmAuthorizations(
-              proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
-              httpAccess = wasmHttpAccess.getOrElse(false),
-              globalDataStoreAccess = WasmDataRights(
-                read = wasmGlobalDataStoreAccessRead.getOrElse(false),
-                write = wasmGlobalDataStoreAccessWrite.getOrElse(false)
-              ),
-              pluginDataStoreAccess = WasmDataRights(
-                read = wasmPluginDataStoreAccessRead.getOrElse(false),
-                write = wasmPluginDataStoreAccessWrite.getOrElse(false)
-              ),
-              globalMapAccess = WasmDataRights(
-                read = wasmGlobalMapAccessRead.getOrElse(false),
-                write = wasmGlobalMapAccessWrite.getOrElse(false)
-              ),
-              pluginMapAccess = WasmDataRights(
-                read = wasmPluginMapAccessRead.getOrElse(false),
-                write = wasmPluginMapAccessWrite.getOrElse(false)
-              ),
-              proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
-              configurationAccess = wasmConfigurationAccess.getOrElse(false)
-            )
+      val wsmCfg = WasmConfig(
+        source = WasmSource(WasmSourceKind(wasmSourceKind.getOrElse("")), wasmSourcePath.getOrElse("")),
+        memoryPages = wasmMemoryPages.getOrElse(30),
+        functionName = wasmFunctionName,
+        config = Map.empty,
+        allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
+        wasi = wasmWasi,
+        authorizations = WasmAuthorizations(
+          proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
+          httpAccess = wasmHttpAccess.getOrElse(false),
+          globalDataStoreAccess = WasmDataRights(
+            read = wasmGlobalDataStoreAccessRead.getOrElse(false),
+            write = wasmGlobalDataStoreAccessWrite.getOrElse(false)
           ),
-          "execute",
-          input,
-          ctx.attrs.some,
-          None
+          pluginDataStoreAccess = WasmDataRights(
+            read = wasmPluginDataStoreAccessRead.getOrElse(false),
+            write = wasmPluginDataStoreAccessWrite.getOrElse(false)
+          ),
+          globalMapAccess = WasmDataRights(
+            read = wasmGlobalMapAccessRead.getOrElse(false),
+            write = wasmGlobalMapAccessWrite.getOrElse(false)
+          ),
+          pluginMapAccess = WasmDataRights(
+            read = wasmPluginMapAccessRead.getOrElse(false),
+            write = wasmPluginMapAccessWrite.getOrElse(false)
+          ),
+          proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
+          configurationAccess = wasmConfigurationAccess.getOrElse(false)
         )
-        .map {
-          case Right(output) =>
-            try {
-              Json.parse(output)
-            } catch {
-              case _: Exception =>
-                output
+      )
+      WasmVm.fromConfig(wsmCfg).flatMap {
+        case None => Future.failed(WasmException("plugin not found !"))
+        case Some((vm, _)) =>
+          vm.call(WasmFunctionParameters.ExtismFuntionCall("execute", input.stringify), None)
+            .map {
+              case Right(output) =>
+                try {
+                  Json.parse(output._1)
+                } catch {
+                  case _: Exception => output
+                }
+              case Left(error) => error
             }
-          case Left(error)   => error
-        }
+            .andThen {
+              case _ => vm.release()
+            }
+      }
     }
   }
 

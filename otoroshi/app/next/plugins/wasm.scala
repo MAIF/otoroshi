@@ -113,6 +113,9 @@ class WasmRouteMatcher extends NgRouteMatcher {
     val fu = WasmVm.fromConfig(config).flatMap {
       case None => Left(Json.obj("error" -> "plugin not found")).vfuture
       case Some((vm, localConfig)) => vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("matches_route"), ctx.wasmJson.stringify), None)
+        .andThen {
+          case _ => vm.release()
+        }
     }
     val res = Await.result(fu, 10.seconds)
     res match {
@@ -193,6 +196,9 @@ class WasmPreRoute extends NgPreRouting {
               }
             }
           }
+          .andThen {
+            case _ => vm.release()
+          }
     }
   }
 }
@@ -265,6 +271,9 @@ class WasmBackend extends NgBackendCall {
                     headers = Map.empty,
                     body = Json.stringify(value).byteString.chunks(16 * 1024)
                   )
+              }
+              .andThen {
+                case _ => vm.release()
               }
         }
       }
@@ -531,6 +540,9 @@ class WasmRequestTransformer extends NgRequestTransformer {
                   }
                 case Left(value) => Left(Results.BadRequest(value))
               }
+              .andThen {
+                case _ => vm.release()
+              }
         }
       })
   }
@@ -607,6 +619,9 @@ class WasmResponseTransformer extends NgRequestTransformer {
                   }
                 case Left(value) => Left(Results.BadRequest(value))
               }
+              .andThen {
+                case _ => vm.release()
+              }
         }
       })
   }
@@ -639,6 +654,9 @@ class WasmSink extends NgRequestSink {
               AttrsHelper.updateAttrs(ctx.attrs, response)
               (response \ "result").asOpt[Boolean].getOrElse(false)
             }
+          }
+          .andThen {
+            case _ => vm.release()
           }
     }
     Await.result(fu, 10.seconds)
@@ -707,6 +725,9 @@ class WasmSink extends NgRequestSink {
                   .withHeaders(headers.toSeq: _*)
                   .as(contentType)
               }
+            }
+            .andThen {
+              case _ => vm.release()
             }
       }
     }
@@ -821,6 +842,9 @@ class WasmRequestHandler extends RequestHandler {
                       }
                       case Left(bad) => Results.InternalServerError(bad).vfuture
                     }
+                    .andThen {
+                      case _ => vm.release()
+                    }
               }
             }
           }
@@ -892,6 +916,9 @@ class WasmJob(config: WasmJobsConfig) extends Job {
             case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
             case Right(_) => ()
           }
+          .andThen {
+            case _ => vm.release()
+          }
     }
   } match {
     case Failure(e) =>
@@ -908,6 +935,9 @@ class WasmJob(config: WasmJobsConfig) extends Job {
             case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
             case Right(_) => ()
           }
+          .andThen {
+            case _ => vm.release()
+          }
     }
   } match {
     case Failure(e) =>
@@ -923,6 +953,9 @@ class WasmJob(config: WasmJobsConfig) extends Job {
           .map {
             case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
             case Right(_) => ()
+          }
+          .andThen {
+            case _ => vm.release()
           }
     }
   } match {
@@ -1046,54 +1079,35 @@ class WasmOPA extends NgAccessValidator {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    if (config.source.kind == WasmSourceKind.Local) {
-      val localPlugin = env.proxyState.wasmPlugin(config.source.path).get
-
-      localPlugin.pool()
-        .getPooledVm(WasmVmInitOptions.empty().copy(resetMemory = false))
-        .flatMap { vm =>
-          if (!vm.initialized()) {
-              vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
-                .flatMap {
-                  case Left(error) => onError(error.stringify, ctx)
-                  case Right(value) =>
-                    vm.initialize {
-                      val pointers = Json.parse(value._1)
-                      vm.opaPointers = OPAWasmVm(
-                        opaDataAddr = (pointers \"dataAddr").as[Int],
-                        opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
-                      ).some
-                    }
-                    execute(vm, ctx)
+    WasmVm.fromConfig(config).flatMap {
+      case None => Errors
+        .craftResponseResult(
+          "plugin not found !",
+          Results.Status(500),
+          ctx.request,
+          None,
+          None,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgAccess.NgDenied(r))
+      case Some((vm, localConfig)) =>
+        if (!vm.initialized()) {
+          vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
+            .flatMap {
+              case Left(error) => onError(error.stringify, ctx)
+              case Right(value) =>
+                vm.initialize {
+                  val pointers = Json.parse(value._1)
+                  vm.opaPointers = OPAWasmVm(
+                    opaDataAddr = (pointers \ "dataAddr").as[Int],
+                    opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
+                  ).some
                 }
-          } else
-            execute(vm, ctx)
-        }
-      } else {
-        WasmUtils
-          .execute(config, "access", ctx.wasmJson, ctx.attrs.some, None)
-          .flatMap {
-            case Right(res) =>
-              val response = Json.parse(res)
-              AttrsHelper.updateAttrs(ctx.attrs, response)
-              val result = response.asOpt[JsArray].getOrElse(Json.arr())
-              val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
-              if (canAccess) {
-                NgAccess.NgAllowed.vfuture
-              } else {
-                Errors
-                  .craftResponseResult(
-                    "Forbidden access",
-                    Results.Status(403),
-                    ctx.request,
-                    None,
-                    None,
-                    attrs = ctx.attrs,
-                    maybeRoute = ctx.route.some
-                  )
-                  .map(r => NgAccess.NgDenied(r))
-              }
-            case Left(err) => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+                execute(vm, ctx)
+            }
+        } else {
+          execute(vm, ctx)
         }
     }
   }
@@ -1119,6 +1133,9 @@ class WasmRouter extends NgRouter {
         case None => Left(Json.obj("error" -> "plugin not found")).vfuture
         case Some((vm, localConfig)) =>
           val ret = vm.call(WasmFunctionParameters.ExtismFuntionCall(config.functionName.orElse(localConfig.functionName).getOrElse("find_route"), ctx.json.stringify), None)
+            .andThen {
+              case _ => vm.release()
+            }
           vm.release()
           ret
       },
