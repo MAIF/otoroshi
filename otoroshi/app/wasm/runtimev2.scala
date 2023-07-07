@@ -7,6 +7,8 @@ import org.extism.sdk.otoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
 import otoroshi.models.WasmPlugin
+import otoroshi.next.plugins.api.{NgPluginVisibility, NgStep}
+import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
 import otoroshi.wasm.proxywasm.VmData
@@ -14,9 +16,9 @@ import play.api.Logger
 import play.api.libs.json.JsValue
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 
@@ -60,6 +62,7 @@ case class WasmVm(index: Int,
                   pool: WasmVmPool,
                   var opaPointers: Option[OPAWasmVm] = None) {
 
+  private val lastUsage: AtomicLong = new AtomicLong(System.currentTimeMillis())
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
   private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
   private val inFlight = new AtomicInteger(0)
@@ -77,6 +80,7 @@ case class WasmVm(index: Int,
 
   private def handle(act: WasmVmAction): Future[Unit] = {
     Future.apply {
+      lastUsage.set(System.currentTimeMillis())
       act match {
         case WasmVmAction.WasmVmKillAction => destroy()
         case action: WasmVmAction.WasmVmCallAction => {
@@ -108,8 +112,7 @@ case class WasmVm(index: Int,
             if (count >= maxCalls) {
               callCounter.set(0)
               if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"killing vm ${index} with remaining ${inFlight.get()} calls (${count})")
-              ignore()
-              killAtRelease.set(true)
+              destroyAtRelease()
             }
           }
         }
@@ -126,12 +129,29 @@ case class WasmVm(index: Int,
     instance.close()
   }
 
+  def destroyAtRelease(): Unit = {
+    ignore()
+    killAtRelease.set(true)
+  }
+
   def release(): Unit = {
     if (killAtRelease.get()) {
       queue.offer(WasmVmAction.WasmVmKillAction)
     } else {
       pool.release(this)
     }
+  }
+
+  def lastUsedAd(): Long = lastUsage.get()
+
+  def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean = !hasBeenUsedInTheLast(duration)
+  def consumesMoreThanMemoryPercent(percent: Double): Boolean = false // TODO: implements
+  def tooSlow(): Boolean = false // TODO: implements
+
+  def hasBeenUsedInTheLast(duration: FiniteDuration): Boolean = {
+    val now = System.currentTimeMillis()
+    val limit = lastUsage.get() + duration.toMillis
+    now < limit
   }
 
   def ignore(): Unit = pool.ignore(this)
@@ -158,6 +178,7 @@ case class WasmVm(index: Int,
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     val promise = Promise[Either[JsValue, (String, ResultsWrapper)]]()
     inFlight.incrementAndGet()
+    lastUsage.set(System.currentTimeMillis())
     queue.offer(WasmVmAction.WasmVmCallAction(parameters, context, promise))
     promise.future
   }
@@ -171,7 +192,7 @@ object WasmVmPool {
 
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new OtoroshiEngine()
-  private val instances = new TrieMap[String, WasmVmPool]()
+  private[wasm] val instances = new TrieMap[String, WasmVmPool]()
 
   def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = instances.synchronized {
     instances.getOrUpdate(plugin.id) {
@@ -196,8 +217,8 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   private val engine = new OtoroshiEngine()
   private val counter = new AtomicInteger(-1)
   private val templateRef = new AtomicReference[OtoroshiTemplate](null)
-  private val availableVms = new ConcurrentLinkedQueue[WasmVm]()
-  private val inUseVms = new ConcurrentLinkedQueue[WasmVm]()
+  private[wasm] val availableVms = new ConcurrentLinkedQueue[WasmVm]()
+  private[wasm] val inUseVms = new ConcurrentLinkedQueue[WasmVm]()
   private val creatingRef = new AtomicBoolean(false)
   private val lastPluginVersion = new AtomicReference[String](null)
   private val requestsSource = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
@@ -374,4 +395,40 @@ object WasmVmInitOptions {
     maxCalls = Int.MaxValue,
     addHostFunctions = _ => Seq.empty
   )
+}
+
+class WasmVmPoolCleaner extends Job {
+
+  private val logger = Logger("otoroshi-wasm-pool-cleaner")
+
+  override def uniqueId: JobId = JobId("otoroshi.wasm.WasmVmPoolCleaner")
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
+  override def steps: Seq[NgStep] = Seq(NgStep.Job)
+
+  override def kind: JobKind = JobKind.Autonomous
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    WasmVmPool.instances.values.foreach { pool =>
+      // TODO: make it customizable
+      val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(10.minutes))
+      val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(0.9))
+      val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow())
+      val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
+      logger.warn(s"will destroy ${allVms.size} wasm vms")
+      allVms.foreach { vm =>
+        vm.destroyAtRelease()
+      }
+    }
+    ().vfuture
+  }
 }
