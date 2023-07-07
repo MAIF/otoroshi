@@ -13,12 +13,12 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
 import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsValue, Json}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 
@@ -192,7 +192,11 @@ object WasmVmPool {
 
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new OtoroshiEngine()
-  private[wasm] val instances = new TrieMap[String, WasmVmPool]()
+  private val instances = new TrieMap[String, WasmVmPool]()
+
+  def allInstances(): Map[String, WasmVmPool] = instances.synchronized {
+    instances.toMap
+  }
 
   def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = instances.synchronized {
     instances.getOrUpdate(plugin.id) {
@@ -201,13 +205,15 @@ object WasmVmPool {
   }
 
   def forConfig(config: => WasmConfig)(implicit env: Env): WasmVmPool = instances.synchronized {
-    // TODO: not sure if it works well with updated config
-    instances.getOrUpdate(config.source.cacheKey) {
-      new WasmVmPool(config.source.cacheKey, config.some, env)
+    val key = s"${config.source.cacheKey}?cfg=${config.json.stringify.sha512}"
+    instances.getOrUpdate(key) {
+      new WasmVmPool(key, config.some, env)
     }
   }
 
-  private[wasm] def removePlugin(id: String): Unit = instances.remove(id)
+  private[wasm] def removePlugin(id: String): Unit = instances.synchronized {
+    instances.remove(id)
+  }
 }
 
 class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env: Env) {
@@ -347,7 +353,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 
   private def atMaxPoolCapacity(plugin: WasmConfig): Boolean = (availableVms.size + inUseVms.size) >= plugin.instances
 
-  private def destroyCurrentVms(): Unit = availableVms.synchronized {
+  private[wasm] def destroyCurrentVms(): Unit = availableVms.synchronized {
     WasmVmPool.logger.info("destroying all vms")
     availableVms.asScala.foreach(_.destroy())
     availableVms.clear()
@@ -399,7 +405,7 @@ object WasmVmInitOptions {
 
 class WasmVmPoolCleaner extends Job {
 
-  private val logger = Logger("otoroshi-wasm-pool-cleaner")
+  private val logger = Logger("otoroshi-wasm-vm-pool-cleaner")
 
   override def uniqueId: JobId = JobId("otoroshi.wasm.WasmVmPoolCleaner")
 
@@ -418,16 +424,24 @@ class WasmVmPoolCleaner extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    WasmVmPool.instances.values.foreach { pool =>
-      // TODO: make it customizable
-      val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(10.minutes))
-      val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(0.9))
-      val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow())
-      val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
-      logger.warn(s"will destroy ${allVms.size} wasm vms")
-      allVms.foreach { vm =>
-        vm.destroyAtRelease()
-      }
+    val config = env.datastores.globalConfigDataStore.latest().plugins.config.select("wasm-vm-pool-cleaner-config").asOpt[JsObject].getOrElse(Json.obj())
+    val notUsedDuration = config.select("not-used-duration").asOpt[Long].map(v => v.millis).getOrElse(10.minutes)
+    WasmVmPool.allInstances().foreach {
+      case (key, pool) =>
+        if (pool.inUseVms.isEmpty && pool.availableVms.isEmpty) {
+          logger.warn(s"will destroy 1 wasm vms pool")
+          pool.destroyCurrentVms()
+          WasmVmPool.removePlugin(key)
+        } else {
+          val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(notUsedDuration))
+          val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(0.9))
+          val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow())
+          val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
+          logger.warn(s"will destroy ${allVms.size} wasm vms")
+          allVms.foreach { vm =>
+            vm.destroyAtRelease()
+          }
+        }
     }
     ().vfuture
   }
