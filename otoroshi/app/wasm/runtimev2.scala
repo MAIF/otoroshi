@@ -126,7 +126,12 @@ case class WasmVm(index: Int,
   def destroy(): Unit = {
     if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"destroy vm: ${index}")
     WasmVm.logger.debug(s"destroy vm: ${index}")
+    pool.clear(this)
     instance.close()
+  }
+
+  def isBusy(): Boolean = {
+    inFlight.get() > 0
   }
 
   def destroyAtRelease(): Unit = {
@@ -199,8 +204,9 @@ object WasmVmPool {
   }
 
   def forPlugin(plugin: WasmPlugin)(implicit env: Env): WasmVmPool = instances.synchronized {
-    instances.getOrUpdate(plugin.id) {
-      new WasmVmPool(plugin.id, None, env)
+    val key = plugin.id // s"plugin://${plugin.id}?cfg=${plugin.config.json.stringify.sha512}"
+    instances.getOrUpdate(key) {
+      new WasmVmPool(key, None, env)
     }
   }
 
@@ -343,6 +349,12 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }
   }
 
+  private[wasm] def clear(vm: WasmVm): Unit = synchronized {
+    availableVms.synchronized {
+      availableVms.remove(vm)
+    }
+  }
+
   private def wasmConfig(): Option[WasmConfig] = {
     optConfig.orElse(env.proxyState.wasmPlugin(stableId).map(_.config))
   }
@@ -413,7 +425,7 @@ class WasmVmPoolCleaner extends Job {
 
   override def steps: Seq[NgStep] = Seq(NgStep.Job)
 
-  override def kind: JobKind = JobKind.Autonomous
+  override def kind: JobKind = JobKind.ScheduledEvery
 
   override def starting: JobStarting = JobStarting.Automatically
 
@@ -425,7 +437,7 @@ class WasmVmPoolCleaner extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = env.datastores.globalConfigDataStore.latest().plugins.config.select("wasm-vm-pool-cleaner-config").asOpt[JsObject].getOrElse(Json.obj())
-    val notUsedDuration = config.select("not-used-duration").asOpt[Long].map(v => v.millis).getOrElse(10.minutes)
+    val notUsedDuration = config.select("not-used-duration").asOpt[Long].map(v => v.millis).getOrElse(5.minutes)
     WasmVmPool.allInstances().foreach {
       case (key, pool) =>
         if (pool.inUseVms.isEmpty && pool.availableVms.isEmpty) {
@@ -437,9 +449,16 @@ class WasmVmPoolCleaner extends Job {
           val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(0.9))
           val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow())
           val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
-          logger.warn(s"will destroy ${allVms.size} wasm vms")
+          if (allVms.nonEmpty) {
+            logger.warn(s"will destroy ${allVms.size} wasm vms")
+          }
           allVms.foreach { vm =>
-            vm.destroyAtRelease()
+            if (vm.isBusy()) {
+              vm.destroyAtRelease()
+            } else {
+              vm.ignore()
+              vm.destroy()
+            }
           }
         }
     }
