@@ -39,7 +39,7 @@ import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
 import otoroshi.utils.SchedulerHelper
-import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
+import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -1452,15 +1452,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   /////////////
   private val apiIncrementsRef      =
-    new AtomicReference[TrieMap[String, AtomicLong]](new LegitTrieMap[String, AtomicLong]())
+    new AtomicReference[TrieMap[String, AtomicLong]](new UnboundedTrieMap[String, AtomicLong]())
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
-    new LegitTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
+    new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
   private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
-  private[cluster] val counters     = new LegitTrieMap[String, AtomicLong]()
+  private[cluster] val counters     = new UnboundedTrieMap[String, AtomicLong]()
   /////////////
 
   def lastSync: DateTime = lastPoll.get()
@@ -1844,8 +1844,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           Cluster.logger.error(s"unable to load cluster state from backup: ${err}")
           false.vfuture
         case Right(payload) => {
-          val store       = new LegitConcurrentHashMap[String, Any]()
-          val expirations = new LegitConcurrentHashMap[String, Long]()
+          val store       = new UnboundedConcurrentHashMap[String, Any]()
+          val expirations = new UnboundedConcurrentHashMap[String, Long]()
           payload
             .chunks(32 * 1024)
             .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
@@ -1891,7 +1891,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(list)
       }
       case "hash" if modern => {
-        val map = new LegitTrieMap[String, ByteString]()
+        val map = new UnboundedTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -1906,7 +1906,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(list)
       }
       case "hash"           => {
-        val map = new LegitConcurrentHashMap[String, ByteString]
+        val map = new UnboundedConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
@@ -1979,8 +1979,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster done ! (${DateTime.now()})"
                   )
-                val store          = new LegitConcurrentHashMap[String, Any]()
-                val expirations    = new LegitConcurrentHashMap[String, Long]()
+                val store          = new UnboundedConcurrentHashMap[String, Any]()
+                val expirations    = new UnboundedConcurrentHashMap[String, Long]()
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
                 val responseDigest = resp.header("X-Data-Digest")
                 val responseCount  = resp.header("X-Data-Count")
@@ -2101,9 +2101,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     try {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
-        val oldApiIncr     = apiIncrementsRef.getAndSet(new LegitTrieMap[String, AtomicLong]())
+        val oldApiIncr     = apiIncrementsRef.getAndSet(new UnboundedTrieMap[String, AtomicLong]())
         val oldServiceIncr =
-          servicesIncrementsRef.getAndSet(new LegitTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+          servicesIncrementsRef.getAndSet(new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
         //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start          = System.currentTimeMillis()
         Retry
@@ -2404,8 +2404,8 @@ class SwappableInMemoryDataStores(
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
     if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Reading state from disk ...")
-    val store       = new LegitConcurrentHashMap[String, Any]()
-    val expirations = new LegitConcurrentHashMap[String, Long]()
+    val store       = new UnboundedConcurrentHashMap[String, Any]()
+    val expirations = new UnboundedConcurrentHashMap[String, Long]()
     source.foreach { raw =>
       val item  = Json.parse(raw)
       val key   = (item \ "k").as[String]
@@ -2438,7 +2438,7 @@ class SwappableInMemoryDataStores(
         Some(list)
       }
       case "hash" if modern => {
-        val map = new LegitTrieMap[String, ByteString]()
+        val map = new UnboundedTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -2453,7 +2453,7 @@ class SwappableInMemoryDataStores(
         Some(list)
       }
       case "hash"           => {
-        val map = new LegitConcurrentHashMap[String, ByteString]
+        val map = new UnboundedConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }

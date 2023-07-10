@@ -12,7 +12,7 @@ import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -248,7 +248,7 @@ class NgTrafficMirroring extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
-  private val inFlightRequests = new LegitTrieMap[String, NgRequestContext]()
+  private val inFlightRequests = new UnboundedTrieMap[String, NgRequestContext]()
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext

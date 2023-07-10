@@ -1,6 +1,6 @@
 package otoroshi.utils
 
-import otoroshi.utils.cache.types.LegitConcurrentHashMap
+import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 
@@ -17,7 +17,7 @@ object RegexPool {
 
   lazy val logger = Logger("otoroshi-regex-pool")
 
-  private val pool = new LegitConcurrentHashMap[String, Regex]() // TODO: check growth over time
+  private val pool = new UnboundedConcurrentHashMap[String, Regex]() // TODO: check growth over time
 
   def apply(originalPattern: String): Regex = {
     if (!pool.containsKey(originalPattern)) {

@@ -7,13 +7,14 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.{NgMatchedRoute, NgRoute}
-import otoroshi.next.plugins.api.{NgPreRoutingError, _}
+import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script._
-import otoroshi.utils.{ConcurrentMutableTypedMap, TypedMap}
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{ConcurrentMutableTypedMap, TypedMap}
 import otoroshi.wasm._
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -21,7 +22,6 @@ import play.api.libs.json._
 import play.api.libs.ws.WSCookie
 import play.api.mvc.{Request, Result, Results}
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -986,7 +986,7 @@ class WasmJobsLauncher extends Job {
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = None
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  private val handledJobs = new TrieMap[String, Job]()
+  private val handledJobs = new UnboundedTrieMap[String, Job]()
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     val globalConfig            = env.datastores.globalConfigDataStore.latest()

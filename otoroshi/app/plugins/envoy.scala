@@ -20,7 +20,7 @@ import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.Cert
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -30,7 +30,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def deprecated: Boolean = true
 
-  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def name: String = "[DEPRECATED] Envoy Control Plane"
 

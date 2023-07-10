@@ -11,7 +11,7 @@ import otoroshi.events._
 import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSRequest}
@@ -335,7 +335,7 @@ object ElasticTemplates                 {
 
 object ElasticWritesAnalytics {
 
-  val clusterInitializedCache = new LegitTrieMap[String, (Boolean, ElasticVersion)]()
+  val clusterInitializedCache = new UnboundedTrieMap[String, (Boolean, ElasticVersion)]()
 
   def toKey(config: ElasticAnalyticsConfig): String = {
     val index: String  = config.index.getOrElse("otoroshi-events")

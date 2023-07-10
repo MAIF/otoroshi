@@ -30,7 +30,7 @@ import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import reactor.netty.http.client.HttpClient
 
@@ -792,7 +792,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     }
   }
 
-  private val queueCache = new LegitTrieMap[String, SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])]]()
+  private val queueCache = new UnboundedTrieMap[String, SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])]]()
 
   private def getQueue(
       request: HttpRequest,

@@ -9,7 +9,7 @@ import otoroshi.env.Env
 import otoroshi.models.WasmPlugin
 import otoroshi.next.plugins.api.{NgPluginVisibility, NgStep}
 import otoroshi.script._
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
 import otoroshi.wasm.proxywasm.VmData
@@ -198,7 +198,7 @@ object WasmVmPool {
 
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new OtoroshiEngine()
-  private val instances = new LegitTrieMap[String, WasmVmPool]()
+  private val instances = new UnboundedTrieMap[String, WasmVmPool]()
 
   def allInstances(): Map[String, WasmVmPool] = instances.synchronized {
     instances.toMap

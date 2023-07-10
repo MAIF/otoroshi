@@ -7,7 +7,7 @@ import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAppsUser}
 import otoroshi.storage.BasicStore
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.{Format, JsObject, JsResult, JsSuccess, JsValue, Reads}
@@ -245,7 +245,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  private val extCache = new LegitTrieMap[Class[_], Any]
+  private val extCache = new UnboundedTrieMap[Class[_], Any]
 
   def extension[A](implicit ct: ClassTag[A]): Option[A] = {
     if (hasExtensions) {

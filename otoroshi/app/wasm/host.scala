@@ -10,7 +10,7 @@ import otoroshi.env.Env
 import otoroshi.events.WasmLogEvent
 import otoroshi.models._
 import otoroshi.next.models.NgTarget
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
@@ -53,7 +53,7 @@ case class StateUserData(
     env: Env,
     executionContext: ExecutionContext,
     mat: Materializer,
-    cache: LegitTrieMap[String, LegitTrieMap[String, ByteString]]
+    cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]]
 )                          extends OtoroshiHostUserData
 case class EmptyUserData() extends OtoroshiHostUserData
 
@@ -780,8 +780,8 @@ object DataStore extends AwaitCapable {
 
 object State {
 
-  private val cache: LegitTrieMap[String, LegitTrieMap[String, ByteString]] =
-    new LegitTrieMap[String, LegitTrieMap[String, ByteString]]()
+  private val cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]] =
+    new UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]]()
 
   def getClusterState(cc: ClusterConfig): JsValue = cc.json
 
@@ -973,7 +973,7 @@ object State {
               state.put(key, ByteString(value))
               hostData.cache.put(id, state)
             case None        =>
-              val state = new LegitTrieMap[String, ByteString]()
+              val state = new UnboundedTrieMap[String, ByteString]()
               state.put(key, ByteString(value))
               hostData.cache.put(id, state)
           }
@@ -1005,7 +1005,7 @@ object State {
               state.remove(key)
               hostData.cache.put(id, state)
             case None        =>
-              val state = new LegitTrieMap[String, ByteString]()
+              val state = new UnboundedTrieMap[String, ByteString]()
               state.remove(key)
               hostData.cache.put(id, state)
           }

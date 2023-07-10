@@ -24,7 +24,7 @@ import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
 import otoroshi.utils.http.WSCookieWithSameSite
@@ -135,7 +135,7 @@ class IzanamiProxy extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
@@ -335,7 +335,7 @@ object IzanamiCanaryRoutingConfig {
 // MIGRATED
 class IzanamiCanary extends RequestTransformer {
 
-  private val cookieJar = new LegitTrieMap[String, WSCookie]()
+  private val cookieJar = new UnboundedTrieMap[String, WSCookie]()
 
   private val cache: Cache[String, JsValue] = Scaffeine()
     .recordStats()

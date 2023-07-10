@@ -21,7 +21,7 @@ import otoroshi.utils.JsonPathUtils
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.DN
 import otoroshi.utils.jwk.JWKSHelper
@@ -363,7 +363,7 @@ class ClientCredentialFlow extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext

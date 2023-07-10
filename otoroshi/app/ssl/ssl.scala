@@ -51,7 +51,7 @@ import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.metrics.{FakeHasMetrics, HasMetrics}
 import otoroshi.utils.metrics.FakeHasMetrics
@@ -1122,12 +1122,12 @@ object DynamicSSLEngineProvider {
   )
 
   val autogenCerts                = Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
-  val _ocspProjectionCertificates = new LegitTrieMap[java.math.BigInteger, OCSPCertProjection]()
+  val _ocspProjectionCertificates = new UnboundedTrieMap[java.math.BigInteger, OCSPCertProjection]()
 
   private def allUnrevokedCertMap: TrieMap[String, Cert] = {
     val datastoreCerts = getCurrentEnv().proxyState.allCertificatesMap().filter(_._2.notRevoked)
     val genCerts       = autogenCerts.asMap()
-    new LegitTrieMap[String, Cert]().++=(datastoreCerts).++=(genCerts)
+    new UnboundedTrieMap[String, Cert]().++=(datastoreCerts).++=(genCerts)
   }
   private def allUnrevokedCertSeq: Seq[Cert] = allUnrevokedCertMap.values.toSeq
 
@@ -1165,7 +1165,7 @@ object DynamicSSLEngineProvider {
 
       val certificates                               = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
       val trustedCertificates: TrieMap[String, Cert] = if (trustedCerts.nonEmpty) {
-        new LegitTrieMap[String, Cert]() ++ trustedCerts
+        new UnboundedTrieMap[String, Cert]() ++ trustedCerts
           // .flatMap(k => _certificates.get(k))
           .flatMap(k => allUnrevokedCertMap.get(k))
           .filter(_.notRevoked)

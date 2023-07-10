@@ -21,7 +21,7 @@ import otoroshi.utils.{future, JsonPathValidator, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.syntax.implicits._
 
@@ -590,8 +590,8 @@ class JobManager(env: Env) {
 
   private[script] val jobActorSystem = ActorSystem("jobs-system")
   private[script] val jobScheduler   = jobActorSystem.scheduler
-  private val registeredJobs         = new LegitTrieMap[JobId, RegisteredJobContext]()
-  private val registeredLocks        = new LegitTrieMap[JobId, (String, String)]()
+  private val registeredJobs         = new UnboundedTrieMap[JobId, RegisteredJobContext]()
+  private val registeredLocks        = new UnboundedTrieMap[JobId, (String, String)]()
   private val scanRef                = new AtomicReference[Cancellable]()
   private val lockRef                = new AtomicReference[Cancellable]()
 

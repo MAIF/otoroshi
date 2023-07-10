@@ -6,12 +6,12 @@ import otoroshi.env.Env
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api._
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 import java.nio.file.{Files, Paths}
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -422,7 +422,7 @@ case class ResultsWrapper(results: OtoroshiResults, pluginOpt: Option[OtoroshiIn
   }
 }
 
-class WasmContext(plugins: TrieMap[String, WasmContextSlot] = new TrieMap[String, WasmContextSlot]()) {
+class WasmContext(plugins: UnboundedTrieMap[String, WasmContextSlot] = new UnboundedTrieMap[String, WasmContextSlot]()) {
   def put(id: String, slot: WasmContextSlot): Unit = plugins.put(id, slot)
   def get(id: String): Option[WasmContextSlot]     = plugins.get(id)
   def close(): Unit = {

@@ -26,7 +26,7 @@ import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
@@ -60,7 +60,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   implicit val e  = env
   implicit val ec = env.analyticsExecutionContext
 
-  val dataExporters: TrieMap[String, DataExporter] = new LegitTrieMap[String, DataExporter]()
+  val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
 
   override def receive: Receive = {

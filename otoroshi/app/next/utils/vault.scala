@@ -16,7 +16,7 @@ import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.ssl.SSLImplicits._
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -859,7 +859,7 @@ class Vaults(env: Env) {
   private val cache                          = Caches.bounded[String, CachedVaultSecret](cachedSecrets.toInt)
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
-  private val vaults: TrieMap[String, Vault] = new LegitTrieMap[String, Vault]()
+  private val vaults: TrieMap[String, Vault] = new UnboundedTrieMap[String, Vault]()
   private implicit val _env                  = env
   private implicit val ec                    = env.otoroshiExecutionContext
 

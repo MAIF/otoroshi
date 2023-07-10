@@ -12,7 +12,7 @@ import otoroshi.script._
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -33,26 +33,26 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .result()
 
-  private val raw_routes          = new LegitTrieMap[String, NgRoute]()
-  private val apikeys             = new LegitTrieMap[String, ApiKey]()
-  private val backends            = new LegitTrieMap[String, NgBackend]()
-  private val ngroutecompositions = new LegitTrieMap[String, NgRouteComposition]()
-  private val ngbackends          = new LegitTrieMap[String, StoredNgBackend]()
-  private val jwtVerifiers        = new LegitTrieMap[String, GlobalJwtVerifier]()
-  private val certificates        = new LegitTrieMap[String, Cert]()
-  private val authModules         = new LegitTrieMap[String, AuthModuleConfig]()
-  private val errorTemplates      = new LegitTrieMap[String, ErrorTemplate]()
-  private val services            = new LegitTrieMap[String, ServiceDescriptor]()
-  private val teams               = new LegitTrieMap[String, Team]()
-  private val tenants             = new LegitTrieMap[String, Tenant]()
-  private val serviceGroups       = new LegitTrieMap[String, ServiceGroup]()
-  private val dataExporters       = new LegitTrieMap[String, DataExporterConfig]()
-  private val otoroshiAdmins      = new LegitTrieMap[String, OtoroshiAdmin]()
-  private val backofficeSessions  = new LegitTrieMap[String, BackOfficeUser]()
-  private val privateAppsSessions = new LegitTrieMap[String, PrivateAppsUser]()
-  private val tcpServices         = new LegitTrieMap[String, TcpService]()
-  private val scripts             = new LegitTrieMap[String, Script]()
-  private val wasmPlugins         = new LegitTrieMap[String, WasmPlugin]()
+  private val raw_routes          = new UnboundedTrieMap[String, NgRoute]()
+  private val apikeys             = new UnboundedTrieMap[String, ApiKey]()
+  private val backends            = new UnboundedTrieMap[String, NgBackend]()
+  private val ngroutecompositions = new UnboundedTrieMap[String, NgRouteComposition]()
+  private val ngbackends          = new UnboundedTrieMap[String, StoredNgBackend]()
+  private val jwtVerifiers        = new UnboundedTrieMap[String, GlobalJwtVerifier]()
+  private val certificates        = new UnboundedTrieMap[String, Cert]()
+  private val authModules         = new UnboundedTrieMap[String, AuthModuleConfig]()
+  private val errorTemplates      = new UnboundedTrieMap[String, ErrorTemplate]()
+  private val services            = new UnboundedTrieMap[String, ServiceDescriptor]()
+  private val teams               = new UnboundedTrieMap[String, Team]()
+  private val tenants             = new UnboundedTrieMap[String, Tenant]()
+  private val serviceGroups       = new UnboundedTrieMap[String, ServiceGroup]()
+  private val dataExporters       = new UnboundedTrieMap[String, DataExporterConfig]()
+  private val otoroshiAdmins      = new UnboundedTrieMap[String, OtoroshiAdmin]()
+  private val backofficeSessions  = new UnboundedTrieMap[String, BackOfficeUser]()
+  private val privateAppsSessions = new UnboundedTrieMap[String, PrivateAppsUser]()
+  private val tcpServices         = new UnboundedTrieMap[String, TcpService]()
+  private val scripts             = new UnboundedTrieMap[String, Script]()
+  private val wasmPlugins         = new UnboundedTrieMap[String, WasmPlugin]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -62,7 +62,7 @@ class NgProxyState(env: Env) {
     .maximumSize(100)
     .build[String, NgExecutionReport]()
 
-  private val routesByDomain    = new LegitTrieMap[String, Seq[NgRoute]]()
+  private val routesByDomain    = new UnboundedTrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
   def enableReportFor(id: String): Unit = {

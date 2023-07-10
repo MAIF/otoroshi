@@ -4,22 +4,22 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
-import org.extism.sdk.otoroshi.{OtoroshiHostFunction, OtoroshiHostUserData, OtoroshiInstance, OtoroshiResults, OtoroshiTemplate}
+import org.extism.sdk.otoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.Cookie
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -228,12 +228,12 @@ object WasmUtils {
   )
 
   // TODO: handle env.wasmCacheSize based on creation date ?
-  private[wasm] val _script_cache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
-  private[wasm] val pluginCache                                         = new TrieMap[String, WasmContextSlot]()
-  private[wasm] val queues                                              = new TrieMap[String, (DateTime, SourceQueueWithComplete[WasmAction])]()
+  private[wasm] val _script_cache: UnboundedTrieMap[String, CacheableWasmScript] = new UnboundedTrieMap[String, CacheableWasmScript]()
+  private[wasm] val pluginCache                                         = new UnboundedTrieMap[String, WasmContextSlot]()
+  private[wasm] val queues                                              = new UnboundedTrieMap[String, (DateTime, SourceQueueWithComplete[WasmAction])]()
   private[wasm] val instancesCounter                                    = new AtomicInteger(0)
 
-  def scriptCache(implicit env: Env): TrieMap[String, CacheableWasmScript] = _script_cache
+  def scriptCache(implicit env: Env): UnboundedTrieMap[String, CacheableWasmScript] = _script_cache
 
   def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
     wasmResponse

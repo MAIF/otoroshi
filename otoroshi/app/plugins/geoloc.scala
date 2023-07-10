@@ -13,7 +13,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import otoroshi.utils.cache.Caches
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
@@ -286,7 +286,7 @@ object MaxMindGeolocationHelper {
   private val logger  = Logger("otoroshi-plugins-maxmind-geolocation-helper")
   private val ipCache = Caches.bounded[String, InetAddress](10000)
   private val cache   = Caches.bounded[String, Option[JsValue]](10000)
-  private val dbs     = new LegitTrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()
+  private val dbs     = new UnboundedTrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()
   private val exc     =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
 

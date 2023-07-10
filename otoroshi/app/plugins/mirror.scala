@@ -12,7 +12,7 @@ import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.HeadersHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -257,7 +257,7 @@ class MirroringPlugin extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
-  private val inFlightRequests = new LegitTrieMap[String, RequestContext]()
+  private val inFlightRequests = new UnboundedTrieMap[String, RequestContext]()
 
   override def afterRequest(
       ctx: AfterRequestContext

@@ -10,7 +10,7 @@ import otoroshi.security.Auth0Config
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
-import otoroshi.utils.cache.types.LegitConcurrentHashMap
+import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import play.api.Logger
 import play.api.libs.json._
 
@@ -36,9 +36,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   def throttlingKey(): String = s"${_env.storageRoot}:throttling:global"
 
   private val callsForIpAddressCache =
-    new LegitConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
+    new UnboundedConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
   private val quotasForIpAddressCache =
-    new LegitConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
+    new UnboundedConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
 
   def incrementCallsForIpAddressWithTTL(ipAddress: String, ttl: Int = 10)(implicit
       ec: ExecutionContext

@@ -7,7 +7,7 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.RegexPool
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.{DN, MtlsConfig}
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -248,7 +248,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  private val cache = new LegitTrieMap[String, (Long, JsValue)]
+  private val cache = new UnboundedTrieMap[String, (Long, JsValue)]
 
   private def validate(certs: Seq[X509Certificate], values: JsValue): Boolean = {
     val allowedSerialNumbers   =

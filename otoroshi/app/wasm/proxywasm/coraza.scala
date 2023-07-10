@@ -15,7 +15,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
@@ -439,7 +439,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean       = true
   override def transformsError: Boolean          = false
 
-  private val plugins = new LegitTrieMap[String, CorazaPlugin]()
+  private val plugins = new UnboundedTrieMap[String, CorazaPlugin]()
 
   private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
     val config          = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
@@ -640,7 +640,7 @@ class CorazaWafConfigAdminExtensionDatastores(env: Env, extensionId: AdminExtens
 
 class CorazaWafConfigAdminExtensionState(env: Env) {
 
-  private val configs = new LegitTrieMap[String, CorazaWafConfig]()
+  private val configs = new UnboundedTrieMap[String, CorazaWafConfig]()
 
   def config(id: String): Option[CorazaWafConfig] = configs.get(id)
   def allConfigs(): Seq[CorazaWafConfig]          = configs.values.toSeq

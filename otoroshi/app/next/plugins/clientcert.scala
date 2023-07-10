@@ -9,10 +9,10 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas, RouteIdentifier, ServiceDescriptorIdentifier}
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api.{NgPluginConfig, _}
+import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -465,7 +465,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
-  private val cache                                        = new LegitTrieMap[String, (Long, JsValue)]
+  private val cache                                        = new UnboundedTrieMap[String, (Long, JsValue)]
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors

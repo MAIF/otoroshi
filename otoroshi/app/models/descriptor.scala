@@ -33,7 +33,7 @@ import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
-import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
+import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 
 import scala.collection.concurrent.TrieMap
@@ -62,9 +62,9 @@ case class ServiceDescriptorQuery(
       case s                                => s"$subdomain.$line.$domain"
     }
 
-  private val existsCache     = new LegitConcurrentHashMap[String, Boolean]
-  private val serviceIdsCache = new LegitConcurrentHashMap[String, Seq[String]]
-  private val servicesCache   = new LegitConcurrentHashMap[String, Seq[ServiceDescriptor]]
+  private val existsCache     = new UnboundedConcurrentHashMap[String, Boolean]
+  private val serviceIdsCache = new UnboundedConcurrentHashMap[String, Seq[String]]
+  private val servicesCache   = new UnboundedConcurrentHashMap[String, Seq[ServiceDescriptor]]
 
   def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = this.asKey
@@ -288,7 +288,7 @@ case class AtomicAverage(count: AtomicLong, sum: AtomicLong) {
 object BestResponseTime extends LoadBalancing {
 
   private[models] val random        = new scala.util.Random
-  private[models] val responseTimes = new LegitTrieMap[String, AtomicAverage]()
+  private[models] val responseTimes = new UnboundedTrieMap[String, AtomicAverage]()
 
   def incrementAverage(desc: ServiceDescriptor, target: Target, responseTime: Long): Unit = {
     val key = s"${desc.id}-${target.asKey}"
@@ -2507,7 +2507,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
      */
 
-    val matched                 = new LegitTrieMap[String, String]()
+    val matched                 = new UnboundedTrieMap[String, String]()
     val filtered1               = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched       = sr.allPaths match {
