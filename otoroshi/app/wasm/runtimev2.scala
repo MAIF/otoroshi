@@ -295,6 +295,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
           WasmVmPool.logger.warn("fetching missing source")
           Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds) // TODO: fix it
         }
+        lastPluginVersion.set(computeHash(config, config.source.cacheKey, WasmUtils.scriptCache(env)))
         val wasm = cache(key).asInstanceOf[CachedWasmScript].script
         val hash = wasm.sha256
         val resolver = new WasmSourceResolver()
@@ -375,18 +376,33 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     availableVms.clear()
     inUseVms.clear()
     //counter.set(0)
+    templateRef.set(null)
     creatingRef.set(false)
     lastPluginVersion.set(null)
   }
 
-  private def hasChanged(config: WasmConfig): Boolean = {
+  private def computeHash(config: WasmConfig, key: String, cache: UnboundedTrieMap[String, CacheableWasmScript]): String = {
+    config.json.stringify.sha512 + "#" + cache.get(key).map {
+      case CacheableWasmScript.CachedWasmScript(wasm, _) => wasm.sha512
+      case _ => "fetching"
+    }.getOrElse("null")
+  }
+
+  private def hasChanged(config: WasmConfig): Boolean = availableVms.synchronized {
+    val key = config.source.cacheKey
+    val cache = WasmUtils.scriptCache(env)
     var oldHash = lastPluginVersion.get()
     if (oldHash == null) {
-      oldHash = config.json.stringify.sha512
+      oldHash = computeHash(config, key, cache)
       lastPluginVersion.set(oldHash)
     }
-    val currentHash = config.json.stringify.sha512
-    oldHash != currentHash
+    cache.get(key) match {
+      case Some(CacheableWasmScript.CachedWasmScript(_, _)) => {
+        val currentHash = computeHash(config, key, cache)
+        oldHash != currentHash
+      }
+      case _ => false
+    }
   }
 
   def getPooledVm(options: WasmVmInitOptions = WasmVmInitOptions.empty()): Future[WasmVm] = {
