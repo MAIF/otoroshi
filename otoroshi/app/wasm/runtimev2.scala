@@ -281,7 +281,9 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       }
     }
   } catch {
-    case t: Throwable => t.printStackTrace()
+    case t: Throwable =>
+      t.printStackTrace()
+      action.fail(t)
   }
 
   private def createVm(config: WasmConfig, options: WasmVmInitOptions, from: String): Unit = synchronized {
