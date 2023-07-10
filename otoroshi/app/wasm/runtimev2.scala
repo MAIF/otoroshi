@@ -192,6 +192,7 @@ case class WasmVm(index: Int,
 
 case class WasmVmPoolAction(promise: Promise[WasmVm], options: WasmVmInitOptions) {
   private[wasm] def provideVm(vm: WasmVm): Unit = promise.trySuccess(vm)
+  private[wasm] def fail(e: Throwable): Unit = promise.tryFailure(e)
 }
 
 object WasmVmPool {
@@ -249,7 +250,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       case None =>
         destroyCurrentVms()
         WasmVmPool.removePlugin(stableId)
-        Future.failed(new RuntimeException(s"No more plugin ${stableId}"))
+        action.fail(new RuntimeException(s"No more plugin ${stableId}"))
       case Some(wcfg) => {
         val changed = hasChanged(wcfg)
         val available = hasAvailableVm(wcfg)
@@ -271,8 +272,6 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
               // create on
               createVm(wcfg, action.options, s"create - changed: ${changed} - available: ${available} - creating: ${creating} - atMax: $atMax - ${wcfg.instances} - ${inUseVms.size()}")
               priorityQueue.offer(action)
-              // val vm = acquireVm()
-              // action.provideVm(vm)
             }
           }
         } else {
