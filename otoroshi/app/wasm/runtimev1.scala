@@ -4,7 +4,7 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
-import org.extism.sdk.otoroshi._
+import org.extism.sdk.wasmotoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -47,13 +47,13 @@ object WasmContextSlot                                                 {
 class WasmContextSlot(
                        id: String,
                        instance: Int,
-                       plugin: OtoroshiInstance,
+                       plugin: WasmOtoroshiInstance,
                        cfg: WasmConfig,
                        wsm: ByteString,
                        closed: AtomicBoolean,
                        updating: AtomicBoolean,
                        instanceId: String,
-                       functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+                       functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
                      ) {
 
   def callSync(
@@ -176,7 +176,7 @@ class WasmContextSlot(
                       config: WasmConfig,
                       wasm: ByteString,
                       attrsOpt: Option[TypedMap],
-                      addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+                      addHostFunctions: Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
                     )(implicit env: Env, ec: ExecutionContext): WasmContextSlot = {
     if (needsUpdate(config, wasm) && updating.compareAndSet(false, true)) {
 
@@ -328,7 +328,7 @@ object WasmUtils {
                                           config: WasmConfig,
                                           pluginId: String,
                                           attrsOpt: Option[TypedMap],
-                                          addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+                                          addHostFunctions: Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
                                         )(implicit env: Env, ec: ExecutionContext): WasmContextSlot =
     env.metrics.withTimer("otoroshi.wasm.core.act-create-plugin") {
       if (WasmUtils.logger.isDebugEnabled)
@@ -338,9 +338,9 @@ object WasmUtils {
       val hash = java.security.MessageDigest.getInstance("SHA-256")
         .digest(wasm.toArray)
         .map("%02x".format(_)).mkString
-      val template = new OtoroshiTemplate(engine, hash, manifest)
+      val template = new WasmOtoroshiTemplate(engine, hash, manifest)
       // val context                                           = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.context")(new Context())
-      val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] =
+      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] =
         HostFunctions.getFunctions(config, pluginId, attrsOpt) ++ addHostFunctions
       val plugin                                            = env.metrics.withTimer("otoroshi.wasm.core.create-plugin.plugin") {
         template.instantiate(
@@ -370,7 +370,7 @@ object WasmUtils {
                         pluginId: String,
                         attrsOpt: Option[TypedMap],
                         ctx: Option[VmData],
-                        addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+                        addHostFunctions: Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
                       )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] =
     env.metrics.withTimerAsync("otoroshi.wasm.core.call-wasm") {
 
@@ -397,7 +397,7 @@ object WasmUtils {
           if (config.opa) {
             slot.callOpa(wasmFunctionParameters.input.get).map { output =>
               slot.close(config.lifetime)
-              output.map(str => (str, ResultsWrapper(new OtoroshiResults(0))))
+              output.map(str => (str, ResultsWrapper(new WasmOtoroshiResults(0))))
             }
           } else {
             slot.call(wasmFunctionParameters, ctx).map { output =>
@@ -426,7 +426,7 @@ object WasmUtils {
           if (config.opa) {
             slot.callOpa(wasmFunctionParameters.input.get).map { output =>
               slot.close(config.lifetime)
-              output.map(str => (str, ResultsWrapper(new OtoroshiResults(0))))
+              output.map(str => (str, ResultsWrapper(new WasmOtoroshiResults(0))))
             }
           } else {
             slot.call(wasmFunctionParameters, ctx).map { output =>
@@ -455,7 +455,7 @@ object WasmUtils {
                    wasmFunctionParameters: WasmFunctionParameters,
                    attrs: Option[TypedMap],
                    ctx: Option[VmData],
-                   addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+                   addHostFunctions: Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
                  )(implicit env: Env): Future[Either[JsValue, (String, ResultsWrapper)]] =
     env.metrics.withTimerAsync("otoroshi.wasm.core.raw-execute") {
       val config = _config // if (_config.opa) _config.copy(lifetime = WasmVmLifetime.Invocation) else _config

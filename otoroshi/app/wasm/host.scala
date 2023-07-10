@@ -3,7 +3,7 @@ package otoroshi.wasm
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
-import org.extism.sdk.otoroshi.{Bridge, OtoroshiExtismFunction, OtoroshiHostFunction, OtoroshiHostUserData, OtoroshiInternal}
+import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
@@ -24,7 +24,7 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Utils {
-  def rawBytePtrToString(plugin: OtoroshiInternal, offset: Long, arrSize: Long): String = {
+  def rawBytePtrToString(plugin: WasmOtoroshiInternal, offset: Long, arrSize: Long): String = {
     val memoryLength = plugin.memoryLength(arrSize)
     val arr          = plugin
       .memory()
@@ -33,11 +33,11 @@ object Utils {
     new String(arr, StandardCharsets.UTF_8)
   }
 
-  def contextParamsToString(plugin: OtoroshiInternal, params: Bridge.ExtismVal*) = {
+  def contextParamsToString(plugin: WasmOtoroshiInternal, params: WasmBridge.ExtismVal*) = {
     rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
   }
 
-  def contextParamsToJson(plugin: OtoroshiInternal, params: Bridge.ExtismVal*) = {
+  def contextParamsToJson(plugin: WasmOtoroshiInternal, params: WasmBridge.ExtismVal*) = {
     Json.parse(rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
   }
 }
@@ -47,15 +47,15 @@ case class EnvUserData(
     executionContext: ExecutionContext,
     mat: Materializer,
     config: WasmConfig
-) extends OtoroshiHostUserData
+) extends WasmOtoroshiHostUserData
 
 case class StateUserData(
     env: Env,
     executionContext: ExecutionContext,
     mat: Materializer,
     cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]]
-)                          extends OtoroshiHostUserData
-case class EmptyUserData() extends OtoroshiHostUserData
+)                          extends WasmOtoroshiHostUserData
+case class EmptyUserData() extends WasmOtoroshiHostUserData
 
 object LogLevel extends Enumeration {
   type LogLevel = Value
@@ -71,7 +71,7 @@ object Status extends Enumeration {
 }
 
 case class HostFunctionWithAuthorization(
-    function: OtoroshiHostFunction[_ <: OtoroshiHostUserData],
+    function: WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData],
     authorized: WasmAuthorizations => Boolean
 )
 
@@ -83,20 +83,20 @@ trait AwaitCapable {
 
 object HFunction {
 
-  def defineEmptyFunction(fname: String, returnType: Bridge.ExtismValType, params: Bridge.ExtismValType*)(
-      f: (OtoroshiInternal, Array[Bridge.ExtismVal], Array[Bridge.ExtismVal]) => Unit
-  ): OtoroshiHostFunction[EmptyUserData] = {
+  def defineEmptyFunction(fname: String, returnType: WasmBridge.ExtismValType, params: WasmBridge.ExtismValType*)(
+      f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal]) => Unit
+  ): WasmOtoroshiHostFunction[EmptyUserData] = {
     defineFunction[EmptyUserData](fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
   }
 
   def defineClassicFunction(
       fname: String,
       config: WasmConfig,
-      returnType: Bridge.ExtismValType,
-      params: Bridge.ExtismValType*
+      returnType: WasmBridge.ExtismValType,
+      params: WasmBridge.ExtismValType*
   )(
-      f: (OtoroshiInternal, Array[Bridge.ExtismVal], Array[Bridge.ExtismVal], EnvUserData) => Unit
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+      f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val ev = EnvUserData(env, ec, mat, config)
     defineFunction[EnvUserData](fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
@@ -105,35 +105,35 @@ object HFunction {
       fname: String,
       config: WasmConfig
   )(
-      f: (OtoroshiInternal, Array[Bridge.ExtismVal], Array[Bridge.ExtismVal], EnvUserData) => Unit
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+      f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val ev = EnvUserData(env, ec, mat, config)
     defineFunction[EnvUserData](
       fname,
       ev.some,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     )((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
-  def defineFunction[A <: OtoroshiHostUserData](
+  def defineFunction[A <: WasmOtoroshiHostUserData](
       fname: String,
       data: Option[A],
-      returnType: Bridge.ExtismValType,
-      params: Bridge.ExtismValType*
+      returnType: WasmBridge.ExtismValType,
+      params: WasmBridge.ExtismValType*
   )(
-      f: (OtoroshiInternal, Array[Bridge.ExtismVal], Array[Bridge.ExtismVal], Option[A]) => Unit
-  ): OtoroshiHostFunction[A] = {
-    new OtoroshiHostFunction[A](
+      f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], Option[A]) => Unit
+  ): WasmOtoroshiHostFunction[A] = {
+    new WasmOtoroshiHostFunction[A](
       fname,
       Array(params: _*),
       Array(returnType),
-      new OtoroshiExtismFunction[A] {
+      new WasmOtoroshiExtismFunction[A] {
         override def invoke(
-            plugin: OtoroshiInternal,
-            params: Array[Bridge.ExtismVal],
-            returns: Array[Bridge.ExtismVal],
+            plugin: WasmOtoroshiInternal,
+            params: Array[WasmBridge.ExtismVal],
+            returns: Array[WasmBridge.ExtismVal],
             data: Optional[A]
         ): Unit = {
           f(plugin, params, returns, if (data.isEmpty) None else Some(data.get()))
@@ -153,10 +153,10 @@ object Logging extends AwaitCapable {
 
   def proxyLog() = HFunction.defineEmptyFunction(
     "proxy_log",
-    Bridge.ExtismValType.I32,
-    Bridge.ExtismValType.I32,
-    Bridge.ExtismValType.I64,
-    Bridge.ExtismValType.I64
+    WasmBridge.ExtismValType.I32,
+    WasmBridge.ExtismValType.I32,
+    WasmBridge.ExtismValType.I64,
+    WasmBridge.ExtismValType.I64
   ) { (plugin, params, returns) =>
     val logLevel = LogLevel(params(0).v.i32)
 
@@ -177,13 +177,13 @@ object Logging extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_log_event",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, params, returns, ud) =>
       val data  = Utils.contextParamsToJson(plugin, params: _*)
       val route = data.select("route_id").asOpt[String].flatMap(env.proxyState.route)
@@ -219,9 +219,9 @@ object Http extends AwaitCapable {
   def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = {
     HFunction.defineContextualFunction("proxy_http_call", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -294,12 +294,12 @@ object Http extends AwaitCapable {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_get_attrs",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       attrs match {
         case None     => plugin.returnBytes(returns(0), Array.empty[Byte])
@@ -312,12 +312,12 @@ object Http extends AwaitCapable {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_get_attr", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -338,12 +338,12 @@ object Http extends AwaitCapable {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_clear_attrs",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       attrs match {
         case None     => plugin.returnInt(returns(0), 0)
@@ -392,12 +392,12 @@ object Http extends AwaitCapable {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_set_attr", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -425,12 +425,12 @@ object Http extends AwaitCapable {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_del_attr", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -468,13 +468,13 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_all_matching", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -493,13 +493,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_keys", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -518,13 +518,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_get", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -542,13 +542,13 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_exists", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -565,13 +565,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pttl", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -587,13 +587,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_setnx", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -617,13 +617,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_set", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -647,13 +647,13 @@ object DataStore extends AwaitCapable {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[EnvUserData] = {
+  ): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_del", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -673,13 +673,13 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_incrby", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -698,13 +698,13 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pexpire", config) {
       (
-          plugin: OtoroshiInternal,
-          params: Array[Bridge.ExtismVal],
-          returns: Array[Bridge.ExtismVal],
+          plugin: WasmOtoroshiInternal,
+          params: Array[WasmBridge.ExtismVal],
+          returns: Array[WasmBridge.ExtismVal],
           hostData: EnvUserData
       ) =>
         {
@@ -787,12 +787,12 @@ object State {
 
   def getProxyState(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_state",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
         val proxyState = hostData.env.proxyState
@@ -827,7 +827,7 @@ object State {
   }
   def proxyStateGetValue(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_state_value", config) { (plugin, params, returns, userData) =>
       {
         val context = Utils.contextParamsToJson(plugin, params: _*)
@@ -889,12 +889,12 @@ object State {
 
   def getProxyConfig(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_config",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
         val cc = hostData.env.configurationJson.stringify
@@ -909,8 +909,8 @@ object State {
     HFunction.defineClassicFunction(
       "proxy_global_config",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
         val cc = hostData.env.datastores.globalConfigDataStore.latest().json.stringify
@@ -921,12 +921,12 @@ object State {
 
   def getClusterState(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_cluster_state",
       config,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
         val cc = hostData.env.clusterConfig
@@ -937,7 +937,7 @@ object State {
 
   def proxyClusteStateGetValue(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): OtoroshiHostFunction[EnvUserData] = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_cluster_state_value", config) { (plugin, params, returns, userData) =>
       {
         val path = Utils.contextParamsToString(plugin, params: _*)
@@ -952,13 +952,13 @@ object State {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[StateUserData] = {
+  ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_set" else "proxy_global_map_set",
       StateUserData(env, executionContext, mat, cache).some,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, params, returns, userData: Option[StateUserData]) =>
       {
         userData.map(hostData => {
@@ -988,13 +988,13 @@ object State {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[StateUserData] = {
+  ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_del" else "proxy_global_map_del",
       StateUserData(env, executionContext, mat, cache).some,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, params, returns, userData: Option[StateUserData]) =>
       {
         userData.map(hostData => {
@@ -1019,13 +1019,13 @@ object State {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[StateUserData] = {
+  ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_get" else "proxy_global_map_get",
       StateUserData(env, executionContext, mat, cache).some,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, params, returns, userData: Option[StateUserData]) =>
       {
         userData.map(hostData => {
@@ -1049,12 +1049,12 @@ object State {
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
-  ): OtoroshiHostFunction[StateUserData] = {
+  ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map" else "proxy_global_map",
       StateUserData(env, executionContext, mat, cache).some,
-      Bridge.ExtismValType.I64,
-      Bridge.ExtismValType.I64
+      WasmBridge.ExtismValType.I64,
+      WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, userData: Option[StateUserData]) =>
       {
         userData.map(hostData => {
@@ -1104,7 +1104,7 @@ object HostFunctions {
   def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(implicit
       env: Env,
       executionContext: ExecutionContext
-  ): Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = {
+  ): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
 
     implicit val mat = env.otoroshiMaterializer
 

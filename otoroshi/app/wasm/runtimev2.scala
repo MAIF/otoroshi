@@ -3,7 +3,7 @@ package otoroshi.wasm
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
-import org.extism.sdk.otoroshi._
+import org.extism.sdk.wasmotoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
 import otoroshi.models.WasmPlugin
@@ -56,10 +56,10 @@ case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
 case class WasmVm(index: Int,
                   maxCalls: Int,
                   resetMemory: Boolean,
-                  instance: OtoroshiInstance,
+                  instance: WasmOtoroshiInstance,
                   vmDataRef: AtomicReference[VmData],
-                  memories: Array[OtoroshiLinearMemory],
-                  functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]],
+                  memories: Array[WasmOtoroshiLinearMemory],
+                  functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]],
                   pool: WasmVmPool,
                   var opaPointers: Option[OPAWasmVm] = None) {
 
@@ -197,7 +197,7 @@ case class WasmVmPoolAction(promise: Promise[WasmVm], options: WasmVmInitOptions
 object WasmVmPool {
 
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
-  private[wasm] val engine = new OtoroshiEngine()
+  private[wasm] val engine = new WasmOtoroshiEngine()
   private val instances = new UnboundedTrieMap[String, WasmVmPool]()
 
   def allInstances(): Map[String, WasmVmPool] = instances.synchronized {
@@ -227,9 +227,9 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 
   WasmVmPool.logger.debug("new WasmVmPool")
 
-  private val engine = new OtoroshiEngine()
+  private val engine = new WasmOtoroshiEngine()
   private val counter = new AtomicInteger(-1)
-  private val templateRef = new AtomicReference[OtoroshiTemplate](null)
+  private val templateRef = new AtomicReference[WasmOtoroshiTemplate](null)
   private[wasm] val availableVms = new ConcurrentLinkedQueue[WasmVm]()
   private[wasm] val inUseVms = new ConcurrentLinkedQueue[WasmVm]()
   private val creatingRef = new AtomicBoolean(false)
@@ -300,7 +300,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
         val hash = wasm.sha256
         val resolver = new WasmSourceResolver()
         val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-        templateRef.set(new OtoroshiTemplate(engine, hash, new Manifest(
+        templateRef.set(new WasmOtoroshiTemplate(engine, hash, new Manifest(
           Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
           new MemoryOptions(config.memoryPages),
           config.config.asJava,
@@ -311,10 +311,10 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       val template = templateRef.get()
       val vmDataRef = new AtomicReference[VmData](null)
       val addedFunctions =  options.addHostFunctions(vmDataRef)
-      val functions: Array[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
+      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
         HostFunctions.getFunctions(config, stableId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
       } else {
-        addedFunctions.toArray[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
+        addedFunctions.toArray[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
       }
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
@@ -407,7 +407,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 case class WasmVmInitOptions(
   importDefaultHostFunctions: Boolean = true,
   resetMemory: Boolean = true,
-  addHostFunctions: (AtomicReference[VmData]) => Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]] = _ => Seq.empty
+  addHostFunctions: (AtomicReference[VmData]) => Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = _ => Seq.empty
 )
 
 object WasmVmInitOptions {

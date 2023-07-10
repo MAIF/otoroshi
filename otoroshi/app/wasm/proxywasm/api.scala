@@ -2,7 +2,7 @@ package otoroshi.wasm.proxywasm
 
 import akka.util.ByteString
 import com.sun.jna.Pointer
-import org.extism.sdk.otoroshi._
+import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginHttpResponse
 import otoroshi.utils.TypedMap
@@ -88,7 +88,7 @@ case class VmData(
     respRef: AtomicReference[play.api.mvc.Result],
     bodyInRef: AtomicReference[ByteString],
     bodyOutRef: AtomicReference[ByteString],
-) extends OtoroshiHostUserData {
+) extends WasmOtoroshiHostUserData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
       .from(request, attrs)
@@ -130,14 +130,14 @@ case class VmData(
 
 trait Api {
 
-  def proxyLog(plugin: OtoroshiInternal, logLevel: Int, messageData: Int, messageSize: Int): Result
+  def proxyLog(plugin: WasmOtoroshiInternal, logLevel: Int, messageData: Int, messageSize: Int): Result
 
-  def proxyResumeStream(plugin: OtoroshiInternal, streamType: StreamType): Result
+  def proxyResumeStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result
 
-  def proxyCloseStream(plugin: OtoroshiInternal, streamType: StreamType): Result
+  def proxyCloseStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result
 
   def proxySendHttpResponse(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       responseCode: Int,
       responseCodeDetailsData: Int,
       responseCodeDetailsSize: Int,
@@ -149,14 +149,14 @@ trait Api {
       vmData: VmData,
   ): Result
 
-  def proxyResumeHttpStream(plugin: OtoroshiInternal, streamType: StreamType): Result
+  def proxyResumeHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result
 
-  def proxyCloseHttpStream(plugin: OtoroshiInternal, streamType: StreamType): Result
+  def proxyCloseHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result
 
-  def getBuffer(plugin: OtoroshiInternal, data: VmData, bufferType: BufferType): IoBuffer
+  def getBuffer(plugin: WasmOtoroshiInternal, data: VmData, bufferType: BufferType): IoBuffer
 
   def proxyGetBuffer(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -166,7 +166,7 @@ trait Api {
   ): Result
 
   def proxySetBuffer(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -175,17 +175,17 @@ trait Api {
       bufferSize: Int
   ): Result
 
-  def getMap(plugin: OtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString]
+  def getMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString]
 
   def copyMapIntoInstance(
       m: Map[String, String],
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       returnMapData: Int,
       returnMapSize: Int
   ): Unit
 
   def proxyGetHeaderMapPairs(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       returnDataPtr: Int,
@@ -193,7 +193,7 @@ trait Api {
   ): Int
 
   def proxyGetHeaderMapValue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -203,7 +203,7 @@ trait Api {
   ): Result
 
   def proxyReplaceHeaderMapValue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -213,7 +213,7 @@ trait Api {
   ): Result
 
   def proxyOpenSharedKvstore(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreNameData: Int,
       kvstoreNameSiz: Int,
       createIfNotExist: Int,
@@ -221,7 +221,7 @@ trait Api {
   ): Result
 
   def proxyGetSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -231,7 +231,7 @@ trait Api {
   ): Result
 
   def proxySetSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -241,7 +241,7 @@ trait Api {
   ): Result
 
   def proxyAddSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -251,17 +251,17 @@ trait Api {
   ): Result
 
   def proxyRemoveSharedKvstoreKey(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
       cas: Int
   ): Result
 
-  def proxyDeleteSharedKvstore(plugin: OtoroshiInternal, kvstoreID: Int): Result
+  def proxyDeleteSharedKvstore(plugin: WasmOtoroshiInternal, kvstoreID: Int): Result
 
   def proxyOpenSharedQueue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       queueNameData: Int,
       queueNameSize: Int,
       createIfNotExist: Int,
@@ -269,38 +269,38 @@ trait Api {
   ): Result
 
   def proxyDequeueSharedQueueItem(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       queueID: Int,
       returnPayloadData: Int,
       returnPayloadSize: Int
   ): Result
 
-  def proxyEnqueueSharedQueueItem(plugin: OtoroshiInternal, queueID: Int, payloadData: Int, payloadSize: Int): Result
+  def proxyEnqueueSharedQueueItem(plugin: WasmOtoroshiInternal, queueID: Int, payloadData: Int, payloadSize: Int): Result
 
-  def proxyDeleteSharedQueue(plugin: OtoroshiInternal, queueID: Int): Result
+  def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result
 
-  def proxyCreateTimer(plugin: OtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result
+  def proxyCreateTimer(plugin: WasmOtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result
 
-  def proxyDeleteTimer(plugin: OtoroshiInternal, timerID: Int): Result
+  def proxyDeleteTimer(plugin: WasmOtoroshiInternal, timerID: Int): Result
 
   def proxyCreateMetric(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       metricType: MetricType,
       metricNameData: Int,
       metricNameSize: Int,
       returnMetricID: Int
   ): MetricType
 
-  def proxyGetMetricValue(plugin: OtoroshiInternal, metricID: Int, returnValue: Int): Result
+  def proxyGetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, returnValue: Int): Result
 
-  def proxySetMetricValue(plugin: OtoroshiInternal, metricID: Int, value: Int): Result
+  def proxySetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, value: Int): Result
 
-  def proxyIncrementMetricValue(plugin: OtoroshiInternal, data: VmData, metricID: Int, offset: Long): Result
+  def proxyIncrementMetricValue(plugin: WasmOtoroshiInternal, data: VmData, metricID: Int, offset: Long): Result
 
-  def proxyDeleteMetric(plugin: OtoroshiInternal, metricID: Int): Result
+  def proxyDeleteMetric(plugin: WasmOtoroshiInternal, metricID: Int): Result
 
   def proxyDefineMetric(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       metricType: Int,
       namePtr: Int,
       nameSize: Int,
@@ -308,7 +308,7 @@ trait Api {
   ): Result
 
   def proxyDispatchHttpCall(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       headersMapData: Int,
@@ -322,7 +322,7 @@ trait Api {
   ): Result
 
   def proxyDispatchGrpcCall(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -338,7 +338,7 @@ trait Api {
   ): Result
 
   def proxyOpenGrpcStream(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -351,18 +351,18 @@ trait Api {
   ): Result
 
   def proxySendGrpcStreamMessage(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       calloutID: Int,
       grpcMessageData: Int,
       grpcMessageSize: Int
   ): Result
 
-  def proxyCancelGrpcCall(plugin: OtoroshiInternal, calloutID: Int): Result
+  def proxyCancelGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result
 
-  def proxyCloseGrpcCall(plugin: OtoroshiInternal, calloutID: Int): Result
+  def proxyCloseGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result
 
   def proxyCallCustomFunction(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       customFunctionID: Int,
       parametersData: Int,
       parametersSize: Int,
@@ -370,10 +370,10 @@ trait Api {
       returnResultsSize: Int
   ): Result
 
-  def copyIntoInstance(plugin: OtoroshiInternal, memory: Pointer, value: IoBuffer, retPtr: Int, retSize: Int): Result
+  def copyIntoInstance(plugin: WasmOtoroshiInternal, memory: Pointer, value: IoBuffer, retPtr: Int, retSize: Int): Result
 
   def proxyGetProperty(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       keyPtr: Int,
       keySize: Int,
@@ -399,45 +399,45 @@ trait Api {
 
   def proxySetTickPeriodMilliseconds(data: VmData, period: Int): Status
 
-  def proxySetEffectiveContext(plugin: OtoroshiInternal, contextID: Int): Status
+  def proxySetEffectiveContext(plugin: WasmOtoroshiInternal, contextID: Int): Status
 
-  def getPluginConfig(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getPluginConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getHttpRequestBody(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getHttpRequestBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getHttpResponseBody(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getHttpResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getDownStreamData(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getDownStreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getUpstreamData(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getUpstreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getHttpCalloutResponseBody(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getHttpCalloutResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
-  def getVmConfig(plugin: OtoroshiInternal, data: VmData): IoBuffer
+  def getVmConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer
 
   def getCustomBuffer(bufferType: BufferType): IoBuffer
 
-  def getHttpRequestHeader(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpRequestHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpRequestTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpRequestTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpRequestMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpRequestMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpResponseHeader(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpResponseHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpResponseTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpResponseMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpCallResponseHeaders(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpCallResponseHeaders(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpCallResponseTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpCallResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getHttpCallResponseMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString]
+  def getHttpCallResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString]
 
-  def getCustomMap(plugin: OtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString]
+  def getCustomMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString]
 
-  def getMemory(plugin: OtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)]
+  def getMemory(plugin: WasmOtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)]
 
-  def getMemory(plugin: OtoroshiInternal): Either[Error, Pointer]
+  def getMemory(plugin: WasmOtoroshiInternal): Either[Error, Pointer]
 }

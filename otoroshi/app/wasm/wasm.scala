@@ -1,7 +1,7 @@
 package otoroshi.wasm
 
 import akka.util.ByteString
-import org.extism.sdk.otoroshi._
+import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
 import otoroshi.next.models.NgTlsConfig
@@ -406,11 +406,11 @@ object WasmConfig {
 }
 
 object ResultsWrapper                                                  {
-  def apply(results: OtoroshiResults): ResultsWrapper                 = new ResultsWrapper(results, None)
-  def apply(results: OtoroshiResults, plugin: OtoroshiInstance): ResultsWrapper = new ResultsWrapper(results, Some(plugin))
+  def apply(results: WasmOtoroshiResults): ResultsWrapper                 = new ResultsWrapper(results, None)
+  def apply(results: WasmOtoroshiResults, plugin: WasmOtoroshiInstance): ResultsWrapper = new ResultsWrapper(results, Some(plugin))
 }
 
-case class ResultsWrapper(results: OtoroshiResults, pluginOpt: Option[OtoroshiInstance]) {
+case class ResultsWrapper(results: WasmOtoroshiResults, pluginOpt: Option[WasmOtoroshiInstance]) {
   def free(): Unit = try {
     if (results.getLength > 0) {
       results.close()

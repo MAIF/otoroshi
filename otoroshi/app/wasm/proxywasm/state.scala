@@ -2,7 +2,7 @@ package otoroshi.wasm
 
 import akka.util.ByteString
 import com.sun.jna.Pointer
-import org.extism.sdk.otoroshi._
+import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
@@ -33,7 +33,7 @@ class ProxyWasmState(
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
   }
 
-  override def proxyLog(plugin: OtoroshiInternal, logLevel: Int, messageData: Int, messageSize: Int): Result = {
+  override def proxyLog(plugin: WasmOtoroshiInternal, logLevel: Int, messageData: Int, messageSize: Int): Result = {
     getMemory(plugin, messageData, messageSize)
       .fold(
         Error.toResult,
@@ -61,18 +61,18 @@ class ProxyWasmState(
       )
   }
 
-  override def proxyResumeStream(plugin: OtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyResumeStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_stream")
     null
   }
 
-  override def proxyCloseStream(plugin: OtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyCloseStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
     traceVmHost("proxy_close_stream")
     null
   }
 
   override def proxySendHttpResponse(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       responseCode: Int,
       responseCodeDetailsData: Int,
       responseCodeDetailsSize: Int,
@@ -108,17 +108,17 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def proxyResumeHttpStream(plugin: OtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyResumeHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_http_stream")
     null
   }
 
-  override def proxyCloseHttpStream(plugin: OtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyCloseHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
     traceVmHost("proxy_close_http_stream")
     null
   }
 
-  override def getBuffer(plugin: OtoroshiInternal, data: VmData, bufferType: BufferType): IoBuffer = {
+  override def getBuffer(plugin: WasmOtoroshiInternal, data: VmData, bufferType: BufferType): IoBuffer = {
     bufferType match {
       case BufferTypeHttpRequestBody      =>
         getHttpRequestBody(plugin, data)
@@ -142,7 +142,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetBuffer(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -178,7 +178,7 @@ class ProxyWasmState(
   }
 
   override def proxySetBuffer(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -213,7 +213,7 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def getMap(plugin: OtoroshiInternal, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
+  override def getMap(plugin: WasmOtoroshiInternal, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
     mapType match {
       case MapTypeHttpRequestHeaders       => getHttpRequestHeader(plugin, vmData)
       case MapTypeHttpRequestTrailers      => getHttpRequestTrailer(plugin, vmData)
@@ -230,13 +230,13 @@ class ProxyWasmState(
 
   def copyMapIntoInstance(
       m: Map[String, String],
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       returnMapData: Int,
       returnMapSize: Int
   ): Unit = unimplementedFunction("copyMapIntoInstance")
 
   override def proxyGetHeaderMapPairs(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       returnDataPtr: Int,
@@ -312,7 +312,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetHeaderMapValue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -346,7 +346,7 @@ class ProxyWasmState(
   }
 
   override def proxyReplaceHeaderMapValue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -386,7 +386,7 @@ class ProxyWasmState(
   }
 
   override def proxyOpenSharedKvstore(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreNameData: Int,
       kvstoreNameSiz: Int,
       createIfNotExist: Int,
@@ -394,7 +394,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenSharedKvstore")
 
   override def proxyGetSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -404,7 +404,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyGetSharedKvstoreKeyValues")
 
   override def proxySetSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -414,7 +414,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxySetSharedKvstoreKeyValues")
 
   override def proxyAddSharedKvstoreKeyValues(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -424,17 +424,17 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyAddSharedKvstoreKeyValues")
 
   override def proxyRemoveSharedKvstoreKey(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
       cas: Int
   ): Result = unimplementedFunction("proxyRemoveSharedKvstoreKey")
 
-  override def proxyDeleteSharedKvstore(plugin: OtoroshiInternal, kvstoreID: Int): Result = unimplementedFunction("proxyDeleteSharedKvstore")
+  override def proxyDeleteSharedKvstore(plugin: WasmOtoroshiInternal, kvstoreID: Int): Result = unimplementedFunction("proxyDeleteSharedKvstore")
 
   override def proxyOpenSharedQueue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       queueNameData: Int,
       queueNameSize: Int,
       createIfNotExist: Int,
@@ -442,35 +442,35 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenSharedQueue")
 
   override def proxyDequeueSharedQueueItem(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       queueID: Int,
       returnPayloadData: Int,
       returnPayloadSize: Int
   ): Result = unimplementedFunction("proxyDequeueSharedQueueItem")
 
   override def proxyEnqueueSharedQueueItem(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       queueID: Int,
       payloadData: Int,
       payloadSize: Int
   ): Result = unimplementedFunction("proxyEnqueueSharedQueueItem")
 
-  override def proxyDeleteSharedQueue(plugin: OtoroshiInternal, queueID: Int): Result = unimplementedFunction("proxyDeleteSharedQueue")
+  override def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result = unimplementedFunction("proxyDeleteSharedQueue")
 
-  override def proxyCreateTimer(plugin: OtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result =
+  override def proxyCreateTimer(plugin: WasmOtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result =
     unimplementedFunction("proxyCreateTimer")
 
-  override def proxyDeleteTimer(plugin: OtoroshiInternal, timerID: Int): Result = unimplementedFunction("proxyDeleteTimer")
+  override def proxyDeleteTimer(plugin: WasmOtoroshiInternal, timerID: Int): Result = unimplementedFunction("proxyDeleteTimer")
 
   override def proxyCreateMetric(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       metricType: MetricType,
       metricNameData: Int,
       metricNameSize: Int,
       returnMetricID: Int
   ): MetricType = unimplementedFunction("proxyCreateMetric")
 
-  override def proxyGetMetricValue(plugin: OtoroshiInternal, metricID: Int, returnValue: Int): Result = {
+  override def proxyGetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, returnValue: Int): Result = {
     // TODO - get metricID
     val value = 10
 
@@ -484,10 +484,10 @@ class ProxyWasmState(
       )
   }
 
-  override def proxySetMetricValue(plugin: OtoroshiInternal, metricID: Int, value: Int): Result = unimplementedFunction("proxySetMetricValue")
+  override def proxySetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, value: Int): Result = unimplementedFunction("proxySetMetricValue")
 
   override def proxyIncrementMetricValue(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       metricID: Int,
       offset: Long
@@ -496,10 +496,10 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def proxyDeleteMetric(plugin: OtoroshiInternal, metricID: Int): Result = unimplementedFunction("proxyDeleteMetric")
+  override def proxyDeleteMetric(plugin: WasmOtoroshiInternal, metricID: Int): Result = unimplementedFunction("proxyDeleteMetric")
 
   override def proxyDefineMetric(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       metricType: Int,
       namePtr: Int,
       nameSize: Int,
@@ -525,7 +525,7 @@ class ProxyWasmState(
   }
 
   override def proxyDispatchHttpCall(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       headersMapData: Int,
@@ -539,7 +539,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyDispatchHttpCall")
 
   override def proxyDispatchGrpcCall(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -555,7 +555,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyDispatchGrpcCall")
 
   override def proxyOpenGrpcStream(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -568,18 +568,18 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenGrpcStream")
 
   override def proxySendGrpcStreamMessage(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       calloutID: Int,
       grpcMessageData: Int,
       grpcMessageSize: Int
   ): Result = unimplementedFunction("proxySendGrpcStreamMessage")
 
-  override def proxyCancelGrpcCall(plugin: OtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCancelGrpcCall")
+  override def proxyCancelGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCancelGrpcCall")
 
-  override def proxyCloseGrpcCall(plugin: OtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCloseGrpcCall")
+  override def proxyCloseGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCloseGrpcCall")
 
   override def proxyCallCustomFunction(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       customFunctionID: Int,
       parametersData: Int,
       parametersSize: Int,
@@ -588,7 +588,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyCallCustomFunction")
 
   override def copyIntoInstance(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       memory: Pointer,
       value: IoBuffer,
       retPtr: Int,
@@ -605,7 +605,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetProperty(
-      plugin: OtoroshiInternal,
+      plugin: WasmOtoroshiInternal,
       data: VmData,
       pathPtr: Int,
       pathSize: Int,
@@ -660,73 +660,73 @@ class ProxyWasmState(
     StatusOK
   }
 
-  override def proxySetEffectiveContext(plugin: OtoroshiInternal, contextID: Int): Status = {
+  override def proxySetEffectiveContext(plugin: WasmOtoroshiInternal, contextID: Int): Status = {
     // TODO - manage context id changes
     // this.contextId = contextID
     StatusOK
   }
 
-  override def getPluginConfig(plugin: OtoroshiInternal, data: VmData): IoBuffer = {
+  override def getPluginConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
     new IoBuffer(data.configuration)
   }
 
-  override def getHttpRequestBody(plugin: OtoroshiInternal, data: VmData): IoBuffer = {
+  override def getHttpRequestBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
     data.bodyIn match {
       case None       => new IoBuffer(ByteString.empty)
       case Some(body) => new IoBuffer(body)
     }
   }
 
-  override def getHttpResponseBody(plugin: OtoroshiInternal, data: VmData): IoBuffer = {
+  override def getHttpResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
     data.bodyOut match {
       case None       => new IoBuffer(ByteString.empty)
       case Some(body) => new IoBuffer(body)
     }
   }
 
-  override def getDownStreamData(plugin: OtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getDownStreamData")
+  override def getDownStreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getDownStreamData")
 
-  override def getUpstreamData(plugin: OtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getUpstreamData")
+  override def getUpstreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getUpstreamData")
 
-  override def getHttpCalloutResponseBody(plugin: OtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getHttpCalloutResponseBody")
+  override def getHttpCalloutResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getHttpCalloutResponseBody")
 
-  override def getVmConfig(plugin: OtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getVmConfig")
+  override def getVmConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getVmConfig")
 
   override def getCustomBuffer(bufferType: BufferType): IoBuffer = unimplementedFunction("getCustomBuffer")
 
-  override def getHttpRequestHeader(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
     data.properties
       .filter(entry => entry._1.startsWith("request.headers.") || entry._1.startsWith(":"))
       .map(t => (t._1.replace("request.headers.", ""), ByteString(t._2)))
   }
 
-  override def getHttpRequestTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
     Map.empty
   }
 
-  override def getHttpRequestMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
     Map.empty
   }
 
-  override def getHttpResponseHeader(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpResponseHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
     data.properties
       .filter(entry => entry._1.startsWith("response.headers.") || entry._1.startsWith(":"))
       .map(t => (t._1.replace("response.headers.", ""), ByteString(t._2)))
   }
 
-  override def getHttpResponseTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseTrailer")
+  override def getHttpResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseTrailer")
 
-  override def getHttpResponseMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseMetadata")
+  override def getHttpResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseMetadata")
 
-  override def getHttpCallResponseHeaders(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseHeaders")
+  override def getHttpCallResponseHeaders(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseHeaders")
 
-  override def getHttpCallResponseTrailer(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseTrailer")
+  override def getHttpCallResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseTrailer")
 
-  override def getHttpCallResponseMetadata(plugin: OtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseMetadata")
+  override def getHttpCallResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseMetadata")
 
-  override def getCustomMap(plugin: OtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString] = unimplementedFunction("getCustomMap")
+  override def getCustomMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString] = unimplementedFunction("getCustomMap")
 
-  override def getMemory(plugin: OtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] = plugin.synchronized {
+  override def getMemory(plugin: WasmOtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] = plugin.synchronized {
     val memory: Pointer = plugin.getLinearMemory("memory")
     if (memory == null) {
       return Error.ErrorExportsNotFound.left
@@ -741,7 +741,7 @@ class ProxyWasmState(
     (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Error]
   }
 
-  override def getMemory(plugin: OtoroshiInternal): Either[Error, Pointer] = plugin.synchronized {
+  override def getMemory(plugin: WasmOtoroshiInternal): Either[Error, Pointer] = plugin.synchronized {
 
     val memory: Pointer = plugin.getLinearMemory("memory")
     if (memory == null) {
