@@ -458,7 +458,7 @@ object WasmUtils {
                    addHostFunctions: Seq[OtoroshiHostFunction[_ <: OtoroshiHostUserData]]
                  )(implicit env: Env): Future[Either[JsValue, (String, ResultsWrapper)]] =
     env.metrics.withTimerAsync("otoroshi.wasm.core.raw-execute") {
-      val config   = if (_config.opa) _config.copy(lifetime = WasmVmLifetime.Invocation) else _config
+      val config = _config // if (_config.opa) _config.copy(lifetime = WasmVmLifetime.Invocation) else _config
       WasmUtils.debugLog.debug("execute")
       val pluginId = config.source.kind match {
         case WasmSourceKind.Local => {

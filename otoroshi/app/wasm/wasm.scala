@@ -314,12 +314,15 @@ case class WasmConfig(
     allowedHosts: Seq[String] = Seq.empty,
     allowedPaths: Map[String, String] = Map.empty,
     ////
-    lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
+    // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
     wasi: Boolean = false,
     opa: Boolean = false,
     instances: Int = 1,
+    killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
     authorizations: WasmAuthorizations = WasmAuthorizations()
 ) extends NgPluginConfig {
+  // still here for compat reason
+  def lifetime: WasmVmLifetime = WasmVmLifetime.Forever
   def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
   def json: JsValue = Json.obj(
     "source"         -> source.json,
@@ -330,9 +333,10 @@ case class WasmConfig(
     "allowedPaths"   -> allowedPaths,
     "wasi"           -> wasi,
     "opa"            -> opa,
-    "lifetime"       -> lifetime.json,
+    // "lifetime"       -> lifetime.json,
     "authorizations" -> authorizations.json,
-    "instances"      -> instances
+    "instances"      -> instances,
+    "killOptions"    -> killOptions.json,
   )
 }
 
@@ -373,24 +377,25 @@ object WasmConfig {
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         opa = (json \ "opa").asOpt[Boolean].getOrElse(false),
-        lifetime = json
-          .select("lifetime")
-          .asOpt[String]
-          .flatMap(WasmVmLifetime.parse)
-          .orElse(
-            (json \ "preserve").asOpt[Boolean].map {
-              case true  => WasmVmLifetime.Request
-              case false => WasmVmLifetime.Forever
-            }
-          )
-          .getOrElse(WasmVmLifetime.Forever),
+        // lifetime = json
+        //   .select("lifetime")
+        //   .asOpt[String]
+        //   .flatMap(WasmVmLifetime.parse)
+        //   .orElse(
+        //     (json \ "preserve").asOpt[Boolean].map {
+        //       case true  => WasmVmLifetime.Request
+        //       case false => WasmVmLifetime.Forever
+        //     }
+        //   )
+        //   .getOrElse(WasmVmLifetime.Forever),
         authorizations = (json \ "authorizations")
           .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
           .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
           .getOrElse {
             WasmAuthorizations()
           },
-        instances = json.select("instances").asOpt[Int].getOrElse(1)
+        instances = json.select("instances").asOpt[Int].getOrElse(1),
+        killOptions = json.select("killOptions").asOpt[JsValue].flatMap(v => WasmVmKillOptions.format.reads(v).asOpt).getOrElse(WasmVmKillOptions.default)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

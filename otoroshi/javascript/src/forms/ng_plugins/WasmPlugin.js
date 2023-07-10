@@ -208,6 +208,52 @@ const schema = {
       },
     },
   },
+  killOptions: {
+    label: 'wasm vm kill options',
+    type: 'form',
+    collapsable: true,
+    collapsed: false,
+    flow: [
+      'max_calls',
+      'max_memory_usage',
+      'max_avg_call_duration',
+      'max_unused_duration',
+    ],
+    schema: {
+      max_calls: {
+        type: 'number',
+        label: 'Max calls',
+        suffix: 'calls',
+        props: {
+          help: 'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
+        },
+      },
+      max_memory_usage: {
+        type: 'number',
+        label: 'Max memory usage',
+        suffix: '%',
+        props: {
+          help: 'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
+        },
+      },
+      max_avg_call_duration: {
+        type: 'number',
+        label: 'Max unused duration',
+        suffix: 'ms.',
+        props: {
+          help: 'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
+        },
+      },
+      max_unused_duration: {
+        type: 'number',
+        label: 'Max unused duration',
+        suffix: 'ms.',
+        props: {
+          help: 'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
+        },
+      }
+    },
+  },
 };
 
 export default {
@@ -219,8 +265,9 @@ export default {
       'source',
       'functionName',
       v.source.kind.toLowerCase() !== 'local' && 'wasi',
-      v.source.kind.toLowerCase() !== 'local' && 'lifetime',
+      // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source.kind.toLowerCase() !== 'local' && 'authorizations',
+      v.source.kind.toLowerCase() !== 'local' && 'killOptions',
       v.source.kind.toLowerCase() !== 'local' && {
         type: 'group',
         name: 'Advanced settings',
