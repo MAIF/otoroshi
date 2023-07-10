@@ -390,13 +390,6 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   }
 
   def getPooledVm(options: WasmVmInitOptions = WasmVmInitOptions.empty()): Future[WasmVm] = {
-    // println("-----------------")
-    // println("\nscript-cache: \n");
-    // println(WasmUtils.scriptCache(env).keySet.mkString("\n"))
-    // println("\n-----------------")
-    // println("\npool-cache: \n");
-    // println(WasmVmPool.instances.keySet.mkString("\n"))
-    // println("\n-----------------")
     val p = Promise[WasmVm]()
     requestsQueue.offer(WasmVmPoolAction(p, options))
     p.future
