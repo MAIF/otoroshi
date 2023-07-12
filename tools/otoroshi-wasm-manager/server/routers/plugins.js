@@ -6,7 +6,7 @@ const { UserManager } = require('../services/user');
 const { format, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
-const { BuildingJob } = require('../services/building-job');
+const { Queue } = require('../services/queue');
 const { FileSystem } = require('../services/file-system');
 
 const manager = require('../logger');
@@ -339,7 +339,7 @@ router.post('/:id/build', async (req, res) => {
 
   const isRustBuild = plugin.type == 'rust';
 
-  BuildingJob.buildIsAlreadyRunning(pluginId)
+  Queue.isBuildRunning(pluginId)
     .then(async exists => {
       if (exists) {
         res.json({ queue_id: pluginId, alreadyExists: true });
@@ -355,7 +355,7 @@ router.post('/:id/build', async (req, res) => {
           if (release || plugin['last_hash'] !== zipHash) {
             FileSystem.checkIfInformationsFileExists(folder, plugin.type)
               .then(() => InformationsReader.extractInformations(folder, plugin.type))
-              .then(({ pluginName, pluginVersion, err }) => {
+              .then(({ pluginName, pluginVersion, metadata, err }) => {
                 if (err) {
                   WebSocket.emitError(plugin.pluginId, release, err);
                   FileSystem.removeFolder('build', folder)
@@ -367,10 +367,10 @@ router.post('/:id/build', async (req, res) => {
                         });
                     });
                 } else {
-                  (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve({}))
-                    .then(metadata => {
+                  (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve(undefined))
+                    .then(opaMetadata => {
                       const wasmName = `${pluginName}-${pluginVersion}${release ? '' : '-dev'}`;
-                      BuildingJob.checkIfBinaryExists(wasmName, release)
+                      Queue.isBinaryExists(wasmName, release)
                         .then(exists => {
                           if (exists) {
                             FileSystem.removeFolder('build', folder)
@@ -382,7 +382,7 @@ router.post('/:id/build', async (req, res) => {
                                   });
                               });
                           } else {
-                            BuildingJob.addBuildToQueue({
+                            Queue.addBuildToQueue({
                               folder,
                               plugin: pluginId,
                               wasmName,
@@ -390,7 +390,7 @@ router.post('/:id/build', async (req, res) => {
                               zipHash,
                               isRustBuild,
                               pluginType: plugin.type,
-                              metadata,
+                              metadata: opaMetadata ? opaMetadata : (metadata ? metadata : {}),
                               release
                             });
 
