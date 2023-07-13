@@ -14,7 +14,7 @@ import otoroshi.events._
 import otoroshi.health.HealthCheck
 import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
@@ -125,7 +125,7 @@ case class AkkaCircuitBreakerWrapper(
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
-  val breakers   = new LegitTrieMap[String, AkkaCircuitBreakerWrapper]()
+  val breakers   = new UnboundedTrieMap[String, AkkaCircuitBreakerWrapper]()
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
@@ -394,7 +394,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
 class CircuitBreakersHolder() {
 
-  private val circuitBreakers = new LegitTrieMap[String, ServiceDescriptorCircuitBreaker]()
+  private val circuitBreakers = new UnboundedTrieMap[String, ServiceDescriptorCircuitBreaker]()
 
   def get(id: String, defaultValue: () => ServiceDescriptorCircuitBreaker): ServiceDescriptorCircuitBreaker = {
     circuitBreakers.getOrElseUpdate(id, defaultValue())

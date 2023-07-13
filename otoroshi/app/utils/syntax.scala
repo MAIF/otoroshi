@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono
 import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -246,11 +247,6 @@ object implicits {
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
-  object BetterString {
-    import java.security.MessageDigest
-    val digest256 = MessageDigest.getInstance("SHA-256")
-    val digest512 = MessageDigest.getInstance("SHA-512")
-  }
   implicit class BetterString(private val obj: String)                 extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String                            = obj.slug
@@ -266,8 +262,8 @@ object implicits {
     def base64UrlSafe: String                      = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String                         = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
     def decodeBase64: String                       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def sha256: String                             = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
-    def sha512: String                             = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha256: String                             = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha512: String                             = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed] = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
@@ -282,8 +278,8 @@ object implicits {
   }
   implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
-    def sha256: String                                 = Hex.encodeHexString(BetterString.digest256.digest(obj.toArray))
-    def sha512: String                                 = Hex.encodeHexString(BetterString.digest512.digest(obj.toArray))
+    def sha256: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
+    def sha512: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
     def json: JsValue = JsBoolean(obj)

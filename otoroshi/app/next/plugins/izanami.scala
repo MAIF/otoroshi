@@ -10,7 +10,7 @@ import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
@@ -341,7 +341,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
-  private val cookieJar = new LegitTrieMap[String, WSCookie]()
+  private val cookieJar = new UnboundedTrieMap[String, WSCookie]()
 
   private val cache: Cache[String, JsValue] = Scaffeine()
     .recordStats()

@@ -2,7 +2,7 @@ package otoroshi.openapi
 
 import io.github.classgraph.{ClassGraph, ScanResult}
 import otoroshi.env.Env
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -92,13 +92,13 @@ class ClassGraphScanner {
       val flattenedOpenapiSchema = {
         val jsonRaw = new String(openapiflatres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
-        val map     = new LegitTrieMap[String, JsValue]()
+        val map     = new UnboundedTrieMap[String, JsValue]()
         map.++=(obj.value)
       }
       val asForms = {
         val jsonRaw = new String(openapiformres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
-        val map     = new LegitTrieMap[String, Form]()
+        val map     = new UnboundedTrieMap[String, Form]()
         map.++=(obj.value.mapValues(Form.fromJson)).toMap
       }
       OpenApiSchema(

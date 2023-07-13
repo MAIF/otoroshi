@@ -18,7 +18,7 @@ import otoroshi.next.extensions.AdminExtension
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{SchedulerHelper, TypedMap}
@@ -599,7 +599,7 @@ trait NanoApp extends RequestTransformer {
 
   override def pluginType: PluginType = PluginType.AppType
 
-  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
@@ -739,10 +739,10 @@ class ScriptManager(env: Env) {
   private val logger       = Logger("otoroshi-script-manager")
   private val updateRef    = new AtomicReference[Cancellable]()
   private val firstScan    = new AtomicBoolean(false)
-  private val compiling    = new LegitTrieMap[String, Unit]()
-  private val cache        = new LegitTrieMap[String, (String, PluginType, Any)]()
-  private val cpCache      = new LegitTrieMap[String, (PluginType, Any)]()
-  private val cpTryCache   = new LegitTrieMap[String, Unit]()
+  private val compiling    = new UnboundedTrieMap[String, Unit]()
+  private val cache        = new UnboundedTrieMap[String, (String, PluginType, Any)]()
+  private val cpCache      = new UnboundedTrieMap[String, (PluginType, Any)]()
+  private val cpTryCache   = new UnboundedTrieMap[String, Unit]()
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
@@ -1155,7 +1155,7 @@ class ScriptManager(env: Env) {
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
     ref match {
-      case r if r.startsWith("cp:")  => {
+      case r if r.startsWith("cp:")  => cpTryCache.synchronized {
         if (!cpTryCache.contains(ref)) {
           Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
             .map(clazz => clazz.newInstance()) match {

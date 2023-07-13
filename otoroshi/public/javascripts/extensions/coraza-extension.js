@@ -38,6 +38,10 @@
           type: 'bool',
           props: { label: 'Inspect req/res body' }
         },
+        pool_capacity: {
+          type: 'number',
+          props: { label: 'Number of coraza instances' }
+        },
         config: {
           type: 'jsonobjectcode',
           props: {
@@ -55,7 +59,7 @@
         { title: 'Description', filterId: 'description', content: (item) => item.description },
       ];
     
-      formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata', 'inspect_body', 'config'];
+      formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata', 'pool_capacity', 'inspect_body', 'config'];
     
       componentDidMount() {
         this.props.setTitle(`All Coraza WAF configs.`);

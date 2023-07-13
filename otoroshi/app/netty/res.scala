@@ -1,12 +1,13 @@
 package reactor.netty.resources
 
+import otoroshi.utils.cache.types.UnboundedTrieMap
+
 import java.lang.reflect.{Field, Modifier}
-import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
 object DefaultLoopResourcesHelper {
 
-  private val cache = new TrieMap[String, LoopResources]()
+  private val cache = new UnboundedTrieMap[String, LoopResources]()
 
   def getDefaultLoop(name: String, workers: Int, daemon: Boolean): LoopResources = {
     val key = s"default-$name-$workers-$daemon"

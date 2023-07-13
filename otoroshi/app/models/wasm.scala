@@ -12,6 +12,7 @@ import play.api.libs.json._
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import otoroshi.wasm.WasmVmPool
 
 case class WasmPlugin(
     id: String,
@@ -30,6 +31,7 @@ case class WasmPlugin(
   override def theDescription: String                 = description
   override def theTags: Seq[String]                   = tags
   override def theMetadata: Map[String, String]       = metadata
+  def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forPlugin(this)
 }
 
 object WasmPlugin {

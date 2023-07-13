@@ -1,158 +1,156 @@
 package otoroshi.wasm;
 
-import akka.stream.Materializer
-import org.extism.sdk.parameters.{IntegerParameter, Parameters}
-import org.extism.sdk._
-import otoroshi.env.Env
-import otoroshi.next.plugins.api.NgCachedConfigContext
+import org.extism.sdk.wasmotoroshi._
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import play.api.libs.json.{JsString, JsValue, Json}
 
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Optional
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext;
+import java.util.concurrent.atomic.AtomicReference;
 
 object OPA extends AwaitCapable {
 
-  def opaAbortFunction: ExtismFunction[EmptyUserData] =
+  def opaAbortFunction: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaAbortFunction");
     }
 
-  def opaPrintlnFunction: ExtismFunction[EmptyUserData] =
+  def opaPrintlnFunction: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaPrintlnFunction");
     }
 
-  def opaBuiltin0Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin0Function: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin0Function");
     }
 
-  def opaBuiltin1Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin1Function: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin1Function");
     }
 
-  def opaBuiltin2Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin2Function: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin2Function");
     }
 
-  def opaBuiltin3Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin3Function: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin3Function");
     };
 
-  def opaBuiltin4Function: ExtismFunction[EmptyUserData] =
+  def opaBuiltin4Function: WasmOtoroshiExtismFunction[EmptyUserData] =
     (
-        plugin: ExtismCurrentPlugin,
-        params: Array[LibExtism.ExtismVal],
-        returns: Array[LibExtism.ExtismVal],
+        plugin: WasmOtoroshiInternal,
+        params: Array[WasmBridge.ExtismVal],
+        returns: Array[WasmBridge.ExtismVal],
         data: Optional[EmptyUserData]
     ) => {
       System.out.println("opaBuiltin4Function");
     }
 
-  def opaAbort() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaAbort() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_abort",
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     Array(),
     opaAbortFunction,
     Optional.empty()
   )
 
-  def opaPrintln() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaPrintln() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_println",
-    Array(LibExtism.ExtismValType.I64),
-    Array(LibExtism.ExtismValType.I64),
+    Array(WasmBridge.ExtismValType.I64),
+    Array(WasmBridge.ExtismValType.I64),
     opaPrintlnFunction,
     Optional.empty()
   )
 
-  def opaBuiltin0() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin0() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_builtin0",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32, WasmBridge.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     opaBuiltin0Function,
     Optional.empty()
   )
 
-  def opaBuiltin1() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin1() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_builtin1",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32, WasmBridge.ExtismValType.I32, WasmBridge.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     opaBuiltin1Function,
     Optional.empty()
   )
 
-  def opaBuiltin2() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin2() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_builtin2",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     opaBuiltin2Function,
     Optional.empty()
   )
 
-  def opaBuiltin3() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin3() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_builtin3",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     opaBuiltin3Function,
     Optional.empty()
   )
 
-  def opaBuiltin4() = new org.extism.sdk.HostFunction[EmptyUserData](
+  def opaBuiltin4() = new WasmOtoroshiHostFunction[EmptyUserData](
     "opa_builtin4",
     Array(
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32,
-      LibExtism.ExtismValType.I32
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32,
+      WasmBridge.ExtismValType.I32
     ),
-    Array(LibExtism.ExtismValType.I32),
+    Array(WasmBridge.ExtismValType.I32),
     opaBuiltin4Function,
     Optional.empty()
   )
@@ -169,98 +167,93 @@ object OPA extends AwaitCapable {
     )
   }
 
-  def getLinearMemories(): Seq[LinearMemory] = {
+  def getLinearMemories(): Seq[WasmOtoroshiLinearMemory] = {
     Seq(
-      new LinearMemory("memory", "env", new LinearMemoryOptions(5, Optional.empty()))
+      new WasmOtoroshiLinearMemory("memory", "env", new WasmOtoroshiLinearMemoryOptions(5, Optional.empty()))
     )
   }
 
-  def loadJSON(plugin: Plugin, value: Array[Byte]): Int = {
+  def loadJSON(plugin: WasmOtoroshiInstance, value: Array[Byte]): Either[JsValue, Int] = {
     if (value.length == 0) {
-      return 0
+      0.right
     } else {
       val value_buf_len = value.length
-      var parameters    = new Parameters(1)
-      val parameter     = new IntegerParameter()
-      parameter.add(parameters, value_buf_len, 0)
+      var parameters    = new WasmOtoroshiParameters(1)
+        .pushInt(value_buf_len)
 
-      val raw_addr = plugin.call("opa_malloc", parameters, 1, "".getBytes())
+      val raw_addr = plugin.call("opa_malloc", parameters, 1)
 
       if (
-        LibExtism.INSTANCE.extism_memory_write_bytes(
-          plugin.getPointer(),
-          plugin.getIndex(),
+        plugin.writeBytes(
           value,
           value_buf_len,
           raw_addr.getValue(0).v.i32
         ) == -1
       ) {
-        throw new ExtismException("Cant' write in memory")
+        JsString("Cant' write in memory").left
+      } else {
+        parameters = new WasmOtoroshiParameters(2)
+          .pushInts(raw_addr.getValue(0).v.i32, value_buf_len)
+        val parsed_addr = plugin.call(
+          "opa_json_parse",
+          parameters,
+          1
+        )
+
+        if (parsed_addr.getValue(0).v.i32 == 0) {
+          JsString("failed to parse json value").left
+        } else {
+          parsed_addr.getValue(0).v.i32.right
+        }
       }
-
-      parameters = new Parameters(2)
-      parameter.add(parameters, raw_addr.getValue(0).v.i32, 0)
-      parameter.add(parameters, value_buf_len, 1)
-      val parsed_addr = plugin.call(
-        "opa_json_parse",
-        parameters,
-        1
-      )
-
-      if (parsed_addr.getValue(0).v.i32 == 0) {
-        throw new ExtismException("failed to parse json value")
-      }
-
-      parsed_addr.getValue(0).v.i32
     }
   }
 
-  def evaluate(plugin: Plugin, input: String): String = {
+  def initialize(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
+    loadJSON(plugin, "{}".getBytes(StandardCharsets.UTF_8))
+      .flatMap(dataAddr => {
+        val base_heap_ptr = plugin.call(
+          "opa_heap_ptr_get",
+          new WasmOtoroshiParameters(0),
+          1
+        )
+
+        val data_heap_ptr = base_heap_ptr.getValue(0).v.i32
+        (
+          Json.obj("dataAddr" -> dataAddr, "baseHeapPtr" -> data_heap_ptr).stringify,
+          ResultsWrapper(new WasmOtoroshiResults(0))
+        ).right
+      })
+  }
+
+  def evaluate(plugin: WasmOtoroshiInstance, dataAddr: Int, baseHeapPtr: Int,  input: String): Either[JsValue, (String, ResultsWrapper)] = {
     val entrypoint = 0
 
     // TODO - read and load builtins functions by calling dumpJSON
-
-    val data_addr = loadJSON(plugin, "{}".getBytes(StandardCharsets.UTF_8))
-
-    val parameter = new IntegerParameter()
-
-    val base_heap_ptr = plugin.call(
-      "opa_heap_ptr_get",
-      new Parameters(0),
-      1
-    )
-
-    val data_heap_ptr = base_heap_ptr.getValue(0).v.i32
-
     val input_len = input.getBytes(StandardCharsets.UTF_8).length
-    LibExtism.INSTANCE.extism_memory_write_bytes(
-      plugin.getPointer(),
-      plugin.getIndex(),
+    plugin.writeBytes(
       input.getBytes(StandardCharsets.UTF_8),
       input_len,
-      data_heap_ptr
+      baseHeapPtr
     )
 
-    val heap_ptr   = data_heap_ptr + input_len
-    val input_addr = data_heap_ptr
+    val heap_ptr   = baseHeapPtr + input_len
+    val input_addr = baseHeapPtr
 
-    val ptr = new Parameters(7)
-    parameter.add(ptr, 0, 0)
-    parameter.add(ptr, entrypoint, 1)
-    parameter.add(ptr, data_addr, 2)
-    parameter.add(ptr, input_addr, 3)
-    parameter.add(ptr, input_len, 4)
-    parameter.add(ptr, heap_ptr, 5)
-    parameter.add(ptr, 0, 6)
+    val ptr = new WasmOtoroshiParameters(7)
+      .pushInts(0 , entrypoint, dataAddr, input_addr, input_len, heap_ptr, 0)
 
     val ret = plugin.call("opa_eval", ptr, 1)
 
-    val memory = LibExtism.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory")
+    val memory = plugin.getMemory("memory")
 
-    val mem: Array[Byte] = memory.getByteArray(ret.getValue(0).v.i32, 65356)
+    val offset: Int = ret.getValue(0).v.i32
+    val arraySize: Int = 65356
+
+    val mem: Array[Byte] = memory.getByteArray(offset, arraySize)
     val size: Int        = lastValidByte(mem)
 
-    new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8)
+    (new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8), ResultsWrapper(new WasmOtoroshiResults(0))).right
   }
 
   def lastValidByte(arr: Array[Byte]): Int = {
@@ -275,10 +268,10 @@ object OPA extends AwaitCapable {
 
 object LinearMemories {
 
-  private val memories: AtomicReference[Seq[LinearMemory]] =
-    new AtomicReference[Seq[LinearMemory]](Seq.empty[LinearMemory])
+  private val memories: AtomicReference[Seq[WasmOtoroshiLinearMemory]] =
+    new AtomicReference[Seq[WasmOtoroshiLinearMemory]](Seq.empty[WasmOtoroshiLinearMemory])
 
-  def getMemories(config: WasmConfig): Array[LinearMemory] = {
+  def getMemories(config: WasmConfig): Array[WasmOtoroshiLinearMemory] = {
     if (config.opa) {
       if (memories.get.isEmpty) {
         memories.set(
@@ -294,15 +287,15 @@ object LinearMemories {
 
 /*
     String dumpJSON() {
-        Results addr = plugin.call("builtins",  new Parameters(0), 1);
+        Results addr = plugin.call("builtins",  new WasmOtoroshiParameters(0), 1);
 
-        Parameters parameters = new Parameters(1);
+        Parameters parameters = new WasmOtoroshiParameters(1);
         IntegerParameter builder = new IntegerParameter();
         builder.add(parameters, addr.getValue(0).v.i32, 0);
 
         Results rawAddr = plugin.call("opa_json_dump", parameters, 1);
 
-        Pointer memory = LibExtism.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory");
+        Pointer memory = WasmBridge.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory");
         byte[] mem = memory.getByteArray(rawAddr.getValue(0).v.i32, 65356);
         int size = lastValidByte(mem);
 

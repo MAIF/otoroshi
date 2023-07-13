@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml.write
 import play.api.libs.json._
@@ -154,7 +154,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
   }
 
   def restrictResultAtCrdsEntities(data: TrieMap[String, JsValue]): TrieMap[String, JsValue] = {
-    val out     = new LegitTrieMap[String, JsValue]()
+    val out     = new UnboundedTrieMap[String, JsValue]()
     val schemas = (spec \ "components" \ "schemas").as[JsObject]
 
     crdsEntities.fields.foreach(curr => {

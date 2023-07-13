@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -22,7 +22,7 @@ class OpenapiToJson(spec: JsValue) {
 
   def extractSchemasFromOpenapi() = {
     val schemas = (spec \ "components" \ "schemas").as[JsObject]
-    val data    = new LegitTrieMap[String, JsValue]()
+    val data    = new UnboundedTrieMap[String, JsValue]()
     schemas.fields.foreach(curr => data.put(curr._1, curr._2))
     data
   }

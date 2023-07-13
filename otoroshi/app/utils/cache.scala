@@ -7,11 +7,14 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 
 package object types {
-  type LegitTrieMap[A, B]           = TrieMap[A, B]
-  type LegitConcurrentHashMap[A, B] = ConcurrentHashMap[A, B]
+  type UnboundedTrieMap[A, B]           = TrieMap[A, B]
+  type UnboundedConcurrentHashMap[A, B] = ConcurrentHashMap[A, B]
 }
 
 object Caches {
+  def unbounded[A, B](): Cache[A, B] = {
+    Scaffeine().build[A, B]()
+  }
   def bounded[A, B](maxItems: Int): Cache[A, B] = {
     Scaffeine().maximumSize(maxItems).build[A, B]()
   }

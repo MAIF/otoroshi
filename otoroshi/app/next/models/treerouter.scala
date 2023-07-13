@@ -3,7 +3,7 @@ package otoroshi.next.models
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, EntityLocation}
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -65,7 +65,7 @@ case class NgMatchedRoute(
 }
 
 object NgTreeRouter {
-  def empty = NgTreeRouter(new LegitTrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
+  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
   def build(routes: Seq[NgRoute]): NgTreeRouter = {
     val root = NgTreeRouter.empty
     routes.foreach { route =>
@@ -153,7 +153,7 @@ object NgTreeNodePath {
   }
 
   def empty: NgTreeNodePath =
-    NgTreeNodePath(scala.collection.mutable.MutableList.empty, new LegitTrieMap[String, NgTreeNodePath])
+    NgTreeNodePath(scala.collection.mutable.MutableList.empty, new UnboundedTrieMap[String, NgTreeNodePath])
 }
 
 case class NgTreeNodePath(

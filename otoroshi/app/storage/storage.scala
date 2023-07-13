@@ -17,7 +17,7 @@ import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
 import otoroshi.storage.stores._
 import otoroshi.tcp.TcpServiceDataStore
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -892,7 +892,7 @@ case class IncrOptimizerItem(
 }
 
 class IncrOptimizer(ops: Int, time: Int) {
-  private val cache = new LegitTrieMap[String, IncrOptimizerItem]()
+  private val cache = new UnboundedTrieMap[String, IncrOptimizerItem]()
   def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
     cache.get(key) match {
       case None       =>

@@ -19,7 +19,7 @@ import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
 import otoroshi.utils.RegexPool
-import otoroshi.utils.cache.types.LegitConcurrentHashMap
+import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import otoroshi.utils.prometheus.CustomCollector
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
@@ -81,7 +81,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private val lastdataInRate                = new AtomicLong(0L)
   private val lastdataOutRate               = new AtomicLong(0L)
   private val lastconcurrentHandledRequests = new AtomicLong(0L)
-  private val lastData                      = new LegitConcurrentHashMap[String, AtomicReference[Any]]() // TODO: analyze growth over time
+  private val lastData                      = new UnboundedConcurrentHashMap[String, AtomicReference[Any]]() // TODO: analyze growth over time
 
   // metricRegistry.register("jvm.buffer", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()))
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())

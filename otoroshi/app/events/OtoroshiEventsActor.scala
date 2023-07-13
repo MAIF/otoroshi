@@ -8,14 +8,7 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -33,31 +26,18 @@ import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{WasmConfig, WasmUtils}
+import otoroshi.wasm.{WasmConfig, WasmFunctionParameters, WasmUtils, WasmVm}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -80,7 +60,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   implicit val e  = env
   implicit val ec = env.analyticsExecutionContext
 
-  val dataExporters: TrieMap[String, DataExporter] = new LegitTrieMap[String, DataExporter]()
+  val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
 
   override def receive: Receive = {
@@ -1244,20 +1224,26 @@ object Exporters {
                 "config" -> configUnsafe.json
               )
               // println(s"call send: ${events.size}")
-              WasmUtils
-                .execute(plugin.config, "export_events", input ++ Json.obj("events" -> JsArray(events)), attrs, None)
-                .map {
-                  case Left(err)  => ExportResult.ExportResultFailure(err.stringify)
-                  case Right(res) =>
-                    res.parseJson.select("error").asOpt[JsValue] match {
-                      case None        => ExportResult.ExportResultSuccess
-                      case Some(error) => ExportResult.ExportResultFailure(error.stringify)
+              WasmVm.fromConfig(plugin.config).flatMap {
+                case None => ExportResult.ExportResultFailure("plugin not found !").vfuture
+                case Some((vm, _)) =>
+                  vm.call(WasmFunctionParameters.ExtismFuntionCall("export_events", (input ++ Json.obj("events" -> JsArray(events))).stringify), None)
+                    .map {
+                      case Left(err) => ExportResult.ExportResultFailure(err.stringify)
+                      case Right(res) =>
+                        res._1.parseJson.select("error").asOpt[JsValue] match {
+                          case None => ExportResult.ExportResultSuccess
+                          case Some(error) => ExportResult.ExportResultFailure(error.stringify)
+                        }
                     }
-                }
-                .recover { case e =>
-                  e.printStackTrace()
-                  ExportResult.ExportResultFailure(e.getMessage)
-                }
+                    .recover { case e =>
+                      e.printStackTrace()
+                      ExportResult.ExportResultFailure(e.getMessage)
+                    }
+                    .andThen {
+                      case _ => vm.release()
+                    }
+              }
             }
         }
         .getOrElse(ExportResult.ExportResultSuccess.vfuture)

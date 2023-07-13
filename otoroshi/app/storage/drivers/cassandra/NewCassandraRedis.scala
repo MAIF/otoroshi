@@ -17,7 +17,7 @@ import otoroshi.env.Env
 import play.api.{Configuration, Logger}
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper
-import otoroshi.utils.cache.types.LegitConcurrentHashMap
+import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -88,7 +88,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   private val metrics = new MetricRegistry()
 
-  private val patterns = new LegitConcurrentHashMap[String, Pattern]()
+  private val patterns = new UnboundedConcurrentHashMap[String, Pattern]()
 
   private val cassandraDurableWrites: String       =
     configuration.getOptionalWithFileSupport[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")

@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models._
 import otoroshi.next.proxy.NgExecutionReport
-import otoroshi.wasm.WasmContext
+import otoroshi.wasm.{WasmContext, WasmVm}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 
