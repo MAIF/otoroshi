@@ -156,14 +156,24 @@ case class WasmVm(index: Int,
 
   def lastUsedAt(): Long = lastUsage.get()
 
-  def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean = !hasBeenUsedInTheLast(duration)
-  def consumesMoreThanMemoryPercent(percent: Double): Boolean = {
+  def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean = if (duration.toNanos == 0L) false else !hasBeenUsedInTheLast(duration)
+
+  def consumesMoreThanMemoryPercent(percent: Double): Boolean = if (percent == 0.0) {
+    false
+  } else {
     val consumed: Double = (instance.getMemorySize.toDouble / maxMemory.toDouble)
     val res = consumed > percent
     if (logger.isDebugEnabled) logger.debug(s"consumesMoreThanMemoryPercent($percent) = (${instance.getMemorySize} / $maxMemory) > $percent : $res : (${consumed * 100.0}%)")
     res
   }
-  def tooSlow(max: Long): Boolean = callDurationReservoirNs.getSnapshot.getMean.toLong > max
+
+  def tooSlow(max: Long): Boolean = {
+    if (max == 0L) {
+      false
+    } else {
+      callDurationReservoirNs.getSnapshot.getMean.toLong > max
+    }
+  }
 
   def hasBeenUsedInTheLast(duration: FiniteDuration): Boolean = {
     val now = System.currentTimeMillis()
@@ -560,8 +570,8 @@ class WasmVmPoolCleaner extends Job {
 case class WasmVmKillOptions(
   immortal: Boolean = false,
   maxCalls: Int = Int.MaxValue,
-  maxMemoryUsage: Double = 0.9,
-  maxAvgCallDuration: FiniteDuration = 1.day,
+  maxMemoryUsage: Double = 0.0,
+  maxAvgCallDuration: FiniteDuration = 0.nano,
   maxUnusedDuration: FiniteDuration = 5.minutes,
 ) {
   def json: JsValue = WasmVmKillOptions.format.writes(this)
@@ -581,8 +591,8 @@ object WasmVmKillOptions {
       WasmVmKillOptions(
         immortal = json.select("immortal").asOpt[Boolean].getOrElse(false),
         maxCalls = json.select("max_calls").asOpt[Int].getOrElse(Int.MaxValue),
-        maxMemoryUsage = json.select("max_memory_usage").asOpt[Double].getOrElse(0.9),
-        maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].map(_.millis).getOrElse(1.day),
+        maxMemoryUsage = json.select("max_memory_usage").asOpt[Double].getOrElse(0.0),
+        maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].map(_.millis).getOrElse(0.nano),
         maxUnusedDuration = json.select("max_unused_duration").asOpt[Long].map(_.millis).getOrElse(5.minutes),
       )
     } match {
