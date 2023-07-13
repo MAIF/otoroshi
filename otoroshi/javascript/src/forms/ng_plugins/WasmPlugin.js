@@ -221,6 +221,13 @@ const schema = {
     ],
     schema: {
       max_calls: {
+        type: 'bool',
+        label: 'Immortal',
+        props: {
+          help: 'The vm instances cannot be killed',
+        },
+      },
+      max_calls: {
         type: 'number',
         label: 'Max calls',
         suffix: 'calls',

@@ -3,8 +3,8 @@ package otoroshi.wasm
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
-import org.extism.sdk.wasmotoroshi._
 import org.extism.sdk.wasm.WasmSourceResolver
+import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.models.WasmPlugin
 import otoroshi.next.plugins.api.{NgPluginVisibility, NgStep}
@@ -245,38 +245,53 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       .run()(env.otoroshiMaterializer)._1
   }
 
+  // unqueue actions from the action queue
   private def handleAction(action: WasmVmPoolAction): Unit = try {
     wasmConfig() match {
       case None =>
+        // if we cannot find the current wasm config, something is wrong, we destroy the pool
         destroyCurrentVms()
         WasmVmPool.removePlugin(stableId)
         action.fail(new RuntimeException(s"No more plugin ${stableId}"))
       case Some(wcfg) => {
-        val changed = hasChanged(wcfg)
-        val available = hasAvailableVm(wcfg)
-        val creating = isVmCreating()
-        val atMax = atMaxPoolCapacity(wcfg)
-        if (changed) {
-          WasmVmPool.logger.warn("plugin has changed, destroying old instances")
-          destroyCurrentVms()
-          createVm(wcfg, action.options, "has changed")
-        }
-        if (!available) {
-          if (creating) {
-            priorityQueue.offer(action)
-            Future.successful(())
-          } else {
-            if (atMax) {
+        // first we ensure the wasm source has been fetched
+        if (!wcfg.source.isCached()(env)) {
+          wcfg.source.getWasm()(env, env.otoroshiExecutionContext).andThen {
+            case _ => priorityQueue.offer(action)
+          }(env.otoroshiExecutionContext)
+        } else {
+          val changed = hasChanged(wcfg)
+          val available = hasAvailableVm(wcfg)
+          val creating = isVmCreating()
+          val atMax = atMaxPoolCapacity(wcfg)
+          // then we check if the underlying wasmcode + config has not changed since last time
+          if (changed) {
+            // if so, we destroy all current vms and recreate a new one
+            WasmVmPool.logger.warn("plugin has changed, destroying old instances")
+            destroyCurrentVms()
+            createVm(wcfg, action.options)
+          }
+          // check if a vm is available
+          if (!available) {
+            // if not, but a new one is creating, just wait a little bit more
+            if (creating) {
               priorityQueue.offer(action)
             } else {
-              // create on
-              createVm(wcfg, action.options, s"create - changed: ${changed} - available: ${available} - creating: ${creating} - atMax: $atMax - ${wcfg.instances} - ${inUseVms.size()}")
-              priorityQueue.offer(action)
+              // check if we hit the max possible instances
+              if (atMax) {
+                // if so, just wait
+                priorityQueue.offer(action)
+              } else {
+                // if not, create a new instance because we need one
+                createVm(wcfg, action.options)
+                priorityQueue.offer(action)
+              }
             }
+          } else {
+            // if so, acquire one
+            val vm = acquireVm()
+            action.provideVm(vm)
           }
-        } else {
-          val vm = acquireVm()
-          action.provideVm(vm)
         }
       }
     }
@@ -286,18 +301,21 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       action.fail(t)
   }
 
-  private def createVm(config: WasmConfig, options: WasmVmInitOptions, from: String): Unit = synchronized {
+  // create a new vm for the pool
+  // we try to create vm one by one and to not create more than needed
+  private def createVm(config: WasmConfig, options: WasmVmInitOptions): Unit = synchronized {
     if (creatingRef.compareAndSet(false, true)) {
       val index = counter.incrementAndGet()
-      WasmVmPool.logger.debug(s"creating vm: ${index}")// - $from")
+      WasmVmPool.logger.debug(s"creating vm: ${index}")
       if (templateRef.get() == null) {
-        val cache = WasmUtils.scriptCache(env)
-        val key = config.source.cacheKey
-        if (!cache.contains(key)) {
+        if (!config.source.isCached()(env)) {
+          // this part should never happen anymore, but just in case
           WasmVmPool.logger.warn("fetching missing source")
-          Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds) // TODO: fix it
+          Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds)
         }
         lastPluginVersion.set(computeHash(config, config.source.cacheKey, WasmUtils.scriptCache(env)))
+        val cache = WasmUtils.scriptCache(env)
+        val key = config.source.cacheKey
         val wasm = cache(key).asInstanceOf[CachedWasmScript].script
         val hash = wasm.sha256
         val resolver = new WasmSourceResolver()
@@ -326,6 +344,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }
   }
 
+  // acquire an available vm for work
   private def acquireVm(): WasmVm = synchronized {
     if (availableVms.size() > 0) {
       availableVms.synchronized {
@@ -339,6 +358,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }
   }
 
+  // release the vm to be available for other tasks
   private[wasm] def release(vm: WasmVm): Unit = synchronized {
     availableVms.synchronized {
       availableVms.offer(vm)
@@ -346,12 +366,14 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }
   }
 
+  // do not consider the vm anymore for more work (the vm is being dropped for some reason)
   private[wasm] def ignore(vm: WasmVm): Unit = synchronized {
     availableVms.synchronized {
       inUseVms.remove(vm)
     }
   }
 
+  // do not consider the vm anymore for more work (the vm is being dropped for some reason)
   private[wasm] def clear(vm: WasmVm): Unit = synchronized {
     availableVms.synchronized {
       availableVms.remove(vm)
@@ -368,10 +390,12 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 
   private def atMaxPoolCapacity(plugin: WasmConfig): Boolean = (availableVms.size + inUseVms.size) >= plugin.instances
 
+  // close the current pool
   private[wasm] def close(): Unit = availableVms.synchronized {
     engine.close()
   }
 
+  // destroy all vms and clear everything in order to destroy the current pool
   private[wasm] def destroyCurrentVms(): Unit = availableVms.synchronized {
     WasmVmPool.logger.info("destroying all vms")
     availableVms.asScala.foreach(_.destroy())
@@ -383,6 +407,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     lastPluginVersion.set(null)
   }
 
+  // compute the current hash for a tuple (wasmcode + config)
   private def computeHash(config: WasmConfig, key: String, cache: UnboundedTrieMap[String, CacheableWasmScript]): String = {
     config.json.stringify.sha512 + "#" + cache.get(key).map {
       case CacheableWasmScript.CachedWasmScript(wasm, _) => wasm.sha512
@@ -390,6 +415,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }.getOrElse("null")
   }
 
+  // compute if the source (wasm code + config) is the same than current
   private def hasChanged(config: WasmConfig): Boolean = availableVms.synchronized {
     val key = config.source.cacheKey
     val cache = WasmUtils.scriptCache(env)
@@ -407,10 +433,42 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     }
   }
 
+  // get a pooled vm when one available.
+  // Do not forget to release it after usage
   def getPooledVm(options: WasmVmInitOptions = WasmVmInitOptions.empty()): Future[WasmVm] = {
     val p = Promise[WasmVm]()
     requestsQueue.offer(WasmVmPoolAction(p, options))
     p.future
+  }
+
+  // borrow a vm for sync operations
+  def withPooledVm[A](options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => A): Future[A] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    getPooledVm(options).flatMap { vm =>
+      val p = Promise[A]()
+      try {
+        val ret = f(vm)
+        p.trySuccess(ret)
+      } catch {
+        case e: Throwable =>
+          p.tryFailure(e)
+      } finally {
+        vm.release()
+      }
+      p.future
+    }
+  }
+
+  // borrow a vm for async operations
+  def withPooledVmF[A](options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => Future[A]): Future[A] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    getPooledVm(options).flatMap { vm =>
+      f(vm).andThen {
+        case _ => vm.release()
+      }
+    }
   }
 }
 
@@ -428,6 +486,7 @@ object WasmVmInitOptions {
   )
 }
 
+// this job tries to kill unused wasm vms and unused pools to save memory
 class WasmVmPoolCleaner extends Job {
 
   private val logger = Logger("otoroshi-wasm-vm-pool-cleaner")
@@ -460,19 +519,21 @@ class WasmVmPoolCleaner extends Job {
           WasmVmPool.removePlugin(key)
         } else {
           val options = pool.wasmConfig().map(_.killOptions)
-          val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)))
-          val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(options.map(_.maxMemoryUsage).getOrElse(0.9)))
-          val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow(options.map(_.maxAvgCallDuration).getOrElse(Long.MaxValue)))
-          val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
-          if (allVms.nonEmpty) {
-            logger.warn(s"will destroy ${allVms.size} wasm vms")
-          }
-          allVms.foreach { vm =>
-            if (vm.isBusy()) {
-              vm.destroyAtRelease()
-            } else {
-              vm.ignore()
-              vm.destroy()
+          if (!options.exists(_.immortal)) {
+            val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)))
+            val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(options.map(_.maxMemoryUsage).getOrElse(0.9)))
+            val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow(options.map(_.maxAvgCallDuration).getOrElse(Long.MaxValue)))
+            val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
+            if (allVms.nonEmpty) {
+              logger.warn(s"will destroy ${allVms.size} wasm vms")
+            }
+            allVms.foreach { vm =>
+              if (vm.isBusy()) {
+                vm.destroyAtRelease()
+              } else {
+                vm.ignore()
+                vm.destroy()
+              }
             }
           }
         }
@@ -482,6 +543,7 @@ class WasmVmPoolCleaner extends Job {
 }
 
 case class WasmVmKillOptions(
+  immortal: Boolean = false,
   maxCalls: Int = Int.MaxValue,
   maxMemoryUsage: Double = 0.9,
   maxAvgCallDuration: Long = Int.MaxValue,
@@ -494,6 +556,7 @@ object WasmVmKillOptions {
   val default = WasmVmKillOptions()
   val format = new Format[WasmVmKillOptions] {
     override def writes(o: WasmVmKillOptions): JsValue = Json.obj(
+      "immortal" -> o.immortal,
       "max_calls" -> o.maxCalls,
       "max_memory_usage" -> o.maxMemoryUsage,
       "max_avg_call_duration" -> o.maxAvgCallDuration,
@@ -501,6 +564,7 @@ object WasmVmKillOptions {
     )
     override def reads(json: JsValue): JsResult[WasmVmKillOptions] = Try {
       WasmVmKillOptions(
+        immortal = json.select("immortal").asOpt[Boolean].getOrElse(false),
         maxCalls = json.select("max_calls").asOpt[Int].getOrElse(Int.MaxValue),
         maxMemoryUsage = json.select("max_memory_usage").asOpt[Double].getOrElse(0.9),
         maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].getOrElse(Int.MaxValue),

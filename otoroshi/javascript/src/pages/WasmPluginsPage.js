@@ -212,6 +212,7 @@ export class WasmPluginsPage extends Component {
       //value.config.source.kind.toLowerCase() !== 'local' && 'config.lifetime',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.opa',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm vm kill options',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.immortal',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_calls',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_memory_usage',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_avg_call_duration',
@@ -468,6 +469,13 @@ export class WasmPluginsPage extends Component {
         boxWidth: 400,
         label: 'Plugin scoped in-memory key/value storage access',
         property: 'pluginMapAccess',
+      },
+    },
+    'config.killOptions.immortal': {
+      type: 'bool',
+      props: {
+        label: 'Immortal',
+        help: 'The vm instances cannot be killed',
       },
     },
     'config.killOptions.max_calls': {

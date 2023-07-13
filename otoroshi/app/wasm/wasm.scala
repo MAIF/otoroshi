@@ -188,6 +188,13 @@ case class WasmSource(kind: WasmSourceKind, path: String, opts: JsValue = Json.o
   def json: JsValue                                                                    = WasmSource.format.writes(this)
   def cacheKey                                                                         = s"${kind.name.toLowerCase}://${path}"
   def getConfig()(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = kind.getConfig(path, opts)
+  def isCached()(implicit env: Env): Boolean = {
+    val cache = WasmUtils.scriptCache(env)
+    cache.get(cacheKey) match {
+      case Some(CacheableWasmScript.CachedWasmScript(_, _)) => true
+      case _ => false
+    }
+  }
   def getWasm()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
     val cache = WasmUtils.scriptCache(env)
     def fetchAndAddToCache(): Future[Either[JsValue, ByteString]] = {
