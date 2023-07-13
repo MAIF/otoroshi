@@ -22,7 +22,7 @@ const addPluginToQueue = props => {
   if (running === 0)
     loop()
   else {
-    WebSocket.emit(props.plugin, "PUBLISH QUEUE", `waiting - ${queue.length - 1} before the publish start\n`)
+    WebSocket.emit(props.plugin, "PUBLISH QUEUE", `waiting - ${queue.length - 1} before the publish start`)
   }
 }
 
@@ -33,17 +33,16 @@ const build = ({ plugin, zipString }) => {
     .then(folder => new Promise(resolve => fs.readFile(`${folder}/wapm.toml`, (err, data) => resolve({ folder, err, data }))))
     .then(({ folder, err, data }) => {
       if (err) {
-        WebSocket.emitError(plugin, "PUBLISH", "wapm.toml not found.\n")
+        WebSocket.emitError(plugin, "PUBLISH", "wapm.toml not found.")
         onFailedProcess(folder, -1, Promise.reject);
       } else {
         return new Promise((resolve, reject) => {
-          WebSocket.emit(plugin, "PUBLISH", `Running command ${PUBLISH_COMMAND} ${PUBLISH_ARGS.join(' ')} ...\n`)
+          WebSocket.emit(plugin, "PUBLISH", `Running command ${PUBLISH_COMMAND} ${PUBLISH_ARGS.join(' ')} ...`)
 
           const source = toml.parse(data).module[0].source;
 
           const { s3, Bucket } = S3.state()
 
-          console.log(`${folder}/${source}`)
           s3.getObject({ Bucket, Key: source })
             .promise()
             .then(data => fs.writeFile(`${folder}/${source}`, data.Body))
@@ -79,7 +78,7 @@ const addChildListener = (plugin, child) => {
 }
 
 const onSuccessProcess = (plugin, folder, resolve) => {
-  WebSocket.emit(plugin, "PUBLISH", "Publish done.\n")
+  WebSocket.emit(plugin, "PUBLISH", "Publish done")
   FileSystem.cleanFolders(folder)
     .then(resolve)
 }

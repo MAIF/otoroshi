@@ -6,6 +6,7 @@ const manager = require('../../logger');
 const { WebSocket } = require('../../services/websocket');
 const { FileSystem } = require('../file-system');
 const WasmS3 = require('../wasm-s3');
+const { optimizeBinaryFile } = require('../wasmgc');
 
 const COMMAND_DELIMITER = " ";
 const BUILD_FOLDER_NAME = "build";
@@ -120,7 +121,7 @@ class Compiler {
     if (childProcessHasFailed) {
       this.#handleChildFailure([buildOptions.buildFolder, buildOptions.logsFolder], closeCode, onChildFailure);
     } else if (isLastCommand) {
-      this.#websocketEmitMessage(buildOptions, "Build done.\n");
+      this.#websocketEmitMessage(buildOptions, "Build done.");
       this.#onSuccess(buildOptions, {
         callback: onAllSuccess,
         handleFailure: onChildFailure
@@ -131,21 +132,28 @@ class Compiler {
   }
 
   #onSuccess = (buildOptions, { callback, handleFailure }) => {
-    this.#websocketEmitMessage(buildOptions, "Starting package ...\n");
+    this.#websocketEmitMessage(buildOptions, "Starting package ...");
 
-    Promise.all(
-      [
-        WasmS3.putWasmFileToS3(buildOptions.plugin.id, this.outputWasmFolder(buildOptions))
-          .then(() => this.#websocketEmitMessage(buildOptions, "WASM has been saved ...\n")),
-        WasmS3.putBuildLogsToS3(`${buildOptions.plugin.id}-logs.zip`, buildOptions.logsFolder)
-          .then(() => this.#websocketEmitMessage(buildOptions, "Logs has been saved ...\n")),
-        WasmS3.putWasmInformationsToS3(buildOptions.userEmail, buildOptions.plugin.id, buildOptions.plugin.hash, `${this.options.wasmName}.wasm`)
-          .then(() => this.#websocketEmitMessage(buildOptions, "Informations has been updated\n"))
-      ]
+    optimizeBinaryFile(
+      buildOptions,
+      this.outputWasmFolder(buildOptions),
+      (message, onError = false) => this.#websocketEmitMessage(buildOptions, message, onError)
     )
       .then(() => {
-        FileSystem.cleanFolders(buildOptions.buildFolder, buildOptions.logsFolder)
-          .then(callback)
+        return Promise.all(
+          [
+            WasmS3.putWasmFileToS3(buildOptions.plugin.id, this.outputWasmFolder(buildOptions))
+              .then(() => this.#websocketEmitMessage(buildOptions, "WASM has been saved ...")),
+            WasmS3.putBuildLogsToS3(`${buildOptions.plugin.id}-logs.zip`, buildOptions.logsFolder)
+              .then(() => this.#websocketEmitMessage(buildOptions, "Logs has been saved ...")),
+            WasmS3.putWasmInformationsToS3(buildOptions.userEmail, buildOptions.plugin.id, buildOptions.plugin.hash, `${this.options.wasmName}.wasm`)
+              .then(() => this.#websocketEmitMessage(buildOptions, "Informations has been updated"))
+          ]
+        )
+          .then(() => {
+            FileSystem.cleanFolders(buildOptions.buildFolder, buildOptions.logsFolder)
+              .then(callback)
+          })
       })
       .catch(err => {
         this.log.error(`Build failed: ${err}`)
@@ -173,13 +181,13 @@ class Compiler {
         return new Promise((onAllSuccess, onChildFailure) => {
           buildOptions.logStreams = this.#createLogStreams(buildOptions);
 
-          this.#websocketEmitMessage(buildOptions, 'Starting build ...\n');
+          this.#websocketEmitMessage(buildOptions, 'Starting build ...');
 
           this.commands
             .reduce((promise, fn, index) => promise.then(() => new Promise(justToNext => {
               const { executable, args } = fn;
 
-              this.#websocketEmitMessage(buildOptions, `Running command ${executable} ${args.join(' ')} ...\n`);
+              this.#websocketEmitMessage(buildOptions, `Running command ${executable} ${args.join(' ')} ...`);
 
               const childProcess = spawn(executable, args, { cwd: buildOptions.buildFolder });
               childProcess.on('close', code => this.#handleCloseEvent(

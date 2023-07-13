@@ -32,16 +32,12 @@ const loop = () => {
 
     const nextBuild = queue.shift()
 
-    console.log(nextBuild)
-
     const compilerOptions = new CompilerOptions({
       wasmName: nextBuild.wasmName,
       entrypoint: nextBuild.metadata?.entrypoint,
       wasi: nextBuild.metadata?.wasi,
       isReleaseBuild: nextBuild.release
     });
-
-    console.log(nextBuild.metadata?.wasi)
 
     const compiler = COMPILERS[nextBuild.pluginType](compilerOptions);
 
@@ -56,7 +52,7 @@ const loop = () => {
       wasi: nextBuild.metadata?.wasi,
     }))
       .then(() => {
-        WebSocket.emit(nextBuild.plugin, "JOB", "You can now use the generated wasm\n")
+        WebSocket.emit(nextBuild.plugin, "JOB", "You can now use the generated wasm")
         running -= 1;
         loop()
       })
@@ -68,17 +64,19 @@ const loop = () => {
   }
 }
 
+const addBuildToQueue = props => {
+  queue.push(props);
+
+  if (running <= 0)
+    loop()
+  else {
+    WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length} before the build start`)
+  }
+}
+
 module.exports = {
   Queue: {
-    addBuildToQueue: props => {
-      queue.push(props);
-
-      if (running <= 0)
-        loop()
-      else {
-        WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length - 1} before the build start\n`)
-      }
-    },
+    addBuildToQueue,
     isBuildRunning: folder => FileSystem.buildFolderAlreadyExits('build', folder),
     isBinaryExists: (name, release) => {
       const { s3, Bucket } = S3.state()

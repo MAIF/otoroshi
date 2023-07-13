@@ -15,11 +15,6 @@ function outputWasmFolder(buildOptions) {
   const formattedWasmName = removeAfterLastHyphen(!buildOptions.isReleaseBuild ?
     this.options.wasmName.replace(new RegExp('-dev' + '$'), '') :
     this.options.wasmName);
- 
-  console.log(this.options.wasmName)
-  console.log(basePath)
-  console.log(formattedWasmName)
-  console.log(path.join(basePath, `${formattedWasmName}.wasm`))
 
   return path.join(basePath, `${formattedWasmName}.wasm`)
 }
