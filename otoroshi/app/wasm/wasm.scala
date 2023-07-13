@@ -315,7 +315,7 @@ object WasmVmLifetime       {
 
 case class WasmConfig(
     source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
-    memoryPages: Int = 4,
+    memoryPages: Int = 20,
     functionName: Option[String] = None,
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
@@ -377,7 +377,7 @@ object WasmConfig {
       }
       WasmConfig(
         source = source,
-        memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(4),
+        memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(20),
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),

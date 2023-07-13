@@ -357,7 +357,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Memory pages',
-        suffix: 'pages of 32 Kb',
+        suffix: 'pages of 64 Kb',
       },
     },
     'config.functionName': {

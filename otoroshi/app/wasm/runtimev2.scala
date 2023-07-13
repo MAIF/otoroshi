@@ -2,6 +2,7 @@ package otoroshi.wasm
 
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import com.codahale.metrics.UniformReservoir
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import org.extism.sdk.wasmotoroshi._
@@ -12,6 +13,7 @@ import otoroshi.script._
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.CacheableWasmScript.CachedWasmScript
+import otoroshi.wasm.WasmVm.logger
 import otoroshi.wasm.proxywasm.VmData
 import play.api.Logger
 import play.api.libs.json._
@@ -55,6 +57,7 @@ case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
 
 case class WasmVm(index: Int,
                   maxCalls: Int,
+                  maxMemory: Long,
                   resetMemory: Boolean,
                   instance: WasmOtoroshiInstance,
                   vmDataRef: AtomicReference[VmData],
@@ -63,6 +66,7 @@ case class WasmVm(index: Int,
                   pool: WasmVmPool,
                   var opaPointers: Option[OPAWasmVm] = None) {
 
+  private val callDurationReservoirNs = new UniformReservoir()
   private val lastUsage: AtomicLong = new AtomicLong(System.currentTimeMillis())
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
   private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
@@ -90,7 +94,9 @@ case class WasmVm(index: Int,
             // action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
             action.context.foreach(ctx => vmDataRef.set(ctx))
             if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"call vm ${index} with method ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
+            val start = System.nanoTime()
             val res = action.parameters.call(instance)
+            callDurationReservoirNs.update(System.nanoTime() - start)
             if (res.isRight && res.right.get._2.results.getValues() != null) {
               val ret = res.right.get._2.results.getValues()(0).v.i32
               if (ret > 7 || ret < 0) { // weird multi thread issues
@@ -148,11 +154,16 @@ case class WasmVm(index: Int,
     }
   }
 
-  def lastUsedAd(): Long = lastUsage.get()
+  def lastUsedAt(): Long = lastUsage.get()
 
   def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean = !hasBeenUsedInTheLast(duration)
-  def consumesMoreThanMemoryPercent(percent: Double): Boolean = false // TODO: implements
-  def tooSlow(max: Long): Boolean = false // TODO: implements
+  def consumesMoreThanMemoryPercent(percent: Double): Boolean = {
+    val consumed: Double = (instance.getMemorySize.toDouble / maxMemory.toDouble)
+    val res = consumed > percent
+    if (logger.isDebugEnabled) logger.debug(s"consumesMoreThanMemoryPercent($percent) = (${instance.getMemorySize} / $maxMemory) > $percent : $res : (${consumed * 100.0}%)")
+    res
+  }
+  def tooSlow(max: Long): Boolean = callDurationReservoirNs.getSnapshot.getMean.toLong > max
 
   def hasBeenUsedInTheLast(duration: FiniteDuration): Boolean = {
     val now = System.currentTimeMillis()
@@ -338,7 +349,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       }
       val memories = LinearMemories.getMemories(config)
       val instance = template.instantiate(engine, functions, memories, config.wasi)
-      val vm = WasmVm(index, config.killOptions.maxCalls, options.resetMemory, instance, vmDataRef, memories, functions, this)
+      val vm = WasmVm(index, config.killOptions.maxCalls, config.memoryPages * (64L * 1024L), options.resetMemory, instance, vmDataRef, memories, functions, this)
       availableVms.offer(vm)
       creatingRef.compareAndSet(true, false)
     }
@@ -520,12 +531,16 @@ class WasmVmPoolCleaner extends Job {
         } else {
           val options = pool.wasmConfig().map(_.killOptions)
           if (!options.exists(_.immortal)) {
-            val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)))
+            val maxDur = options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)
+            val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(maxDur))
             val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(options.map(_.maxMemoryUsage).getOrElse(0.9)))
-            val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow(options.map(_.maxAvgCallDuration).getOrElse(Long.MaxValue)))
+            val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow(options.map(_.maxAvgCallDuration.toNanos).getOrElse(1.day.toNanos)))
             val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
             if (allVms.nonEmpty) {
               logger.warn(s"will destroy ${allVms.size} wasm vms")
+              if (unusedVms.nonEmpty) logger.warn(s" - ${unusedVms.size} because unused for more than ${maxDur.toHours}")
+              if (tooMuchMemoryVms.nonEmpty) logger.warn(s" - ${tooMuchMemoryVms.size} because of too much memory used")
+              if (tooSlowVms.nonEmpty) logger.warn(s" - ${tooSlowVms.size} because of avg call duration too long")
             }
             allVms.foreach { vm =>
               if (vm.isBusy()) {
@@ -546,7 +561,7 @@ case class WasmVmKillOptions(
   immortal: Boolean = false,
   maxCalls: Int = Int.MaxValue,
   maxMemoryUsage: Double = 0.9,
-  maxAvgCallDuration: Long = Int.MaxValue,
+  maxAvgCallDuration: FiniteDuration = 1.day,
   maxUnusedDuration: FiniteDuration = 5.minutes,
 ) {
   def json: JsValue = WasmVmKillOptions.format.writes(this)
@@ -559,7 +574,7 @@ object WasmVmKillOptions {
       "immortal" -> o.immortal,
       "max_calls" -> o.maxCalls,
       "max_memory_usage" -> o.maxMemoryUsage,
-      "max_avg_call_duration" -> o.maxAvgCallDuration,
+      "max_avg_call_duration" -> o.maxAvgCallDuration.toMillis,
       "max_unused_duration" -> o.maxUnusedDuration.toMillis,
     )
     override def reads(json: JsValue): JsResult[WasmVmKillOptions] = Try {
@@ -567,7 +582,7 @@ object WasmVmKillOptions {
         immortal = json.select("immortal").asOpt[Boolean].getOrElse(false),
         maxCalls = json.select("max_calls").asOpt[Int].getOrElse(Int.MaxValue),
         maxMemoryUsage = json.select("max_memory_usage").asOpt[Double].getOrElse(0.9),
-        maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].getOrElse(Int.MaxValue),
+        maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].map(_.millis).getOrElse(1.day),
         maxUnusedDuration = json.select("max_unused_duration").asOpt[Long].map(_.millis).getOrElse(5.minutes),
       )
     } match {

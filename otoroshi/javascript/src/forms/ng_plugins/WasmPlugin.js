@@ -47,7 +47,7 @@ const schema = {
     props: {
       defaultValue: 4,
       subTitle:
-        'Configures memory for the Wasm runtime. Memory is described in units of pages (64KB) and represent contiguous chunks of addressable memory',
+        'Configures memory for the Wasm runtime. Memory is described in units of pages (64Kb) and represent contiguous chunks of addressable memory',
     },
   },
   functionName: {
