@@ -1,9 +1,12 @@
 package otoroshi.utils
 
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
 import play.api.libs.json._
+
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 sealed trait Operator[T] {
   def apply(source: JsValue, key: String): T
@@ -104,11 +107,31 @@ object Match {
 
 object Projection {
 
+  private val library = ImmutableJqLibrary.of()
+
+  private def jqIt(source: JsValue, filter: String): JsValue = {
+    val request = ImmutableJqRequest
+      .builder()
+      .lib(library)
+      .input(source.stringify)
+      .filter(filter)
+      .build()
+    val response = request.execute()
+    if (response.hasErrors) {
+      val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
+      Json.obj("error" -> "error while transforming source", "details" -> errors)
+    } else {
+      response.getOutput.parseJson
+    }
+  }
+
   // TODO: apply el on resulting strings
   def project(source: JsValue, blueprint: JsObject, applyEl: String => String): JsObject = {
     var dest = Json.obj()
     if (Operator.isOperator(blueprint) && blueprint.value.head._1 == "$compose") {
       dest = Composition.compose(source, blueprint, applyEl).asOpt[JsObject].getOrElse(Json.obj())
+    } else if (Operator.isOperator(blueprint) && blueprint.value.head._1 == "$jq") {
+      dest = jqIt(source, blueprint.select("$jq").asString).asObject
     } else {
       if (blueprint.keys.contains("$spread") && blueprint.select("$spread").asOpt[Boolean].contains(true)) {
         dest = dest ++ source.asOpt[JsObject].getOrElse(Json.obj())
@@ -138,6 +161,20 @@ object Projection {
             //     }
             //   )
             // }
+            case ("$jq", value) => {
+              dest = dest ++ Json.obj(key -> jqIt(source, value.asString))
+            }
+            case ("$jqIf", spec: JsObject) => {
+              val path = (spec \ "filter").as[String]
+              val predPath = (spec \ "predicate" \ "path").as[String]
+              val predValue = (spec \ "predicate" \ "value").as[JsValue]
+              val atPredPath = source.atPath(predPath)
+              if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
+                dest = dest ++ Json.obj(key -> jqIt(source, path))
+              } else {
+                dest = dest ++ Json.obj(key -> JsNull)
+              }
+            }
             case ("$compose", value)                => {
               dest = dest ++ Json.obj(key -> Composition.compose(source, value, applyEl))
             }
