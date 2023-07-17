@@ -36,6 +36,8 @@ RUN gunzip extism-js*.gz
 RUN mv extism-js-* /usr/local/bin/extism-js
 RUN chmod +x /usr/local/bin/extism-js
 
+RUN apt-get install binaryen
+
 RUN curl https://get.wasmer.io -sSfL | sh
 
 RUN curl -L -o opa https://openpolicyagent.org/downloads/v0.50.2/opa_linux_amd64_static

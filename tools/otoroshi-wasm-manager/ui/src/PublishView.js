@@ -31,10 +31,10 @@ export function PublishView({ selectedPlugin, openTab, createManifest, createRea
         icon={hasREADME ? 'check' : 'chevron-right'}
         text={hasREADME ? 'Edit README' : 'Add README'} />
 
-      <Button
+      {/* <Button
         onClick={publish}
         icon="upload"
-        text="Publish" />
+        text="Publish" /> */}
     </div>
   </div>
 }

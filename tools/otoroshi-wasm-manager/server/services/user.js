@@ -114,7 +114,7 @@ const updateUser = (req, content) => {
 
   const jsonProfile = format(req.user.email);
 
-  log.info(`updateUser ${jsonProfile}`)
+  // log.info(`updateUser ${jsonProfile}`)
 
   return new Promise(resolve => {
     s3.putObject({

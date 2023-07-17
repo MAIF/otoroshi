@@ -24,7 +24,7 @@ S3.initializeS3Connection()
   .then(() => {
     S3.createBucketIfMissing();
     FileSystem.cleanBuildsAndLogsFolders();
-    Publisher.initialize();
+    // Publisher.initialize();
     // S3.cleanBucket()
     // S3.listObjects()
 

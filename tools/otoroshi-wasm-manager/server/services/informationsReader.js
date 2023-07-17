@@ -26,7 +26,8 @@ async function extractInformations(folder, pluginType) {
       const informations = toml.parse(data);
       return {
         pluginName: informations.package.name,
-        pluginVersion: informations.package.version
+        pluginVersion: informations.package.version,
+        metadata: informations.package.metadata
       };
     } else { // ts and js
       const informations = JSON.parse(data);

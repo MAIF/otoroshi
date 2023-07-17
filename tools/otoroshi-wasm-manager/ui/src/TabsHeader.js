@@ -32,7 +32,7 @@ function Header({
             <Build onBuild={onBuild} />
             <Release onBuild={onBuild} />
             <Download onDownload={onDownload} />
-            {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
+            {/* {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />} */}
           </>}
           <Play showPlaySettings={showPlaySettings} />
         </div>
