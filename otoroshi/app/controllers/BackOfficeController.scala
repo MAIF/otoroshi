@@ -1061,43 +1061,40 @@ class BackOfficeController(
     }
 
   def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    {
-      import scala.xml.Elem
-      import scala.xml.XML._
+    import scala.xml.Elem
+    import scala.xml.XML._
+    Try {
+      val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
+        case Some(url) => Right(load(url))
+        case None      =>
+          (ctx.request.body \ "xml").asOpt[String] match {
+            case Some(content) => Right(loadString(content))
+            case None          => Left("Missing body content")
+          }
+      }
 
-      Try {
-        val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
-          case Some(url) => Right(load(url))
-          case None      =>
-            (ctx.request.body \ "xml").asOpt[String] match {
-              case Some(content) => Right(loadString(content))
-              case None          => Left("Missing body content")
-            }
-        }
+      xmlContent match {
+        case Left(err)         => FastFuture.successful(BadRequest(err))
+        case Right(xmlContent) =>
+          var metadata = (xmlContent \\ "EntitiesDescriptor").toString
 
-        xmlContent match {
-          case Left(err)         => FastFuture.successful(BadRequest(err))
-          case Right(xmlContent) =>
-            var metadata = (xmlContent \\ "EntitiesDescriptor").toString
+          if (metadata.isEmpty)
+            metadata = xmlContent.toString
 
-            if (metadata.isEmpty)
-              metadata = xmlContent.toString
-
-            SamlAuthModuleConfig.fromDescriptor(metadata) match {
-              case Left(err)     => FastFuture.successful(BadRequest(err))
-              case Right(config) => FastFuture.successful(Ok(SamlAuthModuleConfig._fmt.writes(config)))
-            }
-        }
-      } recover { case e: Throwable =>
-        FastFuture.successful(
-          BadRequest(
-            Json.obj(
-              "error" -> e.getMessage
-            )
+          SamlAuthModuleConfig.fromDescriptor(metadata) match {
+            case Left(err)     => FastFuture.successful(BadRequest(err))
+            case Right(config) => FastFuture.successful(Ok(SamlAuthModuleConfig._fmt.writes(config)))
+          }
+      }
+    } recover { case e: Throwable =>
+      FastFuture.successful(
+        BadRequest(
+          Json.obj(
+            "error" -> e.getMessage
           )
         )
-      } get
-    }
+      )
+    } get
   }
 
   def fetchBodiesFor(serviceId: String, requestId: String) =

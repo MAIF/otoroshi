@@ -20,11 +20,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -39,9 +35,9 @@ import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
-import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
 
 import java.io.{ByteArrayInputStream, InputStreamReader, Reader, StringWriter, Writer}
@@ -106,15 +102,19 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     getLogoutRequest(env, authConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
-      case Right(encoded) =>
-        if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-          Left(Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleLogoutUrl, env)))
-        else {
-          env.Ws
-            .url(s"${authConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-            .get()
-          Right(None)
+      case Right(encoded) => authConfig.singleLogoutUrl match {
+        case None => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
+        case Some(singleLogoutUrl) => {
+          if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+            Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
+          else {
+            env.Ws
+              .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+              .get()
+            Right(None)
+          }
         }
+      }
     }
   }
 
@@ -209,15 +209,19 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
     getLogoutRequest(env, authConfig, Some(user.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
-      case Right(encoded) =>
-        if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-          Left(Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleLogoutUrl, env)))
-        else {
-          env.Ws
-            .url(s"${authConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-            .get()
-          Right(None)
+      case Right(encoded) => authConfig.singleLogoutUrl match {
+        case None => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
+        case Some(singleLogoutUrl) => {
+          if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+            Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
+          else {
+            env.Ws
+              .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+              .get()
+            Right(None)
+          }
         }
+      }
     }
   }
 
@@ -319,7 +323,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           singleSignOnUrl = (json \ "singleSignOnUrl").as[String],
-          singleLogoutUrl = (json \ "singleLogoutUrl").as[String],
+          singleLogoutUrl = (json \ "singleLogoutUrl").asOpt[String].filter(_.nonEmpty),
           credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -401,8 +405,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
       else {
         if (idpssoDescriptor.getSingleSignOnServices.isEmpty)
           Left("Cannot find SSO binding in metadata")
-        else if (idpssoDescriptor.getSingleLogoutServices.isEmpty)
-          Left("Cannot find Single Logout Service in metadata")
+        // else if (idpssoDescriptor.getSingleLogoutServices.isEmpty)
+        //   Left("Cannot find Single Logout Service in metadata")
         else {
           Right(
             SamlAuthModuleConfig(
@@ -410,7 +414,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
               name = "SAML Module",
               desc = "SAML Module",
               singleSignOnUrl = idpssoDescriptor.getSingleSignOnServices.get(0).getLocation,
-              singleLogoutUrl = idpssoDescriptor.getSingleLogoutServices.get(0).getLocation,
+              singleLogoutUrl = Try(idpssoDescriptor.getSingleLogoutServices.get(0).getLocation).filter(_ != null).toOption,
               issuer = entityDescriptor.getEntityID,
               ssoProtocolBinding = SAMLProtocolBinding(idpssoDescriptor.getSingleSignOnServices.get(0).getBinding),
               singleLogoutProtocolBinding =
@@ -669,7 +673,7 @@ case class SamlAuthModuleConfig(
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     singleSignOnUrl: String,
-    singleLogoutUrl: String,
+    singleLogoutUrl: Option[String],
     ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
     singleLogoutProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
     credentials: SAMLCredentials = SAMLCredentials(Credential(), Credential()),
@@ -711,7 +715,7 @@ case class SamlAuthModuleConfig(
     "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
     "userValidators"                -> JsArray(userValidators.map(_.json)),
     "singleSignOnUrl"               -> this.singleSignOnUrl,
-    "singleLogoutUrl"               -> this.singleLogoutUrl,
+    "singleLogoutUrl"               -> this.singleLogoutUrl.map(JsString.apply).getOrElse(JsNull).asValue,
     "credentials"                   -> SAMLCredentials.fmt.writes(this.credentials),
     "tags"                          -> JsArray(tags.map(JsString.apply)),
     "metadata"                      -> this.metadata,
@@ -748,7 +752,7 @@ object SAMLModule {
     tags = Seq.empty,
     metadata = Map.empty,
     singleSignOnUrl = "",
-    singleLogoutUrl = "",
+    singleLogoutUrl = None,
     issuer = "",
     sessionCookieValues = SessionCookieValues(),
     clientSideSessionEnabled = true
