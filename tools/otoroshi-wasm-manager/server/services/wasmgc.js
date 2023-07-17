@@ -3,15 +3,9 @@ const fs = require('fs-extra')
 function wasmgc(buildOptions, path, log) {
 
   let command = {
-    executable: "wasm-gc",
-    args: [path]
-  };
-
-  if (buildOptions.plugin.type === "go")
-    command = {
-      executable: '/usr/local/bin/wasm-opt',
-      args: ['-O', path, '-o', path]
-    }
+    executable: 'wasm-opt',
+    args: ['-O', path, '-o', path]
+  }
 
   return new Promise((resolve) => {
     getFileSize(path)
@@ -30,7 +24,7 @@ function wasmgc(buildOptions, path, log) {
 
           getFileSize(path)
             .then(newSize => {
-              log(`File size after optimizing: ${newSize} bytes - ${(1 - (newSize/originalSize)) * 100}%`)
+              log(`File size after optimizing: ${newSize} bytes - ${(1 - (newSize / originalSize)) * 100}%`)
 
               resolve();
             });
@@ -42,7 +36,7 @@ function wasmgc(buildOptions, path, log) {
 function getFileSize(path) {
   return new Promise(resolve => {
     fs.stat(path, (_, stats) => {
-      resolve(stats.size)
+      resolve(stats?.size || 1)
     })
   })
 }

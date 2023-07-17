@@ -67,11 +67,10 @@ const loop = () => {
 const addBuildToQueue = props => {
   queue.push(props);
 
-  if (running <= 0)
-    loop()
-  else {
-    WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length} before the build start`)
-  }
+  loop()
+  // else {
+  //   WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length} before the build start`)
+  // }
 }
 
 module.exports = {
