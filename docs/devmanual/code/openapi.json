@@ -21631,7 +21631,13 @@
             "description" : "???"
           },
           "singleLogoutUrl" : {
-            "type" : "string",
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "type" : "string"
+            } ],
             "description" : "???"
           },
           "id" : {

@@ -3088,6 +3088,26 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 @@@
 
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.wasm.WasmVmPoolCleaner }
+
+## otoroshi.wasm.WasmVmPoolCleaner
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: ``none``
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .plugin .plugin-hidden .plugin-kind-request-handler #otoroshi.next.proxy.ProxyEngine }
 
 ## Otoroshi next proxy engine (experimental)
