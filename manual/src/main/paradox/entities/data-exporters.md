@@ -99,6 +99,44 @@ and the remove fields you don't want with
 }
 ```
 
+Projections allows object modification using jspath, for instance, this example will create a new `otoroshiHeaderKeys` field to exported events. This field will contains a string array containing every request header name.
+
+```json
+{
+  "otoroshiHeaderKeys": {
+     "$path": "$.otoroshiHeadersIn.*.key"
+  }
+}
+```
+
+Alternativerly, projections also allow to use JQ to transform exported events
+
+```json
+{
+  "headerKeys": {
+     "$jq": "[.headers[].key]"
+  }
+}
+```
+
+JQ filter also allows conditionnal filtering : transformation is applied only if given predicate is match. In the following example, `headerKeys` field will be valued only if `target.scheme` is `https`.
+
+```json
+{
+  "headerKeys": {
+    "$jqIf": {
+      "filter": "[.headers[].key]",
+      "predicate": {
+        "path": "target.scheme",
+        "value": "https"
+      }
+    }
+  }
+}
+```
+
+See [JQ manual](https://jqlang.github.io/jq/manual/) for complete syntax reference.
+
 ## Elastic
 
 With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with [elastic read in global config](./global-config.html#analytics-elastic-dashboard-datasource-read-)
