@@ -150,17 +150,17 @@ export class Target extends Component {
 
 export class CustomTimeout extends Component {
   formSchema = {
-    path: { type: 'string', props: { label: 'Path' } },
-    global_timeout: { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds' } },
+    path: { type: 'string', props: { label: 'Path', help: "Path on which the timeout will be active" } },
+    global_timeout: { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds', help: "Specify how long the global call (with retries) should last at most in milliseconds" } },
     connection_timeout: {
       type: 'number',
-      props: { label: 'connection timeout', suffix: 'milliseconds' },
+      props: { label: 'connection timeout', suffix: 'milliseconds', help: "Specify how long each connection should last at most in milliseconds" },
     },
-    idle_timeout: { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds' } },
-    call_timeout: { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds' } },
+    idle_timeout: { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds', help: "Specify how long each connection can stay in idle state at most in milliseconds" } },
+    call_timeout: { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds" } },
     call_and_stream_timeout: {
       type: 'number',
-      props: { label: 'call and stream timeout', suffix: 'milliseconds' },
+      props: { label: 'call and stream timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds for handling the request and streaming the response" },
     },
   };
 
@@ -363,44 +363,44 @@ export const schemas = {
           },
         },
       },
-      'client.backoff_factor': { type: 'number', props: { label: 'backoff factor' } },
-      'client.retries': { type: 'number', props: { label: 'retries' } },
-      'client.max_errors': { type: 'number', props: { label: 'max errors', suffix: 'errors' } },
+      'client.backoff_factor': { type: 'number', props: { label: 'backoff factor', help: 'Specify the factor to multiply the delay for each retry' } },
+      'client.retries': { type: 'number', props: { label: 'retries', help: "Specify how many times the client will retry to fetch the result of the request after an error before giving up." } },
+      'client.max_errors': { type: 'number', props: { label: 'max errors', suffix: 'errors', help: "Specify how many errors can pass before opening the circuit breaker" } },
       'client.global_timeout': {
         type: 'number',
-        props: { label: 'global timeout', suffix: 'milliseconds' },
+        props: { label: 'global timeout', suffix: 'milliseconds', help: "Specify how long the global call (with retries) should last at most in milliseconds." },
       },
       'client.connection_timeout': {
         type: 'number',
-        props: { label: 'connection timeout', suffix: 'milliseconds' },
+        props: { label: 'connection timeout', suffix: 'milliseconds', help: "Specify how long each connection should last at most in milliseconds." },
       },
       'client.idle_timeout': {
         type: 'number',
-        props: { label: 'idle timeout', suffix: 'milliseconds' },
+        props: { label: 'idle timeout', suffix: 'milliseconds', help: "Specify how long each connection can stay in idle state at most in milliseconds." },
       },
       'client.call_timeout': {
         type: 'number',
-        props: { label: 'call timeout', suffix: 'milliseconds' },
+        props: { label: 'call timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds." },
       },
       'client.call_and_stream_timeout': {
         type: 'number',
-        props: { label: 'call and stream timeout', suffix: 'milliseconds' },
+        props: { label: 'call and stream timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds for handling the request and streaming the response." },
       },
       'client.retry_initial_delay': {
         type: 'number',
-        props: { label: 'initial delay', suffix: 'milliseconds' },
+        props: { label: 'initial delay', suffix: 'milliseconds', help: "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor" },
       },
       'client.sample_interval': {
         type: 'number',
-        props: { label: 'sample interval', suffix: 'milliseconds' },
+        props: { label: 'sample interval', suffix: 'milliseconds', help: "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted" },
       },
       'client.cache_connection_settings.enabled': {
         type: 'bool',
-        props: { label: 'cache connection' },
+        props: { label: 'cache connection', help: "Use a cache at host connection level to avoid reconnection time" },
       },
       'client.cache_connection_settings.queue_size': {
         type: 'number',
-        props: { label: 'cache connection queue size' },
+        props: { label: 'cache connection queue size', help: "Queue size for an open tcp connection" },
       },
       'client.custom_timeouts': {
         type: 'array',
