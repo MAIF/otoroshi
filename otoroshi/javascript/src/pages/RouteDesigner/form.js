@@ -5,6 +5,21 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
+import {
+  CIRCUIT_BREAKER_BACKOFF_FACTOR,
+  CIRCUIT_BREAKER_CLIENT_RETRIES,
+  CIRCUIT_BREAKER_MAX_ERRORS,
+  CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+  CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+  CIRCUIT_BREAKER_IDLE_TIMEOUT,
+  CIRCUIT_BREAKER_CALL_TIMEOUT,
+  CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+  CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+  CIRCUIT_BREAKER_SAMPLE_INTERVAL,
+  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
+  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
+  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH
+} from "../../explanations"
 
 export class Target extends Component {
   formSchema = {
@@ -150,17 +165,17 @@ export class Target extends Component {
 
 export class CustomTimeout extends Component {
   formSchema = {
-    path: { type: 'string', props: { label: 'Path', help: "Path on which the timeout will be active" } },
-    global_timeout: { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds', help: "Specify how long the global call (with retries) should last at most in milliseconds" } },
+    path: { type: 'string', props: { label: 'Path', help: CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH } },
+    global_timeout: { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT } },
     connection_timeout: {
       type: 'number',
-      props: { label: 'connection timeout', suffix: 'milliseconds', help: "Specify how long each connection should last at most in milliseconds" },
+      props: { label: 'connection timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT },
     },
-    idle_timeout: { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds', help: "Specify how long each connection can stay in idle state at most in milliseconds" } },
-    call_timeout: { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds" } },
+    idle_timeout: { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT } },
+    call_timeout: { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT } },
     call_and_stream_timeout: {
       type: 'number',
-      props: { label: 'call and stream timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds for handling the request and streaming the response" },
+      props: { label: 'call and stream timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT },
     },
   };
 
@@ -363,44 +378,44 @@ export const schemas = {
           },
         },
       },
-      'client.backoff_factor': { type: 'number', props: { label: 'backoff factor', help: 'Specify the factor to multiply the delay for each retry' } },
-      'client.retries': { type: 'number', props: { label: 'retries', help: "Specify how many times the client will retry to fetch the result of the request after an error before giving up." } },
-      'client.max_errors': { type: 'number', props: { label: 'max errors', suffix: 'errors', help: "Specify how many errors can pass before opening the circuit breaker" } },
+      'client.backoff_factor': { type: 'number', props: { label: 'backoff factor', help: CIRCUIT_BREAKER_BACKOFF_FACTOR } },
+      'client.retries': { type: 'number', props: { label: 'retries', help: CIRCUIT_BREAKER_CLIENT_RETRIES } },
+      'client.max_errors': { type: 'number', props: { label: 'max errors', suffix: 'errors', help: CIRCUIT_BREAKER_MAX_ERRORS } },
       'client.global_timeout': {
         type: 'number',
-        props: { label: 'global timeout', suffix: 'milliseconds', help: "Specify how long the global call (with retries) should last at most in milliseconds." },
+        props: { label: 'global timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT },
       },
       'client.connection_timeout': {
         type: 'number',
-        props: { label: 'connection timeout', suffix: 'milliseconds', help: "Specify how long each connection should last at most in milliseconds." },
+        props: { label: 'connection timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT },
       },
       'client.idle_timeout': {
         type: 'number',
-        props: { label: 'idle timeout', suffix: 'milliseconds', help: "Specify how long each connection can stay in idle state at most in milliseconds." },
+        props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT },
       },
       'client.call_timeout': {
         type: 'number',
-        props: { label: 'call timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds." },
+        props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT },
       },
       'client.call_and_stream_timeout': {
         type: 'number',
-        props: { label: 'call and stream timeout', suffix: 'milliseconds', help: "Specify how long each call should last at most in milliseconds for handling the request and streaming the response." },
+        props: { label: 'call and stream timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT },
       },
       'client.retry_initial_delay': {
         type: 'number',
-        props: { label: 'initial delay', suffix: 'milliseconds', help: "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor" },
+        props: { label: 'initial delay', suffix: 'milliseconds', help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY },
       },
       'client.sample_interval': {
         type: 'number',
-        props: { label: 'sample interval', suffix: 'milliseconds', help: "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted" },
+        props: { label: 'sample interval', suffix: 'milliseconds', help: CIRCUIT_BREAKER_SAMPLE_INTERVAL },
       },
       'client.cache_connection_settings.enabled': {
         type: 'bool',
-        props: { label: 'cache connection', help: "Use a cache at host connection level to avoid reconnection time" },
+        props: { label: 'cache connection', help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED },
       },
       'client.cache_connection_settings.queue_size': {
         type: 'number',
-        props: { label: 'cache connection queue size', help: "Queue size for an open tcp connection" },
+        props: { label: 'cache connection queue size', help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE },
       },
       'client.custom_timeouts': {
         type: 'array',

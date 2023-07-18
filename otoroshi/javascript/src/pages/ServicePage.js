@@ -46,6 +46,7 @@ import { Location } from '../components/Location';
 
 import Loader from '../components/Loader';
 import { Link } from 'react-router-dom';
+import { CIRCUIT_BREAKER_BACKOFF_FACTOR, CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED, CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT, CIRCUIT_BREAKER_CALL_TIMEOUT, CIRCUIT_BREAKER_CLIENT_RETRIES, CIRCUIT_BREAKER_CONNECTION_TIMEOUT, CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH, CIRCUIT_BREAKER_GLOBAL_TIMEOUT, CIRCUIT_BREAKER_IDLE_TIMEOUT, CIRCUIT_BREAKER_MAX_ERRORS, CIRCUIT_BREAKER_RETRY_INITIAL_DELAY } from '../explanations';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -455,7 +456,7 @@ class CustomTimeoutComponent extends Component {
           label="Path"
           placeholder="/"
           value={value.path}
-          help="The path on which the timeout will be active"
+          help={CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH}
           onChange={(e) => this.changeTheValue('path', e)}
         />
         <NumberInput
@@ -463,7 +464,7 @@ class CustomTimeoutComponent extends Component {
           label="Client connection timeout"
           placeholder="10000"
           value={value.connectionTimeout}
-          help="Specify how long each connection should last at most in milliseconds."
+          help={CIRCUIT_BREAKER_CONNECTION_TIMEOUT}
           onChange={(e) => this.changeTheValue('connectionTimeout', e)}
         />
         <NumberInput
@@ -471,7 +472,7 @@ class CustomTimeoutComponent extends Component {
           label="Client idle timeout"
           placeholder="10000"
           value={value.idleTimeout}
-          help="Specify how long each connection can stay in idle state at most in milliseconds."
+          help={CIRCUIT_BREAKER_IDLE_TIMEOUT}
           onChange={(e) => this.changeTheValue('idleTimeout', e)}
         />
         <NumberInput
@@ -479,7 +480,7 @@ class CustomTimeoutComponent extends Component {
           label="Client call and stream timeout"
           placeholder="10000"
           value={value.callAndStreamTimeout}
-          help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
+          help={CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT}
           onChange={(e) => this.changeTheValue('callAndStreamTimeout', e)}
         />
         <NumberInput
@@ -487,7 +488,7 @@ class CustomTimeoutComponent extends Component {
           label="Call timeout"
           placeholder="10000"
           value={value.callTimeout}
-          help="Specify how long each call should last at most in milliseconds."
+          help={CIRCUIT_BREAKER_CALL_TIMEOUT}
           onChange={(e) => this.changeTheValue('callTimeout', e)}
         />
         <NumberInput
@@ -495,7 +496,7 @@ class CustomTimeoutComponent extends Component {
           label="Client global timeout"
           placeholder="10000"
           value={value.globalTimeout}
-          help="Specify how long the global call (with retries) should last at most in milliseconds."
+          help={CIRCUIT_BREAKER_GLOBAL_TIMEOUT}
           onChange={(e) => this.changeTheValue('globalTimeout', e)}
         />
         <Separator />
@@ -2839,7 +2840,7 @@ export class ServicePage extends Component {
             {this.state.service.useAkkaHttpClient && (
               <BooleanInput
                 label="Cache connections"
-                help="Use a cache at host connection level to avoid reconnection time"
+                help={CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED}
                 value={this.state.service.clientConfig.cacheConnectionSettings.enabled}
                 onChange={(v) =>
                   this.changeTheValue('clientConfig.cacheConnectionSettings.enabled', v)
@@ -2849,42 +2850,42 @@ export class ServicePage extends Component {
             <NumberInput
               suffix="times"
               label="Client attempts"
-              help="Specify how many times the client will retry to fetch the result of the request after an error before giving up."
+              help={CIRCUIT_BREAKER_CLIENT_RETRIES}
               value={this.state.service.clientConfig.retries}
               onChange={(v) => this.changeTheValue('clientConfig.retries', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client call timeout"
-              help="Specify how long each call should last at most in milliseconds."
+              help={CIRCUIT_BREAKER_CALL_TIMEOUT}
               value={this.state.service.clientConfig.callTimeout}
               onChange={(v) => this.changeTheValue('clientConfig.callTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client call and stream timeout"
-              help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
+              help={CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT}
               value={this.state.service.clientConfig.callAndStreamTimeout}
               onChange={(v) => this.changeTheValue('clientConfig.callAndStreamTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client connection timeout"
-              help="Specify how long each connection should last at most in milliseconds."
+              help={CIRCUIT_BREAKER_CONNECTION_TIMEOUT}
               value={this.state.service.clientConfig.connectionTimeout}
               onChange={(v) => this.changeTheValue('clientConfig.connectionTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client idle timeout"
-              help="Specify how long each connection can stay in idle state at most in milliseconds."
+              help={CIRCUIT_BREAKER_IDLE_TIMEOUT}
               value={this.state.service.clientConfig.idleTimeout}
               onChange={(v) => this.changeTheValue('clientConfig.idleTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client global timeout"
-              help="Specify how long the global call (with retries) should last at most in milliseconds."
+              help={CIRCUIT_BREAKER_GLOBAL_TIMEOUT}
               value={this.state.service.clientConfig.globalTimeout}
               onChange={(v) => this.changeTheValue('clientConfig.globalTimeout', v)}
             />
@@ -2892,20 +2893,20 @@ export class ServicePage extends Component {
               suffix="times"
               label="C.breaker max errors"
               value={this.state.service.clientConfig.maxErrors}
-              help="Specify how many errors can pass before opening the circuit breaker"
+              help={CIRCUIT_BREAKER_MAX_ERRORS}
               onChange={(v) => this.changeTheValue('clientConfig.maxErrors', v)}
             />
             <NumberInput
               suffix="ms."
               label="C.breaker retry delay"
               value={this.state.service.clientConfig.retryInitialDelay}
-              help="Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
+              help={CIRCUIT_BREAKER_RETRY_INITIAL_DELAY}
               onChange={(v) => this.changeTheValue('clientConfig.retryInitialDelay', v)}
             />
             <NumberInput
               suffix="times"
               label="C.breaker backoff factor"
-              help="Specify the factor to multiply the delay for each retry"
+              help={CIRCUIT_BREAKER_BACKOFF_FACTOR}
               value={this.state.service.clientConfig.backoffFactor}
               onChange={(v) => this.changeTheValue('clientConfig.backoffFactor', v)}
             />
@@ -2913,7 +2914,7 @@ export class ServicePage extends Component {
               suffix="ms."
               label="C.breaker window"
               value={this.state.service.clientConfig.sampleInterval}
-              help="Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
+              help={CIRCUIT_BREAKER_SAMPLE_INTERVAL}
               onChange={(v) => this.changeTheValue('clientConfig.sampleInterval', v)}
             />
             <Separator title="Custom timeout settings" />
