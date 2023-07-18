@@ -413,6 +413,17 @@ case class NgTarget(
 }
 
 object NgTarget {
+  val default = NgTarget(
+    id = "www.otoroshi.io",
+    hostname = "www.otoroshi.io",
+    port = 443,
+    tls = true,
+    weight = 1,
+    protocol = HttpProtocols.HTTP_1_1,
+    predicate = AlwaysMatch,
+    ipAddress = None,
+    tlsConfig = NgTlsConfig.default
+  )
   def fromLegacy(target: Target): NgTarget = fromTarget(target)
   def fromTarget(target: Target): NgTarget = {
     NgTarget(

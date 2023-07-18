@@ -2015,8 +2015,8 @@ export function tryIt(content, entity) {
   });
 }
 
-export function dataExportertryIt(content) {
-  return fetch('/bo/api/data-exporter/tryit', {
+export function kafkaDataExportertryIt(content) {
+  return fetch('/bo/api/data-exporter/kafkatryit', {
     method: 'POST',
     credentials: 'include',
     headers: {

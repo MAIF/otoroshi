@@ -454,7 +454,7 @@ export class DataExportersPage extends Component {
   }
 }
 
-const ExporterTryIt = ({ exporter }) => {
+const KafkaExporterTryIt = ({ exporter }) => {
   const [status, setStatus] = useState('Not tested');
   const [timeout, setConnectionTimeout] = useState(15);
 
@@ -501,7 +501,7 @@ const ExporterTryIt = ({ exporter }) => {
                 icon={() => <i className="fas fa-hammer" />}
                 onPress={() => {
                   setStatus('Processing ...');
-                  return BackOfficeServices.dataExportertryIt({ ...exporter, timeout }).then(
+                  return BackOfficeServices.kafkaDataExportertryIt({ ...exporter, timeout }).then(
                     (res) => {
                       if (res.status === 200) setStatus('Successful');
                       else res.json().then((err) => setStatus(err.error));
@@ -536,6 +536,16 @@ export class NewExporterForm extends Component {
   dataChange = (obj) => {
     this.props.onChange({ ...this.props.value, ...obj });
   };
+
+  testMatchAndProject = () => {
+    window.popup(
+      "Test filtering and projection expressions",
+      (ok, cancel) => (
+        <TestMatchAndProjectModal ok={ok} cancel={cancel} originalFiltering={this.data().filtering} originalProjection={this.data().projection} />
+      ),
+      { additionalClass: 'modal-dialog modal-xl' }
+    )
+  }
 
   render() {
     return (
@@ -596,6 +606,12 @@ export class NewExporterForm extends Component {
               onChange={(e) => this.dataChange({ projection: e })}
               height="200px"
             />
+            <div className="row mb-3">
+              <label className="col-sm-2"></label>
+              <div className="col-sm-10">
+                <button type="button" className="btn btn-primary" onClick={this.testMatchAndProject}><i className="fas fa-vial" /> Test filtering and projection expressions</button>
+              </div>
+            </div>
           </Collapse>
           <Collapse initCollapsed={true} label="Queue details">
             <NumberInput
@@ -652,7 +668,7 @@ export class NewExporterForm extends Component {
               />
             </Collapse>
           )}
-          {this.data().type === 'kafka' && <ExporterTryIt exporter={this.props.value} />}
+          {this.data().type === 'kafka' && <KafkaExporterTryIt exporter={this.props.value} />}
         </form>
       </>
     );
@@ -1642,3 +1658,86 @@ const possibleExporterConfigFormValues = {
     },
   },
 };
+
+class TestMatchAndProjectModal extends Component {
+
+  state = { input: {}, filtering: this.props.originalFiltering, projection: this.props.originalProjection, output: { message: 'no test yet' } }
+
+  componentDidMount() {
+    fetch('/bo/api/test_match_and_project_input', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      },
+    }).then(r => r.json()).then(r => {
+      this.setState({ input: r })
+    })
+  }
+
+  test = () => {
+    this.setState({ output: "running test ..." }, () => {
+      fetch('/bo/api/test_match_and_project', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          input: this.state.input,
+          match: this.state.filtering,
+          projection: this.state.projection,
+        })
+      }).then(r => r.json()).then(r => {
+        if (r.matches) {
+          this.setState({ output: r.projection })
+        } else {
+          this.setState({ output: { message: 'The input document does not match the filtering expressions' }})
+        }
+      });
+    });
+  }
+
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
+              <JsonObjectAsCodeInput
+                label="Input"
+                value={this.state.input}
+                onChange={(e) => this.setState({ input: e })}
+              />
+              <JsonObjectAsCodeInput
+                label="Output"
+                value={this.state.output}
+                onChange={(e) => ('')}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
+              <JsonObjectAsCodeInput
+                label="Filtering"
+                value={this.state.filtering}
+                onChange={(e) => this.setState({ filtering: e })}
+              />
+              <JsonObjectAsCodeInput
+                label="Projection"
+                value={this.state.projection}
+                onChange={(e) => this.setState({ projection: e })}
+              />
+            </div>
+          </div>
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+          <button type="button" className="btn btn-success" onClick={this.test}><i className="fas fa-play" /> run</button>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            close
+          </button>
+        </div>
+      </>
+    );
+  }
+}

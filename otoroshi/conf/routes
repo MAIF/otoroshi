@@ -90,7 +90,7 @@ PUT    /bo/api/backoffice/flags                               otoroshi.controlle
 GET    /bo/api/backoffice/flags                               otoroshi.controllers.BackOfficeController.getFlags()
 
 POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call(entity: Option[String])
-POST   /bo/api/data-exporter/tryit                            otoroshi.next.controllers.TryItController.dataExporterCall()
+POST   /bo/api/data-exporter/kafkatryit                       otoroshi.next.controllers.TryItController.kafkaDataExporterTryIt()
 
 GET     /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 POST    /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
@@ -103,6 +103,8 @@ POST    /bo/api/graphql_to_json                               otoroshi.controlle
 POST    /bo/api/json_to_graphql_schema                        otoroshi.controllers.BackOfficeController.jsonToGraphqlSchema()
 POST    /bo/api/json_to_yaml                                  otoroshi.controllers.BackOfficeController.toYaml()
 GET     /bo/api/plugins/wasm                                  otoroshi.controllers.BackOfficeController.wasmFiles()
+GET     /bo/api/test_match_and_project_input                  otoroshi.controllers.BackOfficeController.testFilteringAndProjectionInputDoc()
+POST    /bo/api/test_match_and_project                        otoroshi.controllers.BackOfficeController.testFilteringAndProjection()
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

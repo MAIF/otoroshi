@@ -34,7 +34,7 @@ class TryItController(
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def dataExporterCall() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def kafkaDataExporterTryIt() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val jsonBody = bodyRaw.utf8String.parseJson
       jsonBody \ "config" match {
