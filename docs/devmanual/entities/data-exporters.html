@@ -357,6 +357,34 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;fieldthatidontwant&quot;: false
 }
 </code></pre>
+<p>Projections allows object modification using jspath, for instance, this example will create a new <code>otoroshiHeaderKeys</code> field to exported events. This field will contains a string array containing every request header name.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;otoroshiHeaderKeys&quot;: {
+     &quot;$path&quot;: &quot;$.otoroshiHeadersIn.*.key&quot;
+  }
+}
+</code></pre>
+<p>Alternativerly, projections also allow to use JQ to transform exported events</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;headerKeys&quot;: {
+     &quot;$jq&quot;: &quot;[.headers[].key]&quot;
+  }
+}
+</code></pre>
+<p>JQ filter also allows conditionnal filtering : transformation is applied only if given predicate is match. In the following example, <code>headerKeys</code> field will be valued only if <code>target.scheme</code> is <code>https</code>.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;headerKeys&quot;: {
+    &quot;$jqIf&quot;: {
+      &quot;filter&quot;: &quot;[.headers[].key]&quot;,
+      &quot;predicate&quot;: {
+        &quot;path&quot;: &quot;target.scheme&quot;,
+        &quot;value&quot;: &quot;https&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p>See <a href="https://jqlang.github.io/jq/manual/">JQ manual</a> for complete syntax reference.</p>
 <h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
 <p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
 <ul>
