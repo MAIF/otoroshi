@@ -2273,7 +2273,7 @@ class EditView extends React.Component {
     const { id, name, icon } = selectedNode;
     const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state;
 
-    const showActions = !selectedNode.legacy && !readOnly; // && 'Backend' !== id;
+    const showActions = !selectedNode.legacy && !readOnly && !usingExistingBackend; // && 'Backend' !== id;
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
