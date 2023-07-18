@@ -418,9 +418,7 @@ object NgCorazaWAFConfig {
 }
 
 class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
-
-  WasmVmPool.logger.debug("new NgCorazaWAF")
-
+  
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
