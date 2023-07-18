@@ -37,13 +37,6 @@ object WasmAction {
   case class WasmUpdate(call: () => Unit) extends WasmAction
 }
 
-object WasmContextSlot                                                 {
-  // private val _currentContext                     = new ThreadLocal[Any]()
-  // def getCurrentContext(): Option[Any]            = Option(_currentContext.get())
-  // private[wasm] def setCurrentContext(value: Any): Unit = _currentContext.set(value)
-  // private[wasm] def clearCurrentContext(): Unit         = _currentContext.remove()
-}
-
 class WasmContextSlot(
                        id: String,
                        instance: Int,

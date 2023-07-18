@@ -543,7 +543,7 @@ export class NewExporterForm extends Component {
       (ok, cancel) => (
         <TestMatchAndProjectModal ok={ok} cancel={cancel} originalFiltering={this.data().filtering} originalProjection={this.data().projection} />
       ),
-      { additionalClass: 'modal-dialog modal-xl' }
+      { additionalClass: 'modal-xl', style: { width: '100%' }, }
     )
   }
 
@@ -1705,18 +1705,6 @@ class TestMatchAndProjectModal extends Component {
           <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
               <JsonObjectAsCodeInput
-                label="Input"
-                value={this.state.input}
-                onChange={(e) => this.setState({ input: e })}
-              />
-              <JsonObjectAsCodeInput
-                label="Output"
-                value={this.state.output}
-                onChange={(e) => ('')}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
-              <JsonObjectAsCodeInput
                 label="Filtering"
                 value={this.state.filtering}
                 onChange={(e) => this.setState({ filtering: e })}
@@ -1725,6 +1713,18 @@ class TestMatchAndProjectModal extends Component {
                 label="Projection"
                 value={this.state.projection}
                 onChange={(e) => this.setState({ projection: e })}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
+              <JsonObjectAsCodeInput
+                label="Input"
+                value={this.state.input}
+                onChange={(e) => this.setState({ input: e })}
+              />
+              <JsonObjectAsCodeInput
+                label="Output"
+                value={this.state.output}
+                onChange={(e) => ('')}
               />
             </div>
           </div>
