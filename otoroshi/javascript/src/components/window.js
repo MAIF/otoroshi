@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import isFunction from 'lodash/isFunction';
 import isString from 'lodash/isString';
+import { WizardFrame } from './wizardframe';
 
 class Alert extends Component {
   componentDidMount() {
@@ -285,10 +286,34 @@ export function registerPopup() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
+  registerWizard()
   window.popup = (title, fn, props = {}) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Popup
+          body={fn}
+          title={title}
+          ok={(inputValue) => {
+            success(inputValue);
+            ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
+          }}
+          cancel={() => {
+            success(null);
+            ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
+          }}
+          {...props}
+        />,
+        document.getElementById('otoroshi-alerts-container')
+      );
+    });
+  };
+}
+
+export function registerWizard() {
+  window.wizard = (title, fn, props = {}) => {
+    return new Promise((success, failure) => {
+      ReactDOM.render(
+        <WizardFrame
           body={fn}
           title={title}
           ok={(inputValue) => {

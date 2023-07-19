@@ -538,12 +538,18 @@ export class NewExporterForm extends Component {
   };
 
   testMatchAndProject = () => {
-    window.popup(
+    window.wizard(
       "Test filtering and projection expressions",
       (ok, cancel) => (
-        <TestMatchAndProjectModal ok={ok} cancel={cancel} originalFiltering={this.data().filtering} originalProjection={this.data().projection} />
+        <TestMatchAndProjectModal 
+          ok={ok} 
+          cancel={cancel} 
+          originalFiltering={this.data().filtering} 
+          originalProjection={this.data().projection} 
+          updateExpressions={(filtering, projection) => this.props.onChange({ ...this.props.value, filtering, projection })}
+        />
       ),
-      { additionalClass: 'modal-xl', style: { width: '100%' }, }
+      { additionalClass: 'modal-xl', style: { width: '100%' }, noCancel: true, okLabel: 'close' }
     )
   }
 
@@ -1698,45 +1704,58 @@ class TestMatchAndProjectModal extends Component {
     });
   }
 
+  copy = () => {
+    this.props.updateExpressions(this.state.filtering, this.state.projection);
+    // this.props.cancel();
+  }
+
   render() {
+    const height = (window.innerHeight * 0.4).toFixed(0)
     return (
       <>
-        <div className="modal-body">
-          <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
+        {/*<div className="modal-body">*/}
+          <div style={{ display: 'flex', flexDirection: 'row', width: '100%', height: '100%', marginTop: 30 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
               <JsonObjectAsCodeInput
                 label="Filtering"
                 value={this.state.filtering}
                 onChange={(e) => this.setState({ filtering: e })}
+                height={`${height}px`}
               />
               <JsonObjectAsCodeInput
                 label="Projection"
                 value={this.state.projection}
                 onChange={(e) => this.setState({ projection: e })}
+                height={`${height}px`}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
               <JsonObjectAsCodeInput
                 label="Input"
                 value={this.state.input}
                 onChange={(e) => this.setState({ input: e })}
+                height={`${height}px`}
               />
               <JsonObjectAsCodeInput
                 label="Output"
                 value={this.state.output}
                 onChange={(e) => ('')}
+                height={`${height}px`}
               />
             </div>
           </div>
           <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-          <button type="button" className="btn btn-success" onClick={this.test}><i className="fas fa-play" /> run</button>
+            <div className="btn-group">
+              <button type="button" className="btn btn-success" onClick={this.test}><i className="fas fa-play" /> run</button>
+              <button type="button" className="btn btn-primary" onClick={this.copy}><i className="fas fa-clipboard" /> update exporter expressions</button>
+            </div>
           </div>
-        </div>
+        {/*</div>
         <div className="modal-footer">
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
             close
           </button>
-        </div>
+        </div>*/}
       </>
     );
   }
