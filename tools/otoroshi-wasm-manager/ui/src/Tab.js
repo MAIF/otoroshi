@@ -13,7 +13,7 @@ import { SidebarContext } from './Sidebar';
 function Tab({ content, ext, handleContent, selected, readOnly }) {
   const ref = useRef()
 
-  if (!content || !selected)
+  if (!selected)
     return null
 
   const EXTENSIONS = {
