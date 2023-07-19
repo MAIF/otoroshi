@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.6.0] - 2023-07-19
+
+https://github.com/MAIF/otoroshi/milestone/67?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.5.2...v16.6.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.6.0
+
+## Added
+
+- add generic pooling support for mono-threaded WASM VMs (#1642)
+- add routine to automatically kill unused vm, vm with too much memory consumed, etc  (#1649)
+- tweak extism to provide efficient vm instanciation with scoped host functions (#1621)
+- include `$jq` operator in Projection utils (#1656)
+- documentation fo jsonpath based projections (#1662)
+- documentation for matcher operators (#1631)
+- add the ability to test filtering and projection from data-exporter view (#1675)
+- use wasm-opt in the wasm manager to cleanup produced wasm (#1630)
+- doc: add circuit breaker topic (#1641)
+
+
+## Changed
+
+- remove lifetime from wasm vm config. (#1654)
+- support wasm vm pool on non wasm plugin configs. (#1652)
+- support coraza calls in wasm vm pools (#1643)
+- support OPA calls in wasm vm pools (#1646)
+- rewrite wasm plugins to use vm pools (#1645)
+- rewrite coraza plugin to avoid blocking (#1644)
+- rewrite wasm data exporters to use vm pools (#1647)
+- rewrite wasm auth plugins to use vm pools (#1653)
+
+## Fixed
+
+- make template update work in multi-thread env. (#1648)
+- handle requests burst on wasm plugin (#1650)
+- auth module - SAML : Using wizard, Single Logout URL is mandatory? (#1663)
+- removing all lines from a file make it impossible to edit (#1673)
+- saml request should be deflated before base64 encoding (#1678)
+
+
 ## [16.5.2] - 2023-07-04
 
 https://github.com/MAIF/otoroshi/milestone/69?closed=1
