@@ -2827,9 +2827,11 @@ class ProxyEngine() extends RequestHandler {
       }
 
       report.markOverheadIn()
+      val start = System.currentTimeMillis()
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>
+          attrs.put(otoroshi.plugins.Keys.BackendDurationKey -> (System.currentTimeMillis() - start))
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
           val hasTrailerHeaders  =
             rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
@@ -3389,6 +3391,7 @@ class ProxyEngine() extends RequestHandler {
           host = backend.toTarget.host,
           uri = rawRequest.relativeUri
         ),
+        backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
         duration = duration,
         overhead = overhead,
         cbDuration = cbDuration,
@@ -3544,6 +3547,7 @@ class ProxyEngine() extends RequestHandler {
           host = backend.toTarget.host,
           uri = rawRequest.relativeUri
         ),
+        backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
         duration = duration,
         overhead = overhead,
         cbDuration = cbDuration,

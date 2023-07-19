@@ -110,6 +110,7 @@ object Errors {
             host = _target.host,
             uri = req.relativeUri
           ),
+          backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,
@@ -199,6 +200,7 @@ object Errors {
             host = _target.host,
             uri = req.relativeUri
           ),
+          backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,
@@ -254,6 +256,7 @@ object Errors {
             host = req.theHost,
             uri = req.relativeUri
           ),
+          backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,

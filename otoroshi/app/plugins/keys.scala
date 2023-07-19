@@ -13,6 +13,7 @@ import play.api.libs.typedmap.TypedKey
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
 
 object Keys {
+  val BackendDurationKey       = TypedKey[Long]("otoroshi.core.BackendDuration")
   val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
   val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
   val ApiKeyJwtKey             = TypedKey[JsValue]("otoroshi.core.ApiKeyJwt")

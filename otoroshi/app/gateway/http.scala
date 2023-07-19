@@ -318,6 +318,7 @@ class HttpHandler()(implicit env: Env) {
                 host = host,
                 uri = req.relativeUri
               ),
+              backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
               duration = duration,
               overhead = overhead,
               cbDuration = cbDuration,

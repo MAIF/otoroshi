@@ -133,9 +133,11 @@ class ForwardTrafficHandler extends RequestHandler {
           builder = builder.withBody(request.body)
         }
 
+        val httpcallstart = System.currentTimeMillis()
         builder
           .stream()
           .map { resp =>
+            val calldur = System.currentTimeMillis() - httpcallstart
             val duration                     = System.currentTimeMillis() - start
             val ctypeOut                     = resp.headers.get("Content-Type").orElse(resp.headers.get("content-type")).map(_.last)
             val clenOut                      =
@@ -224,6 +226,7 @@ class ForwardTrafficHandler extends RequestHandler {
               method = request.method,
               from = request.theIpAddress,
               env = env.env,
+              backendDuration = calldur,
               duration = duration,
               overhead = overhead,
               cbDuration = 0,
