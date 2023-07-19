@@ -740,7 +740,7 @@ class GraphQLBackend extends NgBackendCall {
     } else if (wasmFunctionName.isEmpty) {
       throw WasmException("Missing function")
     } else {
-      val input = ctx.json.asObject ++ Json.obj(
+      val input  = ctx.json.asObject ++ Json.obj(
         "route"   -> ctx.route.json,
         "request" -> ctx.request.json
       )
@@ -775,7 +775,7 @@ class GraphQLBackend extends NgBackendCall {
         )
       )
       WasmVm.fromConfig(wsmCfg).flatMap {
-        case None => Future.failed(WasmException("plugin not found !"))
+        case None          => Future.failed(WasmException("plugin not found !"))
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("execute", input.stringify), None)
             .map {
@@ -785,10 +785,10 @@ class GraphQLBackend extends NgBackendCall {
                 } catch {
                   case _: Exception => output
                 }
-              case Left(error) => error
+              case Left(error)   => error
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     }

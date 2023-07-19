@@ -23,12 +23,12 @@ object ProxyWasmFunctions {
 
   def build(
       state: ProxyWasmState,
-      vmDataRef: AtomicReference[VmData],
+      vmDataRef: AtomicReference[VmData]
   )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
     def getCurrentVmData(): VmData = {
       Option(vmDataRef.get()) match {
         case Some(data: VmData) => data
-        case _ =>
+        case _                  =>
           println("missing vm data")
           new RuntimeException("missing vm data").printStackTrace()
           throw new RuntimeException("missing vm data")
@@ -232,7 +232,7 @@ object ProxyWasmFunctions {
             params(5).v.i32,
             params(6).v.i32,
             params(7).v.i32,
-            getCurrentVmData(),
+            getCurrentVmData()
           ),
         Optional.empty[EnvUserData]()
       )

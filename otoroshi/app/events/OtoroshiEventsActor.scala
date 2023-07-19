@@ -8,7 +8,14 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import akka.stream.alpakka.s3.{
+  ApiVersion,
+  ListBucketResultContents,
+  MemoryBufferType,
+  MetaHeaders,
+  S3Attributes,
+  S3Settings
+}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -30,7 +37,20 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json
+}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -1225,24 +1245,25 @@ object Exporters {
               )
               // println(s"call send: ${events.size}")
               WasmVm.fromConfig(plugin.config).flatMap {
-                case None => ExportResult.ExportResultFailure("plugin not found !").vfuture
+                case None          => ExportResult.ExportResultFailure("plugin not found !").vfuture
                 case Some((vm, _)) =>
-                  vm.call(WasmFunctionParameters.ExtismFuntionCall("export_events", (input ++ Json.obj("events" -> JsArray(events))).stringify), None)
-                    .map {
-                      case Left(err) => ExportResult.ExportResultFailure(err.stringify)
-                      case Right(res) =>
-                        res._1.parseJson.select("error").asOpt[JsValue] match {
-                          case None => ExportResult.ExportResultSuccess
-                          case Some(error) => ExportResult.ExportResultFailure(error.stringify)
-                        }
-                    }
-                    .recover { case e =>
-                      e.printStackTrace()
-                      ExportResult.ExportResultFailure(e.getMessage)
-                    }
-                    .andThen {
-                      case _ => vm.release()
-                    }
+                  vm.call(
+                    WasmFunctionParameters
+                      .ExtismFuntionCall("export_events", (input ++ Json.obj("events" -> JsArray(events))).stringify),
+                    None
+                  ).map {
+                    case Left(err)  => ExportResult.ExportResultFailure(err.stringify)
+                    case Right(res) =>
+                      res._1.parseJson.select("error").asOpt[JsValue] match {
+                        case None        => ExportResult.ExportResultSuccess
+                        case Some(error) => ExportResult.ExportResultFailure(error.stringify)
+                      }
+                  }.recover { case e =>
+                    e.printStackTrace()
+                    ExportResult.ExportResultFailure(e.getMessage)
+                  }.andThen { case _ =>
+                    vm.release()
+                  }
               }
             }
         }

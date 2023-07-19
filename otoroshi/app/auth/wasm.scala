@@ -130,22 +130,23 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => Errors
-          .craftResponseResult(
-            "plugin not found !",
-            Results.Status(500),
-            request,
-            None,
-            None,
-            attrs = TypedMap.empty,
-            maybeRoute = ctx.route.some
-          )
+        case None          =>
+          Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              request,
+              None,
+              None,
+              attrs = TypedMap.empty,
+              maybeRoute = ctx.route.some
+            )
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_login_page", input.stringify), None)
             .map {
-              case Left(err) => Results.InternalServerError(err)
+              case Left(err)     => Results.InternalServerError(err)
               case Right(output) => {
-                val response =
+                val response    =
                   try {
                     Json.parse(output._1)
                   } catch {
@@ -153,8 +154,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                       WasmAuthModule.logger.error("error during json parsing", e)
                       Json.obj()
                   }
-                val body = BodyHelper.extractBodyFrom(response)
-                val headers = response
+                val body        = BodyHelper.extractBodyFrom(response)
+                val headers     = response
                   .select("headers")
                   .asOpt[Map[String, String]]
                   .getOrElse(Map("Content-Type" -> "text/html"))
@@ -166,8 +167,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   .as(contentType)
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {
@@ -196,22 +197,24 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => Errors
-          .craftResponseResult(
-            "plugin not found !",
-            Results.Status(500),
-            request,
-            None,
-            None,
-            attrs = TypedMap.empty,
-            maybeRoute = ctx.route.some
-          ).map(_.left)
+        case None          =>
+          Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              request,
+              None,
+              None,
+              attrs = TypedMap.empty,
+              maybeRoute = ctx.route.some
+            )
+            .map(_.left)
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_logout", input.stringify), None)
             .map {
-              case Left(err) => Results.InternalServerError(err).left
+              case Left(err)     => Results.InternalServerError(err).left
               case Right(output) => {
-                val response =
+                val response  =
                   try {
                     Json.parse(output._1)
                   } catch {
@@ -223,8 +226,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 logoutUrl.right
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {
@@ -251,11 +254,11 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => "plugin not found !".leftf
+        case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_callback", input.stringify), None)
             .map {
-              case Left(err) => err.stringify.left
+              case Left(err)     => err.stringify.left
               case Right(output) => {
                 val response = {
                   try {
@@ -267,13 +270,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   }
                 }
                 PrivateAppsUser.fmt.reads(response) match {
-                  case JsError(errors) => errors.toString().left
+                  case JsError(errors)    => errors.toString().left
                   case JsSuccess(user, _) => user.validate(authConfig.userValidators)
                 }
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {
@@ -292,22 +295,23 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => Errors
-          .craftResponseResult(
-            "plugin not found !",
-            Results.Status(500),
-            request,
-            None,
-            None,
-            attrs = TypedMap.empty,
-            maybeRoute = ctx.route.some
-          )
+        case None          =>
+          Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              request,
+              None,
+              None,
+              attrs = TypedMap.empty,
+              maybeRoute = ctx.route.some
+            )
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_login_page", input.stringify), None)
             .map {
-              case Left(err) => Results.InternalServerError(err)
+              case Left(err)     => Results.InternalServerError(err)
               case Right(output) => {
-                val response =
+                val response    =
                   try {
                     Json.parse(output._1)
                   } catch {
@@ -315,8 +319,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                       WasmAuthModule.logger.error("error during json parsing", e)
                       Json.obj()
                   }
-                val body = BodyHelper.extractBodyFrom(response)
-                val headers = response
+                val body        = BodyHelper.extractBodyFrom(response)
+                val headers     = response
                   .select("headers")
                   .asOpt[Map[String, String]]
                   .getOrElse(Map("Content-Type" -> "text/html"))
@@ -328,8 +332,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   .as(contentType)
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {
@@ -353,22 +357,24 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => Errors
-          .craftResponseResult(
-            "plugin not found !",
-            Results.Status(500),
-            request,
-            None,
-            None,
-            attrs = TypedMap.empty,
-            maybeRoute = ctx.route.some
-          ).map(_.left)
+        case None          =>
+          Errors
+            .craftResponseResult(
+              "plugin not found !",
+              Results.Status(500),
+              request,
+              None,
+              None,
+              attrs = TypedMap.empty,
+              maybeRoute = ctx.route.some
+            )
+            .map(_.left)
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_logout", input.stringify), None)
             .map {
-              case Left(err) => Results.InternalServerError(err).left
+              case Left(err)     => Results.InternalServerError(err).left
               case Right(output) => {
-                val response =
+                val response  =
                   try {
                     Json.parse(output._1)
                   } catch {
@@ -380,8 +386,8 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 logoutUrl.right
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {
@@ -405,11 +411,11 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
       WasmVm.fromConfig(plugin.config).flatMap {
-        case None => "plugin not found !".leftf
+        case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_callback", input.stringify), None)
             .map {
-              case Left(err) => err.stringify.left
+              case Left(err)     => err.stringify.left
               case Right(output) => {
                 val response = {
                   try {
@@ -421,13 +427,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   }
                 }
                 BackOfficeUser.fmt.reads(response) match {
-                  case JsError(errors) => errors.toString().left
+                  case JsError(errors)    => errors.toString().left
                   case JsSuccess(user, _) => user.validate(authConfig.userValidators)
                 }
               }
             }
-            .andThen {
-              case _ => vm.release()
+            .andThen { case _ =>
+              vm.release()
             }
       }
     } getOrElse {

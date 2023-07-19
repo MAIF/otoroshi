@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   //lazy val serviceHost = "cb.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -35,9 +35,9 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
     "Retry on failures" in {
 
-      val callCounter1 = new AtomicInteger(0)
+      val callCounter1          = new AtomicInteger(0)
       val basicTestExpectedBody = """{"message":"hello world"}"""
-      val basicTestServer1 = TargetService(
+      val basicTestServer1      = TargetService(
         "cbr.oto.tools".option,
         "/api",
         "application/json",
@@ -47,7 +47,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
         }
       ).await()
 
-      val callCounter2 = new AtomicInteger(0)
+      val callCounter2     = new AtomicInteger(0)
       val basicTestServer2 = TargetService(
         "cbr.oto.tools".option,
         "/api",
@@ -59,7 +59,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       ).await()
 
       val fakePort = TargetService.freePort
-      val service = ServiceDescriptor(
+      val service  = ServiceDescriptor(
         id = "cbr-test",
         name = "cbr-test",
         env = "prod",
@@ -93,11 +93,11 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
-            .withHttpHeaders(
-              "Host" -> "cbr.oto.tools"
-            )
-            .get()
-            .futureValue
+          .withHttpHeaders(
+            "Host" -> "cbr.oto.tools"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
@@ -222,8 +222,8 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
     "Timeout on long calls" in {
       val basicTestExpectedBody = """{"message":"hello world"}"""
-      val callCounter3 = new AtomicInteger(0)
-      val basicTestServer3 = TargetService(
+      val callCounter3          = new AtomicInteger(0)
+      val basicTestServer3      = TargetService(
         "cbt.oto.tools".option,
         "/api",
         "application/json",
@@ -276,8 +276,8 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
     "Timeout on long calls with retries" in {
       val basicTestExpectedBody = """{"message":"hello world"}"""
-      val callCounter3 = new AtomicInteger(0)
-      val basicTestServer3 = TargetService(
+      val callCounter3          = new AtomicInteger(0)
+      val basicTestServer3      = TargetService(
         "cbtr.oto.tools".option,
         "/api",
         "application/json",

@@ -88,19 +88,19 @@ object JsonPathUtils {
   def getAtPolyF(payload: String, path: String): Either[JsonPathReadError, JsValue] = {
     //val env = OtoroshiEnvHolder.get()
     //env.metrics.withTimer("JsonPathUtils.getAtPolyF") {
-      Try {
-        val docCtx = JsonPath.parse(payload, config)
-        val read   = docCtx.read[JsonNode](path)
-        if (read != null) {
-          Writes.jsonNodeWrites.writes(read)
-        } else {
-          throw JsonPathReadErrorException(JsonPathReadError("null read", path, payload, None))
-        }
-      } match {
-        case Failure(JsonPathReadErrorException(err)) => Left(err)
-        case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
-        case Success(s)                               => Right(s)
+    Try {
+      val docCtx = JsonPath.parse(payload, config)
+      val read   = docCtx.read[JsonNode](path)
+      if (read != null) {
+        Writes.jsonNodeWrites.writes(read)
+      } else {
+        throw JsonPathReadErrorException(JsonPathReadError("null read", path, payload, None))
       }
+    } match {
+      case Failure(JsonPathReadErrorException(err)) => Left(err)
+      case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
+      case Success(s)                               => Right(s)
+    }
     //}
   }
 

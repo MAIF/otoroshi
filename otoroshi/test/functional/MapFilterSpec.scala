@@ -858,10 +858,10 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           Json.obj("key" -> "key1", "value" -> "value1"),
           Json.obj("key" -> "key2", "value" -> "value2"),
           Json.obj("key" -> "key3", "value" -> "value3"),
-          Json.obj("key" -> "key4", "value" -> "value4"),
+          Json.obj("key" -> "key4", "value" -> "value4")
         )
       )
-      val res = otoroshi.utils.Projection.project(
+      val res    = otoroshi.utils.Projection.project(
         source,
         Json.obj(
           "otoroshiHeadersIn" -> Json.obj("$path" -> "$.otoroshiHeadersIn.*.key")

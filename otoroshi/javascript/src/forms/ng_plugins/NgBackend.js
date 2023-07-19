@@ -1,4 +1,18 @@
-import { CIRCUIT_BREAKER_BACKOFF_FACTOR, CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED, CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE, CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT, CIRCUIT_BREAKER_CALL_TIMEOUT, CIRCUIT_BREAKER_CLIENT_RETRIES, CIRCUIT_BREAKER_CONNECTION_TIMEOUT, CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH, CIRCUIT_BREAKER_GLOBAL_TIMEOUT, CIRCUIT_BREAKER_IDLE_TIMEOUT, CIRCUIT_BREAKER_MAX_ERRORS, CIRCUIT_BREAKER_RETRY_INITIAL_DELAY, CIRCUIT_BREAKER_SAMPLE_INTERVAL } from "../../explanations";
+import {
+  CIRCUIT_BREAKER_BACKOFF_FACTOR,
+  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
+  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
+  CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+  CIRCUIT_BREAKER_CALL_TIMEOUT,
+  CIRCUIT_BREAKER_CLIENT_RETRIES,
+  CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
+  CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+  CIRCUIT_BREAKER_IDLE_TIMEOUT,
+  CIRCUIT_BREAKER_MAX_ERRORS,
+  CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+  CIRCUIT_BREAKER_SAMPLE_INTERVAL,
+} from '../../explanations';
 
 export default {
   id: 'Backend',
@@ -31,8 +45,7 @@ export default {
             call_and_stream_timeout: {
               label: 'call_and_stream_timeout',
               type: 'number',
-              help:
-                CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+              help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
             },
             path: {
               label: 'path',
@@ -47,14 +60,12 @@ export default {
             idle_timeout: {
               label: 'idle_timeout',
               type: 'number',
-              help:
-                CIRCUIT_BREAKER_IDLE_TIMEOUT,
+              help: CIRCUIT_BREAKER_IDLE_TIMEOUT,
             },
             global_timeout: {
               label: 'global_timeout',
               type: 'number',
-              help:
-                CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+              help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
             },
           },
           flow: [
@@ -78,8 +89,7 @@ export default {
         global_timeout: {
           label: 'global_timeout',
           type: 'number',
-          help:
-            CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+          help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
         },
         max_errors: {
           label: 'max_errors',
@@ -89,8 +99,7 @@ export default {
         retry_initial_delay: {
           label: 'retry_initial_delay',
           type: 'number',
-          help:
-            CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+          help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
         },
         backoff_factor: {
           label: 'backoff_factor',
@@ -106,7 +115,7 @@ export default {
             queue_size: {
               label: 'queue_size',
               type: 'number',
-              help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE
+              help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
             },
             enabled: {
               label: 'enabled',
@@ -127,14 +136,12 @@ export default {
         call_and_stream_timeout: {
           label: 'call_and_stream_timeout',
           type: 'number',
-          help:
-            CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+          help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
         },
         retries: {
           label: 'retries',
           type: 'number',
-          help:
-            CIRCUIT_BREAKER_CLIENT_RETRIES,
+          help: CIRCUIT_BREAKER_CLIENT_RETRIES,
         },
         proxy: {
           label: 'proxy',

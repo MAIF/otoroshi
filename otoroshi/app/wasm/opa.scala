@@ -226,7 +226,12 @@ object OPA extends AwaitCapable {
       })
   }
 
-  def evaluate(plugin: WasmOtoroshiInstance, dataAddr: Int, baseHeapPtr: Int,  input: String): Either[JsValue, (String, ResultsWrapper)] = {
+  def evaluate(
+      plugin: WasmOtoroshiInstance,
+      dataAddr: Int,
+      baseHeapPtr: Int,
+      input: String
+  ): Either[JsValue, (String, ResultsWrapper)] = {
     val entrypoint = 0
 
     // TODO - read and load builtins functions by calling dumpJSON
@@ -241,19 +246,22 @@ object OPA extends AwaitCapable {
     val input_addr = baseHeapPtr
 
     val ptr = new WasmOtoroshiParameters(7)
-      .pushInts(0 , entrypoint, dataAddr, input_addr, input_len, heap_ptr, 0)
+      .pushInts(0, entrypoint, dataAddr, input_addr, input_len, heap_ptr, 0)
 
     val ret = plugin.call("opa_eval", ptr, 1)
 
     val memory = plugin.getMemory("memory")
 
-    val offset: Int = ret.getValue(0).v.i32
+    val offset: Int    = ret.getValue(0).v.i32
     val arraySize: Int = 65356
 
     val mem: Array[Byte] = memory.getByteArray(offset, arraySize)
     val size: Int        = lastValidByte(mem)
 
-    (new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8), ResultsWrapper(new WasmOtoroshiResults(0))).right
+    (
+      new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8),
+      ResultsWrapper(new WasmOtoroshiResults(0))
+    ).right
   }
 
   def lastValidByte(arr: Array[Byte]): Int = {

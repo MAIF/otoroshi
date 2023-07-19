@@ -539,19 +539,21 @@ export class NewExporterForm extends Component {
 
   testMatchAndProject = () => {
     window.wizard(
-      "Test filtering and projection expressions",
+      'Test filtering and projection expressions',
       (ok, cancel) => (
-        <TestMatchAndProjectModal 
-          ok={ok} 
-          cancel={cancel} 
-          originalFiltering={this.data().filtering} 
-          originalProjection={this.data().projection} 
-          updateExpressions={(filtering, projection) => this.props.onChange({ ...this.props.value, filtering, projection })}
+        <TestMatchAndProjectModal
+          ok={ok}
+          cancel={cancel}
+          originalFiltering={this.data().filtering}
+          originalProjection={this.data().projection}
+          updateExpressions={(filtering, projection) =>
+            this.props.onChange({ ...this.props.value, filtering, projection })
+          }
         />
       ),
       { additionalClass: 'modal-xl', style: { width: '100%' }, noCancel: true, okLabel: 'close' }
-    )
-  }
+    );
+  };
 
   render() {
     return (
@@ -615,7 +617,12 @@ export class NewExporterForm extends Component {
             <div className="row mb-3">
               <label className="col-sm-2"></label>
               <div className="col-sm-10">
-                <button type="button" className="btn btn-primary" onClick={this.testMatchAndProject}><i className="fas fa-vial" /> Test filtering and projection expressions</button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={this.testMatchAndProject}>
+                  <i className="fas fa-vial" /> Test filtering and projection expressions
+                </button>
               </div>
             </div>
           </Collapse>
@@ -1666,90 +1673,117 @@ const possibleExporterConfigFormValues = {
 };
 
 class TestMatchAndProjectModal extends Component {
-
-  state = { input: {}, filtering: this.props.originalFiltering, projection: this.props.originalProjection, output: { message: 'no test yet' } }
+  state = {
+    input: {},
+    filtering: this.props.originalFiltering,
+    projection: this.props.originalProjection,
+    output: { message: 'no test yet' },
+  };
 
   componentDidMount() {
     fetch('/bo/api/test_match_and_project_input', {
       method: 'GET',
       credentials: 'include',
       headers: {
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
-    }).then(r => r.json()).then(r => {
-      this.setState({ input: r })
     })
+      .then((r) => r.json())
+      .then((r) => {
+        this.setState({ input: r });
+      });
   }
 
   test = () => {
-    this.setState({ output: "running test ..." }, () => {
+    this.setState({ output: 'running test ...' }, () => {
       fetch('/bo/api/test_match_and_project', {
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           input: this.state.input,
           match: this.state.filtering,
           projection: this.state.projection,
-        })
-      }).then(r => r.json()).then(r => {
-        if (r.matches) {
-          this.setState({ output: r.projection })
-        } else {
-          this.setState({ output: { message: 'The input document does not match the filtering expressions' }})
-        }
-      });
+        }),
+      })
+        .then((r) => r.json())
+        .then((r) => {
+          if (r.matches) {
+            this.setState({ output: r.projection });
+          } else {
+            this.setState({
+              output: { message: 'The input document does not match the filtering expressions' },
+            });
+          }
+        });
     });
-  }
+  };
 
   copy = () => {
     this.props.updateExpressions(this.state.filtering, this.state.projection);
     // this.props.cancel();
-  }
+  };
 
   render() {
-    const height = (window.innerHeight * 0.4).toFixed(0)
+    const height = (window.innerHeight * 0.4).toFixed(0);
     return (
       <>
         {/*<div className="modal-body">*/}
-          <div style={{ display: 'flex', flexDirection: 'row', width: '100%', height: '100%', marginTop: 30 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
-              <JsonObjectAsCodeInput
-                label="Filtering"
-                value={this.state.filtering}
-                onChange={(e) => this.setState({ filtering: e })}
-                height={`${height}px`}
-              />
-              <JsonObjectAsCodeInput
-                label="Projection"
-                value={this.state.projection}
-                onChange={(e) => this.setState({ projection: e })}
-                height={`${height}px`}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
-              <JsonObjectAsCodeInput
-                label="Input"
-                value={this.state.input}
-                onChange={(e) => this.setState({ input: e })}
-                height={`${height}px`}
-              />
-              <JsonObjectAsCodeInput
-                label="Output"
-                value={this.state.output}
-                onChange={(e) => ('')}
-                height={`${height}px`}
-              />
-            </div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            width: '100%',
+            height: '100%',
+            marginTop: 30,
+          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
+            <JsonObjectAsCodeInput
+              label="Filtering"
+              value={this.state.filtering}
+              onChange={(e) => this.setState({ filtering: e })}
+              height={`${height}px`}
+            />
+            <JsonObjectAsCodeInput
+              label="Projection"
+              value={this.state.projection}
+              onChange={(e) => this.setState({ projection: e })}
+              height={`${height}px`}
+            />
           </div>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-            <div className="btn-group">
-              <button type="button" className="btn btn-success" onClick={this.test}><i className="fas fa-play" /> run</button>
-              <button type="button" className="btn btn-primary" onClick={this.copy}><i className="fas fa-clipboard" /> update exporter expressions</button>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
+            <JsonObjectAsCodeInput
+              label="Input"
+              value={this.state.input}
+              onChange={(e) => this.setState({ input: e })}
+              height={`${height}px`}
+            />
+            <JsonObjectAsCodeInput
+              label="Output"
+              value={this.state.output}
+              onChange={(e) => ''}
+              height={`${height}px`}
+            />
           </div>
+        </div>
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <div className="btn-group">
+            <button type="button" className="btn btn-success" onClick={this.test}>
+              <i className="fas fa-play" /> run
+            </button>
+            <button type="button" className="btn btn-primary" onClick={this.copy}>
+              <i className="fas fa-clipboard" /> update exporter expressions
+            </button>
+          </div>
+        </div>
         {/*</div>
         <div className="modal-footer">
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>

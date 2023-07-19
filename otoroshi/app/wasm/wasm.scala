@@ -49,7 +49,7 @@ sealed trait WasmSourceKind {
     None.vfuture
 }
 
-object WasmSourceKind       {
+object WasmSourceKind {
   case object Unknown     extends WasmSourceKind {
     def name: String = "Unknown"
     def getWasm(path: String, opts: JsValue)(implicit
@@ -192,7 +192,7 @@ case class WasmSource(kind: WasmSourceKind, path: String, opts: JsValue = Json.o
     val cache = WasmUtils.scriptCache(env)
     cache.get(cacheKey) match {
       case Some(CacheableWasmScript.CachedWasmScript(_, _)) => true
-      case _ => false
+      case _                                                => false
     }
   }
   def getWasm()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
@@ -223,7 +223,7 @@ case class WasmSource(kind: WasmSourceKind, path: String, opts: JsValue = Json.o
   }
 }
 
-object WasmSource                                                                     {
+object WasmSource {
   val format = new Format[WasmSource] {
     override def writes(o: WasmSource): JsValue             = Json.obj(
       "kind" -> o.kind.json,
@@ -299,7 +299,7 @@ sealed trait WasmVmLifetime {
   def json: JsValue = JsString(name)
 }
 
-object WasmVmLifetime       {
+object WasmVmLifetime {
 
   case object Invocation extends WasmVmLifetime { def name: String = "Invocation" }
   case object Request    extends WasmVmLifetime { def name: String = "Request"    }
@@ -329,9 +329,9 @@ case class WasmConfig(
     authorizations: WasmAuthorizations = WasmAuthorizations()
 ) extends NgPluginConfig {
   // still here for compat reason
-  def lifetime: WasmVmLifetime = WasmVmLifetime.Forever
+  def lifetime: WasmVmLifetime              = WasmVmLifetime.Forever
   def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
-  def json: JsValue = Json.obj(
+  def json: JsValue                         = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,
     "functionName"   -> functionName,
@@ -343,7 +343,7 @@ case class WasmConfig(
     // "lifetime"       -> lifetime.json,
     "authorizations" -> authorizations.json,
     "instances"      -> instances,
-    "killOptions"    -> killOptions.json,
+    "killOptions"    -> killOptions.json
   )
 }
 
@@ -402,7 +402,11 @@ object WasmConfig {
             WasmAuthorizations()
           },
         instances = json.select("instances").asOpt[Int].getOrElse(1),
-        killOptions = json.select("killOptions").asOpt[JsValue].flatMap(v => WasmVmKillOptions.format.reads(v).asOpt).getOrElse(WasmVmKillOptions.default)
+        killOptions = json
+          .select("killOptions")
+          .asOpt[JsValue]
+          .flatMap(v => WasmVmKillOptions.format.reads(v).asOpt)
+          .getOrElse(WasmVmKillOptions.default)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -412,9 +416,10 @@ object WasmConfig {
   }
 }
 
-object ResultsWrapper                                                  {
-  def apply(results: WasmOtoroshiResults): ResultsWrapper                 = new ResultsWrapper(results, None)
-  def apply(results: WasmOtoroshiResults, plugin: WasmOtoroshiInstance): ResultsWrapper = new ResultsWrapper(results, Some(plugin))
+object ResultsWrapper {
+  def apply(results: WasmOtoroshiResults): ResultsWrapper                               = new ResultsWrapper(results, None)
+  def apply(results: WasmOtoroshiResults, plugin: WasmOtoroshiInstance): ResultsWrapper =
+    new ResultsWrapper(results, Some(plugin))
 }
 
 case class ResultsWrapper(results: WasmOtoroshiResults, pluginOpt: Option[WasmOtoroshiInstance]) {
@@ -429,7 +434,9 @@ case class ResultsWrapper(results: WasmOtoroshiResults, pluginOpt: Option[WasmOt
   }
 }
 
-class WasmContext(plugins: UnboundedTrieMap[String, WasmContextSlot] = new UnboundedTrieMap[String, WasmContextSlot]()) {
+class WasmContext(
+    plugins: UnboundedTrieMap[String, WasmContextSlot] = new UnboundedTrieMap[String, WasmContextSlot]()
+) {
   def put(id: String, slot: WasmContextSlot): Unit = plugins.put(id, slot)
   def get(id: String): Option[WasmContextSlot]     = plugins.get(id)
   def close(): Unit = {
@@ -446,4 +453,3 @@ object CacheableWasmScript {
   case class CachedWasmScript(script: ByteString, createAt: Long)       extends CacheableWasmScript
   case class FetchingWasmScript(f: Future[Either[JsValue, ByteString]]) extends CacheableWasmScript
 }
-

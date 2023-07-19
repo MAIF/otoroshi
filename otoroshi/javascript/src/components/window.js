@@ -286,7 +286,7 @@ export function registerPopup() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  registerWizard()
+  registerWizard();
   window.popup = (title, fn, props = {}) => {
     return new Promise((success, failure) => {
       ReactDOM.render(

@@ -287,7 +287,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = Sign(
           verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")),
-        algoSettings = HSAlgoSettings(512, key))
+          algoSettings = HSAlgoSettings(512, key)
+        )
       )
       createOtoroshiVerifier(jwtVerifier).futureValue
 
@@ -307,8 +308,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
         jwtVerifier = RefJwtVerifier(
-          ids= Seq("verifier2"),
-          enabled = true,
+          ids = Seq("verifier2"),
+          enabled = true
         )
       )
 
@@ -449,18 +450,18 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
             location = InHeader("X-Barrr"),
             mappingSettings = MappingSettings(
               map = Map(
-                "fakebar" -> "x-bar",
-                "bar" -> "x-bar",
+                "fakebar"      -> "x-bar",
+                "bar"          -> "x-bar",
                 "superfakebar" -> "x-bar"
               ),
               values = Json.obj(
-                "x-yo" -> "foo",
-                "the-date-1" -> "the-${date}",
-                "the-date-2" -> "the-${date.format('dd-MM-yyyy')}",
-                "the-var-1" -> "the-${token.var1}",
-                "the-var-2" -> "the-${token.var2}",
+                "x-yo"        -> "foo",
+                "the-date-1"  -> "the-${date}",
+                "the-date-2"  -> "the-${date.format('dd-MM-yyyy')}",
+                "the-var-1"   -> "the-${token.var1}",
+                "the-var-2"   -> "the-${token.var2}",
                 "the-var-1-2" -> "the-${token.var1}-${token.var2}",
-                "the-host" -> "${req.host}"
+                "the-host"    -> "${req.host}"
               ),
               remove = Seq("foo")
             )

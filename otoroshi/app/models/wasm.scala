@@ -31,7 +31,7 @@ case class WasmPlugin(
   override def theDescription: String                 = description
   override def theTags: Seq[String]                   = tags
   override def theMetadata: Map[String, String]       = metadata
-  def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forPlugin(this)
+  def pool()(implicit env: Env): WasmVmPool           = WasmVmPool.forPlugin(this)
 }
 
 object WasmPlugin {

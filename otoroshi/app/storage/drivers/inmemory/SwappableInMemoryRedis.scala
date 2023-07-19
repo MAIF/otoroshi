@@ -29,14 +29,14 @@ object SwapStrategy       {
 
 object ModernMemory {
   def apply(
-             store: TrieMap[String, Any] = new UnboundedTrieMap[String, Any](),
-             expirations: TrieMap[String, Long] = new UnboundedTrieMap[String, Long]()
+      store: TrieMap[String, Any] = new UnboundedTrieMap[String, Any](),
+      expirations: TrieMap[String, Long] = new UnboundedTrieMap[String, Long]()
   ): ModernMemory = new ModernMemory(store, expirations)
 }
 
 class ModernMemory(
-                    store: TrieMap[String, Any] = new UnboundedTrieMap[String, Any](),
-                    expirations: TrieMap[String, Long] = new UnboundedTrieMap[String, Long]()
+    store: TrieMap[String, Any] = new UnboundedTrieMap[String, Any](),
+    expirations: TrieMap[String, Long] = new UnboundedTrieMap[String, Long]()
 ) {
   def size: Int                                                              = store.size
   def get(key: String): Option[Any]                                          = store.get(key)

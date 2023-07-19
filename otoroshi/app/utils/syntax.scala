@@ -262,8 +262,10 @@ object implicits {
     def base64UrlSafe: String                      = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String                         = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
     def decodeBase64: String                       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def sha256: String                             = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
-    def sha512: String                             = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha256: String                             =
+      Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha512: String                             =
+      Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed] = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase

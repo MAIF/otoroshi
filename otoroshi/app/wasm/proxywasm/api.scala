@@ -16,7 +16,7 @@ import play.api.mvc.RequestHeader
 import java.util.concurrent.atomic.AtomicReference
 
 object VmData {
-  def empty(): VmData = VmData(
+  def empty(): VmData                   = VmData(
     configuration = "",
     properties = Map.empty,
     tickPeriod = -1,
@@ -87,7 +87,7 @@ case class VmData(
     tickPeriod: Int = -1,
     respRef: AtomicReference[play.api.mvc.Result],
     bodyInRef: AtomicReference[ByteString],
-    bodyOutRef: AtomicReference[ByteString],
+    bodyOutRef: AtomicReference[ByteString]
 ) extends WasmOtoroshiHostUserData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
@@ -104,8 +104,8 @@ case class VmData(
     val newProps: Map[String, Array[Byte]] = properties ++ Map(
       "response.code"         -> response.status.bytes,
       "response.code_details" -> "".bytes,
-      "response.flags"        -> (-1).bytes,
-      "response.grpc_status"  -> (-1).bytes,
+      "response.flags"        -> -1.bytes,
+      "response.grpc_status"  -> -1.bytes,
       ":status"               -> response.status.toString.bytes
       //"response.size" -> ,
       //"response.total_size" -> ,
@@ -146,7 +146,7 @@ trait Api {
       additionalHeadersMapData: Int,
       additionalHeadersSize: Int,
       grpcStatus: Int,
-      vmData: VmData,
+      vmData: VmData
   ): Result
 
   def proxyResumeHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result
@@ -275,7 +275,12 @@ trait Api {
       returnPayloadSize: Int
   ): Result
 
-  def proxyEnqueueSharedQueueItem(plugin: WasmOtoroshiInternal, queueID: Int, payloadData: Int, payloadSize: Int): Result
+  def proxyEnqueueSharedQueueItem(
+      plugin: WasmOtoroshiInternal,
+      queueID: Int,
+      payloadData: Int,
+      payloadSize: Int
+  ): Result
 
   def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result
 
@@ -370,7 +375,13 @@ trait Api {
       returnResultsSize: Int
   ): Result
 
-  def copyIntoInstance(plugin: WasmOtoroshiInternal, memory: Pointer, value: IoBuffer, retPtr: Int, retSize: Int): Result
+  def copyIntoInstance(
+      plugin: WasmOtoroshiInternal,
+      memory: Pointer,
+      value: IoBuffer,
+      retPtr: Int,
+      retSize: Int
+  ): Result
 
   def proxyGetProperty(
       plugin: WasmOtoroshiInternal,

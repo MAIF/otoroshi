@@ -413,7 +413,7 @@ case class NgTarget(
 }
 
 object NgTarget {
-  val default = NgTarget(
+  val default                              = NgTarget(
     id = "www.otoroshi.io",
     hostname = "www.otoroshi.io",
     port = 443,

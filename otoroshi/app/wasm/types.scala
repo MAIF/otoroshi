@@ -18,84 +18,106 @@ sealed abstract class WasmFunctionParameters {
 }
 
 object WasmFunctionParameters {
-  def from(functionName: String, input: Option[String], parameters: Option[WasmOtoroshiParameters], resultSize: Option[Int]) = {
+  def from(
+      functionName: String,
+      input: Option[String],
+      parameters: Option[WasmOtoroshiParameters],
+      resultSize: Option[Int]
+  ) = {
     (input, parameters, resultSize) match {
-      case (_, Some(p), Some(s))        => BothParamsResults(functionName, p, s)
-      case (_, Some(p), None)           => NoResult(functionName, p)
-      case (_, None, Some(s))           => NoParams(functionName, s)
-      case (Some(in), None, None)       => ExtismFuntionCall(functionName, in)
-      case _                            => UnknownCombination()
+      case (_, Some(p), Some(s))  => BothParamsResults(functionName, p, s)
+      case (_, Some(p), None)     => NoResult(functionName, p)
+      case (_, None, Some(s))     => NoParams(functionName, s)
+      case (Some(in), None, None) => ExtismFuntionCall(functionName, in)
+      case _                      => UnknownCombination()
     }
   }
 
-  case class UnknownCombination(functionName: String = "unknown",
-                                input: Option[String] = None,
-                                parameters: Option[WasmOtoroshiParameters] = None,
-                                resultSize: Option[Int] = None)
-    extends WasmFunctionParameters {
+  case class UnknownCombination(
+      functionName: String = "unknown",
+      input: Option[String] = None,
+      parameters: Option[WasmOtoroshiParameters] = None,
+      resultSize: Option[Int] = None
+  ) extends WasmFunctionParameters {
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
       Left(Json.obj("error" -> "bad call combination"))
     }
-    def withInput(input: Option[String]): WasmFunctionParameters = this.copy(input = input)
+    def withInput(input: Option[String]): WasmFunctionParameters       = this.copy(input = input)
     def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
 
-  case class NoResult(functionName: String, params: WasmOtoroshiParameters,
-                      input: Option[String] = None,
-                      resultSize: Option[Int] = None) extends WasmFunctionParameters {
-    override def parameters: Option[WasmOtoroshiParameters] = Some(params)
+  case class NoResult(
+      functionName: String,
+      params: WasmOtoroshiParameters,
+      input: Option[String] = None,
+      resultSize: Option[Int] = None
+  ) extends WasmFunctionParameters {
+    override def parameters: Option[WasmOtoroshiParameters]                     = Some(params)
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
       plugin.callWithoutResults(functionName, parameters.get)
       Right[JsValue, (String, ResultsWrapper)](("", ResultsWrapper(new WasmOtoroshiResults(0), plugin)))
     }
-    override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(input = input)
+    override def withInput(input: Option[String]): WasmFunctionParameters       = this.copy(input = input)
     override def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
 
-  case class NoParams(functionName: String, result: Int,
-                      input: Option[String] = None,
-                      parameters: Option[WasmOtoroshiParameters] = None) extends WasmFunctionParameters {
-    override def resultSize: Option[Int] = Some(result)
+  case class NoParams(
+      functionName: String,
+      result: Int,
+      input: Option[String] = None,
+      parameters: Option[WasmOtoroshiParameters] = None
+  ) extends WasmFunctionParameters {
+    override def resultSize: Option[Int]                                        = Some(result)
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
-      plugin.callWithoutParams(functionName, resultSize.get)
+      plugin
+        .callWithoutParams(functionName, resultSize.get)
         .right
         .map(_ => ("", ResultsWrapper(new WasmOtoroshiResults(0), plugin)))
     }
-    override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(input = input)
+    override def withInput(input: Option[String]): WasmFunctionParameters       = this.copy(input = input)
     override def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
 
-  case class BothParamsResults(functionName: String, params: WasmOtoroshiParameters, result: Int,
-                               input: Option[String] = None) extends WasmFunctionParameters {
-    override def parameters: Option[WasmOtoroshiParameters] = Some(params)
-    override def resultSize: Option[Int] = Some(result)
+  case class BothParamsResults(
+      functionName: String,
+      params: WasmOtoroshiParameters,
+      result: Int,
+      input: Option[String] = None
+  ) extends WasmFunctionParameters {
+    override def parameters: Option[WasmOtoroshiParameters]                     = Some(params)
+    override def resultSize: Option[Int]                                        = Some(result)
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
-      plugin.call(functionName, parameters.get, resultSize.get)
+      plugin
+        .call(functionName, parameters.get, resultSize.get)
         .right
         .map(res => ("", ResultsWrapper(res, plugin)))
     }
-    override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(input = input)
+    override def withInput(input: Option[String]): WasmFunctionParameters       = this.copy(input = input)
     override def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
 
-  case class ExtismFuntionCall(functionName: String,
-                               in: String,
-                               parameters: Option[WasmOtoroshiParameters] = None,
-                               resultSize: Option[Int] = None) extends WasmFunctionParameters {
+  case class ExtismFuntionCall(
+      functionName: String,
+      in: String,
+      parameters: Option[WasmOtoroshiParameters] = None,
+      resultSize: Option[Int] = None
+  ) extends WasmFunctionParameters {
     override def input: Option[String] = Some(in)
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
-      plugin.extismCall(functionName, input.get.getBytes(StandardCharsets.UTF_8))
+      plugin
+        .extismCall(functionName, input.get.getBytes(StandardCharsets.UTF_8))
         .right
         .map { str =>
           (str, ResultsWrapper(new WasmOtoroshiResults(0), plugin))
         }
     }
 
-    override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(in = input.get)
+    override def withInput(input: Option[String]): WasmFunctionParameters       = this.copy(in = input.get)
     override def withFunctionName(functionName: String): WasmFunctionParameters = this.copy(functionName = functionName)
   }
 
-  case class OPACall(functionName: String, pointers: Option[OPAWasmVm] = None, in: String) extends WasmFunctionParameters {
+  case class OPACall(functionName: String, pointers: Option[OPAWasmVm] = None, in: String)
+      extends WasmFunctionParameters {
     override def input: Option[String] = Some(in)
 
     override def call(plugin: WasmOtoroshiInstance): Either[JsValue, (String, ResultsWrapper)] = {
@@ -108,7 +130,7 @@ object WasmFunctionParameters {
     override def withInput(input: Option[String]): WasmFunctionParameters = this.copy(in = input.get)
 
     override def withFunctionName(functionName: String): WasmFunctionParameters = this
-    override def parameters: Option[WasmOtoroshiParameters] = None
-    override def resultSize: Option[Int] = None
+    override def parameters: Option[WasmOtoroshiParameters]                     = None
+    override def resultSize: Option[Int]                                        = None
   }
 }

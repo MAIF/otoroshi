@@ -81,7 +81,7 @@ class ProxyWasmState(
       additionalHeadersMapData: Int,
       additionalHeadersSize: Int,
       grpcStatus: Int,
-      vmData: VmData,
+      vmData: VmData
   ): Result = {
     traceVmHost(s"proxy_send_http_response: ${responseCode} - ${grpcStatus}")
     for {
@@ -90,19 +90,19 @@ class ProxyWasmState(
       addHeaders  <- getMemory(plugin, additionalHeadersMapData, additionalHeadersSize)
     } yield {
       //WasmContextSlot.getCurrentContext().map(_.asInstanceOf[VmData]).foreach { vmdata =>
-        // Json.obj(
-        //   "http_status" -> responseCode,
-        //   "grpc_code" -> grpcStatus,
-        //   "details" -> codeDetails._2.utf8String,
-        //   "body" -> body._2.utf8String,
-        //   "headers" -> addHeaders._2.utf8String,
-        // ).prettify.debugPrintln
+      // Json.obj(
+      //   "http_status" -> responseCode,
+      //   "grpc_code" -> grpcStatus,
+      //   "details" -> codeDetails._2.utf8String,
+      //   "body" -> body._2.utf8String,
+      //   "headers" -> addHeaders._2.utf8String,
+      // ).prettify.debugPrintln
       vmData.respRef.set(
-          play.api.mvc.Results
-            .Status(responseCode)(body._2)
-            .withHeaders()    // TODO: read it
-            .as("text/plain") // TODO: change it
-        )
+        play.api.mvc.Results
+          .Status(responseCode)(body._2)
+          .withHeaders()    // TODO: read it
+          .as("text/plain") // TODO: change it
+      )
       //}
     }
     ResultOk
@@ -274,7 +274,7 @@ class ProxyWasmState(
       //            return int32(v2.ResultInvalidMemoryAccess)
       //        }
 
-      var lenPtr = addr + u32Len
+      var lenPtr  = addr + u32Len
       var dataPtr = lenPtr + (u32Len + u32Len) * header.size
 
       header.foreach(entry => {
@@ -431,7 +431,9 @@ class ProxyWasmState(
       cas: Int
   ): Result = unimplementedFunction("proxyRemoveSharedKvstoreKey")
 
-  override def proxyDeleteSharedKvstore(plugin: WasmOtoroshiInternal, kvstoreID: Int): Result = unimplementedFunction("proxyDeleteSharedKvstore")
+  override def proxyDeleteSharedKvstore(plugin: WasmOtoroshiInternal, kvstoreID: Int): Result = unimplementedFunction(
+    "proxyDeleteSharedKvstore"
+  )
 
   override def proxyOpenSharedQueue(
       plugin: WasmOtoroshiInternal,
@@ -455,12 +457,16 @@ class ProxyWasmState(
       payloadSize: Int
   ): Result = unimplementedFunction("proxyEnqueueSharedQueueItem")
 
-  override def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result = unimplementedFunction("proxyDeleteSharedQueue")
+  override def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result = unimplementedFunction(
+    "proxyDeleteSharedQueue"
+  )
 
   override def proxyCreateTimer(plugin: WasmOtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result =
     unimplementedFunction("proxyCreateTimer")
 
-  override def proxyDeleteTimer(plugin: WasmOtoroshiInternal, timerID: Int): Result = unimplementedFunction("proxyDeleteTimer")
+  override def proxyDeleteTimer(plugin: WasmOtoroshiInternal, timerID: Int): Result = unimplementedFunction(
+    "proxyDeleteTimer"
+  )
 
   override def proxyCreateMetric(
       plugin: WasmOtoroshiInternal,
@@ -484,7 +490,8 @@ class ProxyWasmState(
       )
   }
 
-  override def proxySetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, value: Int): Result = unimplementedFunction("proxySetMetricValue")
+  override def proxySetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, value: Int): Result =
+    unimplementedFunction("proxySetMetricValue")
 
   override def proxyIncrementMetricValue(
       plugin: WasmOtoroshiInternal,
@@ -496,7 +503,9 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def proxyDeleteMetric(plugin: WasmOtoroshiInternal, metricID: Int): Result = unimplementedFunction("proxyDeleteMetric")
+  override def proxyDeleteMetric(plugin: WasmOtoroshiInternal, metricID: Int): Result = unimplementedFunction(
+    "proxyDeleteMetric"
+  )
 
   override def proxyDefineMetric(
       plugin: WasmOtoroshiInternal,
@@ -574,9 +583,13 @@ class ProxyWasmState(
       grpcMessageSize: Int
   ): Result = unimplementedFunction("proxySendGrpcStreamMessage")
 
-  override def proxyCancelGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCancelGrpcCall")
+  override def proxyCancelGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction(
+    "proxyCancelGrpcCall"
+  )
 
-  override def proxyCloseGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction("proxyCloseGrpcCall")
+  override def proxyCloseGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction(
+    "proxyCloseGrpcCall"
+  )
 
   override def proxyCallCustomFunction(
       plugin: WasmOtoroshiInternal,
@@ -636,7 +649,8 @@ class ProxyWasmState(
     )
   }
 
-  override def proxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status = unimplementedFunction("proxyRegisterSharedQueue")
+  override def proxyRegisterSharedQueue(nameData: ByteString, nameSize: Int, returnID: Int): Status =
+    unimplementedFunction("proxyRegisterSharedQueue")
 
   override def proxyResolveSharedQueue(
       vmIDData: ByteString,
@@ -646,9 +660,11 @@ class ProxyWasmState(
       returnID: Int
   ): Status = unimplementedFunction("proxyResolveSharedQueue")
 
-  override def proxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status = unimplementedFunction("proxyEnqueueSharedQueue")
+  override def proxyEnqueueSharedQueue(queueID: Int, valueData: ByteString, valueSize: Int): Status =
+    unimplementedFunction("proxyEnqueueSharedQueue")
 
-  override def proxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status = unimplementedFunction("proxyDequeueSharedQueue")
+  override def proxyDequeueSharedQueue(queueID: Int, returnValueData: ByteString, returnValueSize: Int): Status =
+    unimplementedFunction("proxyDequeueSharedQueue")
 
   override def proxyDone(): Status = {
     StatusOK
@@ -684,11 +700,17 @@ class ProxyWasmState(
     }
   }
 
-  override def getDownStreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getDownStreamData")
+  override def getDownStreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+    "getDownStreamData"
+  )
 
-  override def getUpstreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getUpstreamData")
+  override def getUpstreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+    "getUpstreamData"
+  )
 
-  override def getHttpCalloutResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getHttpCalloutResponseBody")
+  override def getHttpCalloutResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+    "getHttpCalloutResponseBody"
+  )
 
   override def getVmConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getVmConfig")
 
@@ -714,32 +736,39 @@ class ProxyWasmState(
       .map(t => (t._1.replace("response.headers.", ""), ByteString(t._2)))
   }
 
-  override def getHttpResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseTrailer")
+  override def getHttpResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+    unimplementedFunction("getHttpResponseTrailer")
 
-  override def getHttpResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpResponseMetadata")
+  override def getHttpResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+    unimplementedFunction("getHttpResponseMetadata")
 
-  override def getHttpCallResponseHeaders(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseHeaders")
+  override def getHttpCallResponseHeaders(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+    unimplementedFunction("getHttpCallResponseHeaders")
 
-  override def getHttpCallResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseTrailer")
+  override def getHttpCallResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+    unimplementedFunction("getHttpCallResponseTrailer")
 
-  override def getHttpCallResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = unimplementedFunction("getHttpCallResponseMetadata")
+  override def getHttpCallResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+    unimplementedFunction("getHttpCallResponseMetadata")
 
-  override def getCustomMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString] = unimplementedFunction("getCustomMap")
+  override def getCustomMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString] =
+    unimplementedFunction("getCustomMap")
 
-  override def getMemory(plugin: WasmOtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] = plugin.synchronized {
-    val memory: Pointer = plugin.getLinearMemory("memory")
-    if (memory == null) {
-      return Error.ErrorExportsNotFound.left
-    }
+  override def getMemory(plugin: WasmOtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] =
+    plugin.synchronized {
+      val memory: Pointer = plugin.getLinearMemory("memory")
+      if (memory == null) {
+        return Error.ErrorExportsNotFound.left
+      }
 
-    // TODO - get memory size from RUST
+      // TODO - get memory size from RUST
 //        long memoryLength = 1024 * 64 * 50// plugin.memoryLength(0)
 //        if (addr > memoryLength || (addr+size) > memoryLength) {
 //            return Either.left(Error.ErrAddrOverflow)
 //        }
 
-    (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Error]
-  }
+      (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Error]
+    }
 
   override def getMemory(plugin: WasmOtoroshiInternal): Either[Error, Pointer] = plugin.synchronized {
 

@@ -1155,28 +1155,29 @@ class ScriptManager(env: Env) {
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
     ref match {
-      case r if r.startsWith("cp:")  => cpTryCache.synchronized {
-        if (!cpTryCache.contains(ref)) {
-          Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
-            .map(clazz => clazz.newInstance()) match {
-            case Success(tr) =>
-              cpTryCache.put(ref, ())
-              val typ = tr.asInstanceOf[NamedPlugin].pluginType
-              cpCache.put(ref, (typ, tr))
-              Try {
-                tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
-                tr.asInstanceOf[InternalEventListener].startEvent(r, env)
-              }
-            case Failure(e)  =>
-              e.printStackTrace()
-              logger.error(s"Classpath script `$ref` does not exists ...")
+      case r if r.startsWith("cp:")  =>
+        cpTryCache.synchronized {
+          if (!cpTryCache.contains(ref)) {
+            Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
+              .map(clazz => clazz.newInstance()) match {
+              case Success(tr) =>
+                cpTryCache.put(ref, ())
+                val typ = tr.asInstanceOf[NamedPlugin].pluginType
+                cpCache.put(ref, (typ, tr))
+                Try {
+                  tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
+                  tr.asInstanceOf[InternalEventListener].startEvent(r, env)
+                }
+              case Failure(e)  =>
+                e.printStackTrace()
+                logger.error(s"Classpath script `$ref` does not exists ...")
+            }
+          }
+          cpCache.get(ref).flatMap(a => Option(a._2)) match {
+            case Some(script) => Right(script.asInstanceOf[A])
+            case None         => Left("not-in-cache")
           }
         }
-        cpCache.get(ref).flatMap(a => Option(a._2)) match {
-          case Some(script) => Right(script.asInstanceOf[A])
-          case None         => Left("not-in-cache")
-        }
-      }
       case r if env.scriptingEnabled => {
         env.datastores.scriptDataStore.findById(ref).map {
           case Some(script) => compileAndUpdateIfNeeded(script)

@@ -18,8 +18,8 @@ import {
   CIRCUIT_BREAKER_SAMPLE_INTERVAL,
   CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
   CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
-  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH
-} from "../../explanations"
+  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
+} from '../../explanations';
 
 export class Target extends Component {
   formSchema = {
@@ -166,16 +166,37 @@ export class Target extends Component {
 export class CustomTimeout extends Component {
   formSchema = {
     path: { type: 'string', props: { label: 'Path', help: CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH } },
-    global_timeout: { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT } },
+    global_timeout: {
+      type: 'number',
+      props: {
+        label: 'global timeout',
+        suffix: 'milliseconds',
+        help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+      },
+    },
     connection_timeout: {
       type: 'number',
-      props: { label: 'connection timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT },
+      props: {
+        label: 'connection timeout',
+        suffix: 'milliseconds',
+        help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+      },
     },
-    idle_timeout: { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT } },
-    call_timeout: { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT } },
+    idle_timeout: {
+      type: 'number',
+      props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT },
+    },
+    call_timeout: {
+      type: 'number',
+      props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT },
+    },
     call_and_stream_timeout: {
       type: 'number',
-      props: { label: 'call and stream timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT },
+      props: {
+        label: 'call and stream timeout',
+        suffix: 'milliseconds',
+        help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+      },
     },
   };
 
@@ -378,44 +399,87 @@ export const schemas = {
           },
         },
       },
-      'client.backoff_factor': { type: 'number', props: { label: 'backoff factor', help: CIRCUIT_BREAKER_BACKOFF_FACTOR } },
-      'client.retries': { type: 'number', props: { label: 'retries', help: CIRCUIT_BREAKER_CLIENT_RETRIES } },
-      'client.max_errors': { type: 'number', props: { label: 'max errors', suffix: 'errors', help: CIRCUIT_BREAKER_MAX_ERRORS } },
+      'client.backoff_factor': {
+        type: 'number',
+        props: { label: 'backoff factor', help: CIRCUIT_BREAKER_BACKOFF_FACTOR },
+      },
+      'client.retries': {
+        type: 'number',
+        props: { label: 'retries', help: CIRCUIT_BREAKER_CLIENT_RETRIES },
+      },
+      'client.max_errors': {
+        type: 'number',
+        props: { label: 'max errors', suffix: 'errors', help: CIRCUIT_BREAKER_MAX_ERRORS },
+      },
       'client.global_timeout': {
         type: 'number',
-        props: { label: 'global timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT },
+        props: {
+          label: 'global timeout',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+        },
       },
       'client.connection_timeout': {
         type: 'number',
-        props: { label: 'connection timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT },
+        props: {
+          label: 'connection timeout',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+        },
       },
       'client.idle_timeout': {
         type: 'number',
-        props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT },
+        props: {
+          label: 'idle timeout',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_IDLE_TIMEOUT,
+        },
       },
       'client.call_timeout': {
         type: 'number',
-        props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT },
+        props: {
+          label: 'call timeout',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_CALL_TIMEOUT,
+        },
       },
       'client.call_and_stream_timeout': {
         type: 'number',
-        props: { label: 'call and stream timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT },
+        props: {
+          label: 'call and stream timeout',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+        },
       },
       'client.retry_initial_delay': {
         type: 'number',
-        props: { label: 'initial delay', suffix: 'milliseconds', help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY },
+        props: {
+          label: 'initial delay',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+        },
       },
       'client.sample_interval': {
         type: 'number',
-        props: { label: 'sample interval', suffix: 'milliseconds', help: CIRCUIT_BREAKER_SAMPLE_INTERVAL },
+        props: {
+          label: 'sample interval',
+          suffix: 'milliseconds',
+          help: CIRCUIT_BREAKER_SAMPLE_INTERVAL,
+        },
       },
       'client.cache_connection_settings.enabled': {
         type: 'bool',
-        props: { label: 'cache connection', help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED },
+        props: {
+          label: 'cache connection',
+          help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
+        },
       },
       'client.cache_connection_settings.queue_size': {
         type: 'number',
-        props: { label: 'cache connection queue size', help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE },
+        props: {
+          label: 'cache connection queue size',
+          help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
+        },
       },
       'client.custom_timeouts': {
         type: 'array',

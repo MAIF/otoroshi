@@ -110,7 +110,7 @@ object Projection {
   private val library = ImmutableJqLibrary.of()
 
   private def jqIt(source: JsValue, filter: String): JsValue = {
-    val request = ImmutableJqRequest
+    val request  = ImmutableJqRequest
       .builder()
       .lib(library)
       .input(source.stringify)
@@ -161,13 +161,13 @@ object Projection {
             //     }
             //   )
             // }
-            case ("$jq", value) => {
+            case ("$jq", value)                     => {
               dest = dest ++ Json.obj(key -> jqIt(source, value.asString))
             }
-            case ("$jqIf", spec: JsObject) => {
-              val path = (spec \ "filter").as[String]
-              val predPath = (spec \ "predicate" \ "path").as[String]
-              val predValue = (spec \ "predicate" \ "value").as[JsValue]
+            case ("$jqIf", spec: JsObject)          => {
+              val path       = (spec \ "filter").as[String]
+              val predPath   = (spec \ "predicate" \ "path").as[String]
+              val predValue  = (spec \ "predicate" \ "value").as[JsValue]
               val atPredPath = source.atPath(predPath)
               if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
                 dest = dest ++ Json.obj(key -> jqIt(source, path))

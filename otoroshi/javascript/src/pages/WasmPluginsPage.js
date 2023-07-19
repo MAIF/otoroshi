@@ -215,8 +215,10 @@ export class WasmPluginsPage extends Component {
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.immortal',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_calls',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_memory_usage',
-      value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_avg_call_duration',
-      value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_unused_duration',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.killOptions.max_avg_call_duration',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.killOptions.max_unused_duration',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
@@ -482,32 +484,36 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max calls',
-        help: 'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
-        suffix: 'calls'
+        help:
+          'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
+        suffix: 'calls',
       },
     },
     'config.killOptions.max_memory_usage': {
       type: 'number',
       props: {
         label: 'Max memory usage',
-        help: 'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
-        suffix: '%'
+        help:
+          'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
+        suffix: '%',
       },
     },
     'config.killOptions.max_avg_call_duration': {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help: 'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
-        suffix: 'ms.'
+        help:
+          'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
+        suffix: 'ms.',
       },
     },
     'config.killOptions.max_unused_duration': {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help: 'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
-        suffix: 'ms.'
+        help:
+          'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
+        suffix: 'ms.',
       },
     },
     metadata: {

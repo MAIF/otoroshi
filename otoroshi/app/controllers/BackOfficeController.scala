@@ -2035,16 +2035,21 @@ class BackOfficeController(
   }
 
   def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { ctx =>
+    val body                                   = ctx.request.body
+    val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
+    val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
+    val matchIncludeExpressions: Seq[JsObject] =
+      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+    val matchExcludeExpressions: Seq[JsObject] =
+      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+    val projectionExpression: JsObject         = body.select("projection").asOpt[JsObject].getOrElse(Json.obj())
 
-    val body = ctx.request.body
-    val input = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
-    val matchExpressions: JsObject = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
-    val matchIncludeExpressions: Seq[JsObject] = matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
-    val matchExcludeExpressions: Seq[JsObject] = matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
-    val projectionExpression: JsObject = body.select("projection").asOpt[JsObject].getOrElse(Json.obj())
-
-    val shouldInclude = if (matchIncludeExpressions.isEmpty) true else matchIncludeExpressions.forall(expr => otoroshi.utils.Match.matches(input, expr))
-    val shouldExclude = if (matchExcludeExpressions.isEmpty) false else matchExcludeExpressions.forall(expr => otoroshi.utils.Match.matches(input, expr))
+    val shouldInclude =
+      if (matchIncludeExpressions.isEmpty) true
+      else matchIncludeExpressions.forall(expr => otoroshi.utils.Match.matches(input, expr))
+    val shouldExclude =
+      if (matchExcludeExpressions.isEmpty) false
+      else matchExcludeExpressions.forall(expr => otoroshi.utils.Match.matches(input, expr))
 
     val matches = shouldInclude && !shouldExclude
 
@@ -2055,63 +2060,65 @@ class BackOfficeController(
 
   def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { ctx =>
     val rawRequest = ctx.request
-    val route = NgRoute.empty
-    val target = NgTarget.default
-    Ok(GatewayEvent(
-      `@id` = env.snowflakeGenerator.nextIdStr(),
-      reqId = env.snowflakeGenerator.nextIdStr(),
-      parentReqId = None,
-      `@timestamp` = DateTime.now(),
-      `@calledAt` = DateTime.now(),
-      protocol = ctx.request.theProtocol,
-      to = Location(
-        scheme = rawRequest.theProtocol,
-        host = rawRequest.theHost,
-        uri = rawRequest.relativeUri
-      ),
-      target = Location(
-        scheme = target.toTarget.scheme,
-        host = target.toTarget.host,
-        uri = rawRequest.relativeUri
-      ),
-      duration = 30L,
-      overhead = 10L,
-      cbDuration = 0L,
-      overheadWoCb = 10L,
-      callAttempts = 1,
-      url = rawRequest.theUrl,
-      method = rawRequest.method,
-      from = rawRequest.theIpAddress,
-      env = "prod",
-      data = DataInOut(
-        dataIn = 0L,
-        dataOut = 128L
-      ),
-      status = 200,
-      headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-      headersOut = Seq.empty,
-      otoroshiHeadersIn = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-      otoroshiHeadersOut = Seq.empty,
-      extraInfos = None,
-      identity = Identity(
-        identityType = "APIKEY",
-        identity = "client_id",
-        label = "client"
-      ).some,
-      responseChunked = false,
-      `@serviceId` = s"route_${IdGenerator.uuid}",
-      `@service` = route.name,
-      descriptor = Some(route.legacy),
-      route = Some(route),
-      `@product` = route.metadata.getOrElse("product", "--"),
-      remainingQuotas = RemainingQuotas(),
-      viz = None,
-      clientCertChain = rawRequest.clientCertChainPem,
-      err = false,
-      gwError = None,
-      userAgentInfo = None,
-      geolocationInfo = None,
-      extraAnalyticsData = None
-    ).toJson)
+    val route      = NgRoute.empty
+    val target     = NgTarget.default
+    Ok(
+      GatewayEvent(
+        `@id` = env.snowflakeGenerator.nextIdStr(),
+        reqId = env.snowflakeGenerator.nextIdStr(),
+        parentReqId = None,
+        `@timestamp` = DateTime.now(),
+        `@calledAt` = DateTime.now(),
+        protocol = ctx.request.theProtocol,
+        to = Location(
+          scheme = rawRequest.theProtocol,
+          host = rawRequest.theHost,
+          uri = rawRequest.relativeUri
+        ),
+        target = Location(
+          scheme = target.toTarget.scheme,
+          host = target.toTarget.host,
+          uri = rawRequest.relativeUri
+        ),
+        duration = 30L,
+        overhead = 10L,
+        cbDuration = 0L,
+        overheadWoCb = 10L,
+        callAttempts = 1,
+        url = rawRequest.theUrl,
+        method = rawRequest.method,
+        from = rawRequest.theIpAddress,
+        env = "prod",
+        data = DataInOut(
+          dataIn = 0L,
+          dataOut = 128L
+        ),
+        status = 200,
+        headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
+        headersOut = Seq.empty,
+        otoroshiHeadersIn = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
+        otoroshiHeadersOut = Seq.empty,
+        extraInfos = None,
+        identity = Identity(
+          identityType = "APIKEY",
+          identity = "client_id",
+          label = "client"
+        ).some,
+        responseChunked = false,
+        `@serviceId` = s"route_${IdGenerator.uuid}",
+        `@service` = route.name,
+        descriptor = Some(route.legacy),
+        route = Some(route),
+        `@product` = route.metadata.getOrElse("product", "--"),
+        remainingQuotas = RemainingQuotas(),
+        viz = None,
+        clientCertChain = rawRequest.clientCertChainPem,
+        err = false,
+        gwError = None,
+        userAgentInfo = None,
+        geolocationInfo = None,
+        extraAnalyticsData = None
+      ).toJson
+    )
   }
 }

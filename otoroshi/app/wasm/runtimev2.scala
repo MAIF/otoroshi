@@ -30,10 +30,10 @@ sealed trait WasmVmAction
 object WasmVmAction {
   case object WasmVmKillAction extends WasmVmAction
   case class WasmVmCallAction(
-    parameters: WasmFunctionParameters,
-    context: Option[VmData],
-    promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
-  ) extends WasmVmAction
+      parameters: WasmFunctionParameters,
+      context: Option[VmData],
+      promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
+  )                            extends WasmVmAction
 }
 
 object WasmVm {
@@ -41,7 +41,7 @@ object WasmVm {
   def fromConfig(config: WasmConfig)(implicit env: Env, ec: ExecutionContext): Future[Option[(WasmVm, WasmConfig)]] = {
     if (config.source.kind == WasmSourceKind.Local) {
       env.proxyState.wasmPlugin(config.source.path) match {
-        case None => None.vfuture
+        case None              => None.vfuture
         case Some(localPlugin) => {
           val localConfig = localPlugin.config
           localPlugin.pool().getPooledVm().map(vm => Some((vm, localConfig)))
@@ -55,47 +55,54 @@ object WasmVm {
 
 case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
 
-case class WasmVm(index: Int,
-                  maxCalls: Int,
-                  maxMemory: Long,
-                  resetMemory: Boolean,
-                  instance: WasmOtoroshiInstance,
-                  vmDataRef: AtomicReference[VmData],
-                  memories: Array[WasmOtoroshiLinearMemory],
-                  functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]],
-                  pool: WasmVmPool,
-                  var opaPointers: Option[OPAWasmVm] = None) {
+case class WasmVm(
+    index: Int,
+    maxCalls: Int,
+    maxMemory: Long,
+    resetMemory: Boolean,
+    instance: WasmOtoroshiInstance,
+    vmDataRef: AtomicReference[VmData],
+    memories: Array[WasmOtoroshiLinearMemory],
+    functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]],
+    pool: WasmVmPool,
+    var opaPointers: Option[OPAWasmVm] = None
+) {
 
-  private val callDurationReservoirNs = new UniformReservoir()
-  private val lastUsage: AtomicLong = new AtomicLong(System.currentTimeMillis())
+  private val callDurationReservoirNs       = new UniformReservoir()
+  private val lastUsage: AtomicLong         = new AtomicLong(System.currentTimeMillis())
   private val initializedRef: AtomicBoolean = new AtomicBoolean(false)
-  private val killAtRelease: AtomicBoolean = new AtomicBoolean(false)
-  private val inFlight = new AtomicInteger(0)
-  private val callCounter = new AtomicInteger(0)
+  private val killAtRelease: AtomicBoolean  = new AtomicBoolean(false)
+  private val inFlight                      = new AtomicInteger(0)
+  private val callCounter                   = new AtomicInteger(0)
   private val queue = {
     val env = pool.env
-    Source.queue[WasmVmAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
+    Source
+      .queue[WasmVmAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
       .mapAsync(1)(handle)
       .toMat(Sink.ignore)(Keep.both)
-      .run()(env.otoroshiMaterializer)._1
+      .run()(env.otoroshiMaterializer)
+      ._1
   }
 
-  def calls: Int = callCounter.get()
+  def calls: Int   = callCounter.get()
   def current: Int = inFlight.get()
 
   private def handle(act: WasmVmAction): Future[Unit] = {
     Future.apply {
       lastUsage.set(System.currentTimeMillis())
       act match {
-        case WasmVmAction.WasmVmKillAction => destroy()
+        case WasmVmAction.WasmVmKillAction         => destroy()
         case action: WasmVmAction.WasmVmCallAction => {
           try {
             inFlight.decrementAndGet()
             // action.context.foreach(ctx => WasmContextSlot.setCurrentContext(ctx))
             action.context.foreach(ctx => vmDataRef.set(ctx))
-            if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"call vm ${index} with method ${action.parameters.functionName} on thread ${Thread.currentThread().getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
+            if (WasmVm.logger.isDebugEnabled)
+              WasmVm.logger.debug(s"call vm ${index} with method ${action.parameters.functionName} on thread ${Thread
+                .currentThread()
+                .getName} on path ${action.context.get.properties.get("request.path").map(v => new String(v))}")
             val start = System.nanoTime()
-            val res = action.parameters.call(instance)
+            val res   = action.parameters.call(instance)
             callDurationReservoirNs.update(System.nanoTime() - start)
             if (res.isRight && res.right.get._2.results.getValues() != null) {
               val ret = res.right.get._2.results.getValues()(0).v.i32
@@ -118,7 +125,8 @@ case class WasmVm(index: Int,
             val count = callCounter.incrementAndGet()
             if (count >= maxCalls) {
               callCounter.set(0)
-              if (WasmVm.logger.isDebugEnabled) WasmVm.logger.debug(s"killing vm ${index} with remaining ${inFlight.get()} calls (${count})")
+              if (WasmVm.logger.isDebugEnabled)
+                WasmVm.logger.debug(s"killing vm ${index} with remaining ${inFlight.get()} calls (${count})")
               destroyAtRelease()
             }
           }
@@ -156,14 +164,18 @@ case class WasmVm(index: Int,
 
   def lastUsedAt(): Long = lastUsage.get()
 
-  def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean = if (duration.toNanos == 0L) false else !hasBeenUsedInTheLast(duration)
+  def hasNotBeenUsedInTheLast(duration: FiniteDuration): Boolean =
+    if (duration.toNanos == 0L) false else !hasBeenUsedInTheLast(duration)
 
   def consumesMoreThanMemoryPercent(percent: Double): Boolean = if (percent == 0.0) {
     false
   } else {
-    val consumed: Double = (instance.getMemorySize.toDouble / maxMemory.toDouble)
-    val res = consumed > percent
-    if (logger.isDebugEnabled) logger.debug(s"consumesMoreThanMemoryPercent($percent) = (${instance.getMemorySize} / $maxMemory) > $percent : $res : (${consumed * 100.0}%)")
+    val consumed: Double = instance.getMemorySize.toDouble / maxMemory.toDouble
+    val res              = consumed > percent
+    if (logger.isDebugEnabled)
+      logger.debug(
+        s"consumesMoreThanMemoryPercent($percent) = (${instance.getMemorySize} / $maxMemory) > $percent : $res : (${consumed * 100.0}%)"
+      )
     res
   }
 
@@ -176,7 +188,7 @@ case class WasmVm(index: Int,
   }
 
   def hasBeenUsedInTheLast(duration: FiniteDuration): Boolean = {
-    val now = System.currentTimeMillis()
+    val now   = System.currentTimeMillis()
     val limit = lastUsage.get() + duration.toMillis
     now < limit
   }
@@ -200,8 +212,8 @@ case class WasmVm(index: Int,
   }
 
   def call(
-    parameters: WasmFunctionParameters,
-    context: Option[VmData],
+      parameters: WasmFunctionParameters,
+      context: Option[VmData]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     val promise = Promise[Either[JsValue, (String, ResultsWrapper)]]()
     inFlight.incrementAndGet()
@@ -213,14 +225,14 @@ case class WasmVm(index: Int,
 
 case class WasmVmPoolAction(promise: Promise[WasmVm], options: WasmVmInitOptions) {
   private[wasm] def provideVm(vm: WasmVm): Unit = promise.trySuccess(vm)
-  private[wasm] def fail(e: Throwable): Unit = promise.tryFailure(e)
+  private[wasm] def fail(e: Throwable): Unit    = promise.tryFailure(e)
 }
 
 object WasmVmPool {
 
   private[wasm] val logger = Logger("otoroshi-wasm-vm-pool")
   private[wasm] val engine = new WasmOtoroshiEngine()
-  private val instances = new UnboundedTrieMap[String, WasmVmPool]()
+  private val instances    = new UnboundedTrieMap[String, WasmVmPool]()
 
   def allInstances(): Map[String, WasmVmPool] = instances.synchronized {
     instances.toMap
@@ -249,27 +261,28 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
 
   WasmVmPool.logger.debug("new WasmVmPool")
 
-  private val engine = new WasmOtoroshiEngine()
-  private val counter = new AtomicInteger(-1)
-  private val templateRef = new AtomicReference[WasmOtoroshiTemplate](null)
+  private val engine             = new WasmOtoroshiEngine()
+  private val counter            = new AtomicInteger(-1)
+  private val templateRef        = new AtomicReference[WasmOtoroshiTemplate](null)
   private[wasm] val availableVms = new ConcurrentLinkedQueue[WasmVm]()
-  private[wasm] val inUseVms = new ConcurrentLinkedQueue[WasmVm]()
-  private val creatingRef = new AtomicBoolean(false)
-  private val lastPluginVersion = new AtomicReference[String](null)
-  private val requestsSource = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
-  private val prioritySource = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
+  private[wasm] val inUseVms     = new ConcurrentLinkedQueue[WasmVm]()
+  private val creatingRef        = new AtomicBoolean(false)
+  private val lastPluginVersion  = new AtomicReference[String](null)
+  private val requestsSource     = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
+  private val prioritySource     = Source.queue[WasmVmPoolAction](env.wasmQueueBufferSize, OverflowStrategy.dropTail)
   private val (priorityQueue, requestsQueue) = {
     prioritySource
       .mergePrioritizedMat(requestsSource, 99, 1, false)(Keep.both)
       .map(handleAction)
       .toMat(Sink.ignore)(Keep.both)
-      .run()(env.otoroshiMaterializer)._1
+      .run()(env.otoroshiMaterializer)
+      ._1
   }
 
   // unqueue actions from the action queue
   private def handleAction(action: WasmVmPoolAction): Unit = try {
     wasmConfig() match {
-      case None =>
+      case None       =>
         // if we cannot find the current wasm config, something is wrong, we destroy the pool
         destroyCurrentVms()
         WasmVmPool.removePlugin(stableId)
@@ -277,14 +290,16 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
       case Some(wcfg) => {
         // first we ensure the wasm source has been fetched
         if (!wcfg.source.isCached()(env)) {
-          wcfg.source.getWasm()(env, env.otoroshiExecutionContext).andThen {
-            case _ => priorityQueue.offer(action)
-          }(env.otoroshiExecutionContext)
+          wcfg.source
+            .getWasm()(env, env.otoroshiExecutionContext)
+            .andThen { case _ =>
+              priorityQueue.offer(action)
+            }(env.otoroshiExecutionContext)
         } else {
-          val changed = hasChanged(wcfg)
+          val changed   = hasChanged(wcfg)
           val available = hasAvailableVm(wcfg)
-          val creating = isVmCreating()
-          val atMax = atMaxPoolCapacity(wcfg)
+          val creating  = isVmCreating()
+          val atMax     = atMaxPoolCapacity(wcfg)
           // then we check if the underlying wasmcode + config has not changed since last time
           if (changed) {
             // if so, we destroy all current vms and recreate a new one
@@ -326,7 +341,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   // we try to create vm one by one and to not create more than needed
   private def createVm(config: WasmConfig, options: WasmVmInitOptions): Unit = synchronized {
     if (creatingRef.compareAndSet(false, true)) {
-      val index = counter.incrementAndGet()
+      val index                                                                     = counter.incrementAndGet()
       WasmVmPool.logger.debug(s"creating vm: ${index}")
       if (templateRef.get() == null) {
         if (!config.source.isCached()(env)) {
@@ -335,31 +350,48 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
           Await.result(config.source.getWasm()(env, env.otoroshiExecutionContext), 30.seconds)
         }
         lastPluginVersion.set(computeHash(config, config.source.cacheKey, WasmUtils.scriptCache(env)))
-        val cache = WasmUtils.scriptCache(env)
-        val key = config.source.cacheKey
-        val wasm = cache(key).asInstanceOf[CachedWasmScript].script
-        val hash = wasm.sha256
+        val cache    = WasmUtils.scriptCache(env)
+        val key      = config.source.cacheKey
+        val wasm     = cache(key).asInstanceOf[CachedWasmScript].script
+        val hash     = wasm.sha256
         val resolver = new WasmSourceResolver()
-        val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-        templateRef.set(new WasmOtoroshiTemplate(engine, hash, new Manifest(
-          Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-          new MemoryOptions(config.memoryPages),
-          config.config.asJava,
-          config.allowedHosts.asJava,
-          config.allowedPaths.asJava
-        )))
+        val source   = resolver.resolve("wasm", wasm.toByteBuffer.array())
+        templateRef.set(
+          new WasmOtoroshiTemplate(
+            engine,
+            hash,
+            new Manifest(
+              Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+              new MemoryOptions(config.memoryPages),
+              config.config.asJava,
+              config.allowedHosts.asJava,
+              config.allowedPaths.asJava
+            )
+          )
+        )
       }
-      val template = templateRef.get()
-      val vmDataRef = new AtomicReference[VmData](null)
-      val addedFunctions =  options.addHostFunctions(vmDataRef)
-      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
-        HostFunctions.getFunctions(config, stableId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
-      } else {
-        addedFunctions.toArray[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
-      }
-      val memories = LinearMemories.getMemories(config)
-      val instance = template.instantiate(engine, functions, memories, config.wasi)
-      val vm = WasmVm(index, config.killOptions.maxCalls, config.memoryPages * (64L * 1024L), options.resetMemory, instance, vmDataRef, memories, functions, this)
+      val template                                                                  = templateRef.get()
+      val vmDataRef                                                                 = new AtomicReference[VmData](null)
+      val addedFunctions                                                            = options.addHostFunctions(vmDataRef)
+      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] =
+        if (options.importDefaultHostFunctions) {
+          HostFunctions.getFunctions(config, stableId, None)(env, env.otoroshiExecutionContext) ++ addedFunctions
+        } else {
+          addedFunctions.toArray[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
+        }
+      val memories                                                                  = LinearMemories.getMemories(config)
+      val instance                                                                  = template.instantiate(engine, functions, memories, config.wasi)
+      val vm                                                                        = WasmVm(
+        index,
+        config.killOptions.maxCalls,
+        config.memoryPages * (64L * 1024L),
+        options.resetMemory,
+        instance,
+        vmDataRef,
+        memories,
+        functions,
+        this
+      )
       availableVms.offer(vm)
       creatingRef.compareAndSet(true, false)
     }
@@ -405,7 +437,8 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     optConfig.orElse(env.proxyState.wasmPlugin(stableId).map(_.config))
   }
 
-  private def hasAvailableVm(plugin: WasmConfig): Boolean = availableVms.size() > 0 && (inUseVms.size < plugin.instances)
+  private def hasAvailableVm(plugin: WasmConfig): Boolean =
+    availableVms.size() > 0 && (inUseVms.size < plugin.instances)
 
   private def isVmCreating(): Boolean = creatingRef.get()
 
@@ -429,17 +462,24 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
   }
 
   // compute the current hash for a tuple (wasmcode + config)
-  private def computeHash(config: WasmConfig, key: String, cache: UnboundedTrieMap[String, CacheableWasmScript]): String = {
-    config.json.stringify.sha512 + "#" + cache.get(key).map {
-      case CacheableWasmScript.CachedWasmScript(wasm, _) => wasm.sha512
-      case _ => "fetching"
-    }.getOrElse("null")
+  private def computeHash(
+      config: WasmConfig,
+      key: String,
+      cache: UnboundedTrieMap[String, CacheableWasmScript]
+  ): String = {
+    config.json.stringify.sha512 + "#" + cache
+      .get(key)
+      .map {
+        case CacheableWasmScript.CachedWasmScript(wasm, _) => wasm.sha512
+        case _                                             => "fetching"
+      }
+      .getOrElse("null")
   }
 
   // compute if the source (wasm code + config) is the same than current
   private def hasChanged(config: WasmConfig): Boolean = availableVms.synchronized {
-    val key = config.source.cacheKey
-    val cache = WasmUtils.scriptCache(env)
+    val key     = config.source.cacheKey
+    val cache   = WasmUtils.scriptCache(env)
     var oldHash = lastPluginVersion.get()
     if (oldHash == null) {
       oldHash = computeHash(config, key, cache)
@@ -450,7 +490,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
         val currentHash = computeHash(config, key, cache)
         oldHash != currentHash
       }
-      case _ => false
+      case _                                                => false
     }
   }
 
@@ -486,17 +526,18 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfig], val env:
     implicit val ev = env
     implicit val ec = env.otoroshiExecutionContext
     getPooledVm(options).flatMap { vm =>
-      f(vm).andThen {
-        case _ => vm.release()
+      f(vm).andThen { case _ =>
+        vm.release()
       }
     }
   }
 }
 
 case class WasmVmInitOptions(
-  importDefaultHostFunctions: Boolean = true,
-  resetMemory: Boolean = true,
-  addHostFunctions: (AtomicReference[VmData]) => Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = _ => Seq.empty
+    importDefaultHostFunctions: Boolean = true,
+    resetMemory: Boolean = true,
+    addHostFunctions: (AtomicReference[VmData]) => Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = _ =>
+      Seq.empty
 )
 
 object WasmVmInitOptions {
@@ -522,70 +563,78 @@ class WasmVmPoolCleaner extends Job {
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiInstance
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val config = env.datastores.globalConfigDataStore.latest().plugins.config.select("wasm-vm-pool-cleaner-config").asOpt[JsObject].getOrElse(Json.obj())
+    val config                = env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select("wasm-vm-pool-cleaner-config")
+      .asOpt[JsObject]
+      .getOrElse(Json.obj())
     val globalNotUsedDuration = config.select("not-used-duration").asOpt[Long].map(v => v.millis).getOrElse(5.minutes)
-    WasmVmPool.allInstances().foreach {
-      case (key, pool) =>
-        if (pool.inUseVms.isEmpty && pool.availableVms.isEmpty) {
-          logger.warn(s"will destroy 1 wasm vms pool")
-          pool.destroyCurrentVms()
-          pool.close()
-          WasmVmPool.removePlugin(key)
-        } else {
-          val options = pool.wasmConfig().map(_.killOptions)
-          if (!options.exists(_.immortal)) {
-            val maxDur = options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)
-            val unusedVms = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(maxDur))
-            val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.consumesMoreThanMemoryPercent(options.map(_.maxMemoryUsage).getOrElse(0.9)))
-            val tooSlowVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala).filter(_.tooSlow(options.map(_.maxAvgCallDuration.toNanos).getOrElse(1.day.toNanos)))
-            val allVms = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
-            if (allVms.nonEmpty) {
-              logger.warn(s"will destroy ${allVms.size} wasm vms")
-              if (unusedVms.nonEmpty) logger.warn(s" - ${unusedVms.size} because unused for more than ${maxDur.toHours}")
-              if (tooMuchMemoryVms.nonEmpty) logger.warn(s" - ${tooMuchMemoryVms.size} because of too much memory used")
-              if (tooSlowVms.nonEmpty) logger.warn(s" - ${tooSlowVms.size} because of avg call duration too long")
-            }
-            allVms.foreach { vm =>
-              if (vm.isBusy()) {
-                vm.destroyAtRelease()
-              } else {
-                vm.ignore()
-                vm.destroy()
-              }
+    WasmVmPool.allInstances().foreach { case (key, pool) =>
+      if (pool.inUseVms.isEmpty && pool.availableVms.isEmpty) {
+        logger.warn(s"will destroy 1 wasm vms pool")
+        pool.destroyCurrentVms()
+        pool.close()
+        WasmVmPool.removePlugin(key)
+      } else {
+        val options = pool.wasmConfig().map(_.killOptions)
+        if (!options.exists(_.immortal)) {
+          val maxDur           = options.map(_.maxUnusedDuration).getOrElse(globalNotUsedDuration)
+          val unusedVms        = pool.availableVms.asScala.filter(_.hasNotBeenUsedInTheLast(maxDur))
+          val tooMuchMemoryVms = (pool.availableVms.asScala ++ pool.inUseVms.asScala)
+            .filter(_.consumesMoreThanMemoryPercent(options.map(_.maxMemoryUsage).getOrElse(0.9)))
+          val tooSlowVms       = (pool.availableVms.asScala ++ pool.inUseVms.asScala)
+            .filter(_.tooSlow(options.map(_.maxAvgCallDuration.toNanos).getOrElse(1.day.toNanos)))
+          val allVms           = unusedVms ++ tooMuchMemoryVms ++ tooSlowVms
+          if (allVms.nonEmpty) {
+            logger.warn(s"will destroy ${allVms.size} wasm vms")
+            if (unusedVms.nonEmpty) logger.warn(s" - ${unusedVms.size} because unused for more than ${maxDur.toHours}")
+            if (tooMuchMemoryVms.nonEmpty) logger.warn(s" - ${tooMuchMemoryVms.size} because of too much memory used")
+            if (tooSlowVms.nonEmpty) logger.warn(s" - ${tooSlowVms.size} because of avg call duration too long")
+          }
+          allVms.foreach { vm =>
+            if (vm.isBusy()) {
+              vm.destroyAtRelease()
+            } else {
+              vm.ignore()
+              vm.destroy()
             }
           }
         }
+      }
     }
     ().vfuture
   }
 }
 
 case class WasmVmKillOptions(
-  immortal: Boolean = false,
-  maxCalls: Int = Int.MaxValue,
-  maxMemoryUsage: Double = 0.0,
-  maxAvgCallDuration: FiniteDuration = 0.nano,
-  maxUnusedDuration: FiniteDuration = 5.minutes,
+    immortal: Boolean = false,
+    maxCalls: Int = Int.MaxValue,
+    maxMemoryUsage: Double = 0.0,
+    maxAvgCallDuration: FiniteDuration = 0.nano,
+    maxUnusedDuration: FiniteDuration = 5.minutes
 ) {
   def json: JsValue = WasmVmKillOptions.format.writes(this)
 }
 
 object WasmVmKillOptions {
   val default = WasmVmKillOptions()
-  val format = new Format[WasmVmKillOptions] {
-    override def writes(o: WasmVmKillOptions): JsValue = Json.obj(
-      "immortal" -> o.immortal,
-      "max_calls" -> o.maxCalls,
-      "max_memory_usage" -> o.maxMemoryUsage,
+  val format  = new Format[WasmVmKillOptions] {
+    override def writes(o: WasmVmKillOptions): JsValue             = Json.obj(
+      "immortal"              -> o.immortal,
+      "max_calls"             -> o.maxCalls,
+      "max_memory_usage"      -> o.maxMemoryUsage,
       "max_avg_call_duration" -> o.maxAvgCallDuration.toMillis,
-      "max_unused_duration" -> o.maxUnusedDuration.toMillis,
+      "max_unused_duration"   -> o.maxUnusedDuration.toMillis
     )
     override def reads(json: JsValue): JsResult[WasmVmKillOptions] = Try {
       WasmVmKillOptions(
@@ -593,7 +642,7 @@ object WasmVmKillOptions {
         maxCalls = json.select("max_calls").asOpt[Int].getOrElse(Int.MaxValue),
         maxMemoryUsage = json.select("max_memory_usage").asOpt[Double].getOrElse(0.0),
         maxAvgCallDuration = json.select("max_avg_call_duration").asOpt[Long].map(_.millis).getOrElse(0.nano),
-        maxUnusedDuration = json.select("max_unused_duration").asOpt[Long].map(_.millis).getOrElse(5.minutes),
+        maxUnusedDuration = json.select("max_unused_duration").asOpt[Long].map(_.millis).getOrElse(5.minutes)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -20,7 +20,11 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
+import org.opensaml.xmlsec.keyinfo.impl.{
+  ChainingKeyInfoCredentialResolver,
+  StaticKeyInfoCredentialResolver,
+  X509KeyInfoGeneratorFactory
+}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -104,19 +108,20 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     getLogoutRequest(env, authConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
-      case Right(encoded) => authConfig.singleLogoutUrl match {
-        case None => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
-        case Some(singleLogoutUrl) => {
-          if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-            Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
-          else {
-            env.Ws
-              .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-              .get()
-            Right(None)
+      case Right(encoded) =>
+        authConfig.singleLogoutUrl match {
+          case None                  => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
+          case Some(singleLogoutUrl) => {
+            if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+              Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
+            else {
+              env.Ws
+                .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+                .get()
+              Right(None)
+            }
           }
         }
-      }
     }
   }
 
@@ -211,19 +216,20 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
     getLogoutRequest(env, authConfig, Some(user.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
-      case Right(encoded) => authConfig.singleLogoutUrl match {
-        case None => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
-        case Some(singleLogoutUrl) => {
-          if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-            Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
-          else {
-            env.Ws
-              .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-              .get()
-            Right(None)
+      case Right(encoded) =>
+        authConfig.singleLogoutUrl match {
+          case None                  => Left(Results.InternalServerError(Json.obj("error" -> "no logout url configured !")))
+          case Some(singleLogoutUrl) => {
+            if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+              Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
+            else {
+              env.Ws
+                .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+                .get()
+              Right(None)
+            }
           }
         }
-      }
     }
   }
 
@@ -416,7 +422,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
               name = "SAML Module",
               desc = "SAML Module",
               singleSignOnUrl = idpssoDescriptor.getSingleSignOnServices.get(0).getLocation,
-              singleLogoutUrl = Try(idpssoDescriptor.getSingleLogoutServices.get(0).getLocation).filter(_ != null).toOption,
+              singleLogoutUrl =
+                Try(idpssoDescriptor.getSingleLogoutServices.get(0).getLocation).filter(_ != null).toOption,
               issuer = entityDescriptor.getEntityID,
               ssoProtocolBinding = SAMLProtocolBinding(idpssoDescriptor.getSingleSignOnServices.get(0).getBinding),
               singleLogoutProtocolBinding =
@@ -786,7 +793,7 @@ object SAMLModule {
     request.setIssuer(issuer)
 
     val subject = buildObject(Subject.DEFAULT_ELEMENT_NAME).asInstanceOf[Subject]
-    val nameID = buildObject(NameID.DEFAULT_ELEMENT_NAME).asInstanceOf[NameID]
+    val nameID  = buildObject(NameID.DEFAULT_ELEMENT_NAME).asInstanceOf[NameID]
     nameID.setValue("z" + UUID.randomUUID().toString)
     subject.setNameID(nameID)
     request.setSubject(subject)
@@ -832,7 +839,7 @@ object SAMLModule {
     val dom          = marshaller.marshall(request)
 
     XMLHelper.writeNode(dom, stringWriter)
-    val body = stringWriter.toString
+    val body         = stringWriter.toString
     val deflatedBody = doDeflate(body.getBytes(StandardCharsets.UTF_8))
 
     org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(deflatedBody)
@@ -1026,16 +1033,16 @@ object SAMLModule {
   }
 
   def doDeflate(dataBytes: Array[Byte]): Array[Byte] = {
-    var compBufSize = 655316
+    var compBufSize          = 655316
     if (compBufSize < dataBytes.length + 5) {
       compBufSize = dataBytes.length + 5
     }
-    val compBuf = new Array[Byte](compBufSize)
-    val compresser = new Deflater(9, true)
+    val compBuf              = new Array[Byte](compBufSize)
+    val compresser           = new Deflater(9, true)
     compresser.setInput(dataBytes)
     compresser.finish
     val compressedDataLength = compresser.deflate(compBuf)
-    val compressedData = new Array[Byte](compressedDataLength)
+    val compressedData       = new Array[Byte](compressedDataLength)
     System.arraycopy(compBuf, 0, compressedData, 0, compressedDataLength)
     compressedData
   }
