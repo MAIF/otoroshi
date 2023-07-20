@@ -54,7 +54,7 @@ lazy val root = (project in file("."))
   .disablePlugins(PlayFilters)
 
 // lazy val scalaLangVersion    = "2.13.10"
-lazy val scalaLangVersion        = "2.12.16"
+lazy val scalaLangVersion        = "2.12.18"
 lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "2.14"
 lazy val prometheusVersion       = "0.16.0"
