@@ -54,7 +54,7 @@ lazy val root = (project in file("."))
   .disablePlugins(PlayFilters)
 
 // lazy val scalaLangVersion    = "2.13.10"
-lazy val scalaLangVersion        = "2.12.18"
+lazy val scalaLangVersion        = "2.12.16"
 lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "2.14"
 lazy val prometheusVersion       = "0.16.0"
@@ -63,7 +63,7 @@ lazy val webAuthnVersion         = "2.1.0"   //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
 lazy val bouncyCastleVersion     = "1.70"
 lazy val pulsarVersion           = "2.8.1"
-lazy val openTelemetryVersion    = "1.19.0"
+lazy val openTelemetryVersion    = "1.28.0"
 lazy val jacksonVersion          = "2.13.4"
 lazy val akkaHttpVersion         = "10.2.15"
 lazy val akkaHttp2Version        = "10.2.10" // WHAT ???
@@ -155,10 +155,17 @@ libraryDependencies ++= Seq(
   "org.yaml"                         % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson: _*),
   "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-bom"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-context"                     % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-sdk"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-sdk-common"                  % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-sdk-logs"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-sdk-metrics"                 % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-sdk-trace"                   % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-logging"            % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-exporter-otlp"               % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"             % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson: _*),
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
@@ -268,6 +275,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
+  case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x                                                              =>
