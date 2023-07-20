@@ -15,6 +15,7 @@ import otoroshi.next.plugins.Keys
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -47,8 +48,32 @@ object GlobalExpressionLanguage {
               context.getOrElse(s"item.$field", s"no-item-$field")
             case r"params.$field@(.*)"            =>
               context.getOrElse(s"params.$field", s"no-params-$field")
+
             case "date"                           => DateTime.now().toString()
             case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+            case r"date.epoch_ms" => DateTime.now().getMillis.toString
+            case r"date.epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
+            case r"date.plus_ms($field@(.*))" => DateTime.now().plusMillis(field.toInt).toString()
+            case r"date.plus_ms($field@(.*)).format\('$format@(.*)'\)" => DateTime.now().plusMillis(field.toInt).toString(format)
+            case r"date.plus_ms($field@(.*)).epoch_ms" => DateTime.now().plusMillis(field.toInt).getMillis.toString
+            case r"date.plus_ms($field@(.*)).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().plusMillis(field.toInt).getMillis).toString
+            case r"date.minus_ms($field@(.*))" => DateTime.now().minusMillis(field.toInt).toString()
+            case r"date.minus_ms($field@(.*)).format\('$format@(.*)'\)" => DateTime.now().minusMillis(field.toInt).toString(format)
+            case r"date.minus_ms($field@(.*)).epoch_ms" => DateTime.now().minusMillis(field.toInt).getMillis.toString
+            case r"date.minus_ms($field@(.*)).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().minusMillis(field.toInt).getMillis).toString
+
+            case "now" => DateTime.now().toString()
+            case r"now.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+            case r"now.epoch_ms" => DateTime.now().getMillis.toString
+            case r"now.epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
+            case r"now.plus_ms($field@(.*))" => DateTime.now().plusMillis(field.toInt).toString()
+            case r"now.plus_ms($field@(.*)).format\('$format@(.*)'\)" => DateTime.now().plusMillis(field.toInt).toString(format)
+            case r"now.plus_ms($field@(.*)).epoch_ms" => DateTime.now().plusMillis(field.toInt).getMillis.toString
+            case r"now.plus_ms($field@(.*)).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().plusMillis(field.toInt).getMillis).toString
+            case r"now.minus_ms($field@(.*))" => DateTime.now().minusMillis(field.toInt).toString()
+            case r"now.minus_ms($field@(.*)).format\('$format@(.*)'\)" => DateTime.now().minusMillis(field.toInt).toString(format)
+            case r"now.minus_ms($field@(.*)).epoch_ms" => DateTime.now().minusMillis(field.toInt).getMillis.toString
+            case r"now.minus_ms($field@(.*)).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().minusMillis(field.toInt).getMillis).toString
 
             case "service.domain" if service.isDefined                              => service.get._domain
             case "service.subdomain" if service.isDefined                           => service.get.subdomain

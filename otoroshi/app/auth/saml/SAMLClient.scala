@@ -92,11 +92,14 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       case Right(encoded) =>
         if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
           Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env, Some(relayState)))
-        else
-          Redirect(
+        else {
+          val redirectUrl = if (authConfig.singleSignOnUrl.contains("?")) {
+            s"${authConfig.singleSignOnUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
+          } else {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
-          )
-            .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
+          }
+          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
+        }
     }
   }
 
@@ -115,9 +118,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
             if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
               Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
             else {
-              env.Ws
-                .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-                .get()
+              val redirectUrl = if (authConfig.singleLogoutUrl.contains("?")) {
+                s"${singleLogoutUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+              } else {
+                s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+              }
+              env.Ws.url(redirectUrl).get()
               Right(None)
             }
           }
@@ -203,8 +209,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
         if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
           Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env))
         else {
-          Redirect(s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-            .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(request)
+          val redirectUrl = if (authConfig.singleSignOnUrl.contains("?")) {
+            s"${authConfig.singleSignOnUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+          } else {
+            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+          }
+          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(request)
         }
     }
   }
@@ -213,7 +223,6 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
-
     getLogoutRequest(env, authConfig, Some(user.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
       case Right(encoded) =>
@@ -223,9 +232,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
             if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
               Left(Ok(otoroshi.views.html.oto.saml(encoded, singleLogoutUrl, env)))
             else {
-              env.Ws
-                .url(s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-                .get()
+              val redirectUrl = if (authConfig.singleLogoutUrl.contains("?")) {
+                s"${singleLogoutUrl}&SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+              } else {
+                s"${singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
+              }
+              env.Ws.url(redirectUrl).get()
               Right(None)
             }
           }
