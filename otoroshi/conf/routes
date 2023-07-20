@@ -575,12 +575,14 @@ GET     /api/alert/events                                     otoroshi.controlle
 GET     /api/admins/simple/_template                          otoroshi.controllers.adminapi.TemplatesController.initiateSimpleAdmin()
 POST    /api/admins/simple                                    otoroshi.controllers.adminapi.UsersController.registerSimpleAdmin()
 GET     /api/admins/simple                                    otoroshi.controllers.adminapi.UsersController.simpleAdmins()
+GET     /api/admins/simple/:username                          otoroshi.controllers.adminapi.UsersController.findAdmin(username)
 PUT     /api/admins/simple/:username                          otoroshi.controllers.adminapi.UsersController.updateAdmin(username)
 DELETE  /api/admins/simple/:username                          otoroshi.controllers.adminapi.UsersController.deleteAdmin(username)
 
 GET     /api/admins/webauthn/_template                        otoroshi.controllers.adminapi.TemplatesController.initiateWebauthnAdmin()
 GET     /api/admins/webauthn                                  otoroshi.controllers.adminapi.UsersController.webAuthnAdmins()
 POST    /api/admins/webauthn                                  otoroshi.controllers.adminapi.UsersController.registerWebAuthnAdmin()
+GET     /api/admins/webauthn/:username                        otoroshi.controllers.adminapi.UsersController.findWebAuthnAdmin(username)
 PUT     /api/admins/webauthn/:username                        otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin(username)
 DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin(username, id)
 

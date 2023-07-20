@@ -354,6 +354,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
+  def findAdmin(username: String) =
+    ApiAction.async { ctx =>
+      ctx.checkRights(TenantAdminOnly) {
+        env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+          case None => NotFound(Json.obj("error" -> "user not found")).future
+          case Some(user) if !ctx.canUserRead(user) => ctx.fforbidden
+          case Some(user) => Ok(user.json).future
+        }
+      }
+    }
+
   def updateAdmin(username: String) =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
@@ -374,6 +385,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 }
             }
           }
+        }
+      }
+    }
+
+  def findWebAuthnAdmin(username: String) =
+    ApiAction.async { ctx =>
+      ctx.checkRights(TenantAdminOnly) {
+        env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+          case None => NotFound(Json.obj("error" -> "user not found")).future
+          case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
+          case Some(user) => Ok(user.json).future
         }
       }
     }
