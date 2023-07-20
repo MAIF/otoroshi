@@ -289,6 +289,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
       method = "GET",
       from = "from",
       env = "prod",
+      backendDuration = duration - overhead,
       duration = duration,
       overhead = overhead,
       cbDuration = 0L,
