@@ -192,16 +192,23 @@ class Env(
   private lazy val disableFunnyLogos: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
 
+  lazy val customLogo: Option[String] = configuration.getOptionalWithFileSupport[String]("app.instance.logo")
+
   def otoroshiLogo: String = {
     val now = DateTime.now()
-    if (disableFunnyLogos) {
-      "/__otoroshi_assets/images/otoroshi-logo-color.png"
-    } else if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
-      "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
-    } else if (now.isAfter(halloweenStart) && now.isBefore(halloweenStop)) {
-      "/__otoroshi_assets/images/otoroshi-logo-halloween3.png"
-    } else {
-      "/__otoroshi_assets/images/otoroshi-logo-color.png"
+    customLogo match {
+      case Some(logo) => logo
+      case None => {
+        if (disableFunnyLogos) {
+          "/__otoroshi_assets/images/otoroshi-logo-color.png"
+        } else if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
+          "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
+        } else if (now.isAfter(halloweenStart) && now.isBefore(halloweenStop)) {
+          "/__otoroshi_assets/images/otoroshi-logo-halloween3.png"
+        } else {
+          "/__otoroshi_assets/images/otoroshi-logo-color.png"
+        }
+      }
     }
   }
 

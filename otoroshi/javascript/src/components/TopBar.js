@@ -1140,7 +1140,10 @@ export class TopBar extends Component {
           </>
         );
       } else {
-        if (instanceName.startsWith('ReplaceAll(')) {
+        if (instanceName.startsWith('ReplaceAll(<') && instanceName.endsWith('>)')) {
+          const html = instanceName.substring(11, instanceName.length - 1);
+          return <div dangerouslySetInnerHTML={{ __html: html }}></div>;
+        } else if (instanceName.startsWith('ReplaceAll(')) {
           return <>{instanceName.substring(11, instanceName.length - 1)}</>;
         } else {
           return <>Otoroshi - {instanceName}</>;
