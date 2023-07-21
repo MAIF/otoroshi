@@ -52,7 +52,17 @@ trait ApiActionContextCapable {
   def userIsSuperAdmin(implicit env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
-      case Right(None)       => false
+      case Right(None)       => {
+        val tenantAccess = apiKey.metadata
+          .get("otoroshi-access-rights")
+          .map(Json.parse)
+          .flatMap(_.asOpt[JsArray])
+          .map(UserRights.readFromArray)
+        tenantAccess match {
+          case None => true
+          case Some(userRights) => userRights.superAdmin
+        }
+      }
       case Right(Some(user)) => user.rights.superAdmin
     }
   }
