@@ -997,6 +997,7 @@ play.http {
     number =  ${?INSTANCE_NUMBER} # the instance number. Can be found in otoroshi events
     name = &quot;otoroshi&quot; # instance name
     name = ${?OTOROSHI_INSTANCE_NAME} # instance name
+		logo = ${?OTOROSHI_INSTANCE_LOGO} # instance logo
     zone = &quot;local&quot; # instance zone (optional)
     zone = ${?OTOROSHI_INSTANCE_ZONE} # instance zone (optional)
     region = &quot;local&quot; # instance region (optional)
@@ -2630,6 +2631,7 @@ akka { # akka specific configuration
     number =  ${?OTOROSHI_INSTANCE_NUMBER} # the instance number. Can be found in otoroshi events
     number =  ${?INSTANCE_NUMBER} # the instance number. Can be found in otoroshi events
     name = ${?OTOROSHI_INSTANCE_NAME} # instance name
+		logo = ${?OTOROSHI_INSTANCE_LOGO} # instance logo
     zone = ${?OTOROSHI_INSTANCE_ZONE} # instance zone (optional)
     region = ${?OTOROSHI_INSTANCE_REGION} # instance region (optional)
     dc = ${?OTOROSHI_INSTANCE_DATACENTER} # instance dc (optional)
