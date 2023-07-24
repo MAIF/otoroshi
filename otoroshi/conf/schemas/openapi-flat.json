@@ -8948,6 +8948,11 @@
       }
     }
   },
+  "otoroshi.auth.SAMLCanocalizationMethod" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.models.NgTreeRouter_Test" : {
     "type" : "object",
     "description" : "???",
@@ -9027,26 +9032,6 @@
       }
     }
   },
-  "otoroshi.models.FileSettings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "path" : {
-        "type" : "string",
-        "description" : "File path"
-      },
-      "maxFileSize" : {
-        "type" : "integer",
-        "format" : "int64",
-        "description" : "Max file size for rolling"
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to a file"
-  },
   "otoroshi.plugins.workflow.WorkflowEndpoint" : {
     "type" : "object",
     "description" : "???",
@@ -9072,17 +9057,7 @@
     "oneOfConstraints" : [ {
       "required" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig" ]
     }, {
-      "required" : [ "type", "tlsTrustCertsFilePath", "tenant", "uri", "mtlsConfig", "topic", "namespace" ]
-    }, {
-      "required" : [ "type" ]
-    }, {
       "required" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
-    }, {
-      "required" : [ "type", "ref", "config" ]
-    }, {
-      "required" : [ "type", "path", "maxFileSize" ]
-    }, {
-      "required" : [ "type", "labels" ]
     }, {
       "required" : [ "type", "url", "headers", "mtlsConfig" ]
     }, {
@@ -9179,7 +9154,7 @@
       },
       "topic" : {
         "type" : "string",
-        "description" : "Pulsar topic"
+        "description" : "Optional kafka topic (otoroshi-events by default)"
       },
       "keyPass" : {
         "description" : "null type",
@@ -9203,23 +9178,6 @@
             "description" : "SASL login mechanism"
           }
         }
-      },
-      "tlsTrustCertsFilePath" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "tenant" : {
-        "type" : "string",
-        "description" : "Pulsar tenant"
-      },
-      "uri" : {
-        "type" : "string",
-        "description" : "Pulsar access uri"
-      },
-      "namespace" : {
-        "type" : "string",
-        "description" : "Pulsar namespace"
       },
       "sendWorkers" : {
         "type" : "integer",
@@ -9293,30 +9251,6 @@
         "description" : "null type",
         "type" : "string",
         "nullable" : true
-      },
-      "ref" : {
-        "type" : "string",
-        "description" : "Reference to an exporter"
-      },
-      "config" : {
-        "type" : "object",
-        "description" : "Exporter config."
-      },
-      "path" : {
-        "type" : "string",
-        "description" : "File path"
-      },
-      "maxFileSize" : {
-        "type" : "integer",
-        "format" : "int64",
-        "description" : "Max file size for rolling"
-      },
-      "labels" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "Exported labels for prometheus"
       },
       "url" : {
         "type" : "string",
@@ -14408,17 +14342,6 @@
     "type" : "object",
     "description" : "Otoroshi model for JWT token verifier"
   },
-  "otoroshi.models.ConsoleSettings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to console"
-  },
   "otoroshi.models.TenantAccess" : {
     "type" : "object",
     "description" : "Access rights for organizations",
@@ -14639,6 +14562,22 @@
       }
     }
   },
+  "otoroshi.auth.SAMLSignature" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "algorithm" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "canocalizationMethod" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator" : {
     "type" : "object",
     "description" : "???",
@@ -14679,65 +14618,6 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
-  },
-  "otoroshi.models.S3ExporterSettings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "maxFileSize" : {
-        "type" : "integer",
-        "format" : "int64",
-        "description" : "Max file size for rolling"
-      },
-      "config" : {
-        "description" : "Exporter settings",
-        "properties" : {
-          "writeEvery" : {
-            "type" : "number",
-            "description" : "Write every n milliseconds"
-          },
-          "chunkSize" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Upload chunk max size"
-          },
-          "bucket" : {
-            "type" : "string",
-            "description" : "Bucket name"
-          },
-          "key" : {
-            "type" : "string",
-            "description" : "File path in bucket"
-          },
-          "endpoint" : {
-            "type" : "string",
-            "description" : "Bucket endpoint"
-          },
-          "v4auth" : {
-            "type" : "boolean",
-            "description" : "Use V4 auth"
-          },
-          "access" : {
-            "type" : "string",
-            "description" : "Bucket access key"
-          },
-          "secret" : {
-            "type" : "string",
-            "description" : "Bucket access secret"
-          },
-          "region" : {
-            "type" : "string",
-            "description" : "Bucket region"
-          }
-        },
-        "type" : "object"
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to a S3 bucket"
   },
   "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
     "type" : "object",
@@ -15076,26 +14956,6 @@
         "description" : "null type",
         "type" : "string",
         "nullable" : true
-      }
-    }
-  },
-  "otoroshi.models.DataExporterConfigFiltering" : {
-    "type" : "object",
-    "description" : "Filter events to export",
-    "properties" : {
-      "include" : {
-        "type" : "array",
-        "items" : {
-          "type" : "object"
-        },
-        "description" : "Event include filter"
-      },
-      "exclude" : {
-        "type" : "array",
-        "items" : {
-          "type" : "object"
-        },
-        "description" : "Event exclude filter"
       }
     }
   },
@@ -16239,6 +16099,70 @@
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      }
+    }
+  },
+  "otoroshi.auth.SAMLCredentials" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "signingKey" : {
+        "description" : "???",
+        "properties" : {
+          "certificate" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "privateKey" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "certId" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "useOtoroshiCertificate" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "encryptionKey" : {
+        "description" : "???",
+        "properties" : {
+          "certificate" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "privateKey" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "certId" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "useOtoroshiCertificate" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "signedDocuments" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "encryptedAssertions" : {
+        "type" : "boolean",
+        "description" : "???"
       }
     }
   },
@@ -21512,362 +21436,7 @@
       "dataExporters" : {
         "type" : "array",
         "items" : {
-          "properties" : {
-            "desc" : {
-              "type" : "string",
-              "description" : "Description"
-            },
-            "_loc" : {
-              "description" : "Entity location",
-              "properties" : {
-                "tenant" : {
-                  "description" : "Organization of the current entity",
-                  "type" : "string"
-                },
-                "teams" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "Teams of the current entity"
-                }
-              },
-              "type" : "object"
-            },
-            "bufferSize" : {
-              "type" : "integer",
-              "format" : "int32",
-              "description" : "Number of events in buffer"
-            },
-            "jsonWorkers" : {
-              "type" : "integer",
-              "format" : "int32",
-              "description" : "Number of workers that transform events"
-            },
-            "groupDuration" : {
-              "type" : "number",
-              "description" : "The max duration before sending group"
-            },
-            "groupSize" : {
-              "type" : "integer",
-              "format" : "int32",
-              "description" : "The max size of events group before sending"
-            },
-            "type" : {
-              "description" : "Type of data exporter",
-              "type" : "string",
-              "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
-            },
-            "tags" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
-              },
-              "description" : "Entity tags"
-            },
-            "sendWorkers" : {
-              "type" : "integer",
-              "format" : "int32",
-              "description" : "Number of workers that sends events"
-            },
-            "id" : {
-              "type" : "string",
-              "description" : "Id of the exporter"
-            },
-            "name" : {
-              "type" : "string",
-              "description" : "Entity name"
-            },
-            "metadata" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string"
-              },
-              "description" : "Entity metadata"
-            },
-            "config" : {
-              "description" : "Exporter config",
-              "properties" : {
-                "type" : {
-                  "type" : "string",
-                  "description" : "the kind of exporter",
-                  "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-                },
-                "sendEvents" : {
-                  "type" : "boolean",
-                  "description" : "Send events to it, or just connect"
-                },
-                "truststore" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "hostValidation" : {
-                  "type" : "boolean",
-                  "description" : "Enabled TLS hostname validation"
-                },
-                "servers" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "URLs of the kafka servers"
-                },
-                "mtlsConfig" : {
-                  "description" : "TLS config when calling webhook",
-                  "properties" : {
-                    "mtls" : {
-                      "type" : "boolean",
-                      "description" : "???"
-                    },
-                    "loose" : {
-                      "type" : "boolean",
-                      "description" : "???"
-                    },
-                    "trustAll" : {
-                      "type" : "boolean",
-                      "description" : "???"
-                    },
-                    "trustedCerts" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "string"
-                      },
-                      "description" : "???"
-                    },
-                    "certs" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "string"
-                      },
-                      "description" : "???"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "securityProtocol" : {
-                  "type" : "string",
-                  "description" : "Used security protocol"
-                },
-                "keystore" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "topic" : {
-                  "type" : "string",
-                  "description" : "Pulsar topic"
-                },
-                "keyPass" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "saslConfig" : {
-                  "description" : "SASL configuration",
-                  "type" : "object",
-                  "properties" : {
-                    "username" : {
-                      "type" : "string",
-                      "description" : "SASL username"
-                    },
-                    "password" : {
-                      "type" : "string",
-                      "description" : "SASL password"
-                    },
-                    "mechanism" : {
-                      "type" : "string",
-                      "description" : "SASL login mechanism"
-                    }
-                  }
-                },
-                "tlsTrustCertsFilePath" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "tenant" : {
-                  "type" : "string",
-                  "description" : "Pulsar tenant"
-                },
-                "uri" : {
-                  "type" : "string",
-                  "description" : "Pulsar access uri"
-                },
-                "namespace" : {
-                  "type" : "string",
-                  "description" : "Pulsar namespace"
-                },
-                "sendWorkers" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "???"
-                },
-                "applyTemplate" : {
-                  "type" : "boolean",
-                  "description" : "Enable template creation/update"
-                },
-                "uris" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "???"
-                },
-                "version" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "maxBulkSize" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "???"
-                },
-                "headers" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "type" : "string"
-                  },
-                  "description" : "Sender headers"
-                },
-                "indexSettings" : {
-                  "description" : "Indexation settings",
-                  "properties" : {
-                    "clientSide" : {
-                      "type" : "boolean",
-                      "description" : "Enable index splitting on client side"
-                    },
-                    "numberOfShards" : {
-                      "type" : "integer",
-                      "format" : "int32",
-                      "description" : "???"
-                    },
-                    "numberOfReplicas" : {
-                      "type" : "integer",
-                      "format" : "int32",
-                      "description" : "???"
-                    },
-                    "interval" : {
-                      "description" : "Index splitting interval",
-                      "properties" : { },
-                      "type" : "object"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "user" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "index" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "password" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "ref" : {
-                  "type" : "string",
-                  "description" : "Reference to an exporter"
-                },
-                "config" : {
-                  "type" : "object",
-                  "description" : "Exporter config."
-                },
-                "path" : {
-                  "type" : "string",
-                  "description" : "File path"
-                },
-                "maxFileSize" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Max file size for rolling"
-                },
-                "labels" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "type" : "string"
-                  },
-                  "description" : "Exported labels for prometheus"
-                },
-                "url" : {
-                  "type" : "string",
-                  "description" : "Sender URL"
-                },
-                "to" : {
-                  "type" : "array",
-                  "items" : {
-                    "properties" : {
-                      "name" : {
-                        "type" : "string",
-                        "description" : "Destination name"
-                      },
-                      "email" : {
-                        "type" : "string",
-                        "description" : "Email address"
-                      }
-                    },
-                    "type" : "object"
-                  },
-                  "description" : "Destination email address"
-                },
-                "eu" : {
-                  "type" : "boolean",
-                  "description" : "European tenant"
-                },
-                "apiKey" : {
-                  "type" : "string",
-                  "description" : "Sendgrid apikey"
-                },
-                "domain" : {
-                  "type" : "string",
-                  "description" : "Mailgun domain"
-                },
-                "apiKeyPublic" : {
-                  "type" : "string",
-                  "description" : "Public key"
-                },
-                "apiKeyPrivate" : {
-                  "type" : "string",
-                  "description" : "Private key"
-                }
-              },
-              "type" : "object"
-            },
-            "projection" : {
-              "type" : "object",
-              "description" : "Event projection"
-            },
-            "enabled" : {
-              "type" : "boolean",
-              "description" : "Is the exporter enabled"
-            },
-            "filtering" : {
-              "description" : "Filtering options",
-              "properties" : {
-                "include" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "object"
-                  },
-                  "description" : "Event include filter"
-                },
-                "exclude" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "object"
-                  },
-                  "description" : "Event exclude filter"
-                }
-              },
-              "type" : "object"
-            }
-          },
+          "properties" : { },
           "type" : "object"
         },
         "description" : "???"
@@ -26398,6 +25967,8 @@
             "required" : [ "type", "extraMetadata", "desc", "name", "allowEmptyPassword", "groupFilters", "rightsOverride", "serverUrls", "clientSideSessionEnabled", "basicAuth", "searchBase", "groupRights", "tags", "superAdmins", "sessionMaxAge", "metadataField", "searchFilter", "adminUsername", "userValidators", "emailField", "extractProfileFilter", "userBase", "id", "_loc", "adminPassword", "metadata", "extractProfileFilterNot", "nameField", "extractProfile", "dataOverride", "sessionCookieValues" ]
           }, {
             "required" : [ "type", "accessTokenURL", "desc", "name", "authorizeURL", "rightsOverride", "consumerKey", "callbackURL", "profileURL", "clientSideSessionEnabled", "tags", "sessionMaxAge", "httpMethod", "userValidators", "id", "requestTokenURL", "_loc", "consumerSecret", "metadata", "sessionCookieValues" ]
+          }, {
+            "required" : [ "type", "desc", "name", "ssoProtocolBinding", "clientSideSessionEnabled", "emailAttributeName", "validatingCertificates", "tags", "singleLogoutProtocolBinding", "sessionMaxAge", "issuer", "signature", "userValidators", "singleLogoutUrl", "id", "_loc", "usedNameIDAsEmail", "singleSignOnUrl", "metadata", "validateAssertions", "nameIDFormat", "validateSignature", "credentials", "sessionCookieValues" ]
           } ],
           "properties" : {
             "type" : {
@@ -27200,6 +26771,138 @@
             "consumerSecret" : {
               "type" : "string",
               "description" : "???"
+            },
+            "ssoProtocolBinding" : {
+              "description" : "???",
+              "properties" : { },
+              "type" : "object"
+            },
+            "emailAttributeName" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            },
+            "validatingCertificates" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "singleLogoutProtocolBinding" : {
+              "description" : "???",
+              "properties" : { },
+              "type" : "object"
+            },
+            "issuer" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "signature" : {
+              "description" : "???",
+              "properties" : {
+                "algorithm" : {
+                  "description" : "???",
+                  "properties" : { },
+                  "type" : "object"
+                },
+                "canocalizationMethod" : {
+                  "description" : "???",
+                  "properties" : { },
+                  "type" : "object"
+                }
+              },
+              "type" : "object"
+            },
+            "singleLogoutUrl" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            },
+            "usedNameIDAsEmail" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
+            "singleSignOnUrl" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "validateAssertions" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
+            "nameIDFormat" : {
+              "description" : "???",
+              "properties" : { },
+              "type" : "object"
+            },
+            "validateSignature" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
+            "credentials" : {
+              "description" : "???",
+              "properties" : {
+                "signingKey" : {
+                  "description" : "???",
+                  "properties" : {
+                    "certificate" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "privateKey" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "certId" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "useOtoroshiCertificate" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "encryptionKey" : {
+                  "description" : "???",
+                  "properties" : {
+                    "certificate" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "privateKey" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "certId" : {
+                      "description" : "null type",
+                      "type" : "string",
+                      "nullable" : true
+                    },
+                    "useOtoroshiCertificate" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "signedDocuments" : {
+                  "type" : "boolean",
+                  "description" : "???"
+                },
+                "encryptedAssertions" : {
+                  "type" : "boolean",
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
             }
           }
         },
@@ -29423,6 +29126,11 @@
       }
     }
   },
+  "otoroshi.auth.SAMLSignatureAlgorithm" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.ForceHttpsTraffic" : {
     "type" : "object",
     "description" : "???",
@@ -31010,25 +30718,6 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
-  },
-  "otoroshi.models.ExporterRef" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "ref" : {
-        "type" : "string",
-        "description" : "Reference to an exporter"
-      },
-      "config" : {
-        "type" : "object",
-        "description" : "Exporter config."
-      }
-    },
-    "type" : "object",
-    "description" : "Ref to an exporter id"
   },
   "otoroshi.next.plugins.NgMultiAuthModuleConfig" : {
     "type" : "object",
@@ -37759,6 +37448,11 @@
       }
     }
   },
+  "otoroshi.auth.NameIDFormat" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.GraphQLQuery" : {
     "type" : "object",
     "description" : "???",
@@ -37869,6 +37563,11 @@
         "description" : "???"
       }
     }
+  },
+  "otoroshi.next.plugins.ForwardedHeader" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob" : {
     "type" : "object",
@@ -47816,88 +47515,6 @@
     "description" : "???",
     "properties" : { }
   },
-  "otoroshi.models.GoReplayS3Settings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "s3" : {
-        "description" : "S3 bucket access settings",
-        "properties" : {
-          "writeEvery" : {
-            "type" : "number",
-            "description" : "Write every n milliseconds"
-          },
-          "chunkSize" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Upload chunk max size"
-          },
-          "bucket" : {
-            "type" : "string",
-            "description" : "Bucket name"
-          },
-          "key" : {
-            "type" : "string",
-            "description" : "File path in bucket"
-          },
-          "endpoint" : {
-            "type" : "string",
-            "description" : "Bucket endpoint"
-          },
-          "v4auth" : {
-            "type" : "boolean",
-            "description" : "Use V4 auth"
-          },
-          "access" : {
-            "type" : "string",
-            "description" : "Bucket access key"
-          },
-          "secret" : {
-            "type" : "string",
-            "description" : "Bucket access secret"
-          },
-          "region" : {
-            "type" : "string",
-            "description" : "Bucket region"
-          }
-        },
-        "type" : "object"
-      },
-      "methods" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "Filter on http methods"
-      },
-      "captureResponses" : {
-        "type" : "boolean",
-        "description" : "Enable response capture"
-      },
-      "preferBackendResponse" : {
-        "type" : "boolean",
-        "description" : "Capture internal responses instead of external"
-      },
-      "maxFileSize" : {
-        "type" : "integer",
-        "format" : "int64",
-        "description" : "Max file size for rolling"
-      },
-      "captureRequests" : {
-        "type" : "boolean",
-        "description" : "Enable request capture"
-      },
-      "preferBackendRequest" : {
-        "type" : "boolean",
-        "description" : "Capture internal requests instead of external"
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to a S3 bucket"
-  },
   "otoroshi.utils.ConcurrentMutableTypedMap" : {
     "type" : "object",
     "description" : "???",
@@ -51807,366 +51424,6 @@
     "description" : "???",
     "properties" : { }
   },
-  "otoroshi.models.DataExporterConfig" : {
-    "type" : "object",
-    "description" : "Data exporter settings",
-    "properties" : {
-      "desc" : {
-        "type" : "string",
-        "description" : "Description"
-      },
-      "_loc" : {
-        "description" : "Entity location",
-        "properties" : {
-          "tenant" : {
-            "description" : "Organization of the current entity",
-            "type" : "string"
-          },
-          "teams" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Teams of the current entity"
-          }
-        },
-        "type" : "object"
-      },
-      "bufferSize" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "Number of events in buffer"
-      },
-      "jsonWorkers" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "Number of workers that transform events"
-      },
-      "groupDuration" : {
-        "type" : "number",
-        "description" : "The max duration before sending group"
-      },
-      "groupSize" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "The max size of events group before sending"
-      },
-      "type" : {
-        "description" : "Type of data exporter",
-        "type" : "string",
-        "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
-      },
-      "tags" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "Entity tags"
-      },
-      "sendWorkers" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "Number of workers that sends events"
-      },
-      "id" : {
-        "type" : "string",
-        "description" : "Id of the exporter"
-      },
-      "name" : {
-        "type" : "string",
-        "description" : "Entity name"
-      },
-      "metadata" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "Entity metadata"
-      },
-      "config" : {
-        "description" : "Exporter config",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "description" : "the kind of exporter",
-            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-          },
-          "sendEvents" : {
-            "type" : "boolean",
-            "description" : "Send events to it, or just connect"
-          },
-          "truststore" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "hostValidation" : {
-            "type" : "boolean",
-            "description" : "Enabled TLS hostname validation"
-          },
-          "servers" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "URLs of the kafka servers"
-          },
-          "mtlsConfig" : {
-            "description" : "TLS config when calling webhook",
-            "properties" : {
-              "mtls" : {
-                "type" : "boolean",
-                "description" : "???"
-              },
-              "loose" : {
-                "type" : "boolean",
-                "description" : "???"
-              },
-              "trustAll" : {
-                "type" : "boolean",
-                "description" : "???"
-              },
-              "trustedCerts" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "???"
-              },
-              "certs" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "???"
-              }
-            },
-            "type" : "object"
-          },
-          "securityProtocol" : {
-            "type" : "string",
-            "description" : "Used security protocol"
-          },
-          "keystore" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "topic" : {
-            "type" : "string",
-            "description" : "Pulsar topic"
-          },
-          "keyPass" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "saslConfig" : {
-            "description" : "SASL configuration",
-            "type" : "object",
-            "properties" : {
-              "username" : {
-                "type" : "string",
-                "description" : "SASL username"
-              },
-              "password" : {
-                "type" : "string",
-                "description" : "SASL password"
-              },
-              "mechanism" : {
-                "type" : "string",
-                "description" : "SASL login mechanism"
-              }
-            }
-          },
-          "tlsTrustCertsFilePath" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "tenant" : {
-            "type" : "string",
-            "description" : "Pulsar tenant"
-          },
-          "uri" : {
-            "type" : "string",
-            "description" : "Pulsar access uri"
-          },
-          "namespace" : {
-            "type" : "string",
-            "description" : "Pulsar namespace"
-          },
-          "sendWorkers" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          },
-          "applyTemplate" : {
-            "type" : "boolean",
-            "description" : "Enable template creation/update"
-          },
-          "uris" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "version" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "maxBulkSize" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Sender headers"
-          },
-          "indexSettings" : {
-            "description" : "Indexation settings",
-            "properties" : {
-              "clientSide" : {
-                "type" : "boolean",
-                "description" : "Enable index splitting on client side"
-              },
-              "numberOfShards" : {
-                "type" : "integer",
-                "format" : "int32",
-                "description" : "???"
-              },
-              "numberOfReplicas" : {
-                "type" : "integer",
-                "format" : "int32",
-                "description" : "???"
-              },
-              "interval" : {
-                "description" : "Index splitting interval",
-                "properties" : { },
-                "type" : "object"
-              }
-            },
-            "type" : "object"
-          },
-          "user" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "index" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "password" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "ref" : {
-            "type" : "string",
-            "description" : "Reference to an exporter"
-          },
-          "config" : {
-            "type" : "object",
-            "description" : "Exporter config."
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "File path"
-          },
-          "maxFileSize" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Max file size for rolling"
-          },
-          "labels" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Exported labels for prometheus"
-          },
-          "url" : {
-            "type" : "string",
-            "description" : "Sender URL"
-          },
-          "to" : {
-            "type" : "array",
-            "items" : {
-              "properties" : {
-                "name" : {
-                  "type" : "string",
-                  "description" : "Destination name"
-                },
-                "email" : {
-                  "type" : "string",
-                  "description" : "Email address"
-                }
-              },
-              "type" : "object"
-            },
-            "description" : "Destination email address"
-          },
-          "eu" : {
-            "type" : "boolean",
-            "description" : "European tenant"
-          },
-          "apiKey" : {
-            "type" : "string",
-            "description" : "Sendgrid apikey"
-          },
-          "domain" : {
-            "type" : "string",
-            "description" : "Mailgun domain"
-          },
-          "apiKeyPublic" : {
-            "type" : "string",
-            "description" : "Public key"
-          },
-          "apiKeyPrivate" : {
-            "type" : "string",
-            "description" : "Private key"
-          }
-        },
-        "type" : "object"
-      },
-      "projection" : {
-        "type" : "object",
-        "description" : "Event projection"
-      },
-      "enabled" : {
-        "type" : "boolean",
-        "description" : "Is the exporter enabled"
-      },
-      "filtering" : {
-        "description" : "Filtering options",
-        "properties" : {
-          "include" : {
-            "type" : "array",
-            "items" : {
-              "type" : "object"
-            },
-            "description" : "Event include filter"
-          },
-          "exclude" : {
-            "type" : "array",
-            "items" : {
-              "type" : "object"
-            },
-            "description" : "Event exclude filter"
-          }
-        },
-        "type" : "object"
-      }
-    }
-  },
   "otoroshi.next.plugins.NgEndlessHttpResponseConfig" : {
     "type" : "object",
     "description" : "???",
@@ -52726,24 +51983,6 @@
         "description" : "Use known JDK CAs to build trust for incoming request"
       }
     }
-  },
-  "otoroshi.models.MetricsSettings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "labels" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "Exported labels for prometheus"
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to otoroshi metrics"
   },
   "otoroshi.next.plugins.OIDCAccessTokenAsApikey" : {
     "type" : "object",
@@ -55569,69 +54808,236 @@
     "description" : "???",
     "properties" : { }
   },
-  "otoroshi.events.PulsarConfig" : {
+  "otoroshi.auth.SamlAuthModuleConfig" : {
     "properties" : {
       "type" : {
         "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        "description" : "the type of the module",
+        "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
       },
-      "tlsTrustCertsFilePath" : {
+      "desc" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "ssoProtocolBinding" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "clientSideSessionEnabled" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "emailAttributeName" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
       },
-      "tenant" : {
-        "type" : "string",
-        "description" : "Pulsar tenant"
+      "validatingCertificates" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
-      "uri" : {
-        "type" : "string",
-        "description" : "Pulsar access uri"
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
-      "mtlsConfig" : {
-        "description" : "TLS settings to access pulsar",
+      "singleLogoutProtocolBinding" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "sessionMaxAge" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "issuer" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "signature" : {
+        "description" : "???",
         "properties" : {
-          "mtls" : {
-            "type" : "boolean",
-            "description" : "???"
+          "algorithm" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
           },
-          "loose" : {
-            "type" : "boolean",
-            "description" : "???"
+          "canocalizationMethod" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "userValidators" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "path" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "value" : {
+              "type" : "object",
+              "description" : "???"
+            },
+            "error" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            }
           },
-          "trustAll" : {
-            "type" : "boolean",
-            "description" : "???"
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "singleLogoutUrl" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
           },
-          "trustedCerts" : {
+          "teams" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      },
+      "usedNameIDAsEmail" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "singleSignOnUrl" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "validateAssertions" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "nameIDFormat" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "validateSignature" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "credentials" : {
+        "description" : "???",
+        "properties" : {
+          "signingKey" : {
+            "description" : "???",
+            "properties" : {
+              "certificate" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "privateKey" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "certId" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "useOtoroshiCertificate" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "encryptionKey" : {
+            "description" : "???",
+            "properties" : {
+              "certificate" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "privateKey" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "certId" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "useOtoroshiCertificate" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "signedDocuments" : {
+            "type" : "boolean",
             "description" : "???"
           },
-          "certs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
+          "encryptedAssertions" : {
+            "type" : "boolean",
             "description" : "???"
           }
         },
         "type" : "object"
       },
-      "topic" : {
-        "type" : "string",
-        "description" : "Pulsar topic"
-      },
-      "namespace" : {
-        "type" : "string",
-        "description" : "Pulsar namespace"
+      "sessionCookieValues" : {
+        "description" : "???",
+        "properties" : {
+          "httpOnly" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "secure" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
       }
     },
     "type" : "object",
-    "description" : "Settings for connection to a pulsar cluster"
+    "description" : "???"
   },
   "otoroshi.api.TweakedGlobalConfig" : {
     "type" : "object",
@@ -58285,6 +57691,11 @@
       }
     }
   },
+  "otoroshi.auth.SAMLProtocolBinding" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.NgUserAgentInfoHeaderConfig" : {
     "type" : "object",
     "description" : "???",
@@ -59671,6 +59082,8 @@
       "required" : [ "type", "extraMetadata", "desc", "name", "allowEmptyPassword", "groupFilters", "rightsOverride", "serverUrls", "clientSideSessionEnabled", "basicAuth", "searchBase", "groupRights", "tags", "superAdmins", "sessionMaxAge", "metadataField", "searchFilter", "adminUsername", "userValidators", "emailField", "extractProfileFilter", "userBase", "id", "_loc", "adminPassword", "metadata", "extractProfileFilterNot", "nameField", "extractProfile", "dataOverride", "sessionCookieValues" ]
     }, {
       "required" : [ "type", "accessTokenURL", "desc", "name", "authorizeURL", "rightsOverride", "consumerKey", "callbackURL", "profileURL", "clientSideSessionEnabled", "tags", "sessionMaxAge", "httpMethod", "userValidators", "id", "requestTokenURL", "_loc", "consumerSecret", "metadata", "sessionCookieValues" ]
+    }, {
+      "required" : [ "type", "desc", "name", "ssoProtocolBinding", "clientSideSessionEnabled", "emailAttributeName", "validatingCertificates", "tags", "singleLogoutProtocolBinding", "sessionMaxAge", "issuer", "signature", "userValidators", "singleLogoutUrl", "id", "_loc", "usedNameIDAsEmail", "singleSignOnUrl", "metadata", "validateAssertions", "nameIDFormat", "validateSignature", "credentials", "sessionCookieValues" ]
     } ],
     "properties" : {
       "type" : {
@@ -60473,6 +59886,138 @@
       "consumerSecret" : {
         "type" : "string",
         "description" : "???"
+      },
+      "ssoProtocolBinding" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "emailAttributeName" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "validatingCertificates" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "singleLogoutProtocolBinding" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "issuer" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "signature" : {
+        "description" : "???",
+        "properties" : {
+          "algorithm" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "canocalizationMethod" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "singleLogoutUrl" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "usedNameIDAsEmail" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "singleSignOnUrl" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "validateAssertions" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "nameIDFormat" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "validateSignature" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "credentials" : {
+        "description" : "???",
+        "properties" : {
+          "signingKey" : {
+            "description" : "???",
+            "properties" : {
+              "certificate" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "privateKey" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "certId" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "useOtoroshiCertificate" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "encryptionKey" : {
+            "description" : "???",
+            "properties" : {
+              "certificate" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "privateKey" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "certId" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "useOtoroshiCertificate" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "signedDocuments" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "encryptedAssertions" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
       }
     }
   },
@@ -60560,49 +60105,6 @@
     },
     "type" : "object",
     "description" : "Settings for the generic mailer (http requests)"
-  },
-  "otoroshi.models.GoReplayFileSettings" : {
-    "properties" : {
-      "type" : {
-        "type" : "string",
-        "description" : "the kind of exporter",
-        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-      },
-      "path" : {
-        "type" : "string",
-        "description" : "File path"
-      },
-      "methods" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "Filter on http methods"
-      },
-      "captureResponses" : {
-        "type" : "boolean",
-        "description" : "Enable response capture"
-      },
-      "preferBackendResponse" : {
-        "type" : "boolean",
-        "description" : "Capture internal responses instead of external"
-      },
-      "maxFileSize" : {
-        "type" : "integer",
-        "format" : "int64",
-        "description" : "Max file size for rolling"
-      },
-      "captureRequests" : {
-        "type" : "boolean",
-        "description" : "Enable request capture"
-      },
-      "preferBackendRequest" : {
-        "type" : "boolean",
-        "description" : "Capture internal requests instead of external"
-      }
-    },
-    "type" : "object",
-    "description" : "Settings to export to a file"
   },
   "Null" : {
     "type" : "object",
@@ -60864,6 +60366,31 @@
       },
       "opts" : {
         "type" : "object",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.auth.Credential" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "certificate" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "privateKey" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "certId" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "useOtoroshiCertificate" : {
+        "type" : "boolean",
         "description" : "???"
       }
     }

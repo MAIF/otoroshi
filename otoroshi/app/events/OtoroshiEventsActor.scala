@@ -8,18 +8,18 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
+import io.opentelemetry.api.logs.Severity
+import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.logs.SdkLoggerProvider
+import io.opentelemetry.sdk.logs.`export`.{BatchLogRecordProcessor, LogRecordExporter}
+import io.opentelemetry.sdk.resources.Resource
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -37,20 +37,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -1268,6 +1255,112 @@ object Exporters {
             }
         }
         .getOrElse(ExportResult.ExportResultSuccess.vfuture)
+    }
+  }
+
+  case class OtlpSettings(grpc: Boolean, endpoint: String, timeout: Duration, gzip: Boolean, clientCert: Option[String], trustedCert: Option[String]) extends Exporter {
+    override def toJson: JsValue = OtlpSettings.format.writes(this)
+    def exporter(env: Env): LogRecordExporter = {
+      OtlpGrpcLogRecordExporter.builder()
+        // .setRetryPolicy() // TODO:
+        .applyOnWithOpt(clientCert) {
+          case (builder, id) => env.proxyState.certificate(id) match {
+            case None => builder
+            case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
+          }
+        }
+        .applyOnWithOpt(trustedCert) {
+          case (builder, id) => env.proxyState.certificate(id) match {
+            case None => builder
+            case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
+          }
+        }
+        .setCompression(if (gzip) "gzip" else "none")
+        .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
+        .setEndpoint(endpoint)
+        .build()
+    }
+  }
+
+  case class OpenTelemetrySdkWrapper(sdk: OpenTelemetrySdk, settings: OtlpSettings) {
+    def close(): Unit = sdk.close()
+    def hasChangedFrom(s: OtlpSettings): Boolean = s != settings
+  }
+
+  object OtlpSettings {
+    private val sdks = new UnboundedTrieMap[String, OpenTelemetrySdkWrapper]()
+    val format = new Format[OtlpSettings] {
+      override def writes(o: OtlpSettings): JsValue = Json.obj(
+        "type" -> "otlp",
+        "gzip" -> o.gzip,
+        "grpc" -> o.grpc,
+        "endpoint" -> o.endpoint,
+        "timeout" -> o.timeout.toMillis,
+        "client_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
+        "trusted_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
+      )
+      override def reads(json: JsValue): JsResult[OtlpSettings] = Try {
+        OtlpSettings(
+          grpc = json.select("grpc").asOpt[Boolean].getOrElse(true),
+          gzip = json.select("gzip").asOpt[Boolean].getOrElse(false),
+          endpoint = json.select("endpoint").asString,
+          timeout = json.select("timeout").asOpt[Long].map(_.millis).getOrElse(30.seconds),
+          clientCert = json.select("client_cert").asOpt[String],
+          trustedCert = json.select("trusted_cert").asOpt[String],
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(e) => JsSuccess(e)
+      }
+    }
+    def sdkFor(id: String, name: String, settings: OtlpSettings, env: Env): OpenTelemetrySdkWrapper = sdks.synchronized {
+      def build(): OpenTelemetrySdkWrapper = {
+        val sdk = OpenTelemetrySdk.builder()
+          .setLoggerProvider(
+            SdkLoggerProvider.builder()
+              .setResource(
+                Resource.getDefault().toBuilder()
+                  .put(ResourceAttributes.SERVICE_NAME, name)
+                  .build()
+              )
+              .addLogRecordProcessor(
+                BatchLogRecordProcessor.builder(settings.exporter(env)).build()
+              )
+              .build()
+          )
+          .build()
+        OpenTelemetrySdkWrapper(sdk, settings)
+      }
+      var sdk = sdks.getOrUpdate(id) {
+        build()
+      }
+      if (sdk.hasChangedFrom(settings)) {
+        sdk.close()
+        sdk = build()
+        sdks.put(id, sdk)
+      }
+      sdk
+    }
+  }
+
+  class OtlpLogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[OtlpSettings] match {
+      case None => ExportResult.ExportResultFailure("Bad config type !").vfuture
+      case Some(exporterConfig) => {
+        val sdk = OtlpSettings.sdkFor(config.id, config.name, exporterConfig, env)
+        val logger = sdk.sdk.getSdkLoggerProvider.get("otoroshi-appender")
+        events.foreach { evt =>
+          logger
+            .logRecordBuilder()
+            .setSeverity(Severity.INFO) // TODO: different for alert ?
+            .setBody(evt.stringify)
+            //.setAllAttributes() // TODO
+            .emit()
+        }
+        ExportResult.ExportResultSuccess.vfuture
+      }
     }
   }
 }

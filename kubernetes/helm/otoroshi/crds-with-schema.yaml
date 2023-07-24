@@ -4841,6 +4841,106 @@ spec:
               consumerSecret:
                 type: "string"
                 description: "???"
+              ssoProtocolBinding:
+                type: "object"
+                x-kubernetes-preserve-unknown-fields: true
+                description: "???"
+              emailAttributeName:
+                description: "null type"
+                type: "string"
+                nullable: true
+              validatingCertificates:
+                type: "array"
+                items:
+                  type: "string"
+                description: "???"
+              singleLogoutProtocolBinding:
+                type: "object"
+                x-kubernetes-preserve-unknown-fields: true
+                description: "???"
+              issuer:
+                type: "string"
+                description: "???"
+              signature:
+                description: "???"
+                properties:
+                  algorithm:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "???"
+                  canocalizationMethod:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "???"
+                type: "object"
+              singleLogoutUrl:
+                description: "null type"
+                type: "string"
+                nullable: true
+              usedNameIDAsEmail:
+                type: "boolean"
+                description: "???"
+              singleSignOnUrl:
+                type: "string"
+                description: "???"
+              validateAssertions:
+                type: "boolean"
+                description: "???"
+              nameIDFormat:
+                type: "object"
+                x-kubernetes-preserve-unknown-fields: true
+                description: "???"
+              validateSignature:
+                type: "boolean"
+                description: "???"
+              credentials:
+                description: "???"
+                properties:
+                  signingKey:
+                    description: "???"
+                    properties:
+                      certificate:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      privateKey:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      certId:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      useOtoroshiCertificate:
+                        type: "boolean"
+                        description: "???"
+                    type: "object"
+                  encryptionKey:
+                    description: "???"
+                    properties:
+                      certificate:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      privateKey:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      certId:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
+                      useOtoroshiCertificate:
+                        type: "boolean"
+                        description: "???"
+                    type: "object"
+                  signedDocuments:
+                    type: "boolean"
+                    description: "???"
+                  encryptedAssertions:
+                    type: "boolean"
+                    description: "???"
+                type: "object"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -5202,315 +5302,6 @@ spec:
                 additionalProperties:
                   type: "string"
                 description: "Entity metadata"
----
-apiVersion: "apiextensions.k8s.io/v1"
-kind: "CustomResourceDefinition"
-metadata:
-  name: "data-exporters.proxy.otoroshi.io"
-  creationTimestamp: null
-spec:
-  group: "proxy.otoroshi.io"
-  names:
-    kind: "DataExporter"
-    plural: "data-exporters"
-    singular: "data-exporter"
-  scope: "Namespaced"
-  versions:
-  - name: "v1alpha1"
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: "object"
-  - name: "v1"
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        description: "Data exporter settings"
-        properties:
-          apiVersion:
-            description: "APIVersion defines the versioned schema of this representation\
-              \ of an object. Servers should convert recognized schemas to the latest\
-              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
-            type: "string"
-          kind:
-            description: "Kind is a string value representing the REST resource this\
-              \ object represents. Servers may infer this from the endpoint the client\
-              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
-            type: "string"
-          metadata:
-            type: "object"
-          spec:
-            type: "object"
-            description: "Data exporter settings"
-            properties:
-              desc:
-                type: "string"
-                description: "Description"
-              _loc:
-                description: "Entity location"
-                properties:
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
-                  teams:
-                    type: "array"
-                    items:
-                      type: "string"
-                    description: "Teams of the current entity"
-                type: "object"
-              bufferSize:
-                type: "integer"
-                format: "int32"
-                description: "Number of events in buffer"
-              jsonWorkers:
-                type: "integer"
-                format: "int32"
-                description: "Number of workers that transform events"
-              groupDuration:
-                type: "number"
-                description: "The max duration before sending group"
-              groupSize:
-                type: "integer"
-                format: "int32"
-                description: "The max size of events group before sending"
-              type:
-                description: "Type of data exporter"
-                type: "string"
-              tags:
-                type: "array"
-                items:
-                  type: "string"
-                description: "Entity tags"
-              sendWorkers:
-                type: "integer"
-                format: "int32"
-                description: "Number of workers that sends events"
-              id:
-                type: "string"
-                description: "Id of the exporter"
-              name:
-                type: "string"
-                description: "Entity name"
-              metadata:
-                type: "object"
-                additionalProperties:
-                  type: "string"
-                description: "Entity metadata"
-              config:
-                description: "Exporter config"
-                properties:
-                  type:
-                    type: "string"
-                    description: "the kind of exporter"
-                  sendEvents:
-                    type: "boolean"
-                    description: "Send events to it, or just connect"
-                  truststore:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  hostValidation:
-                    type: "boolean"
-                    description: "Enabled TLS hostname validation"
-                  servers:
-                    type: "array"
-                    items:
-                      type: "string"
-                    description: "URLs of the kafka servers"
-                  mtlsConfig:
-                    description: "TLS config when calling webhook"
-                    properties:
-                      mtls:
-                        type: "boolean"
-                        description: "???"
-                      loose:
-                        type: "boolean"
-                        description: "???"
-                      trustAll:
-                        type: "boolean"
-                        description: "???"
-                      trustedCerts:
-                        type: "array"
-                        items:
-                          type: "string"
-                        description: "???"
-                      certs:
-                        type: "array"
-                        items:
-                          type: "string"
-                        description: "???"
-                    type: "object"
-                  securityProtocol:
-                    type: "string"
-                    description: "Used security protocol"
-                  keystore:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  topic:
-                    type: "string"
-                    description: "Pulsar topic"
-                  keyPass:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  saslConfig:
-                    description: "SASL configuration"
-                    type: "object"
-                    properties:
-                      username:
-                        type: "string"
-                        description: "SASL username"
-                      password:
-                        type: "string"
-                        description: "SASL password"
-                      mechanism:
-                        type: "string"
-                        description: "SASL login mechanism"
-                  tlsTrustCertsFilePath:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  tenant:
-                    type: "string"
-                    description: "Pulsar tenant"
-                  uri:
-                    type: "string"
-                    description: "Pulsar access uri"
-                  namespace:
-                    type: "string"
-                    description: "Pulsar namespace"
-                  sendWorkers:
-                    type: "integer"
-                    format: "int32"
-                    description: "???"
-                  applyTemplate:
-                    type: "boolean"
-                    description: "Enable template creation/update"
-                  uris:
-                    type: "array"
-                    items:
-                      type: "string"
-                    description: "???"
-                  version:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  maxBulkSize:
-                    type: "integer"
-                    format: "int32"
-                    description: "???"
-                  headers:
-                    type: "object"
-                    additionalProperties:
-                      type: "string"
-                    description: "Sender headers"
-                  indexSettings:
-                    description: "Indexation settings"
-                    properties:
-                      clientSide:
-                        type: "boolean"
-                        description: "Enable index splitting on client side"
-                      numberOfShards:
-                        type: "integer"
-                        format: "int32"
-                        description: "???"
-                      numberOfReplicas:
-                        type: "integer"
-                        format: "int32"
-                        description: "???"
-                      interval:
-                        type: "string"
-                        x-kubernetes-preserve-unknown-fields: true
-                        description: "Index splitting interval"
-                    type: "object"
-                  user:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  index:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  password:
-                    description: "null type"
-                    type: "string"
-                    nullable: true
-                  ref:
-                    type: "string"
-                    description: "Reference to an exporter"
-                  config:
-                    type: "object"
-                    description: "Exporter config."
-                  path:
-                    type: "string"
-                    description: "File path"
-                  maxFileSize:
-                    type: "integer"
-                    format: "int64"
-                    description: "Max file size for rolling"
-                  labels:
-                    type: "object"
-                    additionalProperties:
-                      type: "string"
-                    description: "Exported labels for prometheus"
-                  url:
-                    type: "string"
-                    description: "Sender URL"
-                  to:
-                    type: "array"
-                    items:
-                      properties:
-                        name:
-                          type: "string"
-                          description: "Destination name"
-                        email:
-                          type: "string"
-                          description: "Email address"
-                      type: "object"
-                    description: "Destination email address"
-                  eu:
-                    type: "boolean"
-                    description: "European tenant"
-                  apiKey:
-                    type: "string"
-                    description: "Sendgrid apikey"
-                  domain:
-                    type: "string"
-                    description: "Mailgun domain"
-                  apiKeyPublic:
-                    type: "string"
-                    description: "Public key"
-                  apiKeyPrivate:
-                    type: "string"
-                    description: "Private key"
-                type: "object"
-              projection:
-                type: "object"
-                description: "Event projection"
-              enabled:
-                type: "boolean"
-                description: "Is the exporter enabled"
-              filtering:
-                description: "Filtering options"
-                properties:
-                  include:
-                    type: "array"
-                    items:
-                      type: "object"
-                    description: "Event include filter"
-                  exclude:
-                    type: "array"
-                    items:
-                      type: "object"
-                    description: "Event exclude filter"
-                type: "object"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"

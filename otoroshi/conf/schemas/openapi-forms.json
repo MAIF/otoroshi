@@ -61,6 +61,27 @@
     },
     "flow" : [ "headers" ]
   },
+  "otoroshi.auth.Credential" : {
+    "schema" : {
+      "certificate" : {
+        "label" : "certificate",
+        "type" : "string"
+      },
+      "privateKey" : {
+        "label" : "privateKey",
+        "type" : "string"
+      },
+      "certId" : {
+        "label" : "certId",
+        "type" : "string"
+      },
+      "useOtoroshiCertificate" : {
+        "label" : "useOtoroshiCertificate",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "useOtoroshiCertificate", "certId", "privateKey", "certificate" ]
+  },
   "otoroshi.next.plugins.NgResponseCacheCleanupJob" : {
     "schema" : { },
     "flow" : [ ]
@@ -1386,6 +1407,10 @@
     },
     "flow" : [ "value" ]
   },
+  "otoroshi.auth.NameIDFormat" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.next.plugins.NgIpStackGeolocationInfoExtractor" : {
     "schema" : {
       "apikey" : {
@@ -1432,26 +1457,6 @@
       }
     },
     "flow" : [ "eureka_app", "eureka_server" ]
-  },
-  "otoroshi.models.FileSettings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "maxFileSize" : {
-        "label" : "maxFileSize",
-        "type" : "number"
-      }
-    },
-    "flow" : [ "maxFileSize", "path", "type" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlow" : {
     "schema" : { },
@@ -3194,23 +3199,6 @@
     },
     "flow" : [ "raw" ]
   },
-  "otoroshi.models.DataExporterConfigFiltering" : {
-    "schema" : {
-      "include" : {
-        "label" : "include",
-        "type" : "array",
-        "array" : true,
-        "format" : "form"
-      },
-      "exclude" : {
-        "label" : "exclude",
-        "type" : "array",
-        "array" : true,
-        "format" : "form"
-      }
-    },
-    "flow" : [ "exclude", "include" ]
-  },
   "otoroshi.models.LoadBalancing" : {
     "schema" : {
       "type" : {
@@ -4036,6 +4024,10 @@
       }
     },
     "flow" : [ "addresses", "finger" ]
+  },
+  "otoroshi.auth.SAMLCanocalizationMethod" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.plugins.core.apikeys.ClientIdApikeyExtractor" : {
     "schema" : { },
@@ -6959,6 +6951,10 @@
     },
     "flow" : [ "outageStrategy", "stopTime", "enabled", "targetGroups", "includeUserFacingDescriptors", "startTime", "outageDurationFrom", "timesPerDay", "outageDurationTo", "dryRun", "chaosConfig" ]
   },
+  "otoroshi.next.plugins.ForwardedHeader" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.next.plugins.TcpTunnel" : {
     "schema" : { },
     "flow" : [ ]
@@ -8257,67 +8253,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.models.S3ExporterSettings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "maxFileSize" : {
-        "label" : "maxFileSize",
-        "type" : "number"
-      },
-      "config" : {
-        "label" : "config",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "writeEvery" : {
-            "label" : "writeEvery",
-            "type" : "number"
-          },
-          "chunkSize" : {
-            "label" : "chunkSize",
-            "type" : "number"
-          },
-          "bucket" : {
-            "label" : "bucket",
-            "type" : "string"
-          },
-          "key" : {
-            "label" : "key",
-            "type" : "string"
-          },
-          "endpoint" : {
-            "label" : "endpoint",
-            "type" : "string"
-          },
-          "v4auth" : {
-            "label" : "v4auth",
-            "type" : "bool"
-          },
-          "access" : {
-            "label" : "access",
-            "type" : "string"
-          },
-          "secret" : {
-            "label" : "secret",
-            "type" : "string"
-          },
-          "region" : {
-            "label" : "region",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
-      }
-    },
-    "flow" : [ "maxFileSize", "type", "config" ]
-  },
   "otoroshi.next.models.NgTlsConfig" : {
     "schema" : {
       "enabled" : {
@@ -8924,89 +8859,6 @@
       }
     },
     "flow" : [ "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig" ]
-  },
-  "otoroshi.models.GoReplayS3Settings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "s3" : {
-        "label" : "s3",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "writeEvery" : {
-            "label" : "writeEvery",
-            "type" : "number"
-          },
-          "chunkSize" : {
-            "label" : "chunkSize",
-            "type" : "number"
-          },
-          "bucket" : {
-            "label" : "bucket",
-            "type" : "string"
-          },
-          "key" : {
-            "label" : "key",
-            "type" : "string"
-          },
-          "endpoint" : {
-            "label" : "endpoint",
-            "type" : "string"
-          },
-          "v4auth" : {
-            "label" : "v4auth",
-            "type" : "bool"
-          },
-          "access" : {
-            "label" : "access",
-            "type" : "string"
-          },
-          "secret" : {
-            "label" : "secret",
-            "type" : "string"
-          },
-          "region" : {
-            "label" : "region",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
-      },
-      "methods" : {
-        "label" : "methods",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
-      "captureResponses" : {
-        "label" : "captureResponses",
-        "type" : "bool"
-      },
-      "preferBackendResponse" : {
-        "label" : "preferBackendResponse",
-        "type" : "bool"
-      },
-      "maxFileSize" : {
-        "label" : "maxFileSize",
-        "type" : "number"
-      },
-      "captureRequests" : {
-        "label" : "captureRequests",
-        "type" : "bool"
-      },
-      "preferBackendRequest" : {
-        "label" : "preferBackendRequest",
-        "type" : "bool"
-      }
-    },
-    "flow" : [ "preferBackendRequest", "captureRequests", "maxFileSize", "preferBackendResponse", "captureResponses", "methods", "type", "s3" ]
   },
   "otoroshi.next.plugins.TailscaleLocalApiClient" : {
     "schema" : { },
@@ -12911,356 +12763,6 @@
     },
     "flow" : [ "issuer", "subject", "sn" ]
   },
-  "otoroshi.models.DataExporterConfig" : {
-    "schema" : {
-      "desc" : {
-        "label" : "desc",
-        "type" : "string"
-      },
-      "_loc" : {
-        "label" : "_loc",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "tenant" : {
-            "label" : "tenant",
-            "type" : "string"
-          },
-          "teams" : {
-            "label" : "teams",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          }
-        },
-        "flow" : [ "tenant", "teams" ]
-      },
-      "bufferSize" : {
-        "label" : "bufferSize",
-        "type" : "number"
-      },
-      "jsonWorkers" : {
-        "label" : "jsonWorkers",
-        "type" : "number"
-      },
-      "groupDuration" : {
-        "label" : "groupDuration",
-        "type" : "number"
-      },
-      "groupSize" : {
-        "label" : "groupSize",
-        "type" : "number"
-      },
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
-        }
-      },
-      "tags" : {
-        "label" : "tags",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
-      "sendWorkers" : {
-        "label" : "sendWorkers",
-        "type" : "number"
-      },
-      "id" : {
-        "label" : "id",
-        "type" : "string"
-      },
-      "name" : {
-        "label" : "name",
-        "type" : "string"
-      },
-      "metadata" : {
-        "label" : "metadata",
-        "type" : "object"
-      },
-      "config" : {
-        "label" : "config",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "type" : {
-            "type" : "select",
-            "props" : {
-              "label" : "type",
-              "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-            }
-          },
-          "sendEvents" : {
-            "label" : "sendEvents",
-            "type" : "bool"
-          },
-          "truststore" : {
-            "label" : "truststore",
-            "type" : "string"
-          },
-          "hostValidation" : {
-            "label" : "hostValidation",
-            "type" : "bool"
-          },
-          "servers" : {
-            "label" : "servers",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
-          "mtlsConfig" : {
-            "label" : "mtlsConfig",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "mtls" : {
-                "label" : "mtls",
-                "type" : "bool"
-              },
-              "loose" : {
-                "label" : "loose",
-                "type" : "bool"
-              },
-              "trustAll" : {
-                "label" : "trustAll",
-                "type" : "bool"
-              },
-              "trustedCerts" : {
-                "label" : "trustedCerts",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "certs" : {
-                "label" : "certs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              }
-            },
-            "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
-          },
-          "securityProtocol" : {
-            "label" : "securityProtocol",
-            "type" : "string"
-          },
-          "keystore" : {
-            "label" : "keystore",
-            "type" : "string"
-          },
-          "topic" : {
-            "label" : "topic",
-            "type" : "string"
-          },
-          "keyPass" : {
-            "label" : "keyPass",
-            "type" : "string"
-          },
-          "saslConfig" : {
-            "label" : "saslConfig",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "username" : {
-                "label" : "username",
-                "type" : "string"
-              },
-              "password" : {
-                "label" : "password",
-                "type" : "string"
-              },
-              "mechanism" : {
-                "label" : "mechanism",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "username", "password", "mechanism" ]
-          },
-          "tlsTrustCertsFilePath" : {
-            "label" : "tlsTrustCertsFilePath",
-            "type" : "string"
-          },
-          "tenant" : {
-            "label" : "tenant",
-            "type" : "string"
-          },
-          "uri" : {
-            "label" : "uri",
-            "type" : "string"
-          },
-          "namespace" : {
-            "label" : "namespace",
-            "type" : "string"
-          },
-          "sendWorkers" : {
-            "label" : "sendWorkers",
-            "type" : "number"
-          },
-          "applyTemplate" : {
-            "label" : "applyTemplate",
-            "type" : "bool"
-          },
-          "uris" : {
-            "label" : "uris",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
-          "version" : {
-            "label" : "version",
-            "type" : "string"
-          },
-          "maxBulkSize" : {
-            "label" : "maxBulkSize",
-            "type" : "number"
-          },
-          "headers" : {
-            "label" : "headers",
-            "type" : "object"
-          },
-          "indexSettings" : {
-            "label" : "indexSettings",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "clientSide" : {
-                "label" : "clientSide",
-                "type" : "bool"
-              },
-              "numberOfShards" : {
-                "label" : "numberOfShards",
-                "type" : "number"
-              },
-              "numberOfReplicas" : {
-                "label" : "numberOfReplicas",
-                "type" : "number"
-              },
-              "interval" : {
-                "label" : "interval",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : { },
-                "flow" : [ ]
-              }
-            },
-            "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
-          },
-          "user" : {
-            "label" : "user",
-            "type" : "string"
-          },
-          "index" : {
-            "label" : "index",
-            "type" : "string"
-          },
-          "password" : {
-            "label" : "password",
-            "type" : "string"
-          },
-          "ref" : {
-            "label" : "ref",
-            "type" : "string"
-          },
-          "config" : {
-            "label" : "config",
-            "type" : "object"
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "maxFileSize" : {
-            "label" : "maxFileSize",
-            "type" : "number"
-          },
-          "labels" : {
-            "label" : "labels",
-            "type" : "object"
-          },
-          "url" : {
-            "label" : "url",
-            "type" : "string"
-          },
-          "to" : {
-            "label" : "to",
-            "type" : "array",
-            "array" : true,
-            "format" : "form",
-            "schema" : {
-              "name" : {
-                "label" : "name",
-                "type" : "string"
-              },
-              "email" : {
-                "label" : "email",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "name", "email" ]
-          },
-          "eu" : {
-            "label" : "eu",
-            "type" : "bool"
-          },
-          "apiKey" : {
-            "label" : "apiKey",
-            "type" : "string"
-          },
-          "domain" : {
-            "label" : "domain",
-            "type" : "string"
-          },
-          "apiKeyPublic" : {
-            "label" : "apiKeyPublic",
-            "type" : "string"
-          },
-          "apiKeyPrivate" : {
-            "label" : "apiKeyPrivate",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
-      },
-      "projection" : {
-        "label" : "projection",
-        "type" : "object"
-      },
-      "enabled" : {
-        "label" : "enabled",
-        "type" : "bool"
-      },
-      "filtering" : {
-        "label" : "filtering",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "include" : {
-            "label" : "include",
-            "type" : "array",
-            "array" : true,
-            "format" : "form"
-          },
-          "exclude" : {
-            "label" : "exclude",
-            "type" : "array",
-            "array" : true,
-            "format" : "form"
-          }
-        },
-        "flow" : [ "include", "exclude" ]
-      }
-    },
-    "flow" : [ "enabled", "projection", "metadata", "name", "id", "sendWorkers", "tags", "type", "groupSize", "groupDuration", "jsonWorkers", "bufferSize", "desc", "_loc", "config", "filtering" ]
-  },
   "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
     "schema" : { },
     "flow" : [ ]
@@ -15725,22 +15227,6 @@
       }
     },
     "flow" : [ "nonProxyHosts", "encoding", "ntlmDomain", "password", "principal", "protocol", "port", "host" ]
-  },
-  "otoroshi.models.MetricsSettings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "labels" : {
-        "label" : "labels",
-        "type" : "object"
-      }
-    },
-    "flow" : [ "labels", "type" ]
   },
   "otoroshi.tcp.TcpRule" : {
     "schema" : {
@@ -24876,354 +24362,8 @@
         "type" : "array",
         "array" : true,
         "format" : "form",
-        "schema" : {
-          "desc" : {
-            "label" : "desc",
-            "type" : "string"
-          },
-          "_loc" : {
-            "label" : "_loc",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "tenant" : {
-                "label" : "tenant",
-                "type" : "string"
-              },
-              "teams" : {
-                "label" : "teams",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              }
-            },
-            "flow" : [ "tenant", "teams" ]
-          },
-          "bufferSize" : {
-            "label" : "bufferSize",
-            "type" : "number"
-          },
-          "jsonWorkers" : {
-            "label" : "jsonWorkers",
-            "type" : "number"
-          },
-          "groupDuration" : {
-            "label" : "groupDuration",
-            "type" : "number"
-          },
-          "groupSize" : {
-            "label" : "groupSize",
-            "type" : "number"
-          },
-          "type" : {
-            "type" : "select",
-            "props" : {
-              "label" : "type",
-              "options" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
-            }
-          },
-          "tags" : {
-            "label" : "tags",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
-          "sendWorkers" : {
-            "label" : "sendWorkers",
-            "type" : "number"
-          },
-          "id" : {
-            "label" : "id",
-            "type" : "string"
-          },
-          "name" : {
-            "label" : "name",
-            "type" : "string"
-          },
-          "metadata" : {
-            "label" : "metadata",
-            "type" : "object"
-          },
-          "config" : {
-            "label" : "config",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "type" : {
-                "type" : "select",
-                "props" : {
-                  "label" : "type",
-                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-                }
-              },
-              "sendEvents" : {
-                "label" : "sendEvents",
-                "type" : "bool"
-              },
-              "truststore" : {
-                "label" : "truststore",
-                "type" : "string"
-              },
-              "hostValidation" : {
-                "label" : "hostValidation",
-                "type" : "bool"
-              },
-              "servers" : {
-                "label" : "servers",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "mtlsConfig" : {
-                "label" : "mtlsConfig",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "mtls" : {
-                    "label" : "mtls",
-                    "type" : "bool"
-                  },
-                  "loose" : {
-                    "label" : "loose",
-                    "type" : "bool"
-                  },
-                  "trustAll" : {
-                    "label" : "trustAll",
-                    "type" : "bool"
-                  },
-                  "trustedCerts" : {
-                    "label" : "trustedCerts",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : null
-                  },
-                  "certs" : {
-                    "label" : "certs",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : null
-                  }
-                },
-                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
-              },
-              "securityProtocol" : {
-                "label" : "securityProtocol",
-                "type" : "string"
-              },
-              "keystore" : {
-                "label" : "keystore",
-                "type" : "string"
-              },
-              "topic" : {
-                "label" : "topic",
-                "type" : "string"
-              },
-              "keyPass" : {
-                "label" : "keyPass",
-                "type" : "string"
-              },
-              "saslConfig" : {
-                "label" : "saslConfig",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "username" : {
-                    "label" : "username",
-                    "type" : "string"
-                  },
-                  "password" : {
-                    "label" : "password",
-                    "type" : "string"
-                  },
-                  "mechanism" : {
-                    "label" : "mechanism",
-                    "type" : "string"
-                  }
-                },
-                "flow" : [ "username", "password", "mechanism" ]
-              },
-              "tlsTrustCertsFilePath" : {
-                "label" : "tlsTrustCertsFilePath",
-                "type" : "string"
-              },
-              "tenant" : {
-                "label" : "tenant",
-                "type" : "string"
-              },
-              "uri" : {
-                "label" : "uri",
-                "type" : "string"
-              },
-              "namespace" : {
-                "label" : "namespace",
-                "type" : "string"
-              },
-              "sendWorkers" : {
-                "label" : "sendWorkers",
-                "type" : "number"
-              },
-              "applyTemplate" : {
-                "label" : "applyTemplate",
-                "type" : "bool"
-              },
-              "uris" : {
-                "label" : "uris",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "version" : {
-                "label" : "version",
-                "type" : "string"
-              },
-              "maxBulkSize" : {
-                "label" : "maxBulkSize",
-                "type" : "number"
-              },
-              "headers" : {
-                "label" : "headers",
-                "type" : "object"
-              },
-              "indexSettings" : {
-                "label" : "indexSettings",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "clientSide" : {
-                    "label" : "clientSide",
-                    "type" : "bool"
-                  },
-                  "numberOfShards" : {
-                    "label" : "numberOfShards",
-                    "type" : "number"
-                  },
-                  "numberOfReplicas" : {
-                    "label" : "numberOfReplicas",
-                    "type" : "number"
-                  },
-                  "interval" : {
-                    "label" : "interval",
-                    "type" : "form",
-                    "collapsable" : true,
-                    "collapsed" : true,
-                    "schema" : { },
-                    "flow" : [ ]
-                  }
-                },
-                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
-              },
-              "user" : {
-                "label" : "user",
-                "type" : "string"
-              },
-              "index" : {
-                "label" : "index",
-                "type" : "string"
-              },
-              "password" : {
-                "label" : "password",
-                "type" : "string"
-              },
-              "ref" : {
-                "label" : "ref",
-                "type" : "string"
-              },
-              "config" : {
-                "label" : "config",
-                "type" : "object"
-              },
-              "path" : {
-                "label" : "path",
-                "type" : "string"
-              },
-              "maxFileSize" : {
-                "label" : "maxFileSize",
-                "type" : "number"
-              },
-              "labels" : {
-                "label" : "labels",
-                "type" : "object"
-              },
-              "url" : {
-                "label" : "url",
-                "type" : "string"
-              },
-              "to" : {
-                "label" : "to",
-                "type" : "array",
-                "array" : true,
-                "format" : "form",
-                "schema" : {
-                  "name" : {
-                    "label" : "name",
-                    "type" : "string"
-                  },
-                  "email" : {
-                    "label" : "email",
-                    "type" : "string"
-                  }
-                },
-                "flow" : [ "name", "email" ]
-              },
-              "eu" : {
-                "label" : "eu",
-                "type" : "bool"
-              },
-              "apiKey" : {
-                "label" : "apiKey",
-                "type" : "string"
-              },
-              "domain" : {
-                "label" : "domain",
-                "type" : "string"
-              },
-              "apiKeyPublic" : {
-                "label" : "apiKeyPublic",
-                "type" : "string"
-              },
-              "apiKeyPrivate" : {
-                "label" : "apiKeyPrivate",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
-          },
-          "projection" : {
-            "label" : "projection",
-            "type" : "object"
-          },
-          "enabled" : {
-            "label" : "enabled",
-            "type" : "bool"
-          },
-          "filtering" : {
-            "label" : "filtering",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "include" : {
-                "label" : "include",
-                "type" : "array",
-                "array" : true,
-                "format" : "form"
-              },
-              "exclude" : {
-                "label" : "exclude",
-                "type" : "array",
-                "array" : true,
-                "format" : "form"
-              }
-            },
-            "flow" : [ "include", "exclude" ]
-          }
-        },
-        "flow" : [ "desc", "_loc", "bufferSize", "jsonWorkers", "groupDuration", "groupSize", "type", "tags", "sendWorkers", "id", "name", "config", "enabled", "filtering", "metadata", "projection" ]
+        "schema" : { },
+        "flow" : [ ]
       },
       "teams" : {
         "label" : "teams",
@@ -30357,9 +29497,159 @@
           "consumerSecret" : {
             "label" : "consumerSecret",
             "type" : "string"
+          },
+          "ssoProtocolBinding" : {
+            "label" : "ssoProtocolBinding",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          },
+          "emailAttributeName" : {
+            "label" : "emailAttributeName",
+            "type" : "string"
+          },
+          "validatingCertificates" : {
+            "label" : "validatingCertificates",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "singleLogoutProtocolBinding" : {
+            "label" : "singleLogoutProtocolBinding",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          },
+          "issuer" : {
+            "label" : "issuer",
+            "type" : "string"
+          },
+          "signature" : {
+            "label" : "signature",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "algorithm" : {
+                "label" : "algorithm",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : { },
+                "flow" : [ ]
+              },
+              "canocalizationMethod" : {
+                "label" : "canocalizationMethod",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : { },
+                "flow" : [ ]
+              }
+            },
+            "flow" : [ "algorithm", "canocalizationMethod" ]
+          },
+          "singleLogoutUrl" : {
+            "label" : "singleLogoutUrl",
+            "type" : "string"
+          },
+          "usedNameIDAsEmail" : {
+            "label" : "usedNameIDAsEmail",
+            "type" : "bool"
+          },
+          "singleSignOnUrl" : {
+            "label" : "singleSignOnUrl",
+            "type" : "string"
+          },
+          "validateAssertions" : {
+            "label" : "validateAssertions",
+            "type" : "bool"
+          },
+          "nameIDFormat" : {
+            "label" : "nameIDFormat",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          },
+          "validateSignature" : {
+            "label" : "validateSignature",
+            "type" : "bool"
+          },
+          "credentials" : {
+            "label" : "credentials",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "signingKey" : {
+                "label" : "signingKey",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "certificate" : {
+                    "label" : "certificate",
+                    "type" : "string"
+                  },
+                  "privateKey" : {
+                    "label" : "privateKey",
+                    "type" : "string"
+                  },
+                  "certId" : {
+                    "label" : "certId",
+                    "type" : "string"
+                  },
+                  "useOtoroshiCertificate" : {
+                    "label" : "useOtoroshiCertificate",
+                    "type" : "bool"
+                  }
+                },
+                "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+              },
+              "encryptionKey" : {
+                "label" : "encryptionKey",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "certificate" : {
+                    "label" : "certificate",
+                    "type" : "string"
+                  },
+                  "privateKey" : {
+                    "label" : "privateKey",
+                    "type" : "string"
+                  },
+                  "certId" : {
+                    "label" : "certId",
+                    "type" : "string"
+                  },
+                  "useOtoroshiCertificate" : {
+                    "label" : "useOtoroshiCertificate",
+                    "type" : "bool"
+                  }
+                },
+                "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+              },
+              "signedDocuments" : {
+                "label" : "signedDocuments",
+                "type" : "bool"
+              },
+              "encryptedAssertions" : {
+                "label" : "encryptedAssertions",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "signingKey", "encryptionKey", "signedDocuments", "encryptedAssertions" ]
           }
         },
-        "flow" : [ "type", "desc", "name", "clientSideSessionEnabled", "basicAuth", "tags", "users", "sessionMaxAge", "webauthn", "userValidators", "id", "_loc", "sessionCookieValues", "clientId", "otoroshiRightsField", "scope", "accessTokenField", "superAdmins", "refreshTokens", "loginUrl", "apiKeyTagsField", "otoroshiDataField", "emailField", "mtlsConfig", "tokenUrl", "useCookie", "pkce", "authorizeUrl", "callbackUrl", "proxy", "apiKeyMetaField", "clientSecret", "useJson", "oidConfig", "claims", "noWildcardRedirectURI", "nameField", "introspectionUrl", "logoutUrl", "userInfoUrl", "jwtVerifier", "readProfileFromToken", "allowEmptyPassword", "groupFilters", "serverUrls", "searchBase", "metadataField", "searchFilter", "adminUsername", "extractProfileFilter", "userBase", "adminPassword", "extractProfileFilterNot", "extractProfile", "accessTokenURL", "authorizeURL", "consumerKey", "callbackURL", "profileURL", "httpMethod", "requestTokenURL", "consumerSecret", "metadata", "extraMetadata", "rightsOverride", "dataOverride", "groupRights" ]
+        "flow" : [ "type", "desc", "name", "clientSideSessionEnabled", "basicAuth", "tags", "users", "sessionMaxAge", "webauthn", "userValidators", "id", "_loc", "sessionCookieValues", "clientId", "otoroshiRightsField", "scope", "accessTokenField", "superAdmins", "refreshTokens", "loginUrl", "apiKeyTagsField", "otoroshiDataField", "emailField", "mtlsConfig", "tokenUrl", "useCookie", "pkce", "authorizeUrl", "callbackUrl", "proxy", "apiKeyMetaField", "clientSecret", "useJson", "oidConfig", "claims", "noWildcardRedirectURI", "nameField", "introspectionUrl", "logoutUrl", "userInfoUrl", "jwtVerifier", "readProfileFromToken", "allowEmptyPassword", "groupFilters", "serverUrls", "searchBase", "metadataField", "searchFilter", "adminUsername", "extractProfileFilter", "userBase", "adminPassword", "extractProfileFilterNot", "extractProfile", "accessTokenURL", "authorizeURL", "consumerKey", "callbackURL", "profileURL", "httpMethod", "requestTokenURL", "consumerSecret", "ssoProtocolBinding", "emailAttributeName", "validatingCertificates", "singleLogoutProtocolBinding", "issuer", "signature", "singleLogoutUrl", "usedNameIDAsEmail", "singleSignOnUrl", "validateAssertions", "nameIDFormat", "validateSignature", "credentials", "metadata", "extraMetadata", "rightsOverride", "dataOverride", "groupRights" ]
       },
       "tcpServices" : {
         "label" : "tcpServices",
@@ -34767,70 +34057,9 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.events.PulsarConfig" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "tlsTrustCertsFilePath" : {
-        "label" : "tlsTrustCertsFilePath",
-        "type" : "string"
-      },
-      "tenant" : {
-        "label" : "tenant",
-        "type" : "string"
-      },
-      "uri" : {
-        "label" : "uri",
-        "type" : "string"
-      },
-      "mtlsConfig" : {
-        "label" : "mtlsConfig",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "mtls" : {
-            "label" : "mtls",
-            "type" : "bool"
-          },
-          "loose" : {
-            "label" : "loose",
-            "type" : "bool"
-          },
-          "trustAll" : {
-            "label" : "trustAll",
-            "type" : "bool"
-          },
-          "trustedCerts" : {
-            "label" : "trustedCerts",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
-          "certs" : {
-            "label" : "certs",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          }
-        },
-        "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
-      },
-      "topic" : {
-        "label" : "topic",
-        "type" : "string"
-      },
-      "namespace" : {
-        "label" : "namespace",
-        "type" : "string"
-      }
-    },
-    "flow" : [ "namespace", "topic", "uri", "tenant", "tlsTrustCertsFilePath", "type", "mtlsConfig" ]
+  "otoroshi.auth.SAMLProtocolBinding" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesEntity" : {
     "schema" : { },
@@ -38434,48 +37663,6 @@
     },
     "flow" : [ "path", "enabled", "type" ]
   },
-  "otoroshi.models.GoReplayFileSettings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "methods" : {
-        "label" : "methods",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
-      "captureResponses" : {
-        "label" : "captureResponses",
-        "type" : "bool"
-      },
-      "preferBackendResponse" : {
-        "label" : "preferBackendResponse",
-        "type" : "bool"
-      },
-      "maxFileSize" : {
-        "label" : "maxFileSize",
-        "type" : "number"
-      },
-      "captureRequests" : {
-        "label" : "captureRequests",
-        "type" : "bool"
-      },
-      "preferBackendRequest" : {
-        "label" : "preferBackendRequest",
-        "type" : "bool"
-      }
-    },
-    "flow" : [ "preferBackendRequest", "captureRequests", "maxFileSize", "preferBackendResponse", "captureResponses", "methods", "path", "type" ]
-  },
   "Empty" : {
     "schema" : { },
     "flow" : [ ]
@@ -39160,9 +38347,159 @@
       "consumerSecret" : {
         "label" : "consumerSecret",
         "type" : "string"
+      },
+      "ssoProtocolBinding" : {
+        "label" : "ssoProtocolBinding",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "emailAttributeName" : {
+        "label" : "emailAttributeName",
+        "type" : "string"
+      },
+      "validatingCertificates" : {
+        "label" : "validatingCertificates",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "singleLogoutProtocolBinding" : {
+        "label" : "singleLogoutProtocolBinding",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "issuer" : {
+        "label" : "issuer",
+        "type" : "string"
+      },
+      "signature" : {
+        "label" : "signature",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "algorithm" : {
+            "label" : "algorithm",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          },
+          "canocalizationMethod" : {
+            "label" : "canocalizationMethod",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          }
+        },
+        "flow" : [ "algorithm", "canocalizationMethod" ]
+      },
+      "singleLogoutUrl" : {
+        "label" : "singleLogoutUrl",
+        "type" : "string"
+      },
+      "usedNameIDAsEmail" : {
+        "label" : "usedNameIDAsEmail",
+        "type" : "bool"
+      },
+      "singleSignOnUrl" : {
+        "label" : "singleSignOnUrl",
+        "type" : "string"
+      },
+      "validateAssertions" : {
+        "label" : "validateAssertions",
+        "type" : "bool"
+      },
+      "nameIDFormat" : {
+        "label" : "nameIDFormat",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "validateSignature" : {
+        "label" : "validateSignature",
+        "type" : "bool"
+      },
+      "credentials" : {
+        "label" : "credentials",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "signingKey" : {
+            "label" : "signingKey",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "certificate" : {
+                "label" : "certificate",
+                "type" : "string"
+              },
+              "privateKey" : {
+                "label" : "privateKey",
+                "type" : "string"
+              },
+              "certId" : {
+                "label" : "certId",
+                "type" : "string"
+              },
+              "useOtoroshiCertificate" : {
+                "label" : "useOtoroshiCertificate",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+          },
+          "encryptionKey" : {
+            "label" : "encryptionKey",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "certificate" : {
+                "label" : "certificate",
+                "type" : "string"
+              },
+              "privateKey" : {
+                "label" : "privateKey",
+                "type" : "string"
+              },
+              "certId" : {
+                "label" : "certId",
+                "type" : "string"
+              },
+              "useOtoroshiCertificate" : {
+                "label" : "useOtoroshiCertificate",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+          },
+          "signedDocuments" : {
+            "label" : "signedDocuments",
+            "type" : "bool"
+          },
+          "encryptedAssertions" : {
+            "label" : "encryptedAssertions",
+            "type" : "bool"
+          }
+        },
+        "flow" : [ "signingKey", "encryptionKey", "signedDocuments", "encryptedAssertions" ]
       }
     },
-    "flow" : [ "consumerSecret", "requestTokenURL", "profileURL", "callbackURL", "consumerKey", "authorizeURL", "accessTokenURL", "extractProfile", "extractProfileFilterNot", "adminPassword", "userBase", "extractProfileFilter", "adminUsername", "searchFilter", "metadataField", "groupRights", "searchBase", "serverUrls", "groupFilters", "allowEmptyPassword", "readProfileFromToken", "userInfoUrl", "dataOverride", "logoutUrl", "introspectionUrl", "nameField", "noWildcardRedirectURI", "claims", "oidConfig", "useJson", "clientSecret", "apiKeyMetaField", "callbackUrl", "authorizeUrl", "useCookie", "tokenUrl", "emailField", "otoroshiDataField", "apiKeyTagsField", "loginUrl", "refreshTokens", "superAdmins", "accessTokenField", "scope", "otoroshiRightsField", "clientId", "rightsOverride", "extraMetadata", "metadata", "id", "userValidators", "webauthn", "sessionMaxAge", "users", "tags", "basicAuth", "clientSideSessionEnabled", "name", "desc", "type", "_loc", "sessionCookieValues", "mtlsConfig", "pkce", "proxy", "jwtVerifier", "httpMethod" ]
+    "flow" : [ "validateSignature", "validateAssertions", "singleSignOnUrl", "usedNameIDAsEmail", "singleLogoutUrl", "issuer", "validatingCertificates", "emailAttributeName", "consumerSecret", "requestTokenURL", "profileURL", "callbackURL", "consumerKey", "authorizeURL", "accessTokenURL", "extractProfile", "extractProfileFilterNot", "adminPassword", "userBase", "extractProfileFilter", "adminUsername", "searchFilter", "metadataField", "groupRights", "searchBase", "serverUrls", "groupFilters", "allowEmptyPassword", "readProfileFromToken", "userInfoUrl", "dataOverride", "logoutUrl", "introspectionUrl", "nameField", "noWildcardRedirectURI", "claims", "oidConfig", "useJson", "clientSecret", "apiKeyMetaField", "callbackUrl", "authorizeUrl", "useCookie", "tokenUrl", "emailField", "otoroshiDataField", "apiKeyTagsField", "loginUrl", "refreshTokens", "superAdmins", "accessTokenField", "scope", "otoroshiRightsField", "clientId", "rightsOverride", "extraMetadata", "metadata", "id", "userValidators", "webauthn", "sessionMaxAge", "users", "tags", "basicAuth", "clientSideSessionEnabled", "name", "desc", "type", "_loc", "sessionCookieValues", "mtlsConfig", "pkce", "proxy", "jwtVerifier", "httpMethod", "ssoProtocolBinding", "singleLogoutProtocolBinding", "signature", "nameIDFormat", "credentials" ]
   },
   "otoroshi.next.plugins.JQResponse" : {
     "schema" : {
@@ -40435,26 +39772,6 @@
   "otoroshi.plugins.jobs.kubernetes.KubernetesCertSyncJob" : {
     "schema" : { },
     "flow" : [ ]
-  },
-  "otoroshi.models.ExporterRef" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      },
-      "ref" : {
-        "label" : "ref",
-        "type" : "string"
-      },
-      "config" : {
-        "label" : "config",
-        "type" : "object"
-      }
-    },
-    "flow" : [ "config", "ref", "type" ]
   },
   "otoroshi.models.ApiKey" : {
     "schema" : {
@@ -42164,18 +41481,6 @@
       }
     },
     "flow" : [ "to", "apiKeyPrivate", "apiKeyPublic", "type" ]
-  },
-  "otoroshi.models.ConsoleSettings" : {
-    "schema" : {
-      "type" : {
-        "type" : "select",
-        "props" : {
-          "label" : "type",
-          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
-        }
-      }
-    },
-    "flow" : [ "type" ]
   },
   "otoroshi.next.plugins.NgLargeResponseFaultConfig" : {
     "schema" : {
@@ -45691,6 +44996,27 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.auth.SAMLSignature" : {
+    "schema" : {
+      "algorithm" : {
+        "label" : "algorithm",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "canocalizationMethod" : {
+        "label" : "canocalizationMethod",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      }
+    },
+    "flow" : [ "algorithm", "canocalizationMethod" ]
+  },
   "otoroshi.next.plugins.NgOtoroshiInfoConfig" : {
     "schema" : {
       "version" : {
@@ -45848,6 +45174,10 @@
       }
     },
     "flow" : [ "headerName", "secComTtl", "version", "algo" ]
+  },
+  "otoroshi.auth.SAMLSignatureAlgorithm" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.next.plugins.W3CTracingConfig" : {
     "schema" : {
@@ -54223,22 +53553,6 @@
         },
         "flow" : [ "username", "password", "mechanism" ]
       },
-      "tlsTrustCertsFilePath" : {
-        "label" : "tlsTrustCertsFilePath",
-        "type" : "string"
-      },
-      "tenant" : {
-        "label" : "tenant",
-        "type" : "string"
-      },
-      "uri" : {
-        "label" : "uri",
-        "type" : "string"
-      },
-      "namespace" : {
-        "label" : "namespace",
-        "type" : "string"
-      },
       "sendWorkers" : {
         "label" : "sendWorkers",
         "type" : "number"
@@ -54306,26 +53620,6 @@
         "label" : "password",
         "type" : "string"
       },
-      "ref" : {
-        "label" : "ref",
-        "type" : "string"
-      },
-      "config" : {
-        "label" : "config",
-        "type" : "object"
-      },
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "maxFileSize" : {
-        "label" : "maxFileSize",
-        "type" : "number"
-      },
-      "labels" : {
-        "label" : "labels",
-        "type" : "object"
-      },
       "url" : {
         "label" : "url",
         "type" : "string"
@@ -54368,7 +53662,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "labels", "maxFileSize", "path", "config", "ref", "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "namespace", "uri", "tenant", "tlsTrustCertsFilePath", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
+    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
   },
   "otoroshi.plugins.cache.ResponseCacheConfig" : {
     "schema" : {
@@ -54583,6 +53877,69 @@
     },
     "flow" : [ "startedAt", "duration", "until", "descriptorId", "descriptorName" ]
   },
+  "otoroshi.auth.SAMLCredentials" : {
+    "schema" : {
+      "signingKey" : {
+        "label" : "signingKey",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "certificate" : {
+            "label" : "certificate",
+            "type" : "string"
+          },
+          "privateKey" : {
+            "label" : "privateKey",
+            "type" : "string"
+          },
+          "certId" : {
+            "label" : "certId",
+            "type" : "string"
+          },
+          "useOtoroshiCertificate" : {
+            "label" : "useOtoroshiCertificate",
+            "type" : "bool"
+          }
+        },
+        "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+      },
+      "encryptionKey" : {
+        "label" : "encryptionKey",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "certificate" : {
+            "label" : "certificate",
+            "type" : "string"
+          },
+          "privateKey" : {
+            "label" : "privateKey",
+            "type" : "string"
+          },
+          "certId" : {
+            "label" : "certId",
+            "type" : "string"
+          },
+          "useOtoroshiCertificate" : {
+            "label" : "useOtoroshiCertificate",
+            "type" : "bool"
+          }
+        },
+        "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+      },
+      "signedDocuments" : {
+        "label" : "signedDocuments",
+        "type" : "bool"
+      },
+      "encryptedAssertions" : {
+        "label" : "encryptedAssertions",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "encryptedAssertions", "signedDocuments", "signingKey", "encryptionKey" ]
+  },
   "otoroshi.events.AuditEvent" : {
     "schema" : { },
     "flow" : [ ]
@@ -54759,6 +54116,255 @@
   "Any" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.auth.SamlAuthModuleConfig" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      },
+      "desc" : {
+        "label" : "desc",
+        "type" : "string"
+      },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      },
+      "ssoProtocolBinding" : {
+        "label" : "ssoProtocolBinding",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
+      "emailAttributeName" : {
+        "label" : "emailAttributeName",
+        "type" : "string"
+      },
+      "validatingCertificates" : {
+        "label" : "validatingCertificates",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "singleLogoutProtocolBinding" : {
+        "label" : "singleLogoutProtocolBinding",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "sessionMaxAge" : {
+        "label" : "sessionMaxAge",
+        "type" : "number"
+      },
+      "issuer" : {
+        "label" : "issuer",
+        "type" : "string"
+      },
+      "signature" : {
+        "label" : "signature",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "algorithm" : {
+            "label" : "algorithm",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          },
+          "canocalizationMethod" : {
+            "label" : "canocalizationMethod",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          }
+        },
+        "flow" : [ "algorithm", "canocalizationMethod" ]
+      },
+      "userValidators" : {
+        "label" : "userValidators",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "path" : {
+            "label" : "path",
+            "type" : "string"
+          },
+          "value" : {
+            "label" : "value",
+            "type" : "object"
+          },
+          "error" : {
+            "label" : "error",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "path", "error", "value" ]
+      },
+      "singleLogoutUrl" : {
+        "label" : "singleLogoutUrl",
+        "type" : "string"
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      },
+      "usedNameIDAsEmail" : {
+        "label" : "usedNameIDAsEmail",
+        "type" : "bool"
+      },
+      "singleSignOnUrl" : {
+        "label" : "singleSignOnUrl",
+        "type" : "string"
+      },
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
+      "validateAssertions" : {
+        "label" : "validateAssertions",
+        "type" : "bool"
+      },
+      "nameIDFormat" : {
+        "label" : "nameIDFormat",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "validateSignature" : {
+        "label" : "validateSignature",
+        "type" : "bool"
+      },
+      "credentials" : {
+        "label" : "credentials",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "signingKey" : {
+            "label" : "signingKey",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "certificate" : {
+                "label" : "certificate",
+                "type" : "string"
+              },
+              "privateKey" : {
+                "label" : "privateKey",
+                "type" : "string"
+              },
+              "certId" : {
+                "label" : "certId",
+                "type" : "string"
+              },
+              "useOtoroshiCertificate" : {
+                "label" : "useOtoroshiCertificate",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+          },
+          "encryptionKey" : {
+            "label" : "encryptionKey",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "certificate" : {
+                "label" : "certificate",
+                "type" : "string"
+              },
+              "privateKey" : {
+                "label" : "privateKey",
+                "type" : "string"
+              },
+              "certId" : {
+                "label" : "certId",
+                "type" : "string"
+              },
+              "useOtoroshiCertificate" : {
+                "label" : "useOtoroshiCertificate",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "certificate", "privateKey", "certId", "useOtoroshiCertificate" ]
+          },
+          "signedDocuments" : {
+            "label" : "signedDocuments",
+            "type" : "bool"
+          },
+          "encryptedAssertions" : {
+            "label" : "encryptedAssertions",
+            "type" : "bool"
+          }
+        },
+        "flow" : [ "signingKey", "encryptionKey", "signedDocuments", "encryptedAssertions" ]
+      },
+      "sessionCookieValues" : {
+        "label" : "sessionCookieValues",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "httpOnly" : {
+            "label" : "httpOnly",
+            "type" : "bool"
+          },
+          "secure" : {
+            "label" : "secure",
+            "type" : "bool"
+          }
+        },
+        "flow" : [ "httpOnly", "secure" ]
+      }
+    },
+    "flow" : [ "validateSignature", "validateAssertions", "metadata", "singleSignOnUrl", "usedNameIDAsEmail", "id", "singleLogoutUrl", "userValidators", "issuer", "sessionMaxAge", "tags", "validatingCertificates", "emailAttributeName", "clientSideSessionEnabled", "name", "desc", "type", "ssoProtocolBinding", "singleLogoutProtocolBinding", "signature", "_loc", "nameIDFormat", "credentials", "sessionCookieValues" ]
   },
   "otoroshi.next.plugins.JQConfig" : {
     "schema" : {
