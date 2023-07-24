@@ -79,7 +79,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     implicit val req: RequestHeader = request
 
     val redirect   = request.getQueryString("redirect")
-    val hash       = env.sign(s"${authConfig.id}:::backoffice")
+    val hash       = env.sign(s"${authConfig.id}:::${descriptor.id}")
     val relayState = URLEncoder.encode(
       s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirect.getOrElse(
         routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
@@ -98,7 +98,13 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           } else {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           }
-          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
+          Redirect(redirectUrl)
+            .addingToSession(
+              "hash" -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
+              "desc" -> descriptor.id,
+              "ref" -> authConfig.id,
+              "route" -> s"$isRoute",
+            )
         }
     }
   }

@@ -326,7 +326,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
           if (parameters("oauth_callback_confirmed") == "true") {
             val redirect    = request.getQueryString("redirect")
-            val hash        = env.sign(s"${authConfig.id}:::backoffice")
+            val hash        = env.sign(s"${authConfig.id}:::${descriptor.id}")
             val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
               .addingToSession(

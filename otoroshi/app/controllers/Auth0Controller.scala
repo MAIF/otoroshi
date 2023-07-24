@@ -14,7 +14,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.net.URLEncoder
@@ -700,36 +700,52 @@ class AuthController(
         }
       }
 
-      ((desc, ctx.request.getQueryString("state")) match {
-        case (Some(serviceId), _) if !isRoute => processService(serviceId)
-        case (Some(routeId), _) if isRoute    => processRoute(routeId)
+      val stt = ctx.request.getQueryString("state")
+      // val bod: Map[String, Seq[String]] = ctx.request.body.asFormUrlEncoded.getOrElse(Map.empty[String, Seq[String]])
+      // val context = Json.obj(
+      //   "desc" -> desc.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      //   "isRoute" -> isRoute,
+      //   "refFromRelayState" -> refFromRelayState.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      //   "state" -> stt.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      //   "request" -> Json.obj(
+      //     "query" -> req.queryString,
+      //     "headers" -> req.headers.toMap,
+      //     "session" -> req.session.data,
+      //     "body" -> bod,
+      //   )
+      // )
+      // logger.info(s"confidentialAppCallback context: ${context.prettify}")
+
+      ((desc, stt) match {
+        case (Some(serviceId), _) if !isRoute => processService(serviceId).map(_.removingFromSession("desc", "ref", "route"))
+        case (Some(routeId), _) if isRoute    => processRoute(routeId).map(_.removingFromSession("desc", "ref", "route"))
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
-            case Some(route) if isRoute    => processRoute(route)
-            case Some(service) if !isRoute => processService(service)
+            case Some(route) if isRoute    => processRoute(route).map(_.removingFromSession("desc", "ref", "route"))
+            case Some(service) if !isRoute => processService(service).map(_.removingFromSession("desc", "ref", "route"))
             case _                         =>
               NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
           }
         case (_, _)                           =>
           NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
       })
-        .recover {
-          case t: Throwable => {
-            val errorId = IdGenerator.uuid
-            logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
-            InternalServerError(
-              otoroshi.views.html.oto
-                .error(
-                  message =
-                    s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
-                  _env = env,
-                  title = "Authorization error"
-                )
-            )
-          }
+      .recover {
+        case t: Throwable => {
+          val errorId = IdGenerator.uuid
+          logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
+          InternalServerError(
+            otoroshi.views.html.oto
+              .error(
+                message =
+                  s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
+                _env = env,
+                title = "Authorization error"
+              )
+          )
         }
+      }
     }
 
   def auth0error(error: Option[String], error_description: Option[String]) =
