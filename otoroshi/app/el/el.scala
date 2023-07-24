@@ -52,6 +52,8 @@ object GlobalExpressionLanguage {
             // legacy notation
             case "date"                           => DateTime.now().toString()
             case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+            case r"date.epoch_ms" => DateTime.now().getMillis.toString
+            case r"date.epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
 
             // specific date notation
             case r"date($date@(.*)).format\('$format@(.*)'\)" => DateTime.parse(date).getMillis.toString
