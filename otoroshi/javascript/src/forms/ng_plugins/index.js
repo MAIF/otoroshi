@@ -18,6 +18,7 @@ import EurekaServerSink from './EurekaServerSink';
 import EurekaTarget from './EurekaTarget';
 import ExternalEurekaTarget from './ExternalEurekaTarget';
 import ForceHttpsTraffic from './ForceHttpsTraffic';
+import ForwardedHeader from './ForwardedHeader';
 import GlobalMaintenanceMode from './GlobalMaintenanceMode';
 import GlobalPerIpAddressThrottling from './GlobalPerIpAddressThrottling';
 import GlobalThrottling from './GlobalThrottling';
@@ -151,6 +152,7 @@ const pluginsArray = [
   EurekaTarget,
   ExternalEurekaTarget,
   ForceHttpsTraffic,
+  ForwardedHeader,
   GlobalMaintenanceMode,
   GlobalPerIpAddressThrottling,
   GlobalThrottling,

@@ -510,7 +510,7 @@ class XForwardedHeaders extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean           = true
   override def name: String                                = "X-Forwarded-* headers"
   override def description: Option[String]                 =
-    "This plugin adds all the X-Forwarder-* headers to the request for the backend target".some
+    "This plugin adds all the X-Forwarded-* headers to the request for the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def transformRequestSync(
@@ -527,8 +527,13 @@ class XForwardedHeaders extends NgRequestTransformer {
       Seq(
         "X-Forwarded-For"   -> xForwardedFor,
         "X-Forwarded-Host"  -> xForwardedHost,
-        "X-Forwarded-Proto" -> xForwardedProto
-      )
+        "X-Forwarded-Proto" -> xForwardedProto,
+      ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
+        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank => hdrs ++ Seq(
+          "X-Forwarded-Prefix" -> route.path,
+        )
+        case (hdrs, _) => hdrs
+      }
     } else if (!env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.remoteAddress
       val xForwardedProto = request.theProtocol
@@ -537,9 +542,62 @@ class XForwardedHeaders extends NgRequestTransformer {
         "X-Forwarded-For"   -> xForwardedFor,
         "X-Forwarded-Host"  -> xForwardedHost,
         "X-Forwarded-Proto" -> xForwardedProto
-      )
+      ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
+        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank => hdrs ++ Seq(
+          "X-Forwarded-Prefix" -> route.path,
+        )
+        case (hdrs, _) => hdrs
+      }
     } else {
       Seq.empty[(String, String)]
+    }
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
+  }
+}
+
+class ForwardedHeader extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Forwarded header"
+  override def description: Option[String]                 =
+    "This plugin adds all the Forwarded header to the request for the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
+  override def transformRequestSync(
+   ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val request           = ctx.request
+    val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
+      val xForwardedFor   = request.headers
+        .get("X-Forwarded-For")
+        .map(v => v + ", for: " + request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
+        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
+      val xForwardedBy = request.headers
+        .get("X-Forwarded-By")
+        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
+      val xForwardedProto = request.theProtocol
+      val xForwardedHost  = request.theHost
+      Seq(
+        "Forwarded" -> s"${xForwardedFor};proto: ${xForwardedProto};host: ${xForwardedHost};by: ${xForwardedBy}"
+      )
+    } else {
+      val xForwardedFor   = request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""}
+      val xForwardedProto = request.theProtocol
+      val xForwardedHost  = request.theHost
+      Seq(
+        "Forwarded" -> s"for: ${xForwardedFor};proto: ${xForwardedProto};host: ${xForwardedHost};by: "
+      )
     }
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
   }
