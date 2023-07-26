@@ -1340,7 +1340,7 @@ object Exporters {
 
     def json: JsValue = OtlpSettings.format.writes(this)
 
-    def logExporter(env: Env): LogRecordExporter = {
+    def logExporter(env: => Env): LogRecordExporter = {
       if (grpc) {
         OtlpGrpcLogRecordExporter.builder()
           // .setRetryPolicy() // TODO:
@@ -1395,7 +1395,7 @@ object Exporters {
       }
     }
 
-    def metricsExporter(env: Env): MetricExporter = {
+    def metricsExporter(env: => Env): MetricExporter = {
       if (grpc) {
         OtlpGrpcMetricExporter.builder()
           // .setRetryPolicy() // TODO:
@@ -1452,7 +1452,29 @@ object Exporters {
   }
 
   object OtlpSettings {
+
     private val sdks = new UnboundedTrieMap[String, OpenTelemetrySdkWrapper]()
+
+    val defaultLogs = OtlpSettings(
+      grpc = false,
+      endpoint = "http://localhost:10080/logs",
+      timeout = 5000L.millis,
+      gzip = false,
+      clientCert = None,
+      trustedCert = None,
+      headers = Map.empty,
+      maxBatch = 100,
+      maxDuration = 10.seconds,
+    )
+
+    val defaultServerLogs = defaultLogs.copy(
+      endpoint = "http://localhost:10080/server-logs",
+    )
+
+    val defaultMetrics = defaultLogs.copy(
+      endpoint = "http://localhost:10080/metrics",
+    )
+
     val format = new Format[OtlpSettings] {
       override def writes(o: OtlpSettings): JsValue = Json.obj(
         "gzip" -> o.gzip,
@@ -1482,7 +1504,7 @@ object Exporters {
         case Success(e) => JsSuccess(e)
       }
     }
-    def sdkFor(_id: String, name: String, settings: OtlpSettings, env: Env): OpenTelemetrySdkWrapper = sdks.synchronized {
+    def sdkFor(_id: String, name: String, settings: OtlpSettings, env: => Env): OpenTelemetrySdkWrapper = sdks.synchronized {
       val id = settings.endpoint // _id
       def build(): OpenTelemetrySdkWrapper = {
         val sdk = OpenTelemetrySdk.builder()

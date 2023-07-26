@@ -258,17 +258,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           location = EntityLocation(),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
-          config = OtlpLogsExporterSettings(OtlpSettings(
-            grpc = false,
-            endpoint = "http://localhost:10080/logs",
-            timeout = 5000L.millis,
-            gzip = false,
-            clientCert = None,
-            trustedCert = None,
-            headers = Map.empty,
-            maxBatch = 100,
-            maxDuration = 10.seconds,
-          ))
+          config = OtlpLogsExporterSettings(OtlpSettings.defaultLogs)
         )
       case Some("otlp-metrics") =>
         DataExporterConfig(
@@ -282,17 +272,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = OtlpMetricsExporterSettings(
-            otlp = OtlpSettings(
-              grpc = false,
-              endpoint = "http://localhost:10080/metrics",
-              timeout = 5000L.millis,
-              gzip = false,
-              clientCert = None,
-              trustedCert = None,
-              headers = Map.empty,
-              maxBatch = 100,
-              maxDuration = 10.seconds,
-            ),
+            otlp = OtlpSettings.defaultMetrics,
             tags = Map.empty,
             metrics = Seq(MetricSettings(
               id = "calls_duration",

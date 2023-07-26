@@ -4,16 +4,24 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.{Appender, Context}
+import ch.qos.logback.core.filter.Filter
+import ch.qos.logback.core.spi.FilterReply
+import ch.qos.logback.core.status.Status
 import com.softwaremill.macwire.wire
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import controllers.{Assets, AssetsComponents}
+import org.slf4j.LoggerFactory
 import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.cluster.ClusterMode
+import otoroshi.cluster.{ClusterConfig, ClusterMode}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
+import otoroshi.events.Exporters.OtlpSettings
 import otoroshi.gateway._
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
@@ -22,9 +30,10 @@ import otoroshi.next.tunnel.TunnelController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
-import otoroshi.utils.syntax.implicits.BetterConfiguration
+import otoroshi.utils.syntax.implicits._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
@@ -34,6 +43,7 @@ import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
+import java.util
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -356,6 +366,25 @@ object OtoroshiLoaderHelper {
       ()
     }
   }
+
+  def initOpenTelemetryLogger(configuration: Configuration): Unit = {
+    val jsonConfig = configuration.json
+    jsonConfig.select("otoroshi").select("open-telemetry").select("server-logs").asOpt[JsObject].foreach { config =>
+      val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
+      if (enabled) {
+        println(OtlpSettings.defaultServerLogs.json.prettify)
+        val clusterConfig = ClusterConfig.fromRoot(configuration)
+        val otlpConfig = OtlpSettings.format.reads(config).get
+        val lc = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+        val rootLogger = lc.getLogger("root")
+        val appender = new io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender()
+        val sdk = OtlpSettings.sdkFor("root", clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
+        appender.setOpenTelemetry(sdk.sdk)
+        appender.start()
+        rootLogger.addAppender(appender)
+      }
+    }
+  }
 }
 
 object OtoroshiEnvHolder {
@@ -405,6 +434,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   LoggerConfigurator(environment.classLoader).foreach {
     _.configure(environment, configuration, Map.empty)
   }
+  OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration)
 
   lazy val controllerComponents: ControllerComponents = DefaultControllerComponents(
     defaultActionBuilder,
