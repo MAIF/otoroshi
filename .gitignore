@@ -24,3 +24,4 @@ oto-events*
 otoroshi/javascript/stats.json
 .bloop
 /otoroshi/hs_err_*.log
+.scala-build
