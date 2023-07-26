@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.events.Exporters.CustomMetricsSettings
+import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, OtlpSettings, WasmExporterSettings}
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.models._
 import otoroshi.security.IdGenerator
@@ -11,7 +11,7 @@ import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.{Format, Json}
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, DurationLong}
 
 class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[DataExporterConfig] {
   override def fmt: Format[DataExporterConfig] = DataExporterConfig.format
@@ -233,6 +233,75 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = CustomMetricsSettings()
+        )
+      case Some("wasm") =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Wasm,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New wasm exporter config",
+          desc = "New wasm exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = WasmExporterSettings(Json.obj(), None)
+        )
+      case Some("otlp-logs") =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.OtlpLogs,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New OTLP logs exporter config",
+          desc = "New OTLP logs exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = OtlpLogsExporterSettings(OtlpSettings(
+            grpc = false,
+            endpoint = "http://localhost:10080/logs",
+            timeout = 5000L.millis,
+            gzip = false,
+            clientCert = None,
+            trustedCert = None,
+            headers = Map.empty,
+            maxBatch = 100,
+            maxDuration = 10.seconds,
+          ))
+        )
+      case Some("otlp-metrics") =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.OtlpMetrics,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New OTLP metrics exporter config",
+          desc = "New OTLP metrics exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = OtlpMetricsExporterSettings(
+            otlp = OtlpSettings(
+              grpc = false,
+              endpoint = "http://localhost:10080/metrics",
+              timeout = 5000L.millis,
+              gzip = false,
+              clientCert = None,
+              trustedCert = None,
+              headers = Map.empty,
+              maxBatch = 100,
+              maxDuration = 10.seconds,
+            ),
+            tags = Map.empty,
+            metrics = Seq(MetricSettings(
+              id = "calls_duration",
+              selector = Some("duration"),
+              kind = MetricSettingsKind.Counter,
+              eventType = Some("GatewayEvent"),
+              labels = Map.empty,
+            ))
+          )
         )
       case _                      =>
         DataExporterConfig(

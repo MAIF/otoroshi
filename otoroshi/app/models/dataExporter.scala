@@ -228,7 +228,8 @@ object DataExporterConfig {
             case "metrics"       => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
             case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
             case "wasm"          => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "otlp"          => OtlpSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-metrics"  => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-logs"     => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case _               => throw new RuntimeException("Bad config type")
           }
         )
@@ -305,8 +306,12 @@ object DataExporterConfigType {
     def name: String = "wasm"
   }
 
-  case object Otlp extends DataExporterConfigType {
-    def name: String = "otlp"
+  case object OtlpLogs extends DataExporterConfigType {
+    def name: String = "otlp-logs"
+  }
+
+  case object OtlpMetrics extends DataExporterConfigType {
+    def name: String = "otlp-metrics"
   }
 
   def parse(str: String): DataExporterConfigType = {
@@ -326,7 +331,8 @@ object DataExporterConfigType {
       case "metrics"       => Metrics
       case "custommetrics" => CustomMetrics
       case "wasm"          => Wasm
-      case "otlp"          => Otlp
+      case "otlp-metrics"  => OtlpMetrics
+      case "otlp-logs"     => OtlpLogs
       case _               => None
     }
   }
@@ -365,27 +371,28 @@ case class DataExporterConfig(
 
   def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
     config match {
-      case c: KafkaConfig            => new KafkaExporter(this)
-      case c: PulsarConfig           => new PulsarExporter(this)
-      case c: ElasticAnalyticsConfig => new ElasticExporter(this)
-      case c: Webhook                => new WebhookExporter(this)
-      case c: FileSettings           => new FileAppenderExporter(this)
-      case c: S3ExporterSettings     => new S3Exporter(this)
-      case c: GoReplayFileSettings   => new GoReplayFileAppenderExporter(this)
-      case c: GoReplayS3Settings     => new GoReplayS3Exporter(this)
-      case c: NoneMailerSettings     => new GenericMailerExporter(this)
-      case c: ConsoleMailerSettings  => new GenericMailerExporter(this)
-      case c: MailjetSettings        => new GenericMailerExporter(this)
-      case c: MailgunSettings        => new GenericMailerExporter(this)
-      case c: SendgridSettings       => new GenericMailerExporter(this)
-      case c: GenericMailerSettings  => new GenericMailerExporter(this)
-      case c: ExporterRef            => new CustomExporter(this)
-      case c: ConsoleSettings        => new ConsoleExporter(this)
-      case c: MetricsSettings        => new MetricsExporter(this)
-      case c: CustomMetricsSettings  => new CustomMetricsExporter(this)
-      case c: WasmExporterSettings   => new WasmExporter(this)
-      case c: OtlpSettings           => new OtlpLogExporter(this)
-      case _                         => throw new RuntimeException("unsupported exporter type")
+      case c: KafkaConfig                 => new KafkaExporter(this)
+      case c: PulsarConfig                => new PulsarExporter(this)
+      case c: ElasticAnalyticsConfig      => new ElasticExporter(this)
+      case c: Webhook                     => new WebhookExporter(this)
+      case c: FileSettings                => new FileAppenderExporter(this)
+      case c: S3ExporterSettings          => new S3Exporter(this)
+      case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)
+      case c: GoReplayS3Settings          => new GoReplayS3Exporter(this)
+      case c: NoneMailerSettings          => new GenericMailerExporter(this)
+      case c: ConsoleMailerSettings       => new GenericMailerExporter(this)
+      case c: MailjetSettings             => new GenericMailerExporter(this)
+      case c: MailgunSettings             => new GenericMailerExporter(this)
+      case c: SendgridSettings            => new GenericMailerExporter(this)
+      case c: GenericMailerSettings       => new GenericMailerExporter(this)
+      case c: ExporterRef                 => new CustomExporter(this)
+      case c: ConsoleSettings             => new ConsoleExporter(this)
+      case c: MetricsSettings             => new MetricsExporter(this)
+      case c: CustomMetricsSettings       => new CustomMetricsExporter(this)
+      case c: WasmExporterSettings        => new WasmExporter(this)
+      case c: OtlpMetricsExporterSettings => new OtlpMetricsExporter(this)
+      case c: OtlpLogsExporterSettings    => new OtlpLogExporter(this)
+      case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }
 }

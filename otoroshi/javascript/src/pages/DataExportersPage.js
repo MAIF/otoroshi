@@ -1670,6 +1670,160 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  'otlp-logs': {
+    'flow': [
+      'otlp.grpc',
+      'otlp.gzip',
+      'otlp.endpoint',
+      'otlp.timeout',
+      'otlp.client_cert',
+      'otlp.trusted_cert',
+    ],
+    'schema': {
+      'otlp.grpc': {
+        type: 'bool',
+        props: {
+          label: 'Use grpc',
+        },
+      },
+      'otlp.gzip': {
+        type: 'bool',
+        props: {
+          label: 'Use gzip',
+        },
+      },
+      'otlp.endpoint': {
+        type: 'string',
+        props: {
+          label: 'Endpoint',
+        },
+      },
+      'otlp.timeout': {
+        type: 'number',
+        props: {
+          label: 'Timeout',
+          suffix: 'ms.'
+        },
+      },
+      'otlp.client_cert': {
+        type: 'string',
+        props: {
+          label: 'Client cert.',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'otlp.trusted_cert': {
+        type: 'string',
+        props: {
+          label: 'Trusted cert.',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+    }
+  },
+  'otlp-metrics': {
+    'flow': [
+      'custommetrics',
+      'otlp.grpc',
+      'otlp.gzip',
+      'otlp.endpoint',
+      'otlp.timeout',
+      'otlp.client_cert',
+      'otlp.trusted_cert',
+    ],
+    'schema': {
+      custommetrics: {
+        type: CustomMetrics,
+      },
+      'otlp.grpc': {
+        type: 'bool',
+        props: {
+          label: 'Use grpc',
+        },
+      },
+      'otlp.gzip': {
+        type: 'bool',
+        props: {
+          label: 'Use gzip',
+        },
+      },
+      'otlp.endpoint': {
+        type: 'string',
+        props: {
+          label: 'Endpoint',
+        },
+      },
+      'otlp.timeout': {
+        type: 'number',
+        props: {
+          label: 'Timeout',
+          suffix: 'ms.'
+        },
+      },
+      'otlp.client_cert': {
+        type: 'select',
+        props: {
+          label: 'Client cert.',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'otlp.trusted_cert': {
+        type: 'select',
+        props: {
+          label: 'Trusted cert.',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+    },
+  },
 };
 
 class TestMatchAndProjectModal extends Component {
