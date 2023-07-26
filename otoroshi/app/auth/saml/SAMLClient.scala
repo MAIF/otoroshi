@@ -79,11 +79,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     implicit val req: RequestHeader = request
 
     val redirect   = request.getQueryString("redirect")
+    val redirectTo = redirect.getOrElse(
+      routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
+    )
     val hash       = env.sign(s"${authConfig.id}:::${descriptor.id}")
     val relayState = URLEncoder.encode(
-      s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirect.getOrElse(
-        routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
-      )}&route=$isRoute&ref=${authConfig.id}",
+      s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
       "UTF-8"
     )
 
@@ -100,6 +101,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           }
           Redirect(redirectUrl)
             .addingToSession(
+              s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirectTo,
               "hash" -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
               "desc" -> descriptor.id,
               "ref" -> authConfig.id,
