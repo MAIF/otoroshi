@@ -1,6 +1,8 @@
 package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.nimbusds.jose.util.X509CertUtils
 import net.shibboleth.utilities.java.support.xml.BasicParserPool
 import org.apache.pulsar.shade.org.apache.commons.io.IOUtils
@@ -20,11 +22,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -58,7 +56,6 @@ import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaSetConverter}
 import scala.util.Try
-
 import java.util.zip.Deflater
 
 case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
@@ -83,11 +80,17 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
     )
     val hash       = env.sign(s"${authConfig.id}:::${descriptor.id}")
-    val relayState = URLEncoder.encode(
-      s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
-      "UTF-8"
-    )
-
+    val relayState = JWT.create()
+      .withClaim("hash", hash)
+      .withClaim("desc", descriptor.id)
+      .withClaim("route", isRoute)
+      .withClaim("ref", authConfig.id)
+      .withClaim("redirect_uri", redirectTo)
+      .sign(Algorithm.HMAC512(env.otoroshiSecret))
+      //URLEncoder.encode(
+      //  s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
+      //  "UTF-8"
+      //)
     getRequest(env, authConfig).map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>

@@ -2,7 +2,9 @@ package otoroshi.controllers
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
@@ -11,10 +13,10 @@ import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDe
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc._
 
 import java.net.URLEncoder
@@ -23,6 +25,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
 
 class AuthController(
     BackOfficeActionAuth: BackOfficeActionAuth,
@@ -487,10 +490,19 @@ class AuthController(
 
             ctx.request.body.asFormUrlEncoded match {
               case Some(body) if body.get("RelayState").exists(_.nonEmpty) =>
-                val queryParams =
-                  body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-                val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
-
+                // val queryParams =
+                //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+                // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+                val params: Map[String, String] = {
+                  try {
+                    val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
+                    decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+                  } catch {
+                    case t: Throwable =>
+                      logger.error("error while verifying relay_state", t)
+                      Map.empty[String, String]
+                  }
+                }
                 val redirectTo = params.getOrElse(
                   "redirect_uri",
                   routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
@@ -572,10 +584,19 @@ class AuthController(
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
           if (body.get("RelayState").exists(_.nonEmpty)) {
-            val queryParams =
-              body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-            val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
-
+            // val queryParams =
+            //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+            // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+            val params: Map[String, String] = {
+              try {
+                val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
+                decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+              } catch {
+                case t: Throwable =>
+                  logger.error("error while verifying relay_state", t)
+                  Map.empty[String, String]
+              }
+            }
             if (!params.contains("hash") || !params.contains("redirect_uri") || !params.contains("desc"))
               NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
             else {
