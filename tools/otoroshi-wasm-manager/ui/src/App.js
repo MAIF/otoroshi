@@ -15,11 +15,34 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.reloadPlugins()
+    this.reloadPlugins().then(() => {
+      if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const pluginId = params.get('plugin');
+        if (pluginId) {
+          this.setState({
+            configFiles: [],
+            selectedPlugin: pluginId
+          })
+        }
+      }
+    })
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.selectedPlugin !== this.state.selectedPlugin) {
+      if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('plugin', this.state.selectedPlugin);
+        window.history.replaceState(null, null, '?' + params.toString());
+      } else {
+        window.history.replaceState(null, null, '?plugin=' + this.state.selectedPlugin);
+      }
+    }
   }
 
   reloadPlugins = () => {
-    Service.getPlugins()
+    return Service.getPlugins()
       .then(res => {
         if (Array.isArray(res)) {
           this.setState({ plugins: res })
