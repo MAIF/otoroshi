@@ -5,21 +5,7 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
-import {
-  CIRCUIT_BREAKER_BACKOFF_FACTOR,
-  CIRCUIT_BREAKER_CLIENT_RETRIES,
-  CIRCUIT_BREAKER_MAX_ERRORS,
-  CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
-  CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
-  CIRCUIT_BREAKER_IDLE_TIMEOUT,
-  CIRCUIT_BREAKER_CALL_TIMEOUT,
-  CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
-  CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
-  CIRCUIT_BREAKER_SAMPLE_INTERVAL,
-  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
-  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
-  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
-} from '../../explanations';
+import explainations from '../../explainations';
 
 export class Target extends Component {
   formSchema = {
@@ -165,13 +151,13 @@ export class Target extends Component {
 
 export class CustomTimeout extends Component {
   formSchema = {
-    path: { type: 'string', props: { label: 'Path', help: CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH } },
+    path: { type: 'string', props: { label: 'Path', help: explainations.CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH } },
     global_timeout: {
       type: 'number',
       props: {
         label: 'global timeout',
         suffix: 'milliseconds',
-        help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+        help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
       },
     },
     connection_timeout: {
@@ -179,23 +165,23 @@ export class CustomTimeout extends Component {
       props: {
         label: 'connection timeout',
         suffix: 'milliseconds',
-        help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+        help: explainations.CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
       },
     },
     idle_timeout: {
       type: 'number',
-      props: { label: 'idle timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_IDLE_TIMEOUT },
+      props: { label: 'idle timeout', suffix: 'milliseconds', help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT },
     },
     call_timeout: {
       type: 'number',
-      props: { label: 'call timeout', suffix: 'milliseconds', help: CIRCUIT_BREAKER_CALL_TIMEOUT },
+      props: { label: 'call timeout', suffix: 'milliseconds', help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT },
     },
     call_and_stream_timeout: {
       type: 'number',
       props: {
         label: 'call and stream timeout',
         suffix: 'milliseconds',
-        help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+        help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
       },
     },
   };
@@ -401,22 +387,22 @@ export const schemas = {
       },
       'client.backoff_factor': {
         type: 'number',
-        props: { label: 'backoff factor', help: CIRCUIT_BREAKER_BACKOFF_FACTOR },
+        props: { label: 'backoff factor', help: explainations.CIRCUIT_BREAKER_BACKOFF_FACTOR },
       },
       'client.retries': {
         type: 'number',
-        props: { label: 'retries', help: CIRCUIT_BREAKER_CLIENT_RETRIES },
+        props: { label: 'retries', help: explainations.CIRCUIT_BREAKER_CLIENT_RETRIES },
       },
       'client.max_errors': {
         type: 'number',
-        props: { label: 'max errors', suffix: 'errors', help: CIRCUIT_BREAKER_MAX_ERRORS },
+        props: { label: 'max errors', suffix: 'errors', help: explainations.CIRCUIT_BREAKER_MAX_ERRORS },
       },
       'client.global_timeout': {
         type: 'number',
         props: {
           label: 'global timeout',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
         },
       },
       'client.connection_timeout': {
@@ -424,7 +410,7 @@ export const schemas = {
         props: {
           label: 'connection timeout',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
         },
       },
       'client.idle_timeout': {
@@ -432,7 +418,7 @@ export const schemas = {
         props: {
           label: 'idle timeout',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_IDLE_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT,
         },
       },
       'client.call_timeout': {
@@ -440,7 +426,7 @@ export const schemas = {
         props: {
           label: 'call timeout',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_CALL_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT,
         },
       },
       'client.call_and_stream_timeout': {
@@ -448,7 +434,7 @@ export const schemas = {
         props: {
           label: 'call and stream timeout',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
         },
       },
       'client.retry_initial_delay': {
@@ -456,7 +442,7 @@ export const schemas = {
         props: {
           label: 'initial delay',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+          help: explainations.CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
         },
       },
       'client.sample_interval': {
@@ -464,21 +450,21 @@ export const schemas = {
         props: {
           label: 'sample interval',
           suffix: 'milliseconds',
-          help: CIRCUIT_BREAKER_SAMPLE_INTERVAL,
+          help: explainations.CIRCUIT_BREAKER_SAMPLE_INTERVAL,
         },
       },
       'client.cache_connection_settings.enabled': {
         type: 'bool',
         props: {
           label: 'cache connection',
-          help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
+          help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
         },
       },
       'client.cache_connection_settings.queue_size': {
         type: 'number',
         props: {
           label: 'cache connection queue size',
-          help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
+          help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
         },
       },
       'client.custom_timeouts': {

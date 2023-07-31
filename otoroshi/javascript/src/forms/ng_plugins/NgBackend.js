@@ -1,18 +1,4 @@
-import {
-  CIRCUIT_BREAKER_BACKOFF_FACTOR,
-  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
-  CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
-  CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
-  CIRCUIT_BREAKER_CALL_TIMEOUT,
-  CIRCUIT_BREAKER_CLIENT_RETRIES,
-  CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
-  CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
-  CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
-  CIRCUIT_BREAKER_IDLE_TIMEOUT,
-  CIRCUIT_BREAKER_MAX_ERRORS,
-  CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
-  CIRCUIT_BREAKER_SAMPLE_INTERVAL,
-} from '../../explanations';
+import explainations from '../../explainations';
 
 export default {
   id: 'Backend',
@@ -40,32 +26,32 @@ export default {
             connection_timeout: {
               label: 'connection_timeout',
               type: 'number',
-              help: CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
+              help: explainations.CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
             },
             call_and_stream_timeout: {
               label: 'call_and_stream_timeout',
               type: 'number',
-              help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+              help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
             },
             path: {
               label: 'path',
               type: 'string',
-              help: CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
+              help: explainations.CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
             },
             call_timeout: {
               label: 'call_timeout',
               type: 'number',
-              help: CIRCUIT_BREAKER_CALL_TIMEOUT,
+              help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT,
             },
             idle_timeout: {
               label: 'idle_timeout',
               type: 'number',
-              help: CIRCUIT_BREAKER_IDLE_TIMEOUT,
+              help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT,
             },
             global_timeout: {
               label: 'global_timeout',
               type: 'number',
-              help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+              help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
             },
           },
           flow: [
@@ -89,22 +75,22 @@ export default {
         global_timeout: {
           label: 'global_timeout',
           type: 'number',
-          help: CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
         },
         max_errors: {
           label: 'max_errors',
           type: 'number',
-          help: CIRCUIT_BREAKER_MAX_ERRORS,
+          help: explainations.CIRCUIT_BREAKER_MAX_ERRORS,
         },
         retry_initial_delay: {
           label: 'retry_initial_delay',
           type: 'number',
-          help: CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
+          help: explainations.CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
         },
         backoff_factor: {
           label: 'backoff_factor',
           type: 'number',
-          help: CIRCUIT_BREAKER_BACKOFF_FACTOR,
+          help: explainations.CIRCUIT_BREAKER_BACKOFF_FACTOR,
         },
         cache_connection_settings: {
           label: 'cache_connection_settings',
@@ -115,12 +101,12 @@ export default {
             queue_size: {
               label: 'queue_size',
               type: 'number',
-              help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
+              help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
             },
             enabled: {
               label: 'enabled',
               type: 'box-bool',
-              help: CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
+              help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
               props: {
                 description: 'Use a cache at host connection level to avoid reconnection time',
               },
@@ -131,17 +117,17 @@ export default {
         sample_interval: {
           label: 'sample_interval',
           type: 'number',
-          help: CIRCUIT_BREAKER_SAMPLE_INTERVAL,
+          help: explainations.CIRCUIT_BREAKER_SAMPLE_INTERVAL,
         },
         call_and_stream_timeout: {
           label: 'call_and_stream_timeout',
           type: 'number',
-          help: CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
+          help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
         },
         retries: {
           label: 'retries',
           type: 'number',
-          help: CIRCUIT_BREAKER_CLIENT_RETRIES,
+          help: explainations.CIRCUIT_BREAKER_CLIENT_RETRIES,
         },
         proxy: {
           label: 'proxy',
