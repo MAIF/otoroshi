@@ -372,7 +372,6 @@ object OtoroshiLoaderHelper {
     jsonConfig.select("otoroshi").select("open-telemetry").select("server-logs").asOpt[JsObject].foreach { config =>
       val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
       if (enabled) {
-        // println(OtlpSettings.defaultServerLogs.json.prettify)
         val clusterConfig = ClusterConfig.fromRoot(configuration)
         val otlpConfig = OtlpSettings.format.reads(config).get
         val lc = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]

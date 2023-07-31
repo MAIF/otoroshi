@@ -21,63 +21,47 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, DurationLong}
 import scala.util.{Failure, Success, Try}
 
-/*object implicits {
-  implicit class BetterMeter(val meter: Meter) extends AnyVal {
-    def withLongCounter(sdk: OpenTelemetrySdkWrapper, name: String): LongCounter = {
-      sdk.longCounters.getOrUpdate(name) {
-        meter.counterBuilder(name).build()
-      }
-    }
-    def withDoubleCounter(sdk: OpenTelemetrySdkWrapper, name: String): DoubleCounter = {
-      sdk.doubleCounters.getOrUpdate(name) {
-        meter.counterBuilder(name).ofDoubles().build()
-      }
-    }
-    def withLongHistogram(sdk: OpenTelemetrySdkWrapper, name: String): LongHistogram = {
-      sdk.longsHistograms.getOrUpdate(name) {
-        meter.histogramBuilder(name).ofLongs().build()
-      }
-    }
-    def withDoubleHistogram(sdk: OpenTelemetrySdkWrapper, name: String): DoubleHistogram = {
-      sdk.doubleHistograms.getOrUpdate(name) {
-        meter.histogramBuilder(name).build()
-      }
-    }
-    def withTimer(sdk: OpenTelemetrySdkWrapper, name: String): LongHistogram = {
-      sdk.longsHistograms.getOrUpdate(name) {
-        meter.histogramBuilder(name).setUnit("nanoseconds").ofLongs().build()
-      }
-    }
-  }
-}*/
-
 class OpenTelemetryMeter(sdk: OpenTelemetrySdkWrapper, meter: Meter) {
 
-  def withLongCounter(name: String): LongCounter = {
+  private def cleanupKey(name: String): String = {
+    var cleaned = name.toLowerCase().trim.replace(":", ".")
+    if (Character.isDigit(cleaned.charAt(0))) {
+      cleaned = s"n${cleaned}"
+    }
+    if (cleaned.length > 63) cleaned.substring(0, 62) // wtf ???
+    else cleaned
+  }
+
+  def withLongCounter(_name: String): LongCounter = {
+    val name = cleanupKey(_name)
     sdk.longCounters.getOrUpdate(name) {
       meter.counterBuilder(name).build()
     }
   }
 
-  def withDoubleCounter(name: String): DoubleCounter = {
+  def withDoubleCounter(_name: String): DoubleCounter = {
+    val name = cleanupKey(_name)
     sdk.doubleCounters.getOrUpdate(name) {
       meter.counterBuilder(name).ofDoubles().build()
     }
   }
 
-  def withLongHistogram(name: String): LongHistogram = {
+  def withLongHistogram(_name: String): LongHistogram = {
+    val name = cleanupKey(_name)
     sdk.longsHistograms.getOrUpdate(name) {
       meter.histogramBuilder(name).ofLongs().build()
     }
   }
 
-  def withDoubleHistogram(name: String): DoubleHistogram = {
+  def withDoubleHistogram(_name: String): DoubleHistogram = {
+    val name = cleanupKey(_name)
     sdk.doubleHistograms.getOrUpdate(name) {
       meter.histogramBuilder(name).build()
     }
   }
 
-  def withTimer(name: String): LongHistogram = {
+  def withTimer(_name: String): LongHistogram = {
+    val name = cleanupKey(_name)
     sdk.longsHistograms.getOrUpdate(name) {
       meter.histogramBuilder(name).setUnit("nanoseconds").ofLongs().build()
     }

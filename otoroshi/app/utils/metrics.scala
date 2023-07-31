@@ -198,37 +198,37 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   def counterIncOf(name: MetricId, of: Long): Unit = {
     metricRegistry.counter(name).inc(of)
     jmxRegistry.counter(name.getKey).inc(of)
-    openTelemetryRegistry.foreach(_.withLongCounter(name.getKey).add(of))
+    openTelemetryRegistry.foreach(_.withLongCounter(name.getKey).add(Math.abs(of)))
   }
 
   def counterIncOf(name: String, of: Long): Unit = {
     metricRegistry.counter(MetricId.build(name)).inc(of)
     jmxRegistry.counter(name).inc(of)
-    openTelemetryRegistry.foreach(_.withLongCounter(name).add(of))
+    openTelemetryRegistry.foreach(_.withLongCounter(name).add(Math.abs(of)))
   }
 
   def histogramUpdate(name: MetricId, value: Long): Unit = {
     metricRegistry.histogram(name).update(value)
     jmxRegistry.histogram(name.getKey).update(value)
-    openTelemetryRegistry.foreach(_.withLongHistogram(name.getKey).record(value))
+    openTelemetryRegistry.foreach(_.withLongHistogram(name.getKey).record(Math.abs(value)))
   }
 
   def histogramUpdate(name: String, value: Long): Unit = {
     metricRegistry.histogram(MetricId.build(name)).update(value)
     jmxRegistry.histogram(name).update(value)
-    openTelemetryRegistry.foreach(_.withLongHistogram(name).record(value))
+    openTelemetryRegistry.foreach(_.withLongHistogram(name).record(Math.abs(value)))
   }
 
   def timerUpdate(name: MetricId, duration: Long, unit: TimeUnit): Unit = {
     metricRegistry.timer(name).update(duration, unit)
     jmxRegistry.timer(name.getKey).update(duration, unit)
-    openTelemetryRegistry.foreach(_.withTimer(name.getKey).record(FiniteDuration(duration, unit).toNanos))
+    openTelemetryRegistry.foreach(_.withTimer(name.getKey).record(Math.abs(FiniteDuration(duration, unit).toNanos)))
   }
 
   def timerUpdate(name: String, duration: Long, unit: TimeUnit): Unit = {
     metricRegistry.timer(MetricId.build(name)).update(duration, unit)
     jmxRegistry.timer(name).update(duration, unit)
-    openTelemetryRegistry.foreach(_.withTimer(name).record(FiniteDuration(duration, unit).toNanos))
+    openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(FiniteDuration(duration, unit).toNanos)))
   }
 
   override def withTimer[T](name: String, display: Boolean = false)(f: => T): T = {
@@ -243,7 +243,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
         )
       }
       jmxCtx.close()
-      openTelemetryRegistry.foreach(_.withTimer(name).record(elapsed))
+      openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(elapsed)))
       res
     } catch {
       case e: Throwable =>
@@ -265,7 +265,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
       if (display) {
         logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
       }
-      openTelemetryRegistry.foreach(_.withTimer(name).record(elapsed))
+      openTelemetryRegistry.foreach(_.withTimer(name).record(Math.abs(elapsed)))
       jmxCtx.close()
       if (r.isFailure) {
         metricRegistry.counter(MetricId.build(name + ".errors")).inc()

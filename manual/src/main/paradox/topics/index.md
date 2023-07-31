@@ -21,6 +21,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Alternative http backend](./netty-server.md)
 * @ref:[HTTP3 support](./http3.md)
 * @ref:[Anonymous reporting](./anonymous-reporting.md)
+* @ref:[OpenTelemetry support](./opentelemetry.md)
 
 @@@ index
 
@@ -43,5 +44,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Alternative http backend](./netty-server.md)
 * [HTTP3 support](./http3.md)
 * [Anonymous reporting](./anonymous-reporting.md)
+* [OpenTelemetry support](./opentelemetry.md)
   
 @@@

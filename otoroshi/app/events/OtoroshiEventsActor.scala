@@ -1370,15 +1370,15 @@ object Exporters {
                   case MetricSettingsKind.Counter if metric.selector.isEmpty => meter.withLongCounter(id).add(1L, attributes)
                   case MetricSettingsKind.Counter if metric.selector.isDefined =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.withLongCounter(id).add(v, attributes)
+                      meter.withLongCounter(id).add(Math.abs(v), attributes)
                     }
                   case MetricSettingsKind.Histogram =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.withLongHistogram(id).record(v, attributes)
+                      meter.withLongHistogram(id).record(Math.abs(v), attributes)
                     }
                   case MetricSettingsKind.Timer =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.withTimer(id).record(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos, attributes)
+                      meter.withTimer(id).record(Math.abs(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos), attributes)
                     }
                 }
               }
