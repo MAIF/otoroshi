@@ -1,8 +1,9 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, OtlpSettings, WasmExporterSettings}
+import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, WasmExporterSettings}
 import otoroshi.events.{KafkaConfig, PulsarConfig}
+import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}

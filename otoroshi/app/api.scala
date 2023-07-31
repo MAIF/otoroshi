@@ -21,8 +21,8 @@ import otoroshi.cluster.{ClusterConfig, ClusterMode}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
-import otoroshi.events.Exporters.OtlpSettings
 import otoroshi.gateway._
+import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
@@ -372,13 +372,13 @@ object OtoroshiLoaderHelper {
     jsonConfig.select("otoroshi").select("open-telemetry").select("server-logs").asOpt[JsObject].foreach { config =>
       val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
       if (enabled) {
-        println(OtlpSettings.defaultServerLogs.json.prettify)
+        // println(OtlpSettings.defaultServerLogs.json.prettify)
         val clusterConfig = ClusterConfig.fromRoot(configuration)
         val otlpConfig = OtlpSettings.format.reads(config).get
         val lc = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
         val rootLogger = lc.getLogger("root")
         val appender = new io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender()
-        val sdk = OtlpSettings.sdkFor("root", clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
+        val sdk = OtlpSettings.sdkFor("root-server-logs", clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
         appender.setOpenTelemetry(sdk.sdk)
         appender.start()
         rootLogger.addAppender(appender)

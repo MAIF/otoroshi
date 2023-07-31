@@ -30,6 +30,7 @@ import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
@@ -1274,12 +1275,6 @@ object Exporters {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  case class OpenTelemetrySdkWrapper(sdk: OpenTelemetrySdk, settings: OtlpSettings) {
-    def close(): Unit = sdk.close()
-
-    def hasChangedFrom(s: OtlpSettings): Boolean = s != settings
-  }
-
   case class OtlpMetricsExporterSettings(otlp: OtlpSettings, tags: Map[String, String] = Map.empty, metrics: Seq[MetricSettings] = Seq.empty) extends Exporter {
     override def toJson: JsValue = OtlpMetricsExporterSettings.format.writes(this)
   }
@@ -1326,232 +1321,6 @@ object Exporters {
     }
   }
 
-  case class OtlpSettings(
-                     grpc: Boolean,
-                     endpoint: String,
-                     timeout: Duration,
-                     gzip: Boolean,
-                     clientCert: Option[String],
-                     trustedCert: Option[String],
-                     headers: Map[String, String],
-                     maxBatch: Int,
-                     maxDuration: Duration,
-  ) {
-
-    def json: JsValue = OtlpSettings.format.writes(this)
-
-    def logExporter(env: => Env): LogRecordExporter = {
-      if (grpc) {
-        OtlpGrpcLogRecordExporter.builder()
-          // .setRetryPolicy() // TODO:
-          .applyOnWithOpt(clientCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
-            }
-          }
-          .applyOnWithOpt(trustedCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
-            }
-          }
-          .setCompression(if (gzip) "gzip" else "none")
-          .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
-          .setEndpoint(endpoint)
-          .applyOnIf(headers.nonEmpty) { b =>
-            headers.foreach {
-              case (key, value) => b.addHeader(key, value)
-            }
-            b
-          }
-          .build()
-      } else {
-        OtlpHttpLogRecordExporter.builder()
-          //.addHeader() // TODO:
-          //.setRetryPolicy() // TODO:
-          .applyOnWithOpt(clientCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
-            }
-          }
-          .applyOnWithOpt(trustedCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
-            }
-          }
-          .setCompression(if (gzip) "gzip" else "none")
-          .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
-          .setEndpoint(endpoint)
-          .applyOnIf(headers.nonEmpty) { b =>
-            headers.foreach {
-              case (key, value) => b.addHeader(key, value)
-            }
-            b
-          }
-          .build()
-      }
-    }
-
-    def metricsExporter(env: => Env): MetricExporter = {
-      if (grpc) {
-        OtlpGrpcMetricExporter.builder()
-          // .setRetryPolicy() // TODO:
-          .applyOnWithOpt(clientCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
-            }
-          }
-          .applyOnWithOpt(trustedCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
-            }
-          }
-          .setCompression(if (gzip) "gzip" else "none")
-          .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
-          .setEndpoint(endpoint)
-          .applyOnIf(headers.nonEmpty) { b =>
-            headers.foreach {
-              case (key, value) => b.addHeader(key, value)
-            }
-            b
-          }
-          .build()
-      } else {
-        OtlpHttpMetricExporter.builder()
-          //.addHeader() // TODO:
-          //.setRetryPolicy() // TODO:
-          .applyOnWithOpt(clientCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
-            }
-          }
-          .applyOnWithOpt(trustedCert) {
-            case (builder, id) => env.proxyState.certificate(id) match {
-              case None => builder
-              case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
-            }
-          }
-          .setCompression(if (gzip) "gzip" else "none")
-          .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
-          .setEndpoint(endpoint)
-          .applyOnIf(headers.nonEmpty) { b =>
-            headers.foreach {
-              case (key, value) => b.addHeader(key, value)
-            }
-            b
-          }
-          .build()
-      }
-    }
-  }
-
-  object OtlpSettings {
-
-    private val sdks = new UnboundedTrieMap[String, OpenTelemetrySdkWrapper]()
-
-    val defaultLogs = OtlpSettings(
-      grpc = false,
-      endpoint = "http://localhost:10080/logs",
-      timeout = 5000L.millis,
-      gzip = false,
-      clientCert = None,
-      trustedCert = None,
-      headers = Map.empty,
-      maxBatch = 100,
-      maxDuration = 10.seconds,
-    )
-
-    val defaultServerLogs = defaultLogs.copy(
-      endpoint = "http://localhost:10080/server-logs",
-    )
-
-    val defaultMetrics = defaultLogs.copy(
-      endpoint = "http://localhost:10080/metrics",
-    )
-
-    val format = new Format[OtlpSettings] {
-      override def writes(o: OtlpSettings): JsValue = Json.obj(
-        "gzip" -> o.gzip,
-        "grpc" -> o.grpc,
-        "endpoint" -> o.endpoint,
-        "timeout" -> o.timeout.toMillis,
-        "client_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
-        "trusted_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
-        "headers" -> o.headers,
-        "max_batch" -> o.maxBatch,
-        "max_duration" -> o.maxDuration.toMillis,
-      )
-      override def reads(json: JsValue): JsResult[OtlpSettings] = Try {
-        OtlpSettings(
-          grpc = json.select("grpc").asOpt[Boolean].getOrElse(false),
-          gzip = json.select("gzip").asOpt[Boolean].getOrElse(false),
-          endpoint = json.select("endpoint").asString,
-          timeout = json.select("timeout").asOpt[Long].filterNot(_ == 0L).map(_.millis).getOrElse(30.seconds),
-          clientCert = json.select("client_cert").asOpt[String],
-          trustedCert = json.select("trusted_cert").asOpt[String],
-          headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-          maxBatch = json.select("max_batch").asOpt[Int].getOrElse(1000),
-          maxDuration = json.select("max_duration").asOpt[Long].filterNot(_ == 0L).map(_.millis).getOrElse(30.seconds)
-        )
-      } match {
-        case Failure(e) => JsError(e.getMessage)
-        case Success(e) => JsSuccess(e)
-      }
-    }
-    def sdkFor(_id: String, name: String, settings: OtlpSettings, env: => Env): OpenTelemetrySdkWrapper = sdks.synchronized {
-      val id = settings.endpoint // _id
-      def build(): OpenTelemetrySdkWrapper = {
-        val sdk = OpenTelemetrySdk.builder()
-          .setMeterProvider(
-            SdkMeterProvider.builder()
-              .setResource(
-                Resource.getDefault().toBuilder()
-                  .put(ResourceAttributes.SERVICE_NAME, name)
-                  .build()
-              )
-              .registerMetricReader(PeriodicMetricReader
-                .builder(settings.metricsExporter(env))
-                .setInterval(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
-                .build())
-              .build()
-          )
-          .setLoggerProvider(
-            SdkLoggerProvider.builder()
-              .setResource(
-                Resource.getDefault().toBuilder()
-                  .put(ResourceAttributes.SERVICE_NAME, name)
-                  .build()
-              )
-              .addLogRecordProcessor(
-                BatchLogRecordProcessor
-                  .builder(settings.logExporter(env))
-                  .setMaxExportBatchSize(settings.maxBatch)
-                  .setScheduleDelay(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
-                  .build()
-              )
-              .build()
-          )
-          .build()
-        OpenTelemetrySdkWrapper(sdk, settings)
-      }
-      var sdk = sdks.getOrUpdate(id) {
-        build()
-      }
-      if (sdk.hasChangedFrom(settings)) {
-        sdk.close()
-        sdk = build()
-        sdks.put(id, sdk)
-      }
-      sdk
-    }
-  }
-
   class OtlpLogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
     extends DefaultDataExporter(config)(ec, env) {
 
@@ -1583,9 +1352,9 @@ object Exporters {
       case None => ExportResult.ExportResultFailure("Bad config type !").vfuture
       case Some(exporterConfig) => {
         val sdk = OtlpSettings.sdkFor(config.id, config.name, exporterConfig.otlp, env)
-        val meter = sdk.sdk.meterBuilder(env.clusterConfig.name)
+        val meter = new OpenTelemetryMeter(sdk, sdk.sdk.meterBuilder(env.clusterConfig.name)
           .setInstrumentationVersion(env.otoroshiVersion)
-          .build()
+          .build())
         events.foreach { event =>
           exporterConfig.metrics.map { metric =>
             try {
@@ -1598,18 +1367,18 @@ object Exporters {
               val shouldTriggerOnAlert = metric.eventType.map(typeSelector => (event \ "alert").asOpt[String].contains(typeSelector)).getOrElse(true)
               if (shouldTriggerOnType || shouldTriggerOnAlert) {
                 metric.kind match {
-                  case MetricSettingsKind.Counter if metric.selector.isEmpty => meter.counterBuilder(id).build().add(1L, attributes)
+                  case MetricSettingsKind.Counter if metric.selector.isEmpty => meter.withLongCounter(id).add(1L, attributes)
                   case MetricSettingsKind.Counter if metric.selector.isDefined =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.counterBuilder(id).build().add(v, attributes)
+                      meter.withLongCounter(id).add(v, attributes)
                     }
                   case MetricSettingsKind.Histogram =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.histogramBuilder(id).build().record(v, attributes)
+                      meter.withLongHistogram(id).record(v, attributes)
                     }
                   case MetricSettingsKind.Timer =>
                     withEventLongValue(event, metric.selector) { v =>
-                      meter.histogramBuilder(id).setUnit("milliseconds").build().record(v, attributes)
+                      meter.withTimer(id).record(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos, attributes)
                     }
                 }
               }
