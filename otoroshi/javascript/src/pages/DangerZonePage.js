@@ -728,6 +728,15 @@ export class DangerZonePage extends Component {
           'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi team. Enabling this is the best way to contribute to Otoroshi improvement !',
       },
     },
+    initWithNewEngine: {
+      type: 'bool',
+      props: {
+        label: 'Routes only',
+        placeholder: '-',
+        help:
+            'If enabled, otoroshi will not display service descriptor related stuff anymore',
+      },
+    },
     maxConcurrentRequests: {
       type: 'number',
       props: {
@@ -1119,6 +1128,7 @@ export class DangerZonePage extends Component {
     'limitConcurrentRequests',
     'trustXForwarded',
     'anonymousReporting',
+    'initWithNewEngine',
     'maxConcurrentRequests',
     'maxHttp10ResponseSize',
     'maxLogsSize',
