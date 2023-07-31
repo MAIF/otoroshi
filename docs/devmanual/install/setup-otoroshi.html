@@ -88,6 +88,7 @@
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -220,6 +221,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -1752,6 +1754,40 @@ otoroshi {
   secret = &quot;verysecretvaluethatyoumustoverwrite&quot; # the secret used to sign sessions
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  open-telemetry {
+  	server-logs {
+      enabled = false
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENABLED}
+      gzip = false
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GZIP}
+      grpc = false
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENDPOINT}
+      timeout = 5000
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_HEADERS}
+      max_batch = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_MAX_BATCH}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_MAX_DURATION}
+  	}
+  	server-metrics {
+      enabled = false
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENABLED}
+      gzip = false
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GZIP}
+      grpc = false
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENDPOINT}
+      timeout = 5000
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_HEADERS}
+      max_batch = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_MAX_BATCH}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_MAX_DURATION}
+    }
+  }
   next {
     state-sync-interval = 10000
     state-sync-interval = ${?OTOROSHI_NEXT_STATE_SYNC_INTERVAL}
@@ -3083,6 +3119,32 @@ otoroshi {
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  open-telemetry {
+  	server-logs {
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENABLED}
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GZIP}
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENDPOINT}
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_HEADERS}
+      max_batch = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_MAX_BATCH}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_MAX_DURATION}
+  	}
+  	server-metrics {
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENABLED}
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GZIP}
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENDPOINT}
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_HEADERS}
+      max_batch = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_MAX_BATCH}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_MAX_DURATION}
+    }
+  }
   next {
     state-sync-interval = ${?OTOROSHI_NEXT_STATE_SYNC_INTERVAL}
     export-reporting = ${?OTOROSHI_NEXT_EXPORT_REPORTING}
