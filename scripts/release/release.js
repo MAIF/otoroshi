@@ -265,7 +265,7 @@ async function buildTcpTunnelingCliGUI(location, version) {
     cd ${location}/tools/tcp-udp-tunnel-client-gui
     yarn install
     yarn dist-mac
-    hdiutil create -format UDZO -srcfolder "$LOCATION/tools/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
+    # hdiutil create -format UDZO -srcfolder "$LOCATION/tools/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
     `, 
     location, 
     {
@@ -349,9 +349,9 @@ async function uploadAllFiles(release, location, to) {
   await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-linux`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });
-  await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
-  await uploadFilesToRelease(release, { name: `experimental-tls-termination-darwin`, path: path.resolve(location, `experimental-tls-termination-darwin`) });
-  await uploadFilesToRelease(release, { name: `experimental-tls-termination-linux`, path: path.resolve(location, `experimental-tls-termination-linux`) });
+  //await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
+  //await uploadFilesToRelease(release, { name: `experimental-tls-termination-darwin`, path: path.resolve(location, `experimental-tls-termination-darwin`) });
+  //await uploadFilesToRelease(release, { name: `experimental-tls-termination-linux`, path: path.resolve(location, `experimental-tls-termination-linux`) });
 }
 
 async function uploadFilesToRelease(release, file) {
