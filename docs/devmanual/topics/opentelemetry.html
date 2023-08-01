@@ -292,10 +292,75 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#opentelemetry-support" name="opentelemetry-support" class="anchor"><span class="anchor-link"></span></a>OpenTelemetry support</h1>
+<p>OpenTelemetry is an open-source project focused on providing a set of APIs, libraries, agents, and instrumentation to enable observability in modern software applications. It helps developers and software teams collect, process, and export telemetry data, which includes metrics, traces, and logs, from their applications and infrastructure. The project aims to provide a standardized approach to instrumenting applications for distributed tracing, metrics, and logging.</p>
+<p>Here&rsquo;s a breakdown of the key components of OpenTelemetry:</p>
+<ul>
+  <li><strong>Tracing</strong>: Distributed tracing is a method used to monitor and understand the flow of requests across different services in a distributed system. OpenTelemetry allows developers to add instrumentation to their code to trace requests as they flow through various services, providing insights into performance bottlenecks and dependencies between components.</li>
+  <li><strong>Metrics</strong>: Metrics are quantitative measurements that provide information about the behavior and performance of an application. OpenTelemetry enables developers to collect metrics from their applications, such as CPU usage, memory consumption, and custom application-specific metrics, to gain visibility into the application&rsquo;s health and performance.</li>
+  <li><strong>Logging</strong>: OpenTelemetry also supports capturing and exporting logs, which are textual records of events and messages that occur during the execution of an application. Logs are essential for debugging and monitoring purposes, and OpenTelemetry allows developers to integrate logging with other telemetry data, making it easier to correlate events.</li>
+</ul>
+<p>OpenTelemetry is designed to be language-agnostic and vendor-agnostic, supporting multiple programming languages and various telemetry backends. This flexibility makes it easier for developers to adopt the OpenTelemetry standard regardless of their technology stack.</p>
+<p>The goal of OpenTelemetry is to promote a consistent way of collecting telemetry data across different applications and environments, making it easier for developers to adopt observability best practices. By leveraging OpenTelemetry, software teams can gain deeper insights into the behavior of their systems and improve performance, troubleshoot issues, and enhance the overall reliability of their applications.</p>
+<p>Now, OpenTelemetry is officialy supported in Otoroshi and can be used in different parts of your instance. You can use it to collect otoroshi server logs and otoroshi server metrics through config. file. Then you have access to 2 new data exporter that can export otoroshi events to OpenTelemetry log collector and send custom metrics to an OpenTelemetry metrics collector.</p>
 <h2><a href="#server-logs" name="server-logs" class="anchor"><span class="anchor-link"></span></a>server logs</h2>
+<p>otoroshi server logs can be sent to an OpenTelemetry log collector. Everything is configured throught the config. file and can be overloaded through env. variables, and <code>-D</code> jvm flags.</p>
+<p>first you need to set the <code>otoroshi.open-telemetry.server-logs.enabled</code> flag to <code>true</code> and then configure the remote connection through endpoint, timeout, gzip and grpc. You can also enabled mTLS through <code>client_cert</code> and <code>trusted_cert</code> that are otoroshi certificates id references. Finally you can use <code>max_duration</code> to specify the logs push interval.</p>
+<pre class="prettyprint"><code class="language-config">otoroshi {
+  ...
+  open-telemetry {
+    server-logs {
+      enabled = false
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENABLED}
+      gzip = false
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GZIP}
+      grpc = false
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENDPOINT}
+      timeout = 5000
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_HEADERS}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_MAX_DURATION}
+    }
+    ...
+  }
+  ...
+}
+</code></pre>
 <h2><a href="#server-metrics" name="server-metrics" class="anchor"><span class="anchor-link"></span></a>server metrics</h2>
+<p>otoroshi server metrics can be sent to an OpenTelemetry metrics collector. Everything is configured throught the config. file and can be overloaded through env. variables, and <code>-D</code> jvm flags.</p>
+<p>first you need to set the <code>otoroshi.open-telemetry.server-metrics.enabled</code> flag to <code>true</code> and then configure the remote connection through endpoint, timeout, gzip and grpc. You can also enabled mTLS through <code>client_cert</code> and <code>trusted_cert</code> that are otoroshi certificates id references. Finally you can use <code>max_duration</code> to specify the metrics push interval.</p>
+<pre class="prettyprint"><code class="language-config">otoroshi {
+  ...
+  open-telemetry {
+    server-metrics {
+      enabled = false
+      enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENABLED}
+      gzip = false
+      gzip = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GZIP}
+      grpc = false
+      grpc = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_GRPC}
+      endpoint = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_ENDPOINT}
+      timeout = 5000
+      timeout = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TIMEOUT}
+      client_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_CLIENT_CERT}
+      trusted_cert = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_TRUSTED_CERT}
+      headers = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_HEADERS}
+      max_duration = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_METRICS_MAX_DURATION}
+    }
+    ...
+  }
+  ...
+}
+</code></pre>
 <h2><a href="#logs-data-expoter" name="logs-data-expoter" class="anchor"><span class="anchor-link"></span></a>logs data expoter</h2>
+<p>A new kind of data exporter is now available to send otoroshi events serialized as text to an OpenTelemetry log collector. First create a new data exporter and select the type <code>otlp-logs</code>. Then fill the filter and projection part as needed. In the exporter config. section, fill the collectors endpoint, timeout, gzip and grpc flags, enable mTLS through <code>client_cert</code> and <code>trusted_cert</code>. </p><div class="centered-img">
+<img src="../imgs/otlp-logs.png" /></div>
 <h2><a href="#metrics-data-exporter" name="metrics-data-exporter" class="anchor"><span class="anchor-link"></span></a>metrics data exporter</h2>
+<p>A new kind of data exporter is now available to send custom metrics derived from otoroshi events to an OpenTelemetry metrics collector. First create a new data exporter and select the type <code>otlp-metrics</code>. Then fill the filter and projection part as needed. In the exporter config. section, fill the collectors endpoint, timeout, gzip and grpc flags, enable mTLS through <code>client_cert</code> and <code>trusted_cert</code>. </p>
+<p>Then you will be able to add new metrics on this data exporter with a name, the type of metric (counter, timer, histogram), the value and the kind of event it&rsquo;s based on.</p><div class="centered-img">
+<img src="../imgs/otlp-metrics.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
