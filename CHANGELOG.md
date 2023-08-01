@@ -4,13 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.7.0] - 2023-08-01
+
+https://github.com/MAIF/otoroshi/milestone/70?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.6.0...v16.7.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.7.0
+
+### Added 
+
+- X-Forwarded-Prefix not send with other X-Forwarded-* (#1626)
+- new kind of data exporter for opentelemetry metrics (#1637)
+- new kind of data exporter for opentelemetry logs (#1636)
+- integration with opentelemetry logs (#1635)
+- add new endpoint to get one simple admin at a time (#1681)
+- support opentelemetry for internal metrics (#1686)
+- support date manipulation in expression language (#1682)
+- Allow to access script by url (#1670)
+- SAMLv2 improvements (#1685)
+
+### Fixed
+
+- updating admin with api leads to an error because its expected to provide a backoffice user (#1684)
+- Auth module - SAML : Authentication successfull, but loop to login page (#1671)
+- bad SAML2 url composition in some cases (#1683)
+- circuit breaker help labels broken (#1687)
+
+
 ## [16.6.0] - 2023-07-19
 
 https://github.com/MAIF/otoroshi/milestone/67?closed=1
 https://github.com/MAIF/otoroshi/compare/v16.5.2...v16.6.0
 https://github.com/MAIF/otoroshi/releases/tag/v16.6.0
 
-## Added
+### Added
 
 - add generic pooling support for mono-threaded WASM VMs (#1642)
 - add routine to automatically kill unused vm, vm with too much memory consumed, etc  (#1649)
@@ -23,7 +49,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.6.0
 - doc: add circuit breaker topic (#1641)
 
 
-## Changed
+### Changed
 
 - remove lifetime from wasm vm config. (#1654)
 - support wasm vm pool on non wasm plugin configs. (#1652)
@@ -34,7 +60,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.6.0
 - rewrite wasm data exporters to use vm pools (#1647)
 - rewrite wasm auth plugins to use vm pools (#1653)
 
-## Fixed
+### Fixed
 
 - make template update work in multi-thread env. (#1648)
 - handle requests burst on wasm plugin (#1650)
