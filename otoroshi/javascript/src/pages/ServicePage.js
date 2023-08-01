@@ -2,6 +2,7 @@ import React, { Component, Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import YAML from 'yaml';
+import moment from 'moment';
 
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
@@ -1159,21 +1160,34 @@ export class ServicePage extends Component {
 
   convertToRoute = () => {
     window.newConfirm(
-      "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself.",
-      (ok) => {
+      "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself."
+    ).then((ok) => {
         if (ok) {
           BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
-            BackOfficeServices.nextClient
+            BackOfficeServices
+              .nextClient
               .forEntity('routes')
-              .create(res)
+              .create({
+                ...res,
+                metadata: {
+                  ...res.metadata,
+                  converted_from_service_by: window.__user.email + ' - ' + window.__user.name,
+                  converted_from_service_at: moment().format('YYYY-MM-DD hh:mm:ss')
+                }
+              })
               .then(() => {
                 const newService = {
                   ...this.state.service,
                   name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + this.state.service.name,
                   enabled: false,
+                  metadata: {
+                    ...this.state.service.metadata,
+                    converted_to_route_by: window.__user.email + ' - ' + window.__user.name,
+                    converted_to_route_at: moment().format('YYYY-MM-DD hh:mm:ss')
+                  }
                 };
                 this.setState({ service: newService }, () => {
-                  BackOfficeServices.saveService(newService).then(() => {
+                  BackOfficeServices.updateService(newService.id, newService).then(() => {
                     this.props.history.push(`/routes/${res.id}?tab=informations`);
                   });
                 });

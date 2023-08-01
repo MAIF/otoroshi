@@ -3,10 +3,52 @@ import { NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from './FeedbackButton';
 import { convertAsRoute } from '../../services/BackOfficeServices';
 import { useHistory } from 'react-router-dom';
+import * as BackOfficeServices from "../../services/BackOfficeServices";
+import moment from 'moment';
 
 export function ImportServiceDescriptor({ hide }) {
   const [service, setService] = useState();
   const history = useHistory();
+
+  function conversion() {
+    return convertAsRoute(service).then((res) => {
+      return BackOfficeServices
+        .fetchService("prod", service)
+        .then(fullService => {
+          const newService = {
+            ...fullService,
+            name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + fullService.name,
+            enabled: false,
+            metadata: {
+              ...fullService.metadata,
+              converted_to_route_by: window.__user.email + ' - ' + window.__user.name,
+              converted_to_route_at: moment().format('YYYY-MM-DD hh:mm:ss')
+            }
+          };
+          return BackOfficeServices.updateService(newService.id, newService).then(() => {
+            return BackOfficeServices.nextClient
+              .forEntity('routes')
+              .create({
+                ...res,
+                metadata: {
+                  ...res.metadata,
+                  converted_from_service_by: window.__user.email + ' - ' + window.__user.name,
+                  converted_from_service_at: moment().format('YYYY-MM-DD hh:mm:ss')
+                }
+              })
+              .then(() => {
+                history.push(`/routes/${res.id}?tab=informations`);
+              });
+          });
+        })
+    });
+    /*
+    convertAsRoute(service).then((res) => {
+      history.push(`/routes/${res.id}?tab=informations`, {
+        routeFromService: res,
+      });
+    })*/
+  }
 
   return (
     <div className="wizard">
@@ -38,13 +80,7 @@ export function ImportServiceDescriptor({ hide }) {
             disabled={!service}
             text="Migrate and start editing"
             className="mt-3"
-            onPress={() =>
-              convertAsRoute(service).then((res) => {
-                history.push(`/routes/${res.id}?tab=informations`, {
-                  routeFromService: res,
-                });
-              })
-            }
+            onPress={() => conversion()}
             icon={() => <i className="fas fa-paper-plane" />}
           />
         </div>
