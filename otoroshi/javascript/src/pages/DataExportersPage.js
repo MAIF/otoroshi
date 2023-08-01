@@ -671,6 +671,8 @@ export class NewExporterForm extends Component {
                     return this.dataChange({ config: config.mailerSettings });
                   } else if (this.data().type === 'custommetrics') {
                     return this.dataChange({ config: config.custommetrics });
+                  } else if (this.data().type === 'otlp-metrics') {
+                    return this.dataChange({ config: config.custommetrics });
                   } else {
                     return this.dataChange({ config });
                   }
