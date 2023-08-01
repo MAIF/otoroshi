@@ -22,6 +22,7 @@ import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
+import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
@@ -29,7 +30,6 @@ import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
-import otoroshi.utils.metrics.Metrics
 import otoroshi.utils.syntax.implicits._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector

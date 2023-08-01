@@ -8,6 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
+import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -38,7 +39,6 @@ import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.metrics.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
 import play.api._
 import play.api.http.HttpConfiguration

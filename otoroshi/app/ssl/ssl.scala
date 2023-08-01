@@ -22,6 +22,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
+import otoroshi.metrics.{FakeHasMetrics, HasMetrics}
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import otoroshi.gateway.Errors
@@ -53,8 +54,6 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
-import otoroshi.utils.metrics.{FakeHasMetrics, HasMetrics}
-import otoroshi.utils.metrics.FakeHasMetrics
 import otoroshi.utils.syntax.implicits._
 
 import scala.collection.concurrent.TrieMap
