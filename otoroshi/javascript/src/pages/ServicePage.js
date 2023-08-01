@@ -690,7 +690,7 @@ export class ServicePage extends Component {
     } else {
       this.setState({ env: this.props.env });
     }
-    console.log(explainations.CIRCUIT_BREAKER_RETRY_INITIAL_DELAY)
+    console.log(explainations.CIRCUIT_BREAKER_RETRY_INITIAL_DELAY);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -1159,21 +1159,22 @@ export class ServicePage extends Component {
   };
 
   convertToRoute = () => {
-    window.newConfirm(
-      "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself."
-    ).then((ok) => {
+    window
+      .newConfirm(
+        "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself."
+      )
+      .then((ok) => {
         if (ok) {
           BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
-            BackOfficeServices
-              .nextClient
+            BackOfficeServices.nextClient
               .forEntity('routes')
               .create({
                 ...res,
                 metadata: {
                   ...res.metadata,
                   converted_from_service_by: window.__user.email + ' - ' + window.__user.name,
-                  converted_from_service_at: moment().format('YYYY-MM-DD hh:mm:ss')
-                }
+                  converted_from_service_at: moment().format('YYYY-MM-DD hh:mm:ss'),
+                },
               })
               .then(() => {
                 const newService = {
@@ -1183,8 +1184,8 @@ export class ServicePage extends Component {
                   metadata: {
                     ...this.state.service.metadata,
                     converted_to_route_by: window.__user.email + ' - ' + window.__user.name,
-                    converted_to_route_at: moment().format('YYYY-MM-DD hh:mm:ss')
-                  }
+                    converted_to_route_at: moment().format('YYYY-MM-DD hh:mm:ss'),
+                  },
                 };
                 this.setState({ service: newService }, () => {
                   BackOfficeServices.updateService(newService.id, newService).then(() => {
@@ -1194,8 +1195,7 @@ export class ServicePage extends Component {
               });
           });
         }
-      }
-    );
+      });
   };
 
   render() {

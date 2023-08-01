@@ -373,11 +373,11 @@ object OtoroshiLoaderHelper {
       val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
       if (enabled) {
         val clusterConfig = ClusterConfig.fromRoot(configuration)
-        val otlpConfig = OtlpSettings.format.reads(config).get
-        val lc = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-        val rootLogger = lc.getLogger("root")
-        val appender = new io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender()
-        val sdk = OtlpSettings.sdkFor("root-server-logs", clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
+        val otlpConfig    = OtlpSettings.format.reads(config).get
+        val lc            = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+        val rootLogger    = lc.getLogger("root")
+        val appender      = new io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender()
+        val sdk           = OtlpSettings.sdkFor("root-server-logs", clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
         appender.setOpenTelemetry(sdk.sdk)
         appender.start()
         rootLogger.addAppender(appender)

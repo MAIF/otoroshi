@@ -733,8 +733,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Routes only',
         placeholder: '-',
-        help:
-            'If enabled, otoroshi will not display service descriptor related stuff anymore',
+        help: 'If enabled, otoroshi will not display service descriptor related stuff anymore',
       },
     },
     maxConcurrentRequests: {

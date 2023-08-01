@@ -51,19 +51,19 @@ sealed trait W3CTracingConfigKind {
   def name: String
 }
 object W3CTracingConfigKind       {
-  case object Jaeger extends W3CTracingConfigKind { def name: String = "jaeger" }
+  case object Jaeger   extends W3CTracingConfigKind { def name: String = "jaeger"    }
   case object OtlpGrpc extends W3CTracingConfigKind { def name: String = "otlp-grpc" }
   case object OtlpHttp extends W3CTracingConfigKind { def name: String = "otlp-http" }
-  case object Zipkin extends W3CTracingConfigKind { def name: String = "zipkin" }
-  case object Logger extends W3CTracingConfigKind { def name: String = "logger" }
-  case object Noop   extends W3CTracingConfigKind { def name: String = "noop"   }
+  case object Zipkin   extends W3CTracingConfigKind { def name: String = "zipkin"    }
+  case object Logger   extends W3CTracingConfigKind { def name: String = "logger"    }
+  case object Noop     extends W3CTracingConfigKind { def name: String = "noop"      }
   def parse(str: String): W3CTracingConfigKind = str.toLowerCase() match {
-    case "jaeger" => Jaeger
+    case "jaeger"    => Jaeger
     case "otlp-grpc" => OtlpGrpc
     case "otlp-http" => OtlpHttp
-    case "zipkin" => Zipkin
-    case "logger" => Logger
-    case _        => Noop
+    case "zipkin"    => Zipkin
+    case "logger"    => Logger
+    case _           => Noop
   }
 }
 
@@ -115,15 +115,15 @@ class W3CTracing extends NgRequestTransformer {
 
   def buildOpenTelemetry(config: W3CTracingConfig): SdkWrapper = {
     val sdkTracerProvider = config.kind match {
-      case W3CTracingConfigKind.Noop   =>
+      case W3CTracingConfigKind.Noop     =>
         SdkTracerProvider.builder
           .addSpanProcessor(SimpleSpanProcessor.create(NoopSpanExporter.getInstance))
           .build
-      case W3CTracingConfigKind.Logger =>
+      case W3CTracingConfigKind.Logger   =>
         SdkTracerProvider.builder
           .addSpanProcessor(SimpleSpanProcessor.create(LoggingSpanExporter.create()))
           .build
-      case W3CTracingConfigKind.Jaeger =>
+      case W3CTracingConfigKind.Jaeger   =>
         SdkTracerProvider.builder
           .addSpanProcessor(
             SimpleSpanProcessor.create(
@@ -159,7 +159,7 @@ class W3CTracing extends NgRequestTransformer {
             )
           )
           .build
-      case W3CTracingConfigKind.Zipkin =>
+      case W3CTracingConfigKind.Zipkin   =>
         SdkTracerProvider.builder
           .addSpanProcessor(
             SimpleSpanProcessor.create(

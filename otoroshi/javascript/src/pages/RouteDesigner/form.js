@@ -151,7 +151,10 @@ export class Target extends Component {
 
 export class CustomTimeout extends Component {
   formSchema = {
-    path: { type: 'string', props: { label: 'Path', help: explainations.CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH } },
+    path: {
+      type: 'string',
+      props: { label: 'Path', help: explainations.CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH },
+    },
     global_timeout: {
       type: 'number',
       props: {
@@ -170,11 +173,19 @@ export class CustomTimeout extends Component {
     },
     idle_timeout: {
       type: 'number',
-      props: { label: 'idle timeout', suffix: 'milliseconds', help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT },
+      props: {
+        label: 'idle timeout',
+        suffix: 'milliseconds',
+        help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT,
+      },
     },
     call_timeout: {
       type: 'number',
-      props: { label: 'call timeout', suffix: 'milliseconds', help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT },
+      props: {
+        label: 'call timeout',
+        suffix: 'milliseconds',
+        help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT,
+      },
     },
     call_and_stream_timeout: {
       type: 'number',
@@ -395,7 +406,11 @@ export const schemas = {
       },
       'client.max_errors': {
         type: 'number',
-        props: { label: 'max errors', suffix: 'errors', help: explainations.CIRCUIT_BREAKER_MAX_ERRORS },
+        props: {
+          label: 'max errors',
+          suffix: 'errors',
+          help: explainations.CIRCUIT_BREAKER_MAX_ERRORS,
+        },
       },
       'client.global_timeout': {
         type: 'number',

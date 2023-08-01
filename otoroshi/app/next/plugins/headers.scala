@@ -527,12 +527,13 @@ class XForwardedHeaders extends NgRequestTransformer {
       Seq(
         "X-Forwarded-For"   -> xForwardedFor,
         "X-Forwarded-Host"  -> xForwardedHost,
-        "X-Forwarded-Proto" -> xForwardedProto,
+        "X-Forwarded-Proto" -> xForwardedProto
       ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
-        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank => hdrs ++ Seq(
-          "X-Forwarded-Prefix" -> route.path,
-        )
-        case (hdrs, _) => hdrs
+        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank =>
+          hdrs ++ Seq(
+            "X-Forwarded-Prefix" -> route.path
+          )
+        case (hdrs, _)                                                              => hdrs
       }
     } else if (!env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.remoteAddress
@@ -543,10 +544,11 @@ class XForwardedHeaders extends NgRequestTransformer {
         "X-Forwarded-Host"  -> xForwardedHost,
         "X-Forwarded-Proto" -> xForwardedProto
       ).applyOnWithOpt(ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)) {
-        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank => hdrs ++ Seq(
-          "X-Forwarded-Prefix" -> route.path,
-        )
-        case (hdrs, _) => hdrs
+        case (hdrs, route) if route.route.frontend.stripPath && !route.path.isBlank =>
+          hdrs ++ Seq(
+            "X-Forwarded-Prefix" -> route.path
+          )
+        case (hdrs, _)                                                              => hdrs
       }
     } else {
       Seq.empty[(String, String)]
@@ -575,24 +577,24 @@ class ForwardedHeader extends NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def transformRequestSync(
-   ctx: NgTransformerRequestContext
+      ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val request           = ctx.request
     val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
         .get("X-Forwarded-For")
-        .map(v => v + ", for: " + request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
-        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
-      val xForwardedBy = request.headers
+        .map(v => v + ", for: " + request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
+        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
+      val xForwardedBy    = request.headers
         .get("X-Forwarded-By")
-        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""})
+        .getOrElse(request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" })
       val xForwardedProto = request.theProtocol
       val xForwardedHost  = request.theHost
       Seq(
         "Forwarded" -> s"${xForwardedFor};proto: ${xForwardedProto};host: ${xForwardedHost};by: ${xForwardedBy}"
       )
     } else {
-      val xForwardedFor   = request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v""""}
+      val xForwardedFor   = request.remoteAddress.applyOnWithPredicate(_.contains(":")) { v => s""""$v"""" }
       val xForwardedProto = request.theProtocol
       val xForwardedHost  = request.theHost
       Seq(

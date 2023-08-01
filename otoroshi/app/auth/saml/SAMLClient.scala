@@ -22,7 +22,11 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
+import org.opensaml.xmlsec.keyinfo.impl.{
+  ChainingKeyInfoCredentialResolver,
+  StaticKeyInfoCredentialResolver,
+  X509KeyInfoGeneratorFactory
+}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -80,17 +84,18 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
     )
     val hash       = env.sign(s"${authConfig.id}:::${descriptor.id}")
-    val relayState = JWT.create()
+    val relayState = JWT
+      .create()
       .withClaim("hash", hash)
       .withClaim("desc", descriptor.id)
       .withClaim("route", isRoute)
       .withClaim("ref", authConfig.id)
       .withClaim("redirect_uri", redirectTo)
       .sign(Algorithm.HMAC512(env.otoroshiSecret))
-      //URLEncoder.encode(
-      //  s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
-      //  "UTF-8"
-      //)
+    //URLEncoder.encode(
+    //  s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirectTo}&route=$isRoute&ref=${authConfig.id}",
+    //  "UTF-8"
+    //)
     getRequest(env, authConfig).map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>
@@ -105,10 +110,10 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           Redirect(redirectUrl)
             .addingToSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirectTo,
-              "hash" -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
-              "desc" -> descriptor.id,
-              "ref" -> authConfig.id,
-              "route" -> s"$isRoute",
+              "hash"                                                            -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
+              "desc"                                                            -> descriptor.id,
+              "ref"                                                             -> authConfig.id,
+              "route"                                                           -> s"$isRoute"
             )
         }
     }

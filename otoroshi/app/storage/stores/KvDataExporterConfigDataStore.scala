@@ -1,7 +1,14 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, WasmExporterSettings}
+import otoroshi.events.Exporters.{
+  CustomMetricsSettings,
+  MetricSettings,
+  MetricSettingsKind,
+  OtlpLogsExporterSettings,
+  OtlpMetricsExporterSettings,
+  WasmExporterSettings
+}
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models._
@@ -235,7 +242,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = CustomMetricsSettings()
         )
-      case Some("wasm") =>
+      case Some("wasm")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.Wasm,
           id = IdGenerator.namedId("data_exporter", env),
@@ -248,7 +255,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = WasmExporterSettings(Json.obj(), None)
         )
-      case Some("otlp-logs") =>
+      case Some("otlp-logs")      =>
         DataExporterConfig(
           typ = DataExporterConfigType.OtlpLogs,
           id = IdGenerator.namedId("data_exporter", env),
@@ -261,7 +268,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = OtlpLogsExporterSettings(OtlpSettings.defaultLogs)
         )
-      case Some("otlp-metrics") =>
+      case Some("otlp-metrics")   =>
         DataExporterConfig(
           typ = DataExporterConfigType.OtlpMetrics,
           id = IdGenerator.namedId("data_exporter", env),
@@ -275,13 +282,15 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           config = OtlpMetricsExporterSettings(
             otlp = OtlpSettings.defaultMetrics,
             tags = Map.empty,
-            metrics = Seq(MetricSettings(
-              id = "calls_duration",
-              selector = Some("duration"),
-              kind = MetricSettingsKind.Counter,
-              eventType = Some("GatewayEvent"),
-              labels = Map.empty,
-            ))
+            metrics = Seq(
+              MetricSettings(
+                id = "calls_duration",
+                selector = Some("duration"),
+                kind = MetricSettingsKind.Counter,
+                eventType = Some("GatewayEvent"),
+                labels = Map.empty
+              )
+            )
           )
         )
       case _                      =>

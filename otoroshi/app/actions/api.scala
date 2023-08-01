@@ -59,7 +59,7 @@ trait ApiActionContextCapable {
           .flatMap(_.asOpt[JsArray])
           .map(UserRights.readFromArray)
         tenantAccess match {
-          case None => true
+          case None             => true
           case Some(userRights) => userRights.superAdmin
         }
       }

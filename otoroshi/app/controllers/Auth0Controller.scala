@@ -495,7 +495,8 @@ class AuthController(
                 // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
                 val params: Map[String, String] = {
                   try {
-                    val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
+                    val decoded =
+                      JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
                     decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
                   } catch {
                     case t: Throwable =>
@@ -738,7 +739,8 @@ class AuthController(
       // logger.info(s"confidentialAppCallback context: ${context.prettify}")
 
       ((desc, stt) match {
-        case (Some(serviceId), _) if !isRoute => processService(serviceId).map(_.removingFromSession("desc", "ref", "route"))
+        case (Some(serviceId), _) if !isRoute =>
+          processService(serviceId).map(_.removingFromSession("desc", "ref", "route"))
         case (Some(routeId), _) if isRoute    => processRoute(routeId).map(_.removingFromSession("desc", "ref", "route"))
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
@@ -752,21 +754,21 @@ class AuthController(
         case (_, _)                           =>
           NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
       })
-      .recover {
-        case t: Throwable => {
-          val errorId = IdGenerator.uuid
-          logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
-          InternalServerError(
-            otoroshi.views.html.oto
-              .error(
-                message =
-                  s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
-                _env = env,
-                title = "Authorization error"
-              )
-          )
+        .recover {
+          case t: Throwable => {
+            val errorId = IdGenerator.uuid
+            logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
+            InternalServerError(
+              otoroshi.views.html.oto
+                .error(
+                  message =
+                    s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
+                  _env = env,
+                  title = "Authorization error"
+                )
+            )
+          }
         }
-      }
     }
 
   def auth0error(error: Option[String], error_description: Option[String]) =

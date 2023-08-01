@@ -70,9 +70,9 @@ class OpenTelemetryMeter(sdk: OpenTelemetrySdkWrapper, meter: Meter) {
 
 case class OpenTelemetrySdkWrapper(sdk: OpenTelemetrySdk, settings: OtlpSettings) {
 
-  private[opentelemetry] val longCounters = new UnboundedTrieMap[String, LongCounter]()
-  private[opentelemetry] val doubleCounters = new UnboundedTrieMap[String, DoubleCounter]()
-  private[opentelemetry] val longsHistograms = new UnboundedTrieMap[String, LongHistogram]()
+  private[opentelemetry] val longCounters     = new UnboundedTrieMap[String, LongCounter]()
+  private[opentelemetry] val doubleCounters   = new UnboundedTrieMap[String, DoubleCounter]()
+  private[opentelemetry] val longsHistograms  = new UnboundedTrieMap[String, LongHistogram]()
   private[opentelemetry] val doubleHistograms = new UnboundedTrieMap[String, DoubleHistogram]()
 
   def close(): Unit = sdk.close()
@@ -81,32 +81,33 @@ case class OpenTelemetrySdkWrapper(sdk: OpenTelemetrySdk, settings: OtlpSettings
 }
 
 case class OtlpSettings(
-                         grpc: Boolean,
-                         endpoint: String,
-                         timeout: Duration,
-                         gzip: Boolean,
-                         clientCert: Option[String],
-                         trustedCert: Option[String],
-                         headers: Map[String, String],
-                         maxBatch: Int,
-                         maxDuration: Duration,
-                       ) {
+    grpc: Boolean,
+    endpoint: String,
+    timeout: Duration,
+    gzip: Boolean,
+    clientCert: Option[String],
+    trustedCert: Option[String],
+    headers: Map[String, String],
+    maxBatch: Int,
+    maxDuration: Duration
+) {
 
   def json: JsValue = OtlpSettings.format.writes(this)
 
   def logExporter(env: => Env): LogRecordExporter = {
     if (grpc) {
-      OtlpGrpcLogRecordExporter.builder()
+      OtlpGrpcLogRecordExporter
+        .builder()
         // .setRetryPolicy() // TODO:
-        .applyOnWithOpt(clientCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(clientCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
           }
         }
-        .applyOnWithOpt(trustedCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(trustedCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
           }
         }
@@ -114,25 +115,26 @@ case class OtlpSettings(
         .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
         .setEndpoint(endpoint)
         .applyOnIf(headers.nonEmpty) { b =>
-          headers.foreach {
-            case (key, value) => b.addHeader(key, value)
+          headers.foreach { case (key, value) =>
+            b.addHeader(key, value)
           }
           b
         }
         .build()
     } else {
-      OtlpHttpLogRecordExporter.builder()
+      OtlpHttpLogRecordExporter
+        .builder()
         //.addHeader() // TODO:
         //.setRetryPolicy() // TODO:
-        .applyOnWithOpt(clientCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(clientCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
           }
         }
-        .applyOnWithOpt(trustedCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(trustedCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
           }
         }
@@ -140,8 +142,8 @@ case class OtlpSettings(
         .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
         .setEndpoint(endpoint)
         .applyOnIf(headers.nonEmpty) { b =>
-          headers.foreach {
-            case (key, value) => b.addHeader(key, value)
+          headers.foreach { case (key, value) =>
+            b.addHeader(key, value)
           }
           b
         }
@@ -151,17 +153,18 @@ case class OtlpSettings(
 
   def metricsExporter(env: => Env): MetricExporter = {
     if (grpc) {
-      OtlpGrpcMetricExporter.builder()
+      OtlpGrpcMetricExporter
+        .builder()
         // .setRetryPolicy() // TODO:
-        .applyOnWithOpt(clientCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(clientCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
           }
         }
-        .applyOnWithOpt(trustedCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(trustedCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
           }
         }
@@ -169,25 +172,26 @@ case class OtlpSettings(
         .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
         .setEndpoint(endpoint)
         .applyOnIf(headers.nonEmpty) { b =>
-          headers.foreach {
-            case (key, value) => b.addHeader(key, value)
+          headers.foreach { case (key, value) =>
+            b.addHeader(key, value)
           }
           b
         }
         .build()
     } else {
-      OtlpHttpMetricExporter.builder()
+      OtlpHttpMetricExporter
+        .builder()
         //.addHeader() // TODO:
         //.setRetryPolicy() // TODO:
-        .applyOnWithOpt(clientCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(clientCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setClientTls(cert.privateKey.getBytes, cert.chain.getBytes)
           }
         }
-        .applyOnWithOpt(trustedCert) {
-          case (builder, id) => env.proxyState.certificate(id) match {
-            case None => builder
+        .applyOnWithOpt(trustedCert) { case (builder, id) =>
+          env.proxyState.certificate(id) match {
+            case None       => builder
             case Some(cert) => builder.setTrustedCertificates(cert.chain.getBytes)
           }
         }
@@ -195,8 +199,8 @@ case class OtlpSettings(
         .setTimeout(timeout.toMillis, TimeUnit.MILLISECONDS)
         .setEndpoint(endpoint)
         .applyOnIf(headers.nonEmpty) { b =>
-          headers.foreach {
-            case (key, value) => b.addHeader(key, value)
+          headers.foreach { case (key, value) =>
+            b.addHeader(key, value)
           }
           b
         }
@@ -218,28 +222,28 @@ object OtlpSettings {
     trustedCert = None,
     headers = Map.empty,
     maxBatch = 100,
-    maxDuration = 10.seconds,
+    maxDuration = 10.seconds
   )
 
   val defaultServerLogs = defaultLogs.copy(
-    endpoint = "http://localhost:10080/server-logs",
+    endpoint = "http://localhost:10080/server-logs"
   )
 
   val defaultMetrics = defaultLogs.copy(
-    endpoint = "http://localhost:10080/metrics",
+    endpoint = "http://localhost:10080/metrics"
   )
 
   val format = new Format[OtlpSettings] {
     override def writes(o: OtlpSettings): JsValue = Json.obj(
-      "gzip" -> o.gzip,
-      "grpc" -> o.grpc,
-      "endpoint" -> o.endpoint,
-      "timeout" -> o.timeout.toMillis,
-      "client_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
+      "gzip"         -> o.gzip,
+      "grpc"         -> o.grpc,
+      "endpoint"     -> o.endpoint,
+      "timeout"      -> o.timeout.toMillis,
+      "client_cert"  -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
       "trusted_cert" -> o.clientCert.map(JsString.apply).getOrElse(JsNull).asValue,
-      "headers" -> o.headers,
-      "max_batch" -> o.maxBatch,
-      "max_duration" -> o.maxDuration.toMillis,
+      "headers"      -> o.headers,
+      "max_batch"    -> o.maxBatch,
+      "max_duration" -> o.maxDuration.toMillis
     )
 
     override def reads(json: JsValue): JsResult[OtlpSettings] = Try {
@@ -260,52 +264,62 @@ object OtlpSettings {
     }
   }
 
-  def sdkFor(_id: String, name: String, settings: OtlpSettings, env: => Env): OpenTelemetrySdkWrapper = sdks.synchronized {
-    val id = settings.endpoint // _id
+  def sdkFor(_id: String, name: String, settings: OtlpSettings, env: => Env): OpenTelemetrySdkWrapper =
+    sdks.synchronized {
+      val id = settings.endpoint // _id
 
-    def build(): OpenTelemetrySdkWrapper = {
-      val sdk = OpenTelemetrySdk.builder()
-        .setMeterProvider(
-          SdkMeterProvider.builder()
-            .setResource(
-              Resource.getDefault().toBuilder()
-                .put(ResourceAttributes.SERVICE_NAME, name)
-                .build()
-            )
-            .registerMetricReader(PeriodicMetricReader
-              .builder(settings.metricsExporter(env))
-              .setInterval(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
-              .build())
-            .build()
-        )
-        .setLoggerProvider(
-          SdkLoggerProvider.builder()
-            .setResource(
-              Resource.getDefault().toBuilder()
-                .put(ResourceAttributes.SERVICE_NAME, name)
-                .build()
-            )
-            .addLogRecordProcessor(
-              BatchLogRecordProcessor
-                .builder(settings.logExporter(env))
-                .setMaxExportBatchSize(settings.maxBatch)
-                .setScheduleDelay(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
-                .build()
-            )
-            .build()
-        )
-        .build()
-      OpenTelemetrySdkWrapper(sdk, settings)
-    }
+      def build(): OpenTelemetrySdkWrapper = {
+        val sdk = OpenTelemetrySdk
+          .builder()
+          .setMeterProvider(
+            SdkMeterProvider
+              .builder()
+              .setResource(
+                Resource
+                  .getDefault()
+                  .toBuilder()
+                  .put(ResourceAttributes.SERVICE_NAME, name)
+                  .build()
+              )
+              .registerMetricReader(
+                PeriodicMetricReader
+                  .builder(settings.metricsExporter(env))
+                  .setInterval(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
+                  .build()
+              )
+              .build()
+          )
+          .setLoggerProvider(
+            SdkLoggerProvider
+              .builder()
+              .setResource(
+                Resource
+                  .getDefault()
+                  .toBuilder()
+                  .put(ResourceAttributes.SERVICE_NAME, name)
+                  .build()
+              )
+              .addLogRecordProcessor(
+                BatchLogRecordProcessor
+                  .builder(settings.logExporter(env))
+                  .setMaxExportBatchSize(settings.maxBatch)
+                  .setScheduleDelay(settings.maxDuration.toMillis, TimeUnit.MILLISECONDS)
+                  .build()
+              )
+              .build()
+          )
+          .build()
+        OpenTelemetrySdkWrapper(sdk, settings)
+      }
 
-    var sdk = sdks.getOrUpdate(id) {
-      build()
+      var sdk = sdks.getOrUpdate(id) {
+        build()
+      }
+      if (sdk.hasChangedFrom(settings)) {
+        sdk.close()
+        sdk = build()
+        sdks.put(id, sdk)
+      }
+      sdk
     }
-    if (sdk.hasChangedFrom(settings)) {
-      sdk.close()
-      sdk = build()
-      sdks.put(id, sdk)
-    }
-    sdk
-  }
 }

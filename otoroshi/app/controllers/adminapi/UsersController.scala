@@ -358,9 +358,9 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
-          case None => NotFound(Json.obj("error" -> "user not found")).future
+          case None                                 => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserRead(user) => ctx.fforbidden
-          case Some(user) => Ok(user.json).future
+          case Some(user)                           => Ok(user.json).future
         }
       }
     }
@@ -393,9 +393,9 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
-          case None => NotFound(Json.obj("error" -> "user not found")).future
+          case None                                  => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
-          case Some(user) => Ok(user.json).future
+          case Some(user)                            => Ok(user.json).future
         }
       }
     }

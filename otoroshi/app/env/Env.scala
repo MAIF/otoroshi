@@ -198,7 +198,7 @@ class Env(
     val now = DateTime.now()
     customLogo match {
       case Some(logo) => logo
-      case None => {
+      case None       => {
         if (disableFunnyLogos) {
           "/__otoroshi_assets/images/otoroshi-logo-color.png"
         } else if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {

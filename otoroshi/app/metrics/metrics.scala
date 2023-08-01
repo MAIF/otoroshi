@@ -5,7 +5,12 @@ import akka.http.scaladsl.util.FastFuture
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
+import com.codahale.metrics.jvm.{
+  GarbageCollectorMetricSet,
+  JvmAttributeGaugeSet,
+  MemoryUsageGaugeSet,
+  ThreadStatesGaugeSet
+}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry, SemanticMetricSet}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
@@ -60,7 +65,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val metricRegistry: SemanticMetricRegistry = new SemanticMetricRegistry
   private val jmxRegistry: MetricRegistry            = new MetricRegistry
-  private lazy val openTelemetryRegistry = initOpenTelemetryMetrics()
+  private lazy val openTelemetryRegistry             = initOpenTelemetryMetrics()
 
   private val mbs = ManagementFactory.getPlatformMBeanServer
   private val rt  = Runtime.getRuntime
@@ -130,18 +135,21 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   )
 
   def initOpenTelemetryMetrics(): Option[OpenTelemetryMeter] = {
-    env.configurationJson.select("otoroshi").select("open-telemetry").select("server-metrics").asOpt[JsObject].flatMap { config =>
-      val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
-      if (enabled) {
-        val otlpConfig = OtlpSettings.format.reads(config).get
-        val sdk = OtlpSettings.sdkFor("root-server-metrics", env.clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
-        val meter = sdk.sdk.meterBuilder(env.clusterConfig.name)
-          .setInstrumentationVersion(env.otoroshiVersion)
-          .build()
-        Some(new OpenTelemetryMeter(sdk, meter))
-      } else {
-        None
-      }
+    env.configurationJson.select("otoroshi").select("open-telemetry").select("server-metrics").asOpt[JsObject].flatMap {
+      config =>
+        val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
+        if (enabled) {
+          val otlpConfig = OtlpSettings.format.reads(config).get
+          val sdk        =
+            OtlpSettings.sdkFor("root-server-metrics", env.clusterConfig.name, otlpConfig, OtoroshiEnvHolder.get())
+          val meter      = sdk.sdk
+            .meterBuilder(env.clusterConfig.name)
+            .setInstrumentationVersion(env.otoroshiVersion)
+            .build()
+          Some(new OpenTelemetryMeter(sdk, meter))
+        } else {
+          None
+        }
     }
   }
 
@@ -177,7 +185,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   def markString(name: String, value: String): Unit = mark(name, value)
 
-  def markLong(name: String, value: Long): Unit     = mark(name, value)
+  def markLong(name: String, value: Long): Unit = mark(name, value)
 
   def markDouble(name: String, value: Double): Unit = mark(name, value)
 

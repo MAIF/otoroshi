@@ -2827,7 +2827,7 @@ class ProxyEngine() extends RequestHandler {
       }
 
       report.markOverheadIn()
-      val start = System.currentTimeMillis()
+      val start                           = System.currentTimeMillis()
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>

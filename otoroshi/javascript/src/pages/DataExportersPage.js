@@ -1673,7 +1673,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   'otlp-logs': {
-    'flow': [
+    flow: [
       'otlp.grpc',
       'otlp.gzip',
       'otlp.endpoint',
@@ -1681,7 +1681,7 @@ const possibleExporterConfigFormValues = {
       'otlp.client_cert',
       'otlp.trusted_cert',
     ],
-    'schema': {
+    schema: {
       'otlp.grpc': {
         type: 'bool',
         props: {
@@ -1704,7 +1704,7 @@ const possibleExporterConfigFormValues = {
         type: 'number',
         props: {
           label: 'Timeout',
-          suffix: 'ms.'
+          suffix: 'ms.',
         },
       },
       'otlp.client_cert': {
@@ -1745,10 +1745,10 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   'otlp-metrics': {
-    'flow': [
+    flow: [
       'custommetrics',
       'otlp.grpc',
       'otlp.gzip',
@@ -1757,7 +1757,7 @@ const possibleExporterConfigFormValues = {
       'otlp.client_cert',
       'otlp.trusted_cert',
     ],
-    'schema': {
+    schema: {
       custommetrics: {
         type: CustomMetrics,
       },
@@ -1783,7 +1783,7 @@ const possibleExporterConfigFormValues = {
         type: 'number',
         props: {
           label: 'Timeout',
-          suffix: 'ms.'
+          suffix: 'ms.',
         },
       },
       'otlp.client_cert': {
