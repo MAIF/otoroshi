@@ -411,7 +411,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   await buildVersion(to, location, releaseDir, releaseFile);
   await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
   await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
-  await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
+  //await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
