@@ -1708,7 +1708,7 @@ const possibleExporterConfigFormValues = {
         },
       },
       'otlp.client_cert': {
-        type: 'string',
+        type: 'select',
         props: {
           label: 'Client cert.',
           placeholder: 'Choose a client certificate',
@@ -1727,7 +1727,7 @@ const possibleExporterConfigFormValues = {
         },
       },
       'otlp.trusted_cert': {
-        type: 'string',
+        type: 'select',
         props: {
           label: 'Trusted cert.',
           placeholder: 'Choose a trusted certificate',
