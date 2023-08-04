@@ -5,7 +5,7 @@ import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersio
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions.{AdminExtension, AdminExtensionEntity, AdminExtensionId}
+import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
@@ -158,6 +158,17 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       ()
     }
   }
+
+  override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq(
+    AdminExtensionAdminApiRoute(
+      "GET",
+      "/api/extensions/green-score/eco",
+      false,
+      (ctx, request, apk, _) => {
+        Results.Ok(Json.obj("score" -> ecoMetrics.compute())).vfuture
+      }
+    )
+  )
 
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
