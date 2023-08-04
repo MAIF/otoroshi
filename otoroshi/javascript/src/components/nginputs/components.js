@@ -48,12 +48,10 @@ export class NgFormRenderer extends Component {
 
   componentDidMount() {
     if (this.props && this.props.rawSchema) {
-      const folded =
-        ((this.props.rawSchema.props ? this.props.rawSchema.props.collapsable : false) ||
-          this.props.rawSchema.collapsable) &&
-        ((this.props.rawSchema.props ? this.props.rawSchema.props.collapsed : true) ||
-          this.props.rawSchema.collapsed);
-
+      const props = this.props.rawSchema.props
+      const collapsable = (props && Object.keys(props).length > 0) ? props.collapsable : this.props.rawSchema.collapsable;
+      const collapsed = (props && Object.keys(props).length > 0) ? props.collapsed : this.props.rawSchema.collapsed;
+      const folded = collapsable && collapsed;
       this.setState({ folded: folded === undefined ? true : folded });
     }
   }
@@ -182,6 +180,7 @@ export class NgFormRenderer extends Component {
         title = isFunction(titleVar) ? titleVar(this.props.value) : titleVar.replace(/_/g, ' ');
       } catch (e) {
         // console.log(e)
+        title = titleVar;
       }
 
       const noTitle = rawSchemaProps.noTitle || rawSchema.noTitle;

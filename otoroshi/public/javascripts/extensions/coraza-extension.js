@@ -69,51 +69,51 @@
     
       render() {
         return (
-            React.createElement(Table, {
-              parentProps: this.props,
-              selfUrl: "extensions/coraza-waf/coraza-configs",
-              defaultTitle: "All Coraza WAF configs.",
-              defaultValue: () => ({ 
-                id: 'coraza-waf-config_' + uuid(), 
-                name: 'My WAF', 
-                description: 'An awesome WAF', 
-                tags: [], 
-                metadata: {},
-                inspect_body: true,
-                config: {
-                  "directives_map": {
-                      "default": [
-                        "Include @recommended-conf",
-                        "Include @crs-setup-conf",
-                        "Include @owasp_crs/*.conf",
-                        "SecRuleEngine DetectionOnly"
-                      ]
-                  },
-                  "default_directives": "default",
-                  "metric_labels": {},
-                  "per_authority_directives": {}
-                }
-              }),
-              itemName: "Coraza WAF config",
-              formSchema: this.formSchema,
-              formFlow: this.formFlow,
-              columns: this.columns,
-              stayAfterSave: true,
-              fetchItems: (paginationState) => this.client.findAll(),
-              updateItem: this.client.update,
-              deleteItem: this.client.delete,
-              createItem: this.client.create,
-              navigateTo: (item) => {
-                window.location = `/bo/dashboard/extensions/coraza-waf/coraza-configs/edit/${item.id}`
-              },
-              itemUrl: (item) => `/bo/dashboard/extensions/coraza-waf/coraza-configs/edit/${item.id}`,
-              showActions: true,
-              showLink: true,
-              rowNavigation: true,
-              extractKey: (item) => item.id,
-              export: true,
-              kubernetesKind: "CorazaConfig"
-            }, null)
+          React.createElement(Table, {
+            parentProps: this.props,
+            selfUrl: "extensions/coraza-waf/coraza-configs",
+            defaultTitle: "All Coraza WAF configs.",
+            defaultValue: () => ({
+              id: 'coraza-waf-config_' + uuid(),
+              name: 'My WAF',
+              description: 'An awesome WAF',
+              tags: [],
+              metadata: {},
+              inspect_body: true,
+              config: {
+                "directives_map": {
+                    "default": [
+                      "Include @recommended-conf",
+                      "Include @crs-setup-conf",
+                      "Include @owasp_crs/*.conf",
+                      "SecRuleEngine DetectionOnly"
+                    ]
+                },
+                "default_directives": "default",
+                "metric_labels": {},
+                "per_authority_directives": {}
+              }
+            }),
+            itemName: "Coraza WAF config",
+            formSchema: this.formSchema,
+            formFlow: this.formFlow,
+            columns: this.columns,
+            stayAfterSave: true,
+            fetchItems: (paginationState) => this.client.findAll(),
+            updateItem: this.client.update,
+            deleteItem: this.client.delete,
+            createItem: this.client.create,
+            navigateTo: (item) => {
+              window.location = `/bo/dashboard/extensions/coraza-waf/coraza-configs/edit/${item.id}`
+            },
+            itemUrl: (item) => `/bo/dashboard/extensions/coraza-waf/coraza-configs/edit/${item.id}`,
+            showActions: true,
+            showLink: true,
+            rowNavigation: true,
+            extractKey: (item) => item.id,
+            export: true,
+            kubernetesKind: "CorazaConfig"
+          }, null)
         );
       }
     }

@@ -574,7 +574,7 @@ export class NgForm extends Component {
           rawSchema={{
             label,
             collapsable: config.readOnly ? false : collapsable === undefined ? true : collapsable,
-            collapsed: config.readOnly ? false : collapsed === undefined ? false : true,
+            collapsed: config.readOnly ? false : collapsed === undefined ? false : collapsed,
             showSummary: summaryFields,
             summaryFields,
           }}

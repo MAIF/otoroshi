@@ -27,6 +27,8 @@ import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
+import { setupGreenScoreExtension } from './extensions/greenscore/greenscore';
+
 import * as Forms from './forms/ng_plugins/index';
 
 if (!window.Symbol) {
@@ -170,6 +172,7 @@ export function init(node) {
   setupKonami();
   setupOutdatedBrowser();
   setupWindowUtils();
+  setupLocalExtensions();
   ReactDOM.render(<BackOfficeApp />, node);
 }
 
@@ -242,4 +245,8 @@ export function getExtensions() {
 
 export function getExtension(name) {
   return _extensions[name];
+}
+
+function setupLocalExtensions() {
+  setupGreenScoreExtension(registerExtension);
 }

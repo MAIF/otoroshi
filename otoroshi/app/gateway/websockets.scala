@@ -247,7 +247,7 @@ class WebSocketHandler()(implicit env: Env) {
               duration = duration,
               overhead = overhead,
               cbDuration = cbDuration,
-              overheadWoCb = overhead - cbDuration,
+              overheadWoCb = Math.abs(overhead - cbDuration),
               callAttempts = callAttempts,
               url = url,
               method = req.method,
