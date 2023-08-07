@@ -49,6 +49,8 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
   }
 }
 
+case class RouteScreenScore(routeId: String, rulesConfig: GreenScoreConfig)
+
 case class GreenScoreEntity(
   location: EntityLocation,
   id: String,
@@ -56,8 +58,7 @@ case class GreenScoreEntity(
   description: String,
   tags: Seq[String],
   metadata: Map[String, String],
-  routes: Seq[String],
-  config: GreenScoreConfig,
+  routes: Seq[RouteScreenScore]
 ) extends EntityLocationSupport {
   override def internalId: String = id
   override def json: JsValue = GreenScoreEntity.format.writes(this)
@@ -75,8 +76,12 @@ object GreenScoreEntity {
       "description" -> o.description,
       "metadata" -> o.metadata,
       "tags" -> JsArray(o.tags.map(JsString.apply)),
-      "routes" -> JsArray(o.routes.map(JsString.apply)),
-      "config" -> o.config.json,
+      "routes" -> JsArray(o.routes.map(route => {
+          Json.obj(
+            "routeId" -> route.routeId,
+            "rulesConfig" -> route.rulesConfig.json
+          )
+      }))
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -87,8 +92,15 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        routes = json.select("routes").asOpt[Seq[String]].getOrElse(Seq.empty),
-        config = json.select("config").asOpt[JsObject].map(v => GreenScoreConfig.format.reads(v).get).get,
+        routes = json.select("routes").asOpt[JsArray].map(routes => {
+          routes.value.map(route => {
+            route.asOpt[JsObject].map(v => {
+              RouteScreenScore(
+                v.select("routeId").as[String],
+                v.select("rulesConfig").asOpt[JsObject].map(GreenScoreConfig.format.reads).get.get)
+            }).get
+          })
+        }).getOrElse(Seq.empty),
       )
     } match {
       case Failure(ex) => JsError(ex.getMessage)
@@ -166,6 +178,14 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       false,
       (ctx, request, apk, _) => {
         Results.Ok(Json.obj("score" -> ecoMetrics.compute())).vfuture
+      }
+    ),
+    AdminExtensionAdminApiRoute(
+      "GET",
+      "/api/extensions/green-score/template",
+      false,
+      (_, _, _, _) => {
+        Results.Ok(GreenScoreConfig(sections = RulesManager.sections).json).vfuture
       }
     )
   )

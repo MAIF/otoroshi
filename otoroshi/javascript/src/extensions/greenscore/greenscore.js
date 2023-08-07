@@ -1,10 +1,13 @@
 import React, { Component } from 'react';
+import { nextClient } from '../../services/BackOfficeServices';
 import {
-  NgBooleanRenderer
+  NgBooleanRenderer, NgSelectRenderer
 } from '../../components/nginputs'
 import { Table } from '../../components/inputs/Table';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { v4 as uuid } from 'uuid';
+import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
+import { isUndefined } from 'lodash';
 
 export const MAX_GREEN_SCORE_NOTE = 6000;
 const GREEN_SCORE_GRADES = {
@@ -33,35 +36,39 @@ export function calculateGreenScore(routeRules) {
   }
 }
 
-export function GreenScoreForm(props) {
-  const rootObject = props.rootValue?.green_score_rules;
-  const sections = rootObject?.sections || [];
+export function getRankAndLetterFromScore(score) {
+  const rankIdx = Object.entries(GREEN_SCORE_GRADES).findIndex(grade => grade[1](score))
+
+  console.log(score, rankIdx)
+  return {
+    score,
+    rank: rankIdx === -1 ? "Not evaluated" : Object.keys(GREEN_SCORE_GRADES)[rankIdx],
+    letter: String.fromCharCode(65 + rankIdx)
+  }
+}
+
+function GreenScoreForm({ rulesConfig, ...rest }) {
+  const sections = rulesConfig.sections;
 
   const onChange = (checked, currentSectionIdx, currentRuleIdx) => {
-    props.rootOnChange({
-      ...props.rootValue,
-      green_score_rules: {
-        ...props.rootValue.green_score_rules,
-        sections: sections.map((section, sectionIdx) => {
-          if (currentSectionIdx !== sectionIdx)
-            return section
+    rest.onChange({
+      sections: sections.map((section, sectionIdx) => {
+        if (currentSectionIdx !== sectionIdx)
+          return section
 
-          return {
-            ...section,
-            rules: section.rules.map((rule, ruleIdx) => {
-              if (ruleIdx !== currentRuleIdx)
-                return rule;
+        return {
+          ...section,
+          rules: section.rules.map((rule, ruleIdx) => {
+            if (ruleIdx !== currentRuleIdx)
+              return rule;
 
-
-              console.log('changed')
-              return {
-                ...rule,
-                enabled: checked
-              }
-            })
-          }
-        })
-      }
+            return {
+              ...rule,
+              enabled: checked
+            }
+          })
+        }
+      })
     })
   }
 
@@ -71,15 +78,15 @@ export function GreenScoreForm(props) {
         <h4 className='mb-3' style={{ textTransform: 'capitalize' }}>{id}</h4>
         {rules.map(({ id, description, enabled, advice }, currentRuleIdx) => {
           return <div key={id}
-                      className='d-flex align-items-center'
-                      style={{
-                        cursor: 'pointer'
-                      }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        onChange(!enabled, currentSectionIdx, currentRuleIdx)
-                      }}>
-            <div className='flex'>
+            className='d-flex align-items-center'
+            style={{
+              cursor: 'pointer'
+            }}
+            onClick={e => {
+              e.stopPropagation();
+              onChange(!enabled, currentSectionIdx, currentRuleIdx)
+            }}>
+            <div style={{ flex: 1 }}>
               <p className='offset-1 mb-0' style={{ fontWeight: 'bold' }}>{description}</p>
               <p className='offset-1'>{advice}</p>
             </div>
@@ -100,41 +107,200 @@ export function GreenScoreForm(props) {
   </div>
 }
 
+class GreenScoreRoutesForm extends React.Component {
+
+  state = {
+    selectedRoute: undefined,
+    editRoute: undefined,
+  }
+
+  addRoute = () => {
+    const routeId = this.state.selectedRoute;
+
+    this.props.rootOnChange({
+      ...this.props.rootValue,
+      routes: [
+        ...this.props.rootValue.routes,
+        {
+          routeId,
+          rulesConfig: this.props.rulesTemplate
+        }
+      ]
+    });
+
+    this.editRoute(routeId);
+  }
+
+  editRoute = routeId => this.setState({
+    editRoute: routeId,
+    selectedRoute: undefined
+  })
+
+  onWizardClose = () => {
+    this.setState({
+      editRoute: undefined
+    })
+  }
+
+  onRulesChange = rulesConfig => {
+    this.props.rootOnChange({
+      ...this.props.rootValue,
+      routes: this.props.rootValue.routes.map(route => {
+        if (route.routeId === this.state.editRoute) {
+          return {
+            ...route,
+            rulesConfig
+          }
+        }
+        return route
+      })
+    })
+  }
+
+  render() {
+    const { routeEntities } = this.props;
+    const { routes } = this.props.rootValue;
+
+    const { selectedRoute, editRoute } = this.state;
+
+    return <div>
+      {editRoute && <div className="wizard">
+        <div className="wizard-container">
+          <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+            <label style={{ fontSize: '1.15rem' }}>
+              <i className="fas fa-times me-3" onClick={this.onWizardClose} style={{ cursor: 'pointer' }} />
+              <span>Check the rules of the route</span>
+            </label>
+            <GreenScoreForm
+              rulesConfig={routes.find(r => r.routeId === editRoute).rulesConfig}
+              onChange={this.onRulesChange}
+            />
+            <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+              <FeedbackButton
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  borderColor: 'var(--color-primary)',
+                  padding: '12px 48px',
+                }}
+                onPress={() => Promise.resolve()}
+                onSuccess={this.onWizardClose}
+                icon={() => <i className="fas fa-paper-plane" />}
+                text="Save the rules"
+              />
+            </div>
+          </div>
+        </div>
+      </div>}
+
+      <div className='row my-2'>
+        <label className='col-xs-12 col-sm-2 col-form-label'>Add to this group</label>
+        <div className='d-flex align-items-center col-sm-10'>
+          <div style={{ flex: 1 }}>
+            <NgSelectRenderer
+              value={selectedRoute}
+              placeholder="Select a route"
+              label={' '}
+              ngOptions={{
+                spread: true
+              }}
+              onChange={selectedRoute => this.setState({ selectedRoute })}
+              margin={0}
+              style={{ flex: 1 }}
+              options={routeEntities.filter(route => !routes.find(r => route.id === r.routeId))}
+              optionsTransformer={(arr) =>
+                arr.map((item) => ({ label: item.name, value: item.id }))
+              }
+            />
+          </div>
+          <button
+            type='button'
+            className='btn btn-primaryColor mx-2'
+            disabled={!selectedRoute}
+            onClick={this.addRoute}>
+            Start to configure
+          </button>
+        </div>
+      </div>
+
+      <div className='d-flex align-items-center m-3'>
+        <div style={{ flex: 1 }}>
+          <label>Route name</label>
+        </div>
+        <span>Action</span>
+      </div>
+      {routes.length === 0 && <p className='text-center' style={{ fontWeight: 'bold' }}>No routes added</p>}
+      {routes.map(({ routeId, rulesConfig }) => {
+        const rankInformations = calculateGreenScore(rulesConfig)
+        return <div key={routeId} className='d-flex align-items-center m-3 mt-0'>
+          <div style={{ flex: 1 }}>
+            <label>{routeEntities.find(r => r.id === routeId)?.name}</label>
+
+            <span><i className="fa fa-leaf ms-2" style={{ color: rankInformations.rank }} /></span>
+          </div>
+          <button type="button" className='btn btn-primary' onClick={() => this.editRoute(routeId)}>
+            <i className='fa fa-cog' />
+          </button>
+        </div>
+      })}
+    </div>
+  }
+}
+
+function GreenScoreColumm(props) {
+  const score = props
+    .routes
+    .reduce((acc, route) => calculateGreenScore(route.rulesConfig).score + acc, 0) / props.routes.length;
+
+  const { letter, rank } = getRankAndLetterFromScore(score)
+
+  return <div className='text-center'>
+    {letter} <i className="fa fa-leaf" style={{ color: rank }} />
+  </div>
+}
+
 class GreenScoreConfigsPage extends Component {
+
+  state = {
+    routes: [],
+    rulesTemplate: isUndefined
+  }
 
   formSchema = {
     _loc: {
-      type: 'location',
-      props: {},
+      type: 'location'
     },
-    id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    id: {
+      type: 'string',
+      disabled: true,
+      label: 'Id',
+      props: {
+        placeholder: '---'
+      }
+    },
     name: {
       type: 'string',
-      props: { label: 'Name', placeholder: 'My Awesome Green Score' },
+      label: 'Name',
+      props: {
+        placeholder: 'My Awesome Green Score'
+      },
     },
     description: {
       type: 'string',
-      props: { label: 'Description', placeholder: 'Description of the Green Score config' },
+      label: 'Description',
+      props: {
+        placeholder: 'Description of the Green Score config'
+      },
     },
     metadata: {
       type: 'object',
-      props: { label: 'Metadata' },
+      label: 'Metadata'
     },
     tags: {
       type: 'array',
-      props: { label: 'Tags' },
+      label: 'Tags'
     },
     routes: {
-      type: 'array',
-      props: { label: 'Routes' }
-    },
-    // TODO: display the score
-    config: {
-      // TODO: use a custom form with all flags
-      type: 'jsonobjectcode',
-      props: {
-        label: 'raw config.'
-      }
+      renderer: props => <GreenScoreRoutesForm {...props} routeEntities={this.state.routes} rulesTemplate={this.state.rulesTemplate} />
     }
   };
 
@@ -144,18 +310,66 @@ class GreenScoreConfigsPage extends Component {
       filterId: 'name',
       content: (item) => item.name,
     },
-    { title: 'Description', filterId: 'description', content: (item) => item.description },
+    {
+      title: 'Description',
+      filterId: 'description',
+      content: (item) => item.description
+    },
+    {
+      title: 'Green score group',
+      notFilterable: true,
+      content: GreenScoreColumm
+    }
   ];
 
-  formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata', 'routes', 'config'];
+  formFlow = [
+    '_loc',
+    {
+      type: 'group',
+      name: 'Informations',
+      collapsed: false,
+      fields: [
+        'id',
+        'name',
+        'description'
+      ]
+    },
+    {
+      type: 'group',
+      name: 'Routes',
+      collapsed: false,
+      fields: ['routes']
+    },
+    {
+      type: 'group',
+      name: 'Misc.',
+      collapsed: true,
+      fields: ['tags', 'metadata'],
+    }
+  ];
 
   componentDidMount() {
     this.props.setTitle(`All Green Score configs.`);
+
+    nextClient.forEntity(nextClient.ENTITIES.ROUTES)
+      .findAll()
+      .then(routes => this.setState({ routes }))
+
+    fetch("/bo/api/proxy/api/extensions/green-score/template", {
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+      .then(r => r.json())
+      .then(rulesTemplate => this.setState({
+        rulesTemplate
+      }))
   }
 
-  client = BackOfficeServices.apisClient('green-score.extensions.otoroshi.io', 'v1', 'green-scores');
-
   render() {
+    const client = BackOfficeServices.apisClient('green-score.extensions.otoroshi.io', 'v1', 'green-scores');
+
     return (
       <Table
         parentProps={this.props}
@@ -177,10 +391,10 @@ class GreenScoreConfigsPage extends Component {
         formFlow={this.formFlow}
         columns={this.columns}
         stayAfterSave={true}
-        fetchItems={(paginationState) => this.client.findAll()}
-        updateItem={this.client.update}
-        deleteItem={this.client.delete}
-        createItem={this.client.create}
+        fetchItems={(paginationState) => client.findAll()}
+        updateItem={client.update}
+        deleteItem={client.delete}
+        createItem={client.create}
         navigateTo={(item) => {
           window.location = `/bo/dashboard/extensions/green-score/green-score-configs/edit/${item.id}`
         }}
@@ -201,7 +415,12 @@ const GreenScoreExtension = (ctx) => {
   return {
     id: GreenScoreExtensionId,
     sidebarItems: [
-      // TODO: add here if we want icon in sidebar
+      {
+        title: 'Green scores',
+        text: 'All your Green Scores',
+        path: 'extensions/green-score/green-score-configs',
+        icon: 'leaf'
+      }
     ],
     creationItems: [],
     dangerZoneParts: [],
@@ -209,10 +428,10 @@ const GreenScoreExtension = (ctx) => {
       {
         title: 'Green Score configs.',
         description: 'All your Green Score configs.',
-        img: 'private-apps', // TODO: change image
+        img: 'leaf', // TODO: change image
         link: '/extensions/green-score/green-score-configs',
         display: () => true,
-        icon: () => 'fa-cubes', // TODO: change icon
+        icon: () => 'fa-leaf', // TODO: change icon
       },
     ],
     searchItems: [
@@ -220,7 +439,7 @@ const GreenScoreExtension = (ctx) => {
         action: () => {
           window.location.href = `/bo/dashboard/green-score/green-score-configs`
         },
-        env: <span className="fas fa-cubes" />,
+        env: <span className="fas fa-leaf" />,
         label: 'Green Score configs.',
         value: 'green-score-configs',
       }

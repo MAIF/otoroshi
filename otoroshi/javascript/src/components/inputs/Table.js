@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Form } from '.';
+import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
@@ -147,10 +148,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+        ...paginationState,
+        pageSize: this.state.rowsPerPage,
+        page: page + 1,
+      })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -355,6 +356,10 @@ export class Table extends Component {
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
   };
+
+  isAnObject = variable => typeof variable === 'object' &&
+    !Array.isArray(variable) &&
+    variable !== null;
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -685,12 +690,20 @@ export class Table extends Component {
               }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
-              <Form
-                value={this.state.currentItem}
-                onChange={(currentItem) => this.setState({ currentItem })}
-                flow={this.props.formFlow}
-                schema={this.props.formSchema}
-              />
+              this.props.formFlow.find(item => this.isAnObject(item)) ?
+                <NgForm
+                  value={this.state.currentItem}
+                  onChange={(currentItem) => this.setState({ currentItem })}
+                  flow={this.props.formFlow}
+                  schema={this.props.formSchema}
+                />
+                :
+                <Form
+                  value={this.state.currentItem}
+                  onChange={(currentItem) => this.setState({ currentItem })}
+                  flow={this.props.formFlow}
+                  schema={this.props.formSchema}
+                />
             )}
             <hr />
             {!this.props.hideAllActions && (
@@ -751,12 +764,20 @@ export class Table extends Component {
               }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
-              <Form
-                value={this.state.currentItem}
-                onChange={(currentItem) => this.setState({ currentItem })}
-                flow={this.props.formFlow}
-                schema={this.props.formSchema}
-              />
+              this.props.formFlow.find(item => this.isAnObject(item)) ?
+                <NgForm
+                  value={this.state.currentItem}
+                  onChange={(currentItem) => this.setState({ currentItem })}
+                  flow={this.props.formFlow}
+                  schema={this.props.formSchema}
+                />
+                :
+                <Form
+                  value={this.state.currentItem}
+                  onChange={(currentItem) => this.setState({ currentItem })}
+                  flow={this.props.formFlow}
+                  schema={this.props.formSchema}
+                />
             )}
             <hr />
             <div className="displayGroupBtn float-end">
