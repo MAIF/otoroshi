@@ -16,6 +16,31 @@ case class RulesSection(id: SectionId, rules: Seq[Rule]) {
   )
 }
 
+case class Thresholds(
+                       plugins: Int = 0,
+                       dataOut: Int = 0,
+                       headersOut: Int = 0)
+
+object Thresholds {
+  def json(obj: Thresholds) = Json.obj(
+    "plugins" -> obj.plugins,
+    "dataOut" -> obj.dataOut,
+    "headersOut" -> obj.headersOut
+  )
+
+  def reads(item: JsValue): JsResult[Thresholds] = {
+    Try {
+      JsSuccess(Thresholds(
+        plugins = item.select("plugins").as[Int],
+        dataOut = item.select("dataOut").as[Int],
+        headersOut = item.select("headersOut").as[Int]
+      ))
+    } recover { case e =>
+      JsError(e.getMessage)
+    } get
+  }
+}
+
 object RulesSection {
   def reads(json: JsValue): JsResult[Seq[RulesSection]] = {
     Try {
@@ -143,14 +168,15 @@ object RulesManager {
   )
 }
 
-case class GreenScoreConfig(sections: Seq[RulesSection]) extends NgPluginConfig {
+case class GreenScoreConfig(sections: Seq[RulesSection], thresholds: Thresholds = Thresholds()) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "sections" -> sections.map(section => {
       Json.obj(
         "id" -> section.id.value,
         "rules" -> section.rules.map(_.json())
       )
-    })
+    }),
+    "thresholds" -> Thresholds.json(thresholds)
   )
 }
 
@@ -165,7 +191,8 @@ object GreenScoreConfig {
   val format = new Format[GreenScoreConfig] {
     override def reads(json: JsValue): JsResult[GreenScoreConfig] = Try {
       GreenScoreConfig(
-        sections = json.select("sections").as[Seq[RulesSection]](RulesSection.reads)
+        sections = json.select("sections").as[Seq[RulesSection]](RulesSection.reads),
+        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

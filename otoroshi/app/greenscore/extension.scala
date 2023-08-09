@@ -31,8 +31,7 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
         cbDuration = evt.cbDuration,
         duration = evt.duration,
         plugins =  evt.route.map(_.plugins.slots.size).getOrElse(0),
-      )
-      ext.ecoMetrics.updateBackend(
+
         backendId = evt.target.scheme + evt.target.host + evt.target.uri,
         dataIn = evt.data.dataIn,
         dataOut = evt.data.dataOut,
@@ -43,7 +42,7 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
           acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
         } + evt.protocol.byteString.size + 1 + 3 + Results.Status(evt.status).header.reasonPhrase.map(_.byteString.size).getOrElse(0)
       )
-      ext.logger.debug(s"global score for ${routeId}: ${ext.ecoMetrics.compute()}")
+//      ext.logger.debug(s"global score for ${routeId}: ${ext.ecoMetrics.compute()}")
     }
     case _ =>
   }
@@ -177,7 +176,30 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/eco",
       false,
       (ctx, request, apk, _) => {
-        Results.Ok(Json.obj("score" -> ecoMetrics.compute())).vfuture
+        Results.Ok(Json.obj("score" -> 0)).vfuture
+      }
+    ),
+    AdminExtensionAdminApiRoute(
+      "GET",
+      "/api/extensions/green-score/:greenscore",
+      false,
+      (ctx, request, apk, _) => {
+        implicit val ec = env.otoroshiExecutionContext
+        implicit val ev = env
+        val greenScoreId = ctx.named("greenscore").map(JsString.apply).getOrElse(JsNull).asString
+        for {
+          scores <- datastores.greenscoresDatastore.findAll()
+        } yield {
+          val jsonScores = scores
+            .find(_.id == greenScoreId)
+            .map(group => group.routes.foldLeft(Json.arr())((acc, route) => acc :+ ecoMetrics.json(route.routeId)))
+            .getOrElse(Json.arr())
+
+          Results.Ok(Json.obj(
+            "group" -> greenScoreId,
+            "scores" -> jsonScores
+          ))
+        }
       }
     ),
     AdminExtensionAdminApiRoute(

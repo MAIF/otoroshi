@@ -27,7 +27,7 @@ import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
-import { setupGreenScoreExtension } from './extensions/greenscore/greenscore';
+import { setupGreenScoreExtension } from './extensions/greenscore';
 
 import * as Forms from './forms/ng_plugins/index';
 
