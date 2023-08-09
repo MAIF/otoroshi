@@ -28,6 +28,13 @@ export default class GreenScoreRoutesForm extends React.Component {
         editRoute: routeId
     })
 
+    deleteRoute = routeId => {
+        this.props.rootOnChange({
+            ...this.props.rootValue,
+            routes: this.props.rootValue.routes.filter(route => route.routeId !== routeId)
+        })
+    }
+
     onWizardClose = () => {
         this.setState({
             editRoute: undefined
@@ -65,12 +72,16 @@ export default class GreenScoreRoutesForm extends React.Component {
                 routeEntities={routeEntities.filter(route => !routes.find(r => route.id === r.routeId))}
                 addRoute={this.addRoute} />
 
-            <RoutesTable routes={routes} editRoute={this.editRoute} routeEntities={routeEntities} />
+            <RoutesTable
+                routes={routes}
+                editRoute={this.editRoute}
+                routeEntities={routeEntities}
+                deleteRoute={this.deleteRoute} />
         </div>
     }
 }
 
-const RoutesTable = ({ routes, editRoute, routeEntities }) => {
+const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
     return <>
         <div className='d-flex align-items-center m-3'>
             <div style={{ flex: 1 }}>
@@ -89,7 +100,16 @@ const RoutesTable = ({ routes, editRoute, routeEntities }) => {
                         <span><i className="fa fa-leaf ms-2" style={{ color: rankInformations.rank }} /></span>
                     </div>
                     <button type="button" className='btn btn-primary' onClick={() => editRoute(routeId)}>
-                        <i className='fa fa-cog' />
+                        <i className='fa fa-hammer' />
+                    </button>
+                    <button type="button" className='btn btn-danger ms-1' onClick={() => {
+                        window.newConfirm("Delete this route from the configuration ?", { title: 'Validation required' })
+                            .then(ok => {
+                                if (ok)
+                                    deleteRoute(routeId)
+                            })
+                    }}>
+                        <i className='fa fa-trash' />
                     </button>
                 </div>
             })
