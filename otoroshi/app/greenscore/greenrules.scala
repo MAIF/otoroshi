@@ -16,24 +16,47 @@ case class RulesSection(id: SectionId, rules: Seq[Rule]) {
   )
 }
 
+case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0)
+
+object TripleBounds {
+  def json(obj: TripleBounds) = Json.obj(
+    "excellent" -> obj.excellent,
+    "sufficient" -> obj.sufficient,
+    "poor" -> obj.poor
+  )
+
+  def reads(item: JsValue): JsResult[TripleBounds] = {
+    Try {
+      JsSuccess(TripleBounds(
+        excellent = item.select("excellent").as[Int],
+        sufficient = item.select("sufficient").as[Int],
+        poor = item.select("poor").as[Int]
+      ))
+    } recover { case e =>
+      JsError(e.getMessage)
+    } get
+  }
+}
+
 case class Thresholds(
-                       plugins: Int = 0,
-                       dataOut: Int = 0,
-                       headersOut: Int = 0)
+                       plugins: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
+                       dataOut: TripleBounds = TripleBounds(excellent = 100, sufficient = 500, poor = 1000),
+                       headersOut: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50),
+                     )
 
 object Thresholds {
   def json(obj: Thresholds) = Json.obj(
-    "plugins" -> obj.plugins,
-    "dataOut" -> obj.dataOut,
-    "headersOut" -> obj.headersOut
+    "plugins" -> TripleBounds.json(obj.plugins),
+    "dataOut" -> TripleBounds.json(obj.dataOut),
+    "headersOut" -> TripleBounds.json(obj.headersOut),
   )
 
   def reads(item: JsValue): JsResult[Thresholds] = {
     Try {
       JsSuccess(Thresholds(
-        plugins = item.select("plugins").as[Int],
-        dataOut = item.select("dataOut").as[Int],
-        headersOut = item.select("headersOut").as[Int]
+        plugins = item.select("plugins").as[TripleBounds](TripleBounds.reads),
+        dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.reads),
+        headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.reads)
       ))
     } recover { case e =>
       JsError(e.getMessage)

@@ -1,4 +1,4 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component, Suspense, useState } from 'react';
 import Select, { Creatable } from 'react-select';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
@@ -140,9 +140,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -245,12 +244,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-      ? props.margin
-      : _props.rawSchema?.props?.margin !== undefined
-      ? _props.rawSchema?.props?.margin
-      : _props.readOnly
-      ? 'mb-0'
-      : 'mb-3';
+        ? props.margin
+        : _props.rawSchema?.props?.margin !== undefined
+          ? _props.rawSchema?.props?.margin
+          : _props.readOnly
+            ? 'mb-0'
+            : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -406,28 +405,38 @@ export class NgNumberRenderer extends Component {
     const readOnly = this.props.readOnly;
 
     // avoid to have both value and defaultValue props
-    const { defaultValue, ...inputProps } = props;
+    const { defaultValue, unit, ...inputProps } = props;
 
-    return (
-      <LabelAndInput {...this.props}>
-        {readOnly && <ReadOnlyField value={this.props.value || defaultValue} />}
-        {!readOnly && (
-          <input
-            type="number"
-            className="form-control"
-            placeholder={props.placeholder}
-            title={props.help}
-            value={this.state.touched ? this.props.value : this.props.value || defaultValue}
-            onChange={(e) => {
-              this.props.onChange(~~e.target.value);
-              if (!this.state.touched) this.setState({ touched: true });
-            }}
-            {...inputProps}
-          />
-        )}
+    return <LabelAndInput {...this.props}>
+      {readOnly && <ReadOnlyField value={this.props.value || defaultValue} />}
+      <div style={{ ...(props.style || {}) }}>
+        <div style={{
+          position: unit ? 'relative' : 'initial',
+          display: unit ? 'flex' : 'initial'
+        }}>
+          {!readOnly && (
+            <input
+              type="number"
+              className="form-control"
+              placeholder={props.placeholder}
+              title={props.help}
+              value={this.state.touched ? this.props.value : this.props.value || defaultValue}
+              onChange={(e) => {
+                this.props.onChange(~~e.target.value);
+                if (!this.state.touched) this.setState({ touched: true });
+              }}
+              {...inputProps}
+            />
+          )}
+          {unit && <div style={{
+            position: 'absolute',
+            right: 36,
+            alignSelf: 'center'
+          }}>{unit}</div>}
+        </div>
         {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
-      </LabelAndInput>
-    );
+      </div>
+    </LabelAndInput >;
   }
 }
 
@@ -553,20 +562,20 @@ export class NgBoxBooleanRenderer extends Component {
       this.props.margin !== undefined
         ? this.props.margin
         : props.margin !== undefined
-        ? props.margin
-        : this.props.rawSchema?.margin !== undefined
-        ? this.props.rawSchema?.margin
-        : 3;
+          ? props.margin
+          : this.props.rawSchema?.margin !== undefined
+            ? this.props.rawSchema?.margin
+            : 3;
 
     const className = this.props.className;
 
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <div className="col-sm-10 ms-auto">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -644,8 +653,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -828,21 +837,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />

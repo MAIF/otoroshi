@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer } from '../../components/nginputs'
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 import { calculateGreenScore } from './util';
@@ -118,6 +118,17 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
 }
 
 const RulesWizard = ({ onWizardClose, rulesConfig, onRulesChange }) => {
+
+    useEffect(() => {
+        const listener = document.addEventListener("keydown", e => {
+            if (e.key === 'Escape') {
+                onWizardClose()
+            }
+        }, false);
+
+        return () => document.removeEventListener("keydown", listener);
+    }, [])
+
     return <div className="wizard">
         <div className="wizard-container">
             <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
@@ -185,15 +196,9 @@ const RoutesSelector = ({ routeEntities, addRoute }) => {
 }
 
 const GreenScoreForm = ({ rulesConfig, ...rest }) => {
-    const { sections } = rulesConfig;
+    const { sections, thresholds } = rulesConfig;
 
-    const thresholds = rulesConfig.thresholds || {
-        plugins: 0,
-        dataOut: 0,
-        headersOut: 0
-    };
-
-    console.log(rulesConfig, thresholds, rest)
+    console.log(rulesConfig)
 
     const onRulesChange = (checked, currentSectionIdx, currentRuleIdx) => {
         rest.onChange({
@@ -218,13 +223,10 @@ const GreenScoreForm = ({ rulesConfig, ...rest }) => {
         })
     }
 
-    const onDynamicSectionChange = (key, newValue) => {
+    const onBoundsChange = thresholds => {
         rest.onChange({
             ...rulesConfig,
-            thresholds: {
-                ...rulesConfig.thresholds,
-                [key]: newValue
-            }
+            thresholds
         })
     }
 
@@ -232,23 +234,16 @@ const GreenScoreForm = ({ rulesConfig, ...rest }) => {
         <div className='p-3'>
             <h4>Thresholds</h4>
             <p>These threshold are used to assess the route. These checks are applied on the received and sent requests.</p>
-            <NgNumberRenderer
-                value={thresholds.plugins}
-                label="Plugins (number)"
-                schema={{}}
-                onChange={e => onDynamicSectionChange("plugins", e)} />
 
-            <NgNumberRenderer
-                value={thresholds.dataOut}
-                label="Data out (bytes)"
-                schema={{}}
-                onChange={e => onDynamicSectionChange("dataOut", e)} />
-
-            <NgNumberRenderer
-                value={thresholds.headersOut}
-                label="Headers out (bytes)"
-                schema={{}}
-                onChange={e => onDynamicSectionChange("headersOut", e)} />
+            <BoundsInput title="Number of plugins on the route"
+                bounds={thresholds.plugins}
+                onChange={plugins => onBoundsChange({ ...thresholds, plugins })} />
+            <BoundsInput title="Data size sent by the downstream service to not exceeed"
+                bounds={thresholds.dataOut}
+                onChange={dataOut => onBoundsChange({ ...thresholds, dataOut })} />
+            <BoundsInput title="Header size sent by the downstream service to not exceeed"
+                bounds={thresholds.headersOut}
+                onChange={headersOut => onBoundsChange({ ...thresholds, headersOut })} />
         </div>
         {sections.map(({ id, rules }, currentSectionIdx) => {
             return <div key={id} className='p-3'>
@@ -281,5 +276,46 @@ const GreenScoreForm = ({ rulesConfig, ...rest }) => {
                 })}
             </div>
         })}
+    </div>
+}
+
+
+function BoundsInput({ title, bounds, ...props }) {
+    const onChange = (key, value) => {
+        props.onChange({
+            ...bounds,
+            [key]: value
+        })
+    }
+
+    const { excellent, sufficient, poor } = bounds;
+
+    return <div className='row'>
+        <p className='mb-1' style={{ fontWeight: 'bold' }}>{title}</p>
+
+        <div className='d-flex align-items-center mb-3'>
+            {[
+                { value: excellent, subTitle: 'Excellent value', label: 'Excellent', key: 'excellent' },
+                { value: sufficient, subTitle: 'Sufficient value', label: 'Sufficient', key: 'sufficient' },
+                { value: poor, subTitle: 'Poor value', label: 'Poor', key: 'poor' },
+            ].map(({ value, label, subTitle, key }) => <NgNumberRenderer key={key}
+                value={value}
+                label={label}
+                schema={{
+                    props: {
+                        unit: 'bytes',
+                        style: {
+                            flex: 1
+                        },
+                        placeholder: "Value to achieve the rank",
+                        subTitle
+                    }
+                }}
+                ngOptions={{
+                    spread: true
+                }}
+                onChange={e => onChange(key, e)} />
+            )}
+        </div>
     </div>
 }

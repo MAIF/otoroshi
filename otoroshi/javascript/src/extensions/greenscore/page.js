@@ -69,9 +69,9 @@ export default class GreenScoreConfigsPage extends React.Component {
             content: GreenScoreColumm
         },
         {
-            title: 'Dynamic score',
+            title: 'Thresholds score',
             notFilterable: true,
-            Cell: DynamicScoreColumn
+            Cell: ThresholdsScoreColumn
         }
     ];
 
@@ -175,7 +175,7 @@ const GreenScoreColumm = props => {
     </div>
 }
 
-const DynamicScoreColumn = (props) => {
+const ThresholdsScoreColumn = (props) => {
     const [score, setScore] = useState(undefined)
     const greenScoreId = props.value.id;
 
@@ -190,7 +190,11 @@ const DynamicScoreColumn = (props) => {
             .then(setScore)
     }, [])
 
-    console.log(score)
+    const route = props.value.routes[props.index];
+    const { thresholds } = route.rulesConfig;
+
+    console.log(score, thresholds)
+
     return <div></div>
     // return <div className='text-center'>{JSON.stringify(score, null, 4)}</div>
 }
