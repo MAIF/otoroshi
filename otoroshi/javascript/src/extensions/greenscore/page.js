@@ -195,6 +195,28 @@ const ThresholdsScoreColumn = (props) => {
 
     console.log(score, thresholds)
 
-    return <div></div>
+    function getRank(obj, idx) {
+        return Object.keys(obj)[idx] || Object.keys(obj)[Object.keys(obj).length - 1]
+    }
+    if (score && score.scores.length > 0) {
+        const dataOutIdx = Object.values(thresholds.dataOut).findIndex(value => score.scores[0].dataOutReservoir <= value);
+        const headersOutIdx = Object.values(thresholds.headersOut).findIndex(value => score.scores[0].headersOutReservoir <= value);
+        const pluginsIdx = Object.values(thresholds.plugins).findIndex(value => score.scores[0].pluginsReservoir <= value);
+
+        const thresholdsScore = Math.round(
+            ((dataOutIdx !== -1 ? dataOutIdx : Object.keys(thresholds.dataOut).length) +
+                (headersOutIdx !== -1 ? headersOutIdx : Object.keys(thresholds.headersOut).length) +
+                (pluginsIdx !== -1 ? pluginsIdx : Object.keys(thresholds.plugins).length)) / 3);
+
+        const { letter, rank } = getRankAndLetterFromScore((3 - thresholdsScore) * 2000);
+
+        return <div className='text-center' style={{ textTransform: 'capitalize' }}>
+            {letter} <i className="fa fa-leaf" style={{ color: rank }} />
+        </div>
+    }
+
+    return <div className='text-center'>
+        -
+    </div>
     // return <div className='text-center'>{JSON.stringify(score, null, 4)}</div>
 }

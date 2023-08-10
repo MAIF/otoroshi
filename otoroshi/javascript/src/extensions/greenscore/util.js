@@ -29,7 +29,6 @@ export function calculateGreenScore(routeRules) {
 export function getRankAndLetterFromScore(score) {
     const rankIdx = Object.entries(GREEN_SCORE_GRADES).findIndex(grade => grade[1](score))
 
-    console.log(score, rankIdx)
     return {
         score,
         rank: rankIdx === -1 ? "Not evaluated" : Object.keys(GREEN_SCORE_GRADES)[rankIdx],
