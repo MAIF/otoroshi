@@ -335,6 +335,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.ssl.fromOutside.clientAuth=Want",
+  //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
   "-Dotoroshi.next.experimental.netty-server.enabled=true",
