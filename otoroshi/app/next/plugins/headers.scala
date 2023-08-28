@@ -171,6 +171,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         .get
         .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     )
+    val context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
     val newHeaders        = ctx.otoroshiRequest.headers
       .removeAllArgs(
         env.Headers.OtoroshiProxiedHost,
@@ -179,6 +180,17 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         env.Headers.OtoroshiGatewayParentRequest
       )
       .appendAll(additionalHeaders)
+      .mapValues(v => otoroshi.el.GlobalExpressionLanguage(
+        value = v,
+        req = ctx.request.some,
+        service = ctx.route.legacy.some,
+        route = ctx.route.some,
+        apiKey = ctx.apikey,
+        user = ctx.user,
+        context = context,
+        attrs = ctx.attrs,
+        env = env,
+      ))
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
