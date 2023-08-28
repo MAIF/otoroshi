@@ -294,18 +294,8 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
   override def update(values: Seq[T]): Unit       = stateUpdate(values)
 }
 
-class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
-
-  private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
-    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
-  }
-
-  private implicit val ec = env.otoroshiExecutionContext
-
-  private implicit val mat = env.otoroshiMaterializer
-
-  private lazy val resources = Seq(
+class OtoroshiResources(env: Env) {
+  lazy val resources = Seq(
     ///////
     Resource(
       "Route",
@@ -578,6 +568,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       )
     )
   ) ++ env.adminExtensions.resources()
+}
+
+class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
+
+  private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
+  }
+
+  private implicit val ec = env.otoroshiExecutionContext
+
+  private implicit val mat = env.otoroshiMaterializer
 
   private def filterPrefix: Option[String] = "filter.".some
 
@@ -854,7 +856,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       request: RequestHeader,
       bulk: Boolean = false
   )(f: Resource => Future[Result]): Future[Result] = {
-    resources
+    env.allResources.resources
       .filter(_.version.served)
       .find(r =>
         (group == "any" || r.group == group) && (version == "any" || r.version.name == version) && r.pluralName == entity

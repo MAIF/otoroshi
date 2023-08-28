@@ -973,6 +973,8 @@ class Env(
 
   val servers = TcpService.runServers(this)
 
+  lazy val allResources = new otoroshi.api.OtoroshiResources(this)
+
   lazy val adminExtensionsConfig = AdminExtensionConfig(
     enabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.admin-extensions.enabled").getOrElse(true)
   )

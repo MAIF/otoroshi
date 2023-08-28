@@ -259,7 +259,7 @@ trait OptimizedRedisLike {
       case _ if key.startsWith(ds.backendsDataStore.key(""))           => "backend".some
       case _ if key.startsWith(ds.wasmPluginsDataStore.key(""))        => "wasm-plugin".some
       case _                                                                => {
-        env.adminExtensions.resources()
+        env.allResources.resources
           .map { res =>
             (key.startsWith(res.access.key("")), res.singularName)
           }
