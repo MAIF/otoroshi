@@ -499,6 +499,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       )
     ),
     Resource(
+      "Tenant",
+      "tenants",
+      "tenant",
+      "organize.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApi[Tenant](
+        Tenant.format,
+        env.datastores.tenantDataStore.key,
+        env.datastores.tenantDataStore.extractId
+      )
+    ),
+    Resource(
       "Team",
       "teams",
       "team",

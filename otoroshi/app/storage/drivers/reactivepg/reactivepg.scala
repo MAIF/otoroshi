@@ -898,7 +898,8 @@ class ReactivePgRedis(
         .map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()")
         .getOrElse("")
       matchesEntity(key, value) match {
-        case Some((kind, jsonValue)) =>
+        case Some((kind, _jsonValue)) =>
+          val jsonValue = _jsonValue.replace("'", "''")
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
              |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
@@ -906,11 +907,12 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
              |""".stripMargin,
-            Seq(key, value.utf8String, kind, new JsonObject(jsonValue))
+            Seq(key, value.utf8String, kind, new JsonObject(jsonValue)),
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
         case None                    =>
+          val sanitizedValue = value.utf8String.replace("'", "''")
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
              |values ($$1, 'string', $ttl, NOW(), $$2)
@@ -918,7 +920,7 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2${maybeTtlUpdate};
              |""".stripMargin,
-            Seq(key, value.utf8String)
+            Seq(key, sanitizedValue),
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))

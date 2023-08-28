@@ -254,7 +254,18 @@ trait OptimizedRedisLike {
       case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
       case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some
       case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
-      case _                                                           => None
+      case _ if key.startsWith(ds.routeDataStore.key(""))              => "route".some
+      case _ if key.startsWith(ds.routeCompositionDataStore.key(""))   => "route-composition".some
+      case _ if key.startsWith(ds.backendsDataStore.key(""))           => "backend".some
+      case _ if key.startsWith(ds.wasmPluginsDataStore.key(""))        => "wasm-plugin".some
+      case _                                                                => {
+        env.adminExtensions.resources()
+          .map { res =>
+            (key.startsWith(res.access.key("")), res.singularName)
+          }
+          .find(_._1)
+          .map(_._2)
+      }
     }
   }
 }
