@@ -280,6 +280,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
+  case path if path.contains("akka/stream")           => MergeStrategy.first
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x                                                              =>
