@@ -2311,12 +2311,16 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String]) extends SSL
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
-    delegate.setHandshakeApplicationProtocolSelector(selector)
+    if (!lock) {
+      delegate.setHandshakeApplicationProtocolSelector(selector)
+    }
   }
 
   override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] =
     delegate.getHandshakeApplicationProtocolSelector
+
   override def getHandshakeApplicationProtocol: String                                                   = delegate.getHandshakeApplicationProtocol
+
   override def getApplicationProtocol: String                                                            = appProto match {
     case None           => delegate.getApplicationProtocol
     case Some(protocol) => protocol

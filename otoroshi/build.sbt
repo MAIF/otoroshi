@@ -65,8 +65,8 @@ lazy val bouncyCastleVersion     = "1.70"
 lazy val pulsarVersion           = "2.8.1"
 lazy val openTelemetryVersion    = "1.28.0"
 lazy val jacksonVersion          = "2.13.4"
-lazy val akkaHttpVersion         = "10.2.15"
-lazy val akkaHttp2Version        = "10.2.10" // WHAT ???
+lazy val akkaHttpVersion         = "10.2.10"
+lazy val akkaHttp2Version        = "10.2.10"
 lazy val reactorNettyVersion     = "1.1.7"
 lazy val nettyVersion            = "4.1.93.Final"
 lazy val excludesJackson         = Seq(
@@ -77,6 +77,8 @@ lazy val excludesJackson         = Seq(
 lazy val excludeScalaJava8Compat = Seq(
   ExclusionRule(organization = "org.scala-lang.modules")
 )
+
+// BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
 
 libraryDependencies ++= Seq(
   ws,
