@@ -8,7 +8,8 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env) extends AbstractController(cc) {
+class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -20,15 +21,17 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
     if (full) {
       AnonymousReportingJob.buildReport(env.datastores.globalConfigDataStore.latest()).map(report => Ok(report))
     } else {
-      Ok(Json.obj(
-        "otoroshi_cluster_id" -> env.datastores.globalConfigDataStore.latest().otoroshiId,
-        "otoroshi_version" -> env.otoroshiVersion,
-        "otoroshi_version_sem" -> env.otoroshiVersionSem.json,
-        "java_version" -> env.theJavaVersion.json,
-        "os" -> env.os.json,
-        "datastore" -> env.datastoreKind,
-        "env" -> env.env,
-      )).future
+      Ok(
+        Json.obj(
+          "otoroshi_cluster_id"  -> env.datastores.globalConfigDataStore.latest().otoroshiId,
+          "otoroshi_version"     -> env.otoroshiVersion,
+          "otoroshi_version_sem" -> env.otoroshiVersionSem.json,
+          "java_version"         -> env.theJavaVersion.json,
+          "os"                   -> env.os.json,
+          "datastore"            -> env.datastoreKind,
+          "env"                  -> env.env
+        )
+      ).future
     }
   }
 

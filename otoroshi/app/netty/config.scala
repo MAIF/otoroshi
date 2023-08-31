@@ -100,11 +100,11 @@ object ReactorNettyServerConfig {
         .filterNot(_.isEmpty),
       clientAuth = {
         val auth = env.configuration
-            .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.netty.clientAuth")
-            .orElse(
-              env.configuration
-                .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
-            )
+          .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.netty.clientAuth")
+          .orElse(
+            env.configuration
+              .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
+          )
           .flatMap(ClientAuth.apply)
           .getOrElse(ClientAuth.None)
         if (DynamicSSLEngineProvider.logger.isDebugEnabled)

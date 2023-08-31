@@ -907,11 +907,11 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
              |""".stripMargin,
-            Seq(key, value.utf8String, kind, new JsonObject(jsonValue)),
+            Seq(key, value.utf8String, kind, new JsonObject(jsonValue))
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))
-        case None                    =>
+        case None                     =>
           val sanitizedValue = value.utf8String.replace("'", "''")
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
@@ -920,7 +920,7 @@ class ReactivePgRedis(
              |DO
              |  update set type = 'string', value = $$2${maybeTtlUpdate};
              |""".stripMargin,
-            Seq(key, sanitizedValue),
+            Seq(key, sanitizedValue)
           ) { _ =>
             true.some
           }.map(_.getOrElse(true))

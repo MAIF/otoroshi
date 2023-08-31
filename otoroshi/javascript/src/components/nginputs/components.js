@@ -48,9 +48,13 @@ export class NgFormRenderer extends Component {
 
   componentDidMount() {
     if (this.props && this.props.rawSchema) {
-      const props = this.props.rawSchema.props
-      const collapsable = (props && Object.keys(props).length > 0) ? props.collapsable : this.props.rawSchema.collapsable;
-      const collapsed = (props && Object.keys(props).length > 0) ? props.collapsed : this.props.rawSchema.collapsed;
+      const props = this.props.rawSchema.props;
+      const collapsable =
+        props && Object.keys(props).length > 0
+          ? props.collapsable
+          : this.props.rawSchema.collapsable;
+      const collapsed =
+        props && Object.keys(props).length > 0 ? props.collapsed : this.props.rawSchema.collapsed;
       const folded = collapsable && collapsed;
       this.setState({ folded: folded === undefined ? true : folded });
     }

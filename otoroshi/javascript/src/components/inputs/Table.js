@@ -148,10 +148,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-        ...paginationState,
-        pageSize: this.state.rowsPerPage,
-        page: page + 1,
-      })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -357,9 +357,8 @@ export class Table extends Component {
     setTimeout(() => document.body.removeChild(a), 300);
   };
 
-  isAnObject = variable => typeof variable === 'object' &&
-    !Array.isArray(variable) &&
-    variable !== null;
+  isAnObject = (variable) =>
+    typeof variable === 'object' && !Array.isArray(variable) && variable !== null;
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -441,32 +440,34 @@ export class Table extends Component {
         //     placeholder="Search ..."
         //   />
         // },
-        Cell: c.Cell || ((r) => {
-          const value = r.value;
-          const original = r.original;
-          return c.cell ? (
-            c.cell(value, original, this)
-          ) : (
-            <div
-              onClick={(e) => {
-                if (this.props.rowNavigation) {
-                  if (e.metaKey) {
-                    if (this.props.itemUrl) {
-                      const a = document.createElement('a');
-                      a.setAttribute('target', '_blank');
-                      a.setAttribute('href', this.props.itemUrl(original));
-                      a.click();
+        Cell:
+          c.Cell ||
+          ((r) => {
+            const value = r.value;
+            const original = r.original;
+            return c.cell ? (
+              c.cell(value, original, this)
+            ) : (
+              <div
+                onClick={(e) => {
+                  if (this.props.rowNavigation) {
+                    if (e.metaKey) {
+                      if (this.props.itemUrl) {
+                        const a = document.createElement('a');
+                        a.setAttribute('target', '_blank');
+                        a.setAttribute('href', this.props.itemUrl(original));
+                        a.click();
+                      }
+                    } else {
+                      this.gotoItem(e, original);
                     }
-                  } else {
-                    this.gotoItem(e, original);
                   }
-                }
-              }}
-              style={{ cursor: 'pointer', width: '100%' }}>
-              {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
-            </div>
-          );
-        }),
+                }}
+                style={{ cursor: 'pointer', width: '100%' }}>
+                {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
+              </div>
+            );
+          }),
       };
     });
 
@@ -689,22 +690,23 @@ export class Table extends Component {
                 schema: this.props.formSchema,
               }),
             ]}
-            {!this.props.formComponent && !this.props.formFunction && (
-              this.props.formFlow.find(item => this.isAnObject(item)) ?
+            {!this.props.formComponent &&
+              !this.props.formFunction &&
+              (this.props.formFlow.find((item) => this.isAnObject(item)) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
                   schema={this.props.formSchema}
                 />
-                :
+              ) : (
                 <Form
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
                   schema={this.props.formSchema}
                 />
-            )}
+              ))}
             <hr />
             {!this.props.hideAllActions && (
               <>
@@ -763,22 +765,23 @@ export class Table extends Component {
                 schema: this.props.formSchema,
               }),
             ]}
-            {!this.props.formComponent && !this.props.formFunction && (
-              this.props.formFlow.find(item => this.isAnObject(item)) ?
+            {!this.props.formComponent &&
+              !this.props.formFunction &&
+              (this.props.formFlow.find((item) => this.isAnObject(item)) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
                   schema={this.props.formSchema}
                 />
-                :
+              ) : (
                 <Form
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
                   schema={this.props.formSchema}
                 />
-            )}
+              ))}
             <hr />
             <div className="displayGroupBtn float-end">
               {this.props.export && (

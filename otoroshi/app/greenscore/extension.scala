@@ -30,8 +30,7 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
         overheadWoCb = evt.overheadWoCb,
         cbDuration = evt.cbDuration,
         duration = evt.duration,
-        plugins =  evt.route.map(_.plugins.slots.size).getOrElse(0),
-
+        plugins = evt.route.map(_.plugins.slots.size).getOrElse(0),
         backendId = evt.target.scheme + evt.target.host + evt.target.uri,
         dataIn = evt.data.dataIn,
         dataOut = evt.data.dataOut,
@@ -40,46 +39,51 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
         } + evt.method.byteString.size + evt.url.byteString.size + evt.protocol.byteString.size + 2,
         headersOut = evt.headersOut.foldLeft(0L) { case (acc, item) =>
           acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
-        } + evt.protocol.byteString.size + 1 + 3 + Results.Status(evt.status).header.reasonPhrase.map(_.byteString.size).getOrElse(0)
+        } + evt.protocol.byteString.size + 1 + 3 + Results
+          .Status(evt.status)
+          .header
+          .reasonPhrase
+          .map(_.byteString.size)
+          .getOrElse(0)
       )
 //      ext.logger.debug(s"global score for ${routeId}: ${ext.ecoMetrics.compute()}")
     }
-    case _ =>
+    case _                 =>
   }
 }
 
 case class RouteScreenScore(routeId: String, rulesConfig: GreenScoreConfig)
 
 case class GreenScoreEntity(
-  location: EntityLocation,
-  id: String,
-  name: String,
-  description: String,
-  tags: Seq[String],
-  metadata: Map[String, String],
-  routes: Seq[RouteScreenScore]
+    location: EntityLocation,
+    id: String,
+    name: String,
+    description: String,
+    tags: Seq[String],
+    metadata: Map[String, String],
+    routes: Seq[RouteScreenScore]
 ) extends EntityLocationSupport {
-  override def internalId: String = id
-  override def json: JsValue = GreenScoreEntity.format.writes(this)
-  override def theName: String = name
-  override def theDescription: String = description
-  override def theTags: Seq[String] = tags
+  override def internalId: String               = id
+  override def json: JsValue                    = GreenScoreEntity.format.writes(this)
+  override def theName: String                  = name
+  override def theDescription: String           = description
+  override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
 }
 
 object GreenScoreEntity {
   val format = new Format[GreenScoreEntity] {
     override def writes(o: GreenScoreEntity): JsValue = o.location.jsonWithKey ++ Json.obj(
-      "id" -> o.id,
-      "name" -> o.name,
+      "id"          -> o.id,
+      "name"        -> o.name,
       "description" -> o.description,
-      "metadata" -> o.metadata,
-      "tags" -> JsArray(o.tags.map(JsString.apply)),
-      "routes" -> JsArray(o.routes.map(route => {
-          Json.obj(
-            "routeId" -> route.routeId,
-            "rulesConfig" -> route.rulesConfig.json
-          )
+      "metadata"    -> o.metadata,
+      "tags"        -> JsArray(o.tags.map(JsString.apply)),
+      "routes"      -> JsArray(o.routes.map(route => {
+        Json.obj(
+          "routeId"     -> route.routeId,
+          "rulesConfig" -> route.rulesConfig.json
+        )
       }))
     )
 
@@ -91,18 +95,26 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        routes = json.select("routes").asOpt[JsArray].map(routes => {
-          routes.value.map(route => {
-            route.asOpt[JsObject].map(v => {
-              RouteScreenScore(
-                v.select("routeId").as[String],
-                v.select("rulesConfig").asOpt[JsObject].map(GreenScoreConfig.format.reads).get.get)
-            }).get
+        routes = json
+          .select("routes")
+          .asOpt[JsArray]
+          .map(routes => {
+            routes.value.map(route => {
+              route
+                .asOpt[JsObject]
+                .map(v => {
+                  RouteScreenScore(
+                    v.select("routeId").as[String],
+                    v.select("rulesConfig").asOpt[JsObject].map(GreenScoreConfig.format.reads).get.get
+                  )
+                })
+                .get
+            })
           })
-        }).getOrElse(Seq.empty),
+          .getOrElse(Seq.empty)
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -111,12 +123,12 @@ object GreenScoreEntity {
 trait GreenScoreDataStore extends BasicStore[GreenScoreEntity]
 
 class KvGreenScoreDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
-  extends GreenScoreDataStore
+    extends GreenScoreDataStore
     with RedisLikeStore[GreenScoreEntity] {
-  override def fmt: Format[GreenScoreEntity]                        = GreenScoreEntity.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:greenscores:$id"
-  override def extractId(value: GreenScoreEntity): String           = value.id
+  override def fmt: Format[GreenScoreEntity]              = GreenScoreEntity.format
+  override def redisLike(implicit env: Env): RedisLike    = redisCli
+  override def key(id: String): String                    = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:greenscores:$id"
+  override def extractId(value: GreenScoreEntity): String = value.id
 }
 
 class GreenScoreAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
@@ -137,11 +149,11 @@ class GreenScoreAdminExtensionState(env: Env) {
 
 class GreenScoreExtension(val env: Env) extends AdminExtension {
 
-  private[greenscore] val logger = Logger("otoroshi-extension-green-score")
+  private[greenscore] val logger     = Logger("otoroshi-extension-green-score")
   private[greenscore] val ecoMetrics = new EcoMetrics(env)
-  private val listener: ActorRef = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
-  private lazy val datastores = new GreenScoreAdminExtensionDatastores(env, id)
-  private lazy val states = new GreenScoreAdminExtensionState(env)
+  private val listener: ActorRef     = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
+  private lazy val datastores        = new GreenScoreAdminExtensionDatastores(env, id)
+  private lazy val states            = new GreenScoreAdminExtensionState(env)
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.GreenScore")
 
@@ -184,8 +196,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/:greenscore",
       false,
       (ctx, request, apk, _) => {
-        implicit val ec = env.otoroshiExecutionContext
-        implicit val ev = env
+        implicit val ec  = env.otoroshiExecutionContext
+        implicit val ev  = env
         val greenScoreId = ctx.named("greenscore").map(JsString.apply).getOrElse(JsNull).asString
         for {
           scores <- datastores.greenscoresDatastore.findAll()
@@ -195,10 +207,12 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             .map(group => group.routes.foldLeft(Json.arr())((acc, route) => acc :+ ecoMetrics.json(route.routeId)))
             .getOrElse(Json.arr())
 
-          Results.Ok(Json.obj(
-            "group" -> greenScoreId,
-            "scores" -> jsonScores
-          ))
+          Results.Ok(
+            Json.obj(
+              "group"  -> greenScoreId,
+              "scores" -> jsonScores
+            )
+          )
         }
       }
     ),
@@ -227,7 +241,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             c => datastores.greenscoresDatastore.extractId(c),
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
-            stateUpdate = values => states.updateGreenScores(values),
+            stateUpdate = values => states.updateGreenScores(values)
           )
         )
       )

@@ -10,8 +10,8 @@ export default function GreenScoreExtension(extensionId, ctx) {
         title: 'Green scores',
         text: 'All your Green Scores',
         path: 'extensions/green-score/green-score-configs',
-        icon: 'leaf'
-      }
+        icon: 'leaf',
+      },
     ],
     creationItems: [],
     dangerZoneParts: [],
@@ -28,33 +28,33 @@ export default function GreenScoreExtension(extensionId, ctx) {
     searchItems: [
       {
         action: () => {
-          window.location.href = `/bo/dashboard/green-score/green-score-configs`
+          window.location.href = `/bo/dashboard/green-score/green-score-configs`;
         },
         env: <span className="fas fa-leaf" />,
         label: 'Green Score configs.',
         value: 'green-score-configs',
-      }
+      },
     ],
     routes: [
       // TODO: add more route here if needed
       {
         path: '/extensions/green-score/green-score-configs/:taction/:titem',
         component: (props) => {
-          return <GreenScoreConfigsPage {...props} />
-        }
+          return <GreenScoreConfigsPage {...props} />;
+        },
       },
       {
         path: '/extensions/green-score/green-score-configs/:taction',
         component: (props) => {
-          return <GreenScoreConfigsPage {...props} />
-        }
+          return <GreenScoreConfigsPage {...props} />;
+        },
       },
       {
         path: '/extensions/green-score/green-score-configs',
         component: (props) => {
-          return <GreenScoreConfigsPage {...props} />
-        }
-      }
+          return <GreenScoreConfigsPage {...props} />;
+        },
+      },
     ],
-  }
+  };
 }

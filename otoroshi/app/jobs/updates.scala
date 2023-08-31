@@ -305,15 +305,15 @@ case class Version(
   }
 
   def json: JsValue = Json.obj(
-    "raw" -> raw,
-    "major" -> major,
-    "minor" -> minor,
-    "patch" -> patch,
-    "build" -> build.map(v => JsNumber(v)).getOrElse(JsNull).asValue,
-    "suffix" -> suffix.map(_.stringify().json).getOrElse(JsNull).asValue,
+    "raw"            -> raw,
+    "major"          -> major,
+    "minor"          -> minor,
+    "patch"          -> patch,
+    "build"          -> build.map(v => JsNumber(v)).getOrElse(JsNull).asValue,
+    "suffix"         -> suffix.map(_.stringify().json).getOrElse(JsNull).asValue,
     "suffix_version" -> suffixVersion.map(v => JsNumber(v)).getOrElse(JsNull).asValue,
-    "str" -> stringify(),
-    "value" -> value
+    "str"            -> stringify(),
+    "value"          -> value
   )
 }
 
