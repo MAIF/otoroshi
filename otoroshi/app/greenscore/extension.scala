@@ -145,7 +145,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.GreenScore")
 
-  override def enabled: Boolean = env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
+  override def enabled: Boolean = false //env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
 
   override def name: String = "Green Score"
 

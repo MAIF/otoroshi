@@ -248,5 +248,5 @@ export function getExtension(name) {
 }
 
 function setupLocalExtensions() {
-  setupGreenScoreExtension(registerExtension);
+  // setupGreenScoreExtension(registerExtension);
 }
