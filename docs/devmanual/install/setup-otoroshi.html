@@ -2032,6 +2032,9 @@ otoroshi {
       clientAuth = &quot;None&quot;
       clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
       clientAuth = ${?OTOROSHI_SSL_OUTSIDE_CLIENT_AUTH}
+      netty {
+        clientAuth = ${?OTOROSHI_SSL_OUTSIDE_NETTY_CLIENT_AUTH}
+      }
     }
     # the default trust mode
     trust {
@@ -3305,6 +3308,9 @@ otoroshi {
     fromOutside {
       clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
       clientAuth = ${?OTOROSHI_SSL_OUTSIDE_CLIENT_AUTH}
+      netty {
+        clientAuth = ${?OTOROSHI_SSL_OUTSIDE_NETTY_CLIENT_AUTH}
+      }
     }
     trust {
       all = ${?OTOROSHI_SSL_TRUST_ALL}
