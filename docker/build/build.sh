@@ -116,7 +116,7 @@ case "${1}" in
   build-and-push-dev)
     OTO_VERSION="dev"
     copy_build
-    build_and_push_jar_template_version_multi_arch_temurin "$OTO_VERSION" "20"
+    build_and_push_jar_template_version_multi_arch_temurin "$OTO_VERSION" "17"
     cleanup
     ;;
   build-and-push-snapshot)
