@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [16.8.0] - 2023-08-31
+
+https://github.com/MAIF/otoroshi/milestone/71?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.7.0...v16.8.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.8.0
+
+### Added 
+
+- allow different mutual auth. settings on play server and netty server (#1691)
+- add endpoints to get otoroshi version and cluster infos (#1696)
+
+### Fixed
+
+- tls session issue with first request using TLS 1.3 (#1695)
+- issue when consuming backoffice with the netty backend and tls (#1694)
+- issue in el add on 16.7.0 with this kind of EL '${now.plus_ms(300000).epoch_ms}' (#1689)
+
+
 ## [16.7.0] - 2023-08-01
 
 https://github.com/MAIF/otoroshi/milestone/70?closed=1
