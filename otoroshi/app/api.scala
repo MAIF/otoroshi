@@ -12,6 +12,7 @@ import ch.qos.logback.core.spi.FilterReply
 import ch.qos.logback.core.status.Status
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
 import org.slf4j.LoggerFactory
 import otoroshi.netty.ReactorNettyServer
@@ -527,6 +528,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val entitiesController            = wire[EntitiesController]
   lazy val errorTemplatesController      = wire[ErrorTemplatesController]
   lazy val genericApiController          = wire[GenericApiController]
+  lazy val infosApiController            = wire[InfosApiController]
 
   override lazy val assets: Assets = wire[Assets]
 

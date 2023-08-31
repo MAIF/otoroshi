@@ -146,6 +146,9 @@ POST    /backoffice/auth0/callback                            otoroshi.controlle
 
 # Admin API
 
+GET     /api/infos                                            otoroshi.controllers.adminapi.InfosApiController.infos()
+GET     /api/version                                          otoroshi.controllers.adminapi.InfosApiController.version()
+
 ## new models
 GET     /api/new/apikey                                       otoroshi.controllers.adminapi.TemplatesController.initiateApiKey(groupId: Option[String])
 GET     /api/new/service                                      otoroshi.controllers.adminapi.TemplatesController.initiateService()

@@ -5,7 +5,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsNull, JsNumber, JsObject, JsValue, Json}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
@@ -303,6 +303,18 @@ case class Version(
     val suffixVersionStr = suffixVersion.map(v => s".$v").getOrElse("")
     s"$major.$minor.$patch$buildStr$suffixStr$suffixVersionStr"
   }
+
+  def json: JsValue = Json.obj(
+    "raw" -> raw,
+    "major" -> major,
+    "minor" -> minor,
+    "patch" -> patch,
+    "build" -> build.map(v => JsNumber(v)).getOrElse(JsNull).asValue,
+    "suffix" -> suffix.map(_.stringify().json).getOrElse(JsNull).asValue,
+    "suffix_version" -> suffixVersion.map(v => JsNumber(v)).getOrElse(JsNull).asValue,
+    "str" -> stringify(),
+    "value" -> value
+  )
 }
 
 object Version {

@@ -1,6 +1,7 @@
 package otoroshi.loader
 
 import com.softwaremill.macwire._
+import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
 import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
@@ -138,6 +139,7 @@ package object modules {
     lazy val entitiesController            = wire[EntitiesController]
     lazy val errorTemplatesController      = wire[ErrorTemplatesController]
     lazy val genericApiController          = wire[GenericApiController]
+    lazy val infosApiController            = wire[InfosApiController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
