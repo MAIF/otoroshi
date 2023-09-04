@@ -141,6 +141,7 @@ export class WasmSourcePath extends Component {
 }
 
 export class WasmPluginsPage extends Component {
+  
   columns = [
     {
       title: 'Name',
