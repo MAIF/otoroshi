@@ -693,11 +693,11 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
-    Seq(
-      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/coraza-extension.js")
-    )
-  }
+  // override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
+  //   Seq(
+  //     AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/coraza-extension.js")
+  //   )
+  // }
 
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
