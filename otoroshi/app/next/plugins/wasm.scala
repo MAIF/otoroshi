@@ -396,8 +396,6 @@ class WasmAccessValidator extends NgAccessValidator {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    println("access")
-
     env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    =>
         Errors
@@ -412,7 +410,6 @@ class WasmAccessValidator extends NgAccessValidator {
           )
           .map(r => NgAccess.NgDenied(r))
       case Some((vm, localConfig)) =>
-        println("got vm")
         implicit val ic = env.wasmIntegrationCtx
         vm.call(
           WasmFunctionParameters.ExtismFuntionCall(
@@ -422,7 +419,6 @@ class WasmAccessValidator extends NgAccessValidator {
           None
         ).flatMap {
           case Right(res) =>
-            println("res")
             val response = Json.parse(res._1)
             AttrsHelper.updateAttrs(ctx.attrs, response)
             val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
@@ -443,7 +439,6 @@ class WasmAccessValidator extends NgAccessValidator {
                 .map(r => NgAccess.NgDenied(r))
             }
           case Left(err)  =>
-            println("err")
             Errors
               .craftResponseResult(
                 (err \ "error").asOpt[String].getOrElse("An error occured"),
@@ -457,7 +452,6 @@ class WasmAccessValidator extends NgAccessValidator {
               .map(r => NgAccess.NgDenied(r))
         }.andThen {
           case e =>
-            println(e)
             vm.release()
         }
     }
