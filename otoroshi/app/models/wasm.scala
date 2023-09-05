@@ -31,7 +31,6 @@ case class WasmPlugin(
   override def theDescription: String                 = description
   override def theTags: Seq[String]                   = tags
   override def theMetadata: Map[String, String]       = metadata
-  //def pool()(implicit env: Env): WasmVmPool           = WasmVmPool.forPlugin(this.id)(env.wasmIntegrationCtx)
 }
 
 object WasmPlugin {
@@ -125,19 +124,6 @@ class WasmPluginsCacheManager extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    // env.proxyState.allWasmPlugins().foreach { plugin =>
-    //   val now = System.currentTimeMillis()
-    //   WasmUtils.scriptCache(env).get(plugin.config.source.cacheKey) match {
-    //     case None                                                                                           => plugin.config.source.getWasm()
-    //     case Some(CacheableWasmScript.CachedWasmScript(_, createAt)) if (createAt + env.wasmCacheTtl) < now =>
-    //       plugin.config.source.getWasm()
-    //     case Some(CacheableWasmScript.CachedWasmScript(_, createAt))
-    //         if (createAt + env.wasmCacheTtl) > now && (createAt + env.wasmCacheTtl + 1000) < now =>
-    //       plugin.config.source.getWasm()
-    //     case _                                                                                              => ()
-    //   }
-    // }
-    // funit
     env.wasmIntegration.runVmLoaderJob()
   }
 }

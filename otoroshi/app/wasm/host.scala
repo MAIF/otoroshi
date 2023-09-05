@@ -42,22 +42,7 @@ object Utils {
     Json.parse(rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
   }
 }
-/*
-case class EnvUserData(
-    env: Env,
-    executionContext: ExecutionContext,
-    mat: Materializer,
-    config: WasmConfig
-) extends WasmOtoroshiHostUserData
 
-case class StateUserData(
-    env: Env,
-    executionContext: ExecutionContext,
-    mat: Materializer,
-    cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]]
-)                          extends WasmOtoroshiHostUserData
-case class EmptyUserData() extends WasmOtoroshiHostUserData
-*/
 object LogLevel extends Enumeration {
   type LogLevel = Value
 
@@ -70,11 +55,6 @@ object Status extends Enumeration {
   val StatusOK, StatusNotFound, StatusBadArgument, StatusEmpty, StatusCasMismatch, StatusInternalFailure,
       StatusUnimplemented = Value
 }
-
-// case class HostFunctionWithAuthorization(
-//     function: WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData],
-//     authorized: WasmAuthorizations => Boolean
-// )
 
 trait AwaitCapable {
   def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(implicit env: Env): T = {
