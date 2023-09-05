@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
+import io.otoroshi.common.wasm.WasmManagerSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
@@ -501,6 +502,7 @@ object TlsSettings {
   }
 }
 
+/*
 case class WasmManagerSettings(
     url: String = "http://localhost:5001",
     clientId: String = "admin-api-apikey-id",
@@ -532,7 +534,7 @@ object WasmManagerSettings {
         case Success(ac) => JsSuccess(ac)
       }
   }
-}
+}*/
 
 case class DefaultTemplates(
     route: Option[JsObject] = Json.obj().some,        // Option[NgRoute],

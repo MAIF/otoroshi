@@ -476,9 +476,6 @@ class ProxyEngine() extends RequestHandler {
             RequestFlowReport(report, route).toAnalytics()
           }
         }
-        attrs.get(otoroshi.next.plugins.Keys.WasmContextKey).foreach { ctx =>
-          ctx.close()
-        }
       }
       .applyOnIf( /*env.isDev && */ (debug || debugHeaders))(_.map { res =>
         val addHeaders =
@@ -657,9 +654,6 @@ class ProxyEngine() extends RequestHandler {
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
-        }
-        attrs.get(otoroshi.next.plugins.Keys.WasmContextKey).foreach { ctx =>
-          ctx.close()
         }
       }
   }

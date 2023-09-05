@@ -1,5 +1,27 @@
 package otoroshi.wasm
 
+import akka.stream.Materializer
+import io.otoroshi.common.wasm._
+import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
+import otoroshi.env.Env
+import otoroshi.next.models.NgTlsConfig
+import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting}
+import otoroshi.utils.TypedMap
+import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSRequest}
+import play.api.mvc.Cookie
+
+import java.util.concurrent.Executors
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+/*
 import akka.util.ByteString
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
@@ -15,31 +37,6 @@ import java.nio.file.{Files, Paths}
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-
-case class WasmDataRights(read: Boolean = false, write: Boolean = false)
-
-object WasmDataRights {
-  def fmt =
-    new Format[WasmDataRights] {
-      override def writes(o: WasmDataRights) =
-        Json.obj(
-          "read"  -> o.read,
-          "write" -> o.write
-        )
-
-      override def reads(json: JsValue) =
-        Try {
-          JsSuccess(
-            WasmDataRights(
-              read = (json \ "read").asOpt[Boolean].getOrElse(false),
-              write = (json \ "write").asOpt[Boolean].getOrElse(false)
-            )
-          )
-        } recover { case e =>
-          JsError(e.getMessage)
-        } get
-    }
-}
 
 sealed trait WasmSourceKind {
   def name: String
@@ -313,24 +310,139 @@ object WasmVmLifetime {
   }
 }
 
+object ResultsWrapper {
+  def apply(results: WasmOtoroshiResults): ResultsWrapper                               = new ResultsWrapper(results, None)
+  def apply(results: WasmOtoroshiResults, plugin: WasmOtoroshiInstance): ResultsWrapper =
+    new ResultsWrapper(results, Some(plugin))
+}
+
+case class ResultsWrapper(results: WasmOtoroshiResults, pluginOpt: Option[WasmOtoroshiInstance]) {
+  def free(): Unit = try {
+    if (results.getLength > 0) {
+      results.close()
+    }
+  } catch {
+    case t: Throwable =>
+      t.printStackTrace()
+      ()
+  }
+}
+
+class WasmContext(
+    plugins: UnboundedTrieMap[String, WasmContextSlot] = new UnboundedTrieMap[String, WasmContextSlot]()
+) {
+  def put(id: String, slot: WasmContextSlot): Unit = plugins.put(id, slot)
+  def get(id: String): Option[WasmContextSlot]     = plugins.get(id)
+  def close(): Unit = {
+    if (WasmUtils.logger.isDebugEnabled)
+      WasmUtils.logger.debug(s"[WasmContext] will close ${plugins.size} wasm plugin instances")
+    plugins.foreach(_._2.forceClose())
+    plugins.clear()
+  }
+}
+
+sealed trait CacheableWasmScript
+
+object CacheableWasmScript {
+  case class CachedWasmScript(script: ByteString, createAt: Long)       extends CacheableWasmScript
+  case class FetchingWasmScript(f: Future[Either[JsValue, ByteString]]) extends CacheableWasmScript
+}
+*/
+
+case class WasmDataRights(read: Boolean = false, write: Boolean = false)
+
+object WasmDataRights {
+  def fmt =
+    new Format[WasmDataRights] {
+      override def writes(o: WasmDataRights) =
+        Json.obj(
+          "read"  -> o.read,
+          "write" -> o.write
+        )
+
+      override def reads(json: JsValue) =
+        Try {
+          JsSuccess(
+            WasmDataRights(
+              read = (json \ "read").asOpt[Boolean].getOrElse(false),
+              write = (json \ "write").asOpt[Boolean].getOrElse(false)
+            )
+          )
+        } recover { case e =>
+          JsError(e.getMessage)
+        } get
+    }
+}
+
+case class WasmAuthorizations(
+                               httpAccess: Boolean = false,
+                               globalDataStoreAccess: WasmDataRights = WasmDataRights(),
+                               pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
+                               globalMapAccess: WasmDataRights = WasmDataRights(),
+                               pluginMapAccess: WasmDataRights = WasmDataRights(),
+                               proxyStateAccess: Boolean = false,
+                               configurationAccess: Boolean = false,
+                               proxyHttpCallTimeout: Int = 5000
+                             ) {
+  def json: JsValue = WasmAuthorizations.format.writes(this)
+}
+
+object WasmAuthorizations {
+  val format = new Format[WasmAuthorizations] {
+    override def writes(o: WasmAuthorizations): JsValue             = Json.obj(
+      "httpAccess"            -> o.httpAccess,
+      "proxyHttpCallTimeout"  -> o.proxyHttpCallTimeout,
+      "globalDataStoreAccess" -> WasmDataRights.fmt.writes(o.globalDataStoreAccess),
+      "pluginDataStoreAccess" -> WasmDataRights.fmt.writes(o.pluginDataStoreAccess),
+      "globalMapAccess"       -> WasmDataRights.fmt.writes(o.globalMapAccess),
+      "pluginMapAccess"       -> WasmDataRights.fmt.writes(o.pluginMapAccess),
+      "proxyStateAccess"      -> o.proxyStateAccess,
+      "configurationAccess"   -> o.configurationAccess
+    )
+    override def reads(json: JsValue): JsResult[WasmAuthorizations] = Try {
+      WasmAuthorizations(
+        httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
+        proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
+        globalDataStoreAccess = (json \ "globalDataStoreAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .getOrElse(WasmDataRights()),
+        pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .getOrElse(WasmDataRights()),
+        globalMapAccess = (json \ "globalMapAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .getOrElse(WasmDataRights()),
+        pluginMapAccess = (json \ "pluginMapAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .getOrElse(WasmDataRights()),
+        proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
+        configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
 case class WasmConfig(
-    source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
-    memoryPages: Int = 20,
-    functionName: Option[String] = None,
-    config: Map[String, String] = Map.empty,
-    allowedHosts: Seq[String] = Seq.empty,
-    allowedPaths: Map[String, String] = Map.empty,
-    ////
-    // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
-    wasi: Boolean = false,
-    opa: Boolean = false,
-    instances: Int = 1,
-    killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
-    authorizations: WasmAuthorizations = WasmAuthorizations()
-) extends NgPluginConfig {
+   source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
+   memoryPages: Int = 20,
+   functionName: Option[String] = None,
+   config: Map[String, String] = Map.empty,
+   allowedHosts: Seq[String] = Seq.empty,
+   allowedPaths: Map[String, String] = Map.empty,
+   ////
+   // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
+   wasi: Boolean = false,
+   opa: Boolean = false,
+   instances: Int = 1,
+   killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
+   authorizations: WasmAuthorizations = WasmAuthorizations()
+ ) extends NgPluginConfig with WasmConfiguration {
   // still here for compat reason
   def lifetime: WasmVmLifetime              = WasmVmLifetime.Forever
-  def pool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
+  //def wasmPool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
   def json: JsValue                         = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,
@@ -416,40 +528,108 @@ object WasmConfig {
   }
 }
 
-object ResultsWrapper {
-  def apply(results: WasmOtoroshiResults): ResultsWrapper                               = new ResultsWrapper(results, None)
-  def apply(results: WasmOtoroshiResults, plugin: WasmOtoroshiInstance): ResultsWrapper =
-    new ResultsWrapper(results, Some(plugin))
-}
+class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
-case class ResultsWrapper(results: WasmOtoroshiResults, pluginOpt: Option[WasmOtoroshiInstance]) {
-  def free(): Unit = try {
-    if (results.getLength > 0) {
-      results.close()
-    }
-  } catch {
-    case t: Throwable =>
-      t.printStackTrace()
-      ()
+  implicit val ec = env.otoroshiExecutionContext
+  implicit val ev = env
+
+  val logger: Logger = Logger("otoroshi-wasm-integration")
+  val materializer: Materializer = env.otoroshiMaterializer
+  val executionContext: ExecutionContext = env.otoroshiExecutionContext
+  val wasmCacheTtl: Long = env.wasmCacheTtl
+  val wasmQueueBufferSize: Int = env.wasmQueueBufferSize
+  val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
+  val wasmExecutor: ExecutionContext = ExecutionContext.fromExecutorService(
+    Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
+  )
+
+  override def url(path: String): WSRequest = env.Ws.url(path)
+
+  override def mtlsUrl(path: String, tlsConfig: TlsConfig): WSRequest = {
+    val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
+    env.MtlsWs.url(path, cfg)
+  }
+
+  override def wasmManagerSettings: Future[Option[WasmManagerSettings]] = env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
+
+  override def wasmConfig(path: String): Option[WasmConfiguration] = env.proxyState.wasmPlugin(path).map(_.config)
+
+  override def wasmConfigs(): Seq[WasmConfiguration] = env.proxyState.allWasmPlugins().map(_.config)
+
+  override def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
+    HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)
   }
 }
 
-class WasmContext(
-    plugins: UnboundedTrieMap[String, WasmContextSlot] = new UnboundedTrieMap[String, WasmContextSlot]()
-) {
-  def put(id: String, slot: WasmContextSlot): Unit = plugins.put(id, slot)
-  def get(id: String): Option[WasmContextSlot]     = plugins.get(id)
-  def close(): Unit = {
-    if (WasmUtils.logger.isDebugEnabled)
-      WasmUtils.logger.debug(s"[WasmContext] will close ${plugins.size} wasm plugin instances")
-    plugins.foreach(_._2.forceClose())
-    plugins.clear()
+class WasmVmPoolCleaner extends Job {
+
+  private val logger = Logger("otoroshi-wasm-vm-pool-cleaner")
+
+  override def uniqueId: JobId = JobId("otoroshi.wasm.WasmVmPoolCleaner")
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
+  override def steps: Seq[NgStep] = Seq(NgStep.Job)
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiInstance
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val config                = env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select("wasm-vm-pool-cleaner-config")
+      .asOpt[JsObject]
+      .getOrElse(Json.obj())
+    env.wasmIntegration.runVmCleanerJob(config)
   }
 }
 
-sealed trait CacheableWasmScript
+object WasmUtils {
 
-object CacheableWasmScript {
-  case class CachedWasmScript(script: ByteString, createAt: Long)       extends CacheableWasmScript
-  case class FetchingWasmScript(f: Future[Either[JsValue, ByteString]]) extends CacheableWasmScript
+  def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
+    wasmResponse
+      .select("cookies")
+      .asOpt[Seq[JsObject]]
+      .map { arr =>
+        arr.map { c =>
+          DefaultWSCookie(
+            name = c.select("name").asString,
+            value = c.select("value").asString,
+            maxAge = c.select("maxAge").asOpt[Long],
+            path = c.select("path").asOpt[String],
+            domain = c.select("domain").asOpt[String],
+            secure = c.select("secure").asOpt[Boolean].getOrElse(false),
+            httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false)
+          )
+        }
+      }
+
+  def convertJsonPlayCookies(wasmResponse: JsValue): Option[Seq[Cookie]] =
+    wasmResponse
+      .select("cookies")
+      .asOpt[Seq[JsObject]]
+      .map { arr =>
+        arr.map { c =>
+          Cookie(
+            name = c.select("name").asString,
+            value = c.select("value").asString,
+            maxAge = c.select("maxAge").asOpt[Int],
+            path = c.select("path").asOpt[String].getOrElse("/"),
+            domain = c.select("domain").asOpt[String],
+            secure = c.select("secure").asOpt[Boolean].getOrElse(false),
+            httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false),
+            sameSite = c.select("domain").asOpt[String].flatMap(Cookie.SameSite.parse)
+          )
+        }
+      }
 }

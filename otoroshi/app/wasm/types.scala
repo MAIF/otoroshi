@@ -1,4 +1,4 @@
-package otoroshi.wasm
+/*package otoroshi.wasm
 
 import org.extism.sdk.Results
 import org.extism.sdk.wasmotoroshi._
@@ -134,3 +134,5 @@ object WasmFunctionParameters {
     override def resultSize: Option[Int]                                        = None
   }
 }
+
+*/

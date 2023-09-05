@@ -1,5 +1,6 @@
 package otoroshi.auth
 
+import io.otoroshi.common.wasm.WasmFunctionParameters
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models._
@@ -10,7 +11,6 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.utils.{JsonPathValidator, TypedMap}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{WasmFunctionParameters, WasmUtils, WasmVm}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -129,7 +129,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "is_route"      -> isRoute
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -142,6 +142,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
               maybeRoute = ctx.route.some
             )
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_login_page", input.stringify), None)
             .map {
               case Left(err)     => Results.InternalServerError(err)
@@ -196,7 +197,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user"          -> user.map(_.json).getOrElse(JsNull).asValue
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -210,6 +211,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             )
             .map(_.left)
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_logout", input.stringify), None)
             .map {
               case Left(err)     => Results.InternalServerError(err).left
@@ -253,9 +255,10 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "route"         -> route.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_callback", input.stringify), None)
             .map {
               case Left(err)     => err.stringify.left
@@ -294,7 +297,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -307,6 +310,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
               maybeRoute = ctx.route.some
             )
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_login_page", input.stringify), None)
             .map {
               case Left(err)     => Results.InternalServerError(err)
@@ -356,7 +360,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user"          -> user.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -370,6 +374,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             )
             .map(_.left)
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_logout", input.stringify), None)
             .map {
               case Left(err)     => Results.InternalServerError(err).left
@@ -410,9 +415,10 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
+          implicit val ctx = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_callback", input.stringify), None)
             .map {
               case Left(err)     => err.stringify.left

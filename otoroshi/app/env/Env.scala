@@ -8,6 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
+import io.otoroshi.common.wasm.WasmIntegration
 import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -40,6 +41,7 @@ import otoroshi.tcp.TcpService
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.OtoroshiWasmIntegrationContext
 import play.api._
 import play.api.http.HttpConfiguration
 import play.api.inject.ApplicationLifecycle
@@ -980,6 +982,9 @@ class Env(
   )
 
   lazy val adminExtensions = AdminExtensions.current(this, adminExtensionsConfig)
+
+  lazy val wasmIntegrationCtx = new OtoroshiWasmIntegrationContext(this)
+  lazy val wasmIntegration = new WasmIntegration(wasmIntegrationCtx)
 
   datastores.before(configuration, environment, lifecycle)
   // geoloc.start()

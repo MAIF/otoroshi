@@ -7,6 +7,7 @@ import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
 import com.jayway.jsonpath.PathNotFoundException
+import io.otoroshi.common.wasm.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTreeRouter
@@ -24,29 +25,7 @@ import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
-import sangria.schema.{
-  Action,
-  AdditionalTypes,
-  AnyFieldResolver,
-  Argument,
-  AstDirectiveContext,
-  AstSchemaBuilder,
-  AstSchemaMaterializer,
-  BooleanType,
-  DefaultAstSchemaBuilder,
-  Directive,
-  DirectiveResolver,
-  FieldResolver,
-  InstanceCheck,
-  IntType,
-  IntrospectionSchemaBuilder,
-  ListInputType,
-  OptionInputType,
-  ResolverBasedAstSchemaBuilder,
-  ScalarType,
-  Schema,
-  StringType
-}
+import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
@@ -774,9 +753,10 @@ class GraphQLBackend extends NgBackendCall {
           configurationAccess = wasmConfigurationAccess.getOrElse(false)
         )
       )
-      WasmVm.fromConfig(wsmCfg).flatMap {
+      env.wasmIntegration.wasmVmFor(wsmCfg).flatMap {
         case None          => Future.failed(WasmException("plugin not found !"))
         case Some((vm, _)) =>
+          implicit val ic = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("execute", input.stringify), None)
             .map {
               case Right(output) =>

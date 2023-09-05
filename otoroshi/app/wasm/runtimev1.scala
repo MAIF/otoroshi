@@ -1,4 +1,4 @@
-package otoroshi.wasm
+/*package otoroshi.wasm
 
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
@@ -534,3 +534,4 @@ object WasmUtils {
       }
     }
 }
+*/

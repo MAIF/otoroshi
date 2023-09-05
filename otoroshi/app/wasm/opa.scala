@@ -1,4 +1,4 @@
-package otoroshi.wasm;
+/*package otoroshi.wasm;
 
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
@@ -310,3 +310,4 @@ object LinearMemories {
         return new String(Arrays.copyOf(mem, size), StandardCharsets.UTF_8);
     }
 }*/
+*/
