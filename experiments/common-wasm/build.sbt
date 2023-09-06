@@ -1,9 +1,14 @@
 import Dependencies.munit
 
-ThisBuild / scalaVersion     := "2.12.16"
+lazy val scala212 = "2.12.16"
+lazy val scala213 = "2.13.11"
+lazy val supportedScalaVersions = List(scala212, scala213)
+
+ThisBuild / scalaVersion     := scala212
 ThisBuild / version          := "1.0.0-SNAPSHOT"
 ThisBuild / organization     := "io.otoroshi.common"
 ThisBuild / organizationName := "wasm"
+
 
 lazy val playJsonVersion = "2.9.3"
 lazy val playWsVersion = "2.8.19"
@@ -27,6 +32,7 @@ scalacOptions ++= Seq(
 lazy val root = (project in file("."))
   .settings(
     name := "common-wasm",
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       munit % Test,
       "com.typesafe.play"     %% "play-ws"        % playWsVersion,
@@ -34,9 +40,6 @@ lazy val root = (project in file("."))
       "com.typesafe.akka"     %% "akka-stream"    % akkaVersion,
       "com.typesafe.akka"     %% "akka-http"      % akkaHttpVersion,
       "com.typesafe.play"     %% "play-json-joda" % playJsonVersion,
-      "com.github.blemale"    %% "scaffeine"      % "4.0.2",
-      "com.jayway.jsonpath"   % "json-path"       % "2.7.0",
-      "commons-lang"          % "commons-lang"    % "2.6",
       "commons-codec"         % "commons-codec"   % "1.16.0",
       "net.java.dev.jna"      % "jna"             % "5.13.0",
       "com.google.code.gson"  % "gson"            % "2.10",
