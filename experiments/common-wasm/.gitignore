@@ -1,2 +1,4 @@
 /.bsp/
 target/
+darwin-**
+linux-**

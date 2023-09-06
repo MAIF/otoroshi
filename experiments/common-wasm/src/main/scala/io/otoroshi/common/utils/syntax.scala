@@ -8,10 +8,8 @@ import org.apache.commons.codec.binary.{Base64, Hex}
 import play.api.Logger
 import play.api.libs.json._
 
-import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.security.cert.{CertificateFactory, X509Certificate}
 import scala.collection.TraversableOnce
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -19,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 
 private[common] object implicits {
 
-  implicit class BetterSyntax[A](private val obj: A) extends AnyVal {
+  private[common] implicit class BetterSyntax[A](private val obj: A) extends AnyVal {
     def seq: Seq[A] = Seq(obj)
 
     def set: Set[A] = Set(obj)
@@ -108,7 +106,7 @@ private[common] object implicits {
     def singleSource: Source[A, NotUsed] = Source.single(obj)
   }
 
-  implicit class BetterString(private val obj: String) extends AnyVal {
+  private[common] implicit class BetterString(private val obj: String) extends AnyVal {
 
     def byteString: ByteString = ByteString(obj)
 
@@ -142,7 +140,7 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
+  private[common] implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
 
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
 
@@ -151,15 +149,15 @@ private[common] object implicits {
     def sha512: String = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
 
-  implicit class BetterBoolean(private val obj: Boolean) extends AnyVal {
+  private[common] implicit class BetterBoolean(private val obj: Boolean) extends AnyVal {
     def json: JsValue = JsBoolean(obj)
   }
 
-  implicit class BetterDouble(private val obj: Double) extends AnyVal {
+  private[common] implicit class BetterDouble(private val obj: Double) extends AnyVal {
     def json: JsValue = JsNumber(obj)
   }
 
-  implicit class BetterInt(private val obj: Int) extends AnyVal {
+  private[common] implicit class BetterInt(private val obj: Int) extends AnyVal {
     def json: JsValue = JsNumber(obj)
 
     def bytes: Array[Byte] = {
@@ -172,7 +170,7 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterLong(private val obj: Long) extends AnyVal {
+  private[common] implicit class BetterLong(private val obj: Long) extends AnyVal {
     def json: JsValue = JsNumber(obj)
 
     def bytes: Array[Byte] = {
@@ -189,7 +187,7 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterJsValue(private val obj: JsValue) extends AnyVal {
+  private[common] implicit class BetterJsValue(private val obj: JsValue) extends AnyVal {
 
     def stringify: String = Json.stringify(obj)
 
@@ -226,11 +224,11 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
+  private[common] implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
     def orJsNull: JsValue = obj.getOrElse(JsNull)
   }
 
-  implicit class BetterJsLookupResult(private val obj: JsLookupResult) extends AnyVal {
+  private[common] implicit class BetterJsLookupResult(private val obj: JsLookupResult) extends AnyVal {
     def select(name: String): JsLookupResult = obj \ name
 
     def select(index: Int): JsLookupResult = obj \ index
@@ -248,7 +246,7 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
+  private[common] implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
     def asString: String = obj.as[String]
 
     def asInt: Int = obj.as[Int]
@@ -274,7 +272,7 @@ private[common] object implicits {
     def asOptLong: Option[Long] = obj.asOpt[Long]
   }
 
-  implicit class BetterFuture[A](private val obj: Future[A]) extends AnyVal {
+  private[common] implicit class BetterFuture[A](private val obj: Future[A]) extends AnyVal {
 
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]] = obj.map(v => Left(v))
 
@@ -316,7 +314,7 @@ private[common] object implicits {
     }
   }
 
-  implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B]) extends AnyVal {
+  private[common] implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B]) extends AnyVal {
     def addAll(other: Map[String, B]): Map[String, B] = theMap.++(other)
 
     def put(key: String, value: B): Map[String, B] = theMap.+((key, value))
@@ -334,7 +332,7 @@ private[common] object implicits {
     def removeAndPutIgnoreCase(tuple: (String, B)): Map[String, B] = removeIgnoreCase(tuple._1).put(tuple)
   }
 
-  implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
+  private[common] implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
     def add(tuple: (String, B)): TrieMap[String, B] = theMap.+=(tuple)
 
     def addAll(all: TraversableOnce[(String, B)]): TrieMap[String, B] = theMap.++=(all)
@@ -357,7 +355,7 @@ private[common] object implicits {
     def getOrUpdate(k: String)(op: => B): B = theMap.getOrElseUpdate(k, op)
   }
 
-  implicit class BetterSeqOfA[A](val seq: Seq[A]) extends AnyVal {
+  private[common] implicit class BetterSeqOfA[A](val seq: Seq[A]) extends AnyVal {
     def avgBy(f: A => Int): Double = {
       if (seq.isEmpty) 0.0
       else {

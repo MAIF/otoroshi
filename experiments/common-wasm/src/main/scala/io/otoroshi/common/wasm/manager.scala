@@ -6,11 +6,11 @@ import play.api.libs.json._
 import scala.util.{Failure, Success, Try}
 
 case class WasmManagerSettings(
-                                url: String = "http://localhost:5001",
-                                clientId: String = "admin-api-apikey-id",
-                                clientSecret: String = "admin-api-apikey-secret",
-                                pluginsFilter: Option[String] = Some("*")
-                              )                          {
+  url: String = "http://localhost:5001",
+  clientId: String = "admin-api-apikey-id",
+  clientSecret: String = "admin-api-apikey-secret",
+  pluginsFilter: Option[String] = Some("*")
+) {
   def json: JsValue = WasmManagerSettings.format.writes(this)
 }
 object WasmManagerSettings {

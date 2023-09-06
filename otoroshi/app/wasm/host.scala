@@ -1094,8 +1094,8 @@ object HostFunctions {
       Logging.getFunctions(config) ++
       Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
-      DataStore.getFunctions(config, pluginId) ++
-      OPA.getFunctions(config)
+      DataStore.getFunctions(config, pluginId) //++
+      // OPA.getFunctions(config) // managed in common now
 
     functions
       .collect {

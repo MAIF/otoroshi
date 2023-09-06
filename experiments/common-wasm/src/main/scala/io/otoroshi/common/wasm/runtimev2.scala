@@ -191,12 +191,43 @@ case class WasmVm(
   def call(
       parameters: WasmFunctionParameters,
       context: Option[AbsVmData]
-  )(implicit ic: WasmIntegrationContext, ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
+  ): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     val promise = Promise[Either[JsValue, (String, ResultsWrapper)]]()
     inFlight.incrementAndGet()
     lastUsage.set(System.currentTimeMillis())
     queue.offer(WasmVmAction.WasmVmCallAction(parameters, context, promise))
     promise.future
+  }
+
+  def opaCall(functionName: String, in: String, context: Option[AbsVmData] = None): Future[Either[JsValue, (String, ResultsWrapper)]] = {
+    ensureOpaInitialized().call(WasmFunctionParameters.OPACall(functionName, opaPointers, in), context)
+  }
+
+  def ensureOpaInitialized(in: Option[String] = None): WasmVm = {
+    if (!initialized()) {
+      Await.result(
+        call(
+          WasmFunctionParameters.OPACall(
+            "initialize",
+            in = in.getOrElse(Json.obj().stringify),
+          ),
+          None
+        ),
+        10.seconds
+      ) match {
+        case Left(error) => throw new RuntimeException(s"opa initialize error: ${error.stringify}")
+        case Right(value) =>
+          initialize {
+            val pointers = Json.parse(value._1)
+            opaPointers = OPAWasmVm(
+              opaDataAddr = (pointers \ "dataAddr").as[Int],
+              opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
+            ).some
+          }
+          ()
+      }
+    }
+    this
   }
 }
 
@@ -343,12 +374,21 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfiguration], v
       val template                                                                  = templateRef.get()
       val vmDataRef                                                                 = new AtomicReference[AbsVmData](null)
       val addedFunctions                                                            = options.addHostFunctions(vmDataRef)
-      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] =
-        if (options.importDefaultHostFunctions) {
+      val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
+        val fs: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
           ic.hostFunctions(config, stableId) ++ addedFunctions
         } else {
           addedFunctions.toArray[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
         }
+        if (config.opa) {
+          val opaFunctions: Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = OPA.getFunctions(config).collect {
+            case func if func.authorized(config) => func.function
+          }
+          fs ++ opaFunctions
+        } else {
+          fs
+        }
+      }
       val memories                                                                  = LinearMemories.getMemories(config)
       val instance                                                                  = template.instantiate(engine, functions, memories, config.wasi)
       val vm                                                                        = WasmVm(
