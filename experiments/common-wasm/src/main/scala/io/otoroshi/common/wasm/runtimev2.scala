@@ -199,23 +199,20 @@ case class WasmVm(
     promise.future
   }
 
-  def opaCall(functionName: String, in: String, context: Option[AbsVmData] = None): Future[Either[JsValue, (String, ResultsWrapper)]] = {
+  def opaCall(functionName: String, in: String, context: Option[AbsVmData] = None)(implicit ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     ensureOpaInitialized().call(WasmFunctionParameters.OPACall(functionName, opaPointers, in), context)
   }
 
-  def ensureOpaInitialized(in: Option[String] = None): WasmVm = {
+  def ensureOpaInitializedAsync(in: Option[String] = None)(implicit ec: ExecutionContext): Future[WasmVm] = {
     if (!initialized()) {
-      Await.result(
-        call(
-          WasmFunctionParameters.OPACall(
-            "initialize",
-            in = in.getOrElse(Json.obj().stringify),
-          ),
-          None
+      call(
+        WasmFunctionParameters.OPACall(
+          "initialize",
+          in = in.getOrElse(Json.obj().stringify),
         ),
-        10.seconds
-      ) match {
-        case Left(error) => throw new RuntimeException(s"opa initialize error: ${error.stringify}")
+        None
+      ) flatMap {
+        case Left(error) => Future.failed(new RuntimeException(s"opa initialize error: ${error.stringify}"))
         case Right(value) =>
           initialize {
             val pointers = Json.parse(value._1)
@@ -224,10 +221,18 @@ case class WasmVm(
               opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
             ).some
           }
-          ()
+          this.vfuture
       }
+    } else {
+      this.vfuture
     }
-    this
+  }
+
+  def ensureOpaInitialized(in: Option[String] = None)(implicit ec: ExecutionContext): WasmVm = {
+    Await.result(
+      ensureOpaInitializedAsync(in),
+      10.seconds
+    )
   }
 }
 
