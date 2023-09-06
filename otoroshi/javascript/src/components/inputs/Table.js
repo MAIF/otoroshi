@@ -148,10 +148,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+        ...paginationState,
+        pageSize: this.state.rowsPerPage,
+        page: page + 1,
+      })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -566,8 +566,11 @@ export class Table extends Component {
             </div>
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
+                style={{
+                  border: "none"
+                }}
                 ref={this.tableRef}
-                className="fulltable -striped -highlight"
+                className={this.props.v2 ? "fulltable" : "fulltable -striped -highlight"}
                 manual
                 pages={this.state.pages}
                 data={this.state.items}

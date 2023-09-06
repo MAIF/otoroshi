@@ -8,6 +8,17 @@ const GREEN_SCORE_GRADES = {
   '#c0392b': (rank) => rank < 1000,
 };
 
+export function caclculateRuleGroup(routeRules, ruleId) {
+  return routeRules.sections
+    .find(s => s.id === ruleId)
+    .rules
+    .reduce((acc, rule) => {
+      return (acc += rule.enabled
+        ? MAX_GREEN_SCORE_NOTE * (rule.section_weight / 100) * (rule.weight / 100)
+        : 0);
+    }, 0)
+}
+
 export function calculateGreenScore(routeRules) {
   const { sections } = routeRules;
 
@@ -35,7 +46,7 @@ export function getRankAndLetterFromScore(score) {
   const rankIdx = Object.entries(GREEN_SCORE_GRADES).findIndex((grade) => grade[1](score));
 
   return {
-    score,
+    score: isNaN(score) ? 0 : score,
     rank: rankIdx === -1 ? 'Not evaluated' : Object.keys(GREEN_SCORE_GRADES)[rankIdx],
     letter: String.fromCharCode(65 + rankIdx),
   };
