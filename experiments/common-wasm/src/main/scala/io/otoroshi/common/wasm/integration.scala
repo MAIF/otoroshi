@@ -14,7 +14,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-trait AbsVmData {
+trait WasmVmData {
   def properties: Map[String, Array[Byte]]
 }
 

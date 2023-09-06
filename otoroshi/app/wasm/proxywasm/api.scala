@@ -2,7 +2,7 @@ package otoroshi.wasm.proxywasm
 
 import akka.util.ByteString
 import com.sun.jna.Pointer
-import io.otoroshi.common.wasm.AbsVmData
+import io.otoroshi.common.wasm.WasmVmData
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginHttpResponse
@@ -88,7 +88,7 @@ case class VmData(
     respRef: AtomicReference[play.api.mvc.Result],
     bodyInRef: AtomicReference[ByteString],
     bodyOutRef: AtomicReference[ByteString]
-) extends WasmOtoroshiHostUserData with AbsVmData {
+) extends WasmOtoroshiHostUserData with WasmVmData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
       .from(request, attrs)

@@ -3,7 +3,7 @@ package otoroshi.wasm.proxywasm
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
-import io.otoroshi.common.wasm.{AbsVmData, EnvUserData, ResultsWrapper, WasmFunctionParameters, WasmSource, WasmSourceKind, WasmVm, WasmVmInitOptions, WasmVmKillOptions, WasmVmPool}
+import io.otoroshi.common.wasm.{WasmVmData, EnvUserData, ResultsWrapper, WasmFunctionParameters, WasmSource, WasmSourceKind, WasmVm, WasmVmInitOptions, WasmVmKillOptions, WasmVmPool}
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -87,7 +87,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   def isStarted(): Boolean = started.get()
 
-  def createFunctions(ref: AtomicReference[AbsVmData]): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
+  def createFunctions(ref: AtomicReference[WasmVmData]): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
     ProxyWasmFunctions.build(state, ref)
   }
 

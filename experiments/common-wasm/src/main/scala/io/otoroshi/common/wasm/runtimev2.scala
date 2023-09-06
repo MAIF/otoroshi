@@ -24,25 +24,25 @@ sealed trait WasmVmAction
 object WasmVmAction {
   case object WasmVmKillAction extends WasmVmAction
   case class WasmVmCallAction(
-      parameters: WasmFunctionParameters,
-      context: Option[AbsVmData],
-      promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
+                               parameters: WasmFunctionParameters,
+                               context: Option[WasmVmData],
+                               promise: Promise[Either[JsValue, (String, ResultsWrapper)]]
   )                            extends WasmVmAction
 }
 
 case class OPAWasmVm(opaDataAddr: Int, opaBaseHeapPtr: Int)
 
 case class WasmVm(
-    index: Int,
-    maxCalls: Int,
-    maxMemory: Long,
-    resetMemory: Boolean,
-    instance: WasmOtoroshiInstance,
-    vmDataRef: AtomicReference[AbsVmData],
-    memories: Array[WasmOtoroshiLinearMemory],
-    functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]],
-    pool: WasmVmPool,
-    var opaPointers: Option[OPAWasmVm] = None
+                   index: Int,
+                   maxCalls: Int,
+                   maxMemory: Long,
+                   resetMemory: Boolean,
+                   instance: WasmOtoroshiInstance,
+                   vmDataRef: AtomicReference[WasmVmData],
+                   memories: Array[WasmOtoroshiLinearMemory],
+                   functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]],
+                   pool: WasmVmPool,
+                   var opaPointers: Option[OPAWasmVm] = None
 ) {
 
   private val callDurationReservoirNs       = new UniformReservoir()
@@ -190,7 +190,7 @@ case class WasmVm(
 
   def call(
       parameters: WasmFunctionParameters,
-      context: Option[AbsVmData]
+      context: Option[WasmVmData]
   ): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     val promise = Promise[Either[JsValue, (String, ResultsWrapper)]]()
     inFlight.incrementAndGet()
@@ -199,7 +199,7 @@ case class WasmVm(
     promise.future
   }
 
-  def opaCall(functionName: String, in: String, context: Option[AbsVmData] = None)(implicit ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
+  def opaCall(functionName: String, in: String, context: Option[WasmVmData] = None)(implicit ec: ExecutionContext): Future[Either[JsValue, (String, ResultsWrapper)]] = {
     ensureOpaInitialized().call(WasmFunctionParameters.OPACall(functionName, opaPointers, in), context)
   }
 
@@ -377,7 +377,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfiguration], v
         )
       }
       val template                                                                  = templateRef.get()
-      val vmDataRef                                                                 = new AtomicReference[AbsVmData](null)
+      val vmDataRef                                                                 = new AtomicReference[WasmVmData](null)
       val addedFunctions                                                            = options.addHostFunctions(vmDataRef)
       val functions: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
         val fs: Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = if (options.importDefaultHostFunctions) {
@@ -551,7 +551,7 @@ class WasmVmPool(stableId: => String, optConfig: => Option[WasmConfiguration], v
 case class WasmVmInitOptions(
     importDefaultHostFunctions: Boolean = true,
     resetMemory: Boolean = true,
-    addHostFunctions: (AtomicReference[AbsVmData]) => Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = _ =>
+    addHostFunctions: (AtomicReference[WasmVmData]) => Seq[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = _ =>
       Seq.empty
 )
 
