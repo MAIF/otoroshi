@@ -122,13 +122,15 @@ object SectionScoreHelper {
   }
 
 
-  def mean(values: Seq[SectionScore]) = SectionScore(
-    id = values.head.id,
-    score = values.foldLeft(0.0)(_ + _.score) / values.length,
-    normalizedScore = values.foldLeft(0.0)(_ + _.normalizedScore) / values.length,
-    letter = letterFromScore(values.foldLeft(0.0)(_ + _.score)),
-    color = colorFromScore(values.foldLeft(0.0)(_ + _.score))
-  )
+  def mean(values: Seq[SectionScore]) = {
+    SectionScore(
+      id = values.head.id,
+      score = values.foldLeft(0.0)(_ + _.score) / values.length,
+      normalizedScore = values.foldLeft(0.0)(_ + _.normalizedScore) / values.length,
+      letter = letterFromScore(values.foldLeft(0.0)(_ + _.score)),
+      color = colorFromScore(values.foldLeft(0.0)(_ + _.score))
+    )
+  }
 }
 
 sealed trait Score {
@@ -260,7 +262,7 @@ class EcoMetrics(env: Env) {
     val producedData = 1 - this.normalizeReservoir(routeScore.dataOutReservoir.getSnapshot.getMean, route.rulesConfig.thresholds.dataOut.poor)
     val producedHeaders = 1 - this.normalizeReservoir(routeScore.headersOutReservoir.getSnapshot.getMean, route.rulesConfig.thresholds.headersOut.poor)
 
-    RouteScore(
+    val test = RouteScore(
       route = route,
       sectionsScore = sectionsScore,
       pluginsInstance = plugins,
@@ -273,11 +275,14 @@ class EcoMetrics(env: Env) {
       informations = SectionScore(
         id = route.routeId,
         score = sectionsScore.foldLeft(0.0)( _ + _.score),
-        normalizedScore =  sectionsScore.foldLeft(0.0)( _ + _.normalizedScore),
+        normalizedScore =  sectionsScore.foldLeft(0.0)( _ + _.normalizedScore) / sectionsScore.length,
         letter = letterFromScore(sectionsScore.foldLeft(0.0)( _ + _.score)),
         color = colorFromScore(sectionsScore.foldLeft(0.0)( _ + _.score)),
       )
     )
+
+    println(sectionsScore)
+    test
   }
 
   def json(routeId: String): JsValue = registry.json(routeId)

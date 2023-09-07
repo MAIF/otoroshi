@@ -27,8 +27,6 @@ export default class RulesRadarchart extends PureComponent {
 
   render() {
     const { values }= this.props;
-
-    console.log(values)
     
     const data = [
       { subject: 'Architecture', value: values.architecture.normalized_score, fullMark: 1, domain: [0, 1] },
@@ -40,6 +38,7 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Produced headers', value: values.produced_headers, fullMark: 1, domain: [0, 1] },
     ];
     
+    console.log(data)
 
     return <div style={{
       flex: '1 1 50%',

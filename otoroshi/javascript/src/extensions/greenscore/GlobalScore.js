@@ -1,5 +1,4 @@
 import React from 'react';
-// import { calculateGreenScore, getRankAndLetterFromScore } from "./util";
 
 function Tag({ value }) {
     return <div style={{
@@ -26,8 +25,18 @@ function Tag({ value }) {
 export function GlobalScore({ tag = "static", letter, rank, color, score, ...props }) {
 
     function showDynamicThresholds() {
-        return <div>
+        const index = Math.round((score.plugins_instance + score.produced_data + score.produced_headers) / 3);
+        if (props.raw) {
+            return <span>
+                <span style={{ fontSize: '5rem' }}>{index * 100}</span>
+                <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`%`}</span>
+            </span>
+        }
+        const colors = ['#2ecc71', '#27ae60', '#f1c40f', '#d35400', '#c0392b'];
 
+        return <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            {String.fromCharCode(64 + index)} <i className="fa fa-leaf"
+                style={{ color: colors[index], fontSize: '5rem' }} />
         </div>
     }
 
@@ -44,8 +53,6 @@ export function GlobalScore({ tag = "static", letter, rank, color, score, ...pro
                 style={{ color, fontSize: '5rem' }} />
         </>
     }
-
-    console.log(props)
 
     return <div
         className="text-center p-3"

@@ -200,16 +200,33 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             .map(group => {
               val groupScores = group.routes.map(route => ecoMetrics.calculateScore(route))
 
+              val architecture = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.architecture) }
+              val design = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.design) }
+              val usage = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.usage) }
+              val log = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.log) }
+
               group.json.as[JsObject]
                 .deepMerge(Json.obj(
                   "routes" -> groupScores.map(_.json()),
                     "plugins_instance" -> groupScores.foldLeft(0.0)(_ + _.pluginsInstance) / groupScores.length,
                     "produced_data" -> groupScores.foldLeft(0.0)(_ + _.producedData) / groupScores.length,
                     "produced_headers" -> groupScores.foldLeft(0.0)(_ + _.producedHeaders) / groupScores.length,
-                    "architecture" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.architecture) }.json,
-                    "design" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.design) }.json,
-                    "usage" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.usage) }.json,
-                    "log" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.log) }.json,
+                    "architecture" -> architecture.copy(
+                      score = architecture.score / group.routes.length,
+                      normalizedScore = architecture.normalizedScore / group.routes.length
+                    ).json,
+                    "design" -> design.copy(
+                      score = design.score / group.routes.length,
+                      normalizedScore = design.normalizedScore / group.routes.length
+                    ).json,
+                    "usage" -> usage.copy(
+                      score = usage.score / group.routes.length,
+                      normalizedScore = usage.normalizedScore / group.routes.length
+                    ).json,
+                    "log" -> log.copy(
+                      score = log.score / group.routes.length,
+                      normalizedScore = log.normalizedScore / group.routes.length
+                    ).json,
                     "score" -> groupScores.foldLeft(0.0)(_ + _.informations.score) / groupScores.length,
                     "normalized_score" -> groupScores.foldLeft(0.0)(_ + _.informations.normalizedScore) / groupScores.length,
                     "letter" -> letterFromScore(groupScores.foldLeft(0.0)(_ + _.informations.score)),

@@ -3,7 +3,6 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import { v4 as uuid } from 'uuid';
-// import { calculateGreenScore, calculateThresholdsScore, getRankAndLetterFromScore, getThreshold } from './util';
 import GreenScoreRoutesForm from './routesForm';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
@@ -163,7 +162,7 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   render() {
-    console.log(this.state)
+    // console.log(this.state)
 
     const { groups, globalScore } = this.state;
 
@@ -178,8 +177,8 @@ export default class GreenScoreConfigsPage extends React.Component {
         </div>
         <RulesRadarchart values={globalScore} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-          <GlobalScore groups={groups} score={globalScore.score} raw dynamic title="Net PU" tag="dynamic" />
-          <GlobalScore groups={groups} score={globalScore.score} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
+          <GlobalScore groups={groups} score={globalScore} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
+          <GlobalScore groups={groups} score={globalScore} raw dynamic title="Net PU" tag="dynamic" />
         </div>
       </div>
 

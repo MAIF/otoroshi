@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
-import { calculateGreenScore } from './util';
 
 export default class GreenScoreRoutesForm extends React.Component {
   state = {
@@ -105,15 +104,10 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
         </p>
       )}
       {routes.map(({ routeId, rulesConfig }) => {
-        const rankInformations = calculateGreenScore(rulesConfig);
         return (
           <div key={routeId} className="d-flex align-items-center m-3 mt-0">
             <div style={{ flex: 1 }}>
               <label>{routeEntities.find((r) => r.id === routeId)?.name}</label>
-
-              <span>
-                <i className="fa fa-leaf ms-2" style={{ color: rankInformations.rank }} />
-              </span>
             </div>
             <button type="button" className="btn btn-primary" onClick={() => editRoute(routeId)}>
               <i className="fa fa-hammer" />
