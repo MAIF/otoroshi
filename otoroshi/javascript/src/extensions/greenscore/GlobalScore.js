@@ -1,15 +1,54 @@
 import React from 'react';
-import { calculateGreenScore, getRankAndLetterFromScore } from "./util";
+// import { calculateGreenScore, getRankAndLetterFromScore } from "./util";
 
-export function GlobalScore(props) {
-    const score = props.groups.reduce((acc, group) => {
-        return acc + group.routes.reduce((acc, route) => calculateGreenScore(route.rulesConfig).score + acc, 0) / group.routes.length;
-    }, 0) / props.groups.length;
+function Tag({ value }) {
+    return <div style={{
+        position: 'absolute',
+        top: '.75rem',
+        left: '.75rem',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '500',
+        fontSize: '.75rem',
+        lineHeight: '1.2rem',
+        letterSpacing: '.125em',
+        textTransform: 'uppercase',
+        color: '#f9b000',
+        marginBottom: '10px',
+        display: 'block'
+    }}>
+        {value}
+    </div>
+}
 
-    const { letter, rank, ...rest } = getRankAndLetterFromScore(score);
+export function GlobalScore({ tag = "static", letter, rank, color, score, ...props }) {
+
+    function showDynamicThresholds() {
+        return <div>
+
+        </div>
+    }
+
+    function showNetScore() {
+        return <div>
+            <span style={{ fontSize: '5rem' }}>{Math.round(score)}</span>
+            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${props.groups.length * 6000}`}</span>
+        </div>
+    }
+
+    function showGlobalScore() {
+        return <>
+            {letter !== "@" ? letter : '-'} <i className="fa fa-leaf"
+                style={{ color, fontSize: '5rem' }} />
+        </>
+    }
+
+    console.log(props)
 
     return <div
-        className="text-center ms-2"
+        className="text-center p-3"
         style={{
             flex: .5,
             maxWidth: 250,
@@ -24,15 +63,16 @@ export function GlobalScore(props) {
             alignItems: 'baseline',
             justifyContent: 'center'
         }}>
-            {!props.raw && <>{letter !== "@" ? letter : '-'} <i className="fa fa-leaf"
-                style={{ color: rank, fontSize: '6rem' }} />
+            {props.dynamic ? showDynamicThresholds() : <>
+                {!props.raw && showGlobalScore()}
+                {props.raw && showNetScore()}
             </>}
-            {props.raw && <div>
-                <span style={{ fontSize: '5rem' }}>{Math.round(rest.score)}</span>
-                <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${props.groups.length * 6000}`}</span>
-            </div>}
         </div>
-        <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }}>{props.raw ? 'Net' : 'Global'} score</h3>
+        <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
+            {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}
+        </h3>
+
+        <Tag value={tag} />
 
         <div style={{
             position: 'absolute',

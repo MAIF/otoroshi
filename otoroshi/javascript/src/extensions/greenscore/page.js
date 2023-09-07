@@ -3,11 +3,10 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import { v4 as uuid } from 'uuid';
-import { calculateGreenScore, calculateThresholdsScore, getRankAndLetterFromScore, getThreshold } from './util';
+// import { calculateGreenScore, calculateThresholdsScore, getRankAndLetterFromScore, getThreshold } from './util';
 import GreenScoreRoutesForm from './routesForm';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
-import { compareSync } from 'bcryptjs';
 
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
@@ -108,45 +107,44 @@ export default class GreenScoreConfigsPage extends React.Component {
     },
   ];
 
+  client = BackOfficeServices.apisClient(
+    'green-score.extensions.otoroshi.io',
+    'v1',
+    'green-scores'
+  );
+
   componentDidMount() {
     this.props.setTitle(`Green Score groups`);
 
-    nextClient
-      .forEntity(nextClient.ENTITIES.ROUTES)
-      .findAll()
-      .then((routes) => this.setState({ routes }));
-
-    fetch('/bo/api/proxy/api/extensions/green-score/template', {
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-      .then((r) => r.json())
-      .then((rulesTemplate) =>
+    Promise.all([
+      nextClient
+        .forEntity(nextClient.ENTITIES.ROUTES)
+        .findAll(),
+      fetch('/bo/api/proxy/api/extensions/green-score/template', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+        .then((r) => r.json()),
+      fetch('/bo/api/proxy/api/extensions/green-score', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+        .then((r) => r.json())
+    ])
+      .then(([routes, rulesTemplate, { groups, ...globalScore }]) => {
         this.setState({
+          routes,
           rulesTemplate,
+          groups: groups.map((group, i) => ({
+            ...group,
+            opened: false,
+          })),
+          globalScore
         })
-      );
-
-    const client = BackOfficeServices.apisClient(
-      'green-score.extensions.otoroshi.io',
-      'v1',
-      'green-scores'
-    );
-
-    client.findAll()
-      .then(groups => {
-        Promise.all(groups.map(group => getThreshold(group.id)))
-          .then(thresholds => {
-            this.setState({
-              groups: groups.map((group, i) => ({
-                ...group,
-                opened: false,
-                globalThresholds: thresholds[i].scores
-              }))
-            })
-          })
       })
   }
 
@@ -166,23 +164,27 @@ export default class GreenScoreConfigsPage extends React.Component {
 
   render() {
     console.log(this.state)
-    const client = BackOfficeServices.apisClient(
-      'green-score.extensions.otoroshi.io',
-      'v1',
-      'green-scores'
-    );
 
-    const { groups } = this.state;
+    const { groups, globalScore } = this.state;
 
-    return <div className="clearfix container-xl px-3 px-md-4 px-lg-5 mt-4">
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <RulesRadarchart groups={groups} />
-        <GlobalScore groups={groups} />
-        <GlobalScore groups={groups} raw />
+    if (!globalScore)
+      return <div></div>
+
+    return <div className="clearfix container-xl">
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <GlobalScore letter={globalScore.letter} score={globalScore.score} color={globalScore.color} />
+          <GlobalScore groups={groups} score={globalScore.score} raw />
+        </div>
+        <RulesRadarchart values={globalScore} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <GlobalScore groups={groups} score={globalScore.score} raw dynamic title="Net PU" tag="dynamic" />
+          <GlobalScore groups={groups} score={globalScore.score} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
+        </div>
       </div>
 
       <div className='mt-4'>
-        <Table
+        {/* <Table
           v2
           parentProps={this.props}
           selfUrl="extensions/green-score/green-score-configs"
@@ -201,10 +203,10 @@ export default class GreenScoreConfigsPage extends React.Component {
           formFlow={this.formFlow}
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={client.findAll}
-          updateItem={client.update}
-          deleteItem={client.delete}
-          createItem={client.create}
+          fetchItems={this.client.findAll}
+          updateItem={this.client.update}
+          deleteItem={this.client.delete}
+          createItem={this.client.create}
           navigateTo={(item) => {
             window.location = `/bo/dashboard/extensions/green-score/green-score-configs/edit/${item.id}`;
           }}
@@ -217,7 +219,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           extractKey={(item) => item.id}
           export={true}
           kubernetesKind={'GreenScore'}
-        />
+        /> */}
         {/* {groups.map((group, i) => {
           return <div key={group.id}
             style={{
@@ -265,7 +267,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           </div>
         })} */}
       </div>
-    </div>
+    </div >
   }
 }
 

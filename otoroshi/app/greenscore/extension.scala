@@ -4,6 +4,8 @@ import akka.actor.{Actor, ActorRef, Props}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
+import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore}
+import otoroshi.greenscore.Score.SectionScore
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -52,7 +54,7 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
   }
 }
 
-case class RouteScreenScore(routeId: String, rulesConfig: GreenScoreConfig)
+case class RouteGreenScore(routeId: String, rulesConfig: GreenScoreConfig)
 
 case class GreenScoreEntity(
     location: EntityLocation,
@@ -61,7 +63,7 @@ case class GreenScoreEntity(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    routes: Seq[RouteScreenScore]
+    routes: Seq[RouteGreenScore]
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = GreenScoreEntity.format.writes(this)
@@ -103,7 +105,7 @@ object GreenScoreEntity {
               route
                 .asOpt[JsObject]
                 .map(v => {
-                  RouteScreenScore(
+                  RouteGreenScore(
                     v.select("routeId").as[String],
                     v.select("rulesConfig").asOpt[JsObject].map(GreenScoreConfig.format.reads).get.get
                   )
@@ -185,34 +187,54 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
   override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq(
     AdminExtensionAdminApiRoute(
       "GET",
-      "/api/extensions/green-score/eco",
+      "/api/extensions/green-score",
       false,
       (ctx, request, apk, _) => {
-        Results.Ok(Json.obj("score" -> 0)).vfuture
-      }
-    ),
-    AdminExtensionAdminApiRoute(
-      "GET",
-      "/api/extensions/green-score/:greenscore",
-      false,
-      (ctx, request, apk, _) => {
-        implicit val ec  = env.otoroshiExecutionContext
-        implicit val ev  = env
-        val greenScoreId = ctx.named("greenscore").map(JsString.apply).getOrElse(JsNull).asString
+        implicit val ec = env.otoroshiExecutionContext
+        implicit val ev = env
+
         for {
           scores <- datastores.greenscoresDatastore.findAll()
         } yield {
           val jsonScores = scores
-            .find(_.id == greenScoreId)
-            .map(group => group.routes.foldLeft(Json.arr())((acc, route) => acc :+ ecoMetrics.json(route.routeId)))
-            .getOrElse(Json.arr())
+            .map(group => {
+              val groupScores = group.routes.map(route => ecoMetrics.calculateScore(route))
 
-          Results.Ok(
-            Json.obj(
-              "group"  -> greenScoreId,
-              "scores" -> jsonScores
-            )
-          )
+              group.json.as[JsObject]
+                .deepMerge(Json.obj(
+                  "routes" -> groupScores.map(_.json()),
+                    "plugins_instance" -> groupScores.foldLeft(0.0)(_ + _.pluginsInstance) / groupScores.length,
+                    "produced_data" -> groupScores.foldLeft(0.0)(_ + _.producedData) / groupScores.length,
+                    "produced_headers" -> groupScores.foldLeft(0.0)(_ + _.producedHeaders) / groupScores.length,
+                    "architecture" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.architecture) }.json,
+                    "design" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.design) }.json,
+                    "usage" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.usage) }.json,
+                    "log" -> groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.log) }.json,
+                    "score" -> groupScores.foldLeft(0.0)(_ + _.informations.score) / groupScores.length,
+                    "normalized_score" -> groupScores.foldLeft(0.0)(_ + _.informations.normalizedScore) / groupScores.length,
+                    "letter" -> letterFromScore(groupScores.foldLeft(0.0)(_ + _.informations.score)),
+                    "color" -> colorFromScore(groupScores.foldLeft(0.0)(_ + _.informations.score))
+                ))
+            })
+
+          Results.Ok(Json.obj(
+            "groups" -> JsArray(jsonScores),
+            "plugins_instance" -> jsonScores.map(item => (item \ "plugins_instance").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
+            "produced_data" -> jsonScores.map(item => (item \ "produced_data").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
+            "produced_headers" -> jsonScores.map(item => (item \ "produced_headers").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
+            "architecture" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "architecture")
+              .as[SectionScore](SectionScoreHelper.format.reads))).json,
+            "design" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "design")
+                .as[SectionScore](SectionScoreHelper.format.reads))).json,
+            "usage" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "usage")
+                .as[SectionScore](SectionScoreHelper.format.reads))).json,
+            "log" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "log")
+                .as[SectionScore](SectionScoreHelper.format.reads))).json,
+            "score" -> jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
+            "normalized_score" -> jsonScores.map(item => (item \ "normalized_score").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
+            "letter" -> letterFromScore(jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _)),
+            "color" -> colorFromScore(jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _))
+          ))
         }
       }
     ),
