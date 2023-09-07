@@ -369,33 +369,35 @@ object ElasticWritesAnalytics {
   }
 
   def isInitialized(config: ElasticAnalyticsConfig): (Boolean, ElasticVersion) = {
-    clusterInitializedCache.getOrElse(toKey(config), {
-      config.version match {
-        case Some(rawVersion) => {
-          val version = Version(rawVersion) match {
-            case v if v.isBefore(Version("7.0.0")) => ElasticVersion.UnderSeven(rawVersion)
-            case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(rawVersion)
-            case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(rawVersion)
-            case _ => ElasticVersion.AboveSeven(rawVersion)
+    clusterInitializedCache.getOrElse(
+      toKey(config), {
+        config.version match {
+          case Some(rawVersion) => {
+            val version = Version(rawVersion) match {
+              case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(rawVersion)
+              case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(rawVersion)
+              case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(rawVersion)
+              case _                                  => ElasticVersion.AboveSeven(rawVersion)
+            }
+            (false, version)
           }
-          (false, version)
+          case None             => (false, ElasticVersion.default)
         }
-        case None => (false, ElasticVersion.default)
       }
-    })
+    )
   }
 }
 
 sealed trait ElasticVersion {
   def underSeven: Boolean
 }
-object ElasticVersion {
+object ElasticVersion       {
 
-  case class UnderSeven(raw: String) extends ElasticVersion { def underSeven: Boolean = true }
-  case class AboveSeven(raw: String) extends ElasticVersion { def underSeven: Boolean = false }
+  case class UnderSeven(raw: String)      extends ElasticVersion { def underSeven: Boolean = true  }
+  case class AboveSeven(raw: String)      extends ElasticVersion { def underSeven: Boolean = false }
   case class AboveSevenEight(raw: String) extends ElasticVersion { def underSeven: Boolean = false }
 
-  val defaultStr: String = "6.0.0"
+  val defaultStr: String      = "6.0.0"
   val default: ElasticVersion = UnderSeven(defaultStr)
 }
 
@@ -455,15 +457,16 @@ object ElasticUtils {
         }).future
       }
       case None          => {
-        ElasticUtils.checkVersion(config, logger, env)
+        ElasticUtils
+          .checkVersion(config, logger, env)
           .map {
             case Left(err) => ElasticVersion.default
             case Right(_v) => {
               Version(_v) match {
-                case v if v.isBefore(Version("7.0.0")) => ElasticVersion.UnderSeven(_v)
+                case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
                 case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
                 case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
-                case _ => ElasticVersion.AboveSeven(_v)
+                case _                                  => ElasticVersion.AboveSeven(_v)
               }
             }
           }
@@ -480,16 +483,16 @@ object ElasticUtils {
         //      case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
         //      case _                                  => ElasticVersion.AboveSeven(_v)
         //    }
-          // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
-          //   case v if v <= 6 => ElasticVersion.UnderSeven
-          //   case v if v > 6 => {
-          //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
-          //       case v if v >= 8 => ElasticVersion.AboveSevenEight
-          //       case v if v < 8 => ElasticVersion.AboveSeven
-          //     }
-          //   }
-          // }
-          }
+        // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
+        //   case v if v <= 6 => ElasticVersion.UnderSeven
+        //   case v if v > 6 => {
+        //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
+        //       case v if v >= 8 => ElasticVersion.AboveSevenEight
+        //       case v if v < 8 => ElasticVersion.AboveSeven
+        //     }
+        //   }
+        // }
+      }
       //}
     }
   }
@@ -594,7 +597,8 @@ object ElasticUtils {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val version = (resp.json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr)
+          val version =
+            (resp.json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr)
           if (logger.isDebugEnabled) logger.debug(s"elastic version from server is: ${version}")
           Right(version)
         } else {
@@ -653,22 +657,22 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       config.version match {
         case Some(versionRaw) => {
           val version = Version(versionRaw) match {
-            case v if v.isBefore(Version("7.0.0")) => ElasticVersion.UnderSeven(versionRaw)
+            case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
             case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
             case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
-            case _ => ElasticVersion.AboveSeven(versionRaw)
+            case _                                  => ElasticVersion.AboveSeven(versionRaw)
           }
           ElasticWritesAnalytics.initialized(config, version)
         }
-        case None => {
+        case None             => {
           ElasticUtils.checkVersion(config, logger, env).map {
-            case Left(err) => ElasticWritesAnalytics.initialized(config, ElasticVersion.default)
+            case Left(err)         => ElasticWritesAnalytics.initialized(config, ElasticVersion.default)
             case Right(versionRaw) => {
               val version = Version(versionRaw) match {
-                case v if v.isBefore(Version("7.0.0")) => ElasticVersion.UnderSeven(versionRaw)
+                case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
                 case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
                 case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
-                case _ => ElasticVersion.AboveSeven(versionRaw)
+                case _                                  => ElasticVersion.AboveSeven(versionRaw)
               }
               ElasticWritesAnalytics.initialized(config, version)
             }

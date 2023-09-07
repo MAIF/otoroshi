@@ -367,7 +367,7 @@ export class Table extends Component {
     } else {
       return this.props.formFlow;
     }
-  }
+  };
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
