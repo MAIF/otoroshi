@@ -308,7 +308,7 @@ const GreenScoreForm = ({ rulesConfig, ...rest }) => {
                   <div style={{ minWidth: 52 }}>
                     <NgBooleanRenderer
                       value={enabled}
-                      onChange={(checked) => onChange(checked, currentSectionIdx, currentRuleIdx)}
+                      onChange={() => { }}
                       schema={{}}
                       ngOptions={{
                         spread: true,

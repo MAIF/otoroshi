@@ -3,10 +3,11 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import { v4 as uuid } from 'uuid';
-import { calculateGreenScore, getRankAndLetterFromScore } from './util';
+import { calculateGreenScore, calculateThresholdsScore, getRankAndLetterFromScore, getThreshold } from './util';
 import GreenScoreRoutesForm from './routesForm';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
+import { compareSync } from 'bcryptjs';
 
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
@@ -136,12 +137,16 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     client.findAll()
       .then(groups => {
-        this.setState({
-          groups: groups.map(group => ({
-            ...group,
-            opened: false
-          }))
-        })
+        Promise.all(groups.map(group => getThreshold(group.id)))
+          .then(thresholds => {
+            this.setState({
+              groups: groups.map((group, i) => ({
+                ...group,
+                opened: false,
+                globalThresholds: thresholds[i].scores
+              }))
+            })
+          })
       })
   }
 
@@ -167,7 +172,7 @@ export default class GreenScoreConfigsPage extends React.Component {
       'green-scores'
     );
 
-    const { groups, routes } = this.state;
+    const { groups } = this.state;
 
     return <div className="clearfix container-xl px-3 px-md-4 px-lg-5 mt-4">
       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -176,7 +181,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         <GlobalScore groups={groups} raw />
       </div>
 
-      <div className='mt-2'>
+      <div className='mt-4'>
         <Table
           v2
           parentProps={this.props}
@@ -283,55 +288,23 @@ const GreenScoreColumm = (props) => {
 };
 
 const ThresholdsScoreColumn = (props) => {
-  const [score, setScore] = useState(undefined);
-  const greenScoreId = props.value.id;
+  const [score, setScore] = useState({ letter: '-', rank: 0 });
 
   useEffect(() => {
-    fetch(`/bo/api/proxy/api/extensions/green-score/${greenScoreId}`, {
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-      .then((r) => r.json())
+    calculateThresholdsScore(props.value.id, [props.value.routes ? props.value.routes[props.index] : props.route])
       .then(setScore);
   }, []);
 
-  const route = props.value.routes ? props.value.routes[props.index] : props.route;
-  const { thresholds } = route.rulesConfig;
+  const { letter, rank } = score;
 
-  if (score && score.scores.length > 0) {
-    const dataOutIdx = Object.values(thresholds.dataOut).findIndex(
-      (value) => score.scores[0].dataOutReservoir <= value
-    );
-    const headersOutIdx = Object.values(thresholds.headersOut).findIndex(
-      (value) => score.scores[0].headersOutReservoir <= value
-    );
-    const pluginsIdx = Object.values(thresholds.plugins).findIndex(
-      (value) => score.scores[0].pluginsReservoir <= value
-    );
-
-    const thresholdsScore = Math.round(
-      ((dataOutIdx !== -1 ? dataOutIdx : Object.keys(thresholds.dataOut).length) +
-        (headersOutIdx !== -1 ? headersOutIdx : Object.keys(thresholds.headersOut).length) +
-        (pluginsIdx !== -1 ? pluginsIdx : Object.keys(thresholds.plugins).length)) /
-      3
-    );
-
-    const { letter, rank } = getRankAndLetterFromScore((3 - thresholdsScore) * 2000);
-
-    return (
-      <div className="text-center" style={{
-        textTransform: 'capitalize',
-        background: 'var(--bg-color_level1)',
-        borderRadius: '25%',
-        padding: '.25rem .5rem'
-      }}>
-        {letter} <i className="fa fa-leaf" style={{ color: rank }} />
-      </div>
-    );
-  }
-
-  return <div className="text-center">-</div>;
-  // return <div className='text-center'>{JSON.stringify(score, null, 4)}</div>
-};
+  return (
+    <div className="text-center" style={{
+      textTransform: 'capitalize',
+      background: 'var(--bg-color_level1)',
+      borderRadius: '25%',
+      padding: '.25rem .5rem'
+    }}>
+      {letter} <i className="fa fa-leaf" style={{ color: rank }} />
+    </div>
+  );
+}

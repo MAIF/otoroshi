@@ -42,12 +42,67 @@ export function calculateGreenScore(routeRules) {
   };
 }
 
-export function getRankAndLetterFromScore(score) {
+export function getLetter(score) {
   const rankIdx = Object.entries(GREEN_SCORE_GRADES).findIndex((grade) => grade[1](score));
+  return String.fromCharCode(65 + rankIdx);
+}
 
+export function getRank(score) {
+  const rankIdx = Object.entries(GREEN_SCORE_GRADES).findIndex((grade) => grade[1](score));
+  return rankIdx === -1 ? 'Not evaluated' : Object.keys(GREEN_SCORE_GRADES)[rankIdx];
+}
+
+export function getRankAndLetterFromScore(score) {
   return {
     score: isNaN(score) ? 0 : score,
-    rank: rankIdx === -1 ? 'Not evaluated' : Object.keys(GREEN_SCORE_GRADES)[rankIdx],
-    letter: String.fromCharCode(65 + rankIdx),
+    rank: getRank(score),
+    letter: getLetter(score)
   };
+}
+
+export function getThreshold(greenScoreId) {
+  return fetch(`/bo/api/proxy/api/extensions/green-score/${greenScoreId}`, {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+    .then((r) => r.json())
+}
+
+export function calculateThresholdsScore(greenScoreId, routes) {
+  return getThreshold(greenScoreId)
+    .then(score => {
+      const globalScore = routes.reduce((acc, route) => {
+        const { thresholds } = route.rulesConfig;
+
+        if (score && score.scores.length > 0) {
+          const dataOutIdx = Object.values(thresholds.dataOut).findIndex(
+            (value) => score.scores[0].dataOutReservoir <= value
+          );
+          const headersOutIdx = Object.values(thresholds.headersOut).findIndex(
+            (value) => score.scores[0].headersOutReservoir <= value
+          );
+          const pluginsIdx = Object.values(thresholds.plugins).findIndex(
+            (value) => score.scores[0].pluginsReservoir <= value
+          );
+
+          const thresholdsScore = Math.round(
+            ((dataOutIdx !== -1 ? dataOutIdx : Object.keys(thresholds.dataOut).length) +
+              (headersOutIdx !== -1 ? headersOutIdx : Object.keys(thresholds.headersOut).length) +
+              (pluginsIdx !== -1 ? pluginsIdx : Object.keys(thresholds.plugins).length)) /
+            3
+          );
+
+          return acc + getRankAndLetterFromScore((3 - thresholdsScore) * 2000).score;
+        } else {
+          return acc + getRankAndLetterFromScore(0).score;
+        }
+      }, 0)
+
+      return {
+        letter: getLetter(globalScore),
+        rank: getRank(globalScore)
+      }
+    });
 }

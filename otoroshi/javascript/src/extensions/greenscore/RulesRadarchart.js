@@ -4,24 +4,36 @@ import { caclculateRuleGroup } from './util';
 
 export default class RulesRadarchart extends PureComponent {
 
-  calculate = routes => {
-    return routes.reduce((acc, route) => {
+  normalizeReservoir = (value, limit) => {
+    if (value > limit)
+      return 1;
+    return value / limit
+  }
+
+  calculate = (routes, globalThresholds) => {
+    return routes.reduce((acc, route, i) => {
       return [
         { subject: 'Architecture', value: acc[0].value + caclculateRuleGroup(route.rulesConfig, "architecture") },
         { subject: 'Design', value: acc[1].value + caclculateRuleGroup(route.rulesConfig, 'design') },
         { subject: 'Usage', value: acc[2].value + caclculateRuleGroup(route.rulesConfig, 'usage') },
-        { subject: 'Log retention', value: acc[3].value + caclculateRuleGroup(route.rulesConfig, 'log') }
+        { subject: 'Log retention', value: acc[3].value + caclculateRuleGroup(route.rulesConfig, 'log') },
+        { subject: 'Plugins instance', value: acc[4].value + 1 - this.normalizeReservoir(globalThresholds[i].pluginsReservoir, route.rulesConfig.thresholds.plugins.poor) },
+        { subject: 'Produced data', value: acc[5].value + 1 - this.normalizeReservoir(globalThresholds[i].dataOutReservoir, route.rulesConfig.thresholds.dataOut.poor) },
+        { subject: 'Produced headers', value: acc[6].value + 1 - this.normalizeReservoir(globalThresholds[i].headersOutReservoir, route.rulesConfig.thresholds.headersOut.poor) },
       ]
     }, [
       { subject: 'Architecture', value: 0 },
       { subject: 'Design', value: 0 },
       { subject: 'Usage', value: 0 },
       { subject: 'Log retention', value: 0 },
+      { subject: 'Plugins instance', value: 0 },
+      { subject: 'Produced data', value: 0 },
+      { subject: 'Produced headers', value: 0 },
     ])
   }
 
   renderPolarAngleAxis = props => {
-    const newPoint = this.movePointAtAngle([props.x, props.y], props.payload.index * 90, 12);
+    const newPoint = this.movePointAtAngle([props.x, props.y], props.payload.index * 90, 10);
     const texts = props.payload.value.split(" ");
 
     return texts
@@ -29,9 +41,8 @@ export default class RulesRadarchart extends PureComponent {
         key={text}
         {...props}
         verticalAnchor="middle"
-        textRendering='start'
         x={props.payload.index % 2 !== 0 ? newPoint[0] : props.x}
-        y={props.payload.index % 2 === 0 ? newPoint[1] : props.y + i * 20 - texts.length / 2 * 10}
+        y={(props.payload.index % 2 === 0 ? newPoint[1] : props.y) + (i * 20)}
       >
         {text}
       </Text>
@@ -45,26 +56,41 @@ export default class RulesRadarchart extends PureComponent {
 
   render() {
     const values = this.props.groups.reduce((acc, item) => {
-      const values = this.calculate(item.routes);
+      const values = this.calculate(item.routes, item.globalThresholds);
       return [
         { subject: 'Architecture', value: acc[0].value + values[0].value },
         { subject: 'Design', value: acc[1].value + values[1].value },
         { subject: 'Usage', value: acc[2].value + values[2].value },
-        { subject: 'Log retention', value: acc[3].value + values[3].value }
+        { subject: 'Log retention', value: acc[3].value + values[3].value },
+        { subject: 'Plugins instance', value: acc[4].value + values[4].value },
+        { subject: 'Produced data', value: acc[5].value + values[5].value },
+        { subject: 'Produced headers', value: acc[6].value + values[6].value }
       ]
     }, [
       { subject: 'Architecture', value: 0 },
       { subject: 'Design', value: 0 },
       { subject: 'Usage', value: 0 },
-      { subject: 'Log retention', value: 0 }
+      { subject: 'Log retention', value: 0 },
+      { subject: 'Plugins instance', value: 0 },
+      { subject: 'Produced data', value: 0 },
+      { subject: 'Produced headers', value: 0 }
     ]);
+    
+    const numberOfRoutes = this.props.groups.reduce((acc, group) => acc + group.routes.length, 0);
 
     const data = [
-      { subject: 'Architecture', value: values[0].value / this.props.groups.length },
-      { subject: 'Design', value: values[1].value / this.props.groups.length },
-      { subject: 'Usage', value: values[2].value / this.props.groups.length },
-      { subject: 'Log retention', value: values[3].value / this.props.groups.length }
+      { subject: 'Architecture', value: values[0].value / numberOfRoutes / 1500, fullMark: 1, domain: [0, 1] },
+      { subject: 'Design', value: values[1].value / numberOfRoutes / 2400, fullMark: 1, domain: [0, 1] },
+      { subject: 'Usage', value: values[2].value / numberOfRoutes / 1500, fullMark: 1, domain: [0, 1] },
+      { subject: 'Log retention', value: values[3].value / numberOfRoutes / 600, fullMark: 1, domain: [0, 1] },
+      { subject: 'Plugins instance', value: values[4].value / numberOfRoutes, fullMark: 1, domain: [0, 1] },
+      { subject: 'Produced data', value: values[5].value / numberOfRoutes, fullMark: 1, domain: [0, 1] },
+      { subject: 'Produced headers', value: values[6].value / numberOfRoutes, fullMark: 1, domain: [0, 1] },
     ];
+
+    console.log(this.props)
+
+    console.log(data)
 
     return <div style={{
       flex: 1,
@@ -78,12 +104,7 @@ export default class RulesRadarchart extends PureComponent {
           outerRadius="80%"
           cx="50%"
           cy="50%"
-          data={[
-            { subject: 'Architecture', value: data[0].value / 1500, fullMark: 1, domain: [0, 1] },
-            { subject: 'Design', value: Math.max(data[1].value / 2400, 1), fullMark: 1, domain: [0, 1] },
-            { subject: 'Usage', value: data[2].value / 1500, fullMark: 1, domain: [0, 1] },
-            { subject: 'Log retention', value: data[3].value / 600, fullMark: 1, domain: [0, 1] }
-          ]}
+          data={data}
           fill="var(--color_level2)"
           fontSize={16}>
           <PolarGrid />
@@ -99,6 +120,7 @@ export default class RulesRadarchart extends PureComponent {
         right: 6,
         borderRadius: '50%',
         background: 'rgba(249, 176, 0, 0.46)',
+        color: '#fff',
         width: 32,
         height: 32,
         display: 'flex',
