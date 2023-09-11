@@ -3,13 +3,13 @@ EXTISM_REPO=MAIF
 
 EXTISM_VERSION=$(curl https://api.github.com/repos/${EXTISM_REPO}/extism/releases/latest | jq -r '.name')
 
-echo "latest extism version is: ${EXTISM_VERSION}"
+# echo "latest extism version is: ${EXTISM_VERSION}"
 
 rm -rfv ./otoroshi/conf/native
 rm -rfv ./otoroshi/conf/darwin-*
 rm -rfv ./otoroshi/conf/linux-*
 
-curl -L -o "./lib/extism-${EXTISM_VERSION}.jar" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/extism-0.4.0.jar"
+# curl -L -o "./lib/extism-${EXTISM_VERSION}.jar" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/extism-0.4.0.jar"
 
 # mkdir ./otoroshi/conf/native
 

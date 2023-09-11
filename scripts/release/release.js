@@ -226,6 +226,8 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.12/common-wasm_2.12-${version}.jar`),  path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.13/common-wasm_2.13-${version}.jar`),  path.resolve(where, releaseDir)], where);
 }
 
 async function buildVersion(version, where, releaseDir, releaseFile) {

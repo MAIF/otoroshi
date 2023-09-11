@@ -35,14 +35,23 @@ lazy val root = (project in file("."))
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       munit % Test,
-      "com.typesafe.play"     %% "play-ws"        % playWsVersion,
-      "com.typesafe.play"     %% "play-json"      % playJsonVersion,
-      "com.typesafe.akka"     %% "akka-stream"    % akkaVersion,
-      "com.typesafe.akka"     %% "akka-http"      % akkaHttpVersion,
-      "com.typesafe.play"     %% "play-json-joda" % playJsonVersion,
-      "commons-codec"         % "commons-codec"   % "1.16.0",
-      "net.java.dev.jna"      % "jna"             % "5.13.0",
-      "com.google.code.gson"  % "gson"            % "2.10",
-      "io.dropwizard.metrics" % "metrics-json"    % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
-    )
+      "com.typesafe.play"     %% "play-ws"        % playWsVersion % "provided",
+      "com.typesafe.play"     %% "play-json"      % playJsonVersion % "provided",
+      "com.typesafe.akka"     %% "akka-stream"    % akkaVersion % "provided",
+      "com.typesafe.akka"     %% "akka-http"      % akkaHttpVersion % "provided",
+      "com.typesafe.play"     %% "play-json-joda" % playJsonVersion % "provided",
+      "commons-codec"         % "commons-codec"   % "1.16.0" % "provided",
+      "net.java.dev.jna"      % "jna"             % "5.13.0" % "provided",
+      "com.google.code.gson"  % "gson"            % "2.10" % "provided",
+      "io.dropwizard.metrics" % "metrics-json"    % metricsVersion % "provided" excludeAll (excludesJackson: _*), // Apache 2.0
+    ),
   )
+
+assembly / test := {}
+assembly / assemblyJarName := s"common-wasm_${scalaVersion.value.split("\\.").init.mkString(".")}-${version.value}.jar"
+assembly / assemblyMergeStrategy := {
+  case PathList("org", "apache", "commons", "logging", xs@_*) => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
+    oldStrategy(x)
+}
