@@ -126,11 +126,9 @@ object ElasticAnalyticsConfig {
       )
     override def reads(json: JsValue)              =
       Try {
-        val uris: Seq[String] = json
-          .select("uris")
-          .asOpt[Seq[String]]
-          .orElse((json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)))
-          .getOrElse(Seq.empty[String])
+        val clusterUriValue: Seq[String] = (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
+        val urisValue: Seq[String] = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
+        val uris: Seq[String] = (clusterUriValue ++ urisValue)
           .flatMap { uri =>
             if (uri.contains(",")) {
               uri.split(",").map(_.trim)
@@ -138,6 +136,7 @@ object ElasticAnalyticsConfig {
               Seq(uri)
             }
           }
+          .distinct
         if (uris.isEmpty) {
           JsError("no cluster uri found at all")
         } else {
