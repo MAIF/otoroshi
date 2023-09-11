@@ -219,7 +219,7 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 Test / parallelExecution := false
 IntegrationTest / testForkedParallel := false
 
-usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
+usePgpKeyHex("6C19C0E58124AFC40322487CFEE117327E7176CA")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
