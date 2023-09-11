@@ -49,9 +49,3 @@ lazy val root = (project in file("."))
 
 assembly / test := {}
 assembly / assemblyJarName := s"common-wasm_${scalaVersion.value.split("\\.").init.mkString(".")}-${version.value}.jar"
-assembly / assemblyMergeStrategy := {
-  case PathList("org", "apache", "commons", "logging", xs@_*) => MergeStrategy.first
-  case x =>
-    val oldStrategy = (assembly / assemblyMergeStrategy).value
-    oldStrategy(x)
-}
