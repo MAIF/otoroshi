@@ -3,7 +3,7 @@ package otoroshi.wasm.proxywasm
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
-import io.otoroshi.common.wasm.{WasmVmData, EnvUserData, ResultsWrapper, WasmFunctionParameters, WasmSource, WasmSourceKind, WasmVm, WasmVmInitOptions, WasmVmKillOptions, WasmVmPool}
+import io.otoroshi.common.wasm.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -79,7 +79,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val pool: WasmVmPool        = new WasmVmPool(key, wasm.some, env.wasmIntegrationCtx)
+  private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -104,7 +104,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
         Left(Json.obj("error" -> "no vm found in attrs")).vfuture
       case Some(vm) => {
         WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-        implicit val ic = env.wasmIntegrationCtx
         vm.call(WasmFunctionParameters.NoResult(function, params), Some(data))
           .map { opt =>
             opt.map { res =>
@@ -133,7 +132,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
         Future.failed(new RuntimeException("no vm found in attrs"))
       case Some(vm) => {
         WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-        implicit val ic = env.wasmIntegrationCtx
         vm.call(WasmFunctionParameters.BothParamsResults(function, params, results), Some(data))
           .flatMap {
             case Left(err)           =>

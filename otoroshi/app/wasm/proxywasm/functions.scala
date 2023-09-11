@@ -1,7 +1,7 @@
 package otoroshi.wasm.proxywasm
 
 import akka.stream.Materializer
-import io.otoroshi.common.wasm.{WasmVmData, EnvUserData}
+import io.otoroshi.common.wasm.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.wasm._

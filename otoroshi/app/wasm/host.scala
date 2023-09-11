@@ -3,7 +3,8 @@ package otoroshi.wasm
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
-import io.otoroshi.common.wasm.{EmptyUserData, EnvUserData, HostFunctionWithAuthorization, OPA, StateUserData}
+import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.common.wasm.scaladsl.opa._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
@@ -78,7 +79,7 @@ object HFunction {
   )(
       f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
-    val ev = EnvUserData(env.wasmIntegrationCtx, ec, mat, config)
+    val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
@@ -88,7 +89,7 @@ object HFunction {
   )(
       f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
-    val ev = EnvUserData(env.wasmIntegrationCtx, ec, mat, config)
+    val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](
       fname,
       ev.some,
@@ -937,7 +938,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_set" else "proxy_global_map_set",
-      StateUserData(env.wasmIntegrationCtx, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -973,7 +974,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_del" else "proxy_global_map_del",
-      StateUserData(env.wasmIntegrationCtx, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -1004,7 +1005,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_get" else "proxy_global_map_get",
-      StateUserData(env.wasmIntegrationCtx, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -1034,7 +1035,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map" else "proxy_global_map",
-      StateUserData(env.wasmIntegrationCtx, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, userData: Option[StateUserData]) =>

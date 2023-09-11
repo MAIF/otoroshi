@@ -1,90 +1,33 @@
 package io.otoroshi.common.wasm.test
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import io.otoroshi.common.utils.implicits.{BetterJsValue, BetterSyntax}
-import io.otoroshi.common.wasm.{CacheableWasmScript, TlsConfig, WasmConfiguration, WasmFunctionParameters, WasmIntegration, WasmIntegrationContext, WasmManagerSettings, WasmSource, WasmSourceKind, WasmVmKillOptions}
-import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
-import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.WSRequest
+import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.common.wasm.scaladsl.implicits._
+import play.api.libs.json.Json
 
-import java.util.concurrent.Executors
-import scala.collection.concurrent.TrieMap
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
 
 class WasmSpec extends munit.FunSuite {
 
-  val testWasmConfigs: Map[String, WasmConfiguration] = Map(
-    "basic" -> new WasmConfiguration {
-      override def source: WasmSource = WasmSource(WasmSourceKind.File, "./src/test/resources/basic.wasm")
-      override def memoryPages: Int = 4
-      override def functionName: Option[String] = None
-      override def config: Map[String, String] = Map.empty
-      override def allowedHosts: Seq[String] = Seq.empty
-      override def allowedPaths: Map[String, String] = Map.empty
-      override def wasi: Boolean = true
-      override def opa: Boolean = false
-      override def instances: Int = 1
-      override def killOptions: WasmVmKillOptions = WasmVmKillOptions.default
-      override def json: JsValue = Json.obj()
-    },
-    "opa" -> new WasmConfiguration {
-      override def source: WasmSource = WasmSource(WasmSourceKind.File, "./src/test/resources/opa.wasm")
-      override def memoryPages: Int = 4
-      override def functionName: Option[String] = None
-      override def config: Map[String, String] = Map.empty
-      override def allowedHosts: Seq[String] = Seq.empty
-      override def allowedPaths: Map[String, String] = Map.empty
-      override def wasi: Boolean = false
-      override def opa: Boolean = true
-      override def instances: Int = 1
-      override def killOptions: WasmVmKillOptions = WasmVmKillOptions.default
-      override def json: JsValue = Json.obj()
-    }
+  val wasmStore = InMemoryWasmConfigurationStore(
+    "basic" -> BasicWasmConfiguration.fromWasiSource(WasmSource(WasmSourceKind.File, "./src/test/resources/basic.wasm")),
+    "opa" -> BasicWasmConfiguration.fromOpaSource(WasmSource(WasmSourceKind.File, "./src/test/resources/opa.wasm")),
   )
-
-  implicit val ctx = new WasmIntegrationContext {
-
-    val system = ActorSystem("test-common-wasm")
-    val materializer: Materializer = Materializer(system)
-    val executionContext: ExecutionContext = system.dispatcher
-    val logger: Logger = Logger("test-common-wasm")
-    val wasmCacheTtl: Long = 2000
-    val wasmQueueBufferSize: Int = 100
-    val wasmManagerSettings: Future[Option[WasmManagerSettings]] = Future.successful(None)
-    val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
-    val wasmExecutor: ExecutionContext = ExecutionContext.fromExecutorService(
-      Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
-    )
-
-    override def url(path: String): WSRequest = ???
-    override def mtlsUrl(path: String, tlsConfig: TlsConfig): WSRequest = ???
-    override def wasmConfig(path: String): Option[WasmConfiguration] = testWasmConfigs.get(path)
-    override def wasmConfigs(): Seq[WasmConfiguration] = testWasmConfigs.values.toSeq
-    override def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = Array.empty
-  }
+  val wasmIntegration = WasmIntegration(BasicWasmIntegrationContextWithNoHttpClient("test-common-wasm", wasmStore))
+  wasmIntegration.runVmLoaderJob()
 
   test("basic setup with manual release should work") {
 
-    implicit val ec = ctx.executionContext
+    import wasmIntegration.executionContext
 
-    val integration = WasmIntegration(ctx)
-
-    integration.runVmLoaderJob()
-
-    val fu = integration.wasmVmById("basic").flatMap {
+    val fu = wasmIntegration.wasmVmById("basic").flatMap {
       case Some((vm, _)) => {
-        vm.call(
-          WasmFunctionParameters.ExtismFuntionCall(
-            "execute",
-            Json.obj("message" -> "coucou").stringify
-          ),
-          None
+        vm.callExtismFunction(
+          "execute",
+          Json.obj("message" -> "coucou").stringify
         ).map {
           case Left(error) => println(s"error: ${error.prettify}")
-          case Right((out, wrapper)) => {
+          case Right(out) => {
             assertEquals(out, "{\"input\":{\"message\":\"coucou\"},\"message\":\"yo\"}")
             println(s"output: ${out}")
           }
@@ -102,22 +45,15 @@ class WasmSpec extends munit.FunSuite {
 
   test("basic setup with auto release should work") {
 
-    implicit val ec = ctx.executionContext
+    import wasmIntegration.executionContext
 
-    val integration = WasmIntegration(ctx)
-
-    integration.runVmLoaderJob()
-
-    val fu = integration.withPooledVm(testWasmConfigs("basic")) { vm =>
-      vm.call(
-        WasmFunctionParameters.ExtismFuntionCall(
-          "execute",
-          Json.obj("message" -> "coucou").stringify
-        ),
-        None
+    val fu = wasmIntegration.withPooledVm(wasmStore.wasmConfigurationUnsafe("basic")) { vm =>
+      vm.callExtismFunction(
+        "execute",
+        Json.obj("message" -> "coucou").stringify
       ).map {
         case Left(error) => println(s"error: ${error.prettify}")
-        case Right((out, wrapper)) => {
+        case Right(out) => {
           assertEquals(out, "{\"input\":{\"message\":\"coucou\"},\"message\":\"yo\"}")
           println(s"output: ${out}")
         }
@@ -129,19 +65,15 @@ class WasmSpec extends munit.FunSuite {
 
   test("opa manual setup with auto release should work") {
 
-    implicit val ec = ctx.executionContext
-
-    val integration = WasmIntegration(ctx)
-
-    integration.runVmLoaderJob()
+    import wasmIntegration.executionContext
 
     val callCtx = Json.obj("request" -> Json.obj("headers" -> Json.obj("foo" -> "bar"))).stringify
-    val fu = integration.withPooledVm(testWasmConfigs("opa")) { vm =>
+    val fu = wasmIntegration.withPooledVm(wasmStore.wasmConfigurationUnsafe("opa")) { vm =>
       vm.ensureOpaInitialized(callCtx.some).call(
-        WasmFunctionParameters.OPACall("execute", vm.opaPointers, callCtx), None
+        WasmFunctionParameters.OPACall("execute", vm.getOpaPointers(), callCtx), None
       ).map {
         case Left(error) => println(s"error: ${error.prettify}")
-        case Right((out, wrapper)) => {
+        case Right((out, _)) => {
           println(s"opa output: ${out}")
         }
       }
@@ -152,15 +84,11 @@ class WasmSpec extends munit.FunSuite {
 
   test("opa auto setup with auto release should work") {
 
-    implicit val ec = ctx.executionContext
-
-    val integration = WasmIntegration(ctx)
-
-    integration.runVmLoaderJob()
+    import wasmIntegration.executionContext
 
     val callCtx = Json.obj("request" -> Json.obj("headers" -> Json.obj("foo" -> "bar"))).stringify
-    val fu = integration.withPooledVm(testWasmConfigs("opa")) { vm =>
-      vm.opaCall("execute", callCtx).map {
+    val fu = wasmIntegration.withPooledVm(wasmStore.wasmConfigurationUnsafe("opa")) { vm =>
+      vm.callOpa("execute", callCtx).map {
         case Left(error) => println(s"error: ${error.prettify}")
         case Right((out, wrapper)) => {
           println(s"opa output: ${out}")

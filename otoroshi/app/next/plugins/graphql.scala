@@ -7,7 +7,6 @@ import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
 import com.jayway.jsonpath.PathNotFoundException
-import io.otoroshi.common.wasm.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTreeRouter
@@ -694,6 +693,8 @@ class GraphQLBackend extends NgBackendCall {
       ec: ExecutionContext
   ): Action[Unit, Any] = {
 
+    import io.otoroshi.common.wasm.scaladsl.{WasmSource, WasmSourceKind, WasmFunctionParameters}
+
     val wasmSourceKind   = c.arg(wasmSourceKindArg)
     val wasmSourcePath   = c.arg(wasmSourcePathArg)
     val wasmFunctionName = c.argOpt(wasmFunctionNameArg)
@@ -756,7 +757,6 @@ class GraphQLBackend extends NgBackendCall {
       env.wasmIntegration.wasmVmFor(wsmCfg).flatMap {
         case None          => Future.failed(WasmException("plugin not found !"))
         case Some((vm, _)) =>
-          implicit val ic = env.wasmIntegrationCtx
           vm.call(WasmFunctionParameters.ExtismFuntionCall("execute", input.stringify), None)
             .map {
               case Right(output) =>

@@ -25,7 +25,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
-import io.otoroshi.common.wasm.WasmFunctionParameters
+import io.otoroshi.common.wasm.scaladsl._
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -1252,7 +1252,6 @@ object Exporters {
               env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
                 case None          => ExportResult.ExportResultFailure("plugin not found !").vfuture
                 case Some((vm, _)) =>
-                  implicit val ic = env.wasmIntegrationCtx
                   vm.call(
                     WasmFunctionParameters
                       .ExtismFuntionCall("export_events", (input ++ Json.obj("events" -> JsArray(events))).stringify),

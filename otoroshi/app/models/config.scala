@@ -1,7 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
-import io.otoroshi.common.wasm.WasmManagerSettings
+import io.otoroshi.common.wasm.scaladsl.WasmManagerSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env

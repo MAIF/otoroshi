@@ -60,6 +60,7 @@ const files = [
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
+  { file: './experiments/common-wasm/build.sbt' },
   { file: './readme.md' },
 ];
 
@@ -205,6 +206,14 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
 }
 
 async function buildDistribution(version, where, releaseDir, releaseFile) {
+  // build common-wasm
+  await runScript(`
+  export JAVA_HOME=$JDK8_HOME
+  export PATH=\${JAVA_HOME}/bin:\${PATH}
+  cd ${where}/experiments/common-wasm/
+  sh ./update-extism.sh
+  sh ./build.sh
+  `, where);
   // run test and build server
   await runScript(`
   export JAVA_HOME=$JDK8_HOME

@@ -1,6 +1,5 @@
 package otoroshi.models
 
-import io.otoroshi.common.wasm.WasmVmPool
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._

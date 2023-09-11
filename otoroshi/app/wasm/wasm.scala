@@ -1,7 +1,8 @@
 package otoroshi.wasm
 
 import akka.stream.Materializer
-import io.otoroshi.common.wasm._
+import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.common.wasm.scaladsl.security.TlsConfig
 import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
