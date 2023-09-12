@@ -214,18 +214,21 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
     Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
   )
 
-  override def url(path: String): WSRequest = env.Ws.url(path)
-
-  override def mtlsUrl(path: String, tlsConfig: TlsConfig): WSRequest = {
-    val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
-    env.MtlsWs.url(path, cfg)
+  override def url(path: String, tlsConfigOpt: Option[TlsConfig] = None): WSRequest = {
+    tlsConfigOpt match {
+      case None => env.Ws.url(path)
+      case Some(tlsConfig) => {
+        val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
+        env.MtlsWs.url(path, cfg)
+      }
+    }
   }
 
   override def wasmManagerSettings: Future[Option[WasmManagerSettings]] = env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
 
-  override def wasmConfig(path: String): Option[WasmConfiguration] = env.proxyState.wasmPlugin(path).map(_.config)
+  override def wasmConfig(path: String): Future[Option[WasmConfiguration]] = env.proxyState.wasmPlugin(path).map(_.config).vfuture
 
-  override def wasmConfigs(): Seq[WasmConfiguration] = env.proxyState.allWasmPlugins().map(_.config)
+  override def wasmConfigs(): Future[Seq[WasmConfiguration]] = env.proxyState.allWasmPlugins().map(_.config).vfuture
 
   override def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
     HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)

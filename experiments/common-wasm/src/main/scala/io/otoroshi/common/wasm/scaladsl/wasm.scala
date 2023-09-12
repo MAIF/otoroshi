@@ -176,10 +176,7 @@ object WasmSourceKind {
       val proxy          = opts.select("proxy").asOpt[JsObject].flatMap(v => WSProxyServerJson.proxyFromJson(v))
       val tlsConfig: Option[TlsConfig]      =
         opts.select("tls").asOpt(TlsConfig.format).orElse(opts.select("tls").asOpt(TlsConfig.format))
-      (tlsConfig match {
-        case None      => ic.url(path)
-        case Some(cfg) => ic.mtlsUrl(path, cfg)
-      })
+      ic.url(path, tlsConfig)
         .withMethod(method)
         .withFollowRedirects(followRedirect)
         .withHttpHeaders(headers.toSeq: _*)
@@ -243,7 +240,7 @@ object WasmSourceKind {
         ic: WasmIntegrationContext,
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
-      ic.wasmConfig(path)  match {
+      ic.wasmConfig(path) flatMap {
         case None         => Left(Json.obj("error" -> "resource not found")).vfuture
         case Some(config) => config.source.getWasm()
       }
@@ -252,7 +249,7 @@ object WasmSourceKind {
         ic: WasmIntegrationContext,
         ec: ExecutionContext
     ): Future[Option[WasmConfiguration]] = {
-      ic.wasmConfig(path).vfuture
+      ic.wasmConfig(path)
     }
   }
   case object File        extends WasmSourceKind {

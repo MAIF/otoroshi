@@ -6,7 +6,7 @@ import io.otoroshi.common.wasm.scaladsl.implicits._
 import io.otoroshi.common.wasm.scaladsl.security.TlsConfig
 import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
 import play.api.Logger
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSRequest
 
 import java.util.concurrent.atomic.AtomicReference
@@ -29,12 +29,12 @@ trait WasmIntegrationContext {
   def wasmCacheTtl: Long
   def wasmQueueBufferSize: Int
 
-  def url(path: String): WSRequest
-  def mtlsUrl(path: String, tlsConfig: TlsConfig): WSRequest
+  def url(path: String, tlsConfigOpt: Option[TlsConfig] = None): WSRequest
 
   def wasmManagerSettings: Future[Option[WasmManagerSettings]]
-  def wasmConfig(path: String): Option[WasmConfiguration]
-  def wasmConfigs(): Seq[WasmConfiguration]
+  def wasmConfigSync(path: String): Option[WasmConfiguration] = None
+  def wasmConfig(path: String): Future[Option[WasmConfiguration]] = wasmConfigSync(path).vfuture
+  def wasmConfigs(): Future[Seq[WasmConfiguration]]
   def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
 
   def wasmScriptCache: TrieMap[String, CacheableWasmScript]
@@ -58,11 +58,10 @@ class BasicWasmIntegrationContextWithNoHttpClient[A <: WasmConfiguration](name: 
     Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
   )
 
-  override def url(path: String): WSRequest = ???
-  override def mtlsUrl(path: String, tlsConfig: TlsConfig): WSRequest = ???
+  override def url(path: String, tlsConfigOpt: Option[TlsConfig] = None): WSRequest = ???
 
-  override def wasmConfig(path: String): Option[WasmConfiguration] = store.wasmConfiguration(path)
-  override def wasmConfigs(): Seq[WasmConfiguration] = store.wasmConfigurations()
+  override def wasmConfigSync(path: String): Option[WasmConfiguration] = store.wasmConfiguration(path)
+  override def wasmConfigs(): Future[Seq[WasmConfiguration]] = store.wasmConfigurations().vfuture
   override def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = Array.empty
 }
 
@@ -81,12 +80,12 @@ class WasmIntegration(ic: WasmIntegrationContext) {
   /// vm apis
 
   private[common] def wasmVmById(id: String): Future[Option[(WasmVm, WasmConfiguration)]] = {
-    ic.wasmConfig(id).map(cfg => wasmVmFor(cfg)).getOrElse(Future.successful(None))
+    ic.wasmConfig(id).flatMap(_.map(cfg => wasmVmFor(cfg)).getOrElse(Future.successful(None)))
   }
 
   def wasmVmFor(config: WasmConfiguration): Future[Option[(WasmVm, WasmConfiguration)]] = {
     if (config.source.kind == WasmSourceKind.Local) {
-      ic.wasmConfig(config.source.path) match {
+      ic.wasmConfig(config.source.path) flatMap {
         case None => None.vfuture
         case Some(localConfig) => {
           localConfig.pool().getPooledVm().map(vm => Some((vm, localConfig)))
@@ -99,7 +98,7 @@ class WasmIntegration(ic: WasmIntegrationContext) {
 
   def withPooledVmSync[A](config: WasmConfiguration, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => A): Future[A] = {
     if (config.source.kind == WasmSourceKind.Local) {
-      ic.wasmConfig(config.source.path) match {
+      ic.wasmConfig(config.source.path) flatMap {
         case None => Future.failed(new RuntimeException(s"no wasm config. found with path '${config.source.path}'"))
         case Some(localConfig) => localConfig.pool().withPooledVm(options)(f)
       }
@@ -111,7 +110,7 @@ class WasmIntegration(ic: WasmIntegrationContext) {
   // borrow a vm for async operations
   def withPooledVm[A](config: WasmConfiguration, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => Future[A]): Future[A] = {
     if (config.source.kind == WasmSourceKind.Local) {
-      ic.wasmConfig(config.source.path) match {
+      ic.wasmConfig(config.source.path) flatMap {
         case None => Future.failed(new RuntimeException(s"no wasm config. found with path '${config.source.path}'"))
         case Some(localConfig) => localConfig.pool().withPooledVmF(options)(f)
       }
@@ -122,6 +121,8 @@ class WasmIntegration(ic: WasmIntegrationContext) {
 
   /// Jobs api
 
+  def startF(cleanerJobConfig: JsObject = Json.obj()): Future[Unit] = Future(start(cleanerJobConfig))
+
   def start(cleanerJobConfig: JsObject): Unit = {
     schedRef.set(scheduler.scheduleWithFixedDelay(() => {
       runVmLoaderJob()
@@ -129,12 +130,14 @@ class WasmIntegration(ic: WasmIntegrationContext) {
     }, 1000, 30000, TimeUnit.MILLISECONDS))
   }
 
+  def stopF(): Future[Unit] = Future(stop())
+
   def stop(): Unit = {
     Option(schedRef.get()).foreach(_.cancel(false))
   }
 
   def runVmLoaderJob(): Future[Unit] = {
-    ic.wasmConfigs().foreach { plugin =>
+    ic.wasmConfigs().map(_.foreach { plugin =>
       val now = System.currentTimeMillis()
       ic.wasmScriptCache.get(plugin.source.cacheKey) match {
         case None => plugin.source.getWasm()
@@ -145,8 +148,7 @@ class WasmIntegration(ic: WasmIntegrationContext) {
           plugin.source.getWasm()
         case _ => ()
       }
-    }
-    ().vfuture
+    })
   }
 
   def runVmCleanerJob(config: JsObject): Future[Unit] = {

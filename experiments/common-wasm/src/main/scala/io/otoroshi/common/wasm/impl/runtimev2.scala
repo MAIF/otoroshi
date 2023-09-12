@@ -452,7 +452,7 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
   }
 
   private[wasm] def wasmConfig(): Option[WasmConfiguration] = {
-    optConfig.orElse(ic.wasmConfig(stableId))
+    optConfig.orElse(ic.wasmConfigSync(stableId)).orElse(ic.wasmConfig(stableId).await(30.seconds)) // ugly but ...
   }
 
   private def hasAvailableVm(plugin: WasmConfiguration): Boolean =

@@ -12,7 +12,8 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import scala.collection.TraversableOnce
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 private[common] object implicits {
@@ -273,6 +274,8 @@ private[common] object implicits {
   }
 
   private[common] implicit class BetterFuture[A](private val obj: Future[A]) extends AnyVal {
+
+    def await(atMost: FiniteDuration): A = Await.result(obj, atMost)
 
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]] = obj.map(v => Left(v))
 
