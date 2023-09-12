@@ -222,10 +222,16 @@ object WasmSourceKind {
             )
             .get()
             .flatMap { resp =>
-              if (resp.status == 400) {
-                Left(Json.obj("error" -> "missing signed plugin url")).vfuture
-              } else {
+              if (resp.status == 200) {
                 Right(resp.bodyAsBytes).vfuture
+              } else {
+                val body = resp.body
+                Left(Json.obj(
+                  "error" -> "bad wasm manager response",
+                  "status" -> resp.status,
+                  "headers" -> resp.headers.mapValues(_.last),
+                  "body" -> body
+                )).vfuture
               }
             }
         }
