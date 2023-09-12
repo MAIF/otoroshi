@@ -54,7 +54,9 @@ RUN npm run build
 RUN rm -rf node_modules
 
 WORKDIR $HOME/server
+RUN npm install pm2@latest -g
 RUN npm install
 
 EXPOSE 5001
-CMD ["node", "index.js"]
+# CMD ["node", "index.js"]
+CMD ["pm2", "start", "index.js"]
