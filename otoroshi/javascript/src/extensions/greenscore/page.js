@@ -49,13 +49,13 @@ export default class GreenScoreConfigsPage extends React.Component {
       label: 'Tags',
     },
     routes: {
-      renderer: (props) => (
-        <GreenScoreRoutesForm
+      renderer: (props) => {
+        return <GreenScoreRoutesForm
           {...props}
           routeEntities={this.state.routes}
           rulesTemplate={this.state.rulesTemplate}
         />
-      ),
+      }
     },
   };
 
@@ -72,16 +72,16 @@ export default class GreenScoreConfigsPage extends React.Component {
       notFilterable: true,
       content: (item) => item.description,
     },
-    {
-      title: 'Green score group',
-      notFilterable: true,
-      content: GreenScoreColumm,
-    },
-    {
-      title: 'Thresholds score',
-      notFilterable: true,
-      Cell: ThresholdsScoreColumn,
-    },
+    // {
+    //   title: 'Green score group',
+    //   notFilterable: true,
+    //   content: GreenScoreColumm,
+    // },
+    // {
+    //   title: 'Thresholds score',
+    //   notFilterable: true,
+    //   Cell: ThresholdsScoreColumn,
+    // },
   ];
 
   formFlow = [
@@ -162,7 +162,7 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   render() {
-    // console.log(this.state)
+    console.log(this.state)
 
     const { groups, globalScore } = this.state;
 
@@ -183,7 +183,7 @@ export default class GreenScoreConfigsPage extends React.Component {
       </div>
 
       <div className='mt-4'>
-        {/* <Table
+        <Table
           v2
           parentProps={this.props}
           selfUrl="extensions/green-score/green-score-configs"
@@ -218,7 +218,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           extractKey={(item) => item.id}
           export={true}
           kubernetesKind={'GreenScore'}
-        /> */}
+        />
         {/* {groups.map((group, i) => {
           return <div key={group.id}
             style={{
@@ -271,11 +271,11 @@ export default class GreenScoreConfigsPage extends React.Component {
 }
 
 const GreenScoreColumm = (props) => {
-  const score =
-    (props.routes || [props.route]).reduce((acc, route) => calculateGreenScore(route.rulesConfig).score + acc, 0) /
-    (props.routes || [props.route]).length;
+  // const score =
+  //   (props.routes || [props.route]).reduce((acc, route) => calculateGreenScore(route.rulesConfig).score + acc, 0) /
+  //   (props.routes || [props.route]).length;
 
-  const { letter, rank } = getRankAndLetterFromScore(score);
+  // const { letter, rank } = getRankAndLetterFromScore(score);
 
   return (
     <div className="text-center" style={{
@@ -283,7 +283,7 @@ const GreenScoreColumm = (props) => {
       borderRadius: '25%',
       padding: '.25rem .5rem'
     }}>
-      {letter} <i className="fa fa-leaf" style={{ color: rank }} />
+      {/* {letter} <i className="fa fa-leaf" style={{ color: rank }} /> */}
     </div>
   );
 };

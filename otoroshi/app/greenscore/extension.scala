@@ -1,6 +1,7 @@
 package otoroshi.greenscore
 
 import akka.actor.{Actor, ActorRef, Props}
+import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
@@ -48,13 +49,12 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
           .map(_.byteString.size)
           .getOrElse(0)
       )
-//      ext.logger.debug(s"global score for ${routeId}: ${ext.ecoMetrics.compute()}")
     }
     case _                 =>
   }
 }
 
-case class RouteGreenScore(routeId: String, rulesConfig: GreenScoreConfig)
+case class RouteRules(routeId: String, rulesConfig: RulesRouteConfiguration)
 
 case class GreenScoreEntity(
     location: EntityLocation,
@@ -63,7 +63,7 @@ case class GreenScoreEntity(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    routes: Seq[RouteGreenScore]
+    routes: Seq[RouteRules]
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = GreenScoreEntity.format.writes(this)
@@ -105,9 +105,9 @@ object GreenScoreEntity {
               route
                 .asOpt[JsObject]
                 .map(v => {
-                  RouteGreenScore(
+                  RouteRules(
                     v.select("routeId").as[String],
-                    v.select("rulesConfig").asOpt[JsObject].map(GreenScoreConfig.format.reads).get.get
+                    v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads).get.get
                   )
                 })
                 .get
@@ -152,7 +152,7 @@ class GreenScoreAdminExtensionState(env: Env) {
 class GreenScoreExtension(val env: Env) extends AdminExtension {
 
   private[greenscore] val logger     = Logger("otoroshi-extension-green-score")
-  private[greenscore] val ecoMetrics = new EcoMetrics(env)
+  private[greenscore] val ecoMetrics = new EcoMetrics()
   private val listener: ActorRef     = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
   private lazy val datastores        = new GreenScoreAdminExtensionDatastores(env, id)
   private lazy val states            = new GreenScoreAdminExtensionState(env)
@@ -196,61 +196,10 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         for {
           scores <- datastores.greenscoresDatastore.findAll()
         } yield {
-          val jsonScores = scores
-            .map(group => {
-              val groupScores = group.routes.map(route => ecoMetrics.calculateScore(route))
-
-              val architecture = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.architecture) }
-              val design = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.design) }
-              val usage = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.usage) }
-              val log = groupScores.foldLeft(SectionScore()) { case (a,b) => a.merge(b.log) }
-
-              group.json.as[JsObject]
-                .deepMerge(Json.obj(
-                  "routes" -> groupScores.map(_.json()),
-                    "plugins_instance" -> groupScores.foldLeft(0.0)(_ + _.pluginsInstance) / groupScores.length,
-                    "produced_data" -> groupScores.foldLeft(0.0)(_ + _.producedData) / groupScores.length,
-                    "produced_headers" -> groupScores.foldLeft(0.0)(_ + _.producedHeaders) / groupScores.length,
-                    "architecture" -> architecture.copy(
-                      score = architecture.score / group.routes.length,
-                      normalizedScore = architecture.normalizedScore / group.routes.length
-                    ).json,
-                    "design" -> design.copy(
-                      score = design.score / group.routes.length,
-                      normalizedScore = design.normalizedScore / group.routes.length
-                    ).json,
-                    "usage" -> usage.copy(
-                      score = usage.score / group.routes.length,
-                      normalizedScore = usage.normalizedScore / group.routes.length
-                    ).json,
-                    "log" -> log.copy(
-                      score = log.score / group.routes.length,
-                      normalizedScore = log.normalizedScore / group.routes.length
-                    ).json,
-                    "score" -> groupScores.foldLeft(0.0)(_ + _.informations.score) / groupScores.length,
-                    "normalized_score" -> groupScores.foldLeft(0.0)(_ + _.informations.normalizedScore) / groupScores.length,
-                    "letter" -> letterFromScore(groupScores.foldLeft(0.0)(_ + _.informations.score)),
-                    "color" -> colorFromScore(groupScores.foldLeft(0.0)(_ + _.informations.score))
-                ))
-            })
+          val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
 
           Results.Ok(Json.obj(
-            "groups" -> JsArray(jsonScores),
-            "plugins_instance" -> jsonScores.map(item => (item \ "plugins_instance").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
-            "produced_data" -> jsonScores.map(item => (item \ "produced_data").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
-            "produced_headers" -> jsonScores.map(item => (item \ "produced_headers").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
-            "architecture" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "architecture")
-              .as[SectionScore](SectionScoreHelper.format.reads))).json,
-            "design" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "design")
-                .as[SectionScore](SectionScoreHelper.format.reads))).json,
-            "usage" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "usage")
-                .as[SectionScore](SectionScoreHelper.format.reads))).json,
-            "log" -> SectionScoreHelper.mean(jsonScores.map(item => (item \ "log")
-                .as[SectionScore](SectionScoreHelper.format.reads))).json,
-            "score" -> jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
-            "normalized_score" -> jsonScores.map(item => (item \ "normalized_score").as[Double]).foldLeft(0.0)(_ + _) / jsonScores.length,
-            "letter" -> letterFromScore(jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _)),
-            "color" -> colorFromScore(jsonScores.map(item => (item \ "score").as[Double]).foldLeft(0.0)(_ + _))
+            "scores" -> groupScores.map(_.json())
           ))
         }
       }
@@ -260,7 +209,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/template",
       false,
       (_, _, _, _) => {
-        Results.Ok(GreenScoreConfig(sections = RulesManager.sections).json).vfuture
+        Results.Ok(JsArray(RulesManager.rules.map(_.json()))).vfuture
       }
     )
   )

@@ -695,7 +695,7 @@ export class Table extends Component {
             ]}
             {!this.props.formComponent &&
               !this.props.formFunction &&
-              (this.props.formFlow.find((item) => this.isAnObject(item)) ? (
+              ((Array.isArray(this.props.formFlow) && this.props.formFlow.find((item) => this.isAnObject(item))) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -770,7 +770,7 @@ export class Table extends Component {
             ]}
             {!this.props.formComponent &&
               !this.props.formFunction &&
-              (this.props.formFlow.find((item) => this.isAnObject(item)) ? (
+              ((Array.isArray(this.props.formFlow) && this.props.formFlow.find((item) => this.isAnObject(item))) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}

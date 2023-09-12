@@ -14,7 +14,26 @@ export default class GreenScoreRoutesForm extends React.Component {
         ...this.props.rootValue.routes,
         {
           routeId,
-          rulesConfig: this.props.rulesTemplate,
+          rulesConfig: {
+            states: [],
+            thresholds: {
+              plugins: {
+                excellent: 1,
+                sufficient: 10,
+                poor: 15
+              },
+              dataOut: {
+                excellent: 100,
+                sufficient: 500,
+                poor: 1000
+              },
+              headersOut: {
+                excellent: 10,
+                sufficient: 30,
+                poor: 50
+              }
+            }
+          }
         },
       ],
     });
@@ -56,7 +75,7 @@ export default class GreenScoreRoutesForm extends React.Component {
   };
 
   render() {
-    const { routeEntities } = this.props;
+    const { routeEntities, rulesTemplate } = this.props;
     const { routes } = this.props.rootValue;
 
     const { editRoute } = this.state;
@@ -67,7 +86,8 @@ export default class GreenScoreRoutesForm extends React.Component {
           <RulesWizard
             onRulesChange={this.onRulesChange}
             onWizardClose={this.onWizardClose}
-            rulesConfig={routes.find((r) => r.routeId === editRoute).rulesConfig}
+            route={routes.find((r) => r.routeId === editRoute)}
+            rulesTemplate={rulesTemplate}
           />
         )}
 
@@ -133,7 +153,7 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
   );
 };
 
-const RulesWizard = ({ onWizardClose, rulesConfig, onRulesChange }) => {
+const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesTemplate }) => {
   useEffect(() => {
     const listener = document.addEventListener(
       'keydown',
@@ -160,7 +180,7 @@ const RulesWizard = ({ onWizardClose, rulesConfig, onRulesChange }) => {
             />
             <span>Check the rules of the route</span>
           </label>
-          <GreenScoreForm rulesConfig={rulesConfig} onChange={onRulesChange} />
+          <GreenScoreForm route={route} onChange={onRulesChange} rulesTemplate={rulesTemplate} />
           <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
             <FeedbackButton
               style={{
@@ -217,35 +237,47 @@ const RoutesSelector = ({ routeEntities, addRoute }) => {
   );
 };
 
-const GreenScoreForm = ({ rulesConfig, ...rest }) => {
-  const { sections, thresholds } = rulesConfig;
+const GreenScoreForm = ({ route, ...rest }) => {
+  const { states, thresholds } = route.rulesConfig;
 
-  console.log(rulesConfig);
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0);
 
-  const onRulesChange = (checked, currentSectionIdx, currentRuleIdx) => {
+  const onRulesChange = (enabled, ruleId) => {
+
+    let statesOfCurrentDate = states.find(f => f.date === today.getTime());
+
+    console.log('states of current date', statesOfCurrentDate)
+
+    if (!statesOfCurrentDate)
+      statesOfCurrentDate = {
+        states: [],
+        date: today.getTime()
+      }
+
+    statesOfCurrentDate = {
+      states: [
+        ...statesOfCurrentDate.states.filter(item => item.id !== ruleId),
+        {
+          id: ruleId,
+          enabled
+        }
+      ],
+      date: today.getTime()
+    }
+
     rest.onChange({
-      ...rulesConfig,
-      sections: sections.map((section, sectionIdx) => {
-        if (currentSectionIdx !== sectionIdx) return section;
-
-        return {
-          ...section,
-          rules: section.rules.map((rule, ruleIdx) => {
-            if (ruleIdx !== currentRuleIdx) return rule;
-
-            return {
-              ...rule,
-              enabled: checked,
-            };
-          }),
-        };
-      }),
+      ...route.rulesConfig,
+      states: [
+        ...states.filter(f => f.date !== today.getTime()),
+        statesOfCurrentDate
+      ]
     });
   };
 
   const onBoundsChange = (thresholds) => {
     rest.onChange({
-      ...rulesConfig,
+      ...route.rulesConfig,
       thresholds,
     });
   };
@@ -275,23 +307,29 @@ const GreenScoreForm = ({ rulesConfig, ...rest }) => {
           onChange={(headersOut) => onBoundsChange({ ...thresholds, headersOut })}
         />
       </div>
-      {sections.map(({ id, rules }, currentSectionIdx) => {
+      {rest.rulesTemplate.map(({ id, rules }) => {
+        const groupId = id;
         return (
-          <div key={id} className="p-3">
+          <div key={groupId} className="p-3">
             <h4 className="mb-3" style={{ textTransform: 'capitalize' }}>
-              {id}
+              {groupId}
             </h4>
-            {rules.map(({ id, description, enabled, advice }, currentRuleIdx) => {
+            {(rules || []).map(({ id, description, advice }) => {
+              const ruleId = id;
+
+              const statesAtDate = states.find(s => s.date === today.getTime());
+              const enabled = (statesAtDate ? statesAtDate.states.find(f => f.id === ruleId)?.enabled : false);
+
               return (
                 <div
-                  key={id}
+                  key={ruleId}
                   className="d-flex align-items-center"
                   style={{
                     cursor: 'pointer',
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRulesChange(!enabled, currentSectionIdx, currentRuleIdx);
+                    onRulesChange(!enabled, ruleId);
                   }}>
                   <div style={{ flex: 1 }}>
                     <p className="offset-1 mb-0" style={{ fontWeight: 'bold' }}>
