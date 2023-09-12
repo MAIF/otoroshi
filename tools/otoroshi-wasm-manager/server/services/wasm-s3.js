@@ -17,7 +17,7 @@ const putWasmFileToS3 = (pluginId, wasmFolder) => {
       else
         s3.upload({
           Bucket,
-          Key: pluginId,
+          Key: wasmFolder.split('/').slice(-1)[0],
           Body: data
         }, err => err ? reject(err) : resolve())
     })
