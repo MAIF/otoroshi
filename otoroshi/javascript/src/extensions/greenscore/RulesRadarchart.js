@@ -49,8 +49,6 @@ export default class RulesRadarchart extends PureComponent {
       <ResponsiveContainer height="100%">
         <RadarChart
           outerRadius="70%"
-          cx="50%"
-          cy="50%"
           data={data}
           fill="var(--color_level2)"
           fontSize={16}>

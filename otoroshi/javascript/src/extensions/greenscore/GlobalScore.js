@@ -25,25 +25,16 @@ function Tag({ value }) {
 export function GlobalScore(allProps) {
     const { tag = "static", letter, rank, color, score, maxScore, ...props } = allProps;
 
-    function showDynamicThresholds() {
-        const index = Math.round((score.plugins + score.produced_data + score.produced_headers) / 3);
-        if (props.raw) {
-            return <span>
-                <span style={{ fontSize: '5rem' }}>{index * 100}</span>
-                <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`%`}</span>
-            </span>
-        }
-        const colors = ['#2ecc71', '#27ae60', '#f1c40f', '#d35400', '#c0392b'];
-
-        return <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            {String.fromCharCode(64 + index)} <i className="fa fa-leaf"
-                style={{ color: colors[index], fontSize: '5rem' }} />
+    function showDynamicRawScore() {
+        return <div>
+            <span style={{ fontSize: '5rem' }}>{Math.round(score)}</span>
+            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{'%'}</span>
         </div>
     }
 
     function showNetScore() {
         return <div>
-            <span style={{ fontSize: '5rem' }}>{Math.round(score)}</span>
+            <span style={{ fontSize: `${5 - ((String(score).length) * .1)}rem` }}>{Math.round(score)}</span>
             <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${maxScore}`}</span>
         </div>
     }
@@ -71,10 +62,8 @@ export function GlobalScore(allProps) {
             alignItems: 'baseline',
             justifyContent: 'center'
         }}>
-            {props.dynamic ? showDynamicThresholds() : <>
-                {!props.raw && showGlobalScore()}
-                {props.raw && showNetScore()}
-            </>}
+            {props.dynamic ? (props.raw ? showDynamicRawScore() : showGlobalScore()) :
+                props.raw ? showNetScore() : showGlobalScore()}
         </div>
         <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
             {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}

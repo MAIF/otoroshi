@@ -1,12 +1,9 @@
 package otoroshi.greenscore
 
 import akka.actor.{Actor, ActorRef, Props}
-import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
-import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore}
-import otoroshi.greenscore.Score.{DynamicScore, SectionScore}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}

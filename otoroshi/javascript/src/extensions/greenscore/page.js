@@ -208,6 +208,16 @@ export default class GreenScoreConfigsPage extends React.Component {
     return scores.reduce((a, i) => a + i, 0) / scores.length
   }
 
+  getDynamicScore = (dynamic_score) => {
+    const scores = [
+      dynamic_score.plugins_instance,
+      dynamic_score.produced_data,
+      dynamic_score.produced_headers
+    ];
+
+    return scores.reduce((a, i) => a + i, 0) / scores.length
+  }
+
   render() {
     if (this.state.scores.length > 0)
       console.log(this.state)
@@ -217,6 +227,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
     const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate, global.dynamic_score) : 0;
+    const normalizedDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_score) : 0;
 
     return <div className="clearfix container-xl">
       {scores.length > 0 && <>
@@ -238,10 +249,15 @@ export default class GreenScoreConfigsPage extends React.Component {
           <RulesRadarchart
             values={valuesAtCurrentDate}
             dynamic_score={global.dynamic_score} />
-          {/* <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-          <GlobalScore score={global.dynamic_score} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
-          <GlobalScore score={global.dynamic_score} raw dynamic title="Net PU" tag="dynamic" />
-        </div> */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+            <GlobalScore
+              letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
+              color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
+              dynamic
+              title="Produced data"
+              tag="dynamic" />
+            <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net PU" tag="dynamic" />
+          </div>
         </div>
       </>}
 

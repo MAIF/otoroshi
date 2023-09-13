@@ -1,7 +1,6 @@
 package otoroshi.greenscore
 
 import com.codahale.metrics.UniformReservoir
-import otoroshi.env.Env
 import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore, scoreToColor}
 import otoroshi.greenscore.Score.{DynamicScore, RouteScore, SectionScore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
@@ -73,6 +72,7 @@ class RouteReservoirs {
       headers: Long,
       headersOut: Long
   ) = {
+
     overheadReservoir.update(overhead)
     overheadWithoutCircuitBreakerReservoir.update(overheadWithoutCircuitBreaker)
     circuitBreakerDurationReservoir.update(circuitBreakerDuration)
@@ -256,7 +256,6 @@ class EcoMetrics {
         .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
           case (acc, rule) =>
             val value = if (state.states.exists(s => s.id == rule.id && s.enabled)) {
-              println("RULE CHECKED", rule.id, rule.section)
               MAX_GREEN_SCORE_NOTE * (rule.sectionWeight / 100) * (rule.weight / 100)
             } else {
               0

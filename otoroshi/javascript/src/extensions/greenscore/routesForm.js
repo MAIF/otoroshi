@@ -241,6 +241,7 @@ const GreenScoreForm = ({ route, ...rest }) => {
   const { states, thresholds } = route.rulesConfig;
 
   const today = new Date()
+  today.setDate(today.getDate() - 1) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
   const onRulesChange = (enabled, ruleId) => {
