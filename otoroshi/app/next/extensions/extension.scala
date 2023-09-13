@@ -6,6 +6,7 @@ import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAppsUser}
+import otoroshi.next.utils.Vault
 import otoroshi.storage.BasicStore
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
@@ -142,6 +143,8 @@ case class AdminExtensionWellKnownRoute(
 
 case class AdminExtensionConfig(enabled: Boolean)
 
+case class AdminExtensionVault(name: String, build: (String, Configuration, Env) => Vault)
+
 trait AdminExtension {
 
   def env: Env
@@ -167,6 +170,7 @@ trait AdminExtension {
   def privateAppAuthRoutes(): Seq[AdminExtensionPrivateAppAuthRoute]     = Seq.empty
   def privateAppPublicRoutes(): Seq[AdminExtensionPrivateAppPublicRoute] = Seq.empty
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
+  def vaults(): Seq[AdminExtensionVault] = Seq.empty
 
   def configuration: Configuration = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
@@ -243,9 +247,13 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   private val wellKnownRoutes: Seq[AdminExtensionWellKnownRoute] = extensions.flatMap(_.wellKnownRoutes())
   private val wellKnownRouter                                    = new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownRoutes)
 
+  private val vaults: Seq[AdminExtensionVault] = extensions.flatMap(_.vaults())
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private val extCache = new UnboundedTrieMap[Class[_], Any]
+
+  def vault(name: String): Option[AdminExtensionVault] = vaults.find(_.name == name)
 
   def extension[A](implicit ct: ClassTag[A]): Option[A] = {
     if (hasExtensions) {

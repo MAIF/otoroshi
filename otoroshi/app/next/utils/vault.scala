@@ -909,7 +909,13 @@ class Vaults(env: Env) {
         } else {
           // TODO: support square https://github.com/square/keywhiz ?
           // TODO: support pinterest https://github.com/pinterest/knox ?
-          logger.error(s"unknown vault type '${typ}'")
+          env.adminExtensions.vault(typ) match {
+            case None => logger.error(s"unknown vault type '${typ}'")
+            case Some(adminVault) => {
+              logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
+              vaults.put(key, adminVault.build(key, vaultConfig.get[Configuration](key), env))
+            }
+          }
         }
       }
     }
