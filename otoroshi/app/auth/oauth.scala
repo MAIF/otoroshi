@@ -8,7 +8,7 @@ import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -104,7 +104,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
                 obj.asObject.value.mapValues { arr =>
                   arr.asArray.value
                     .map { item =>
-                      JsonPathValidator.format.reads(item)
+                      JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
@@ -112,7 +112,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
                 }.toMap
               }.toMap
             }
-            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonValidator]]])
         )
       )
     } recover { case e =>
@@ -185,7 +185,7 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     otoroshiRightsField: String = "otoroshi_rights",
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata

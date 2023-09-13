@@ -13,7 +13,7 @@ import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
@@ -83,12 +83,12 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       case Left(err)         => JsError(err)
       case Right(None)       => readEntity()
       case Right(Some(user)) => {
-        val envValidators: Seq[JsonPathValidator]  =
-          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators
-            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val userValidators: Seq[JsonPathValidator] =
-          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators
-            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val envValidators: Seq[JsonValidator]  =
+          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
+        val userValidators: Seq[JsonValidator] =
+          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ user.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
         val validators                             = envValidators ++ userValidators
         val failedValidators                       = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {

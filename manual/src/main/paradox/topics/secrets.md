@@ -132,10 +132,10 @@ vaults {
   ...
   name_of_the_vault {
     type = "infisical"
-    baseUrl = "https://app.infisical.com" # optional, the base url of your infisical server, fallback to https://app.infisical.com
+    baseUrl = "https://app.infisical.com" # optional, the base url of your infisical server, fallbacks to https://app.infisical.com
     serviceToken = "st.xxxx.yyyy.zzzz" # the service token for your projet
     e2ee = true # are you secrets end to end encrypted
-    defaultSecretType = "shared" # optional, fallback to shared
+    defaultSecretType = "shared" # optional, fallbacks to shared
     defaultWorkspaceId = "xxxxxx" # optional, value can be passed in the secret address
     defaultEnvironment = "dev" # optional, value can be passed in the secret address
   }

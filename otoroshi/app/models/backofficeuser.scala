@@ -6,7 +6,7 @@ import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
@@ -34,7 +34,7 @@ case class BackOfficeUser(
     tags: Seq[String],
     metadata: Map[String, String],
     rights: UserRights,
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]],
+    adminEntityValidators: Map[String, Seq[JsonValidator]],
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends RefreshableUser
     with ValidableUser
@@ -46,7 +46,7 @@ case class BackOfficeUser(
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = name
   def theTags: Seq[String]             = tags
-  // def adminEntityValidators: Map[String, Seq[JsonPathValidator]] = Map(
+  // def adminEntityValidators: Map[String, Seq[JsonValidator]] = Map(
   //   "all" -> Seq(
   //     JsonPathValidator("$.*", "JsonContainsNot(${env.)".json, "no el env".some),
   //     JsonPathValidator("$.*", "JsonContainsNot(${config.)".json, "no el config".some),
@@ -118,14 +118,14 @@ object BackOfficeUser {
                 obj.value.mapValues { arr =>
                   arr.asArray.value
                     .map { item =>
-                      JsonPathValidator.format.reads(item)
+                      JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
                     }
                 }.toMap
               }
-              .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+              .getOrElse(Map.empty[String, Seq[JsonValidator]])
           )
         )
       } recover { case e =>

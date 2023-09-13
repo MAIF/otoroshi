@@ -5,7 +5,7 @@ import otoroshi.models.{UserRights, _}
 import otoroshi.next.models.NgRoute
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
-import otoroshi.utils.{JsonPathValidator, RegexPool}
+import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 trait ValidableUser { self =>
   def json: JsValue
-  def validate(validators: Seq[JsonPathValidator]): Either[String, self.type] = {
+  def validate(validators: Seq[JsonPathValidator])(implicit env: Env): Either[String, self.type] = {
     val jsonuser = json
     if (validators.forall(validator => validator.validate(jsonuser))) {
       Right(this)
@@ -257,7 +257,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def rightsOverride: Map[String, UserRights]
   def dataOverride: Map[String, JsObject]
   def otoroshiRightsField: String
-  def adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]]
+  def adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]]
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

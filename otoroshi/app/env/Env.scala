@@ -38,7 +38,7 @@ import otoroshi.storage.drivers.lettuce._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
@@ -586,7 +586,7 @@ class Env(
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val adminEntityValidators: Map[String, Seq[JsonPathValidator]] = configurationJson
+  lazy val adminEntityValidators: Map[String, Seq[JsonValidator]] = configurationJson
     .select("otoroshi")
     .select("adminapi")
     .select("entity_validators")
@@ -595,14 +595,14 @@ class Env(
       obj.value.mapValues { arr =>
         arr.asArray.value
           .map { item =>
-            JsonPathValidator.format.reads(item)
+            JsonValidator.format.reads(item)
           }
           .collect { case JsSuccess(v, _) =>
             v
           }
       }.toMap
     }
-    .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+    .getOrElse(Map.empty[String, Seq[JsonValidator]])
 
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
