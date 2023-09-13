@@ -847,10 +847,7 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
     .getOptionalWithFileSupport[Boolean](s"e2ee")
     .getOrElse(false)
 
-  private val serviceTokenSecret = {
-    serviceToken.substring(serviceToken.lastIndexOf('.') + 1)
-    // serviceToken.split("\\.")(3)
-  }
+  private val serviceTokenSecret = serviceToken.substring(serviceToken.lastIndexOf('.') + 1)
 
   private val defaultSecretType: Option[String] = configuration
     .getOptionalWithFileSupport[String](s"defaultSecretType")
@@ -867,11 +864,11 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
       .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
       .getOrElse(1.minute)
 
-  private val serviceTokenDataHolder = new AtomicReference[JsValue](null)
+  private val serviceTokenDataHolder = new AtomicReference[(JsValue, Option[String])](null)
 
-  private def getServiceToken()(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  private def getServiceToken()(implicit env: Env, ec: ExecutionContext): Future[Either[String, (JsValue, Option[String])]] = {
     Option(serviceTokenDataHolder.get()) match {
-      case Some(value) => value.right.vfuture
+      case Some(tuple) => tuple.right.vfuture
       case None => {
         env.Ws
           .url(s"${baseUrl}/api/v2/service-token")
@@ -883,8 +880,11 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              serviceTokenDataHolder.set(resp.json)
-              Right(serviceTokenDataHolder.get())
+              val serviceTokenData = resp.json
+              val secretKeyOpt = decryptKey(serviceTokenData)
+              val tuple = (serviceTokenData, secretKeyOpt)
+              serviceTokenDataHolder.set(tuple)
+              Right(tuple)
             } else {
               Left(resp.body)
             }
@@ -914,9 +914,9 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
     }
   }
 
-  private def decryptValue(resp: JsValue, serviceTokenData: JsValue, options: Map[String, String]): CachedVaultSecretStatus = {
+  private def decryptValue(resp: JsValue, serviceTokenData: JsValue, serviceTokenKey: Option[String], options: Map[String, String]): CachedVaultSecretStatus = {
     (for {
-      secretKey <- decryptKey(serviceTokenData)
+      secretKey <- serviceTokenKey.orElse(decryptKey(serviceTokenData))
       secretValueCiphertext <- resp.select("secretValueCiphertext").asOpt[String]
       secretValueIV <- resp.select("secretValueIV").asOpt[String]
       secretValueTag <- resp.select("secretValueTag").asOpt[String]
@@ -932,29 +932,27 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
         new String(cipher.doFinal(Array.concat(encryptedBytes, tagBytes)))
       }
-      CachedVaultSecretStatus.SecretReadSuccess(selectValue(decryptedValue, options))
+      selectValue(decryptedValue, options)
     }).getOrElse(CachedVaultSecretStatus.SecretReadError("error while reading encrypted secret value"))
   }
 
-  private def selectValue(value: String, options: Map[String, String]): String = try {
-    if (options.get("json_parse").contains("true")) {
-      val pointer = options.get("json_pointer").get
-      Json.parse(value).atPointer(pointer).asOpt[JsValue] match {
-        case Some(JsString(value)) =>  value
-        case Some(JsNumber(value)) =>  value.toString()
-        case Some(JsBoolean(value)) => value.toString
-        case Some(o@JsObject(_)) =>    o.stringify
-        case Some(arr@JsArray(_)) =>   arr.stringify
-        case Some(JsNull) => "null"
-        case _ => "not-found"
+  private def selectValue(value: String, options: Map[String, String]): CachedVaultSecretStatus = try {
+    options.get("json_pointer") match {
+      case None => CachedVaultSecretStatus.SecretReadSuccess(value)
+      case Some(pointer) => Json.parse(value).atPointer(pointer).asOpt[JsValue] match {
+        case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
+        case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+        case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
+        case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+        case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+        case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
+        case _ => CachedVaultSecretStatus.SecretValueNotFound
       }
-    } else {
-      value
     }
   } catch {
     case e: Throwable =>
       logger.error(s"error while selecting json", e)
-      value
+      CachedVaultSecretStatus.SecretReadError(e.getMessage)
   }
 
   override def get(_path: String, options: Map[String, String])(implicit
@@ -963,7 +961,7 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
   ): Future[CachedVaultSecretStatus] = {
     getServiceToken().flatMap {
       case Left(err) => CachedVaultSecretStatus.SecretReadError(err).vfuture
-      case Right(serviceTokenData) => {
+      case Right((serviceTokenData, secretKeyOpt)) => {
         val path = _path.tail
         val url = if (e2ee) {
           s"$baseUrl/api/v3/secrets/${path}"
@@ -993,11 +991,11 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
           .map { resp =>
             if (resp.status == 200) {
               if (e2ee) {
-                decryptValue(resp.json.select("secret").asOpt[JsObject].getOrElse(Json.obj()), serviceTokenData, options)
+                decryptValue(resp.json.select("secret").asOpt[JsObject].getOrElse(Json.obj()), serviceTokenData, secretKeyOpt, options)
               } else {
                 resp.json.select("secret").select("secretValue").asOpt[String] match {
                   case None => CachedVaultSecretStatus.SecretReadError(s"unable to read secret ${path} in ${resp.json}")
-                  case Some(secretValue) => CachedVaultSecretStatus.SecretReadSuccess(selectValue(secretValue, options))
+                  case Some(secretValue) => selectValue(secretValue, options)
                 }
               }
             } else if (resp.status == 401) {

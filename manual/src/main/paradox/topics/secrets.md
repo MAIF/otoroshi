@@ -144,7 +144,7 @@ vaults {
 
 you should define your references like `${vault://infisical_vault/my_secret_path?workspaceId=xxx&environment=dev&type=shared}`. `workspaceId`, `environment` and `type` are optional if filled in global config. 
 
-You can also pass a `json_parse=true` and `json_pointer=/foo/bar` to handle the value like a json document a select a value inside it.
+You can also pass a `json_pointer=/foo/bar` to handle the value like a json document a select a value inside it.
 
 ### Hashicorp Vault
 
