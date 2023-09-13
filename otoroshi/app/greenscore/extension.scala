@@ -6,7 +6,7 @@ import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersio
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
 import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore}
-import otoroshi.greenscore.Score.SectionScore
+import otoroshi.greenscore.Score.{DynamicScore, SectionScore}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -198,8 +198,11 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         } yield {
           val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
 
+          val globalScore = ecoMetrics.calculateGlobalScore(groupScores)
+
           Results.Ok(Json.obj(
-            "scores" -> groupScores.map(_.json())
+            "scores" -> groupScores.map(_.json()),
+            "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
           ))
         }
       }

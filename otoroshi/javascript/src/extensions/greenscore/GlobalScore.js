@@ -22,10 +22,11 @@ function Tag({ value }) {
     </div>
 }
 
-export function GlobalScore({ tag = "static", letter, rank, color, score, ...props }) {
+export function GlobalScore(allProps) {
+    const { tag = "static", letter, rank, color, score, maxScore, ...props } = allProps;
 
     function showDynamicThresholds() {
-        const index = Math.round((score.plugins_instance + score.produced_data + score.produced_headers) / 3);
+        const index = Math.round((score.plugins + score.produced_data + score.produced_headers) / 3);
         if (props.raw) {
             return <span>
                 <span style={{ fontSize: '5rem' }}>{index * 100}</span>
@@ -43,7 +44,7 @@ export function GlobalScore({ tag = "static", letter, rank, color, score, ...pro
     function showNetScore() {
         return <div>
             <span style={{ fontSize: '5rem' }}>{Math.round(score)}</span>
-            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${props.groups.length * 6000}`}</span>
+            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${maxScore}`}</span>
         </div>
     }
 

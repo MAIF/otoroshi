@@ -6,12 +6,31 @@ import { v4 as uuid } from 'uuid';
 import GreenScoreRoutesForm from './routesForm';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
+import { NgSelectRenderer } from '../../components/nginputs';
+import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE, getColor, getLetter } from './util';
+
+function DatePicker({ date, onChange, options }) {
+  return <div className='mb-3'>
+    <NgSelectRenderer
+      value={date}
+      placeholder="Select a date"
+      label={' '}
+      ngOptions={{
+        spread: true,
+      }}
+      onChange={onChange}
+      options={options}
+      optionsTransformer={(arr) => arr.map((item) => ({ label: new Date(item).toDateString(), value: item }))}
+    />
+  </div>
+}
 
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
     routes: [],
-    rulesTemplate: undefined,
-    groups: []
+    rulesBySection: undefined,
+    scores: [],
+    date: undefined,
   };
 
   formSchema = {
@@ -53,7 +72,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         return <GreenScoreRoutesForm
           {...props}
           routeEntities={this.state.routes}
-          rulesTemplate={this.state.rulesTemplate}
+          rulesBySection={this.state.rulesBySection}
         />
       }
     },
@@ -134,53 +153,97 @@ export default class GreenScoreConfigsPage extends React.Component {
       })
         .then((r) => r.json())
     ])
-      .then(([routes, rulesTemplate, { groups, ...globalScore }]) => {
+      .then(([routes, rulesTemplate, { scores, global }]) => {
         this.setState({
           routes,
-          rulesTemplate,
-          groups: groups.map((group, i) => ({
-            ...group,
-            opened: false,
-          })),
-          globalScore
+          rulesBySection: this.rulesTemplateToRulesBySection(rulesTemplate),
+          scores,
+          global,
+          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0]
         })
       })
   }
 
-  openScore = group => {
-    this.setState({
-      groups: this.state.groups.map(g => {
-        if (g.id === group.id) {
-          return {
-            ...g,
-            opened: !g.opened
-          }
+  rulesTemplateToRulesBySection = rulesTemplate => {
+    return rulesTemplate.reduce((acc, rule) => {
+      if (acc[rule.section]) {
+        return {
+          ...acc,
+          [rule.section]: [...acc[rule.section], rule]
         }
-        return g;
-      })
-    })
+      } else {
+        return {
+          ...acc,
+          [rule.section]: [rule]
+        }
+      }
+    }, {})
+  }
+
+  // openScore = group => {
+  //   this.setState({
+  //     groups: this.state.groups.map(g => {
+  //       if (g.id === group.id) {
+  //         return {
+  //           ...g,
+  //           opened: !g.opened
+  //         }
+  //       }
+  //       return g;
+  //     })
+  //   })
+  // }
+
+  getAllNormalizedScore = (values, dynamic_score) => {
+    const scores = [
+      values.find(v => v.section === "architecture")?.score.normalized_score || 0,
+      values.find(v => v.section === "design")?.score.normalized_score || 0,
+      values.find(v => v.section === "usage")?.score.normalized_score || 0,
+      values.find(v => v.section === "log")?.score.normalized_score || 0,
+      // dynamic_score.plugins_instance,
+      // dynamic_score.produced_data,
+      // dynamic_score.produced_headers
+    ];
+
+    return scores.reduce((a, i) => a + i, 0) / scores.length
   }
 
   render() {
-    console.log(this.state)
+    if (this.state.scores.length > 0)
+      console.log(this.state)
 
-    const { groups, globalScore } = this.state;
+    const { scores, global } = this.state;
 
-    if (!globalScore)
-      return <div></div>
+    const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
+    const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
+    const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate, global.dynamic_score) : 0;
 
     return <div className="clearfix container-xl">
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-          <GlobalScore letter={globalScore.letter} score={globalScore.score} color={globalScore.color} />
-          <GlobalScore groups={groups} score={globalScore.score} raw />
+      {scores.length > 0 && <>
+        <DatePicker
+          onChange={date => this.setState({ date })}
+          date={this.state.date}
+          options={[...new Set(global.sections_score_by_date.map(section => section.date))]} />
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem', minHeight: 480 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+            <GlobalScore
+              letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
+              color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
+            <GlobalScore
+              score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+              maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
+              raw />
+          </div>
+          <RulesRadarchart
+            values={valuesAtCurrentDate}
+            dynamic_score={global.dynamic_score} />
+          {/* <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <GlobalScore score={global.dynamic_score} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
+          <GlobalScore score={global.dynamic_score} raw dynamic title="Net PU" tag="dynamic" />
+        </div> */}
         </div>
-        <RulesRadarchart values={globalScore} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-          <GlobalScore groups={groups} score={globalScore} dynamic title="Produced and Usage (PU) data" tag="dynamic" />
-          <GlobalScore groups={groups} score={globalScore} raw dynamic title="Net PU" tag="dynamic" />
-        </div>
-      </div>
+      </>}
 
       <div className='mt-4'>
         <Table

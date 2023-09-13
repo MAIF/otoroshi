@@ -116,35 +116,31 @@ object Score {
   case class SectionScore(id: String = "",
                           date: Long = 0L,
                           score: Double = 0.0,
-                          normalizedScore: Double = 0.0,
-                          letter: String = "",
-                          color: String = "") {
+                          normalizedScore: Double = 0.0) {
     def json() = Json.obj(
       "id" -> id,
       "date" -> date,
       "score" -> score,
-      "normalized_score" -> normalizedScore,
-      "letter" -> letter,
-      "color" -> color
+      "normalized_score" -> normalizedScore
     )
 
     def merge(other: SectionScore): SectionScore = SectionScore(
       id = other.id,
       score = score + other.score,
       normalizedScore = normalizedScore + other.normalizedScore,
-      date = other.date,
-      letter = other.letter,
-      color = other.color
+      date = other.date
     )
 
     def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
   }
 
-  case class DynamicScore(plugins: Double = 0.0, producedData: Double = 0.0, producedHeaders: Double = 0.0) {
+  case class DynamicScore(plugins: Double = 0,
+                          producedData: Double = 0,
+                          producedHeaders: Double = 0) {
     def json() = Json.obj(
       "plugins_instance" -> plugins,
       "produced_data" -> producedData,
-      "produced_headers" -> producedHeaders
+      "produced_headers" -> producedHeaders,
     )
 
     def merge(other: DynamicScore) = DynamicScore(
@@ -167,13 +163,23 @@ object Score {
 
 case class GroupScore(
                        informations: GreenScoreEntity,
-                       scoreByRoute: Seq[RouteScore],
+//                       scoreByRoute: Seq[RouteScore],
                        sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
                        dynamicScores: DynamicScore
                      ) {
   def json() = Json.obj(
     "informations" -> informations.json,
-    "score_by_route" -> scoreByRoute.map(_.json()),
+//    "score_by_route" -> scoreByRoute.map(_.json()),
+    "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
+    "dynamic_score" -> dynamicScores.json()
+  )
+}
+
+case class GlobalScore(
+                        dynamicScores: DynamicScore,
+                        sectionsScoreByDate: Seq[RouteScoreByDateAndSection]
+                      ) {
+  def json() = Json.obj(
     "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
     "dynamic_score" -> dynamicScores.json()
   )
@@ -181,7 +187,7 @@ case class GroupScore(
 
 
 object EcoMetrics {
-  private val MAX_GREEN_SCORE_NOTE = 6000
+  val MAX_GREEN_SCORE_NOTE = 6000
 
   private def scoreToColor(rank: Double): Score = {
     if (rank >= MAX_GREEN_SCORE_NOTE) {
@@ -205,13 +211,40 @@ object EcoMetrics {
   }
 }
 
-case class RouteScoreByDateAndSection(date: Long, section: String, score: SectionScore) {
+case class RouteScoreByDateAndSection(date: Long,
+                                      section: String,
+                                      sectionWeight: Double,
+                                      score: SectionScore,
+                                      letter: String = "",
+                                      color: String = "") {
   def json() = Json.obj(
     "date" -> date,
     "section" -> section,
+    "section_weight" -> sectionWeight,
     "score" -> score.json,
+    "letter" -> letter,
+    "color" -> color
 //    "rules" -> rules.map(_.json())
   )
+
+  def processRoute(): RouteScoreByDateAndSection = {
+    copy(
+      letter = letterFromScore(score.score),
+      color = colorFromScore(score.score),
+      score = score.copy(
+        normalizedScore = score.score / (sectionWeight / 100 * MAX_GREEN_SCORE_NOTE)
+      ))
+  }
+
+  def processGroup(length: Int): RouteScoreByDateAndSection = {
+    val groupScore = score.score / length
+    copy(
+      letter = letterFromScore(groupScore),
+      color = colorFromScore(groupScore),
+      score = score.copy(
+        normalizedScore = score.normalizedScore / length
+      ))
+  }
 }
 
 class EcoMetrics {
@@ -220,40 +253,35 @@ class EcoMetrics {
 
   private def calculateRulesByDate(rules: RulesRouteConfiguration): Seq[RouteScoreByDateAndSection] = {
     rules.states.flatMap(state => RulesManager.rules
-        .zipWithIndex
         .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
-          case (acc, (rule, ruleIndex)) =>
-            val value = if (state.states.lift(ruleIndex).exists(_.enabled)) {
+          case (acc, rule) =>
+            val value = if (state.states.exists(s => s.id == rule.id && s.enabled)) {
+              println("RULE CHECKED", rule.id, rule.section)
               MAX_GREEN_SCORE_NOTE * (rule.sectionWeight / 100) * (rule.weight / 100)
             } else {
               0
             }
             acc.find(score => score.date == state.date && score.section == rule.section)
               .map(item => {
-                acc.filter(score => score.date != state.date && score.section != rule.section) :+ RouteScoreByDateAndSection(
+                acc.filter(score => !(score.date == state.date && score.section == rule.section)) :+ RouteScoreByDateAndSection(
                   date = state.date,
                   section = rule.section,
-//                  rules = item.rules :+ rule,
+                  sectionWeight = rule.sectionWeight,
                   score = SectionScore(
                     id = rule.section,
                     date = state.date,
                     score = item.score.score + value,
-                    normalizedScore = item.score.score + value / (rule.sectionWeight / 100 * MAX_GREEN_SCORE_NOTE),
-                    letter = letterFromScore(item.score.score + value),
-                    color = colorFromScore(item.score.score + value)
                   )
                 )
               })
               .getOrElse(acc :+ RouteScoreByDateAndSection(
                 date = state.date,
                 section = rule.section,
+                sectionWeight = rule.sectionWeight,
                 score = SectionScore(
                   id = rule.section,
                   date = state.date,
-                  score = value,
-                  normalizedScore = value / (rule.sectionWeight / 100 * MAX_GREEN_SCORE_NOTE),
-                  letter = letterFromScore(value),
-                  color = colorFromScore(value)
+                  score = value
                 )
               ))
         })
@@ -270,11 +298,11 @@ class EcoMetrics {
     routes.foldLeft(Seq.empty[RouteScoreByDateAndSection]) { case (acc, state) =>
       acc.find(score => score.date == state.date && score.section == state.section)
         .map(item => {
-          acc.filter(score => score.date != state.date && score.section != state.section) :+ RouteScoreByDateAndSection(
+          acc.filter(score => !(score.date == state.date && score.section == state.section)) :+ RouteScoreByDateAndSection(
             date = state.date,
             section = state.section,
-//            rules = item.rules ++ state.rules,
-            score = item.score.merge(state.score)
+            score = item.score.merge(state.score),
+            sectionWeight = item.sectionWeight
           )
         })
         .getOrElse(acc :+ state)
@@ -282,25 +310,36 @@ class EcoMetrics {
   }
 
   private def mergeRouteDynamicScores(dynamicScore: Seq[DynamicScore]): DynamicScore = {
-    val result = dynamicScore
-      .foldLeft(DynamicScore()) { case (acc, item) => acc.merge(item) }
+    if (dynamicScore.isEmpty) {
+      DynamicScore()
+    } else {
+      val result =  dynamicScore
+        .foldLeft(DynamicScore()) { case (acc, item) => acc.merge(item) }
 
-    DynamicScore(
-      plugins = result.plugins / dynamicScore.length,
-      producedData = result.producedData / dynamicScore.length,
-      producedHeaders = result.producedHeaders / dynamicScore.length,
+      DynamicScore(
+        plugins = result.plugins / dynamicScore.length,
+        producedData = result.producedData / dynamicScore.length,
+        producedHeaders = result.producedHeaders / dynamicScore.length,
+      )
+    }
+  }
+
+  def calculateGlobalScore(groups: Seq[GroupScore]): GlobalScore = {
+    GlobalScore(
+      dynamicScores = mergeRouteDynamicScores(groups.map(_.dynamicScores)),
+      sectionsScoreByDate = mergeRoutesScoreByDateAndSection(groups.flatMap(_.sectionsScoreByDate))
     )
   }
 
   def calculateGroupScore(group: GreenScoreEntity): GroupScore = {
     val scoreByRoute = group.routes.map(route => calculateRouteScore(route))
 
-    val groupScore = mergeRoutesScoreByDateAndSection(scoreByRoute.flatMap(_.sectionsScoreByDate))
+    val groupScore: Seq[RouteScoreByDateAndSection] = mergeRoutesScoreByDateAndSection(scoreByRoute.flatMap(_.sectionsScoreByDate))
 
     GroupScore(
       informations = group,
-      scoreByRoute = scoreByRoute,
-      sectionsScoreByDate = groupScore,
+//      scoreByRoute = scoreByRoute,
+      sectionsScoreByDate = groupScore.map(_.processGroup(group.routes.length)),
       dynamicScores = mergeRouteDynamicScores(scoreByRoute.map(_.dynamicScores))
     )
   }
@@ -315,7 +354,7 @@ class EcoMetrics {
     val producedHeaders = 1 - this.normalizeReservoir(routeScore.headersOutReservoir.getSnapshot.getMean, route.rulesConfig.thresholds.headersOut.poor)
 
     RouteScore(
-      sectionsScoreByDate = sectionsScoreByDate,
+      sectionsScoreByDate = sectionsScoreByDate.map(section => section.processRoute()),
       dynamicScores = DynamicScore(
         plugins = plugins,
         producedData = producedData,

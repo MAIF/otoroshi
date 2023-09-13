@@ -75,7 +75,7 @@ export default class GreenScoreRoutesForm extends React.Component {
   };
 
   render() {
-    const { routeEntities, rulesTemplate } = this.props;
+    const { routeEntities, rulesBySection } = this.props;
     const { routes } = this.props.rootValue;
 
     const { editRoute } = this.state;
@@ -87,7 +87,7 @@ export default class GreenScoreRoutesForm extends React.Component {
             onRulesChange={this.onRulesChange}
             onWizardClose={this.onWizardClose}
             route={routes.find((r) => r.routeId === editRoute)}
-            rulesTemplate={rulesTemplate}
+            rulesBySection={rulesBySection}
           />
         )}
 
@@ -153,7 +153,7 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
   );
 };
 
-const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesTemplate }) => {
+const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection }) => {
   useEffect(() => {
     const listener = document.addEventListener(
       'keydown',
@@ -180,7 +180,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesTemplate }) => 
             />
             <span>Check the rules of the route</span>
           </label>
-          <GreenScoreForm route={route} onChange={onRulesChange} rulesTemplate={rulesTemplate} />
+          <GreenScoreForm route={route} onChange={onRulesChange} rulesBySection={rulesBySection} />
           <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
             <FeedbackButton
               style={{
@@ -307,7 +307,7 @@ const GreenScoreForm = ({ route, ...rest }) => {
           onChange={(headersOut) => onBoundsChange({ ...thresholds, headersOut })}
         />
       </div>
-      {rest.rulesTemplate.map(({ id, rules }) => {
+      {Object.entries(rest.rulesBySection).map(([id, rules]) => {
         const groupId = id;
         return (
           <div key={groupId} className="p-3">

@@ -26,24 +26,22 @@ export default class RulesRadarchart extends PureComponent {
   ];
 
   render() {
-    const { values }= this.props;
-    
+    const { values, dynamic_score } = this.props;
+
     const data = [
-      { subject: 'Architecture', value: values.architecture.normalized_score, fullMark: 1, domain: [0, 1] },
-      { subject: 'Design', value: values.design.normalized_score, fullMark: 1, domain: [0, 1] },
-      { subject: 'Usage', value: values.usage.normalized_score, fullMark: 1, domain: [0, 1] },
-      { subject: 'Log retention', value: values.log.normalized_score, fullMark: 1, domain: [0, 1] },
-      { subject: 'Plugins instance', value: values.plugins_instance, fullMark: 1, domain: [0, 1] },
-      { subject: 'Produced data', value: values.produced_data, fullMark: 1, domain: [0, 1] },
-      { subject: 'Produced headers', value: values.produced_headers, fullMark: 1, domain: [0, 1] },
+      { subject: 'Architecture', value: values.find(v => v.section === "architecture")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
+      { subject: 'Design', value: values.find(v => v.section === "design")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
+      { subject: 'Usage', value: values.find(v => v.section === "usage")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
+      { subject: 'Log retention', value: values.find(v => v.section === "log")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
+      { subject: 'Plugins instance', value: dynamic_score.plugins_instance, fullMark: 1, domain: [0, 1] },
+      { subject: 'Produced data', value: dynamic_score.produced_data, fullMark: 1, domain: [0, 1] },
+      { subject: 'Produced headers', value: dynamic_score.produced_headers, fullMark: 1, domain: [0, 1] },
     ];
-    
-    console.log(data)
 
     return <div style={{
       flex: '1 1 50%',
       // maxWidth: 420,
-      maxWidth: '50%',
+      // maxWidth: '50%',
       background: 'var(--bg-color_level2)',
       borderRadius: '.2rem',
       position: 'relative'
