@@ -105,6 +105,22 @@ vaults {
 }
 ```
 
+### Local
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "local"
+    root = "the_root_path/in_otoroshi/environment"
+  }
+}
+```
+
+value of this vault can be configured in the danger zone > Global metadata > Otoroshi environment.
+
 ### Infisical
 
 a backend for the awesome open source project [Infisical](https://infisical.com/) is available. It support both non E2EE and E2EE secrets.
