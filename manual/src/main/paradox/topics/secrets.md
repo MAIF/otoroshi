@@ -123,7 +123,7 @@ value of this vault can be configured in the danger zone > Global metadata > Oto
 
 ### Infisical
 
-a backend for the awesome open source project [Infisical](https://infisical.com/) is available. It support both non E2EE and E2EE secrets.
+a backend for the awesome open source project [Infisical](https://infisical.com/). It support both E2EE and non E2EE secrets.
 
 the configuration of this backend should be like
 
