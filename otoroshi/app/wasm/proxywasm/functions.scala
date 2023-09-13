@@ -1,6 +1,7 @@
 package otoroshi.wasm.proxywasm
 
 import akka.stream.Materializer
+import io.otoroshi.common.wasm.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.wasm._
@@ -23,7 +24,7 @@ object ProxyWasmFunctions {
 
   def build(
       state: ProxyWasmState,
-      vmDataRef: AtomicReference[VmData]
+      vmDataRef: AtomicReference[WasmVmData]
   )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
     def getCurrentVmData(): VmData = {
       Option(vmDataRef.get()) match {

@@ -4,6 +4,7 @@ import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import io.otoroshi.common.wasm.scaladsl._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.{NgMatchedRoute, NgRoute}
@@ -106,11 +107,11 @@ class WasmRouteMatcher extends NgRouteMatcher {
   override def steps: Seq[NgStep]                          = Seq(NgStep.MatchRoute)
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    implicit val ec = WasmUtils.executor
+    implicit val ec = env.wasmIntegration.executionContext
     val config      = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-    val fu          = WasmVm.fromConfig(config).flatMap {
+    val fu          = env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    => Left(Json.obj("error" -> "plugin not found")).vfuture
       case Some((vm, localConfig)) =>
         vm.call(
@@ -156,7 +157,7 @@ class WasmPreRoute extends NgPreRouting {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     val input  = ctx.wasmJson
-    WasmVm.fromConfig(config).flatMap {
+    env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    =>
         Errors
           .craftResponseResult(
@@ -239,10 +240,10 @@ class WasmBackend extends NgBackendCall {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-    WasmUtils.debugLog.debug("callBackend")
+    //WasmUtils.debugLog.debug("callBackend")
     ctx.wasmJson
       .flatMap { input =>
-        WasmVm.fromConfig(config).flatMap {
+        env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
               .craftResponseResult(
@@ -392,7 +393,7 @@ class WasmAccessValidator extends NgAccessValidator {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    WasmVm.fromConfig(config).flatMap {
+    env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    =>
         Errors
           .craftResponseResult(
@@ -445,8 +446,9 @@ class WasmAccessValidator extends NgAccessValidator {
                 maybeRoute = ctx.route.some
               )
               .map(r => NgAccess.NgDenied(r))
-        }.andThen { case _ =>
-          vm.release()
+        }.andThen {
+          case e =>
+            vm.release()
         }
     }
     //} else {
@@ -515,7 +517,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
       .getOrElse(WasmConfig())
     ctx.wasmJson
       .flatMap(input => {
-        WasmVm.fromConfig(config).flatMap {
+        env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
               .craftResponseResult(
@@ -602,7 +604,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
       .getOrElse(WasmConfig())
     ctx.wasmJson
       .flatMap(input => {
-        WasmVm.fromConfig(config).flatMap {
+        env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
               .craftResponseResult(
@@ -676,7 +678,7 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_)          => WasmConfig()
     }
-    val fu     = WasmVm.fromConfig(config).flatMap {
+    val fu     = env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    => false.vfuture
       case Some((vm, localConfig)) =>
         vm.call(WasmFunctionParameters.ExtismFuntionCall("sink_matches", ctx.wasmJson.stringify), None)
@@ -715,7 +717,7 @@ class WasmSink extends NgRequestSink {
     requestToWasmJson(ctx.body).flatMap { body =>
       val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
 
-      WasmVm.fromConfig(config).flatMap {
+      env.wasmIntegration.wasmVmFor(config).flatMap {
         case None                    =>
           Errors
             .craftResponseResult(
@@ -838,7 +840,7 @@ class WasmRequestHandler extends RequestHandler {
           case Some(config) => {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
-              WasmVm.fromConfig(config).flatMap {
+              env.wasmIntegration.wasmVmFor(config).flatMap {
                 case None                    =>
                   Errors
                     .craftResponseResult(
@@ -951,7 +953,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
     None // TODO: make it configurable base on global env ???
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
-    WasmVm.fromConfig(config.config).flatMap {
+    env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None          => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, _)) =>
         vm.call(WasmFunctionParameters.ExtismFuntionCall("job_start", ctx.wasmJson.stringify), None)
@@ -970,7 +972,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
     case Success(s) => s
   }
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = Try {
-    WasmVm.fromConfig(config.config).flatMap {
+    env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None          => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, _)) =>
         vm.call(WasmFunctionParameters.ExtismFuntionCall("job_stop", ctx.wasmJson.stringify), None)
@@ -989,7 +991,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
     case Success(s) => s
   }
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
-    WasmVm.fromConfig(config.config).flatMap {
+    env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None                    => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, localConfig)) =>
         vm.call(
@@ -1107,17 +1109,17 @@ class WasmOPA extends NgAccessValidator {
     .map(r => NgAccess.NgDenied(r))
 
   private def execute(vm: WasmVm, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext) = {
-    vm.call(WasmFunctionParameters.OPACall("execute", vm.opaPointers, ctx.wasmJson.stringify), None)
+    vm.callOpa("execute", ctx.wasmJson.stringify)
       .flatMap {
         case Right((rawResult, _)) =>
-          val response  = Json.parse(rawResult)
-          val result    = response.asOpt[JsArray].getOrElse(Json.arr())
+          val response = Json.parse(rawResult)
+          val result = response.asOpt[JsArray].getOrElse(Json.arr())
           val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           if (canAccess)
             NgAccess.NgAllowed.vfuture
           else
             onError("Forbidden access", ctx, 403.some)
-        case Left(err)             => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+        case Left(err) => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
       }
       .andThen { case _ =>
         vm.release()
@@ -1129,7 +1131,7 @@ class WasmOPA extends NgAccessValidator {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
 
-    WasmVm.fromConfig(config).flatMap {
+    env.wasmIntegration.wasmVmFor(config).flatMap {
       case None                    =>
         Errors
           .craftResponseResult(
@@ -1142,24 +1144,24 @@ class WasmOPA extends NgAccessValidator {
             maybeRoute = ctx.route.some
           )
           .map(r => NgAccess.NgDenied(r))
-      case Some((vm, localConfig)) =>
-        if (!vm.initialized()) {
-          vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
-            .flatMap {
-              case Left(error)  => onError(error.stringify, ctx)
-              case Right(value) =>
-                vm.initialize {
-                  val pointers = Json.parse(value._1)
-                  vm.opaPointers = OPAWasmVm(
-                    opaDataAddr = (pointers \ "dataAddr").as[Int],
-                    opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
-                  ).some
-                }
-                execute(vm, ctx)
-            }
-        } else {
-          execute(vm, ctx)
-        }
+      case Some((vm, localConfig)) => execute(vm, ctx)
+        // if (!vm.initialized()) {
+        //   vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
+        //     .flatMap {
+        //       case Left(error)  => onError(error.stringify, ctx)
+        //       case Right(value) =>
+        //         vm.initialize {
+        //           val pointers = Json.parse(value._1)
+        //           vm.opaPointers = OPAWasmVm(
+        //             opaDataAddr = (pointers \ "dataAddr").as[Int],
+        //             opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
+        //           ).some
+        //         }
+        //         execute(vm, ctx)
+        //     }
+        // } else {
+        //   execute(vm, ctx)
+        // }
     }
   }
 }
@@ -1180,7 +1182,7 @@ class WasmRouter extends NgRouter {
   override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     Await.result(
-      WasmVm.fromConfig(config).flatMap {
+      env.wasmIntegration.wasmVmFor(config).flatMap {
         case None                    => Left(Json.obj("error" -> "plugin not found")).vfuture
         case Some((vm, localConfig)) =>
           val ret = vm
