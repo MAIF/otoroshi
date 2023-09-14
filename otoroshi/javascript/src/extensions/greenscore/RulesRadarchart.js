@@ -41,7 +41,7 @@ export default class RulesRadarchart extends PureComponent {
     return <div style={{
       flex: '1 1 50%',
       // maxWidth: 420,
-      // maxWidth: '50%',
+      maxWidth: '50%',
       background: 'var(--bg-color_level2)',
       borderRadius: '.2rem',
       position: 'relative'

@@ -1,7 +1,7 @@
 package otoroshi.greenscore
 
 import com.codahale.metrics.UniformReservoir
-import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore, scoreToColor}
+import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
 import otoroshi.greenscore.Score.{DynamicScore, RouteScore, SectionScore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json._
@@ -365,17 +365,17 @@ class EcoMetrics {
   def json(routeId: String): JsValue = registry.json(routeId)
 
   def updateRoute(
-      routeId: String,
-      overhead: Long,
-      overheadWoCb: Long,
-      cbDuration: Long,
-      duration: Long,
-      plugins: Int,
-      backendId: String,
-      dataIn: Long,
-      dataOut: Long,
-      headers: Long,
-      headersOut: Long
+                   routeId: String,
+                   overhead: Long,
+                   overheadWoCb: Long,
+                   cbDuration: Long,
+                   duration: Long,
+                   plugins: Int,
+                   backendId: String,
+                   dataIn: Long,
+                   dataOut: Long,
+                   headers: Long,
+                   headersOut: Long
   ) = {
     registry.updateRoute(
       routeId,

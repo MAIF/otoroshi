@@ -22,7 +22,7 @@ object OtoroshiEventListener {
 
 class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
   override def receive: Receive = {
-    case evt: GatewayEvent => {
+    case evt: GatewayEvent =>
       val routeId = evt.route.map(_.id).getOrElse(evt.`@serviceId`)
       ext.ecoMetrics.updateRoute(
         routeId = routeId,
@@ -46,7 +46,6 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
           .map(_.byteString.size)
           .getOrElse(0)
       )
-    }
     case _                 =>
   }
 }

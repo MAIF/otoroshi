@@ -23,6 +23,10 @@ $color-dark-4: #595959;
 $color-dark-5: #494948;
 $color-dark-6: #373735;
 
+$color-dark-4-opa80: #59595980;
+$color-dark-5-opa80: #49494880;
+$color-dark-6-opa80: #37373580;
+
 //light mode var
 $color-white-1: #fff;
 $color-white-2: #f3f3f4;
@@ -30,6 +34,9 @@ $color-white-3: #e8e8e8;
 $color-white-4: #e1dfdf;
 $color-white-5: #333;
 
+$color-white-2-opa80: #f3f3f480;
+$color-white-3-opa80: #e8e8e880;
+$color-white-4-opa80: #e1dfdf80;
 
 :root {
   // globals
@@ -56,6 +63,10 @@ $color-white-5: #333;
   --bg-color_level3: #{$color-dark-4};
   --color_level3: #{$color-dark-1};
 
+  --text: #fff;
+  --bg-color_level1_opa80: #{$color-dark-6-opa80};
+  --bg-color_level2_opa80: #{$color-dark-5-opa80};
+  --bg-color_level3_opa80: #{$color-dark-4-opa80};
 }
 
 [data-theme="light"] {
@@ -65,4 +76,9 @@ $color-white-5: #333;
   --color_level2: #{$color-white-5};
   --bg-color_level3: #{$color-white-4};
   --color_level3: #{$color-white-5};
+
+  --text: #000;
+  --bg-color_level1_opa80: #{$color-white-2-opa80};
+  --bg-color_level2_opa80: #{$color-white-3-opa80};
+  --bg-color_level3_opa80: #{$color-white-4-opa80};
 }

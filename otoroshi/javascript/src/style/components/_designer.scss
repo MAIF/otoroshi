@@ -695,3 +695,9 @@
         top: calc(100vh - 52px);
     }
 }
+
+.date-hover--selected,
+.date-hover:hover {
+    background-color: #f9ae0055;
+    color: #000;
+}
