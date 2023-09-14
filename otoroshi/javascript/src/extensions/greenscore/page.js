@@ -9,6 +9,9 @@ import { GlobalScore } from './GlobalScore';
 import moment from 'moment';
 import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE } from './util';
 import StackedBarChart from './StackedBarChart';
+import { DynamicChart } from './DynamicChart';
+import { firstLetterUppercase } from '../../util';
+import CustomTable from './CustomTable';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -58,7 +61,7 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
 
   return <div style={{
     position: 'absolute',
-    top: 0,
+    top: -52,
     bottom: 0,
     left: 0,
     right: 0,
@@ -153,6 +156,7 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
     routes: [],
+    groups: [],
     rulesBySection: undefined,
     scores: [],
     date: undefined,
@@ -279,9 +283,10 @@ export default class GreenScoreConfigsPage extends React.Component {
       })
         .then((r) => r.json())
     ])
-      .then(([routes, rulesTemplate, { scores, global }]) => {
+      .then(([routes, rulesTemplate, { scores, global, groups }]) => {
         this.setState({
           routes,
+          groups,
           rulesBySection: this.rulesTemplateToRulesBySection(rulesTemplate),
           scores,
           global,
@@ -306,26 +311,13 @@ export default class GreenScoreConfigsPage extends React.Component {
     }, {})
   }
 
-  // openScore = group => {
-  //   this.setState({
-  //     groups: this.state.groups.map(g => {
-  //       if (g.id === group.id) {
-  //         return {
-  //           ...g,
-  //           opened: !g.opened
-  //         }
-  //       }
-  //       return g;
-  //     })
-  //   })
-  // }
-
-  getAllNormalizedScore = (values, dynamic_score) => {
+  getAllNormalizedScore = (values, normalized = true) => {
+    const field = normalized ? 'normalized_score' : 'score';
     const scores = [
-      values.find(v => v.section === "architecture")?.score.normalized_score || 0,
-      values.find(v => v.section === "design")?.score.normalized_score || 0,
-      values.find(v => v.section === "usage")?.score.normalized_score || 0,
-      values.find(v => v.section === "log")?.score.normalized_score || 0
+      values.find(v => v.section === "architecture")?.score[field] || 0,
+      values.find(v => v.section === "design")?.score[field] || 0,
+      values.find(v => v.section === "usage")?.score[field] || 0,
+      values.find(v => v.section === "log")?.score[field] || 0
     ];
 
     return scores.reduce((a, i) => a + i, 0) / scores.length
@@ -352,56 +344,56 @@ export default class GreenScoreConfigsPage extends React.Component {
     if (this.state.scores.length > 0)
       console.log(this.state)
 
-    const { scores, global, dateSelectorOpened } = this.state;
+    const { scores, global, dateSelectorOpened, groups } = this.state;
 
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
-    const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate, global.dynamic_score) : 0;
+    const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate) : 0;
     const normalizedDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_score) : 0;
 
     return <div>
       {scores.length > 0 && <>
         <div style={{
-          display: 'flex',
-          gap: '.5rem',
-          minHeight: 200,
-          position: 'relative',
+          minHeight: 250,
           paddingTop: 50
         }}>
-          <DatePicker
-            opened={dateSelectorOpened}
-            onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
-            date={this.state.date}
-            onChange={date => this.setState({ date, dateSelectorOpened: false })}
-            onClose={() => this.setState({ dateSelectorOpened: false })}
-            options={[
-              ...new Set(global.sections_score_by_date.map(section => section.date)),
-              // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
-            ].sort()} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div style={{
+            display: 'flex', flex: 1, gap: '.5rem', marginBottom: '.5rem', position: 'relative'
+          }}>
+            < DatePicker
+              opened={dateSelectorOpened}
+              onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
+              date={this.state.date}
+              onChange={date => this.setState({ date, dateSelectorOpened: false })}
+              onClose={() => this.setState({ dateSelectorOpened: false })}
+              options={[
+                ...new Set(global.sections_score_by_date.map(section => section.date)),
+                // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
+              ].sort()} />
             <GlobalScore
               letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
               color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
+            <RulesRadarchart
+              values={valuesAtCurrentDate}
+              dynamic_score={global.dynamic_score} />
             <GlobalScore
               score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
               maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
               raw />
           </div>
-          <RulesRadarchart
-            values={valuesAtCurrentDate}
-            dynamic_score={global.dynamic_score} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
             <GlobalScore
               letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
               color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
               dynamic
               title="Produced data"
               tag="dynamic" />
-            <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net PU" tag="dynamic" />
+            <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+            <DynamicChart values={global.dynamic_score} />
           </div>
         </div>
 
-        <div style={{
+        {/* <div style={{
           display: 'flex',
           margin: '.5rem 0'
         }}>
@@ -418,134 +410,25 @@ export default class GreenScoreConfigsPage extends React.Component {
               }
             }
           }, {})} />
-        </div>
-      </>
-      }
+        </div> */}
+      </>}
 
-      <div className='mt-4'>
-        <Table
-          v2
-          parentProps={this.props}
-          selfUrl="extensions/green-score/green-score-configs"
-          defaultTitle="All Green Score configs."
-          defaultValue={() => ({
-            id: 'green-score-config_' + uuid(),
-            name: 'My Green Score',
-            description: 'An awesome Green Score',
-            tags: [],
-            metadata: {},
-            routes: [],
-            config: {},
-          })}
-          itemName="Green Score config"
-          formSchema={this.formSchema}
-          formFlow={this.formFlow}
-          columns={this.columns}
-          stayAfterSave={true}
-          fetchItems={this.client.findAll}
-          updateItem={this.client.update}
-          deleteItem={this.client.delete}
-          createItem={this.client.create}
-          navigateTo={(item) => {
-            window.location = `/bo/dashboard/extensions/green-score/green-score-configs/edit/${item.id}`;
-          }}
-          itemUrl={(item) =>
-            `/bo/dashboard/extensions/green-score/green-score-configs/edit/${item.id}`
+      <CustomTable items={groups}
+        scores={scores.map(group => {
+          const atDate = group.sections_score_by_date.filter(section => section.date === this.state.date);
+          const t = [
+            atDate.find(v => v.section === "architecture")?.score["score"] || 0,
+            atDate.find(v => v.section === "design")?.score["score"] || 0,
+            atDate.find(v => v.section === "usage")?.score["score"] || 0,
+            atDate.find(v => v.section === "log")?.score["score"] || 0
+          ];
+          return {
+            sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === this.state.date),
+            score: t.reduce((a, i) => a + i, 0),
+            ...group,
+            dynamic_score: this.getDynamicScore(group.dynamic_score)
           }
-          showActions={true}
-          showLink={false}
-          rowNavigation={true}
-          extractKey={(item) => item.id}
-          export={true}
-          kubernetesKind={'GreenScore'}
-        />
-        {/* {groups.map((group, i) => {
-          return <div key={group.id}
-            style={{
-              marginBottom: '.2rem',
-              background: 'var(--bg-color_level2)',
-              padding: '.5rem 1rem',
-              borderRadius: '.25rem'
-            }} onClick={() => this.openScore(group)}>
-
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontWeight: 'bold', minWidth: '30%' }}>{group.name}</span>
-
-              <GreenScoreColumm {...group} />
-              <ThresholdsScoreColumn value={group} index={i} />
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--bg-color_level1)',
-                borderRadius: '10%',
-                width: 32,
-                height: 32,
-                cursor: 'pointer'
-              }} onClick={() => this.openScore(group)}>
-                <i className={`fas fa-chevron-${group.opened ? 'up' : 'down'}`} />
-              </div>
-            </div>
-            {group.opened && <div className='mt-3'>
-              {group.routes.map(route => {
-                return <div key={route.routeId} className='mt-1' style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ minWidth: '30%' }}>{routes.find(r => r.id === route.routeId).name}</span>
-                  <GreenScoreColumm route={route} />
-                  <ThresholdsScoreColumn route={route} value={{
-                    id: group.id
-                  }} />
-                  <div style={{ width: 32 }}></div>
-                </div>
-              })}
-            </div>}
-          </div>
-        })} */}
-      </div>
-    </div >
+        })} />
+    </div>
   }
-}
-
-const GreenScoreColumm = (props) => {
-  // const score =
-  //   (props.routes || [props.route]).reduce((acc, route) => calculateGreenScore(route.rulesConfig).score + acc, 0) /
-  //   (props.routes || [props.route]).length;
-
-  // const {letter, rank} = getRankAndLetterFromScore(score);
-
-  return (
-    <div className="text-center" style={{
-      background: 'var(--bg-color_level1)',
-      borderRadius: '25%',
-      padding: '.25rem .5rem'
-    }}>
-      {/* {letter} <i className="fa fa-leaf" style={{ color: rank }} /> */}
-    </div>
-  );
-};
-
-const ThresholdsScoreColumn = (props) => {
-  const [score, setScore] = useState({ letter: '-', rank: 0 });
-
-  useEffect(() => {
-    calculateThresholdsScore(props.value.id, [props.value.routes ? props.value.routes[props.index] : props.route])
-      .then(setScore);
-  }, []);
-
-  const { letter, rank } = score;
-
-  return (
-    <div className="text-center" style={{
-      textTransform: 'capitalize',
-      background: 'var(--bg-color_level1)',
-      borderRadius: '25%',
-      padding: '.25rem .5rem'
-    }}>
-      {letter} <i className="fa fa-leaf" style={{ color: rank }} />
-    </div>
-  );
 }

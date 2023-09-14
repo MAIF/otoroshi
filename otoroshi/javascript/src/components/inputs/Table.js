@@ -570,7 +570,7 @@ export class Table extends Component {
                   border: "none"
                 }}
                 ref={this.tableRef}
-                className={this.props.v2 ? "fulltable" : "fulltable -striped -highlight"}
+                className="fulltable -striped -highlight"
                 manual
                 pages={this.state.pages}
                 data={this.state.items}

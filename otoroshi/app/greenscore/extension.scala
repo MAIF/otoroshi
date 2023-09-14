@@ -197,6 +197,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
           val globalScore = ecoMetrics.calculateGlobalScore(groupScores)
 
           Results.Ok(Json.obj(
+            "groups" -> scores.map(_.json),
             "scores" -> groupScores.map(_.json()),
             "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
           ))
