@@ -8,6 +8,7 @@ import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
 import moment from 'moment';
 import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE } from './util';
+import StackedBarChart from './StackedBarChart';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -105,14 +106,14 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
               textAlign: 'center',
               fontSize: '1.25rem',
               whiteSpace: 'nowrap'
-            }}>{format(months[currentMonthAndYear].value)}</span>
+            }}>{format(months[currentMonthAndYear]?.value)}</span>
           {months.length > 1 && <DatePickerSelector icon='fas fa-chevron-right' onClick={next} />}
           {months.length > 1 && <DatePickerSelector icon='fas fa-angles-right' onClick={goToEnd} />}
         </div>
 
         <div className='d-flex flex-wrap mt-3' style={{ gap: 12 }}>
           {dates
-            .filter(date => date.month === months[currentMonthAndYear].month && date.year === months[currentMonthAndYear].year)
+            .filter(date => date.month === months[currentMonthAndYear]?.month && date.year === months[currentMonthAndYear]?.year)
             .map(d => {
               return <div key={d.datetime}
                 onClick={() => setSelectedDate(d.datetime)}
@@ -155,7 +156,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     rulesBySection: undefined,
     scores: [],
     date: undefined,
-    dateSelectorOpened: true
+    dateSelectorOpened: false
   };
 
   formSchema = {
@@ -360,7 +361,13 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     return <div>
       {scores.length > 0 && <>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem', minHeight: 480, position: 'relative', paddingTop: 50 }}>
+        <div style={{
+          display: 'flex',
+          gap: '.5rem',
+          minHeight: 200,
+          position: 'relative',
+          paddingTop: 50
+        }}>
           <DatePicker
             opened={dateSelectorOpened}
             onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
@@ -369,7 +376,7 @@ export default class GreenScoreConfigsPage extends React.Component {
             onClose={() => this.setState({ dateSelectorOpened: false })}
             options={[
               ...new Set(global.sections_score_by_date.map(section => section.date)),
-              ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
+              // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
             ].sort()} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
             <GlobalScore
@@ -393,7 +400,27 @@ export default class GreenScoreConfigsPage extends React.Component {
             <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net PU" tag="dynamic" />
           </div>
         </div>
-      </>}
+
+        <div style={{
+          display: 'flex',
+          margin: '.5rem 0'
+        }}>
+          <StackedBarChart values={global.sections_score_by_date.reduce((acc, item) => {
+            if (acc[item.date]) {
+              return {
+                ...acc,
+                [item.date]: [...acc[item.date], item]
+              }
+            } else {
+              return {
+                ...acc,
+                [item.date]: [item]
+              }
+            }
+          }, {})} />
+        </div>
+      </>
+      }
 
       <div className='mt-4'>
         <Table
