@@ -79,7 +79,7 @@
         width: 100%;
     }
 
-    .element-arrow {        
+    .element-arrow {
         color: var(--color_level3);
     }
 
@@ -552,13 +552,13 @@
     }
 
     .graphql-form-type {
-        background-color:  var(--bg-color_level2);
-        border: 1px solid  var(--bg-color_level1);
+        background-color: var(--bg-color_level2);
+        border: 1px solid var(--bg-color_level1);
     }
 
     .graphql-form-element {
         background-color: var(--bg-color_level3);
-        color:var(--color_level3);
+        color: var(--color_level3);
         margin: 6px;
         display: flex;
         align-items: center;
@@ -569,7 +569,7 @@
 
     .endpoint {
         // cursor: pointer;
-        background-color:var(--bg-color_level2);
+        background-color: var(--bg-color_level2);
         border-radius: 4px;
         padding: 4px 8px;
     }
@@ -696,8 +696,164 @@
     }
 }
 
-.date-hover--selected,
+.date-hover--selected {
+    background-color: var(--color-primary);
+}
+
 .date-hover:hover {
-    background-color: #f9ae0055;
-    color: #000;
+    background-color: var(--bg-color_level3_opa80);
+    // color: #000;
+}
+
+.scale-in-ver-top {
+    -webkit-animation: scale-in-ver-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    animation: scale-in-ver-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+
+@-webkit-keyframes scale-in-ver-top {
+    0% {
+        -webkit-transform: scaleY(0);
+        transform: scaleY(0);
+        -webkit-transform-origin: 100% 0%;
+        transform-origin: 100% 0%;
+        opacity: 1;
+    }
+
+    100% {
+        -webkit-transform: scaleY(1);
+        transform: scaleY(1);
+        -webkit-transform-origin: 100% 0%;
+        transform-origin: 100% 0%;
+        opacity: 1;
+    }
+}
+
+@keyframes scale-in-ver-top {
+    0% {
+        -webkit-transform: scaleY(0);
+        transform: scaleY(0);
+        -webkit-transform-origin: 100% 0%;
+        transform-origin: 100% 0%;
+        opacity: 1;
+    }
+
+    100% {
+        -webkit-transform: scaleY(1);
+        transform: scaleY(1);
+        -webkit-transform-origin: 100% 0%;
+        transform-origin: 100% 0%;
+        opacity: 1;
+    }
+}
+
+.slide-in-blurred-top {
+    -webkit-animation: slide-in-blurred-top .6s cubic-bezier(.23, 1.000, .32, 1.000) both;
+    animation: slide-in-blurred-top .6s cubic-bezier(.23, 1.000, .32, 1.000) both
+}
+
+
+@-webkit-keyframes slide-in-blurred-top {
+    0% {
+        -webkit-transform: translateY(-1000px) scaleY(2.5) scaleX(.2);
+        transform: translateY(-1000px) scaleY(2.5) scaleX(.2);
+        -webkit-transform-origin: 50% 0;
+        transform-origin: 50% 0;
+        -webkit-filter: blur(40px);
+        filter: blur(40px);
+        opacity: 0
+    }
+
+    100% {
+        -webkit-transform: translateY(0) scaleY(1) scaleX(1);
+        transform: translateY(0) scaleY(1) scaleX(1);
+        -webkit-transform-origin: 50% 50%;
+        transform-origin: 50% 50%;
+        -webkit-filter: blur(0);
+        filter: blur(0);
+        opacity: 1
+    }
+}
+
+@keyframes slide-in-blurred-top {
+    0% {
+        -webkit-transform: translateY(-1000px) scaleY(2.5) scaleX(.2);
+        transform: translateY(-1000px) scaleY(2.5) scaleX(.2);
+        -webkit-transform-origin: 50% 0;
+        transform-origin: 50% 0;
+        -webkit-filter: blur(40px);
+        filter: blur(40px);
+        opacity: 0
+    }
+
+    100% {
+        -webkit-transform: translateY(0) scaleY(1) scaleX(1);
+        transform: translateY(0) scaleY(1) scaleX(1);
+        -webkit-transform-origin: 50% 50%;
+        transform-origin: 50% 50%;
+        -webkit-filter: blur(0);
+        filter: blur(0);
+        opacity: 1
+    }
+}
+
+@property --dynamic-raw-score {
+    syntax: '<integer>';
+    initial-value: 0;
+    inherits: false;
+}
+
+@property --net-score {
+    syntax: '<integer>';
+    initial-value: 0;
+    inherits: false;
+}
+
+.net-score {
+    animation: net-counter 1s ease-in-out forwards;
+    counter-reset: net-score var(--net-score);
+}
+
+.dynamic-raw-score {
+    animation: counter 1s ease-in-out forwards;
+    counter-reset: dynamic-raw-score var(--dynamic-raw-score);
+}
+
+@keyframes net-counter {
+    from {
+        --net-score: 0;
+    }
+
+    to {
+        --net-score: var(--net-score-to);
+    }
+}
+
+@keyframes counter {
+    from {
+        --dynamic-raw-score: 0;
+    }
+
+    to {
+        --dynamic-raw-score: var(--dynamic-raw-score-to);
+    }
+}
+
+.dynamic-raw-score::after {
+    content: counter(dynamic-raw-score);
+}
+
+.net-score::after {
+    content: counter(net-score);
+}
+
+.reveal {
+    position: relative;
+    transform: translateY(150px);
+    opacity: 0;
+    transition: 1s all ease;
+}
+
+.reveal.show {
+    transform: translateY(0);
+    opacity: 1;
 }

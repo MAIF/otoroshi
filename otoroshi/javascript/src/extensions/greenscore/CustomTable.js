@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { firstLetterUppercase } from '../../util';
 import { GREEN_SCORE_GRADES, getColor, getLetter } from './util';
 
@@ -76,7 +77,7 @@ export default class CustomTable extends React.Component {
         const { scores } = this.props;
         const { items } = this.state;
 
-        return <div className='mt-4'>
+        return <div>
             <Headings />
             {
                 items.map((group, i) => {
@@ -113,8 +114,8 @@ export default class CustomTable extends React.Component {
 
                             <span className='mx-3 text-center'>
                                 {getLetter(scores[i].score)}
-                                <i className="fa fa-leaf"
-                                    style={{ color: getColor(scores[i].score), fontSize: '1.25rem' }} />
+                                <i className="fa fa-leaf ms-1"
+                                    style={{ color: getColor(scores[i].score), fontSize: '1.1rem' }} />
                             </span>
                             <div className='text-center d-flex justify-content-center'>
                                 <div style={{ minWidth: 40 }}>
@@ -124,60 +125,65 @@ export default class CustomTable extends React.Component {
                             </div>
                             <span className='text-center'>
                                 {String.fromCharCode(65 + (1 - scores[i].dynamic_score) * 5)}
-                                <i className="fa fa-leaf"
-                                    style={{ color: Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scores[i].dynamic_score) * 5)], fontSize: '1.25rem' }} />
+                                <i className="fa fa-leaf ms-1"
+                                    style={{ color: Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scores[i].dynamic_score) * 5)], fontSize: '1.1rem' }} />
                             </span>
-                            <span className='text-center'>{scores[i].dynamic_score * 100}%</span>
+                            <span className='text-center'>{parseFloat(scores[i].dynamic_score * 100, 2).toFixed(2)}%</span>
 
-                            <div className='d-flex justify-content-center ml-auto' onClick={e => {
-                                e.stopPropagation()
-                                this.openActions(i)
-                            }}>
-                                {group.openedActions ? <div className='d-flex'>
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm me-1 date-hover"
-                                        style={{
-                                            border: '1px solid var(--text)'
-                                        }}
-                                    >
-                                        <i className="fas fa-pencil-alt" style={{ color: 'var(--text)' }} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm date-hover"
-                                        style={{
-                                            border: '1px solid var(--text)'
-                                        }}>
-                                        <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
-                                    </button>
-                                </div> : <i className="fas fa-ellipsis-vertical" style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: 'var(--bg-color_level1)',
-                                    borderRadius: '10%',
-                                    cursor: 'pointer',
-                                    width: 32,
-                                    height: 32,
-                                }} />}
-                            </div>
+                            <ItemActions unfold={group.openedActions}
+                                openAction={() => this.openActions(i)}
+                                editLink={`/extensions/green-score/groups/${group.id}`} />
                         </div>
-                        {
-                            group.opened && <div className='mt-3'>
-                                {group.routes.map(route => {
-                                    return <div key={route.routeId} className='mt-1' style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ minWidth: '30%' }}>
-                                        </span>
+                        {group.opened && <div className='mt-3'>
+                            {group.routes.map(route => {
+                                return <div key={route.routeId} className='mt-1' style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ minWidth: '30%' }}>
+                                    </span>
 
 
-                                    </div>
-                                })}
-                            </div>
-                        }
+                                </div>
+                            })}
+                        </div>}
                     </div>
                 })
             }
-        </div>
+        </div >
     }
+}
+
+function ItemActions({ unfold, openAction, editLink }) {
+    return <div className='d-flex justify-content-center ml-auto' onClick={e => {
+        e.stopPropagation()
+        openAction()
+    }}>
+        {unfold ? <div className='d-flex'>
+            <Link
+                to={editLink}
+                type="button"
+                className="btn btn-sm me-1 date-hover"
+                style={{
+                    border: '1px solid var(--text)'
+                }}
+            >
+                <i className="fas fa-pencil-alt" style={{ color: 'var(--text)' }} />
+            </Link>
+            <button
+                type="button"
+                className="btn btn-sm date-hover"
+                style={{
+                    border: '1px solid var(--text)'
+                }}>
+                <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
+            </button>
+        </div> : <i className="fas fa-ellipsis-vertical" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-color_level1)',
+            borderRadius: '10%',
+            cursor: 'pointer',
+            width: 32,
+            height: 32,
+        }} />}
+    </div>
 }

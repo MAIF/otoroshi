@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import * as BackOfficeServices from '../../services/BackOfficeServices';
+import React, { useState } from 'react';
+import moment from 'moment';
+
+import { Switch, Route } from 'react-router-dom';
+
+import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE } from './util';
+
 import { nextClient } from '../../services/BackOfficeServices';
-import { Table } from '../../components/inputs/Table';
-import { v4 as uuid } from 'uuid';
-import GreenScoreRoutesForm from './routesForm';
+
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
-import moment from 'moment';
-import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE } from './util';
 import StackedBarChart from './StackedBarChart';
 import { DynamicChart } from './DynamicChart';
-import { firstLetterUppercase } from '../../util';
 import CustomTable from './CustomTable';
+import ManagerTitle from './TitleManager';
+import EditGroup from './EditGroup';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
-    border: '2px solid var(--bg-color_level3)',
+    boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
     borderRadius: 8, height: 32, width: 32, cursor: 'pointer'
   }}
     onClick={onClick}
@@ -70,8 +72,12 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
     <div className='date-hover'
       onClick={() => onDateSelectorChange(true)}
       style={{
-        border: '1px solid var(--color-primary)',
+        boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
         padding: '.5rem 1rem',
+        height: 42,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: 175,
         textAlign: 'center',
         cursor: 'pointer',
@@ -79,7 +85,6 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
         borderTopRightRadius: 8,
         borderBottomLeftRadius: opened ? '0px' : '8px',
         borderBottomRightRadius: opened ? 0 : 8,
-        borderBottom: opened ? 'none' : '1px solid var(--color-primary)',
         transition: 'border .2s'
       }}><i className='fas fa-calendar me-2' />{moment(date).format("DD MMMM YY").toString()}</div>
 
@@ -95,7 +100,7 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
         borderRadius: 12,
         opacity: 1,
         borderTopLeftRadius: 0,
-        border: '1px solid var(--color-primary)',
+        boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
         maxWidth: 350,
         minWidth: 350,
       }}
@@ -163,104 +168,6 @@ export default class GreenScoreConfigsPage extends React.Component {
     dateSelectorOpened: false
   };
 
-  formSchema = {
-    _loc: {
-      type: 'location',
-    },
-    id: {
-      type: 'string',
-      disabled: true,
-      label: 'Id',
-      props: {
-        placeholder: '---',
-      },
-    },
-    name: {
-      type: 'string',
-      label: 'Group name',
-      props: {
-        placeholder: 'My Awesome Green Score group',
-      },
-    },
-    description: {
-      type: 'string',
-      label: 'Description',
-      props: {
-        placeholder: 'Description of the Green Score config',
-      },
-    },
-    metadata: {
-      type: 'object',
-      label: 'Metadata',
-    },
-    tags: {
-      type: 'array',
-      label: 'Tags',
-    },
-    routes: {
-      renderer: (props) => {
-        return <GreenScoreRoutesForm
-          {...props}
-          routeEntities={this.state.routes}
-          rulesBySection={this.state.rulesBySection}
-        />
-      }
-    },
-  };
-
-  columns = [
-    {
-      title: 'Name',
-      filterId: 'name',
-      notFilterable: true,
-      content: (item) => item.name,
-    },
-    {
-      title: 'Description',
-      filterId: 'description',
-      notFilterable: true,
-      content: (item) => item.description,
-    },
-    // {
-    //   title: 'Green score group',
-    //   notFilterable: true,
-    //   content: GreenScoreColumm,
-    // },
-    // {
-    //   title: 'Thresholds score',
-    //   notFilterable: true,
-    //   Cell: ThresholdsScoreColumn,
-    // },
-  ];
-
-  formFlow = [
-    '_loc',
-    {
-      type: 'group',
-      name: 'Informations',
-      collapsed: false,
-      fields: ['id', 'name', 'description'],
-    },
-    {
-      type: 'group',
-      name: 'Routes',
-      collapsed: false,
-      fields: ['routes'],
-    },
-    {
-      type: 'group',
-      name: 'Misc.',
-      collapsed: true,
-      fields: ['tags', 'metadata'],
-    },
-  ];
-
-  client = BackOfficeServices.apisClient(
-    'green-score.extensions.otoroshi.io',
-    'v1',
-    'green-scores'
-  );
-
   componentDidMount() {
     this.props.setTitle(`Green Score groups`);
 
@@ -292,7 +199,25 @@ export default class GreenScoreConfigsPage extends React.Component {
           global,
           date: [...new Set(global.sections_score_by_date.map(section => section.date))][0]
         })
-      })
+      });
+
+    this.props.setTitle(() => <ManagerTitle />);
+
+    document.getElementById('content-scroll-container').addEventListener('scroll', this.reveal)
+  }
+
+  reveal() {
+    const reveals = [...document.querySelectorAll(".reveal")];
+    const windowHeight = window.innerHeight;
+    const elementVisible = 120;
+
+    reveals.forEach(reveal => {
+      const elementTop = reveal.getBoundingClientRect().top;
+
+      if (elementTop < windowHeight - elementVisible) {
+        reveal.classList.add("show");
+      }
+    })
   }
 
   rulesTemplateToRulesBySection = rulesTemplate => {
@@ -341,8 +266,8 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   render() {
-    if (this.state.scores.length > 0)
-      console.log(this.state)
+    // if (this.state.scores.length > 0)
+    //   console.log(this.state)
 
     const { scores, global, dateSelectorOpened, groups } = this.state;
 
@@ -351,84 +276,91 @@ export default class GreenScoreConfigsPage extends React.Component {
     const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate) : 0;
     const normalizedDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_score) : 0;
 
-    return <div>
-      {scores.length > 0 && <>
-        <div style={{
-          minHeight: 250,
-          paddingTop: 50
-        }}>
-          <div style={{
-            display: 'flex', flex: 1, gap: '.5rem', marginBottom: '.5rem', position: 'relative'
-          }}>
-            < DatePicker
-              opened={dateSelectorOpened}
-              onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
-              date={this.state.date}
-              onChange={date => this.setState({ date, dateSelectorOpened: false })}
-              onClose={() => this.setState({ dateSelectorOpened: false })}
-              options={[
-                ...new Set(global.sections_score_by_date.map(section => section.date)),
-                // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
-              ].sort()} />
-            <GlobalScore
-              letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
-              color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
-            <RulesRadarchart
-              values={valuesAtCurrentDate}
-              dynamic_score={global.dynamic_score} />
-            <GlobalScore
-              score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-              maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
-              raw />
-          </div>
-          <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
-            <GlobalScore
-              letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
-              color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
-              dynamic
-              title="Produced data"
-              tag="dynamic" />
-            <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
-            <DynamicChart values={global.dynamic_score} />
-          </div>
-        </div>
+    return <div style={{ margin: '0 auto' }} className='container-sm'>
+      <Switch>
+        <Route exact path='/extensions/green-score'
+          component={() => scores.length > 0 && <>
+            <div style={{
+              minHeight: 250,
+              paddingTop: 50
+            }}>
+              <div style={{
+                display: 'flex', flex: 1, gap: '.5rem', marginBottom: '.5rem', position: 'relative'
+              }}>
+                <DatePicker
+                  opened={dateSelectorOpened}
+                  onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
+                  date={this.state.date}
+                  onChange={date => this.setState({ date, dateSelectorOpened: false })}
+                  onClose={() => this.setState({ dateSelectorOpened: false })}
+                  options={[
+                    ...new Set(global.sections_score_by_date.map(section => section.date)),
+                    // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
+                  ].sort()} />
+                <GlobalScore
+                  letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
+                  color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
+                <RulesRadarchart
+                  values={valuesAtCurrentDate}
+                  dynamic_score={global.dynamic_score} />
+                <GlobalScore
+                  score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                  maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
+                  raw />
+              </div>
+              <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
+                <GlobalScore
+                  letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
+                  color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
+                  dynamic
+                  title="Produced data"
+                  tag="dynamic" />
+                <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                <DynamicChart values={global.dynamic_score} />
+              </div>
+            </div>
 
-        {/* <div style={{
-          display: 'flex',
-          margin: '.5rem 0'
-        }}>
-          <StackedBarChart values={global.sections_score_by_date.reduce((acc, item) => {
-            if (acc[item.date]) {
-              return {
-                ...acc,
-                [item.date]: [...acc[item.date], item]
-              }
-            } else {
-              return {
-                ...acc,
-                [item.date]: [item]
-              }
-            }
-          }, {})} />
-        </div> */}
-      </>}
+            <div style={{
+              display: 'flex',
+              margin: '.5rem 0'
+            }} className='reveal'>
+              <StackedBarChart values={global.sections_score_by_date.reduce((acc, item) => {
+                if (acc[item.date]) {
+                  return {
+                    ...acc,
+                    [item.date]: [...acc[item.date], item]
+                  }
+                } else {
+                  return {
+                    ...acc,
+                    [item.date]: [item]
+                  }
+                }
+              }, {})} />
+            </div>
+          </>} />
 
-      <CustomTable items={groups}
-        scores={scores.map(group => {
-          const atDate = group.sections_score_by_date.filter(section => section.date === this.state.date);
-          const t = [
-            atDate.find(v => v.section === "architecture")?.score["score"] || 0,
-            atDate.find(v => v.section === "design")?.score["score"] || 0,
-            atDate.find(v => v.section === "usage")?.score["score"] || 0,
-            atDate.find(v => v.section === "log")?.score["score"] || 0
-          ];
-          return {
-            sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === this.state.date),
-            score: t.reduce((a, i) => a + i, 0),
-            ...group,
-            dynamic_score: this.getDynamicScore(group.dynamic_score)
-          }
-        })} />
+        <Route exact path='/extensions/green-score/groups'
+          component={() => <CustomTable items={groups}
+            scores={scores.map(group => {
+              const atDate = group.sections_score_by_date.filter(section => section.date === this.state.date);
+              const t = [
+                atDate.find(v => v.section === "architecture")?.score["score"] || 0,
+                atDate.find(v => v.section === "design")?.score["score"] || 0,
+                atDate.find(v => v.section === "usage")?.score["score"] || 0,
+                atDate.find(v => v.section === "log")?.score["score"] || 0
+              ];
+              return {
+                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === this.state.date),
+                score: t.reduce((a, i) => a + i, 0),
+                ...group,
+                dynamic_score: this.getDynamicScore(group.dynamic_score)
+              }
+            })} />} />
+
+        <Route exact path="/extensions/green-score/groups/:group_id"
+          component={EditGroup} />
+      </Switch>
     </div>
   }
 }

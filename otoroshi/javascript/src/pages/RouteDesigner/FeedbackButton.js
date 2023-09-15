@@ -88,7 +88,7 @@ export function FeedbackButton({
             });
         }
       }}>
-      <div
+      {icon && <div
         className="me-1"
         style={{
           width: '16px',
@@ -125,7 +125,7 @@ export function FeedbackButton({
             }}
           />
         )}
-      </div>
+      </div>}
       {text}
     </button>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 function Tag({ value }) {
     return <div style={{
@@ -27,21 +27,34 @@ export function GlobalScore(allProps) {
 
     function showDynamicRawScore() {
         return <div>
-            <span style={{ fontSize: '5rem' }}>{Math.round(score)}</span>
+            <span style={{
+                fontSize: '5rem',
+                '--dynamic-raw-score-to': Math.round(score)
+            }}
+                className='dynamic-raw-score'></span>
             <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{'%'}</span>
         </div>
     }
 
     function showNetScore() {
-        return <div>
-            <span style={{ fontSize: `${5 - ((String(score).length) * .1)}rem` }}>{Math.round(score)}</span>
-            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`/${maxScore}`}</span>
-        </div>
+        return <div style={{ position: 'relative' }}>
+            <span style={{
+                fontSize: `${5 - ((String(score).length) * .1)}rem`,
+                '--net-score-to': Math.round(score)
+            }} className='net-score'></span>
+            <div style={{
+                fontSize: '1rem', fontWeight: 'bold',
+                position: 'absolute',
+                bottom: '2rem',
+                left: 0,
+                right: 0
+            }}>{`/ ${maxScore}`}</div>
+        </div >
     }
 
     function showGlobalScore() {
         return <>
-            {letter !== "@" ? letter : '-'} <i className="fa fa-leaf"
+            {letter !== "@" ? letter : '-'} <i className="fa fa-leaf scale-in-ver-top"
                 style={{ color, fontSize: '5rem' }} />
         </>
     }
@@ -51,6 +64,7 @@ export function GlobalScore(allProps) {
         style={{
             flex: .5,
             maxWidth: 250,
+            minWidth: 230,
             background: 'var(--bg-color_level2)',
             borderRadius: '.2rem',
             padding: '0 .5rem',

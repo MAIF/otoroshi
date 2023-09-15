@@ -273,9 +273,8 @@ class BackOfficeAppContainer extends Component {
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar">
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -295,23 +294,20 @@ class BackOfficeAppContainer extends Component {
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column nav-sidebar mt-3">
                     <li
-                      className={`nav-item mt-0 ${
-                        this.state.openedSidebar ? 'nav-item--open' : ''
-                      }`}>
+                      className={`nav-item mt-0 ${this.state.openedSidebar ? 'nav-item--open' : ''
+                        }`}>
                       <Link
                         to="/"
-                        className={`nav-link ${
-                          window.location.pathname === '/bo/dashboard/' ? 'active' : ''
-                        }`}
+                        className={`nav-link ${window.location.pathname === '/bo/dashboard/' ? 'active' : ''
+                          }`}
                         {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                         onClick={() => {
                           DynamicTitle.setContent(null);
                           DynamicSidebar.setContent(null);
                         }}>
                         <i
-                          className={`fab fa-fort-awesome ${
-                            this.state.openedSidebar ? 'me-3' : ''
-                          }`}
+                          className={`fab fa-fort-awesome ${this.state.openedSidebar ? 'me-3' : ''
+                            }`}
                         />
                         {this.state.openedSidebar ? 'Dashboard' : ''}
                       </Link>
@@ -339,7 +335,7 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
               <div className="flex-fill px-3">
-                <div className={classes.join(' ')}>
+                <div className={classes.join(' ')} id="content-scroll-container">
                   <DynamicTitle />
                   {!this.state.catchedError && (
                     <Switch>

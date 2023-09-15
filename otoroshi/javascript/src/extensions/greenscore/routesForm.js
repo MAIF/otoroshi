@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 
-export default class GreenScoreRoutesForm extends React.Component {
+export default class GroupRoutes extends React.Component {
   state = {
     editRoute: undefined,
+    value: this.props.rootValue
   };
 
   addRoute = (routeId) => {
@@ -60,30 +61,40 @@ export default class GreenScoreRoutesForm extends React.Component {
   };
 
   onRulesChange = (rulesConfig) => {
-    this.props.rootOnChange({
-      ...this.props.rootValue,
-      routes: this.props.rootValue.routes.map((route) => {
-        if (route.routeId === this.state.editRoute) {
-          return {
-            ...route,
-            rulesConfig,
-          };
-        }
-        return route;
-      }),
+    this.setState({
+      value: {
+        ...this.state.value,
+        routes: this.state.value.routes.map((route) => {
+          if (route.routeId === this.state.editRoute) {
+            return {
+              ...route,
+              rulesConfig,
+            };
+          }
+          return route;
+        })
+      }
     });
   };
 
-  render() {
-    const { routeEntities, rulesBySection } = this.props;
-    const { routes } = this.props.rootValue;
+  saveRules = () => {
+    this.props.rootOnChange(this.state.value)
+  }
 
-    const { editRoute } = this.state;
+  render() {
+    if (!(this.props.rootValue && this.props.rootValue.routes))
+      return null;
+
+    const { allRoutes = [], rulesBySection = [] } = this.props;
+
+    const { editRoute, value } = this.state;
+    const { routes } = value;
 
     return (
       <div>
         {editRoute && (
           <RulesWizard
+            saveRules={this.saveRules}
             onRulesChange={this.onRulesChange}
             onWizardClose={this.onWizardClose}
             route={routes.find((r) => r.routeId === editRoute)}
@@ -92,7 +103,7 @@ export default class GreenScoreRoutesForm extends React.Component {
         )}
 
         <RoutesSelector
-          routeEntities={routeEntities.filter(
+          allRoutes={allRoutes.filter(
             (route) => !routes.find((r) => route.id === r.routeId)
           )}
           addRoute={this.addRoute}
@@ -101,7 +112,7 @@ export default class GreenScoreRoutesForm extends React.Component {
         <RoutesTable
           routes={routes}
           editRoute={this.editRoute}
-          routeEntities={routeEntities}
+          allRoutes={allRoutes}
           deleteRoute={this.deleteRoute}
         />
       </div>
@@ -109,7 +120,7 @@ export default class GreenScoreRoutesForm extends React.Component {
   }
 }
 
-const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
+const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
   return (
     <>
       <div className="d-flex align-items-center m-3">
@@ -127,7 +138,7 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
         return (
           <div key={routeId} className="d-flex align-items-center m-3 mt-0">
             <div style={{ flex: 1 }}>
-              <label>{routeEntities.find((r) => r.id === routeId)?.name}</label>
+              <label>{allRoutes.find((r) => r.id === routeId)?.name}</label>
             </div>
             <button type="button" className="btn btn-primary" onClick={() => editRoute(routeId)}>
               <i className="fa fa-hammer" />
@@ -153,7 +164,7 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, routeEntities }) => {
   );
 };
 
-const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection }) => {
+const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, saveRules }) => {
   useEffect(() => {
     const listener = document.addEventListener(
       'keydown',
@@ -188,7 +199,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection }) =>
                 borderColor: 'var(--color-primary)',
                 padding: '12px 48px',
               }}
-              onPress={() => Promise.resolve()}
+              onPress={() => Promise.resolve(saveRules)}
               onSuccess={onWizardClose}
               icon={() => <i className="fas fa-paper-plane" />}
               text="Save the rules"
@@ -200,7 +211,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection }) =>
   );
 };
 
-const RoutesSelector = ({ routeEntities, addRoute }) => {
+const RoutesSelector = ({ allRoutes, addRoute }) => {
   const [route, setRoute] = useState(undefined);
 
   return (
@@ -218,7 +229,7 @@ const RoutesSelector = ({ routeEntities, addRoute }) => {
             onChange={setRoute}
             margin={0}
             style={{ flex: 1 }}
-            options={routeEntities}
+            options={allRoutes}
             optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
           />
         </div>
@@ -249,7 +260,7 @@ const GreenScoreForm = ({ route, ...rest }) => {
 
     let statesOfCurrentDate = states.find(f => f.date === today.getTime());
 
-    console.log('states of current date', statesOfCurrentDate)
+    // console.log('states of current date', statesOfCurrentDate)
 
     if (!statesOfCurrentDate)
       statesOfCurrentDate = {
