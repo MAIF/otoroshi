@@ -219,7 +219,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
+    def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
     if (!ctx.userIsSuperAdmin && rights.superAdmin) {
       FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
     } else {
@@ -229,21 +229,33 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         case Right(None)       =>
           true
         case Right(Some(user)) => {
-          // println(s"right some ${user.json}")
+//           println(s"right some ${user.json}")
           val tenantAccesses    = user.rights.rights.map(_.tenant)
           val newTenantAccesses = rights.rights.map(_.tenant)
+
+          val hasAccessToTenant = tenantAccesses.map(_.value).contains("*")
           val badTenantAccess   = newTenantAccesses.exists(v => !tenantAccesses.contains(v))
+
           val badTeamAccess     = user.rights.rights.exists { right =>
             user.rights.rights.find(_.tenant.value == right.tenant.value) match {
               case None    => false
-              case Some(r) => {
+              case Some(r) =>
                 val teams    = r.teams
                 val newTeams = right.teams
-                newTeams.exists(v => !teams.contains(v))
-              }
+
+                if(r.teams.map(_.value).contains("*")) {
+                  false
+                } else {
+                  newTeams.exists(v => !teams.contains(v))
+                }
             }
           }
-          !(badTenantAccess || badTeamAccess)
+
+          if(hasAccessToTenant) {
+            !badTeamAccess
+          } else {
+            !(badTenantAccess || badTeamAccess)
+          }
         }
       }
       if (pass) {
