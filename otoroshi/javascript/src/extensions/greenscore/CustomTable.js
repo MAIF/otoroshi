@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { firstLetterUppercase } from '../../util';
 import { GREEN_SCORE_GRADES, getColor, getLetter } from './util';
+import * as BackOfficeServices from '../../services/BackOfficeServices';
 
 function Headings() {
     return <div className='mb-2' style={{
@@ -32,6 +33,14 @@ export default class CustomTable extends React.Component {
 
     state = {
         items: this.props.items
+    }
+
+    componentDidMount() {
+        this.client = BackOfficeServices.apisClient(
+            'green-score.extensions.otoroshi.io',
+            'v1',
+            'green-scores'
+        )
     }
 
     componentDidUpdate(prevProps) {
@@ -131,6 +140,8 @@ export default class CustomTable extends React.Component {
                             <span className='text-center'>{parseFloat(scores[i].dynamic_score * 100, 2).toFixed(2)}%</span>
 
                             <ItemActions unfold={group.openedActions}
+                                onDelete={() => this.client.deleteById(group.id)
+                                    .then(() => items.filter((_, j) => i !== j))}
                                 openAction={() => this.openActions(i)}
                                 editLink={`/extensions/green-score/groups/${group.id}`} />
                         </div>
@@ -151,7 +162,7 @@ export default class CustomTable extends React.Component {
     }
 }
 
-function ItemActions({ unfold, openAction, editLink }) {
+function ItemActions({ unfold, openAction, editLink, onDelete }) {
     return <div className='d-flex justify-content-center ml-auto' onClick={e => {
         e.stopPropagation()
         openAction()
@@ -172,7 +183,7 @@ function ItemActions({ unfold, openAction, editLink }) {
                 className="btn btn-sm date-hover"
                 style={{
                     border: '1px solid var(--text)'
-                }}>
+                }} onClick={onDelete}>
                 <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
             </button>
         </div> : <i className="fas fa-ellipsis-vertical" style={{
