@@ -121,7 +121,8 @@ export default class CustomTable extends React.Component {
                             gridTemplateColumns: '62px 2fr repeat(4, 1fr) 64px',
                             alignItems: 'center'
                         }}>
-                            <div style={{
+                            <div />
+                            {/* <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -133,7 +134,7 @@ export default class CustomTable extends React.Component {
                                 marginRight: 12
                             }} onClick={() => this.openScore(group)}>
                                 <i className={`fas fa-chevron-${group.opened ? 'up' : 'down'}`} />
-                            </div>
+                            </div> */}
                             <span style={{ minWidth: '30%', color: 'var(--text)' }}>
                                 {firstLetterUppercase(group.name)}
                             </span>

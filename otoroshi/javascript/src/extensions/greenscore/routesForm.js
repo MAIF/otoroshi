@@ -125,40 +125,57 @@ export default class GroupRoutes extends React.Component {
 const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
   return (
     <>
-      <div className="d-flex align-items-center m-3">
-        <div style={{ flex: 1 }}>
-          <label>Route name</label>
-        </div>
-        <span>Action</span>
+      <div className="m-3 mt-4" style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 64px',
+        padding: '0rem 1rem',
+      }}>
+        <label style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}>Route name</label>
+        <span style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}>Action</span>
       </div>
       {routes.length === 0 && (
         <p className="text-center" style={{ fontWeight: 'bold' }}>
           No routes added
         </p>
       )}
-      {routes.map(({ routeId, rulesConfig }) => {
+      {routes.map(({ routeId }) => {
         return (
-          <div key={routeId} className="d-flex align-items-center m-3 mt-0">
+          <div key={routeId} className="m-3 mt-0" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 64px',
+            padding: '0rem 1rem'
+          }}>
             <div style={{ flex: 1 }}>
               <label>{allRoutes.find((r) => r.id === routeId)?.name}</label>
             </div>
-            <button type="button" className="btn btn-primary" onClick={() => editRoute(routeId)}>
-              <i className="fa fa-hammer" />
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger ms-1"
-              onClick={() => {
-                window
-                  .newConfirm('Delete this route from the configuration ?', {
-                    title: 'Validation required',
-                  })
-                  .then((ok) => {
-                    if (ok) deleteRoute(routeId);
-                  });
-              }}>
-              <i className="fa fa-trash" />
-            </button>
+            <div className='d-flex'>
+              <button
+                onClick={() => editRoute(routeId)}
+                type="button"
+                className="btn btn-sm me-1 date-hover"
+                style={{
+                  border: '1px solid var(--text)'
+                }}>
+                <i className="fa fa-pencil-alt" style={{ color: 'var(--text)' }} />
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm date-hover"
+                style={{
+                  border: '1px solid var(--text)'
+                }}
+                onClick={() => {
+                  window
+                    .newConfirm('Delete this route from the configuration ?', {
+                      title: 'Validation required',
+                    })
+                    .then((ok) => {
+                      if (ok) deleteRoute(routeId);
+                    });
+                }}>
+                <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
+              </button>
+            </div>
           </div>
         );
       })}
