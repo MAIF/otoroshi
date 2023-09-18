@@ -5,15 +5,7 @@ import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Attributes, Materializer}
-import akka.stream.alpakka.s3.{
-  ApiVersion,
-  MemoryBufferType,
-  MetaHeaders,
-  MultipartUploadResult,
-  ObjectMetadata,
-  S3Attributes,
-  S3Settings
-}
+import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, MetaHeaders, MultipartUploadResult, ObjectMetadata, S3Attributes, S3Settings}
 import akka.stream.alpakka.s3.headers.CannedAcl
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source}
@@ -1451,17 +1443,29 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   /////////////
-  private val apiIncrementsRef      =
-    new AtomicReference[TrieMap[String, AtomicLong]](new UnboundedTrieMap[String, AtomicLong]())
-  private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
-    new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
-  )
+  // private val apiIncrementsRef      =
+  //   new AtomicReference[TrieMap[String, AtomicLong]](new UnboundedTrieMap[String, AtomicLong]())
+  // private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
+  //   new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
+  // )
+  private val quotaIncrs = new AtomicReference[TrieMap[String, ClusterQuotaIncr]](new UnboundedTrieMap[String, ClusterQuotaIncr]())
+
   private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
   private[cluster] val counters     = new UnboundedTrieMap[String, AtomicLong]()
   /////////////
+
+  private def putQuotaIfAbsent[A <: ClusterQuotaIncr](key: String, f: => A): Unit = {
+    if (!quotaIncrs.get().contains(key)) {
+      quotaIncrs.get().putIfAbsent(key, f)
+    }
+  }
+
+  private def getQuotaIncr[A <: ClusterQuotaIncr](key: String): Option[A] = {
+    quotaIncrs.get().get(key).map(_.asInstanceOf[A])
+  }
 
   def lastSync: DateTime = lastPoll.get()
 
@@ -1807,32 +1811,45 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def incrementApi(id: String, increment: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
+      val key = s"apikey:$id"
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
-      if (!apiIncrementsRef.get().contains(id)) {
-        apiIncrementsRef.get().putIfAbsent(id, new AtomicLong(0L))
+      if (!quotaIncrs.get().contains(key)) {
+        quotaIncrs.get().putIfAbsent(key, ClusterQuotaIncr.ApikeyCallIncr(id))
       }
-      apiIncrementsRef.get().get(id).foreach(_.addAndGet(increment))
+      getQuotaIncr[ClusterQuotaIncr.ApikeyCallIncr](key).foreach(_.increment(increment))
     }
   }
 
-  def incrementService(id: String, dataIn: Long, dataOut: Long): Unit = {
+  def incrementService(id: String, calls: Long, dataIn: Long, dataOut: Long, overhead: Long, duration: Long, backendDuration: Long, headersIn: Long, headersOut: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
-      if (!servicesIncrementsRef.get().contains("global")) {
-        servicesIncrementsRef.get().putIfAbsent("global", (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
+      val key = s"routes:$id"
+      val gkey = s"routes:global"
+      putQuotaIfAbsent(gkey, ClusterQuotaIncr.RouteCallIncr("global"))
+      getQuotaIncr[ClusterQuotaIncr.RouteCallIncr](gkey).foreach { quota =>
+        quota.increment(
+          calls,
+          dataIn,
+          dataOut,
+          overhead,
+          duration,
+          backendDuration,
+          headersIn,
+          headersOut,
+        )
       }
-      servicesIncrementsRef.get().get("global").foreach { case (calls, dataInCounter, dataOutCounter) =>
-        calls.incrementAndGet()
-        dataInCounter.addAndGet(dataIn)
-        dataOutCounter.addAndGet(dataOut)
-      }
-      if (!servicesIncrementsRef.get().contains(id)) {
-        servicesIncrementsRef.get().putIfAbsent(id, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
-      }
-      servicesIncrementsRef.get().get(id).foreach { case (calls, dataInCounter, dataOutCounter) =>
-        calls.incrementAndGet()
-        dataInCounter.addAndGet(dataIn)
-        dataOutCounter.addAndGet(dataOut)
+      putQuotaIfAbsent(key, ClusterQuotaIncr.RouteCallIncr(id))
+      getQuotaIncr[ClusterQuotaIncr.RouteCallIncr](key).foreach { quota =>
+        quota.increment(
+          calls,
+          dataIn,
+          dataOut,
+          overhead,
+          duration,
+          backendDuration,
+          headersIn,
+          headersOut,
+        )
       }
     }
   }
@@ -2101,9 +2118,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     try {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
-        val oldApiIncr     = apiIncrementsRef.getAndSet(new UnboundedTrieMap[String, AtomicLong]())
-        val oldServiceIncr =
-          servicesIncrementsRef.getAndSet(new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+        val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterQuotaIncr]())
+        //val oldApiIncr     = apiIncrementsRef.getAndSet(new UnboundedTrieMap[String, AtomicLong]())
+        //val oldServiceIncr =
+        //  servicesIncrementsRef.getAndSet(new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
         //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start          = System.currentTimeMillis()
         Retry
@@ -2166,24 +2184,27 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 )
               ) + "\n"
             )) flatMap { stats =>
-              val apiIncrSource     = Source(oldApiIncr.toList.map { case (key, inc) =>
-                ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
-              })
-              val serviceIncrSource = Source(oldServiceIncr.toList.map { case (key, (calls, dataIn, dataOut)) =>
-                ByteString(
-                  Json.stringify(
-                    Json.obj(
-                      "typ" -> "srvincr",
-                      "srv" -> key,
-                      "c"   -> calls.get(),
-                      "di"  -> dataIn.get(),
-                      "do"  -> dataOut.get()
-                    )
-                  ) + "\n"
-                )
-              })
+              /// push other data here !
+              val quotaIncrSource = Source(oldQuotasIncr.toList.map(v => (v._2.json.stringify + "\n").byteString))
+              // val apiIncrSource     = Source(oldApiIncr.toList.map { case (key, inc) =>
+              //   ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
+              // })
+              // val serviceIncrSource = Source(oldServiceIncr.toList.map { case (key, (calls, dataIn, dataOut)) =>
+              //   ByteString(
+              //     Json.stringify(
+              //       Json.obj(
+              //         "typ" -> "srvincr",
+              //         "srv" -> key,
+              //         "c"   -> calls.get(),
+              //         "di"  -> dataIn.get(),
+              //         "do"  -> dataOut.get()
+              //       )
+              //     ) + "\n"
+              //   )
+              // })
               val globalSource      = Source.single(stats)
-              val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
+              // val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
+              val body              = quotaIncrSource.concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody            = SourceBody(body)
               val request           = env.MtlsWs
                 .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
@@ -2229,18 +2250,19 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           }
           .recover { case e =>
             e.printStackTrace()
-            oldApiIncr.foreach { case (key, c) =>
-              apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
+            oldQuotasIncr.foreach {
+              case (key, incr: ClusterQuotaIncr.ApikeyCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterQuotaIncr.ApikeyCallIncr(incr.clientId)).asInstanceOf[ClusterQuotaIncr.ApikeyCallIncr].increment(incr.calls.get())
+              case (key, incr: ClusterQuotaIncr.RouteCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterQuotaIncr.RouteCallIncr(incr.routeId)).asInstanceOf[ClusterQuotaIncr.RouteCallIncr].increment(
+                incr.calls.get(),
+                incr.dataIn.get(),
+                incr.dataOut.get(),
+                incr.overhead.get(),
+                incr.duration.get(),
+                incr.backendDuration.get(),
+                incr.headersIn.get(),
+                incr.headersOut.get(),
+              )
             }
-            oldServiceIncr.foreach { case (key, (counter1, counter2, counter3)) =>
-              val (c1, c2, c3) = servicesIncrementsRef
-                .get()
-                .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
-              c1.addAndGet(counter1.get())
-              c2.addAndGet(counter2.get())
-              c3.addAndGet(counter3.get())
-            }
-
             Cluster.logger.error(
               s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
               e
@@ -2758,3 +2780,121 @@ class SwappableInMemoryDataStores(
     }
   }
 }
+
+sealed trait ClusterQuotaIncr {
+  def json: JsValue
+  def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit]
+  def updateWorker()(implicit env: Env): Future[Unit]
+}
+object ClusterQuotaIncr {
+
+  def read(item: JsValue): Option[ClusterQuotaIncr] = {
+    item.select("typ").asOpt[String] match {
+      case Some("apkincr") => ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
+      case Some("srvincr") => RouteCallIncr(
+        routeId = item.select("srv").asString,
+        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic,
+        dataIn = item.select("di").asOpt[Long].getOrElse(0L).atomic,
+        dataOut = item.select("do").asOpt[Long].getOrElse(0L).atomic,
+        overhead = item.select("oh").asOpt[Long].getOrElse(0L).atomic,
+        duration = item.select("du").asOpt[Long].getOrElse(0L).atomic,
+        backendDuration = item.select("bdu").asOpt[Long].getOrElse(0L).atomic,
+        headersIn = item.select("hi").asOpt[Long].getOrElse(0L).atomic,
+        headersOut = item.select("ho").asOpt[Long].getOrElse(0L).atomic,
+      ).some
+      case _ => None
+    }
+  }
+
+  case class ApikeyCallIncr(clientId: String, calls: AtomicLong = new AtomicLong(0L)) extends ClusterQuotaIncr {
+
+    def increment(inc: Long): Long = calls.addAndGet(inc)
+
+    def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+        case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, calls.get()).map(_ => ())
+        case None => FastFuture.successful(())
+      }
+    }
+
+    def updateWorker()(implicit env: Env): Future[Unit] = {
+      env.clusterAgent.incrementApi(clientId, calls.get()).vfuture
+    }
+
+    def json: JsValue = Json.obj(
+      "typ" -> "apkincr", "apk" -> clientId, "i" -> calls.get()
+    )
+  }
+
+  case class RouteCallIncr(
+    routeId: String,
+    calls: AtomicLong = new AtomicLong(0L),
+    dataIn: AtomicLong = new AtomicLong(0L),
+    dataOut: AtomicLong = new AtomicLong(0L),
+    overhead: AtomicLong = new AtomicLong(0L),
+    duration: AtomicLong = new AtomicLong(0L),
+    backendDuration: AtomicLong = new AtomicLong(0L),
+    headersIn: AtomicLong = new AtomicLong(0L),
+    headersOut: AtomicLong = new AtomicLong(0L),
+  ) extends ClusterQuotaIncr {
+
+    def increment(
+      callsInc: Long,
+      dataInInc: Long,
+      dataOutInc: Long,
+      overheadInc: Long,
+      durationInc: Long,
+      backendDurationInc: Long,
+      headersInInc: Long,
+      headersOutInc: Long,
+   ): Long = {
+      calls.addAndGet(callsInc)
+      dataIn.addAndGet(dataInInc)
+      dataOut.addAndGet(dataOutInc)
+      overhead.addAndGet(overheadInc)
+      duration.addAndGet(durationInc)
+      backendDuration.addAndGet(backendDurationInc)
+      headersIn.addAndGet(headersInInc)
+      headersOut.addAndGet(headersOutInc)
+    }
+
+    def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      env.datastores.serviceDescriptorDataStore.findOrRouteById(routeId).flatMap {
+        case Some(_) =>
+          val config = env.datastores.globalConfigDataStore.latest()
+          env.datastores.serviceDescriptorDataStore
+            .updateIncrementableMetrics(routeId, calls.get(), dataIn.get(), dataOut.get(), config)
+          // TODO: increment greenscore stuff
+        case None => FastFuture.successful(())
+      }
+    }
+
+    def updateWorker()(implicit env: Env): Future[Unit] = {
+      env.clusterAgent.incrementService(
+        routeId,
+        calls.get(),
+        dataIn.get(),
+        dataOut.get(),
+        overhead.get(),
+        duration.get(),
+        backendDuration.get(),
+        headersIn.get(),
+        headersOut.get(),
+      ).vfuture
+    }
+
+    def json: JsValue = Json.obj(
+      "typ" -> "srvincr",
+      "srv" -> routeId,
+      "c" -> calls.get(),
+      "di" -> dataIn.get(),
+      "do" -> dataOut.get(),
+      "oh" -> overhead.get(),
+      "du" -> duration.get(),
+      "bdu" -> backendDuration.get(),
+      "hi" -> headersIn.get(),
+      "ho" -> headersOut.get(),
+    )
+  }
+}
+
