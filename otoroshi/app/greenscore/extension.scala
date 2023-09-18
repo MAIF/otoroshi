@@ -6,6 +6,7 @@ import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
@@ -13,6 +14,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results
 
+import scala.collection.Seq
 import scala.concurrent.Future
 import scala.util._
 
@@ -229,7 +231,16 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             c => datastores.greenscoresDatastore.extractId(c),
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
-            stateUpdate = values => states.updateGreenScores(values)
+            stateUpdate = values => states.updateGreenScores(values),
+            tmpl = () => GreenScoreEntity(
+              id = IdGenerator.namedId("green-score", env),
+              name = "green score group",
+              description = "screen score for the routes of this group",
+              metadata = Map.empty,
+              tags = Seq.empty,
+              routes = Seq.empty,
+              location = EntityLocation.default
+            ).json
           )
         )
       )

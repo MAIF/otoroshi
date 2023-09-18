@@ -19,9 +19,11 @@ export default function EditGroup({ }) {
     const [routes, setRoutes] = useState(undefined);
     const [rulesBySection, setRulesBySection] = useState(undefined);
 
+    const isNew = params.group_id === 'new';
+
     useEffect(() => {
         Promise.all([
-            client.findById(params.group_id),
+            isNew ? client.template() : client.findById(params.group_id),
             getRulesBySection(),
             BackOfficeServices.nextClient
                 .forEntity(BackOfficeServices.nextClient.ENTITIES.ROUTES)
@@ -112,10 +114,12 @@ export default function EditGroup({ }) {
     if (!group || !routes || !rulesBySection)
         return null;
 
+    console.log(group)
+
     return <div style={{ position: 'relative' }}>
         <FeedbackButton
             className="ms-2"
-            text="Save"
+            text={isNew ? 'Create' : "Save"}
             style={{
                 position: 'absolute',
                 top: 0,
@@ -125,12 +129,11 @@ export default function EditGroup({ }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 57,
-                padding: 0,
+                padding: '.5rem 1rem',
                 borderRadius: 6
             }}
             onPress={() => {
-                client.update(group)
+                (isNew ? client.create(group) : client.update(group))
                     .then(() => {
                         history.push('/extensions/green-score/groups')
                     })

@@ -6,13 +6,16 @@ import moment from 'moment';
 export default class StackedBarChart extends PureComponent {
 
     render() {
-        const data = Object.entries(this.props.values).map(([date, section]) => {
-            return {
-                name: moment(new Date(Number(date))).format("DD MMMM YY"),
-                rawDate: date,
-                ...section.reduce((acc, s) => ({ ...acc, [s.section]: s.score.score }), {})
-            }
-        })
+        const mapValues = Object.entries(this.props.values || {});
+        const data = [...mapValues, mapValues[0]]
+            .filter(f => f)
+            .map(([date, section]) => {
+                return {
+                    name: moment(new Date(Number(date))).format("DD MMMM YY"),
+                    rawDate: date,
+                    ...section.reduce((acc, s) => ({ ...acc, [s.section]: s.score.score }), {})
+                }
+            })
             .sort((a, b) => a.rawDate - b.rawDate)
 
         return <div style={{

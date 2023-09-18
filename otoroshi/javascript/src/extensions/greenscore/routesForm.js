@@ -90,6 +90,8 @@ export default class GroupRoutes extends React.Component {
     const { editRoute, value } = this.state;
     const { routes } = value;
 
+    console.log(value)
+
     return (
       <div>
         {editRoute && (
@@ -199,7 +201,10 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
                 borderColor: 'var(--color-primary)',
                 padding: '12px 48px',
               }}
-              onPress={() => Promise.resolve(saveRules)}
+              onPress={() => {
+                saveRules()
+                Promise.resolve()
+              }}
               onSuccess={onWizardClose}
               icon={() => <i className="fas fa-paper-plane" />}
               text="Save the rules"

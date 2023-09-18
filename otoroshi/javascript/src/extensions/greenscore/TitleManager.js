@@ -28,9 +28,11 @@ function Tab({ isActive, title, icon, to, fillBackground }) {
 }
 
 export default function ManagerTitle({ }) {
-    const location = useLocation()
+    const location = useLocation();
 
-    const editingGroup = location.pathname.startsWith('/extensions/green-score/groups/green-score')
+    const editingGroup = location.pathname.startsWith('/extensions/green-score/groups/green-score');
+
+    const isOnCreation = location.pathname.endsWith('new');
 
     return (
         <PageTitle
@@ -41,12 +43,12 @@ export default function ManagerTitle({ }) {
             }}
             className="container-sm"
             title={"Green score"}>
-            {!editingGroup && <>
+            {!editingGroup && !isOnCreation && <>
                 <Tab title="Dashboard" icon="globe" to='/extensions/green-score' isActive={location.pathname === '/extensions/green-score'} />
 
                 <Tab title="Groups" icon="users" to='/extensions/green-score/groups' isActive={location.pathname === '/extensions/green-score/groups'} />
 
-                <Tab title="Add New Group" fillBackground />
+                <Tab title="Add New Group" fillBackground to='/extensions/green-score/groups/new' />
             </>}
         </PageTitle>
     );
