@@ -2786,11 +2786,25 @@ class ProxyEngine() extends RequestHandler {
       val extractedTimeout                               =
         route.backend.client.legacy
           .extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+      val isTargetHttp1 = finalTarget.protocol == HttpProtocols.HTTP_1_0 || finalTarget.protocol == HttpProtocols.HTTP_1_1
+      val isTargetHttp2 = finalTarget.protocol == HttpProtocols.HTTP_2_0
+      val version = rawRequest.version.toLowerCase
+      val isRequestAboveHttp1 = (!version.startsWith("http/1")) && (version.startsWith("http/2") || version.startsWith("http3"))
+      val isRequestAboveHttp2 = (!version.startsWith("http/1") && !version.startsWith("http/2")) && version.startsWith("http3")
+      val requestHeaders = request.headers.filterNot(_._1.toLowerCase == "cookie").+("Host" -> host).toSeq
+        .applyOnIf(isTargetHttp1 && isRequestAboveHttp1) { s =>
+          s
+            .filterNot(_._1.toLowerCase().startsWith("x-http2"))
+            .filterNot(_._1.toLowerCase().startsWith("x-http3"))
+        }
+        .applyOnIf(isTargetHttp2 && isRequestAboveHttp2) { s =>
+          s.filterNot(_._1.toLowerCase().startsWith("x-http3"))
+        }
       val builder                                        = clientReq
         .withRequestTimeout(extractedTimeout)
         .withFailureIndicator(fakeFailureIndicator)
         .withMethod(request.method)
-        .withHttpHeaders(request.headers.filterNot(_._1.toLowerCase == "cookie").+("Host" -> host).toSeq: _*)
+        .withHttpHeaders(requestHeaders: _*)
         .withCookies(wsCookiesIn: _*)
         .withFollowRedirects(false)
         .withMaybeProxyServer(
