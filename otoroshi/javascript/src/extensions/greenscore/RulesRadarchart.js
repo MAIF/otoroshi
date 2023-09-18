@@ -39,7 +39,7 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Produced headers', value: dynamic_score.produced_headers, fullMark: 1, domain: [0, 1] },
     ];
 
-    return <Wrapper>
+    return <Wrapper loading={this.props.loading}>
       <div style={{
         flex: '1 1 50%',
         // maxWidth: 420,

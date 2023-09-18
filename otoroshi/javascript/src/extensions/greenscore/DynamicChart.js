@@ -28,7 +28,7 @@ function Tag({ value }) {
 
 export function DynamicChart(props) {
 
-    return <Wrapper>
+    return <Wrapper loading={props.loading}>
         <div
             className="text-center p-3 d-flex flex-column"
             style={{

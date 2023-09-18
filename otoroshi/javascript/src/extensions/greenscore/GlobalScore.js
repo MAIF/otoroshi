@@ -60,7 +60,7 @@ export function GlobalScore(allProps) {
         </>
     }
 
-    return <Wrapper>
+    return <Wrapper loading={props.loading}>
         <div
             className="text-center p-3"
             style={{

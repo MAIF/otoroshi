@@ -166,7 +166,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     rulesBySection: undefined,
     scores: [],
     date: undefined,
-    dateSelectorOpened: false
+    dateSelectorOpened: false,
+    loading: true
   };
 
   componentDidMount() {
@@ -198,7 +199,8 @@ export default class GreenScoreConfigsPage extends React.Component {
           rulesBySection: this.rulesTemplateToRulesBySection(rulesTemplate),
           scores,
           global,
-          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0]
+          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
+          loading: false
         })
       });
 
@@ -270,7 +272,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     // if (this.state.scores.length > 0)
     //   console.log(this.state)
 
-    const { scores, global, dateSelectorOpened, groups } = this.state;
+    const { scores, global, dateSelectorOpened, groups, loading } = this.state;
 
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
@@ -303,29 +305,33 @@ export default class GreenScoreConfigsPage extends React.Component {
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
                 <GlobalScore
+                  loading={loading}
                   letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
                   color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
                 <RulesRadarchart
+                  loading={loading}
                   values={valuesAtCurrentDate}
                   dynamic_score={global?.dynamic_score || {}} />
                 <GlobalScore
+                  loading={loading}
                   score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
                   maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
                   raw />
               </div>
               <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
                 <GlobalScore
+                  loading={loading}
                   letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
                   color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
                   dynamic
                   title="Produced data"
                   tag="dynamic" />
-                <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
-                <DynamicChart values={global?.dynamic_score} />
+                <GlobalScore loading={loading} score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                <DynamicChart loading={loading} values={global?.dynamic_score} />
               </div>
             </div>
 
-            <Wrapper>
+            <Wrapper loading={loading}>
               <div style={{
                 display: 'flex',
                 margin: '.5rem 0'

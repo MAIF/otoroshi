@@ -1,14 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-export default function Wrapper({ children, ...props }) {
-  const [loading, setLoading] = useState(props.loading === undefined ? true : props.loading);
-
-  useEffect(() => {
-    // setTimeout(() => {
-    //   setLoading(false)
-    // }, 1000)
-  }, [])
-
+export default function Wrapper({ children, loading }) {
   if (!loading)
     return children
 
