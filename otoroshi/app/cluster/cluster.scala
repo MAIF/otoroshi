@@ -16,6 +16,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.auth.AuthConfigsDataStore
+import otoroshi.cluster.ClusterLeaderUpdateMessage.GlobalStatusUpdate
 import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
@@ -1224,7 +1225,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   }
 
   def renewMemberShip(): Unit = {
-    (for {
+    /*(for {
       rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
       duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
       overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
@@ -1270,7 +1271,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         ).setScale(3, RoundingMode.HALF_EVEN),
         "concurrentHandledRequests" -> concurrentHandledRequests
       )
-    }).flatMap { stats =>
+    })*/
+    GlobalStatusUpdate.build().flatMap { stats =>
       env.datastores.clusterStateDataStore.registerMember(
         MemberView(
           id = ClusterConfig.clusterNodeId,
@@ -1286,7 +1288,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           internalHttpsPort = env.httpsPort,
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
-          stats = stats,
+          stats = stats.json.asObject,
           relay = env.clusterConfig.relay,
           tunnels = env.tunnelManager.currentTunnels.toSeq
         )
@@ -1448,7 +1450,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   // private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
   //   new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   // )
-  private val quotaIncrs = new AtomicReference[TrieMap[String, ClusterQuotaIncr]](new UnboundedTrieMap[String, ClusterQuotaIncr]())
+  private val quotaIncrs = new AtomicReference[TrieMap[String, ClusterLeaderUpdateMessage]](new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
 
   private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
@@ -1457,13 +1459,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private[cluster] val counters     = new UnboundedTrieMap[String, AtomicLong]()
   /////////////
 
-  private def putQuotaIfAbsent[A <: ClusterQuotaIncr](key: String, f: => A): Unit = {
+  private def putQuotaIfAbsent[A <: ClusterLeaderUpdateMessage](key: String, f: => A): Unit = {
     if (!quotaIncrs.get().contains(key)) {
       quotaIncrs.get().putIfAbsent(key, f)
     }
   }
 
-  private def getQuotaIncr[A <: ClusterQuotaIncr](key: String): Option[A] = {
+  private def getQuotaIncr[A <: ClusterLeaderUpdateMessage](key: String): Option[A] = {
     quotaIncrs.get().get(key).map(_.asInstanceOf[A])
   }
 
@@ -1814,9 +1816,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       val key = s"apikey:$id"
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
       if (!quotaIncrs.get().contains(key)) {
-        quotaIncrs.get().putIfAbsent(key, ClusterQuotaIncr.ApikeyCallIncr(id))
+        quotaIncrs.get().putIfAbsent(key, ClusterLeaderUpdateMessage.ApikeyCallIncr(id))
       }
-      getQuotaIncr[ClusterQuotaIncr.ApikeyCallIncr](key).foreach(_.increment(increment))
+      getQuotaIncr[ClusterLeaderUpdateMessage.ApikeyCallIncr](key).foreach(_.increment(increment))
     }
   }
 
@@ -1825,8 +1827,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
       val key = s"routes:$id"
       val gkey = s"routes:global"
-      putQuotaIfAbsent(gkey, ClusterQuotaIncr.RouteCallIncr("global"))
-      getQuotaIncr[ClusterQuotaIncr.RouteCallIncr](gkey).foreach { quota =>
+      putQuotaIfAbsent(gkey, ClusterLeaderUpdateMessage.RouteCallIncr("global"))
+      getQuotaIncr[ClusterLeaderUpdateMessage.RouteCallIncr](gkey).foreach { quota =>
         quota.increment(
           calls,
           dataIn,
@@ -1838,8 +1840,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           headersOut,
         )
       }
-      putQuotaIfAbsent(key, ClusterQuotaIncr.RouteCallIncr(id))
-      getQuotaIncr[ClusterQuotaIncr.RouteCallIncr](key).foreach { quota =>
+      putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.RouteCallIncr(id))
+      getQuotaIncr[ClusterLeaderUpdateMessage.RouteCallIncr](key).foreach { quota =>
         quota.increment(
           calls,
           dataIn,
@@ -2118,7 +2120,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     try {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
-        val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterQuotaIncr]())
+        val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
         //val oldApiIncr     = apiIncrementsRef.getAndSet(new UnboundedTrieMap[String, AtomicLong]())
         //val oldServiceIncr =
         //  servicesIncrementsRef.getAndSet(new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
@@ -2135,7 +2137,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               Cluster.logger.trace(
                 s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
               )
-            val rt = Runtime.getRuntime
+            /*val rt = Runtime.getRuntime
             (for {
               rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
               duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -2183,7 +2185,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "concurrentHandledRequests" -> concurrentHandledRequests
                 )
               ) + "\n"
-            )) flatMap { stats =>
+            ))*/
+
+            GlobalStatusUpdate.build().map(v => (v.json.stringify + "\n").byteString).flatMap { stats =>
               /// push other data here !
               val quotaIncrSource = Source(oldQuotasIncr.toList.map(v => (v._2.json.stringify + "\n").byteString))
               // val apiIncrSource     = Source(oldApiIncr.toList.map { case (key, inc) =>
@@ -2251,8 +2255,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           .recover { case e =>
             e.printStackTrace()
             oldQuotasIncr.foreach {
-              case (key, incr: ClusterQuotaIncr.ApikeyCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterQuotaIncr.ApikeyCallIncr(incr.clientId)).asInstanceOf[ClusterQuotaIncr.ApikeyCallIncr].increment(incr.calls.get())
-              case (key, incr: ClusterQuotaIncr.RouteCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterQuotaIncr.RouteCallIncr(incr.routeId)).asInstanceOf[ClusterQuotaIncr.RouteCallIncr].increment(
+              case (key, incr: ClusterLeaderUpdateMessage.ApikeyCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterLeaderUpdateMessage.ApikeyCallIncr(incr.clientId)).asInstanceOf[ClusterLeaderUpdateMessage.ApikeyCallIncr].increment(incr.calls.get())
+              case (key, incr: ClusterLeaderUpdateMessage.RouteCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterLeaderUpdateMessage.RouteCallIncr(incr.routeId)).asInstanceOf[ClusterLeaderUpdateMessage.RouteCallIncr].increment(
                 incr.calls.get(),
                 incr.dataIn.get(),
                 incr.dataOut.get(),
@@ -2781,16 +2785,17 @@ class SwappableInMemoryDataStores(
   }
 }
 
-sealed trait ClusterQuotaIncr {
+sealed trait ClusterLeaderUpdateMessage {
   def json: JsValue
-  def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit]
+  def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit]
   def updateWorker()(implicit env: Env): Future[Unit]
 }
-object ClusterQuotaIncr {
+object ClusterLeaderUpdateMessage {
 
-  def read(item: JsValue): Option[ClusterQuotaIncr] = {
+  def read(item: JsValue): Option[ClusterLeaderUpdateMessage] = {
     // println(s"read: ${item.prettify}")
     item.select("typ").asOpt[String] match {
+      case Some("globstats") => GlobalStatusUpdate(item).some
       case Some("apkincr") => ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
       case Some("srvincr") => RouteCallIncr(
         routeId = item.select("srv").asString,
@@ -2807,11 +2812,131 @@ object ClusterQuotaIncr {
     }
   }
 
-  case class ApikeyCallIncr(clientId: String, calls: AtomicLong = new AtomicLong(0L)) extends ClusterQuotaIncr {
+  object GlobalStatusUpdate {
+    def build()(implicit env: Env, ec: ExecutionContext): Future[GlobalStatusUpdate] = {
+      for {
+        rate <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
+        duration <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
+        overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+        dataInRate <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
+        dataOutRate <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
+        concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
+      } yield {
+        val rt = Runtime.getRuntime
+        GlobalStatusUpdate(Json.obj(
+          "typ" -> "globstats",
+          "cpu_usage" -> CpuInfo.cpuLoad(),
+          "load_average" -> CpuInfo.loadAverage(),
+          "heap_used" -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+          "heap_size" -> rt.totalMemory() / 1024 / 1024,
+          "live_threads" -> ManagementFactory.getThreadMXBean.getThreadCount,
+          "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
+          "daemon_threads" -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+          "counters" -> env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
+          "rate" -> BigDecimal(
+            Option(rate)
+              .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+              .getOrElse(0.0)
+          ).setScale(3, RoundingMode.HALF_EVEN),
+          "duration" -> BigDecimal(
+            Option(duration)
+              .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+              .getOrElse(0.0)
+          ).setScale(3, RoundingMode.HALF_EVEN),
+          "overhead" -> BigDecimal(
+            Option(overhead)
+              .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+              .getOrElse(0.0)
+          ).setScale(3, RoundingMode.HALF_EVEN),
+          "dataInRate" -> BigDecimal(
+            Option(dataInRate)
+              .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+              .getOrElse(0.0)
+          ).setScale(3, RoundingMode.HALF_EVEN),
+          "dataOutRate" -> BigDecimal(
+            Option(dataOutRate)
+              .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+              .getOrElse(0.0)
+          ).setScale(3, RoundingMode.HALF_EVEN),
+          "concurrentHandledRequests" -> concurrentHandledRequests
+        ))
+      }
+    }
+  }
+
+  case class GlobalStatusUpdate(stats: JsValue) extends ClusterLeaderUpdateMessage {
+
+    override def json: JsValue = Json.obj("typ" -> "globstats") ++ stats.asObject
+
+    override def updateLeader(request: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      request.headers
+        .get(ClusterAgent.OtoroshiWorkerNameHeader)
+        .map { name =>
+          println("register member")
+          env.datastores.clusterStateDataStore.registerMember(
+            MemberView(
+              id = request.headers
+                .get(ClusterAgent.OtoroshiWorkerIdHeader)
+                .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+              name = name,
+              os = request.headers
+                .get(ClusterAgent.OtoroshiWorkerOsHeader)
+                .map(OS.fromString)
+                .getOrElse(OS.default),
+              version = request.headers
+                .get(ClusterAgent.OtoroshiWorkerVersionHeader)
+                .getOrElse("undefined"),
+              javaVersion = request.headers
+                .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
+                .map(JavaVersion.fromString)
+                .getOrElse(JavaVersion.default),
+              memberType = ClusterMode.Worker,
+              location =
+                request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+              httpPort = request.headers
+                .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+                .map(_.toInt)
+                .getOrElse(env.exposedHttpPortInt),
+              httpsPort = request.headers
+                .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+                .map(_.toInt)
+                .getOrElse(env.exposedHttpsPortInt),
+              internalHttpPort = request.headers
+                .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                .map(_.toInt)
+                .getOrElse(env.httpPort),
+              internalHttpsPort = request.headers
+                .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                .map(_.toInt)
+                .getOrElse(env.httpsPort),
+              lastSeen = DateTime.now(),
+              timeout = Duration(
+                env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+                TimeUnit.MILLISECONDS
+              ),
+              stats = stats.as[JsObject],
+              tunnels = Seq.empty,
+              relay = request.headers
+                .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                .flatMap(RelayRouting.parse)
+                .getOrElse(RelayRouting.default)
+            )
+          )
+        }
+        .getOrElse(FastFuture.successful(()))
+    }
+
+    override def updateWorker()(implicit env: Env): Future[Unit] = {
+      // TODO: membership + global stats ?
+      FastFuture.successful(())
+    }
+  }
+
+  case class ApikeyCallIncr(clientId: String, calls: AtomicLong = new AtomicLong(0L)) extends ClusterLeaderUpdateMessage {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
-    def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, calls.get()).map(_ => ())
         case None => FastFuture.successful(())
@@ -2837,7 +2962,7 @@ object ClusterQuotaIncr {
     backendDuration: AtomicLong = new AtomicLong(0L),
     headersIn: AtomicLong = new AtomicLong(0L),
     headersOut: AtomicLong = new AtomicLong(0L),
-  ) extends ClusterQuotaIncr {
+  ) extends ClusterLeaderUpdateMessage {
 
     def increment(
       callsInc: Long,
@@ -2859,13 +2984,13 @@ object ClusterQuotaIncr {
       headersOut.addAndGet(headersOutInc)
     }
 
-    def updateLeader()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.serviceDescriptorDataStore.findOrRouteById(routeId).flatMap {
         case Some(_) =>
           val config = env.datastores.globalConfigDataStore.latest()
           env.datastores.serviceDescriptorDataStore
             .updateIncrementableMetrics(routeId, calls.get(), dataIn.get(), dataOut.get(), config)
-          // TODO: increment greenscore stuff
+          // TODO: increment greenscore stuff here
         case None => FastFuture.successful(())
       }
     }
