@@ -628,6 +628,7 @@ class RouteDesigner extends React.Component {
                   <Component
                     setSidebarContent={this.props.setSidebarContent}
                     setTitle={this.props.setTitle}
+                    onRoutes
                     {...p}
                     {...p.match}
                     env={this.props.env}

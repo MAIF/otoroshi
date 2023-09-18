@@ -93,8 +93,7 @@ const ResetSecret = ({ changeValue }) => (
 class ResetQuotas extends Component {
   resetQuotas = (e) => {
     e.preventDefault();
-    BackOfficeServices.resetRemainingQuotas(
-      this.props.rawValue.authorizedGroup,
+    BackOfficeServices.resetRemainingApikeyQuotas(
       this.props.rawValue.clientId
     ).then(() => {
       window.location.reload();
@@ -174,8 +173,7 @@ class DailyRemainingQuotas extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.fetchRemainingQuotas(
-      this.props.rawValue.authorizedGroup,
+    BackOfficeServices.fetchRemainingApikeyQuotas(
       this.props.rawValue.clientId
     ).then((quotas) => {
       console.log(quotas);
@@ -301,6 +299,7 @@ const ApiKeysConstants = {
     remainingQuotas: {
       type: DailyRemainingQuotas,
       props: {
+        onRoutes: that.props.onRoutes,
         label: '',
       },
     },
@@ -319,6 +318,7 @@ const ApiKeysConstants = {
     resetQuotas: {
       type: ResetQuotas,
       props: {
+        onRoutes: that.props.onRoutes,
         label: '',
       },
     },
