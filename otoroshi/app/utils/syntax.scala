@@ -25,7 +25,7 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.TraversableOnce
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
@@ -291,6 +291,7 @@ object implicits {
   }
   implicit class BetterInt(private val obj: Int)                       extends AnyVal {
     def json: JsValue = JsNumber(obj)
+    def atomic: AtomicInteger = new AtomicInteger(obj)
     def bytes: Array[Byte] = {
       Array[Byte](
         ((obj >> 24) & 0xff).asInstanceOf[Byte],
@@ -302,6 +303,7 @@ object implicits {
   }
   implicit class BetterLong(private val obj: Long)                     extends AnyVal {
     def json: JsValue = JsNumber(obj)
+    def atomic: AtomicLong = new AtomicLong(obj)
     def bytes: Array[Byte] = {
       Array[Byte](
         ((obj >> 56) & 0xff).asInstanceOf[Byte],

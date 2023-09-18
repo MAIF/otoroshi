@@ -301,32 +301,36 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
-                (jsItem \ "typ").asOpt[String] match {
-                  case Some("globstats") => {
-                    // TODO: membership + global stats ?
-                    FastFuture.successful(())
-                  }
-                  case Some("srvincr")   => {
-                    val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                    val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                    val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                    val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                    env.clusterAgent.incrementService(id, dataIn, dataOut)
-                    if (calls - 1 > 0) {
-                      (0L to (calls - 1L)).foreach { _ =>
-                        env.clusterAgent.incrementService(id, 0L, 0L)
-                      }
-                    }
-                    FastFuture.successful(())
-                  }
-                  case Some("apkincr")   => {
-                    val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                    val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                    env.clusterAgent.incrementApi(id, increment)
-                    FastFuture.successful(())
-                  }
-                  case _                 => FastFuture.successful(())
+                ClusterQuotaIncr.read(jsItem) match {
+                  case None => FastFuture.successful(())
+                  case Some(quota) => quota.updateWorker()
                 }
+                // (jsItem \ "typ").asOpt[String] match {
+                //   case Some("globstats") => {
+                //     // TODO: membership + global stats ?
+                //     FastFuture.successful(())
+                //   }
+                //   case Some("srvincr")   => {
+                //     val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
+                //     val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
+                //     val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
+                //     val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
+                //     env.clusterAgent.incrementService(id, dataIn, dataOut)
+                //     if (calls - 1 > 0) {
+                //       (0L to (calls - 1L)).foreach { _ =>
+                //         env.clusterAgent.incrementService(id, 0L, 0L)
+                //       }
+                //     }
+                //     FastFuture.successful(())
+                //   }
+                //   case Some("apkincr")   => {
+                //     val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
+                //     val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
+                //     env.clusterAgent.incrementApi(id, increment)
+                //     FastFuture.successful(())
+                //   }
+                //   case _                 => FastFuture.successful(())
+                // }
               }
               .runWith(Sink.ignore)
               .map { _ =>
@@ -352,85 +356,149 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
                 .mapAsync(4) { item =>
                   val jsItem = Json.parse(item.utf8String)
-                  (jsItem \ "typ").asOpt[String] match {
-                    case Some("globstats") => {
-                      ctx.request.headers
-                        .get(ClusterAgent.OtoroshiWorkerNameHeader)
-                        .map { name =>
-                          env.datastores.clusterStateDataStore.registerMember(
-                            MemberView(
-                              id = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerIdHeader)
-                                .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
-                              name = name,
-                              os = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerOsHeader)
-                                .map(OS.fromString)
-                                .getOrElse(OS.default),
-                              version = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerVersionHeader)
-                                .getOrElse("undefined"),
-                              javaVersion = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
-                                .map(JavaVersion.fromString)
-                                .getOrElse(JavaVersion.default),
-                              memberType = ClusterMode.Worker,
-                              location =
-                                ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                              httpPort = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-                                .map(_.toInt)
-                                .getOrElse(env.exposedHttpPortInt),
-                              httpsPort = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-                                .map(_.toInt)
-                                .getOrElse(env.exposedHttpsPortInt),
-                              internalHttpPort = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-                                .map(_.toInt)
-                                .getOrElse(env.httpPort),
-                              internalHttpsPort = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-                                .map(_.toInt)
-                                .getOrElse(env.httpsPort),
-                              lastSeen = DateTime.now(),
-                              timeout = Duration(
-                                env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-                                TimeUnit.MILLISECONDS
-                              ),
-                              stats = jsItem.as[JsObject],
-                              tunnels = Seq.empty,
-                              relay = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
-                                .flatMap(RelayRouting.parse)
-                                .getOrElse(RelayRouting.default)
-                            )
-                          )
+                  ClusterQuotaIncr.read(jsItem) match {
+                    case Some(quota) => quota.updateLeader()
+                    case None => {
+                      (jsItem \ "typ").asOpt[String] match {
+                        case Some("globstats") => {
+                          ctx.request.headers
+                            .get(ClusterAgent.OtoroshiWorkerNameHeader)
+                            .map { name =>
+                              env.datastores.clusterStateDataStore.registerMember(
+                                MemberView(
+                                  id = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerIdHeader)
+                                    .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+                                  name = name,
+                                  os = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerOsHeader)
+                                    .map(OS.fromString)
+                                    .getOrElse(OS.default),
+                                  version = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerVersionHeader)
+                                    .getOrElse("undefined"),
+                                  javaVersion = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
+                                    .map(JavaVersion.fromString)
+                                    .getOrElse(JavaVersion.default),
+                                  memberType = ClusterMode.Worker,
+                                  location =
+                                    ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+                                  httpPort = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+                                    .map(_.toInt)
+                                    .getOrElse(env.exposedHttpPortInt),
+                                  httpsPort = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+                                    .map(_.toInt)
+                                    .getOrElse(env.exposedHttpsPortInt),
+                                  internalHttpPort = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                                    .map(_.toInt)
+                                    .getOrElse(env.httpPort),
+                                  internalHttpsPort = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                                    .map(_.toInt)
+                                    .getOrElse(env.httpsPort),
+                                  lastSeen = DateTime.now(),
+                                  timeout = Duration(
+                                    env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+                                    TimeUnit.MILLISECONDS
+                                  ),
+                                  stats = jsItem.as[JsObject],
+                                  tunnels = Seq.empty,
+                                  relay = ctx.request.headers
+                                    .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                                    .flatMap(RelayRouting.parse)
+                                    .getOrElse(RelayRouting.default)
+                                )
+                              )
+                            }
+                            .getOrElse(FastFuture.successful(()))
                         }
-                        .getOrElse(FastFuture.successful(()))
-                    }
-                    case Some("srvincr")   => {
-                      val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                      val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                      val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                      val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                      env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-                        case Some(_) =>
-                          env.datastores.serviceDescriptorDataStore
-                            .updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
-                        case None    => FastFuture.successful(())
+                        case _ => FastFuture.successful(())
                       }
                     }
-                    case Some("apkincr")   => {
-                      val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                      val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                      env.datastores.apiKeyDataStore.findById(id).flatMap {
-                        case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
-                        case None         => FastFuture.successful(())
-                      }
-                    }
-                    case _                 => FastFuture.successful(())
                   }
+                  //(jsItem \ "typ").asOpt[String] match {
+                  //  case Some("globstats") => {
+                  //    ctx.request.headers
+                  //      .get(ClusterAgent.OtoroshiWorkerNameHeader)
+                  //      .map { name =>
+                  //        env.datastores.clusterStateDataStore.registerMember(
+                  //          MemberView(
+                  //            id = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerIdHeader)
+                  //              .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+                  //            name = name,
+                  //            os = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerOsHeader)
+                  //              .map(OS.fromString)
+                  //              .getOrElse(OS.default),
+                  //            version = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerVersionHeader)
+                  //              .getOrElse("undefined"),
+                  //            javaVersion = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
+                  //              .map(JavaVersion.fromString)
+                  //              .getOrElse(JavaVersion.default),
+                  //            memberType = ClusterMode.Worker,
+                  //            location =
+                  //              ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+                  //            httpPort = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+                  //              .map(_.toInt)
+                  //              .getOrElse(env.exposedHttpPortInt),
+                  //            httpsPort = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+                  //              .map(_.toInt)
+                  //              .getOrElse(env.exposedHttpsPortInt),
+                  //            internalHttpPort = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                  //              .map(_.toInt)
+                  //              .getOrElse(env.httpPort),
+                  //            internalHttpsPort = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                  //              .map(_.toInt)
+                  //              .getOrElse(env.httpsPort),
+                  //            lastSeen = DateTime.now(),
+                  //            timeout = Duration(
+                  //              env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+                  //              TimeUnit.MILLISECONDS
+                  //            ),
+                  //            stats = jsItem.as[JsObject],
+                  //            tunnels = Seq.empty,
+                  //            relay = ctx.request.headers
+                  //              .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                  //              .flatMap(RelayRouting.parse)
+                  //              .getOrElse(RelayRouting.default)
+                  //          )
+                  //        )
+                  //      }
+                  //      .getOrElse(FastFuture.successful(()))
+                  //  }
+                  //  case Some("srvincr")   => {
+                  //    val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
+                  //    val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
+                  //    val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
+                  //    val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
+                  //    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+                  //      case Some(_) =>
+                  //        env.datastores.serviceDescriptorDataStore
+                  //          .updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
+                  //      case None    => FastFuture.successful(())
+                  //    }
+                  //  }
+                  //  case Some("apkincr")   => {
+                  //    val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
+                  //    val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
+                  //    env.datastores.apiKeyDataStore.findById(id).flatMap {
+                  //      case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
+                  //      case None         => FastFuture.successful(())
+                  //    }
+                  //  }
+                  //  case _                 => FastFuture.successful(())
+                  //}
 
                 }
                 .runWith(Sink.ignore)
