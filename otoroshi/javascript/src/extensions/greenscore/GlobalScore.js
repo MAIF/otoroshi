@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import Wrapper from './Wrapper';
 
 function Tag({ value }) {
     return <div style={{
@@ -59,46 +60,52 @@ export function GlobalScore(allProps) {
         </>
     }
 
-    return <div
-        className="text-center p-3"
-        style={{
-            flex: .5,
-            maxWidth: 250,
-            minWidth: 230,
-            background: 'var(--bg-color_level2)',
-            borderRadius: '.2rem',
-            padding: '0 .5rem',
-            fontSize: '10rem',
-            position: 'relative'
-        }}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'center'
-        }}>
-            {props.dynamic ? (props.raw ? showDynamicRawScore() : showGlobalScore()) :
-                props.raw ? showNetScore() : showGlobalScore()}
-        </div>
-        <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
-            {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}
-        </h3>
+    return <Wrapper>
+        <div
+            className="text-center p-3"
+            style={{
+                flex: .5,
+                maxWidth: 250,
+                minWidth: 230,
+                background: 'var(--bg-color_level2)',
+                borderRadius: '.2rem',
+                padding: '0 .5rem',
+                fontSize: '10rem',
+                position: 'relative'
+            }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'center'
+            }}>
+                {props.dynamic ? (props.raw ? showDynamicRawScore() : showGlobalScore()) :
+                    props.raw ? showNetScore() : showGlobalScore()}
+            </div>
 
-        <Tag value={tag} />
+            <h3 style={{
+                color: 'var(--color_level2)',
+                fontWeight: 100,
+            }} className='m-0'>
+                {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}
+            </h3>
 
-        <div style={{
-            position: 'absolute',
-            top: 6,
-            right: 6,
-            borderRadius: '50%',
-            background: 'rgba(249, 176, 0, 0.46)',
-            color: '#fff',
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        }}>
-            <i className={`fas fa-${props.dynamic ? 'bolt' : props.raw ? 'seedling' : 'spa'}`} style={{ fontSize: 'initial' }} />
+            <Tag value={tag} />
+
+            <div style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                borderRadius: '50%',
+                background: 'rgba(249, 176, 0, 0.46)',
+                color: '#fff',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <i className={`fas fa-${props.dynamic ? 'bolt' : props.raw ? 'seedling' : 'spa'}`} style={{ fontSize: 'initial' }} />
+            </div>
         </div>
-    </div>
+    </Wrapper>
 };

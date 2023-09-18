@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart, ResponsiveContainer, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 import { firstLetterUppercase } from '../../util'
+import Wrapper from './Wrapper';
 
 function Tag({ value }) {
     return <div style={{
@@ -27,56 +28,58 @@ function Tag({ value }) {
 
 export function DynamicChart(props) {
 
-    return <div
-        className="text-center p-3 d-flex flex-column"
-        style={{
-            flex: 1,
-            background: 'var(--bg-color_level2)',
-            borderRadius: '.2rem',
-            padding: '0 .5rem',
-            position: 'relative'
-        }}>
-        <div style={{ maxHeight: 250, flex: 1 }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                    layout='vertical'
-                    margin={{
-                        top: 50,
-                        bottom: 10,
-                        left: 20,
-                        right: 20
-                    }}
-                    data={Object.entries(props.values || {}).map(([key, value]) => ({
-                        name: firstLetterUppercase(key.replace(/_/g, ' ')),
-                        value: value * 100
-                    }))}>
-                    <CartesianGrid strokeDasharray="2 2" />
-                    <XAxis type='number' domain={[0, 100]} />
-                    <YAxis type="category" dataKey="name"  stroke='var(--text)'/>
-                    <Bar dataKey="value" fill="var(--color-primary)" barSize={20} radius={[10, 10, 10, 10]} />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-        <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
-            Dynamic score
-        </h3>
+    return <Wrapper>
+        <div
+            className="text-center p-3 d-flex flex-column"
+            style={{
+                flex: 1,
+                background: 'var(--bg-color_level2)',
+                borderRadius: '.2rem',
+                padding: '0 .5rem',
+                position: 'relative'
+            }}>
+            <div style={{ maxHeight: 250, flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                        layout='vertical'
+                        margin={{
+                            top: 50,
+                            bottom: 10,
+                            left: 20,
+                            right: 20
+                        }}
+                        data={Object.entries(props.values || {}).map(([key, value]) => ({
+                            name: firstLetterUppercase(key.replace(/_/g, ' ')),
+                            value: value * 100
+                        }))}>
+                        <CartesianGrid strokeDasharray="2 2" />
+                        <XAxis type='number' domain={[0, 100]} />
+                        <YAxis type="category" dataKey="name" stroke='var(--text)' />
+                        <Bar dataKey="value" fill="var(--color-primary)" barSize={20} radius={[10, 10, 10, 10]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+            <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
+                Dynamic score
+            </h3>
 
-        <Tag value="Dynamic" />
+            <Tag value="Dynamic" />
 
-        <div style={{
-            position: 'absolute',
-            top: 6,
-            right: 6,
-            borderRadius: '50%',
-            background: 'rgba(249, 176, 0, 0.46)',
-            color: '#fff',
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        }}>
-            <i className='fas fa-bolt' style={{ fontSize: 'initial' }} />
+            <div style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                borderRadius: '50%',
+                background: 'rgba(249, 176, 0, 0.46)',
+                color: '#fff',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <i className='fas fa-bolt' style={{ fontSize: 'initial' }} />
+            </div>
         </div>
-    </div>
+    </Wrapper>
 };

@@ -12,8 +12,9 @@ import { GlobalScore } from './GlobalScore';
 import StackedBarChart from './StackedBarChart';
 import { DynamicChart } from './DynamicChart';
 import CustomTable from './CustomTable';
-import ManagerTitle from './TitleManager';
+import { ManagerTitle, Tab } from './TitleManager';
 import EditGroup from './EditGroup';
+import Wrapper from './Wrapper';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -279,30 +280,34 @@ export default class GreenScoreConfigsPage extends React.Component {
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
         <Route exact path='/extensions/green-score'
-          component={() => scores.length > 0 && <>
+          component={() => <>
             <div style={{
               minHeight: 250,
               paddingTop: 50
             }}>
+              {scores.length === 0 && <div className='d-flex flex-column justify-content-center align-items-center m-0 mb-3'>
+                <p style={{ fontSize: '2rem', marginBottom: '1rem' }}>No enough data to display the dashboard</p>
+                <Tab title="Start New Group" fillBackground to='/extensions/green-score/groups/new' />
+              </div>}
               <div style={{
                 display: 'flex', flex: 1, gap: '.5rem', marginBottom: '.5rem', position: 'relative'
               }}>
-                <DatePicker
+                {scores.length > 0 && <DatePicker
                   opened={dateSelectorOpened}
                   onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
                   date={this.state.date}
                   onChange={date => this.setState({ date, dateSelectorOpened: false })}
                   onClose={() => this.setState({ dateSelectorOpened: false })}
                   options={[
-                    ...new Set(global.sections_score_by_date.map(section => section.date)),
+                    ...new Set(global?.sections_score_by_date.map(section => section.date)),
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
-                  ].sort()} />
+                  ].sort()} />}
                 <GlobalScore
                   letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
                   color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
                 <RulesRadarchart
                   values={valuesAtCurrentDate}
-                  dynamic_score={global.dynamic_score} />
+                  dynamic_score={global?.dynamic_score || {}} />
                 <GlobalScore
                   score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
                   maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
@@ -316,28 +321,30 @@ export default class GreenScoreConfigsPage extends React.Component {
                   title="Produced data"
                   tag="dynamic" />
                 <GlobalScore score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
-                <DynamicChart values={global.dynamic_score} />
+                <DynamicChart values={global?.dynamic_score} />
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              margin: '.5rem 0'
-            }} className='reveal'>
-              <StackedBarChart values={global.sections_score_by_date.reduce((acc, item) => {
-                if (acc[item.date]) {
-                  return {
-                    ...acc,
-                    [item.date]: [...acc[item.date], item]
+            <Wrapper>
+              <div style={{
+                display: 'flex',
+                margin: '.5rem 0'
+              }} className='reveal'>
+                <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
+                  if (acc[item.date]) {
+                    return {
+                      ...acc,
+                      [item.date]: [...acc[item.date], item]
+                    }
+                  } else {
+                    return {
+                      ...acc,
+                      [item.date]: [item]
+                    }
                   }
-                } else {
-                  return {
-                    ...acc,
-                    [item.date]: [item]
-                  }
-                }
-              }, {})} />
-            </div>
+                }, {})} />
+              </div>
+            </Wrapper>
           </>} />
 
         <Route exact path='/extensions/green-score/groups'

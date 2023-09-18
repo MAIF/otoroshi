@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import PageTitle from '../../components/PageTitle';
 import { useHistory, useLocation } from 'react-router-dom';
 
-function Tab({ isActive, title, icon, to, fillBackground }) {
+export function Tab({ isActive, title, icon, to, fillBackground }) {
     const history = useHistory()
 
     return <div className="ms-2" style={{ minHeight: 40 }}>
@@ -27,7 +27,7 @@ function Tab({ isActive, title, icon, to, fillBackground }) {
     </div >
 }
 
-export default function ManagerTitle({ }) {
+export function ManagerTitle({ }) {
     const location = useLocation();
 
     const editingGroup = location.pathname.startsWith('/extensions/green-score/groups/green-score');

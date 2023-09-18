@@ -81,6 +81,23 @@ export default class CustomTable extends React.Component {
         })
     }
 
+    deleteGroup = id => {
+        window
+            .newConfirm('Delete this group ?', {
+                title: 'Validation required',
+            })
+            .then((ok) => {
+                if (ok) {
+                    this.client.deleteById(id)
+                        .then(() => {
+                            this.setState({
+                                items: this.state.items.filter(g => g.id !== id)
+                            })
+                        })
+                }
+            });
+    }
+
     render() {
         console.log(this.props)
         const { scores } = this.props;
@@ -140,8 +157,7 @@ export default class CustomTable extends React.Component {
                             <span className='text-center'>{parseFloat(scores[i].dynamic_score * 100, 2).toFixed(2)}%</span>
 
                             <ItemActions unfold={group.openedActions}
-                                onDelete={() => this.client.deleteById(group.id)
-                                    .then(() => items.filter((_, j) => i !== j))}
+                                onDelete={() => this.deleteGroup(group.id)}
                                 openAction={() => this.openActions(i)}
                                 editLink={`/extensions/green-score/groups/${group.id}`} />
                         </div>

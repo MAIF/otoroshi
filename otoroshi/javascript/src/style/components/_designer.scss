@@ -857,3 +857,20 @@
     transform: translateY(0);
     opacity: 1;
 }
+
+.animate-loader {
+    background: linear-gradient(to bottom, var(--bg-color_level1) 0%, var(--bg-color_level2) 50%, var(--bg-color_level1) 100%);
+    background-size: 200% 200%;
+    background-repeat: no-repeat;
+    animation: animate 5s infinite alternate forwards;
+}
+
+@keyframes animate {
+    0% {
+        background-position: 100% 100%;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}

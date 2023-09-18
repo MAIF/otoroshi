@@ -1,5 +1,6 @@
 import React, { PureComponent } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Text } from 'recharts';
+import Wrapper from './Wrapper';
 
 export default class RulesRadarchart extends PureComponent {
 
@@ -38,42 +39,44 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Produced headers', value: dynamic_score.produced_headers, fullMark: 1, domain: [0, 1] },
     ];
 
-    return <div style={{
-      flex: '1 1 50%',
-      // maxWidth: 420,
-      // maxWidth: '50%',
-      background: 'var(--bg-color_level2)',
-      borderRadius: '.2rem',
-      position: 'relative'
-    }} className='p-3'>
-      <ResponsiveContainer height="100%" width="100%">
-        <RadarChart
-          outerRadius="70%"
-          data={data}
-          fill="var(--color_level2)"
-          fontSize={16}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="subject" tick={props => this.renderPolarAngleAxis(props)} />
-          <PolarRadiusAxis angle={90} domain={[0, 1]} fontSize={0} />
-          <Radar name="Mike" dataKey="value" stroke="#8884d8" fill="#f9b000" fillOpacity={0.6} />
-        </RadarChart>
-      </ResponsiveContainer>
-
+    return <Wrapper>
       <div style={{
-        position: 'absolute',
-        top: 6,
-        right: 6,
-        borderRadius: '50%',
-        background: 'rgba(249, 176, 0, 0.46)',
-        color: '#fff',
-        width: 32,
-        height: 32,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <i className='fas fa-chart-area' style={{ fontSize: 'initial' }} />
+        flex: '1 1 50%',
+        // maxWidth: 420,
+        // maxWidth: '50%',
+        background: 'var(--bg-color_level2)',
+        borderRadius: '.2rem',
+        position: 'relative'
+      }} className='p-3'>
+        <ResponsiveContainer height="100%" width="100%">
+          <RadarChart
+            outerRadius="70%"
+            data={data}
+            fill="var(--color_level2)"
+            fontSize={16}>
+            <PolarGrid />
+            <PolarAngleAxis dataKey="subject" tick={props => this.renderPolarAngleAxis(props)} />
+            <PolarRadiusAxis angle={90} domain={[0, 1]} fontSize={0} />
+            <Radar name="Mike" dataKey="value" stroke="#8884d8" fill="#f9b000" fillOpacity={0.6} />
+          </RadarChart>
+        </ResponsiveContainer>
+
+        <div style={{
+          position: 'absolute',
+          top: 6,
+          right: 6,
+          borderRadius: '50%',
+          background: 'rgba(249, 176, 0, 0.46)',
+          color: '#fff',
+          width: 32,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <i className='fas fa-chart-area' style={{ fontSize: 'initial' }} />
+        </div>
       </div>
-    </div>
+    </Wrapper>
   }
 }
