@@ -5,7 +5,7 @@ import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -92,7 +92,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
                 obj.asObject.value.mapValues { arr =>
                   arr.asArray.value
                     .map { item =>
-                      JsonPathValidator.format.reads(item)
+                      JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
@@ -100,7 +100,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
                 }.toMap
               }.toMap
             }
-            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonValidator]]])
         )
       )
     } recover { case e =>
@@ -160,7 +160,7 @@ case class Oauth1ModuleConfig(
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
   def humanName: String                = "OAuth1 provider"

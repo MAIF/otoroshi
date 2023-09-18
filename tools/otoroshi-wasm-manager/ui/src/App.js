@@ -20,10 +20,7 @@ class App extends React.Component {
         const params = new URLSearchParams(window.location.search);
         const pluginId = params.get('plugin');
         if (pluginId) {
-          this.setState({
-            configFiles: [],
-            selectedPlugin: pluginId
-          })
+          this.onPluginClick(pluginId);
         }
       }
     })
@@ -33,10 +30,10 @@ class App extends React.Component {
     if (prevState.selectedPlugin !== this.state.selectedPlugin) {
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
-        params.set('plugin', this.state.selectedPlugin);
+        params.set('plugin', this.state.selectedPlugin.pluginId);
         window.history.replaceState(null, null, '?' + params.toString());
       } else {
-        window.history.replaceState(null, null, '?plugin=' + this.state.selectedPlugin);
+        window.history.replaceState(null, null, '?plugin=' + this.state.selectedPlugin.pluginId);
       }
     }
   }

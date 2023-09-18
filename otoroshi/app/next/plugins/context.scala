@@ -163,7 +163,7 @@ class ContextValidation extends NgAccessValidator {
       |""".stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = ContextValidationConfig().some
 
-  private def validate(ctx: NgAccessContext): Boolean = {
+  private def validate(ctx: NgAccessContext)(implicit env: Env): Boolean = {
     val config         = ctx.cachedConfig(internalName)(ContextValidationConfig.format).getOrElse(ContextValidationConfig())
     val token: JsValue = ctx.attrs
       .get(otoroshi.next.plugins.Keys.JwtInjectionKey)

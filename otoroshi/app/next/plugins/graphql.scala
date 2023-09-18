@@ -24,29 +24,7 @@ import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
-import sangria.schema.{
-  Action,
-  AdditionalTypes,
-  AnyFieldResolver,
-  Argument,
-  AstDirectiveContext,
-  AstSchemaBuilder,
-  AstSchemaMaterializer,
-  BooleanType,
-  DefaultAstSchemaBuilder,
-  Directive,
-  DirectiveResolver,
-  FieldResolver,
-  InstanceCheck,
-  IntType,
-  IntrospectionSchemaBuilder,
-  ListInputType,
-  OptionInputType,
-  ResolverBasedAstSchemaBuilder,
-  ScalarType,
-  Schema,
-  StringType
-}
+import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
@@ -715,6 +693,8 @@ class GraphQLBackend extends NgBackendCall {
       ec: ExecutionContext
   ): Action[Unit, Any] = {
 
+    import io.otoroshi.common.wasm.scaladsl.{WasmSource, WasmSourceKind, WasmFunctionParameters}
+
     val wasmSourceKind   = c.arg(wasmSourceKindArg)
     val wasmSourcePath   = c.arg(wasmSourcePathArg)
     val wasmFunctionName = c.argOpt(wasmFunctionNameArg)
@@ -774,7 +754,7 @@ class GraphQLBackend extends NgBackendCall {
           configurationAccess = wasmConfigurationAccess.getOrElse(false)
         )
       )
-      WasmVm.fromConfig(wsmCfg).flatMap {
+      env.wasmIntegration.wasmVmFor(wsmCfg).flatMap {
         case None          => Future.failed(WasmException("plugin not found !"))
         case Some((vm, _)) =>
           vm.call(WasmFunctionParameters.ExtismFuntionCall("execute", input.stringify), None)

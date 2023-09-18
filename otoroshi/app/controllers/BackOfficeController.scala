@@ -10,6 +10,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
+import io.otoroshi.common.wasm.scaladsl._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -1820,12 +1821,12 @@ class BackOfficeController(
       case Some(config) => {
         val index: String = config.index.getOrElse("otoroshi-events")
         for {
-          version <- ElasticUtils.getElasticVersion(config, env)
+          version <- ElasticUtils.getElasticVersion(config, logger, env)
         } yield {
           val strTpl: String   = version match {
-            case ElasticVersion.UnderSeven      => ElasticTemplates.indexTemplate_v6
-            case ElasticVersion.AboveSeven      => ElasticTemplates.indexTemplate_v7
-            case ElasticVersion.AboveSevenEight => ElasticTemplates.indexTemplate_v7_8
+            case ElasticVersion.UnderSeven(_)      => ElasticTemplates.indexTemplate_v6
+            case ElasticVersion.AboveSeven(_)      => ElasticTemplates.indexTemplate_v7
+            case ElasticVersion.AboveSevenEight(_) => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
             strTpl
@@ -1850,7 +1851,7 @@ class BackOfficeController(
       case Some(config) => {
         val index: String = config.index.getOrElse("otoroshi-events")
         for {
-          version <- ElasticUtils.checkVersion(config, env)
+          version <- ElasticUtils.checkVersion(config, logger, env)
         } yield {
           version match {
             case Left(err) => InternalServerError(Json.obj("error" -> err))

@@ -3,6 +3,8 @@ package otoroshi.wasm
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
+import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.common.wasm.scaladsl.opa._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
@@ -42,21 +44,6 @@ object Utils {
   }
 }
 
-case class EnvUserData(
-    env: Env,
-    executionContext: ExecutionContext,
-    mat: Materializer,
-    config: WasmConfig
-) extends WasmOtoroshiHostUserData
-
-case class StateUserData(
-    env: Env,
-    executionContext: ExecutionContext,
-    mat: Materializer,
-    cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]]
-)                          extends WasmOtoroshiHostUserData
-case class EmptyUserData() extends WasmOtoroshiHostUserData
-
 object LogLevel extends Enumeration {
   type LogLevel = Value
 
@@ -69,11 +56,6 @@ object Status extends Enumeration {
   val StatusOK, StatusNotFound, StatusBadArgument, StatusEmpty, StatusCasMismatch, StatusInternalFailure,
       StatusUnimplemented = Value
 }
-
-case class HostFunctionWithAuthorization(
-    function: WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData],
-    authorized: WasmAuthorizations => Boolean
-)
 
 trait AwaitCapable {
   def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(implicit env: Env): T = {
@@ -97,7 +79,7 @@ object HFunction {
   )(
       f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
-    val ev = EnvUserData(env, ec, mat, config)
+    val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
@@ -107,7 +89,7 @@ object HFunction {
   )(
       f: (WasmOtoroshiInternal, Array[WasmBridge.ExtismVal], Array[WasmBridge.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): WasmOtoroshiHostFunction[EnvUserData] = {
-    val ev = EnvUserData(env, ec, mat, config)
+    val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](
       fname,
       ev.some,
@@ -188,7 +170,7 @@ object Logging extends AwaitCapable {
       val data  = Utils.contextParamsToJson(plugin, params: _*)
       val route = data.select("route_id").asOpt[String].flatMap(env.proxyState.route)
       val event = WasmLogEvent(
-        `@id` = ud.env.snowflakeGenerator.nextIdStr(),
+        `@id` = ud.asInstanceOf[OtoroshiWasmIntegrationContext].ev.snowflakeGenerator.nextIdStr(),
         `@service` = route.map(_.name).getOrElse(""),
         `@serviceId` = route.map(_.id).getOrElse(""),
         `@timestamp` = DateTime.now(),
@@ -234,13 +216,13 @@ object Http extends AwaitCapable {
             RegexPool(h).matches(urlHost)
           )
           if (allowed) {
-            val builder                  = hostData.env.Ws
+            val builder                  = hostData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev.Ws
               .url(url)
               .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
               .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
               .withRequestTimeout(
                 Duration(
-                  (context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout),
+                  (context \ "request_timeout").asOpt[Long].getOrElse(hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig.worker.timeout),
                   TimeUnit.MILLISECONDS
                 )
               )
@@ -271,7 +253,7 @@ object Http extends AwaitCapable {
                     "body_base64" -> body
                   )
                 },
-              Duration(hostData.config.authorizations.proxyHttpCallTimeout, TimeUnit.MILLISECONDS)
+              Duration(hostData.config.asInstanceOf[WasmConfig].authorizations.proxyHttpCallTimeout, TimeUnit.MILLISECONDS)
             )
             plugin.returnString(returns(0), Json.stringify(out))
           } else {
@@ -452,7 +434,7 @@ object Http extends AwaitCapable {
       mat: Materializer
   ): Seq[HostFunctionWithAuthorization] = {
     Seq(
-      HostFunctionWithAuthorization(proxyHttpCall(config), _.httpAccess),
+      HostFunctionWithAuthorization(proxyHttpCall(config), _.asInstanceOf[WasmConfig].authorizations.httpAccess),
       HostFunctionWithAuthorization(getAttributes(config, attrs), _ => true),
       HostFunctionWithAuthorization(getAttribute(config, attrs), _ => true),
       HostFunctionWithAuthorization(setAttribute(config, attrs), _ => true),
@@ -480,7 +462,7 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params: _*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key").map { values =>
+          val future = env.datastores.rawDataStore.allMatching(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key").map { values =>
             values.map(v => JsString(v.encodeBase64.utf8String))
           }
           val res    = await(future)
@@ -505,7 +487,7 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params: _*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$path$key").map { values =>
+          val future = env.datastores.rawDataStore.keys(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key").map { values =>
             JsArray(values.map(JsString.apply)).stringify
           }
           val out    = await(future)
@@ -530,7 +512,7 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params: _*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$path$key")
+          val future = env.datastores.rawDataStore.get(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
           val out    = await(future)
           val bytes  = out.map(_.toArray).getOrElse(Array.empty[Byte])
           plugin.returnBytes(returns(0), bytes)
@@ -554,7 +536,7 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params: _*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$path$key")
+          val future = env.datastores.rawDataStore.exists(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
         }
@@ -577,7 +559,7 @@ object DataStore extends AwaitCapable {
         {
           val key    = Utils.contextParamsToString(plugin, params: _*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
-          val future = env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$path$key")
+          val future = env.datastores.rawDataStore.pttl(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
           returns(0).v.i64 = await(future)
         }
     }
@@ -606,7 +588,7 @@ object DataStore extends AwaitCapable {
             .orElse(data.select("value_base64").asOpt[String].map(s => ByteString(s).decodeBase64))
             .get
           val ttl    = (data \ "ttl").asOpt[Long]
-          val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", value, ttl)
+          val future = env.datastores.rawDataStore.setnx(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", value, ttl)
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
         }
@@ -636,7 +618,7 @@ object DataStore extends AwaitCapable {
             .orElse(data.select("value_base64").asOpt[String].map(s => ByteString(s).decodeBase64))
             .get
           val ttl    = (data \ "ttl").asOpt[Long]
-          val future = env.datastores.rawDataStore.set(s"${hostData.env.storageRoot}:$path$key", value, ttl)
+          val future = env.datastores.rawDataStore.set(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", value, ttl)
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
         }
@@ -661,7 +643,7 @@ object DataStore extends AwaitCapable {
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore
             .del(
-              (data \ "keys").asOpt[Seq[String]].getOrElse(Seq.empty).map(r => s"${hostData.env.storageRoot}:$path$r")
+              (data \ "keys").asOpt[Seq[String]].getOrElse(Seq.empty).map(r => s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
             )
           val out    = await(future)
           returns(0).v.i64 = out
@@ -687,7 +669,7 @@ object DataStore extends AwaitCapable {
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val incr   = (data \ "incr").asOpt[String].map(_.toInt).getOrElse((data \ "incr").asOpt[Int].getOrElse(0))
-          val future = env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$path$key", incr)
+          val future = env.datastores.rawDataStore.incrby(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", incr)
           val out    = await(future)
           returns(0).v.i64 = out
         }
@@ -712,7 +694,7 @@ object DataStore extends AwaitCapable {
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val pttl   = (data \ "pttl").asOpt[String].map(_.toInt).getOrElse((data \ "pttl").asOpt[Int].getOrElse(0))
-          val future = env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$path$key", pttl)
+          val future = env.datastores.rawDataStore.pexpire(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key", pttl)
           val out    = await(future)
           plugin.returnInt(returns(0), if (out) 1 else 0)
         }
@@ -725,55 +707,55 @@ object DataStore extends AwaitCapable {
       mat: Materializer
   ): Seq[HostFunctionWithAuthorization] =
     Seq(
-      HostFunctionWithAuthorization(proxyDataStoreKeys(config = config), _.globalDataStoreAccess.read),
-      HostFunctionWithAuthorization(proxyDataStoreGet(config = config), _.globalDataStoreAccess.read),
-      HostFunctionWithAuthorization(proxyDataStoreExists(config = config), _.globalDataStoreAccess.read),
-      HostFunctionWithAuthorization(proxyDataStorePttl(config = config), _.globalDataStoreAccess.read),
-      HostFunctionWithAuthorization(proxyDataStoreSet(config = config), _.globalDataStoreAccess.write),
-      HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config), _.globalDataStoreAccess.write),
-      HostFunctionWithAuthorization(proxyDataStoreDel(config = config), _.globalDataStoreAccess.write),
-      HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config), _.globalDataStoreAccess.write),
-      HostFunctionWithAuthorization(proxyDataStorePexpire(config = config), _.globalDataStoreAccess.write),
-      HostFunctionWithAuthorization(proxyDataStoreAllMatching(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreKeys(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreGet(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreExists(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStorePttl(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreSet(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreDel(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStorePexpire(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreAllMatching(config = config), _.asInstanceOf[WasmConfig].authorizations.globalDataStoreAccess.read),
       HostFunctionWithAuthorization(
         proxyDataStoreKeys(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.read
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.read
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreGet(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.read
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.read
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.read
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.read
       ),
       HostFunctionWithAuthorization(
         proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.read
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.read
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.read
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.read
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreSet(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.write
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.write
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.write
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.write
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.write
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.write
       ),
       HostFunctionWithAuthorization(
         proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.write
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.write
       ),
       HostFunctionWithAuthorization(
         proxyDataStorePexpire(config = config, pluginRestricted = true, prefix = pluginId.some),
-        _.pluginDataStoreAccess.write
+        _.asInstanceOf[WasmConfig].authorizations.pluginDataStoreAccess.write
       )
     )
 }
@@ -795,7 +777,7 @@ object State {
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val proxyState = hostData.env.proxyState
+        val proxyState = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.proxyState
 
         val state = Json
           .obj(
@@ -834,51 +816,52 @@ object State {
 
         val entity             = (context \ "entity").asOpt[String].getOrElse("")
         val id: Option[String] = (context \ "id").asOpt[String]
+        val env = userData.ic.asInstanceOf[OtoroshiWasmIntegrationContext].ev
 
         plugin.returnString(
           returns(0),
           ((entity, id) match {
-            case ("raw_routes", None)          => JsArray(userData.env.proxyState.allRawRoutes().map(_.json))
-            case ("routes", None)              => JsArray(userData.env.proxyState.allRoutes().map(_.json))
-            case ("routeCompositions", None)   => JsArray(userData.env.proxyState.allRouteCompositions().map(_.json))
-            case ("apikeys", None)             => JsArray(userData.env.proxyState.allApikeys().map(_.json))
-            case ("ngbackends", None)          => JsArray(userData.env.proxyState.allBackends().map(_.json))
-            case ("jwtVerifiers", None)        => JsArray(userData.env.proxyState.allJwtVerifiers().map(_.json))
-            case ("certificates", None)        => JsArray(userData.env.proxyState.allCertificates().map(_.json))
-            case ("authModules", None)         => JsArray(userData.env.proxyState.allAuthModules().map(_.json))
-            case ("services", None)            => JsArray(userData.env.proxyState.allServices().map(_.json))
-            case ("teams", None)               => JsArray(userData.env.proxyState.allTeams().map(_.json))
-            case ("tenants", None)             => JsArray(userData.env.proxyState.allTenants().map(_.json))
-            case ("serviceGroups", None)       => JsArray(userData.env.proxyState.allServiceGroups().map(_.json))
-            case ("dataExporters", None)       => JsArray(userData.env.proxyState.allDataExporters().map(_.json))
-            case ("otoroshiAdmins", None)      => JsArray(userData.env.proxyState.allOtoroshiAdmins().map(_.json))
-            case ("backofficeSessions", None)  => JsArray(userData.env.proxyState.allBackofficeSessions().map(_.json))
-            case ("privateAppsSessions", None) => JsArray(userData.env.proxyState.allPrivateAppsSessions().map(_.json))
-            case ("tcpServices", None)         => JsArray(userData.env.proxyState.allTcpServices().map(_.json))
-            case ("scripts", None)             => JsArray(userData.env.proxyState.allScripts().map(_.json))
+            case ("raw_routes", None)          => JsArray(env.proxyState.allRawRoutes().map(_.json))
+            case ("routes", None)              => JsArray(env.proxyState.allRoutes().map(_.json))
+            case ("routeCompositions", None)   => JsArray(env.proxyState.allRouteCompositions().map(_.json))
+            case ("apikeys", None)             => JsArray(env.proxyState.allApikeys().map(_.json))
+            case ("ngbackends", None)          => JsArray(env.proxyState.allBackends().map(_.json))
+            case ("jwtVerifiers", None)        => JsArray(env.proxyState.allJwtVerifiers().map(_.json))
+            case ("certificates", None)        => JsArray(env.proxyState.allCertificates().map(_.json))
+            case ("authModules", None)         => JsArray(env.proxyState.allAuthModules().map(_.json))
+            case ("services", None)            => JsArray(env.proxyState.allServices().map(_.json))
+            case ("teams", None)               => JsArray(env.proxyState.allTeams().map(_.json))
+            case ("tenants", None)             => JsArray(env.proxyState.allTenants().map(_.json))
+            case ("serviceGroups", None)       => JsArray(env.proxyState.allServiceGroups().map(_.json))
+            case ("dataExporters", None)       => JsArray(env.proxyState.allDataExporters().map(_.json))
+            case ("otoroshiAdmins", None)      => JsArray(env.proxyState.allOtoroshiAdmins().map(_.json))
+            case ("backofficeSessions", None)  => JsArray(env.proxyState.allBackofficeSessions().map(_.json))
+            case ("privateAppsSessions", None) => JsArray(env.proxyState.allPrivateAppsSessions().map(_.json))
+            case ("tcpServices", None)         => JsArray(env.proxyState.allTcpServices().map(_.json))
+            case ("scripts", None)             => JsArray(env.proxyState.allScripts().map(_.json))
 
-            case ("raw_routes", Some(key))          => userData.env.proxyState.rawRoute(key).map(_.json).getOrElse(JsNull)
-            case ("routes", Some(key))              => userData.env.proxyState.route(key).map(_.json).getOrElse(JsNull)
+            case ("raw_routes", Some(key))          => env.proxyState.rawRoute(key).map(_.json).getOrElse(JsNull)
+            case ("routes", Some(key))              => env.proxyState.route(key).map(_.json).getOrElse(JsNull)
             case ("routeCompositions", Some(key))   =>
-              userData.env.proxyState.routeComposition(key).map(_.json).getOrElse(JsNull)
-            case ("apikeys", Some(key))             => userData.env.proxyState.apikey(key).map(_.json).getOrElse(JsNull)
-            case ("ngbackends", Some(key))          => userData.env.proxyState.backend(key).map(_.json).getOrElse(JsNull)
-            case ("jwtVerifiers", Some(key))        => userData.env.proxyState.jwtVerifier(key).map(_.json).getOrElse(JsNull)
-            case ("certificates", Some(key))        => userData.env.proxyState.certificate(key).map(_.json).getOrElse(JsNull)
-            case ("authModules", Some(key))         => userData.env.proxyState.authModule(key).map(_.json).getOrElse(JsNull)
-            case ("services", Some(key))            => userData.env.proxyState.service(key).map(_.json).getOrElse(JsNull)
-            case ("teams", Some(key))               => userData.env.proxyState.team(key).map(_.json).getOrElse(JsNull)
-            case ("tenants", Some(key))             => userData.env.proxyState.tenant(key).map(_.json).getOrElse(JsNull)
-            case ("serviceGroups", Some(key))       => userData.env.proxyState.serviceGroup(key).map(_.json).getOrElse(JsNull)
-            case ("dataExporters", Some(key))       => userData.env.proxyState.dataExporter(key).map(_.json).getOrElse(JsNull)
+              env.proxyState.routeComposition(key).map(_.json).getOrElse(JsNull)
+            case ("apikeys", Some(key))             => env.proxyState.apikey(key).map(_.json).getOrElse(JsNull)
+            case ("ngbackends", Some(key))          => env.proxyState.backend(key).map(_.json).getOrElse(JsNull)
+            case ("jwtVerifiers", Some(key))        => env.proxyState.jwtVerifier(key).map(_.json).getOrElse(JsNull)
+            case ("certificates", Some(key))        => env.proxyState.certificate(key).map(_.json).getOrElse(JsNull)
+            case ("authModules", Some(key))         => env.proxyState.authModule(key).map(_.json).getOrElse(JsNull)
+            case ("services", Some(key))            => env.proxyState.service(key).map(_.json).getOrElse(JsNull)
+            case ("teams", Some(key))               => env.proxyState.team(key).map(_.json).getOrElse(JsNull)
+            case ("tenants", Some(key))             => env.proxyState.tenant(key).map(_.json).getOrElse(JsNull)
+            case ("serviceGroups", Some(key))       => env.proxyState.serviceGroup(key).map(_.json).getOrElse(JsNull)
+            case ("dataExporters", Some(key))       => env.proxyState.dataExporter(key).map(_.json).getOrElse(JsNull)
             case ("otoroshiAdmins", Some(key))      =>
-              userData.env.proxyState.otoroshiAdmin(key).map(_.json).getOrElse(JsNull)
+              env.proxyState.otoroshiAdmin(key).map(_.json).getOrElse(JsNull)
             case ("backofficeSessions", Some(key))  =>
-              userData.env.proxyState.backofficeSession(key).map(_.json).getOrElse(JsNull)
+              env.proxyState.backofficeSession(key).map(_.json).getOrElse(JsNull)
             case ("privateAppsSessions", Some(key)) =>
-              userData.env.proxyState.privateAppsSession(key).map(_.json).getOrElse(JsNull)
-            case ("tcpServices", Some(key))         => userData.env.proxyState.tcpService(key).map(_.json).getOrElse(JsNull)
-            case ("scripts", Some(key))             => userData.env.proxyState.script(key).map(_.json).getOrElse(JsNull)
+              env.proxyState.privateAppsSession(key).map(_.json).getOrElse(JsNull)
+            case ("tcpServices", Some(key))         => env.proxyState.tcpService(key).map(_.json).getOrElse(JsNull)
+            case ("scripts", Some(key))             => env.proxyState.script(key).map(_.json).getOrElse(JsNull)
 
             case (_, __) => JsNull
           }).stringify
@@ -897,7 +880,7 @@ object State {
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val cc = hostData.env.configurationJson.stringify
+        val cc = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.configurationJson.stringify
         plugin.returnString(returns(0), cc)
       }
     }
@@ -913,7 +896,7 @@ object State {
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val cc = hostData.env.datastores.globalConfigDataStore.latest().json.stringify
+        val cc = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.datastores.globalConfigDataStore.latest().json.stringify
         plugin.returnString(returns(0), cc)
       }
     }
@@ -929,7 +912,7 @@ object State {
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, hostData) =>
       {
-        val cc = hostData.env.clusterConfig
+        val cc = hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig
         plugin.returnString(returns(0), getClusterState(cc).stringify)
       }
     }
@@ -942,7 +925,7 @@ object State {
       {
         val path = Utils.contextParamsToString(plugin, params: _*)
 
-        val cc = userData.env.clusterConfig
+        val cc = userData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig
         plugin.returnString(returns(0), JsonOperationsHelper.getValueAtPath(path, getClusterState(cc))._2.stringify)
       }
     }
@@ -955,7 +938,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_set" else "proxy_global_map_set",
-      StateUserData(env, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -991,7 +974,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_del" else "proxy_global_map_del",
-      StateUserData(env, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -1022,7 +1005,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map_get" else "proxy_global_map_get",
-      StateUserData(env, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
@@ -1052,7 +1035,7 @@ object State {
   ): WasmOtoroshiHostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
       if (pluginRestricted) "proxy_plugin_map" else "proxy_global_map",
-      StateUserData(env, executionContext, mat, cache).some,
+      StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       WasmBridge.ExtismValType.I64,
       WasmBridge.ExtismValType.I64
     ) { (plugin, _, returns, userData: Option[StateUserData]) =>
@@ -1082,20 +1065,20 @@ object State {
       mat: Materializer
   ): Seq[HostFunctionWithAuthorization] =
     Seq(
-      HostFunctionWithAuthorization(getProxyState(config), _.proxyStateAccess),
-      HostFunctionWithAuthorization(proxyStateGetValue(config), _.proxyStateAccess),
-      HostFunctionWithAuthorization(getGlobalProxyConfig(config), _.proxyStateAccess),
-      HostFunctionWithAuthorization(getClusterState(config), _.configurationAccess),
-      HostFunctionWithAuthorization(proxyClusteStateGetValue(config), _.configurationAccess),
-      HostFunctionWithAuthorization(getProxyConfig(config), _.configurationAccess),
-      HostFunctionWithAuthorization(proxyGlobalMapDel(), _.globalMapAccess.write),
-      HostFunctionWithAuthorization(proxyGlobalMapSet(), _.globalMapAccess.write),
-      HostFunctionWithAuthorization(proxyGlobalMapGet(), _.globalMapAccess.read),
-      HostFunctionWithAuthorization(proxyGlobalMap(), _.globalMapAccess.read),
-      HostFunctionWithAuthorization(proxyGlobalMapDel(pluginRestricted = true, pluginId.some), _.pluginMapAccess.write),
-      HostFunctionWithAuthorization(proxyGlobalMapSet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.write),
-      HostFunctionWithAuthorization(proxyGlobalMapGet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read),
-      HostFunctionWithAuthorization(proxyGlobalMap(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read)
+      HostFunctionWithAuthorization(getProxyState(config), _.asInstanceOf[WasmConfig].authorizations.proxyStateAccess),
+      HostFunctionWithAuthorization(proxyStateGetValue(config), _.asInstanceOf[WasmConfig].authorizations.proxyStateAccess),
+      HostFunctionWithAuthorization(getGlobalProxyConfig(config), _.asInstanceOf[WasmConfig].authorizations.proxyStateAccess),
+      HostFunctionWithAuthorization(getClusterState(config), _.asInstanceOf[WasmConfig].authorizations.configurationAccess),
+      HostFunctionWithAuthorization(proxyClusteStateGetValue(config), _.asInstanceOf[WasmConfig].authorizations.configurationAccess),
+      HostFunctionWithAuthorization(getProxyConfig(config), _.asInstanceOf[WasmConfig].authorizations.configurationAccess),
+      HostFunctionWithAuthorization(proxyGlobalMapDel(), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapSet(), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapGet(), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read),
+      HostFunctionWithAuthorization(proxyGlobalMap(), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read),
+      HostFunctionWithAuthorization(proxyGlobalMapDel(pluginRestricted = true, pluginId.some), _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapSet(pluginRestricted = true, pluginId.some), _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapGet(pluginRestricted = true, pluginId.some), _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.read),
+      HostFunctionWithAuthorization(proxyGlobalMap(pluginRestricted = true, pluginId.some), _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.read)
     )
 }
 
@@ -1112,14 +1095,13 @@ object HostFunctions {
       Logging.getFunctions(config) ++
       Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
-      DataStore.getFunctions(config, pluginId) ++
-      OPA.getFunctions(config)
+      DataStore.getFunctions(config, pluginId) //++
+      // OPA.getFunctions(config) // managed in common now
 
     functions
       .collect {
-        case func if func.authorized(config.authorizations) => func.function
+        case func if func.authorized(config) => func.function
       }
-      .seffectOn(_.map(_.name).mkString(", "))
       .toArray
   }
 }

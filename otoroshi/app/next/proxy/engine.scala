@@ -476,9 +476,6 @@ class ProxyEngine() extends RequestHandler {
             RequestFlowReport(report, route).toAnalytics()
           }
         }
-        attrs.get(otoroshi.next.plugins.Keys.WasmContextKey).foreach { ctx =>
-          ctx.close()
-        }
       }
       .applyOnIf( /*env.isDev && */ (debug || debugHeaders))(_.map { res =>
         val addHeaders =
@@ -657,9 +654,6 @@ class ProxyEngine() extends RequestHandler {
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
-        }
-        attrs.get(otoroshi.next.plugins.Keys.WasmContextKey).foreach { ctx =>
-          ctx.close()
         }
       }
   }
@@ -2802,19 +2796,23 @@ class ProxyEngine() extends RequestHandler {
         .withMaybeProxyServer(
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
-      val theBody                                        = request.body.applyOnIf(request.hasBody && engineConfig.capture) { source =>
-        var requestChunks = ByteString("")
-        source
-          .map { chunk =>
-            if ((requestChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
-              requestChunks = requestChunks ++ chunk
+      val theBody                                        = request.body
+        .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { body =>
+          body.alsoTo(Sink.foreach(chunk => counterIn.addAndGet(chunk.size)))
+        }
+        .applyOnIf(request.hasBody && engineConfig.capture) { source =>
+          var requestChunks = ByteString("")
+          source
+            .map { chunk =>
+              if ((requestChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
+                requestChunks = requestChunks ++ chunk
+              }
+              chunk
             }
-            chunk
-          }
-          .alsoTo(Sink.onComplete { case _ =>
-            attrs.put(otoroshi.plugins.Keys.CaptureRequestBodyKey -> requestChunks)
-          })
-      }
+            .alsoTo(Sink.onComplete { case _ =>
+              attrs.put(otoroshi.plugins.Keys.CaptureRequestBodyKey -> requestChunks)
+            })
+        }
       // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
       val builderWithBody                                = if (currentReqHasBody) {
         if (shouldInjectContentLength) {
@@ -3206,20 +3204,24 @@ class ProxyEngine() extends RequestHandler {
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
-    val theBody = response.body.applyOnIf(engineConfig.capture) { source =>
-      var responseChunks = ByteString("")
-      source
-        .map { chunk =>
-          if ((responseChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
-            responseChunks = responseChunks ++ chunk
+    val theBody = response.body
+      .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
+        body.alsoTo(Sink.foreach(chunk => counterOut.addAndGet(chunk.size)))
+      }
+      .applyOnIf(engineConfig.capture) { source =>
+        var responseChunks = ByteString("")
+        source
+          .map { chunk =>
+            if ((responseChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
+              responseChunks = responseChunks ++ chunk
+            }
+            chunk
           }
-          chunk
-        }
-        .alsoTo(Sink.onComplete { case _ =>
-          TrafficCaptureEvent(route, rawRequest, request, rawResponse.response, response, responseChunks, attrs)
-            .toAnalytics()
-        })
-    } /*.map { bs =>
+          .alsoTo(Sink.onComplete { case _ =>
+            TrafficCaptureEvent(route, rawRequest, request, rawResponse.response, response, responseChunks, attrs)
+              .toAnalytics()
+          })
+      } /*.map { bs =>
       counterOut.addAndGet(bs.length)
       bs
     }*/

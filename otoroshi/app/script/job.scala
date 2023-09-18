@@ -17,7 +17,7 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils
-import otoroshi.utils.{future, JsonPathValidator, SchedulerHelper, TypedMap}
+import otoroshi.utils.{JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -145,8 +145,8 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
             case None             => false
             case Some(predicates) => {
               val validators =
-                predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-              validators.forall(_.validate(context))
+                predicates.map(v => JsonValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+              validators.forall(_.validate(context)(env))
             }
           }
         }
@@ -156,8 +156,8 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
           case None             => None
           case Some(predicates) => {
             val validators =
-              predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-            if (validators.forall(_.validate(context))) {
+              predicates.map(v => JsonValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+            if (validators.forall(_.validate(context)(env))) {
               obj.some
             } else {
               None

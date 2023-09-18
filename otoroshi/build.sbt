@@ -219,7 +219,7 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 Test / parallelExecution := false
 IntegrationTest / testForkedParallel := false
 
-usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
+usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
@@ -345,7 +345,9 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
-  "-Dotoroshi.loggers.otoroshi-wasm-debug=INFO",
+  "-Dotoroshi.loggers.otoroshi-wasm-debug=DEBUG",
+  "-Dotoroshi.loggers.otoroshi-wasm-vm-pool=DEBUG",
+  "-Dotoroshi.loggers.otoroshi-wasm-integration=DEBUG",
   "-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE",
   "-Dotoroshi.options.enable-json-media-type-with-open-charset=true",
   "-Dotoroshi.next.state-sync-interval=1000"

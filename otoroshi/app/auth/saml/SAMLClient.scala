@@ -22,11 +22,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -38,7 +34,7 @@ import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
@@ -399,7 +395,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 obj.asObject.value.mapValues { arr =>
                   arr.asArray.value
                     .map { item =>
-                      JsonPathValidator.format.reads(item)
+                      JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
@@ -407,7 +403,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 }.toMap
               }.toMap
             }
-            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonValidator]]])
         )
       )
     } recover { case e =>
@@ -729,7 +725,7 @@ case class SamlAuthModuleConfig(
     usedNameIDAsEmail: Boolean = true,
     emailAttributeName: Option[String] = Some("Email"),
     sessionCookieValues: SessionCookieValues,
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
 ) extends AuthModuleConfig {
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata

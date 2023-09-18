@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y 
 RUN apt-get install -y build-essential git curl software-properties-common
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
 RUN apt-get install -y nodejs --no-install-recommends tzdata python3-distutils python3.9
 # RUN apt-get update -y
 # RUN apt-get install -y 
@@ -54,7 +54,9 @@ RUN npm run build
 RUN rm -rf node_modules
 
 WORKDIR $HOME/server
+RUN npm install pm2@latest -g
 RUN npm install
 
 EXPOSE 5001
-CMD ["node", "index.js"]
+# CMD ["node", "index.js"]
+CMD ["pm2", "start", "index.js"]

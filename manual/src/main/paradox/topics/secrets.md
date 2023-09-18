@@ -105,6 +105,47 @@ vaults {
 }
 ```
 
+### Local
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "local"
+    root = "the_root_path/in_otoroshi/environment"
+  }
+}
+```
+
+value of this vault can be configured in the danger zone > Global metadata > Otoroshi environment.
+
+### Infisical
+
+a backend for the awesome open source project [Infisical](https://infisical.com/). It support both E2EE and non E2EE secrets.
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "infisical"
+    baseUrl = "https://app.infisical.com" # optional, the base url of your infisical server, fallbacks to https://app.infisical.com
+    serviceToken = "st.xxxx.yyyy.zzzz" # the service token for your projet
+    e2ee = true # are you secrets end to end encrypted
+    defaultSecretType = "shared" # optional, fallbacks to shared
+    defaultWorkspaceId = "xxxxxx" # optional, value can be passed in the secret address
+    defaultEnvironment = "dev" # optional, value can be passed in the secret address
+  }
+}
+```
+
+you should define your references like `${vault://infisical_vault/my_secret_path?workspaceId=xxx&environment=dev&type=shared}`. `workspaceId`, `environment` and `type` are optional if filled in global config. 
+
+You can also pass a `json_pointer=/foo/bar` to handle the value like a json document a select a value inside it.
+
 ### Hashicorp Vault
 
 a backend for [Hashicorp Vault](https://www.vaultproject.io/). Right now we only support KV engines.

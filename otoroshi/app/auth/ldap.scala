@@ -16,7 +16,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, _}
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.{JsonPathValidator, RegexPool}
+import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import otoroshi.utils.syntax.implicits._
 
 import javax.naming.ldap.{Control, InitialLdapContext}
@@ -30,7 +30,7 @@ case class LdapAuthUser(
     metadata: JsObject = Json.obj(),
     userRights: Option[UserRights],
     ldapProfile: Option[JsValue],
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
+    adminEntityValidators: Map[String, Seq[JsonValidator]]
 ) {
   def asJson: JsValue = LdapAuthUser.fmt.writes(this)
 }
@@ -63,14 +63,14 @@ object LdapAuthUser {
                   obj.value.mapValues { arr =>
                     arr.asArray.value
                       .map { item =>
-                        JsonPathValidator.format.reads(item)
+                        JsonValidator.format.reads(item)
                       }
                       .collect { case JsSuccess(v, _) =>
                         v
                       }
                   }.toMap
                 }
-                .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+                .getOrElse(Map.empty[String, Seq[JsonValidator]])
             )
           )
         } recover { case e =>
@@ -169,7 +169,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 obj.asObject.value.mapValues { arr =>
                   arr.asArray.value
                     .map { item =>
-                      JsonPathValidator.format.reads(item)
+                      JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
@@ -177,7 +177,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 }.toMap
               }.toMap
             }
-            .getOrElse(Map.empty[String, Map[String, Seq[JsonPathValidator]]])
+            .getOrElse(Map.empty[String, Map[String, Seq[JsonValidator]]])
         )
       )
     } recover { case e =>
@@ -269,7 +269,7 @@ case class LdapAuthModuleConfig(
     extractProfileFilterNot: Seq[String] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonPathValidator]]] = Map.empty,
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
@@ -672,7 +672,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor): Either[String, PrivateAppsUser] = {
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit env: Env): Either[String, PrivateAppsUser] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         PrivateAppsUser(
@@ -703,7 +703,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
-  def bindAdminUser(username: String, password: String): Either[String, BackOfficeUser] = {
+  def bindAdminUser(username: String, password: String)(implicit env: Env): Either[String, BackOfficeUser] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         BackOfficeUser(

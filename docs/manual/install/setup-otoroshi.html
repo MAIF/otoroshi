@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.8.0
+16.8.1
 </div>
 </div>
 <div class="nav-toc">
@@ -168,7 +168,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.8.0
+16.8.1
 </div>
 </div>
 <div class="nav-toc">
@@ -2427,6 +2427,10 @@ otoroshi {
   		otoroshi_extensions_foo {
   			enabled = false
   		}
+      otoroshi_extensions_greenscore {
+        enabled = false
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
+      }
   	}
   }
 }
@@ -3568,6 +3572,9 @@ otoroshi {
   	configurations {
   		otoroshi_extensions_foo {
   		}
+      otoroshi_extensions_greenscore {
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
+      }
   	}
   }
 }

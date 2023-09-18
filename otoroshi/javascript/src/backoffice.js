@@ -28,6 +28,7 @@ import { v4 as uuid } from 'uuid';
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
 import { setupGreenScoreExtension } from './extensions/greenscore';
+import { setupCorazaExtension } from './extensions/coraza';
 
 import * as Forms from './forms/ng_plugins/index';
 
@@ -249,4 +250,5 @@ export function getExtension(name) {
 
 function setupLocalExtensions() {
   setupGreenScoreExtension(registerExtension);
+  setupCorazaExtension(registerExtension);
 }

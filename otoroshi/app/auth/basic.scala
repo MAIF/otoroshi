@@ -10,7 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import otoroshi.controllers.{routes, LocalCredentialRepository}
+import otoroshi.controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
@@ -21,7 +21,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -60,7 +60,7 @@ case class BasicAuthUser(
     metadata: JsObject = Json.obj(),
     tags: Seq[String],
     rights: UserRights,
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
+    adminEntityValidators: Map[String, Seq[JsonValidator]]
 ) {
   def asJson: JsValue = BasicAuthUser.fmt.writes(this)
 }
@@ -97,14 +97,14 @@ object BasicAuthUser {
                   obj.value.mapValues { arr =>
                     arr.asArray.value
                       .map { item =>
-                        JsonPathValidator.format.reads(item)
+                        JsonValidator.format.reads(item)
                       }
                       .collect { case JsSuccess(v, _) =>
                         v
                       }
                   }.toMap
                 }
-                .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+                .getOrElse(Map.empty[String, Seq[JsonValidator]])
             )
           )
         } recover { case e =>
@@ -240,7 +240,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor): Either[String, PrivateAppsUser] = {
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit env: Env): Either[String, PrivateAppsUser] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
@@ -266,7 +266,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def bindAdminUser(username: String, password: String): Either[String, BackOfficeUser] = {
+  def bindAdminUser(username: String, password: String)(implicit env: Env): Either[String, BackOfficeUser] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {

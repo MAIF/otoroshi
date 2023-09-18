@@ -60,6 +60,7 @@ const files = [
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
+  { file: './experiments/common-wasm/build.sbt' },
   { file: './readme.md' },
 ];
 
@@ -205,6 +206,14 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
 }
 
 async function buildDistribution(version, where, releaseDir, releaseFile) {
+  // build common-wasm
+  await runScript(`
+  export JAVA_HOME=$JDK8_HOME
+  export PATH=\${JAVA_HOME}/bin:\${PATH}
+  cd ${where}/experiments/common-wasm/
+  sh ./update-extism.sh
+  sh ./build.sh
+  `, where);
   // run test and build server
   await runScript(`
   export JAVA_HOME=$JDK8_HOME
@@ -217,6 +226,8 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.12/common-wasm_2.12-${version}.jar`),  path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.13/common-wasm_2.13-${version}.jar`),  path.resolve(where, releaseDir)], where);
 }
 
 async function buildVersion(version, where, releaseDir, releaseFile) {

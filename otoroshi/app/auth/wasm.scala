@@ -5,12 +5,11 @@ import otoroshi.gateway.Errors
 import otoroshi.models._
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.plugins.api.{NgAccess, NgCachedConfigContext}
+import otoroshi.next.plugins.api.NgCachedConfigContext
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
-import otoroshi.utils.{JsonPathValidator, TypedMap}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{WasmFunctionParameters, WasmUtils, WasmVm}
+import otoroshi.utils.{JsonPathValidator, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -129,7 +128,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "is_route"      -> isRoute
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -142,13 +141,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
               maybeRoute = ctx.route.some
             )
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_login_page", input.stringify), None)
+          vm.callExtismFunction("pa_login_page", input.stringify)
             .map {
               case Left(err)     => Results.InternalServerError(err)
               case Right(output) => {
                 val response    =
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)
@@ -196,7 +195,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user"          -> user.map(_.json).getOrElse(JsNull).asValue
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -210,13 +209,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             )
             .map(_.left)
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_logout", input.stringify), None)
+          vm.callExtismFunction("pa_logout", input.stringify)
             .map {
               case Left(err)     => Results.InternalServerError(err).left
               case Right(output) => {
                 val response  =
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)
@@ -253,16 +252,16 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "route"         -> route.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("pa_callback", input.stringify), None)
+          vm.callExtismFunction("pa_callback", input.stringify)
             .map {
               case Left(err)     => err.stringify.left
               case Right(output) => {
                 val response = {
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)
@@ -294,7 +293,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -307,13 +306,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
               maybeRoute = ctx.route.some
             )
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_login_page", input.stringify), None)
+          vm.callExtismFunction("bo_login_page", input.stringify)
             .map {
               case Left(err)     => Results.InternalServerError(err)
               case Right(output) => {
                 val response    =
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)
@@ -356,7 +355,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "user"          -> user.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          =>
           Errors
             .craftResponseResult(
@@ -370,13 +369,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             )
             .map(_.left)
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_logout", input.stringify), None)
+          vm.callExtismFunction("bo_logout", input.stringify)
             .map {
               case Left(err)     => Results.InternalServerError(err).left
               case Right(output) => {
                 val response  =
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)
@@ -410,16 +409,16 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
-      WasmVm.fromConfig(plugin.config).flatMap {
+      env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
         case None          => "plugin not found !".leftf
         case Some((vm, _)) =>
-          vm.call(WasmFunctionParameters.ExtismFuntionCall("bo_callback", input.stringify), None)
+          vm.callExtismFunction("bo_callback", input.stringify)
             .map {
               case Left(err)     => err.stringify.left
               case Right(output) => {
                 val response = {
                   try {
-                    Json.parse(output._1)
+                    Json.parse(output)
                   } catch {
                     case e: Exception =>
                       WasmAuthModule.logger.error("error during json parsing", e)

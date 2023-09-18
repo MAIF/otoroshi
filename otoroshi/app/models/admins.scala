@@ -4,7 +4,7 @@ import otoroshi.env.Env
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models._
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import play.api.libs.json._
 import otoroshi.utils.syntax.implicits._
 
@@ -45,7 +45,7 @@ trait OtoroshiAdmin extends EntityLocationSupport {
   def rights: UserRights
   def isSimple: Boolean
   def isWebAuthn: Boolean
-  def adminEntityValidators: Map[String, Seq[JsonPathValidator]]
+  def adminEntityValidators: Map[String, Seq[JsonValidator]]
 }
 
 case class SimpleOtoroshiAdmin(
@@ -58,7 +58,7 @@ case class SimpleOtoroshiAdmin(
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
+    adminEntityValidators: Map[String, Seq[JsonValidator]]
 ) extends OtoroshiAdmin {
   val isSimple                         = true
   val isWebAuthn                       = false
@@ -106,14 +106,14 @@ object SimpleOtoroshiAdmin {
             obj.value.mapValues { arr =>
               arr.asArray.value
                 .map { item =>
-                  JsonPathValidator.format.reads(item)
+                  JsonValidator.format.reads(item)
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
                 }
             }.toMap
           }
-          .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+          .getOrElse(Map.empty[String, Seq[JsonValidator]])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -134,7 +134,7 @@ case class WebAuthnOtoroshiAdmin(
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidators: Map[String, Seq[JsonPathValidator]]
+    adminEntityValidators: Map[String, Seq[JsonValidator]]
 ) extends OtoroshiAdmin {
   val isSimple                         = false
   val isWebAuthn                       = true
@@ -189,14 +189,14 @@ object WebAuthnOtoroshiAdmin {
             obj.value.mapValues { arr =>
               arr.asArray.value
                 .map { item =>
-                  JsonPathValidator.format.reads(item)
+                  JsonValidator.format.reads(item)
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
                 }
             }.toMap
           }
-          .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+          .getOrElse(Map.empty[String, Seq[JsonValidator]])
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

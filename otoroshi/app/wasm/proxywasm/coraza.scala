@@ -3,6 +3,7 @@ package otoroshi.wasm.proxywasm
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
+import io.otoroshi.common.wasm.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -63,7 +64,7 @@ object CorazaPluginKeys {
 
 class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) {
 
-  WasmVmPool.logger.debug("new CorazaPlugin")
+  // WasmVmPool.logger.debug("new CorazaPlugin")
 
   private implicit val ev = env
   private implicit val ec = env.otoroshiExecutionContext
@@ -78,7 +79,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
     new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
-  private lazy val pool: WasmVmPool        = new WasmVmPool(key, wasm.some, env)
+  private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
     CorazaTrailEvent(level, msg).toAnalytics()
@@ -86,7 +87,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
 
   def isStarted(): Boolean = started.get()
 
-  def createFunctions(ref: AtomicReference[VmData]): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
+  def createFunctions(ref: AtomicReference[WasmVmData]): Seq[WasmOtoroshiHostFunction[EnvUserData]] = {
     ProxyWasmFunctions.build(state, ref)
   }
 
@@ -464,7 +465,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.1.0.wasm?$key"
+      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.1.2.wasm?$key"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
@@ -693,11 +694,11 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
-    Seq(
-      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/coraza-extension.js")
-    )
-  }
+  // override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
+  //   Seq(
+  //     AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extensions/coraza-extension.js")
+  //   )
+  // }
 
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(

@@ -8,14 +8,7 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -32,6 +25,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
+import io.otoroshi.common.wasm.scaladsl._
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -50,27 +44,14 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.{WasmConfig, WasmFunctionParameters, WasmUtils, WasmVm}
+import otoroshi.wasm.WasmConfig
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -1268,7 +1249,7 @@ object Exporters {
                 "config" -> configUnsafe.json
               )
               // println(s"call send: ${events.size}")
-              WasmVm.fromConfig(plugin.config).flatMap {
+              env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
                 case None          => ExportResult.ExportResultFailure("plugin not found !").vfuture
                 case Some((vm, _)) =>
                   vm.call(

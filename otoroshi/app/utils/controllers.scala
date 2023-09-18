@@ -1,12 +1,15 @@
 package otoroshi.utils.controllers
 
-import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
+import org.joda.time.DateTime
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.events._
-import org.joda.time.DateTime
 import otoroshi.models.{BackOfficeUser, EntityLocationSupport}
+import otoroshi.security.IdGenerator
+import otoroshi.utils.JsonValidator
+import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
@@ -14,9 +17,6 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Ok
 import play.api.mvc._
-import otoroshi.security.IdGenerator
-import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.json.JsonOperationsHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -227,12 +227,12 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
       case Left(err)         => Left(err.json)
       case Right(None)       => readEntity(json)
       case Right(Some(user)) => {
-        val envValidators: Seq[JsonPathValidator]  =
-          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ env.adminEntityValidators
-            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
-        val userValidators: Seq[JsonPathValidator] =
-          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonPathValidator]) ++ user.adminEntityValidators
-            .getOrElse(singularName.toLowerCase, Seq.empty[JsonPathValidator])
+        val envValidators: Seq[JsonValidator]  =
+          env.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ env.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
+        val userValidators: Seq[JsonValidator] =
+          user.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ user.adminEntityValidators
+            .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
         val validators                             = envValidators ++ userValidators
         val failedValidators                       = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {

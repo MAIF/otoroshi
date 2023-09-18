@@ -6,6 +6,7 @@ import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
 import { NgSelectRenderer } from '../nginputs';
+import _ from 'lodash';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -359,6 +360,14 @@ export class Table extends Component {
 
   isAnObject = (variable) =>
     typeof variable === 'object' && !Array.isArray(variable) && variable !== null;
+
+  actualFlow = () => {
+    if (_.isFunction(this.props.formFlow)) {
+      return this.props.formFlow(this.state.currentItem);
+    } else {
+      return this.props.formFlow;
+    }
+  };
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();

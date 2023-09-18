@@ -8,6 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
+import io.otoroshi.common.wasm.scaladsl.WasmIntegration
 import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -37,9 +38,10 @@ import otoroshi.storage.drivers.lettuce._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
-import otoroshi.utils.JsonPathValidator
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.OtoroshiWasmIntegrationContext
 import play.api._
 import play.api.http.HttpConfiguration
 import play.api.inject.ApplicationLifecycle
@@ -188,6 +190,9 @@ class Env(
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).withMillisOfDay(0)
   private lazy val halloweenStop  =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
+
+  lazy val dynamicBodySizeCompute =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.dynamicBodySizeCompute").getOrElse(true)
 
   private lazy val disableFunnyLogos: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
@@ -584,7 +589,7 @@ class Env(
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val adminEntityValidators: Map[String, Seq[JsonPathValidator]] = configurationJson
+  lazy val adminEntityValidators: Map[String, Seq[JsonValidator]] = configurationJson
     .select("otoroshi")
     .select("adminapi")
     .select("entity_validators")
@@ -593,14 +598,14 @@ class Env(
       obj.value.mapValues { arr =>
         arr.asArray.value
           .map { item =>
-            JsonPathValidator.format.reads(item)
+            JsonValidator.format.reads(item)
           }
           .collect { case JsSuccess(v, _) =>
             v
           }
       }.toMap
     }
-    .getOrElse(Map.empty[String, Seq[JsonPathValidator]])
+    .getOrElse(Map.empty[String, Seq[JsonValidator]])
 
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
@@ -980,6 +985,8 @@ class Env(
   )
 
   lazy val adminExtensions = AdminExtensions.current(this, adminExtensionsConfig)
+
+  lazy val wasmIntegration = WasmIntegration(new OtoroshiWasmIntegrationContext(this))
 
   datastores.before(configuration, environment, lifecycle)
   // geoloc.start()
