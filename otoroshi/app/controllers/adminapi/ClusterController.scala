@@ -1,6 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import akka.NotUsed
+import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
@@ -16,7 +17,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
-import play.api.libs.streams.Accumulator
+import play.api.libs.streams.{Accumulator, ActorFlow}
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import play.api.mvc._
@@ -24,8 +25,8 @@ import play.api.mvc._
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic._
+import scala.concurrent.duration._
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     env: Env
@@ -290,7 +291,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def updateQuotas() =
+  def updateState() =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -303,7 +304,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 val jsItem = Json.parse(item.utf8String)
                 ClusterLeaderUpdateMessage.read(jsItem) match {
                   case None => FastFuture.successful(())
-                  case Some(quota) => quota.updateWorker()
+                  case Some(quota) => quota.updateWorker(MemberView.fromRequest(ctx.request))
                 }
                 // (jsItem \ "typ").asOpt[String] match {
                 //   case Some("globstats") => {
@@ -357,7 +358,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 .mapAsync(4) { item =>
                   val jsItem = Json.parse(item.utf8String)
                   ClusterLeaderUpdateMessage.read(jsItem) match {
-                    case Some(quota) => quota.updateLeader(ctx.request)
+                    case Some(quota) => quota.updateLeader(MemberView.fromRequest(ctx.request))
                     case None => FastFuture.successful(())
                   }
                   //(jsItem \ "typ").asOpt[String] match {
@@ -439,7 +440,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   //  }
                   //  case _                 => FastFuture.successful(())
                   //}
-
                 }
                 .runWith(Sink.ignore)
                 .andThen { case _ =>
@@ -469,7 +469,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   val cachedCount  = new AtomicLong(0L)
   val cachedDigest = new AtomicReference[String]("--")
 
-  def internalState() =
+  def readState() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -752,5 +752,67 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
         }
       }
     }
+  }
+
+  def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
+    println("stateWs")
+    val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
+    action.apply(req).run().flatMap { result =>
+      if (result.header.status == 204) {
+        ActorFlow.actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+      } else {
+        result.leftf
+      }
+    }
+  }
+}
+
+object ClusterStateActor {
+  def props(out: ActorRef, env: Env) = Props(new ClusterStateActor(out, env))
+}
+
+class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
+
+  private val ref = new AtomicReference[Cancellable]()
+
+  override def preStart(): Unit = {
+    ref.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, env.clusterConfig.worker.state.pollEvery.millis) { () =>
+      val msg = ClusterLeaderStateMessage(
+        state = env.clusterLeaderAgent.cachedState,
+        nodeName = env.clusterConfig.leader.name,
+        nodeVersion = env.otoroshiVersion,
+        dataCount = env.clusterLeaderAgent.cachedCount,
+        dataDigest = env.clusterLeaderAgent.cachedDigest,
+        dataFrom = env.clusterLeaderAgent.cachedTimestamp,
+      )
+      val mess = msg.json.stringify
+      println(s"pushing the state: ${mess.size} bytes")
+      out ! play.api.http.websocket.TextMessage(mess)
+    }(env.otoroshiExecutionContext))
+  }
+
+  override def postStop(): Unit = {
+    Option(ref.get()).foreach(_.cancel())
+  }
+
+  override def receive: Receive = {
+    case play.api.http.websocket.TextMessage(data) => {
+      ClusterMessageFromWorker.format.reads(data.parseJson) match {
+        case JsSuccess(msgfw, _) =>
+          println(s"got a messahe fgrom worker: ${msgfw.json.prettify}")
+          ClusterLeaderUpdateMessage.read(msgfw.payload) match {
+            case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case _ =>
+          }
+        case JsError(err) => println(s"error while reading: $err")
+      }
+    }
+    case play.api.http.websocket.PingMessage(_) => out ! play.api.http.websocket.PongMessage(ByteString.empty)
+    case play.api.http.websocket.CloseMessage(statusCode, reason) => self ! PoisonPill
+    case play.api.http.websocket.BinaryMessage(_) => println("cannot handle binary message")
+    case play.api.http.websocket.PongMessage(_) => println("cannot handle pong message")
+    case _ => println("cannot handle unknown message")
   }
 }

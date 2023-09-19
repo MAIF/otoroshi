@@ -3,18 +3,25 @@ package otoroshi.cluster
 import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.ws.WebSocketRequest
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.{Attributes, Materializer}
+import akka.stream.{Attributes, Materializer, OverflowStrategy}
 import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, MetaHeaders, MultipartUploadResult, ObjectMetadata, S3Attributes, S3Settings}
 import akka.stream.alpakka.s3.headers.CannedAcl
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source}
+import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
+import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
+import io.netty.handler.codec.http.websocketx.{WebSocketFrame, WebSocketVersion}
+import io.netty.handler.codec.http.{DefaultHttpHeaders, HttpHeaders}
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
+import org.reactivestreams.{Publisher, Subscriber, Subscription}
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterLeaderUpdateMessage.GlobalStatusUpdate
 import otoroshi.env.{Env, JavaVersion, OS}
@@ -41,6 +48,8 @@ import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
 import play.api.mvc.RequestHeader
 import play.api.{Configuration, Environment, Logger}
+import reactor.core.publisher.Flux
+import reactor.netty.http.client.WebsocketClientSpec
 import redis.RedisClientMasterSlaves
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -165,7 +174,8 @@ case class WorkerConfig(
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
     tenants: Seq[TenantId] = Seq.empty,
-    swapStrategy: SwapStrategy = SwapStrategy.Replace
+    swapStrategy: SwapStrategy = SwapStrategy.Replace,
+    useWs: Boolean = false,
     //initialCacert: Option[String] = None
 )                                                                                             {
   def json: JsValue = Json.obj(
@@ -177,7 +187,8 @@ case class WorkerConfig(
     "state"            -> state.json,
     "quotas"           -> quotas.json,
     "tenants"          -> tenants.map(_.value),
-    "swap_strategy"    -> swapStrategy.name
+    "swap_strategy"    -> swapStrategy.name,
+    "use_ws"           -> useWs,
   )
 }
 
@@ -555,7 +566,8 @@ object ClusterConfig {
         swapStrategy = configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
           case Some("Merge") => SwapStrategy.Merge
           case _             => SwapStrategy.Replace
-        }
+        },
+        useWs = configuration.getOptionalWithFileSupport[Boolean]("worker.useWs").getOrElse(false),
       )
     )
   }
@@ -744,6 +756,57 @@ case class MemberView(
 }
 
 object MemberView {
+  def fromRequest(request: RequestHeader, stats: JsObject = Json.obj())(implicit env: Env): MemberView = {
+    MemberView(
+      id = request.headers
+        .get(ClusterAgent.OtoroshiWorkerIdHeader)
+        .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+      name = request.headers
+        .get(ClusterAgent.OtoroshiWorkerNameHeader)
+        .get,
+      os = request.headers
+        .get(ClusterAgent.OtoroshiWorkerOsHeader)
+        .map(OS.fromString)
+        .getOrElse(OS.default),
+      version = request.headers
+        .get(ClusterAgent.OtoroshiWorkerVersionHeader)
+        .getOrElse("undefined"),
+      javaVersion = request.headers
+        .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
+        .map(JavaVersion.fromString)
+        .getOrElse(JavaVersion.default),
+      memberType = ClusterMode.Worker,
+      location =
+        request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+      httpPort = request.headers
+        .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+        .map(_.toInt)
+        .getOrElse(env.exposedHttpPortInt),
+      httpsPort = request.headers
+        .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+        .map(_.toInt)
+        .getOrElse(env.exposedHttpsPortInt),
+      internalHttpPort = request.headers
+        .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+        .map(_.toInt)
+        .getOrElse(env.httpPort),
+      internalHttpsPort = request.headers
+        .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+        .map(_.toInt)
+        .getOrElse(env.httpsPort),
+      lastSeen = DateTime.now(),
+      timeout = Duration(
+        env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+        TimeUnit.MILLISECONDS
+      ),
+      stats = stats,
+      tunnels = Seq.empty,
+      relay = request.headers
+        .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+        .flatMap(RelayRouting.parse)
+        .getOrElse(RelayRouting.default)
+    )
+  }
   def fromJsonSafe(value: JsValue)(implicit env: Env): JsResult[MemberView] =
     Try {
       JsSuccess(
@@ -2266,6 +2329,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 incr.headersIn.get(),
                 incr.headersOut.get(),
               )
+              case _ => ()
             }
             Cluster.logger.error(
               s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
@@ -2306,24 +2370,105 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def startF(): Future[Unit] = FastFuture.successful(start())
 
+  private def callLeaderAkka(): Unit = {
+
+    def onNext(elem: String): Unit = {
+      ClusterLeaderStateMessage.format.reads(elem.parseJson) match {
+        case JsError(e) => println(s"deser error: ${e}")
+        case JsSuccess(e, _) =>
+          firstSuccessfulStateFetchDone.compareAndSet(false, true)
+          println("yes")
+          println(e)
+      }
+    }
+
+    val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val pushSource: Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
+      Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+        queueRef.set(q)
+        q
+      }
+    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource
+    val (fu, matz) = env.Ws.ws(
+      request = WebSocketRequest.fromTargetUriString("ws://otoroshi-api.oto.tools:9999/api/cluster/state/ws").copy(
+        extraHeaders = List(
+          RawHeader("Host", "otoroshi-api.oto.tools"),
+          RawHeader(env.Headers.OtoroshiClientId, "admin-api-apikey-id"),
+          RawHeader(env.Headers.OtoroshiClientSecret, "admin-api-apikey-secret")
+        )
+      ),
+      targetOpt = None,
+      customizer = identity,
+      clientFlow = Flow
+        .fromSinkAndSource(
+          Sink.foreach[akka.http.scaladsl.model.ws.Message] {
+            case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => onNext(data)
+            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(data => onNext(data))
+            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) =>
+            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+          },
+          source
+        )
+    )
+    fu.map { _ =>
+      val cancel = env.otoroshiScheduler.scheduleWithFixedDelay(1.second, config.worker.quotas.pushEvery.millis) { () =>
+        /// push other data here !
+        println("push stuff")
+        val member = MemberView(
+          id = ClusterConfig.clusterNodeId,
+          name = config.worker.name,
+          version = env.otoroshiVersion,
+          javaVersion =  env.theJavaVersion,
+          os = env.os,
+          location = s"$hostAddress",
+          httpPort = env.exposedHttpPortInt,
+          httpsPort = env.exposedHttpsPortInt,
+          internalHttpPort = env.httpPort,
+          internalHttpsPort = env.httpsPort,
+          lastSeen = DateTime.now(),
+          timeout = Duration(
+            env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+            TimeUnit.MILLISECONDS
+          ),
+          memberType = ClusterMode.Worker,
+          relay = env.clusterConfig.relay,
+          tunnels = env.tunnelManager.currentTunnels.toSeq,
+          stats = Json.obj(),
+        )
+        GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
+          val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
+          queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, stats.json).json.prettify))
+          oldQuotasIncr.values.foreach { incr =>
+            queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, incr.json).json.prettify))
+          }
+        }
+      }(env.otoroshiExecutionContext)
+    }
+  }
+
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       if (Cluster.logger.isDebugEnabled)
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
-      pollRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.state.pollEvery.millis)(
-          utils.SchedulerHelper.runnable(
-            pollState()
+      if (config.worker.useWs) {
+        println("USING CLUSTER API THROUGH WEBSOCKET: THIS IS NOT READY YET !!!!")
+        callLeaderAkka()
+      } else {
+        pollRef.set(
+          env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.state.pollEvery.millis)(
+            utils.SchedulerHelper.runnable(
+              pollState()
+            )
           )
         )
-      )
-      pushRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.quotas.pushEvery.millis)(
-          utils.SchedulerHelper.runnable(
-            pushQuotas()
+        pushRef.set(
+          env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.quotas.pushEvery.millis)(
+            utils.SchedulerHelper.runnable(
+              pushQuotas()
+            )
           )
         )
-      )
+      }
     }
   }
 
@@ -2785,17 +2930,85 @@ class SwappableInMemoryDataStores(
   }
 }
 
+object ClusterLeaderStateMessage {
+  val format = new Format[ClusterLeaderStateMessage] {
+    override def reads(json: JsValue): JsResult[ClusterLeaderStateMessage] = Try {
+      ClusterLeaderStateMessage(
+        state = json.select("state").asOpt[Array[Byte]].map(ByteString.apply).getOrElse(ByteString.empty),
+        nodeName = json.select("node_name").asString,
+        nodeVersion = json.select("node_version").asString,
+        dataCount = json.select("data_count").asLong,
+        dataDigest = json.select("data_digest").asString,
+        dataFrom = json.select("data_from").asLong,
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: ClusterLeaderStateMessage): JsValue = o.json
+  }
+}
+
+case class ClusterLeaderStateMessage(
+    state: ByteString,
+    nodeName: String,
+    nodeVersion: String,
+    dataCount: Long,
+    dataDigest: String,
+    dataFrom: Long
+) {
+  def json: JsValue = Json.obj(
+    "state" -> state,
+    "node_name" -> nodeName,
+    "node_version" -> nodeVersion,
+    "data_count" -> dataCount,
+    "data_digest" -> dataDigest,
+    "data_from" -> dataFrom,
+  )
+}
+
+object ClusterMessageFromWorker {
+  val format = new Format[ClusterMessageFromWorker] {
+
+    override def reads(json: JsValue): JsResult[ClusterMessageFromWorker] = Try {
+      ClusterMessageFromWorker(
+        member = MemberView.fromJsonSafe(json.select("member").asValue)(OtoroshiEnvHolder.get()).get,
+        payload = json.select("payload").asValue,
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: ClusterMessageFromWorker): JsValue = Json.obj(
+      "member" -> o.member.json,
+      "payload" -> o.payload,
+    )
+  }
+}
+case class ClusterMessageFromWorker(member: MemberView, payload: JsValue) {
+  def json: JsValue = ClusterMessageFromWorker.format.writes(this)
+}
+
 sealed trait ClusterLeaderUpdateMessage {
   def json: JsValue
-  def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit]
-  def updateWorker()(implicit env: Env): Future[Unit]
+  def update(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.clusterConfig.mode match {
+      case ClusterMode.Off => ().vfuture
+      case ClusterMode.Worker => updateWorker(member)
+      case ClusterMode.Leader => updateLeader(member)
+    }
+  }
+  def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit]
+  def updateWorker(member: MemberView)(implicit env: Env): Future[Unit]
 }
 object ClusterLeaderUpdateMessage {
 
   def read(item: JsValue): Option[ClusterLeaderUpdateMessage] = {
     // println(s"read: ${item.prettify}")
     item.select("typ").asOpt[String] match {
-      case Some("globstats") => GlobalStatusUpdate(item).some
+      case Some("globstats") => GlobalStatusUpdate.format.reads(item).asOpt
       case Some("apkincr") => ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
       case Some("srvincr") => RouteCallIncr(
         routeId = item.select("srv").asString,
@@ -2813,6 +3026,50 @@ object ClusterLeaderUpdateMessage {
   }
 
   object GlobalStatusUpdate {
+
+    val format = new Format[GlobalStatusUpdate] {
+
+      override def reads(json: JsValue): JsResult[GlobalStatusUpdate] = Try {
+        GlobalStatusUpdate(
+          cpuUsage = json.select("cpu_usage").asOpt[Double].getOrElse(0.0),
+          loadAverage = json.select("load_average").asOpt[Double].getOrElse(0L),
+          heapUsed = json.select("heap_used").asOpt[Long].getOrElse(0L),
+          heapSize = json.select("heap_size").asOpt[Long].getOrElse(0L),
+          liveThreads = json.select("live_threads").asOpt[Long].getOrElse(0L),
+          livePeakThreads = json.select("live_peak_threads").asOpt[Long].getOrElse(0L),
+          daemonThreads = json.select("daemon_threads").asOpt[Long].getOrElse(0L),
+          counters = json.select("counters").asOpt[JsObject].getOrElse(Json.obj()),
+          rate = json.select("rate").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
+          duration = json.select("duration").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
+          overhead = json.select("overhead").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
+          dataInRate = json.select("dataInRate").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
+          dataOutRate = json.select("dataOutRate").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
+          concurrentHandledRequests = json.select("concurrentHandledRequests").asOpt[Long].getOrElse(0L),
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(e) => JsSuccess(e)
+      }
+
+      override def writes(o: GlobalStatusUpdate): JsValue = Json.obj(
+        "typ" -> "globstats",
+        "cpu_usage" -> o.cpuUsage,
+        "load_average" -> o.loadAverage,
+        "heap_used" -> o.heapUsed,
+        "heap_size" -> o.heapSize,
+        "live_threads" -> o.liveThreads,
+        "live_peak_threads" -> o.livePeakThreads,
+        "daemon_threads" -> o.daemonThreads,
+        "counters" -> o.counters,
+        "rate" -> o.rate,
+        "duration" -> o.duration,
+        "overhead" -> o.overhead,
+        "dataInRate" -> o.dataInRate,
+        "dataOutRate" -> o.dataOutRate,
+        "concurrentHandledRequests" -> o.concurrentHandledRequests
+      )
+    }
+
     def build()(implicit env: Env, ec: ExecutionContext): Future[GlobalStatusUpdate] = {
       for {
         rate <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
@@ -2823,56 +3080,70 @@ object ClusterLeaderUpdateMessage {
         concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
       } yield {
         val rt = Runtime.getRuntime
-        GlobalStatusUpdate(Json.obj(
-          "typ" -> "globstats",
-          "cpu_usage" -> CpuInfo.cpuLoad(),
-          "load_average" -> CpuInfo.loadAverage(),
-          "heap_used" -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-          "heap_size" -> rt.totalMemory() / 1024 / 1024,
-          "live_threads" -> ManagementFactory.getThreadMXBean.getThreadCount,
-          "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-          "daemon_threads" -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
-          "counters" -> env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
-          "rate" -> BigDecimal(
+        GlobalStatusUpdate(
+          cpuUsage = CpuInfo.cpuLoad(),
+          loadAverage = CpuInfo.loadAverage(),
+          heapUsed = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+          heapSize = rt.totalMemory() / 1024 / 1024,
+          liveThreads = ManagementFactory.getThreadMXBean.getThreadCount,
+          livePeakThreads = ManagementFactory.getThreadMXBean.getPeakThreadCount,
+          daemonThreads = ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+          counters = env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
+          rate = BigDecimal(
             Option(rate)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
               .getOrElse(0.0)
           ).setScale(3, RoundingMode.HALF_EVEN),
-          "duration" -> BigDecimal(
+          duration = BigDecimal(
             Option(duration)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
               .getOrElse(0.0)
           ).setScale(3, RoundingMode.HALF_EVEN),
-          "overhead" -> BigDecimal(
+          overhead = BigDecimal(
             Option(overhead)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
               .getOrElse(0.0)
           ).setScale(3, RoundingMode.HALF_EVEN),
-          "dataInRate" -> BigDecimal(
+          dataInRate = BigDecimal(
             Option(dataInRate)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
               .getOrElse(0.0)
           ).setScale(3, RoundingMode.HALF_EVEN),
-          "dataOutRate" -> BigDecimal(
+          dataOutRate = BigDecimal(
             Option(dataOutRate)
               .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
               .getOrElse(0.0)
           ).setScale(3, RoundingMode.HALF_EVEN),
-          "concurrentHandledRequests" -> concurrentHandledRequests
-        ))
+          concurrentHandledRequests = concurrentHandledRequests
+        )
       }
     }
   }
 
-  case class GlobalStatusUpdate(stats: JsValue) extends ClusterLeaderUpdateMessage {
+  case class GlobalStatusUpdate(
+    cpuUsage: Double,
+    loadAverage: Double,
+    heapUsed: Long,
+    heapSize: Long,
+    liveThreads: Long,
+    livePeakThreads: Long,
+    daemonThreads: Long,
+    counters: JsObject,
+    rate: BigDecimal,
+    duration: BigDecimal,
+    overhead: BigDecimal,
+    dataInRate: BigDecimal,
+    dataOutRate: BigDecimal,
+    concurrentHandledRequests: Long,
+  ) extends ClusterLeaderUpdateMessage {
 
-    override def json: JsValue = Json.obj("typ" -> "globstats") ++ stats.asObject
+    override def json: JsValue = GlobalStatusUpdate.format.writes(this)
 
-    override def updateLeader(request: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-      request.headers
+    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      env.datastores.clusterStateDataStore.registerMember(member.copy(stats = json.asObject))
+      /*request.headers
         .get(ClusterAgent.OtoroshiWorkerNameHeader)
         .map { name =>
-          println("register member")
           env.datastores.clusterStateDataStore.registerMember(
             MemberView(
               id = request.headers
@@ -2914,7 +3185,7 @@ object ClusterLeaderUpdateMessage {
                 env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                 TimeUnit.MILLISECONDS
               ),
-              stats = stats.as[JsObject],
+              stats = json.asObject,
               tunnels = Seq.empty,
               relay = request.headers
                 .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
@@ -2924,9 +3195,10 @@ object ClusterLeaderUpdateMessage {
           )
         }
         .getOrElse(FastFuture.successful(()))
+       */
     }
 
-    override def updateWorker()(implicit env: Env): Future[Unit] = {
+    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
       // TODO: membership + global stats ?
       FastFuture.successful(())
     }
@@ -2936,14 +3208,14 @@ object ClusterLeaderUpdateMessage {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
-    def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, calls.get()).map(_ => ())
         case None => FastFuture.successful(())
       }
     }
 
-    def updateWorker()(implicit env: Env): Future[Unit] = {
+    def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
       env.clusterAgent.incrementApi(clientId, calls.get()).vfuture
     }
 
@@ -2984,7 +3256,7 @@ object ClusterLeaderUpdateMessage {
       headersOut.addAndGet(headersOutInc)
     }
 
-    def updateLeader(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.serviceDescriptorDataStore.findOrRouteById(routeId).flatMap {
         case Some(_) =>
           val config = env.datastores.globalConfigDataStore.latest()
@@ -2995,7 +3267,7 @@ object ClusterLeaderUpdateMessage {
       }
     }
 
-    def updateWorker()(implicit env: Env): Future[Unit] = {
+    def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
       env.clusterAgent.incrementService(
         routeId,
         calls.get(),
