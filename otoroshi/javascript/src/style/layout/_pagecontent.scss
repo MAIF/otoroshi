@@ -34,7 +34,6 @@
   display: none;
 }
 
-
 .page-header {
   // position: fixed;
   background-color: var(--bg-color_level1);
@@ -72,7 +71,17 @@
 }
 
 .global-tenant-selector {
-  width: 100%;
+  width: 180px;
+
+  .Select-value,
+  .Select,
+  .Select-control,
+  .Select.has-value.Select--single
+    > .Select-control
+    .Select-value
+    .Select-value-label {
+    background: none;
+  }
 }
 
 //monkey page
