@@ -15,7 +15,6 @@ import CustomTable from './CustomTable';
 import { ManagerTitle, Tab } from './TitleManager';
 import EditGroup from './EditGroup';
 import Wrapper from './Wrapper';
-import { conforms } from 'lodash';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -51,7 +50,7 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
   }))]
     .filter((v, i, a) => a.findIndex(v2 => (v2.month === v.month && v2.year === v.year)) === i);
 
-  const [currentMonthAndYear, setCurrentMonthAndYear] = useState(0);
+  const [currentMonthAndYear, setCurrentMonthAndYear] = useState(months.findIndex(m => m.month === (new Date(date).getUTCMonth() + 1)));
 
   const format = date => moment(date, "DD/MM/YYYY").format("MMMM YYYY");
 

@@ -108,7 +108,7 @@ export function GlobalScore(allProps) {
                 alignItems: 'center',
                 justifyContent: 'center'
             }}>
-                <i className={`fas fa-${props.dynamic ? 'bolt' : props.raw ? 'seedling' : 'spa'}`} style={{ fontSize: 'initial' }} />
+                <i className={`fas fa-${props.dynamic ? 'bolt' : 'spa'}`} style={{ fontSize: 'initial' }} />
             </div>
         </div>
     </Wrapper>

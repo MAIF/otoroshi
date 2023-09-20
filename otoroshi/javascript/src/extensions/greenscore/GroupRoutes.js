@@ -89,8 +89,6 @@ export default class GroupRoutes extends React.Component {
     const { editRoute, value } = this.state;
     const { routes } = value;
 
-    console.log(value)
-
     return <>
       {editRoute && (
         <RulesWizard
@@ -325,27 +323,52 @@ function GreenScoreForm({ route, ...rest }) {
   today.setMonth(today.getMonth() - 4) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
-  const onRulesChange = (enabled, ruleId) => {
-
+  const onRulesChange = (enabled, ruleId, allRulesOfTheSection) => {
     let statesOfCurrentDate = states.find(f => f.date === today.getTime());
 
-    // console.log('states of current date', statesOfCurrentDate)
-
-    if (!statesOfCurrentDate)
+    if (!statesOfCurrentDate) {
       statesOfCurrentDate = {
-        states: [],
+        states: states.length > 0 ? states[states.length - 1] : [],
         date: today.getTime()
       }
+    }
+
+    const section = Object.values(rest.rulesBySection)
+      .flatMap(r => r)
+      .find(r => r.id === ruleId).section;
 
     statesOfCurrentDate = {
-      states: [
-        ...statesOfCurrentDate.states.filter(item => item.id !== ruleId),
-        {
-          id: ruleId,
-          enabled
-        }
-      ],
+      states: statesOfCurrentDate.states.filter(item => item.id !== ruleId && (allRulesOfTheSection ? item.section !== section : true)),
       date: today.getTime()
+    }
+
+    if (allRulesOfTheSection) {
+      statesOfCurrentDate = {
+        states: [
+          ...statesOfCurrentDate.states,
+          ...Object.values(rest.rulesBySection)
+            .flatMap(r => r)
+            .filter(r => r.section === section)
+            .map(r => ({
+              id: r.id,
+              section,
+              enabled
+            }))
+        ],
+        date: today.getTime()
+      }
+    } else {
+      statesOfCurrentDate = {
+        states: [
+          ...statesOfCurrentDate.states,
+          {
+            id: ruleId,
+            section,
+            enabled
+          }
+        ],
+        date: today.getTime()
+      }
     }
 
     rest.onChange({
@@ -422,57 +445,68 @@ function ThresholdsTable({ thresholds, onBoundsChange }) {
 }
 
 function RulesTables({ rest, states, onRulesChange, today }) {
-  return Object.entries(rest.rulesBySection).map(([id, rules]) => {
-    const groupId = id;
-    return (
-      <div key={groupId} className="p-3">
-        <h4 className="mb-3" style={{ textTransform: 'capitalize' }}>
-          {groupId}
-        </h4>
-        {(rules || []).map(({ id, description, advice }) => {
-          const ruleId = id;
+  const ruleIsEabled = ruleId => {
+    let statesAtDate = states.find(s => s.date === today.getTime());
 
-          let statesAtDate = states.find(s => s.date === today.getTime());
+    if (!statesAtDate && states.length > 0) {
+      statesAtDate = states[states.length - 1]
+    }
 
-          if (!statesAtDate && states.length > 0) {
-            statesAtDate = states[states.length - 1]
-          }
+    return statesAtDate ? statesAtDate.states.find(f => f.id === ruleId)?.enabled : false
+  }
 
-          const enabled = (statesAtDate ? statesAtDate.states.find(f => f.id === ruleId)?.enabled : false);
+  const getSectionStatus = rules => rules.reduce((acc, rule) => acc && ruleIsEabled(rule.id), true)
 
-          return (
-            <div
-              key={ruleId}
-              className="d-flex align-items-center"
+  return <>
+    {Object.entries(rest.rulesBySection).map(([id, rules]) => {
+      const groupId = id;
+      const sectionStatus = getSectionStatus(rules);
+
+      return (
+        <div key={groupId} className="p-3">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px' }}>
+            <h4 className="mb-3" style={{ textTransform: 'capitalize' }}>
+              {groupId}
+            </h4>
+            <NgBooleanRenderer
+              value={sectionStatus}
+              onChange={() => {
+                onRulesChange(!sectionStatus, rules[0].id, true)
+              }}
+              schema={{}}
+              ngOptions={{ spread: true }}
+            />
+          </div>
+          {(rules || []).map(({ id, description, advice }) => {
+            const enabled = ruleIsEabled(id);
+
+            return <div key={id}
+              className="align-items-center"
               style={{
-                cursor: 'pointer',
+                display: 'grid',
+                gridTemplateColumns: '1fr 52px',
+                cursor: 'pointer'
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                onRulesChange(!enabled, ruleId);
+                onRulesChange(!enabled, id);
               }}>
-              <div style={{ flex: 1 }}>
-                <p className="mb-0" style={{ fontWeight: 'bold' }}>
-                  {description}
-                </p>
+              <div>
+                <p className="mb-0" style={{ fontWeight: 'bold' }}>{description}</p>
                 <p className="">{advice}</p>
               </div>
-              <div style={{ minWidth: 52 }}>
-                <NgBooleanRenderer
-                  value={enabled}
-                  onChange={() => { }}
-                  schema={{}}
-                  ngOptions={{
-                    spread: true,
-                  }}
-                />
-              </div>
+              <NgBooleanRenderer
+                value={enabled}
+                onChange={() => { }}
+                schema={{}}
+                ngOptions={{ spread: true }}
+              />
             </div>
-          );
-        })}
-      </div>
-    );
-  })
+          })}
+        </div >
+      );
+    })}
+  </>
 }
 
 function BoundsInput({ title, bounds, unit, ...props }) {
