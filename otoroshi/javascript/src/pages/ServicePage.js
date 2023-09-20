@@ -48,6 +48,7 @@ import { Location } from '../components/Location';
 import Loader from '../components/Loader';
 import { Link } from 'react-router-dom';
 import explainations from '../explainations';
+import { ReactSelectOverride } from '../components/inputs/ReactSelectOverride';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -585,12 +586,12 @@ class CleverSelector extends Component {
             onClick={this.show}>
             <i className="fas fa-times-circle" />
           </button>
-          <Select
+          <ReactSelectOverride
             style={{ width: 300, border: '1px solid #ccc' }}
             placeholder="Select a target from CleverCloud"
             value={this.state.value}
             options={this.state.services.map((s) => ({ label: s.name, value: s.url }))}
-            onChange={this.onChange}
+            onChange={v => this.onChange({ value: v })}
           />
         </div>
       );
@@ -1572,26 +1573,22 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
+                        }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                      this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${
-                      this.state.service.matchingRoot || ''
-                    }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
+                      }/`}
                   />
                 )}
               </>
@@ -3541,11 +3538,10 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>

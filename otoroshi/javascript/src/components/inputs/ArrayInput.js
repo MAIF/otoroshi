@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import Select from 'react-select';
-import Creatable from 'react-select/lib/Creatable';
 import { Help } from './Help';
+import { ReactSelectOverride } from './ReactSelectOverride';
 
 export class ArrayInput extends Component {
   state = {
@@ -209,7 +208,7 @@ export class ArrayInput extends Component {
                 )}
                 {!!this.state.values.length && !this.props.creatable && !this.props.component && (
                   <div className="flex-grow-1">
-                    <Select
+                    <ReactSelectOverride
                       name={`selector-${idx}`}
                       value={value}
                       isLoading={this.state.loading}
@@ -217,20 +216,21 @@ export class ArrayInput extends Component {
                       placeholder={this.props.placeholder}
                       optionRenderer={this.props.optionRenderer}
                       options={this.state.values}
-                      onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                      onChange={(e) => this.changeValue({ target: { value: e } }, idx)}
                     />
                   </div>
                 )}
                 {!!this.state.values.length && this.props.creatable && !this.props.component && (
-                  <Creatable
+                  <ReactSelectOverride
+                    creatable
                     name={`selector-${idx}`}
-                    value={{ label: value, value }}
+                    value={value}
                     isLoading={this.state.loading}
                     disabled={this.props.disabled}
                     placeholder={this.props.placeholder}
                     optionRenderer={this.props.optionRenderer}
                     options={this.state.values}
-                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                    onChange={(e) => this.changeValue({ target: { value: e } }, idx)}
                     promptTextCreator={(label) => `Create events filter "${label}"`}
                   />
                 )}

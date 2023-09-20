@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Select from 'react-select';
 import { Help } from './Help';
+import { ReactSelectOverride } from './ReactSelectOverride';
 
 export class SelectInput extends Component {
   state = {
@@ -70,18 +71,13 @@ export class SelectInput extends Component {
   };
 
   onChange = (e) => {
-    if (e) {
-      this.setState({ value: e.value });
-      this.props.onChange(e.value);
-    } else {
-      this.setState({ value: null });
-      this.props.onChange(null);
-    }
+    this.setState({ value: e });
+    this.props.onChange(e);
   };
 
-  onChangeClassic = (e) => {
-    this.setState({ value: e.target.value });
-    this.props.onChange(e.target.value);
+  onChangeClassic = e => {
+    this.setState({ value: e });
+    this.props.onChange(e);
   };
 
   render() {
@@ -111,14 +107,11 @@ export class SelectInput extends Component {
           </label>
           <div className="col-sm-10">
             <div style={{ width: '100%' }}>
-              <select
-                className="form-control classic-select"
+              <ReactSelectOverride
                 value={this.state.value}
-                onChange={this.onChangeClassic}>
-                {this.state.values.map((value) => (
-                  <option value={value.value}>{value.label}</option>
-                ))}
-              </select>
+                onChange={this.onChangeClassic}
+                options={this.state.values}
+              />
             </div>
           </div>
         </div>
@@ -127,7 +120,7 @@ export class SelectInput extends Component {
     if (this.props.staticValues) {
       return (
         <div style={{ width: '100%' }}>
-          <Select
+          <ReactSelectOverride
             style={{ width: '100%' }}
             name={`${this.props.label}-search`}
             isLoading={this.state.loading}
@@ -151,7 +144,7 @@ export class SelectInput extends Component {
         <div className={this.props.flex ? 'col-sm-12' : 'col-sm-10'}>
           <div style={{ width: '100%' }}>
             {!this.props.disabled && (
-              <Select
+              <ReactSelectOverride
                 style={{ width: this.props.more ? '100%' : '100%' }}
                 name={`${this.props.label}-search`}
                 isLoading={this.state.loading}

@@ -1,13 +1,12 @@
-import React, { Component, Suspense, useState } from 'react';
-import Select, { Creatable } from 'react-select';
+import React, { Component, Suspense } from 'react';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
-import { Help, ObjectInput } from '../inputs';
+import { ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
-import { Button } from '../Button';
 import ReactTooltip from 'react-tooltip';
+import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -140,9 +139,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -245,12 +243,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-      ? props.margin
-      : _props.rawSchema?.props?.margin !== undefined
-      ? _props.rawSchema?.props?.margin
-      : _props.readOnly
-      ? 'mb-0'
-      : 'mb-3';
+        ? props.margin
+        : _props.rawSchema?.props?.margin !== undefined
+          ? _props.rawSchema?.props?.margin
+          : _props.readOnly
+            ? 'mb-0'
+            : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -571,20 +569,20 @@ export class NgBoxBooleanRenderer extends Component {
       this.props.margin !== undefined
         ? this.props.margin
         : props.margin !== undefined
-        ? props.margin
-        : this.props.rawSchema?.margin !== undefined
-        ? this.props.rawSchema?.margin
-        : 3;
+          ? props.margin
+          : this.props.rawSchema?.margin !== undefined
+            ? this.props.rawSchema?.margin
+            : 3;
 
     const className = this.props.className;
 
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <div className="col-sm-10 ms-auto">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -662,8 +660,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -846,21 +844,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
@@ -911,7 +909,6 @@ export class NgArraySelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
-    const Component = props.creatable ? Select : Creatable;
 
     return (
       <LabelAndInput {...this.props}>
@@ -923,7 +920,8 @@ export class NgArraySelectRenderer extends Component {
                   className="d-flex justify-content-between align-items-center mb-1"
                   key={`${value}-${idx}`}>
                   <div style={{ width: '100%', flex: 1 }}>
-                    <Component
+                    <ReactSelectOverride
+                      creatable={props.creatable}
                       name={`selector-${this.props.name}`}
                       value={value}
                       isLoading={this.state.loading}
@@ -937,8 +935,36 @@ export class NgArraySelectRenderer extends Component {
                       style={{ width: '100%' }}
                       onChange={(e) => {
                         const newArray = this.props.value ? [...this.props.value] : [];
-                        newArray.splice(idx, 1, e?.value || '');
+                        newArray.splice(idx, 1, e || '');
                         this.props.onChange(newArray);
+                      }}
+                      components={{
+                        IndicatorSeparator: () => null,
+                      }}
+                      styles={{
+                        control: (baseStyles) => ({
+                          ...baseStyles,
+                          border: '1px solid var(--bg-color_level3)',
+                          color: 'var(--text)',
+                          backgroundColor: 'var(--bg-color_level2)',
+                          boxShadow: 'none'
+                        }),
+                        menu: (baseStyles) => ({
+                          ...baseStyles,
+                          margin: 0,
+                          borderTopLeftRadius: 0,
+                          borderTopRightRadius: 0,
+                          backgroundColor: 'var(--bg-color_level2)',
+                          color: 'var(--text)'
+                        }),
+                        input: provided => ({
+                          ...provided,
+                          color: 'var(--text)'
+                        }),
+                        singleValue: provided => ({
+                          ...provided,
+                          color: 'var(--text)'
+                        })
                       }}
                     />
                   </div>
@@ -1034,7 +1060,7 @@ export class NgObjectSelectRenderer extends Component {
                       style={{ width: '50%' }}
                       {...props}
                     />
-                    <Select
+                    <ReactSelectOverride
                       name={`selector-${this.props.name}`}
                       value={value}
                       isLoading={this.state.loading}
@@ -1045,7 +1071,7 @@ export class NgObjectSelectRenderer extends Component {
                       style={{ width: '100%' }}
                       onChange={(e) => {
                         const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e.value;
+                        newObject[key] = e;
                         this.props.onChange(newObject);
                       }}
                     />
@@ -1134,14 +1160,14 @@ export class NgSelectRenderer extends Component {
     const props = schema.props || this.props || {};
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
-    const Component = creatable ? Creatable : Select;
 
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
         {!readOnly && (
-          <Component
+          <ReactSelectOverride
             name={`selector-${this.props.name}`}
+            creatable={creatable}
             value={this.props.value}
             isMulti={props.isMulti}
             isLoading={this.state.loading}
@@ -1153,12 +1179,40 @@ export class NgSelectRenderer extends Component {
               this.state.options || props.options || this.props.options
             )}
             onChange={(e) => {
-              if (creatable && !this.state.options.find((o) => o.value === e?.value)) {
+              if (creatable && !this.state.options.find((o) => o.value === e)) {
                 this.setState({
-                  options: [...this.state.options, e.value],
+                  options: [...this.state.options, e],
                 });
               }
-              this.props.onChange(e?.value);
+              this.props.onChange(e);
+            }}
+            components={{
+              IndicatorSeparator: () => null,
+            }}
+            styles={{
+              control: (baseStyles) => ({
+                ...baseStyles,
+                border: '1px solid var(--bg-color_level3)',
+                color: 'var(--text)',
+                backgroundColor: 'var(--bg-color_level2)',
+                boxShadow: 'none'
+              }),
+              menu: (baseStyles) => ({
+                ...baseStyles,
+                margin: 0,
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                backgroundColor: 'var(--bg-color_level2)',
+                color: 'var(--text)'
+              }),
+              input: provided => ({
+                ...provided,
+                color: 'var(--text)'
+              }),
+              singleValue: provided => ({
+                ...provided,
+                color: 'var(--text)'
+              })
             }}
           />
         )}

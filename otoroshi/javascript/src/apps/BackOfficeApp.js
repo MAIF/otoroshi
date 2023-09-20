@@ -7,7 +7,6 @@ import {
   withRouter,
 } from 'react-router-dom';
 import queryString from 'query-string';
-import Select from 'react-select';
 
 import { ServicePage } from '../pages/ServicePage';
 import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';

@@ -1,10 +1,9 @@
 import React, { Component, useState } from 'react';
-import PropTypes from 'prop-types';
-import Select, { Async } from 'react-select';
+
+import Async from 'react-select/async'
 import last from 'lodash/last';
 import isString from 'lodash/isString';
 import fuzzy from 'fuzzy';
-import { DefaultAdminPopover } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
@@ -622,7 +621,7 @@ export class TopBar extends Component {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: '' }),
+      body: JSON.stringify({ query }),
     })
       .then((r) => r.json())
       .then((results) => {
@@ -1031,7 +1030,8 @@ export class TopBar extends Component {
             options.push(item);
           });
         });
-        return { options };
+
+        return options;
       });
   };
 
@@ -1604,7 +1604,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-            // style={{ zIndex: 100 }}
+          // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1650,32 +1650,11 @@ export class TopBar extends Component {
                       value="one"
                       placeholder="Search service, line, etc ..."
                       loadOptions={this.searchServicesOptions}
-                      openOnFocus={true}
-                      onChange={(i) => i.action()}
-                      arrowRenderer={(a) => {
-                        return (
-                          <span
-                            style={{ display: 'flex', height: 20 }}
-                            title="You can jump directly into the search bar from anywhere just by typing '/'">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                              <defs>
-                                <rect id="a" width="19" height="20" rx="3" />
-                              </defs>
-                              <g fill="none" fillRule="evenodd">
-                                <rect
-                                  stroke="#5F6165"
-                                  x=".5"
-                                  y=".5"
-                                  width="18"
-                                  height="19"
-                                  rx="3"
-                                />
-                                <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
-                              </g>
-                            </svg>
-                          </span>
-                        );
+                      openMenuOnFocus={true}
+                      onFocus={() => {
+                        this.selector.onInputChange(" ")
                       }}
+                      onChange={(i) => i.action()}
                       filterOptions={(opts, value, excluded, conf) => {
                         const [env, searched] = extractEnv(value);
                         const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
@@ -1686,32 +1665,86 @@ export class TopBar extends Component {
                         });
                         return matched.map((i) => i.original);
                       }}
-                      optionRenderer={(p) => {
-                        const env =
-                          p.env && isString(p.env)
-                            ? p.env.length > 4
-                              ? p.env.substring(0, 4) + '.'
-                              : p.env
-                            : null;
-                        return (
-                          <div style={{ display: 'flex' }}>
-                            <div
-                              style={{
-                                width: 60,
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                              {p.env && isString(p.env) && (
-                                <span className={`badge ${this.color(p.env)}`}>{env}</span>
-                              )}
-                              {p.env && !isString(p.env) && p.env}
-                            </div>
-                            <span>{p.label}</span>
-                          </div>
-                        );
+                      styles={{
+                        control: (baseStyles, state) => ({
+                          ...baseStyles,
+                          border: '1px solid var(--bg-color_level3)',
+                          width: 400,
+                          color: 'var(--text)',
+                          backgroundColor: 'var(--bg-color_level2)',
+                          boxShadow: 'none'
+                        }),
+                        menu: (baseStyles) => ({
+                          ...baseStyles,
+                          margin: 0,
+                          borderTopLeftRadius: 0,
+                          borderTopRightRadius: 0,
+                          backgroundColor: 'var(--bg-color_level2)',
+                          color: 'var(--text)'
+                        }),
+                        input: provided => ({
+                          ...provided,
+                          color: 'var(--text)'
+                        })
                       }}
-                      style={{ width: 400 }}
+                      components={{
+                        NoOptionsMessage: () => null,
+                        Option: props => {
+                          const p = props.data;
+                          const env =
+                            p.env && isString(p.env)
+                              ? p.env.length > 4
+                                ? p.env.substring(0, 4) + '.'
+                                : p.env
+                              : null;
+                          return (
+                            <div style={{
+                              display: 'flex', alignItems: 'center', padding: '.5rem',
+                              background: props.isFocused ? 'var(--bg-color_level2)' : 'var(--bg-color_level3)'
+                            }}
+                              ref={props.innerRef} {...props.innerProps}>
+                              <div
+                                style={{
+                                  width: 60,
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                }}>
+                                {p.env && isString(p.env) && (
+                                  <span className={`badge ${this.color(p.env)}`}>{env}</span>
+                                )}
+                                {p.env && !isString(p.env) && p.env}
+                              </div>
+                              <span>{p.label}</span>
+                            </div>
+                          );
+                        },
+                        IndicatorSeparator: () => null,
+                        DropdownIndicator: () => {
+                          return (
+                            <span
+                              style={{ display: 'flex', height: 20, paddingRight: 5 }}
+                              title="You can jump directly into the search bar from anywhere just by typing '/'">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                                <defs>
+                                  <rect id="a" width="19" height="20" rx="3" />
+                                </defs>
+                                <g fill="none" fillRule="evenodd">
+                                  <rect
+                                    stroke="#5F6165"
+                                    x=".5"
+                                    y=".5"
+                                    width="18"
+                                    height="19"
+                                    rx="3"
+                                  />
+                                  <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
+                                </g>
+                              </svg>
+                            </span>
+                          );
+                        }
+                      }}
                     />
                   </div>
                   <div className="dropdown">
@@ -1833,9 +1866,8 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${
-                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                      } py-2 pb-4`}
+                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                        } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });
