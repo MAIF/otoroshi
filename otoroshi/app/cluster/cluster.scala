@@ -1288,53 +1288,6 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   }
 
   def renewMemberShip(): Unit = {
-    /*(for {
-      rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
-      duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
-      overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-      dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
-      dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
-      concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-    } yield {
-      val rt = Runtime.getRuntime
-      Json.obj(
-        "typ"                       -> "globstats",
-        "cpu_usage"                 -> CpuInfo.cpuLoad(),
-        "load_average"              -> CpuInfo.loadAverage(),
-        "heap_used"                 -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-        "heap_size"                 -> rt.totalMemory() / 1024 / 1024,
-        "live_threads"              -> ManagementFactory.getThreadMXBean.getThreadCount,
-        "live_peak_threads"         -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-        "daemon_threads"            -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
-        "counters"                  -> env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
-        "rate"                      -> BigDecimal(
-          Option(rate)
-            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-            .getOrElse(0.0)
-        ).setScale(3, RoundingMode.HALF_EVEN),
-        "duration"                  -> BigDecimal(
-          Option(duration)
-            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-            .getOrElse(0.0)
-        ).setScale(3, RoundingMode.HALF_EVEN),
-        "overhead"                  -> BigDecimal(
-          Option(overhead)
-            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-            .getOrElse(0.0)
-        ).setScale(3, RoundingMode.HALF_EVEN),
-        "dataInRate"                -> BigDecimal(
-          Option(dataInRate)
-            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-            .getOrElse(0.0)
-        ).setScale(3, RoundingMode.HALF_EVEN),
-        "dataOutRate"               -> BigDecimal(
-          Option(dataOutRate)
-            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-            .getOrElse(0.0)
-        ).setScale(3, RoundingMode.HALF_EVEN),
-        "concurrentHandledRequests" -> concurrentHandledRequests
-      )
-    })*/
     GlobalStatusUpdate.build().flatMap { stats =>
       env.datastores.clusterStateDataStore.registerMember(
         MemberView(
@@ -2184,10 +2137,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
         val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
-        //val oldApiIncr     = apiIncrementsRef.getAndSet(new UnboundedTrieMap[String, AtomicLong]())
-        //val oldServiceIncr =
-        //  servicesIncrementsRef.getAndSet(new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
-        //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start          = System.currentTimeMillis()
         Retry
           .retry(
@@ -2200,75 +2149,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               Cluster.logger.trace(
                 s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
               )
-            /*val rt = Runtime.getRuntime
-            (for {
-              rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
-              duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
-              overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-              dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
-              dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
-              concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-            } yield ByteString(
-              Json.stringify(
-                Json.obj(
-                  "typ"                       -> "globstats",
-                  "cpu_usage"                 -> CpuInfo.cpuLoad(),
-                  "load_average"              -> CpuInfo.loadAverage(),
-                  "heap_used"                 -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-                  "heap_size"                 -> rt.totalMemory() / 1024 / 1024,
-                  "live_threads"              -> ManagementFactory.getThreadMXBean.getThreadCount,
-                  "live_peak_threads"         -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-                  "daemon_threads"            -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
-                  "counters"                  -> counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
-                  "rate"                      -> BigDecimal(
-                    Option(rate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "duration"                  -> BigDecimal(
-                    Option(duration)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "overhead"                  -> BigDecimal(
-                    Option(overhead)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "dataInRate"                -> BigDecimal(
-                    Option(dataInRate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "dataOutRate"               -> BigDecimal(
-                    Option(dataOutRate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "concurrentHandledRequests" -> concurrentHandledRequests
-                )
-              ) + "\n"
-            ))*/
 
             GlobalStatusUpdate.build().map(v => (v.json.stringify + "\n").byteString).flatMap { stats =>
               /// push other data here !
               val quotaIncrSource = Source(oldQuotasIncr.toList.map(v => (v._2.json.stringify + "\n").byteString))
-              // val apiIncrSource     = Source(oldApiIncr.toList.map { case (key, inc) =>
-              //   ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
-              // })
-              // val serviceIncrSource = Source(oldServiceIncr.toList.map { case (key, (calls, dataIn, dataOut)) =>
-              //   ByteString(
-              //     Json.stringify(
-              //       Json.obj(
-              //         "typ" -> "srvincr",
-              //         "srv" -> key,
-              //         "c"   -> calls.get(),
-              //         "di"  -> dataIn.get(),
-              //         "do"  -> dataOut.get()
-              //       )
-              //     ) + "\n"
-              //   )
-              // })
               val globalSource      = Source.single(stats)
               // val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val body              = quotaIncrSource.concat(globalSource).via(env.clusterConfig.gzip())
@@ -2389,7 +2273,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         q
       }
     val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource
-    val (fu, matz) = env.Ws.ws(
+    val (fu, _) = env.Ws.ws(
       request = WebSocketRequest.fromTargetUriString("ws://otoroshi-api.oto.tools:9999/api/cluster/state/ws").copy(
         extraHeaders = List(
           RawHeader("Host", "otoroshi-api.oto.tools"),
@@ -3141,61 +3025,6 @@ object ClusterLeaderUpdateMessage {
 
     override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.clusterStateDataStore.registerMember(member.copy(stats = json.asObject))
-      /*request.headers
-        .get(ClusterAgent.OtoroshiWorkerNameHeader)
-        .map { name =>
-          env.datastores.clusterStateDataStore.registerMember(
-            MemberView(
-              id = request.headers
-                .get(ClusterAgent.OtoroshiWorkerIdHeader)
-                .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
-              name = name,
-              os = request.headers
-                .get(ClusterAgent.OtoroshiWorkerOsHeader)
-                .map(OS.fromString)
-                .getOrElse(OS.default),
-              version = request.headers
-                .get(ClusterAgent.OtoroshiWorkerVersionHeader)
-                .getOrElse("undefined"),
-              javaVersion = request.headers
-                .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
-                .map(JavaVersion.fromString)
-                .getOrElse(JavaVersion.default),
-              memberType = ClusterMode.Worker,
-              location =
-                request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-              httpPort = request.headers
-                .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-                .map(_.toInt)
-                .getOrElse(env.exposedHttpPortInt),
-              httpsPort = request.headers
-                .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-                .map(_.toInt)
-                .getOrElse(env.exposedHttpsPortInt),
-              internalHttpPort = request.headers
-                .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-                .map(_.toInt)
-                .getOrElse(env.httpPort),
-              internalHttpsPort = request.headers
-                .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-                .map(_.toInt)
-                .getOrElse(env.httpsPort),
-              lastSeen = DateTime.now(),
-              timeout = Duration(
-                env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-                TimeUnit.MILLISECONDS
-              ),
-              stats = json.asObject,
-              tunnels = Seq.empty,
-              relay = request.headers
-                .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
-                .flatMap(RelayRouting.parse)
-                .getOrElse(RelayRouting.default)
-            )
-          )
-        }
-        .getOrElse(FastFuture.successful(()))
-       */
     }
 
     override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {

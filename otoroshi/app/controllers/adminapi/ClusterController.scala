@@ -306,32 +306,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   case None => FastFuture.successful(())
                   case Some(quota) => quota.updateWorker(MemberView.fromRequest(ctx.request))
                 }
-                // (jsItem \ "typ").asOpt[String] match {
-                //   case Some("globstats") => {
-                //     // TODO: membership + global stats ?
-                //     FastFuture.successful(())
-                //   }
-                //   case Some("srvincr")   => {
-                //     val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                //     val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                //     val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                //     val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                //     env.clusterAgent.incrementService(id, dataIn, dataOut)
-                //     if (calls - 1 > 0) {
-                //       (0L to (calls - 1L)).foreach { _ =>
-                //         env.clusterAgent.incrementService(id, 0L, 0L)
-                //       }
-                //     }
-                //     FastFuture.successful(())
-                //   }
-                //   case Some("apkincr")   => {
-                //     val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                //     val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                //     env.clusterAgent.incrementApi(id, increment)
-                //     FastFuture.successful(())
-                //   }
-                //   case _                 => FastFuture.successful(())
-                // }
               }
               .runWith(Sink.ignore)
               .map { _ =>
@@ -361,85 +335,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                     case Some(quota) => quota.updateLeader(MemberView.fromRequest(ctx.request))
                     case None => FastFuture.successful(())
                   }
-                  //(jsItem \ "typ").asOpt[String] match {
-                  //  case Some("globstats") => {
-                  //    ctx.request.headers
-                  //      .get(ClusterAgent.OtoroshiWorkerNameHeader)
-                  //      .map { name =>
-                  //        env.datastores.clusterStateDataStore.registerMember(
-                  //          MemberView(
-                  //            id = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerIdHeader)
-                  //              .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
-                  //            name = name,
-                  //            os = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerOsHeader)
-                  //              .map(OS.fromString)
-                  //              .getOrElse(OS.default),
-                  //            version = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerVersionHeader)
-                  //              .getOrElse("undefined"),
-                  //            javaVersion = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
-                  //              .map(JavaVersion.fromString)
-                  //              .getOrElse(JavaVersion.default),
-                  //            memberType = ClusterMode.Worker,
-                  //            location =
-                  //              ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                  //            httpPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.exposedHttpPortInt),
-                  //            httpsPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.exposedHttpsPortInt),
-                  //            internalHttpPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.httpPort),
-                  //            internalHttpsPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.httpsPort),
-                  //            lastSeen = DateTime.now(),
-                  //            timeout = Duration(
-                  //              env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-                  //              TimeUnit.MILLISECONDS
-                  //            ),
-                  //            stats = jsItem.as[JsObject],
-                  //            tunnels = Seq.empty,
-                  //            relay = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
-                  //              .flatMap(RelayRouting.parse)
-                  //              .getOrElse(RelayRouting.default)
-                  //          )
-                  //        )
-                  //      }
-                  //      .getOrElse(FastFuture.successful(()))
-                  //  }
-                  //  case Some("srvincr")   => {
-                  //    val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                  //    val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                  //    val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                  //    val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                  //    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-                  //      case Some(_) =>
-                  //        env.datastores.serviceDescriptorDataStore
-                  //          .updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
-                  //      case None    => FastFuture.successful(())
-                  //    }
-                  //  }
-                  //  case Some("apkincr")   => {
-                  //    val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                  //    val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                  //    env.datastores.apiKeyDataStore.findById(id).flatMap {
-                  //      case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
-                  //      case None         => FastFuture.successful(())
-                  //    }
-                  //  }
-                  //  case _                 => FastFuture.successful(())
-                  //}
                 }
                 .runWith(Sink.ignore)
                 .andThen { case _ =>
@@ -541,108 +436,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 )
               )
             }
-
-            /*
-            def sendAndCache(): Future[Result] = {
-              // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
-              if (caching.compareAndSet(false, true)) {
-                val start: Long = System.currentTimeMillis()
-                // var stateCache = ByteString.empty
-                val counter     = new AtomicLong(0L)
-                val digest      = MessageDigest.getInstance("SHA-256")
-                env.datastores
-                  .rawExport(env.clusterConfig.leader.groupingBy)
-                  .map { item =>
-                    ByteString(Json.stringify(item) + "\n")
-                  }
-                  .alsoTo(Sink.foreach { item =>
-                    digest.update(item.asByteBuffer)
-                    counter.incrementAndGet()
-                  })
-                  .via(env.clusterConfig.gzip())
-                  // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
-                  // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-                  // .alsoTo(Sink.onComplete {
-                  //   case Success(_) =>
-                  //     if ((System.currentTimeMillis() - start) > budget) {
-                  //       Cluster.logger.warn(
-                  //         s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?"
-                  //       )
-                  //     }
-                  //     cachedRef.set(stateCache)
-                  //     cachedAt.set(System.currentTimeMillis())
-                  //     caching.compareAndSet(true, false)
-                  //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                  //     env.clusterConfig.leader.stateDumpPath
-                  //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                  //     Cluster.logger.debug(
-                  //       s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
-                  //     )
-                  //   case Failure(e) =>
-                  //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
-                  //       e)
-                  // })
-                  .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-                  .fold {
-                    case Success(stateCache) => {
-                      if ((System.currentTimeMillis() - start) > budget) {
-                        Cluster.logger.warn(
-                          s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?"
-                        )
-                      }
-                      cachedRef.set(stateCache)
-                      cachedAt.set(System.currentTimeMillis())
-                      cachedCount.set(counter.get())
-                      cachedDigest.set(Hex.encodeHexString(digest.digest()))
-                      caching.compareAndSet(true, false)
-                      env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                      env.clusterConfig.leader.stateDumpPath
-                        .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                      Cluster.logger.debug(
-                        s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
-                      )
-                      Ok.sendEntity(
-                        HttpEntity.Streamed(
-                          Source.single(stateCache),
-                          None,
-                          Some("application/x-ndjson")
-                        )
-                      ).withHeaders(
-                        "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                        "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                        "X-Data-Count"                 -> s"${cachedCount.get()}",
-                        "X-Data-Digest"                -> cachedDigest.get(),
-                        "X-Data-From"                  -> s"${System.currentTimeMillis()}",
-                        "X-Data-Fresh"                 -> "true"
-                      ) //.withHeaders("Content-Encoding" -> "gzip")
-                    }
-                    case Failure(err)        =>
-                      Cluster.logger.error(
-                        s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
-                        err
-                      )
-                      InternalServerError(
-                        Json.obj("error" -> "Stream error while exporting raw state", "message" -> err.getMessage)
-                      )
-                  }
-              } else {
-                Cluster.logger.debug(
-                  s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-                )
-                Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-                  .withHeaders(
-                    "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                    "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                    "X-Data-Count"                 -> s"${cachedCount.get()}",
-                    "X-Data-Digest"                -> cachedDigest.get(),
-                    "X-Data-From"                  -> s"${cachedAt.get()}",
-                    "X-Data-From-Cache"            -> "true"
-                  )
-                  .future
-              }
-            }
-             */
-            // if (env.clusterConfig.autoUpdateState) {
             if (Cluster.logger.isDebugEnabled)
               Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
@@ -673,39 +466,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 "X-Data-Auto"                  -> "true"
               ).vfuture
             }
-            // } else if (cachedValue == null) {
-            //   sendAndCache()
-            // } else if (caching.get()) {
-            //   Cluster.logger.debug(
-            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-            //   )
-            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-            //     .withHeaders(
-            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
-            //       "X-Data-Digest"                -> cachedDigest.get(),
-            //       "X-Data-From"                  -> s"${cachedAt.get()}",
-            //       "X-Data-From-Cache"            -> "true"
-            //     )
-            //     .future
-            // } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
-            //   sendAndCache()
-            // } else {
-            //   Cluster.logger.debug(
-            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-            //   )
-            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-            //     .withHeaders(
-            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
-            //       "X-Data-Digest"                -> cachedDigest.get(),
-            //       "X-Data-From"                  -> s"${cachedAt.get()}",
-            //       "X-Data-From-Cache"            -> "true"
-            //     )
-            //     .future
-            // }
           }
         }
       }
