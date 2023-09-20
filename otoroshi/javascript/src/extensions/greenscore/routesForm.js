@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
+import { firstLetterUppercase } from '../../util';
+
+const DEFAULT_VALUES = {
+  excellent: 1,
+  sufficient: 10,
+  poor: 15
+};
 
 export default class GroupRoutes extends React.Component {
   state = {
@@ -18,21 +25,14 @@ export default class GroupRoutes extends React.Component {
           rulesConfig: {
             states: [],
             thresholds: {
-              plugins: {
-                excellent: 1,
-                sufficient: 10,
-                poor: 15
-              },
-              dataOut: {
-                excellent: 100,
-                sufficient: 500,
-                poor: 1000
-              },
-              headersOut: {
-                excellent: 10,
-                sufficient: 30,
-                poor: 50
-              }
+              calls: DEFAULT_VALUES,
+              dataIn: DEFAULT_VALUES,
+              dataOut: DEFAULT_VALUES,
+              overhead: DEFAULT_VALUES,
+              duration: DEFAULT_VALUES,
+              backendDuration: DEFAULT_VALUES,
+              headersIn: DEFAULT_VALUES,
+              headersOut: DEFAULT_VALUES
             }
           }
         },
@@ -220,7 +220,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
               }}
               onPress={() => {
                 saveRules()
-                Promise.resolve()
+                return Promise.resolve()
               }}
               onSuccess={onWizardClose}
               icon={() => <i className="fas fa-paper-plane" />}
@@ -274,7 +274,7 @@ const GreenScoreForm = ({ route, ...rest }) => {
   const { states, thresholds } = route.rulesConfig;
 
   const today = new Date()
-  // today.setDate(today.getDate() - 1) // TODO - remove this line
+  // today.setDate(today.getDate() + 1) // TODO - remove this line
   // today.setMonth(today.getMonth() - 4) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
@@ -317,6 +317,9 @@ const GreenScoreForm = ({ route, ...rest }) => {
     });
   };
 
+
+  console.log(thresholds)
+
   return (
     <div>
       <div className="p-3">
@@ -326,21 +329,24 @@ const GreenScoreForm = ({ route, ...rest }) => {
           sent requests.
         </p>
 
-        <BoundsInput
-          title="Number of plugins on the route"
-          bounds={thresholds.plugins}
-          onChange={(plugins) => onBoundsChange({ ...thresholds, plugins })}
-        />
-        <BoundsInput
-          title="Data size sent by the downstream service to not exceeed"
-          bounds={thresholds.dataOut}
-          onChange={(dataOut) => onBoundsChange({ ...thresholds, dataOut })}
-        />
-        <BoundsInput
-          title="Header size sent by the downstream service to not exceeed"
-          bounds={thresholds.headersOut}
-          onChange={(headersOut) => onBoundsChange({ ...thresholds, headersOut })}
-        />
+        {[
+          { key: "overhead", title: "Overhead", unit: "ms" },
+          { key: "duration", title: "Duration", unit: "ms" },
+          { key: "backendDuration", title: "Backend Duration", unit: "ms" },
+          { key: "calls", title: "Calls", unit: "" },
+          { key: "dataIn", title: "Data In", unit: "bytes" },
+          { key: "dataOut", title: "Data Out", unit: "bytes" },
+          { key: "headersOut", title: "Headers Out", unit: "bytes" },
+          { key: "headersIn", title: "Headers In", unit: "bytes" },
+        ]
+          .map(({ key, title, unit }) => <BoundsInput
+            key={key}
+            title={title}
+            unit={unit}
+            bounds={thresholds[key]}
+            onChange={value => onBoundsChange({ ...thresholds, [key]: value })}
+          />)}
+
       </div>
       {Object.entries(rest.rulesBySection).map(([id, rules]) => {
         const groupId = id;
@@ -352,7 +358,12 @@ const GreenScoreForm = ({ route, ...rest }) => {
             {(rules || []).map(({ id, description, advice }) => {
               const ruleId = id;
 
-              const statesAtDate = states.find(s => s.date === today.getTime());
+              let statesAtDate = states.find(s => s.date === today.getTime());
+
+              if (!statesAtDate && states.length > 0) {
+                statesAtDate = states[states.length - 1]
+              }
+
               const enabled = (statesAtDate ? statesAtDate.states.find(f => f.id === ruleId)?.enabled : false);
 
               return (
@@ -392,7 +403,7 @@ const GreenScoreForm = ({ route, ...rest }) => {
   );
 };
 
-function BoundsInput({ title, bounds, ...props }) {
+function BoundsInput({ title, bounds, unit, ...props }) {
   const onChange = (key, value) => {
     props.onChange({
       ...bounds,
@@ -425,7 +436,7 @@ function BoundsInput({ title, bounds, ...props }) {
             label={label}
             schema={{
               props: {
-                unit: 'bytes',
+                unit,
                 style: {
                   flex: 1,
                 },

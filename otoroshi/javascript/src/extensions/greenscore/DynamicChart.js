@@ -38,17 +38,17 @@ export function DynamicChart(props) {
                 padding: '0 .5rem',
                 position: 'relative'
             }}>
-            <div style={{ maxHeight: 250, flex: 1 }}>
+            <div style={{ maxHeight: 370, flex: 1 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         layout='vertical'
                         margin={{
-                            top: 50,
+                            top: 30,
                             bottom: 10,
-                            left: 20,
+                            left: 75,
                             right: 20
                         }}
-                        data={Object.entries(props.values || {}).map(([key, value]) => ({
+                        data={props.values.map(([key, value]) => ({
                             name: firstLetterUppercase(key.replace(/_/g, ' ')),
                             value: value * 100
                         }))}>
@@ -60,7 +60,7 @@ export function DynamicChart(props) {
                 </ResponsiveContainer>
             </div>
             <h3 style={{ color: 'var(--color_level2)', fontWeight: 100 }} className='m-0'>
-                Dynamic score
+                {props.title}
             </h3>
 
             <Tag value="Dynamic" />

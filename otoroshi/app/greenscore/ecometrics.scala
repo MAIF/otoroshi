@@ -1,8 +1,9 @@
 package otoroshi.greenscore
 
 import com.codahale.metrics.UniformReservoir
+import otoroshi.cluster.ClusterQuotaIncr.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
-import otoroshi.greenscore.Score.{DynamicScore, RouteScore, SectionScore}
+import otoroshi.greenscore.Score.{RouteScore, SectionScore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json._
 
@@ -12,92 +13,113 @@ import scala.collection.concurrent.TrieMap
 class ThresholdsRegistry {
   private val routesScore: UnboundedTrieMap[String, RouteReservoirs] = TrieMap.empty
 
-  def updateRoute(
-      routeId: String,
-      overhead: Long,
-      overheadWithoutCircuitBreaker: Long,
-      circuitBreakerDuration: Long,
-      duration: Long,
-      plugins: Int,
-      backendId: String,
-      dataIn: Long,
-      dataOut: Long,
-      headers: Long,
-      headersOut: Long
-  ) = {
+  def updateRoute(routeCallIncr: RouteCallIncr) = {
     routesScore
-      .getOrElseUpdate(routeId, new RouteReservoirs())
-      .update(
-        overhead,
-        overheadWithoutCircuitBreaker,
-        circuitBreakerDuration,
-        duration,
-        plugins,
-        backendId,
-        dataIn,
-        dataOut,
-        headers,
-        headersOut
-      )
+      .getOrElseUpdate(routeCallIncr.routeId, RouteReservoirs())
+      .update(routeCallIncr)
   }
 
   def route(routeId: String): Option[RouteReservoirs] = routesScore.get(routeId)
 
-  def json(routeId: String) = routesScore.get(routeId).map(_.json()).getOrElse(new RouteReservoirs().json())
+  def json(routeId: String) = routesScore.get(routeId).map(_.json()).getOrElse(RouteReservoirs().json())
 }
 
-class RouteReservoirs {
-  private val overheadReservoir: UniformReservoir                      = new UniformReservoir()
-  private val overheadWithoutCircuitBreakerReservoir: UniformReservoir = new UniformReservoir()
-  private val circuitBreakerDurationReservoir: UniformReservoir        = new UniformReservoir()
-  private val durationReservoir: UniformReservoir                      = new UniformReservoir()
-  var pluginsReservoir: Int                                    = 0
+case class ScalingRouteReservoirs(overhead: Long = 0,
+                                  duration: Long = 0,
+                                  backendDuration: Long = 0,
+                                  calls: Long = 0,
+                                  dataIn: Long = 0,
+                                  dataOut: Long = 0,
+                                  headersOut: Long = 0,
+                                  headersIn: Long = 0) {
+  def json() = Json.obj(
+    "overhead" -> overhead,
+    "duration" -> duration,
+    "backendDuration" -> backendDuration,
+    "calls" -> calls,
+    "dataIn" -> dataIn,
+    "dataOut" -> dataOut,
+    "headersOut" -> headersOut,
+    "headersIn" -> headersIn,
+  )
 
-  private val dataInReservoir: UniformReservoir     = new UniformReservoir()
-  val headersOutReservoir: UniformReservoir = new UniformReservoir()
-  val dataOutReservoir: UniformReservoir    = new UniformReservoir()
-  private val headersReservoir: UniformReservoir    = new UniformReservoir()
+  def merge(other: ScalingRouteReservoirs) = copy(
+    overhead = overhead + other.overhead,
+    duration = duration + other.duration,
+    backendDuration = backendDuration + other.backendDuration,
+    calls = calls + other.calls,
+    dataIn = dataIn + other.dataIn,
+    headersOut = headersOut + other.headersOut,
+    headersIn = headersIn + other.headersIn,
+    dataOut = dataOut + other.dataOut,
+  )
 
-  private var backendId: String = ""
+  def mean(length: Int) = copy(
+    overhead = overhead / length,
+    duration = duration / length,
+    backendDuration = backendDuration / length,
+    calls = calls / length,
+    dataIn = dataIn / length,
+    headersOut = headersOut / length,
+    headersIn = headersIn / length,
+    dataOut = dataOut / length,
+  )
+}
 
-  def update(
-      overhead: Long,
-      overheadWithoutCircuitBreaker: Long,
-      circuitBreakerDuration: Long,
-      duration: Long,
-      plugins: Int,
-      backendId: String,
-      dataIn: Long,
-      dataOut: Long,
-      headers: Long,
-      headersOut: Long
-  ) = {
+object ScalingRouteReservoirs {
+  private def scalingReservoir(value: Double, limit: Int): Long = {
+    if (value > limit)
+      1
+    else
+      (value / limit).toLong
+  }
 
-    overheadReservoir.update(overhead)
-    overheadWithoutCircuitBreakerReservoir.update(overheadWithoutCircuitBreaker)
-    circuitBreakerDurationReservoir.update(circuitBreakerDuration)
-    durationReservoir.update(duration)
-    pluginsReservoir = plugins
+  def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
+    ScalingRouteReservoirs(
+      overhead = 1 - this.scalingReservoir(reservoirs.overhead.getSnapshot.getMean, thresholds.overhead.poor),
+      duration = 1 - this.scalingReservoir(reservoirs.duration.getSnapshot.getMean, thresholds.duration.poor),
+      backendDuration = 1 - this.scalingReservoir(reservoirs.backendDuration.getSnapshot.getMean, thresholds.backendDuration.poor),
+      calls = 1 - this.scalingReservoir(reservoirs.calls.getSnapshot.getMean, thresholds.calls.poor),
+      dataIn = 1 - this.scalingReservoir(reservoirs.dataIn.getSnapshot.getMean, thresholds.dataIn.poor),
+      dataOut = 1 - this.scalingReservoir(reservoirs.dataOut.getSnapshot.getMean, thresholds.dataOut.poor),
+      headersOut = 1 - this.scalingReservoir(reservoirs.headersOut.getSnapshot.getMean, thresholds.headersOut.poor),
+      headersIn = 1 - this.scalingReservoir(reservoirs.headersIn.getSnapshot.getMean, thresholds.headersIn.poor)
+    )
+  }
+}
 
-    dataInReservoir.update(dataIn)
-    dataOutReservoir.update(dataOut)
-    headersReservoir.update(headers)
-    headersOutReservoir.update(headersOut)
+case class RouteReservoirs(
+  overhead: UniformReservoir         = new UniformReservoir(),
+  duration: UniformReservoir         = new UniformReservoir(),
+  backendDuration: UniformReservoir  = new UniformReservoir(),
+  calls: UniformReservoir            = new UniformReservoir(),
+  dataIn: UniformReservoir           = new UniformReservoir(),
+  headersOut: UniformReservoir       = new UniformReservoir(),
+  dataOut: UniformReservoir          = new UniformReservoir(),
+  headersIn: UniformReservoir        = new UniformReservoir()
 
-    this.backendId = backendId
+) {
+  def update(routeCallIncr: RouteCallIncr) = {
+    overhead.update(routeCallIncr.overhead.get())
+    duration.update(routeCallIncr.duration.get())
+    backendDuration.update(routeCallIncr.backendDuration.get())
+
+    dataIn.update(routeCallIncr.dataIn.get())
+    dataOut.update(routeCallIncr.dataOut.get())
+    headersIn.update(routeCallIncr.headersIn.get())
+    headersOut.update(routeCallIncr.headersOut.get())
+    calls.update(routeCallIncr.calls.get())
   }
 
   def json(): JsValue = Json.obj(
-    "overheadReservoir"                      -> overheadReservoir.getSnapshot.getMean,
-    "overheadWithoutCircuitBreakerReservoir" -> overheadWithoutCircuitBreakerReservoir.getSnapshot.getMean,
-    "circuitBreakerDurationReservoir"        -> circuitBreakerDurationReservoir.getSnapshot.getMean,
-    "durationReservoir"                      -> durationReservoir.getSnapshot.getMean,
-    "pluginsReservoir"                       -> pluginsReservoir,
-    "backendId"                              -> backendId,
-    "dataInReservoir"                        -> dataInReservoir.getSnapshot.getMean,
-    "dataOutReservoir"                       -> dataOutReservoir.getSnapshot.getMean,
-    "headersReservoir"                       -> headersReservoir.getSnapshot.getMean,
-    "headersOutReservoir"                    -> headersOutReservoir.getSnapshot.getMean
+    "overhead"               -> overhead.getSnapshot.getMean,
+    "duration"                      -> duration.getSnapshot.getMean,
+    "backendDuration"               -> backendDuration.getSnapshot.getMean,
+    "dataIn"                        -> dataIn.getSnapshot.getMean,
+    "dataOut"                       -> dataOut.getSnapshot.getMean,
+    "headersIn"                     -> headersIn.getSnapshot.getMean,
+    "headersOut"                    -> headersOut.getSnapshot.getMean,
+    "calls"                         -> calls.getSnapshot.getMean
   )
 }
 
@@ -134,25 +156,9 @@ object Score {
     def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
   }
 
-  case class DynamicScore(plugins: Double = 0,
-                          producedData: Double = 0,
-                          producedHeaders: Double = 0) {
-    def json() = Json.obj(
-      "plugins_instance" -> plugins,
-      "produced_data" -> producedData,
-      "produced_headers" -> producedHeaders,
-    )
-
-    def merge(other: DynamicScore) = DynamicScore(
-      plugins = plugins + other.plugins,
-      producedData = producedData + other.producedData,
-      producedHeaders = producedHeaders + other.producedHeaders
-    )
-  }
-
   case class RouteScore(
                          sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
-                         dynamicScores: DynamicScore
+                         dynamicScores: ScalingRouteReservoirs
                        ) {
     def json(): JsObject = Json.obj(
       "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
@@ -163,20 +169,18 @@ object Score {
 
 case class GroupScore(
                        informations: GreenScoreEntity,
-//                       scoreByRoute: Seq[RouteScore],
                        sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
-                       dynamicScores: DynamicScore
+                       dynamicScores: ScalingRouteReservoirs
                      ) {
   def json() = Json.obj(
     "informations" -> informations.json,
-//    "score_by_route" -> scoreByRoute.map(_.json()),
     "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
     "dynamic_score" -> dynamicScores.json()
   )
 }
 
 case class GlobalScore(
-                        dynamicScores: DynamicScore,
+                        dynamicScores: ScalingRouteReservoirs,
                         sectionsScoreByDate: Seq[RouteScoreByDateAndSection]
                       ) {
   def json() = Json.obj(
@@ -224,7 +228,6 @@ case class RouteScoreByDateAndSection(date: Long,
     "score" -> score.json,
     "letter" -> letter,
     "color" -> color
-//    "rules" -> rules.map(_.json())
   )
 
   def processRoute(): RouteScoreByDateAndSection = {
@@ -286,13 +289,6 @@ class EcoMetrics {
         })
   }
 
-  private def normalizeReservoir(value: Double, limit: Int) = {
-    if (value > limit)
-      1
-    else
-      value / limit
-  }
-
   private def mergeRoutesScoreByDateAndSection(routes: Seq[RouteScoreByDateAndSection]) = {
     routes.foldLeft(Seq.empty[RouteScoreByDateAndSection]) { case (acc, state) =>
       acc.find(score => score.date == state.date && score.section == state.section)
@@ -308,18 +304,14 @@ class EcoMetrics {
     }
   }
 
-  private def mergeRouteDynamicScores(dynamicScore: Seq[DynamicScore]): DynamicScore = {
+  private def mergeRouteDynamicScores(dynamicScore: Seq[ScalingRouteReservoirs]): ScalingRouteReservoirs = {
     if (dynamicScore.isEmpty) {
-      DynamicScore()
+      ScalingRouteReservoirs()
     } else {
-      val result =  dynamicScore
-        .foldLeft(DynamicScore()) { case (acc, item) => acc.merge(item) }
+      val result = dynamicScore
+        .foldLeft(ScalingRouteReservoirs()) { case (acc, item) => acc.merge(item) }
 
-      DynamicScore(
-        plugins = result.plugins / dynamicScore.length,
-        producedData = result.producedData / dynamicScore.length,
-        producedHeaders = result.producedHeaders / dynamicScore.length,
-      )
+      result.mean(dynamicScore.length)
     }
   }
 
@@ -337,7 +329,6 @@ class EcoMetrics {
 
     GroupScore(
       informations = group,
-//      scoreByRoute = scoreByRoute,
       sectionsScoreByDate = groupScore.map(_.processGroup(group.routes.length)),
       dynamicScores = mergeRouteDynamicScores(scoreByRoute.map(_.dynamicScores))
     )
@@ -346,49 +337,17 @@ class EcoMetrics {
   def calculateRouteScore(route: RouteRules): RouteScore = {
     val sectionsScoreByDate = calculateRulesByDate(route.rulesConfig)
 
-    val routeScore = registry.route(route.routeId).getOrElse(new RouteReservoirs())
-
-    val plugins = 1 - this.normalizeReservoir(routeScore.pluginsReservoir, route.rulesConfig.thresholds.plugins.poor)
-    val producedData = 1 - this.normalizeReservoir(routeScore.dataOutReservoir.getSnapshot.getMean, route.rulesConfig.thresholds.dataOut.poor)
-    val producedHeaders = 1 - this.normalizeReservoir(routeScore.headersOutReservoir.getSnapshot.getMean, route.rulesConfig.thresholds.headersOut.poor)
+    val routeScore = registry.route(route.routeId).getOrElse(RouteReservoirs())
 
     RouteScore(
       sectionsScoreByDate = sectionsScoreByDate.map(section => section.processRoute()),
-      dynamicScores = DynamicScore(
-        plugins = plugins,
-        producedData = producedData,
-        producedHeaders = producedHeaders,
-      )
+      dynamicScores = ScalingRouteReservoirs.from(routeScore, route.rulesConfig.thresholds)
     )
   }
 
   def json(routeId: String): JsValue = registry.json(routeId)
 
-  def updateRoute(
-                   routeId: String,
-                   overhead: Long,
-                   overheadWoCb: Long,
-                   cbDuration: Long,
-                   duration: Long,
-                   plugins: Int,
-                   backendId: String,
-                   dataIn: Long,
-                   dataOut: Long,
-                   headers: Long,
-                   headersOut: Long
-  ) = {
-    registry.updateRoute(
-      routeId,
-      overhead,
-      overheadWoCb,
-      cbDuration,
-      duration,
-      plugins,
-      backendId,
-      dataIn,
-      dataOut,
-      headers,
-      headersOut
-    )
+  def updateRoute(routeCallIncr: RouteCallIncr): Unit = {
+    registry.updateRoute(routeCallIncr)
   }
 }

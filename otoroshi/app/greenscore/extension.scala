@@ -2,6 +2,7 @@ package otoroshi.greenscore
 
 import akka.actor.{Actor, ActorRef, Props}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
+import otoroshi.cluster.ClusterQuotaIncr.RouteCallIncr
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
@@ -14,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results
 
-import scala.collection.Seq
+import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Future
 import scala.util._
 
@@ -26,28 +27,25 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
   override def receive: Receive = {
     case evt: GatewayEvent =>
       val routeId = evt.route.map(_.id).getOrElse(evt.`@serviceId`)
-      ext.ecoMetrics.updateRoute(
+      ext.ecoMetrics.updateRoute(RouteCallIncr(
         routeId = routeId,
-        overhead = evt.overhead,
-        overheadWoCb = evt.overheadWoCb,
-        cbDuration = evt.cbDuration,
-        duration = evt.duration,
-        plugins = evt.route.map(_.plugins.slots.size).getOrElse(0),
-        backendId = evt.target.scheme + evt.target.host + evt.target.uri,
-        dataIn = evt.data.dataIn,
-        dataOut = evt.data.dataOut,
-        headers = evt.headers.foldLeft(0L) { case (acc, item) =>
+        overhead = new AtomicLong(evt.overhead),
+        duration = new AtomicLong(evt.duration),
+        backendDuration = new AtomicLong(evt.backendDuration),
+        dataIn = new AtomicLong(evt.data.dataIn),
+        dataOut = new AtomicLong(evt.data.dataOut),
+        headersIn = new AtomicLong(evt.headers.foldLeft(0L) { case (acc, item) =>
           acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
-        } + evt.method.byteString.size + evt.url.byteString.size + evt.protocol.byteString.size + 2,
-        headersOut = evt.headersOut.foldLeft(0L) { case (acc, item) =>
+        } + evt.method.byteString.size + evt.url.byteString.size + evt.protocol.byteString.size + 2),
+        headersOut = new AtomicLong(evt.headersOut.foldLeft(0L) { case (acc, item) =>
           acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
         } + evt.protocol.byteString.size + 1 + 3 + Results
           .Status(evt.status)
           .header
           .reasonPhrase
           .map(_.byteString.size)
-          .getOrElse(0)
-      )
+          .getOrElse(0))
+      ))
     case _                 =>
   }
 }
@@ -245,5 +243,9 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         )
       )
     )
+  }
+
+  def updateFromQuotas(routeCallIncr: RouteCallIncr) = {
+    ecoMetrics.updateRoute(routeCallIncr)
   }
 }

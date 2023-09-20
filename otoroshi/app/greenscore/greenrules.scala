@@ -32,24 +32,39 @@ object TripleBounds {
 }
 
 case class Thresholds(
-    plugins: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
-    dataOut: TripleBounds = TripleBounds(excellent = 100, sufficient = 500, poor = 1000),
-    headersOut: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50)
+                       overhead: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
+                       duration: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
+                       backendDuration: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
+                       calls: TripleBounds = TripleBounds(excellent = 5, sufficient = 10, poor = 15),
+                       dataIn: TripleBounds = TripleBounds(excellent = 100, sufficient = 500, poor = 1000),
+                       dataOut: TripleBounds = TripleBounds(excellent = 100, sufficient = 500, poor = 1000),
+                       headersOut: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50),
+                       headersIn: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50)
 )
 
 object Thresholds {
   def json(obj: Thresholds) = Json.obj(
-    "plugins"    -> TripleBounds.json(obj.plugins),
-    "dataOut"    -> TripleBounds.json(obj.dataOut),
-    "headersOut" -> TripleBounds.json(obj.headersOut)
+    "overhead" -> TripleBounds.json(obj.overhead),
+    "duration" -> TripleBounds.json(obj.duration),
+    "backendDuration" -> TripleBounds.json(obj.backendDuration),
+    "calls" -> TripleBounds.json(obj.calls),
+    "dataIn" -> TripleBounds.json(obj.dataIn),
+    "dataOut" -> TripleBounds.json(obj.dataOut),
+    "headersOut" -> TripleBounds.json(obj.headersOut),
+    "headersIn" -> TripleBounds.json(obj.headersIn)
   )
 
   def reads(item: JsValue): JsResult[Thresholds] = {
     Try {
       JsSuccess(
         Thresholds(
-          plugins = item.select("plugins").as[TripleBounds](TripleBounds.reads),
+          calls = item.select("calls").as[TripleBounds](TripleBounds.reads),
+          dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.reads),
           dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.reads),
+          overhead = item.select("overhead").as[TripleBounds](TripleBounds.reads),
+          duration = item.select("duration").as[TripleBounds](TripleBounds.reads),
+          backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.reads),
+          headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.reads),
           headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.reads)
         )
       )

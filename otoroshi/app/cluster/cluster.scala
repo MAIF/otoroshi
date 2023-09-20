@@ -2864,7 +2864,10 @@ object ClusterQuotaIncr {
           val config = env.datastores.globalConfigDataStore.latest()
           env.datastores.serviceDescriptorDataStore
             .updateIncrementableMetrics(routeId, calls.get(), dataIn.get(), dataOut.get(), config)
-          // TODO: increment greenscore stuff
+          env.adminExtensions.extension[otoroshi.greenscore.GreenScoreExtension].foreach(adminExtension => {
+            adminExtension.updateFromQuotas(this)
+          })
+          FastFuture.successful(())
         case None => FastFuture.successful(())
       }
     }

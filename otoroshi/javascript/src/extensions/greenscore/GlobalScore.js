@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import Wrapper from './Wrapper';
+
+import { getColorFromLetter } from './util'
 
 function Tag({ value }) {
     return <div style={{
@@ -48,7 +50,9 @@ export function GlobalScore(allProps) {
                 position: 'absolute',
                 bottom: '2rem',
                 left: 0,
-                right: 0
+                right: 0,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap'
             }}>{`/ ${maxScore}`}</div>
         </div >
     }
@@ -56,7 +60,7 @@ export function GlobalScore(allProps) {
     function showGlobalScore() {
         return <>
             {letter !== "@" ? letter : '-'} <i className="fa fa-leaf scale-in-ver-top"
-                style={{ color, fontSize: '5rem' }} />
+                style={{ color: color || getColorFromLetter(letter), fontSize: '5rem' }} />
         </>
     }
 

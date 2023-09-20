@@ -15,6 +15,7 @@ import CustomTable from './CustomTable';
 import { ManagerTitle, Tab } from './TitleManager';
 import EditGroup from './EditGroup';
 import Wrapper from './Wrapper';
+import { conforms } from 'lodash';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -253,9 +254,14 @@ export default class GreenScoreConfigsPage extends React.Component {
 
   getDynamicScore = (dynamic_score) => {
     const scores = [
-      dynamic_score.plugins_instance,
-      dynamic_score.produced_data,
-      dynamic_score.produced_headers
+      dynamic_score.backendDuration,
+      dynamic_score.calls,
+      dynamic_score.dataIn,
+      dynamic_score.dataOut,
+      dynamic_score.headersIn,
+      dynamic_score.headersOut,
+      dynamic_score.overhead,
+      dynamic_score.duration,
     ];
 
     return scores.reduce((a, i) => a + i, 0) / scores.length
@@ -274,6 +280,8 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     const { scores, global, dateSelectorOpened, groups, loading } = this.state;
 
+    console.log(this.state)
+
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
     const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate) : 0;
@@ -284,7 +292,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         <Route exact path='/extensions/green-score'
           component={() => <>
             <div style={{
-              minHeight: 250,
+              minHeight: 320,
               paddingTop: 50
             }}>
               {scores.length === 0 && <div className='d-flex flex-column justify-content-center align-items-center m-0 mb-3'>
@@ -292,7 +300,12 @@ export default class GreenScoreConfigsPage extends React.Component {
                 <Tab title="Start New Group" fillBackground to='/extensions/green-score/groups/new' />
               </div>}
               <div style={{
-                display: 'flex', flex: 1, gap: '.5rem', marginBottom: '.5rem', position: 'relative'
+                display: 'flex',
+                flex: 1,
+                gap: '.5rem',
+                marginBottom: '.5rem',
+                position: 'relative',
+                minHeight: 380
               }}>
                 {scores.length > 0 && <DatePicker
                   opened={dateSelectorOpened}
@@ -306,7 +319,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                   ].sort()} />}
                 <GlobalScore
                   loading={loading}
-                  letter={String.fromCharCode(65 + (1 - normalizedGlobalScore) * 5)}
+                  letter={String.fromCharCode(Math.ceil(65 + (1 - normalizedGlobalScore) * 5))}
                   color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
                 <RulesRadarchart
                   loading={loading}
@@ -315,19 +328,30 @@ export default class GreenScoreConfigsPage extends React.Component {
                 <GlobalScore
                   loading={loading}
                   score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-                  maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate.length}
+                  maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
                   raw />
               </div>
               <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
-                <GlobalScore
-                  loading={loading}
-                  letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
-                  color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
-                  dynamic
-                  title="Produced data"
-                  tag="dynamic" />
-                <GlobalScore loading={loading} score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
-                <DynamicChart loading={loading} values={global?.dynamic_score} />
+                <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                  <GlobalScore
+                    loading={loading}
+                    letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
+                    color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
+                    dynamic
+                    title="Produced data"
+                    tag="dynamic" />
+                  <GlobalScore loading={loading} score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                </div>
+                <div style={{ flex: 1, gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                  <DynamicChart
+                    loading={loading}
+                    title="Durations score"
+                    values={Object.entries(global?.dynamic_score || {}).filter(([key, _]) => ["backendDuration", "duration", "calls", "overhead"].includes(key))} />
+                  <DynamicChart
+                    loading={loading}
+                    title="Data score"
+                    values={Object.entries(global?.dynamic_score || {}).filter(([key, _]) => !["backendDuration", "duration", "calls", "overhead"].includes(key))} />
+                </div>
               </div>
             </div>
 

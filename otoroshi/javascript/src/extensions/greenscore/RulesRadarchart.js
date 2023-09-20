@@ -4,17 +4,21 @@ import Wrapper from './Wrapper';
 
 export default class RulesRadarchart extends PureComponent {
 
+  degToRad = degrees => degrees * (Math.PI / 180);
+
   renderPolarAngleAxis = props => {
-    const newPoint = this.movePointAtAngle([props.x, props.y], props.payload.index * 90, 10);
-    const texts = props.payload.value.split(" ");
+    const newPoint = this.movePointAtAngle([props.x, props.y], this.degToRad((360 / 12) * props.payload.index), 10);
+    const texts = [props.payload.value] // props.payload.value.split(" ");
 
     return texts
       .map((text, i) => <Text
         key={text}
         {...props}
         verticalAnchor="middle"
-        x={props.payload.index % 2 !== 0 ? newPoint[0] : props.x}
-        y={(props.payload.index % 2 === 0 ? newPoint[1] : props.y) + (i * 20)}
+        x={newPoint[0]}
+        y={newPoint[1]}
+      // x={props.payload.index % 2 !== 0 ? newPoint[0] : props.x}
+      // y={(props.payload.index % 2 === 0 ? newPoint[1] : props.y) + (i * 20)}
       >
         {text}
       </Text>
@@ -22,8 +26,8 @@ export default class RulesRadarchart extends PureComponent {
   }
 
   movePointAtAngle = (point, angle, distance) => [
-    point[0] + (Math.sin(angle) * distance),
-    point[1] - (Math.cos(angle) * distance)
+    point[0] + (Math.cos(angle) * distance),
+    point[1] + (Math.sin(angle) * distance)
   ];
 
   render() {
@@ -34,9 +38,14 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Design', value: values.find(v => v.section === "design")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
       { subject: 'Usage', value: values.find(v => v.section === "usage")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
       { subject: 'Log retention', value: values.find(v => v.section === "log")?.score.normalized_score || 0, fullMark: 1, domain: [0, 1] },
-      { subject: 'Plugins instance', value: dynamic_score.plugins_instance, fullMark: 1, domain: [0, 1] },
-      { subject: 'Produced data', value: dynamic_score.produced_data, fullMark: 1, domain: [0, 1] },
-      { subject: 'Produced headers', value: dynamic_score.produced_headers, fullMark: 1, domain: [0, 1] },
+      { subject: 'Backend duration', value: dynamic_score.plugins_instance, fullMark: 1, domain: [0, 1] },
+      { subject: 'Calls', value: dynamic_score.calls, fullMark: 1, domain: [0, 1] },
+      { subject: 'Data in', value: dynamic_score.dataIn, fullMark: 1, domain: [0, 1] },
+      { subject: 'Data out', value: dynamic_score.dataOut, fullMark: 1, domain: [0, 1] },
+      { subject: 'Duration', value: dynamic_score.duration, fullMark: 1, domain: [0, 1] },
+      { subject: 'Headers in', value: dynamic_score.headersIn, fullMark: 1, domain: [0, 1] },
+      { subject: 'Headers out', value: dynamic_score.headersOut, fullMark: 1, domain: [0, 1] },
+      { subject: 'Overhead', value: dynamic_score.overhead, fullMark: 1, domain: [0, 1] },
     ];
 
     return <Wrapper loading={this.props.loading}>
@@ -50,10 +59,11 @@ export default class RulesRadarchart extends PureComponent {
       }} className='p-3'>
         <ResponsiveContainer height="100%" width="100%">
           <RadarChart
-            outerRadius="70%"
+            outerRadius="90%"
+            innerRadius="10%"
             data={data}
             fill="var(--color_level2)"
-            fontSize={16}>
+            fontSize={15}>
             <PolarGrid />
             <PolarAngleAxis dataKey="subject" tick={props => this.renderPolarAngleAxis(props)} />
             <PolarRadiusAxis angle={90} domain={[0, 1]} fontSize={0} />

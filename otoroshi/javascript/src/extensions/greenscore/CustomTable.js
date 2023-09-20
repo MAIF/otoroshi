@@ -51,17 +51,17 @@ export default class CustomTable extends React.Component {
     }
 
     openScore = group => {
-        this.setState({
-            items: this.state.items.map(g => {
-                if (g.id === group.id) {
-                    return {
-                        ...g,
-                        opened: !g.opened
-                    }
-                }
-                return g;
-            })
-        })
+        // this.setState({
+        //     items: this.state.items.map(g => {
+        //         if (g.id === group.id) {
+        //             return {
+        //                 ...g,
+        //                 opened: !g.opened
+        //             }
+        //         }
+        //         return g;
+        //     })
+        // })
     }
 
     openActions = i => {
