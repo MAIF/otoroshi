@@ -507,7 +507,10 @@ object ClusterConfig {
         name = configuration
           .getOptionalWithFileSupport[String]("leader.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i"))
-          .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
+          .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}")
+          .applyOnWithOpt(Option(System.getenv("INSTANCE_NUMBER"))) {
+            case (str, instanceNumber) => str.replace("${env.INSTANCE_NUMBER}", instanceNumber)
+          },
         urls = configuration
           .getOptionalWithFileSupport[String]("leader.url")
           .map(s => Seq(s))
@@ -534,7 +537,10 @@ object ClusterConfig {
         name = configuration
           .getOptionalWithFileSupport[String]("worker.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i"))
-          .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
+          .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}")
+          .applyOnWithOpt(Option(System.getenv("INSTANCE_NUMBER"))) {
+            case (str, instanceNumber) => str.replace("${env.INSTANCE_NUMBER}", instanceNumber)
+          },
         retries = configuration.getOptionalWithFileSupport[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptionalWithFileSupport[Long]("worker.timeout").getOrElse(2000),
         dataStaleAfter =
@@ -2251,7 +2257,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private def callLeaderAkka(attempt: Int): Unit = {
 
     val logger = Cluster.logger
-    logger.info(s"callLeaderAkka: ${attempt}")
+
+    def debug(msg: String): Unit = {
+      if (env.isDev) {
+        logger.info(s"[CLUSTER-WS] $msg")
+      } else {
+        if (logger.isDebugEnabled) logger.debug(msg)
+      }
+    }
+
+    debug(s"callLeaderAkka: ${attempt}")
     val alreadyReLaunched = new AtomicBoolean(false)
     val pushCancelSource = new AtomicReference[Cancellable]()
     val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
@@ -2268,7 +2283,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         case JsError(e) => logger.error(s"ClusterLeaderStateMessage deserialization error: $e")
         case JsSuccess(csm, _) => {
 
-          logger.info("got new state")
+          debug("got new state")
 
           val store = new UnboundedConcurrentHashMap[String, Any]()
           val expirations = new UnboundedConcurrentHashMap[String, Long]()
@@ -2378,7 +2393,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     def onUpgradeSuccessful(): Unit = {
       pushCancelSource.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, config.worker.quotas.pushEvery.millis) { () =>
         /// push other data here !
-        logger.info("push quotas")
+        debug("push quotas")
         val member = MemberView(
           id = ClusterConfig.clusterNodeId,
           name = config.worker.name,
@@ -2414,7 +2429,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     val url: String = config.leader.urls.apply(attempt % config.leader.urls.size)
     val secured = url.startsWith("https")
     val uri = Uri(url).copy(scheme = if (secured) "wss" else "ws", path = Uri.Path("/api/cluster/state/ws"))
-    logger.info("connecting to cluster ws")
+    debug("connecting to cluster ws")
     val (fu, _) = env.Ws.ws(
       request = WebSocketRequest.fromTargetUri(uri).copy(
         extraHeaders = List(
