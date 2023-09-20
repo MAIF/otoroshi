@@ -19,7 +19,6 @@ object OtoWsWorker {
         properties = System.getProperties
           .seffectOn(_.setProperty("otoroshi.cluster.mode", "worker"))
           .seffectOn(_.setProperty("otoroshi.cluster.leader.url", "http://otoroshi-api.oto.tools:9999"))
-          .seffectOn(_.setProperty("otoroshi.cluster.worker.dbpath", "./worker.db"))
           .seffectOn(_.setProperty("otoroshi.cluster.worker.useWs", "true"))
       ),
       ConfigFactory

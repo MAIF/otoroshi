@@ -515,7 +515,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   }
 
   def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
-    println("stateWs")
     val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
@@ -546,7 +545,7 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
         dataFrom = env.clusterLeaderAgent.cachedTimestamp,
       )
       val mess = msg.json.stringify
-      println(s"pushing the state: ${mess.size} bytes")
+      Cluster.logger.debug(s"ws pushing the state: ${mess.size} bytes")
       out ! play.api.http.websocket.TextMessage(mess)
     }(env.otoroshiExecutionContext))
   }
@@ -559,20 +558,19 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
     case play.api.http.websocket.TextMessage(data) => {
       ClusterMessageFromWorker.format.reads(data.parseJson) match {
         case JsSuccess(msgfw, _) =>
-          println(s"got a messahe fgrom worker: ${msgfw.json.prettify}")
           ClusterLeaderUpdateMessage.read(msgfw.payload) match {
             case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
             case _ =>
           }
-        case JsError(err) => println(s"error while reading: $err")
+        case JsError(err) => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")
       }
     }
     case play.api.http.websocket.PingMessage(_) => out ! play.api.http.websocket.PongMessage(ByteString.empty)
     case play.api.http.websocket.CloseMessage(statusCode, reason) => self ! PoisonPill
-    case play.api.http.websocket.BinaryMessage(_) => println("cannot handle binary message")
-    case play.api.http.websocket.PongMessage(_) => println("cannot handle pong message")
-    case _ => println("cannot handle unknown message")
+    case play.api.http.websocket.BinaryMessage(_) => Cluster.logger.warn("cannot handle binary message")
+    case play.api.http.websocket.PongMessage(_) => Cluster.logger.warn("cannot handle pong message")
+    case _ => Cluster.logger.warn("cannot handle unknown message")
   }
 }
