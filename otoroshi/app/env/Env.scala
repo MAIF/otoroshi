@@ -279,7 +279,7 @@ class Env(
 
   lazy val maxWebhookSize: Int = configuration.getOptionalWithFileSupport[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val clusterConfig: ClusterConfig           = ClusterConfig.fromRoot(configuration)
+  lazy val clusterConfig: ClusterConfig           = ClusterConfig.fromRoot(configuration, this)
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
@@ -485,7 +485,7 @@ class Env(
   lazy val title: String                   = configuration
     .getOptionalWithFileSupport[String]("app.instance.title")
     .map {
-      case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
+      case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length).init
       case v                                => v
     }
     .getOrElse("Otoroshi")

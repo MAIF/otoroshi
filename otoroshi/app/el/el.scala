@@ -25,6 +25,10 @@ object GlobalExpressionLanguage {
 
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
+  def applyOutsideContext(value: String, env: Env, context: Map[String, String] = Map.empty, attrs: TypedMap = TypedMap.empty): String = {
+    apply(value = value, req = None, service = None, route = None, apiKey = None, user = None, context = context, attrs = attrs, env = env)
+  }
+
   def apply(
       value: String,
       req: Option[RequestHeader],

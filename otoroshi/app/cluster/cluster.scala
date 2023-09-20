@@ -20,6 +20,7 @@ import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterLeaderUpdateMessage.GlobalStatusUpdate
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
@@ -350,13 +351,14 @@ case class ClusterConfig(
 
 object ClusterConfig {
   lazy val clusterNodeId = s"node_${IdGenerator.uuid}"
-  def fromRoot(rootConfig: Configuration): ClusterConfig = {
+  def fromRoot(rootConfig: Configuration, env: Env): ClusterConfig = {
     apply(
       rootConfig.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty),
-      rootConfig
+      rootConfig,
+      env
     )
   }
-  def apply(configuration: Configuration, rootConfig: Configuration): ClusterConfig = {
+  def apply(configuration: Configuration, rootConfig: Configuration, env: Env): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
       mode =
@@ -508,9 +510,7 @@ object ClusterConfig {
           .getOptionalWithFileSupport[String]("leader.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i"))
           .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}")
-          .applyOnWithOpt(Option(System.getenv("INSTANCE_NUMBER"))) {
-            case (str, instanceNumber) => str.replace("${env.INSTANCE_NUMBER}", instanceNumber)
-          },
+          .applyOn(str => GlobalExpressionLanguage.applyOutsideContext(str, env)),
         urls = configuration
           .getOptionalWithFileSupport[String]("leader.url")
           .map(s => Seq(s))

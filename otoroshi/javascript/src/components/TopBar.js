@@ -1106,8 +1106,13 @@ export class TopBar extends Component {
     }
 
     if (this.props.env.instanceName.toLowerCase() !== 'otoroshi') {
-      const title = `Otoroshi - ${this.props.env.instanceName}`;
-      window.document.title = title;
+      const instanceName = this.props.env.instanceName;
+      if (instanceName.startsWith('ReplaceAll(')) {
+        window.document.title = instanceName.substring(11, instanceName.length - 1);
+      } else {
+        const title = `Otoroshi - ${instanceName}`;
+        window.document.title = title;
+      }
     }
   }
 

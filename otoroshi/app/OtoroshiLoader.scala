@@ -32,8 +32,8 @@ class OtoroshiLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader).foreach {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
-    OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration)
     val components = new OtoroshiComponentsInstances(context, None, None, false)
+    OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration, components.env)
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
     components.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
