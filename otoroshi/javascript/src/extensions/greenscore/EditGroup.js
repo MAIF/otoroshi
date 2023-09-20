@@ -2,12 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { NgForm } from '../../components/nginputs';
-import GroupRoutes from './routesForm';
+import GroupRoutes from './GroupRoutes';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
+
+function SaveButton({ saveAndExit, group, isNew, client, title }) {
+    const history = useHistory()
+
+    return <FeedbackButton
+        className="ms-2"
+        text={title ? title : (isNew ? 'Create' : "Save")}
+        style={{
+            maxHeight: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '.5rem 1rem',
+            borderRadius: 6
+        }}
+        onPress={() => {
+            return (isNew ? client.create(group) : client.update(group))
+                .then(() => {
+                    if (saveAndExit)
+                        history.push('/extensions/green-score/groups')
+                })
+        }}
+    />
+}
 
 export default function EditGroup({ }) {
     const params = useParams();
-    const history = useHistory()
+    const history = useHistory();
 
     const client = BackOfficeServices.apisClient(
         'green-score.extensions.otoroshi.io',
@@ -117,28 +141,21 @@ export default function EditGroup({ }) {
     console.log(group)
 
     return <div style={{ position: 'relative' }}>
-        <FeedbackButton
-            className="ms-2"
-            text={isNew ? 'Create' : "Save"}
-            style={{
-                position: 'absolute',
-                top: 0,
-                marginTop: 'calc(-2.5rem - 34px)',
-                right: 0,
-                maxHeight: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '.5rem 1rem',
-                borderRadius: 6
-            }}
-            onPress={() => {
-                (isNew ? client.create(group) : client.update(group))
-                    .then(() => {
-                        history.push('/extensions/green-score/groups')
-                    })
-            }}
-        />
+        <div className='d-flex' style={{
+            position: 'absolute',
+            top: 0,
+            marginTop: 'calc(-2.5rem - 34px)',
+            right: 0
+        }}>
+            <FeedbackButton
+                style={{ padding: '0 .5rem 0 0.25rem', borderRadius: 6, background: 'transparent', color: 'var(--text)' }}
+                onPress={() => Promise.resolve(history.push('/extensions/green-score/groups'))}
+                icon={() => <i className="fas fa-chevron-left" />}
+                text="Back "
+            />
+            {!isNew && <SaveButton client={client} title="Save and stay" group={group} />}
+            <SaveButton isNew={isNew} client={client} group={group} saveAndExit />
+        </div>
         <NgForm
             flow={flow}
             schema={schema}

@@ -201,7 +201,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           scores,
           global,
           date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
-          loading: false
+          loading: scores.length <= 0
         })
       });
 
