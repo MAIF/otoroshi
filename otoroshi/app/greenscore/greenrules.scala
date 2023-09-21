@@ -7,15 +7,28 @@ import scala.util.{Failure, Success, Try}
 
 case class RuleId(value: String)
 
-case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0)
-
-object TripleBounds {
-  def json(obj: TripleBounds) = Json.obj(
-    "excellent"  -> obj.excellent,
-    "sufficient" -> obj.sufficient,
-    "poor"       -> obj.poor
+case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0) {
+  def +(b: TripleBounds) = copy(
+    excellent = excellent + b.excellent, sufficient = sufficient + b.sufficient, poor = poor + b.poor
   )
 
+  def incr(value: Int, thresholds: TripleBounds) = {
+    if(value <= thresholds.excellent)
+      copy(excellent = excellent + 1)
+    else if(value <= thresholds.sufficient)
+      copy(sufficient = sufficient + 1)
+    else
+      copy(poor = poor + 1)
+  }
+
+  def json() = Json.obj(
+    "excellent" -> excellent,
+    "sufficient" -> sufficient,
+    "poor" -> poor
+  )
+}
+
+object TripleBounds {
   def reads(item: JsValue): JsResult[TripleBounds] = {
     Try {
       JsSuccess(
@@ -40,20 +53,20 @@ case class Thresholds(
                        dataOut: TripleBounds = TripleBounds(excellent = 100, sufficient = 500, poor = 1000),
                        headersOut: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50),
                        headersIn: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50)
-)
+) {
+  def json() = Json.obj(
+    "overhead" -> overhead.json(),
+    "duration" -> duration.json(),
+    "backendDuration" -> backendDuration.json(),
+    "calls" -> calls.json(),
+    "dataIn" -> dataIn.json(),
+    "dataOut" -> dataOut.json(),
+    "headersOut" -> headersOut.json(),
+    "headersIn" -> headersIn.json(),
+  )
+}
 
 object Thresholds {
-  def json(obj: Thresholds) = Json.obj(
-    "overhead" -> TripleBounds.json(obj.overhead),
-    "duration" -> TripleBounds.json(obj.duration),
-    "backendDuration" -> TripleBounds.json(obj.backendDuration),
-    "calls" -> TripleBounds.json(obj.calls),
-    "dataIn" -> TripleBounds.json(obj.dataIn),
-    "dataOut" -> TripleBounds.json(obj.dataOut),
-    "headersOut" -> TripleBounds.json(obj.headersOut),
-    "headersIn" -> TripleBounds.json(obj.headersIn)
-  )
-
   def reads(item: JsValue): JsResult[Thresholds] = {
     Try {
       JsSuccess(
@@ -366,7 +379,7 @@ case class RulesRouteConfiguration(states: Seq[RuleStateRecord] = Seq.empty,
   def json: JsValue = {
     Json.obj(
       "states" -> JsArray(states.map(RuleStateRecord.format.writes)),
-      "thresholds" -> Thresholds.json(thresholds)
+      "thresholds" -> thresholds.json()
     )
   }
 }

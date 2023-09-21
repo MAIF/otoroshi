@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 
 import { Switch, Route } from 'react-router-dom';
@@ -24,6 +24,115 @@ function DatePickerSelector({ icon, onClick }) {
     onClick={onClick}
     className='justify-content-center d-flex align-items-center'>
     <i className={icon} />
+  </div>
+}
+
+function ModeWrapper({ mode, value, children }) {
+  if (value === mode || mode === "all")
+    return children
+
+  return null
+}
+
+function FilterSelector({ mode, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState(mode)
+
+  const addToState = value => {
+    if (state === 'all')
+      setState(value)
+    else if (value === state)
+      setState('all')
+    else if (value !== state)
+      setState('all')
+  }
+
+  return <div style={{
+    position: 'absolute',
+    top: -52,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    background: open ? 'var(--bg-color_level1_opa80)' : 'transparent',
+    display: 'flex',
+    flexDirection: 'column'
+  }}>
+    <div className='date-hover'
+      onClick={() => setOpen(true)}
+      style={{
+        boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
+        padding: '.5rem 1rem',
+        height: 42,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 175,
+        textAlign: 'center',
+        cursor: 'pointer',
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
+        borderBottomLeftRadius: open ? '0px' : '8px',
+        borderBottomRightRadius: open ? 0 : 8,
+        transition: 'border .2s'
+      }}>Filters <i className='fas fa-filter ms-1'></i></div>
+
+    {open && <div style={{
+      display: 'flex',
+      flex: 1,
+      justifyContent: 'start'
+    }}>
+      <div style={{
+        zIndex: 12,
+        background: 'var(--bg-color_level2)',
+        borderRadius: 12,
+        opacity: 1,
+        borderTopLeftRadius: 0,
+        boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
+        maxWidth: 350,
+        minWidth: 350,
+      }}
+        className='p-3 d-flex flex-column'>
+        <div className='d-flex' style={{ gap: '.5rem' }}>
+          <div
+            onClick={() => addToState('static')}
+            className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${state !== 'dynamic' ? 'date-hover--selected' : ''}`}
+            style={{
+              flex: 1,
+              border: '1px solid var(--color-primary)',
+              color: 'var(--text)',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}>STATIC <i className='fas fa-spa ms-2' /></div>
+          <div
+            onClick={() => addToState('dynamic')}
+            className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${state !== 'static' ? 'date-hover--selected' : ''}`}
+            style={{
+              flex: 1,
+              border: '1px solid var(--color-primary)',
+              color: 'var(--text)',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}>DYNAMIC <i className='fas fa-bolt ms-2' /></div>
+        </div>
+        <div className='mt-auto d-flex' style={{ gap: 8, }}>
+          <button type="button" className='btn p-2' onClick={() => setOpen(false)} style={{
+            flex: 1,
+            borderRadius: 8,
+            border: '2px solid var(--bg-color_level3)',
+            color: 'var(--text)'
+          }}>Cancel</button>
+          <button type="button" className='btn p-2'
+            onClick={() => onChange(state)}
+            style={{
+              flex: 1,
+              borderRadius: 8,
+              background: 'var(--color-primary)',
+              color: 'var(--color-white)'
+            }}>Apply</button>
+        </div>
+      </div>
+    </div>}
   </div>
 }
 
@@ -167,7 +276,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     scores: [],
     date: undefined,
     dateSelectorOpened: false,
-    loading: true
+    loading: true,
+    mode: 'all'
   };
 
   componentDidMount() {
@@ -239,8 +349,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     }, {})
   }
 
-  getAllNormalizedScore = (values, normalized = true) => {
-    const field = normalized ? 'normalized_score' : 'score';
+  getAllScalingScore = (values, scaling = true) => {
+    const field = scaling ? 'scaling_score' : 'score';
     const scores = [
       values.find(v => v.section === "architecture")?.score[field] || 0,
       values.find(v => v.section === "design")?.score[field] || 0,
@@ -251,16 +361,16 @@ export default class GreenScoreConfigsPage extends React.Component {
     return scores.reduce((a, i) => a + i, 0) / scores.length
   }
 
-  getDynamicScore = (dynamic_score) => {
+  getDynamicScore = (dynamic_values) => {
     const scores = [
-      dynamic_score.backendDuration,
-      dynamic_score.calls,
-      dynamic_score.dataIn,
-      dynamic_score.dataOut,
-      dynamic_score.headersIn,
-      dynamic_score.headersOut,
-      dynamic_score.overhead,
-      dynamic_score.duration,
+      dynamic_values.backendDuration,
+      dynamic_values.calls,
+      dynamic_values.dataIn,
+      dynamic_values.dataOut,
+      dynamic_values.headersIn,
+      dynamic_values.headersOut,
+      dynamic_values.overhead,
+      dynamic_values.duration,
     ];
 
     return scores.reduce((a, i) => a + i, 0) / scores.length
@@ -273,18 +383,114 @@ export default class GreenScoreConfigsPage extends React.Component {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).getTime();
   }
 
-  render() {
-    // if (this.state.scores.length > 0)
-    //   console.log(this.state)
+  mergeThresholds = (a1, a2) => {
+    return {
+      overhead: a1.overhead + a2.rulesConfig.thresholds.overhead.poor,
+      duration: a1.duration + a2.rulesConfig.thresholds.duration.poor,
+      backendDuration: a1.backendDuration + a2.rulesConfig.thresholds.backendDuration.poor,
+      calls: a1.calls + a2.rulesConfig.thresholds.calls.poor,
+      dataIn: a1.dataIn + a2.rulesConfig.thresholds.dataIn.poor,
+      dataOut: a1.dataOut + a2.rulesConfig.thresholds.dataOut.poor,
+      headersOut: a1.headersOut + a2.rulesConfig.thresholds.headersOut.poor,
+      headersIn: a1.headersIn + a2.rulesConfig.thresholds.headersIn.poor
+    }
+  }
 
-    const { scores, global, dateSelectorOpened, groups, loading } = this.state;
+  meanThresholds = (a1, length) => {
+    return {
+      overhead: Math.round(a1.overhead / length),
+      duration: Math.round(a1.duration / length),
+      backendDuration: Math.round(a1.backendDuration / length),
+      calls: Math.round(a1.calls / length),
+      dataIn: Math.round(a1.dataIn / length),
+      dataOut: Math.round(a1.dataOut / length),
+      headersOut: Math.round(a1.headersOut / length),
+      headersIn: Math.round(a1.headersIn / length)
+    }
+  }
+
+  getThresholds = () => {
+    const DEFAULT = {
+      overhead: 0, duration: 0, backendDuration: 0, calls: 0, dataIn: 0, dataOut: 0, headersOut: 0, headersIn: 0
+    };
+
+    if (this.state.scores.length > 0)
+      return this.meanThresholds(
+        this.state.groups.reduce((acc, group) => {
+          const sum = this.meanThresholds(
+            group.routes.reduce((acc, route) => this.mergeThresholds(acc, route), DEFAULT),
+            group.routes?.length || 1
+          );
+
+          return {
+            overhead: acc.overhead + sum.overhead,
+            duration: acc.duration + sum.duration,
+            backendDuration: acc.backendDuration + sum.backendDuration,
+            calls: acc.calls + sum.calls,
+            dataIn: acc.dataIn + sum.dataIn,
+            dataOut: acc.dataOut + sum.dataOut,
+            headersOut: acc.headersOut + sum.headersOut,
+            headersIn: acc.headersIn + sum.headersIn
+          }
+        }, DEFAULT),
+        this.state.groups.length)
+
+    else {
+      return DEFAULT
+    }
+  }
+
+  scaling = (value, max) => {
+    if (value < max) {
+      return value / max
+    }
+    return max
+  }
+
+  getCounters = () => {
+    if (this.state.global?.dynamic_values)
+      return Object.values(this.state.global.dynamic_values.counters).reduce((acc, c) => {
+        return {
+          excellent: acc.excellent + c.excellent,
+          sufficient: acc.sufficient + c.sufficient,
+          poor: acc.poor + c.poor,
+        }
+      }, {
+        excellent: 0, sufficient: 0, poor: 0
+      });
+
+    return {}
+  }
+
+  getCountersLength = () => {
+    if (this.state.global)
+      return Object.values(this.state.global.dynamic_values.counters)
+        .reduce((acc, c) => acc + c.excellent + c.sufficient + c.poor, 0);
+    else
+      return 0
+  }
+
+  onModeChange = newMode => {
+    this.setState({
+      mode: newMode
+    })
+  }
+
+  render() {
+    const { scores, global, dateSelectorOpened, groups, loading, mode } = this.state;
 
     console.log(this.state)
 
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
-    const normalizedGlobalScore = scores.length > 0 ? this.getAllNormalizedScore(valuesAtCurrentDate) : 0;
-    const normalizedDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_score) : 0;
+    const scalingGlobalScore = scores.length > 0 ? this.getAllScalingScore(valuesAtCurrentDate) : 0;
+    const scalingDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_values.scaling) : 0;
+    const availableDates = [...new Set(global?.sections_score_by_date.map(section => section.date))];
+
+    const thresholds = this.getThresholds();
+
+    const dynamicCounters = this.getCounters();
+    const dynamicCountersLength = this.getCountersLength();
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
@@ -306,74 +512,153 @@ export default class GreenScoreConfigsPage extends React.Component {
                 position: 'relative',
                 minHeight: 380
               }}>
-                {scores.length > 0 && <DatePicker
+
+                {availableDates.length > 1 && <DatePicker
                   opened={dateSelectorOpened}
                   onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
                   date={this.state.date}
                   onChange={date => this.setState({ date, dateSelectorOpened: false })}
                   onClose={() => this.setState({ dateSelectorOpened: false })}
                   options={[
-                    ...new Set(global?.sections_score_by_date.map(section => section.date)),
+                    ...availableDates,
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
-                <GlobalScore
-                  loading={loading}
-                  letter={String.fromCharCode(Math.ceil(65 + (1 - normalizedGlobalScore) * 5))}
-                  color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedGlobalScore) * 5)]} />
-                <RulesRadarchart
-                  loading={loading}
-                  values={valuesAtCurrentDate}
-                  dynamic_score={global?.dynamic_score || {}} />
-                <GlobalScore
-                  loading={loading}
-                  score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-                  maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
-                  raw />
-              </div>
-              <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
-                <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+
+                <FilterSelector onChange={this.onModeChange} mode={mode} />
+
+                <ModeWrapper mode={mode} value="static">
                   <GlobalScore
                     loading={loading}
-                    letter={String.fromCharCode(65 + (1 - normalizedDynamicScore) * 5)}
-                    color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - normalizedDynamicScore) * 5)]}
-                    dynamic
-                    title="Produced data"
-                    tag="dynamic" />
-                  <GlobalScore loading={loading} score={normalizedDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
-                </div>
-                <div style={{ flex: 1, gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
-                  <DynamicChart
+                    letter={String.fromCharCode(65 + Math.min(Math.floor((1 - scalingGlobalScore) * 5)))}
+                    color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingGlobalScore) * 5)]} />
+
+                  <RulesRadarchart
                     loading={loading}
-                    title="Durations score"
-                    values={Object.entries(global?.dynamic_score || {}).filter(([key, _]) => ["backendDuration", "duration", "calls", "overhead"].includes(key))} />
-                  <DynamicChart
+                    values={valuesAtCurrentDate}
+                    dynamic_values={global?.dynamic_values || {}} />
+                  <GlobalScore
                     loading={loading}
-                    title="Data score"
-                    values={Object.entries(global?.dynamic_score || {}).filter(([key, _]) => !["backendDuration", "duration", "calls", "overhead"].includes(key))} />
-                </div>
+                    score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                    maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
+                    raw />
+                </ModeWrapper>
               </div>
+
+              <ModeWrapper mode={mode} value="dynamic">
+                <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
+                  <div style={{ flex: 1, gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                    <DynamicChart
+                      loading={loading}
+                      title="Dynamic values"
+                      values={Object.entries(global?.dynamic_values.scaling || {})} />
+                  </div>
+                  <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                    <GlobalScore
+                      loading={loading}
+                      letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
+                      color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingDynamicScore) * 5)]}
+                      dynamic
+                      title="Data"
+                      tag="dynamic" />
+                    <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                  </div>
+                </div>
+              </ModeWrapper>
+
+              <ModeWrapper mode={mode} value="dynamic">
+                <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
+                  {/* global.dynamic_values.counters */}
+                  <GlobalScore
+                    className='reveal'
+                    loading={loading}
+                    score={dynamicCounters.excellent}
+                    maxScore={dynamicCountersLength}
+                    dynamic
+                    raw
+                    unit=" "
+                    title="Excellent"
+                    tag="dynamic" />
+                  <GlobalScore
+                    className='reveal'
+                    loading={loading}
+                    score={dynamicCounters.sufficient}
+                    dynamic
+                    raw
+                    unit=" "
+                    title="Sufficient"
+                    tag="dynamic" />
+                  <GlobalScore
+                    className='reveal'
+                    loading={loading}
+                    score={dynamicCounters.poor}
+                    dynamic
+                    raw
+                    unit=" "
+                    title="Poor"
+                    tag="dynamic" />
+                </div>
+              </ModeWrapper>
             </div>
 
-            <Wrapper loading={loading}>
-              <div style={{
-                display: 'flex',
-                margin: '.5rem 0'
-              }} className='reveal'>
-                <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
-                  if (acc[item.date]) {
-                    return {
-                      ...acc,
-                      [item.date]: [...acc[item.date], item]
+            <ModeWrapper mode={mode} value="static">
+              <Wrapper loading={loading}>
+                <div style={{
+                  display: 'flex',
+                  margin: '.5rem 0'
+                }} className='reveal'>
+                  <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
+                    if (acc[item.date]) {
+                      return {
+                        ...acc,
+                        [item.date]: [...acc[item.date], item]
+                      }
+                    } else {
+                      return {
+                        ...acc,
+                        [item.date]: [item]
+                      }
                     }
-                  } else {
-                    return {
-                      ...acc,
-                      [item.date]: [item]
-                    }
-                  }
-                }, {})} />
-              </div>
-            </Wrapper>
+                  }, {})} />
+                </div>
+              </Wrapper>
+
+            </ModeWrapper>
+            <ModeWrapper mode={mode} value="dynamic">
+              <Wrapper loading={loading}>
+                {scores.length > 0 ? [
+                  [
+                    { key: "overhead", title: 'Overhead', unit: 'ms' },
+                    { key: "duration", title: 'Duration', unit: 'ms' },
+                    { key: "backendDuration", title: 'Backend duration', unit: 'ms' },
+                    { key: "calls", title: 'Calls', unit: 's' },
+                  ],
+                  [
+                    { key: "dataIn", title: 'Data in', unit: 'bytes' },
+                    { key: "dataOut", title: 'Data out', unit: 'bytes' },
+                    { key: "headersOut", title: 'Headers out', unit: 'bytes' },
+                    { key: "headersIn", title: 'Headers in', unit: 'bytes' },
+                  ]
+                ].map((values, j) => <div className='d-flex justify-content-between' style={{ marginBottom: '.5rem', flex: 1, gap: '.5rem' }} key={`container${j}`}>
+                  {values
+                    .map(({ key, title, unit }) => {
+                      const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
+                      return <GlobalScore
+                        className='reveal'
+                        key={key}
+                        loading={loading}
+                        color={Object.keys(GREEN_SCORE_GRADES)[Math.round(scalingValue < 0 ? 0 : scalingValue)]}
+                        maxScore={thresholds[key]}
+                        score={global.dynamic_values.raw[key]}
+                        dynamic
+                        raw
+                        unit={unit}
+                        title={title}
+                        tag="dynamic" />
+                    })}
+                </div>) : <div></div>}
+              </Wrapper>
+
+            </ModeWrapper>
           </>} />
 
         <Route exact path='/extensions/green-score/groups'
@@ -390,13 +675,13 @@ export default class GreenScoreConfigsPage extends React.Component {
                 sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === this.state.date),
                 score: t.reduce((a, i) => a + i, 0),
                 ...group,
-                dynamic_score: this.getDynamicScore(group.dynamic_score)
+                dynamic_values: this.getDynamicScore(group.dynamic_values.scaling)
               }
             })} />} />
 
         <Route exact path="/extensions/green-score/groups/:group_id"
           component={EditGroup} />
       </Switch>
-    </div>
+    </div >
   }
 }

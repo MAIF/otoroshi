@@ -3,7 +3,7 @@ package otoroshi.greenscore
 import com.codahale.metrics.UniformReservoir
 import otoroshi.cluster.ClusterQuotaIncr.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
-import otoroshi.greenscore.Score.{RouteScore, SectionScore}
+import otoroshi.greenscore.Score.SectionScore
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json._
 
@@ -24,14 +24,61 @@ class ThresholdsRegistry {
   def json(routeId: String) = routesScore.get(routeId).map(_.json()).getOrElse(RouteReservoirs().json())
 }
 
-case class ScalingRouteReservoirs(overhead: Long = 0,
-                                  duration: Long = 0,
-                                  backendDuration: Long = 0,
-                                  calls: Long = 0,
-                                  dataIn: Long = 0,
-                                  dataOut: Long = 0,
-                                  headersOut: Long = 0,
-                                  headersIn: Long = 0) {
+case class DynamicTripleBounds(
+                                overhead: TripleBounds = TripleBounds(),
+                                duration: TripleBounds = TripleBounds(),
+                                backendDuration: TripleBounds = TripleBounds(),
+                                calls: TripleBounds = TripleBounds(),
+                                dataIn: TripleBounds = TripleBounds(),
+                                dataOut: TripleBounds = TripleBounds(),
+                                headersOut: TripleBounds = TripleBounds(),
+                                headersIn: TripleBounds = TripleBounds()
+                              ) {
+
+  def json() = Json.obj(
+    "overhead" -> overhead.json(),
+    "duration" -> duration.json(),
+    "backendDuration" -> backendDuration.json(),
+    "calls" -> calls.json(),
+    "dataIn" -> dataIn.json(),
+    "dataOut" -> dataOut.json(),
+    "headersOut" -> headersOut.json(),
+    "headersIn" -> headersIn.json(),
+  )
+
+  def +(other: DynamicTripleBounds) = copy(
+    overhead = overhead + other.overhead,
+    duration = duration + other.duration,
+    backendDuration = backendDuration + other.backendDuration,
+    calls = calls + other.calls,
+    dataIn = dataIn + other.dataIn,
+    headersOut = headersOut + other.headersOut,
+    headersIn = headersIn + other.headersIn,
+    dataOut = dataOut + other.dataOut,
+  )
+
+  def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
+    DynamicTripleBounds(
+      overhead.incr(reservoirs.overhead.getSnapshot.getMean.toInt, thresholds.overhead),
+      duration.incr(reservoirs.duration.getSnapshot.getMean.toInt, thresholds.duration),
+      backendDuration.incr( reservoirs.backendDuration.getSnapshot.getMean.toInt, thresholds.backendDuration),
+      calls.incr(reservoirs.calls.getSnapshot.getMean.toInt, thresholds.calls),
+      dataIn.incr(reservoirs.dataIn.getSnapshot.getMean.toInt, thresholds.dataIn),
+      dataOut.incr(reservoirs.dataOut.getSnapshot.getMean.toInt, thresholds.dataOut),
+      headersOut.incr(reservoirs.headersOut.getSnapshot.getMean.toInt, thresholds.headersOut),
+      headersIn.incr(reservoirs.headersIn.getSnapshot.getMean.toInt, thresholds.headersIn)
+    )
+  }
+}
+
+case class ScalingRouteReservoirs(overhead: Float = 0,
+                                  duration: Float = 0,
+                                  backendDuration: Float = 0,
+                                  calls: Float = 0,
+                                  dataIn: Float = 0,
+                                  dataOut: Float = 0,
+                                  headersOut: Float = 0,
+                                  headersIn: Float = 0) {
   def json() = Json.obj(
     "overhead" -> overhead,
     "duration" -> duration,
@@ -67,11 +114,24 @@ case class ScalingRouteReservoirs(overhead: Long = 0,
 }
 
 object ScalingRouteReservoirs {
-  private def scalingReservoir(value: Double, limit: Int): Long = {
+  private def scalingReservoir(value: Double, limit: Int): Float = {
     if (value > limit)
       1
     else
-      (value / limit).toLong
+      (value / limit).toFloat
+  }
+
+  def from(reservoirs: RouteReservoirs) = {
+    ScalingRouteReservoirs(
+      reservoirs.overhead.getSnapshot.getMean.toLong,
+      reservoirs.duration.getSnapshot.getMean.toLong,
+      reservoirs.backendDuration.getSnapshot.getMean.toLong,
+      reservoirs.calls.getSnapshot.getMean.toLong,
+      reservoirs.dataIn.getSnapshot.getMean.toLong,
+      reservoirs.dataOut.getSnapshot.getMean.toLong,
+      reservoirs.headersOut.getSnapshot.getMean.toLong,
+      reservoirs.headersIn.getSnapshot.getMean.toLong,
+    )
   }
 
   def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
@@ -138,54 +198,75 @@ object Score {
   case class SectionScore(id: String = "",
                           date: Long = 0L,
                           score: Double = 0.0,
-                          normalizedScore: Double = 0.0) {
+                          scalingScore: Double = 0.0) {
     def json() = Json.obj(
       "id" -> id,
       "date" -> date,
       "score" -> score,
-      "normalized_score" -> normalizedScore
+      "scaling_score" -> scalingScore
     )
 
     def merge(other: SectionScore): SectionScore = SectionScore(
       id = other.id,
       score = score + other.score,
-      normalizedScore = normalizedScore + other.normalizedScore,
+      scalingScore = scalingScore + other.scalingScore,
       date = other.date
     )
 
     def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
   }
+}
 
-  case class RouteScore(
-                         sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
-                         dynamicScores: ScalingRouteReservoirs
-                       ) {
-    def json(): JsObject = Json.obj(
-      "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
-      "dynamic_score" -> dynamicScores.json()
-    )
-  }
+case class RouteScore(
+                       sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
+                       dynamicValues: Dynamicvalues
+                     ) {
+  def json(): JsObject = Json.obj(
+    "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
+    "dynamic_values" -> dynamicValues.json()
+  )
+}
+
+case class Dynamicvalues(scaling: ScalingRouteReservoirs = ScalingRouteReservoirs(),
+                         raw: ScalingRouteReservoirs = ScalingRouteReservoirs(),
+                         counters: DynamicTripleBounds = DynamicTripleBounds()) {
+  def json() = Json.obj(
+    "scaling" -> scaling.json(),
+    "raw" -> raw.json(),
+    "counters" -> counters.json()
+  )
+
+  def merge(other: Dynamicvalues) = copy(
+    scaling = scaling.merge(other.scaling),
+    raw = raw.merge(other.raw),
+    counters = counters + other.counters
+  )
+
+  def mean(length: Int) = copy(
+    scaling = scaling.mean(length),
+    raw = raw.mean(length)
+  )
 }
 
 case class GroupScore(
                        informations: GreenScoreEntity,
                        sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
-                       dynamicScores: ScalingRouteReservoirs
+                       dynamicValues: Dynamicvalues
                      ) {
   def json() = Json.obj(
     "informations" -> informations.json,
     "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
-    "dynamic_score" -> dynamicScores.json()
+    "dynamic_values" -> dynamicValues.json()
   )
 }
 
 case class GlobalScore(
-                        dynamicScores: ScalingRouteReservoirs,
+                        dynamicValues: Dynamicvalues,
                         sectionsScoreByDate: Seq[RouteScoreByDateAndSection]
                       ) {
   def json() = Json.obj(
     "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
-    "dynamic_score" -> dynamicScores.json()
+    "dynamic_values" -> dynamicValues.json()
   )
 }
 
@@ -235,7 +316,7 @@ case class RouteScoreByDateAndSection(date: Long,
       letter = letterFromScore(score.score),
       color = colorFromScore(score.score),
       score = score.copy(
-        normalizedScore = score.score / (sectionWeight / 100 * MAX_GREEN_SCORE_NOTE)
+        scalingScore = score.score / (sectionWeight / 100 * MAX_GREEN_SCORE_NOTE)
       ))
   }
 
@@ -245,7 +326,7 @@ case class RouteScoreByDateAndSection(date: Long,
       letter = letterFromScore(groupScore),
       color = colorFromScore(groupScore),
       score = score.copy(
-        normalizedScore = score.normalizedScore / length
+        scalingScore = score.scalingScore / length
       ))
   }
 }
@@ -304,12 +385,12 @@ class EcoMetrics {
     }
   }
 
-  private def mergeRouteDynamicScores(dynamicScore: Seq[ScalingRouteReservoirs]): ScalingRouteReservoirs = {
+  private def mergeRouteDynamicValues(dynamicScore: Seq[Dynamicvalues]): Dynamicvalues = {
     if (dynamicScore.isEmpty) {
-      ScalingRouteReservoirs()
+      Dynamicvalues()
     } else {
       val result = dynamicScore
-        .foldLeft(ScalingRouteReservoirs()) { case (acc, item) => acc.merge(item) }
+        .foldLeft(Dynamicvalues()) { case (acc, item) => acc.merge(item) }
 
       result.mean(dynamicScore.length)
     }
@@ -317,7 +398,7 @@ class EcoMetrics {
 
   def calculateGlobalScore(groups: Seq[GroupScore]): GlobalScore = {
     GlobalScore(
-      dynamicScores = mergeRouteDynamicScores(groups.map(_.dynamicScores)),
+      dynamicValues = mergeRouteDynamicValues(groups.map(_.dynamicValues)),
       sectionsScoreByDate = mergeRoutesScoreByDateAndSection(groups.flatMap(_.sectionsScoreByDate))
     )
   }
@@ -330,7 +411,7 @@ class EcoMetrics {
     GroupScore(
       informations = group,
       sectionsScoreByDate = groupScore.map(_.processGroup(group.routes.length)),
-      dynamicScores = mergeRouteDynamicScores(scoreByRoute.map(_.dynamicScores))
+      dynamicValues = mergeRouteDynamicValues(scoreByRoute.map(_.dynamicValues))
     )
   }
 
@@ -341,7 +422,11 @@ class EcoMetrics {
 
     RouteScore(
       sectionsScoreByDate = sectionsScoreByDate.map(section => section.processRoute()),
-      dynamicScores = ScalingRouteReservoirs.from(routeScore, route.rulesConfig.thresholds)
+      dynamicValues = Dynamicvalues(
+        scaling = ScalingRouteReservoirs.from(routeScore, route.rulesConfig.thresholds),
+        raw = ScalingRouteReservoirs.from(routeScore),
+        counters = DynamicTripleBounds().from(routeScore, route.rulesConfig.thresholds)
+      )
     )
   }
 

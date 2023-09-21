@@ -232,10 +232,6 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
           <GreenScoreForm route={route} onChange={onRulesChange} rulesBySection={rulesBySection} activeTab={activeTab} />
           <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
             <FeedbackButton
-              onPress={() => {
-                saveRules()
-                return Promise.resolve()
-              }}
               className="me-2"
               onSuccess={onWizardClose}
               icon={() => <i className="fas fa-chevron-left" />}

@@ -38,14 +38,14 @@ export function DynamicChart(props) {
                 padding: '0 .5rem',
                 position: 'relative'
             }}>
-            <div style={{ maxHeight: 370, flex: 1 }}>
+            <div style={{ maxHeight: 420, flex: 1 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                        layout='vertical'
+                        // layout='vertical'
                         margin={{
-                            top: 30,
+                            top: 75,
                             bottom: 10,
-                            left: 75,
+                            left: 20,
                             right: 20
                         }}
                         data={props.values.map(([key, value]) => ({
@@ -53,9 +53,9 @@ export function DynamicChart(props) {
                             value: value * 100
                         }))}>
                         <CartesianGrid strokeDasharray="2 2" />
-                        <XAxis type='number' domain={[0, 100]} />
-                        <YAxis type="category" dataKey="name" stroke='var(--text)' />
-                        <Bar dataKey="value" fill="var(--color-primary)" barSize={20} radius={[10, 10, 10, 10]} />
+                        <XAxis dataKey="name" stroke='var(--text)' />
+                        <YAxis stroke='var(--text)' domain={[0, 1]} />
+                        <Bar dataKey="value" fill="var(--color-primary)" barSize={20} radius={[10, 10, 0, 0]} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>

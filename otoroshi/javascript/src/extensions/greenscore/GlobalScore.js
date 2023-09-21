@@ -26,17 +26,19 @@ function Tag({ value }) {
 }
 
 export function GlobalScore(allProps) {
-    const { tag = "static", letter, rank, color, score, maxScore, ...props } = allProps;
+    const { tag = "static", letter, rank, color, score, maxScore, unit, ...props } = allProps;
 
     function showDynamicRawScore() {
-        return <div>
+        return <>
             <span style={{
                 fontSize: '5rem',
                 '--dynamic-raw-score-to': Math.round(score)
             }}
                 className='dynamic-raw-score'></span>
-            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{'%'}</span>
-        </div>
+            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`${maxScore ? `/${maxScore} ` : ''}`}
+                <span style={{ fontWeight: 'normal' }}>{unit || '%'}</span>
+            </span>
+        </>
     }
 
     function showNetScore() {
@@ -66,21 +68,25 @@ export function GlobalScore(allProps) {
 
     return <Wrapper loading={props.loading}>
         <div
-            className="text-center p-3"
+            className={`text-center p-3 ${allProps.className}`}
             style={{
                 flex: .5,
-                maxWidth: 250,
-                minWidth: 230,
+                // maxWidth: 250,
+                minWidth: 250,
                 background: 'var(--bg-color_level2)',
                 borderRadius: '.2rem',
                 padding: '0 .5rem',
                 fontSize: '10rem',
-                position: 'relative'
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                // boxShadow: props.dynamic && props.raw ? `inset ${color} 0 -4px 0px 0px` : 0
             }}>
             <div style={{
                 display: 'flex',
                 alignItems: 'baseline',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flex: 1
             }}>
                 {props.dynamic ? (props.raw ? showDynamicRawScore() : showGlobalScore()) :
                     props.raw ? showNetScore() : showGlobalScore()}
@@ -89,7 +95,7 @@ export function GlobalScore(allProps) {
             <h3 style={{
                 color: 'var(--color_level2)',
                 fontWeight: 100,
-            }} className='m-0'>
+            }} className='m-0 mt-1'>
                 {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}
             </h3>
 
@@ -99,17 +105,25 @@ export function GlobalScore(allProps) {
                 position: 'absolute',
                 top: 6,
                 right: 6,
-                borderRadius: '50%',
-                background: 'rgba(249, 176, 0, 0.46)',
-                color: '#fff',
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <i className={`fas fa-${props.dynamic ? 'bolt' : 'spa'}`} style={{ fontSize: 'initial' }} />
+                bottom: 6
+            }} className='d-flex flex-column justify-content-between'>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(249, 176, 0, 0.46)',
+                    color: '#fff',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                }}>
+                    <i className={`fas fa-${props.dynamic ? 'bolt' : 'spa'}`} style={{ fontSize: 'initial' }} />
+                </div>
+
+                {props.dynamic && props.raw && <i className="fa fa-leaf scale-in-ver-top"
+                    style={{ color, fontSize: '1.25rem', }} />}
             </div>
         </div>
-    </Wrapper>
+    </Wrapper >
 };
