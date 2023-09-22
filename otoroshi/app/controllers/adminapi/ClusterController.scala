@@ -2,7 +2,6 @@ package otoroshi.controllers.adminapi
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
@@ -18,12 +17,8 @@ import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.{Accumulator, ActorFlow}
-import play.api.libs.typedmap.TypedMap
-import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import play.api.mvc._
 
-import java.net.{InetAddress, URI}
-import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic._
 import scala.concurrent.duration._
@@ -534,6 +529,17 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
 
   private val ref = new AtomicReference[Cancellable]()
 
+  implicit val ec = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
+
+  def debug(msg: String): Unit = {
+    if (env.isDev) {
+      Cluster.logger.info(s"[CLUSTER-WS] $msg")
+    } else {
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(msg)
+    }
+  }
+
   override def preStart(): Unit = {
     ref.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, env.clusterConfig.worker.state.pollEvery.millis) { () =>
       val msg = ClusterLeaderStateMessage(
@@ -545,9 +551,15 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
         dataFrom = env.clusterLeaderAgent.cachedTimestamp,
       )
       val mess = msg.json.stringify
-      Cluster.logger.debug(s"ws pushing the state: ${mess.size} bytes")
-      out ! play.api.http.websocket.TextMessage(mess)
-    }(env.otoroshiExecutionContext))
+      if (env.clusterConfig.compression > -1) {
+        val data = mess.byteString
+        debug(s"ws pushing the state: ${data.size / 1024} Kb compressed")
+        out ! play.api.http.websocket.BinaryMessage(data)
+      } else {
+        debug(s"ws pushing the state: ${mess.byteString.size / 1024} Kb uncompressed")
+        out ! play.api.http.websocket.TextMessage(mess)
+      }
+    })
   }
 
   override def postStop(): Unit = {

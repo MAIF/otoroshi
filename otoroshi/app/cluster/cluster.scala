@@ -2,6 +2,7 @@ package otoroshi.cluster
 
 import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
+import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.model.{ContentTypes, Uri}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
@@ -10,7 +11,7 @@ import akka.stream.alpakka.s3.headers.CannedAcl
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.alpakka.s3._
 import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, Materializer, OverflowStrategy}
+import akka.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
@@ -38,7 +39,7 @@ import otoroshi.utils
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
 import otoroshi.utils.http.Implicits._
-import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
 import otoroshi.utils.syntax.implicits._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -52,6 +53,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.net.InetSocketAddress
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
@@ -2254,7 +2256,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def startF(): Future[Unit] = FastFuture.successful(start())
 
-  private def callLeaderAkka(attempt: Int): Unit = {
+  private def callLeaderAkka(currentAttempt: Int): Unit = {
+
+    var attempt: Int = currentAttempt
 
     val logger = Cluster.logger
 
@@ -2271,19 +2275,34 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     val pushCancelSource = new AtomicReference[Cancellable]()
     val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
     val pushSource: Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+      Source.queue[akka.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue { q =>
         queueRef.set(q)
         q
       }
     val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource
 
-    def onClusterState(elem: String): Unit = {
+    def handleOfferFailure(key: String, msg: ClusterLeaderUpdateMessage): PartialFunction[Try[QueueOfferResult], Unit] = {
+      new PartialFunction[Try[QueueOfferResult], Unit] {
+        def isDefinedAt(x: Try[QueueOfferResult]): Boolean = x.isFailure
+        def apply(x: Try[QueueOfferResult]): Unit = {
+          x match {
+            case Success(_) => ()
+            case Failure(e) => {
+              logger.error("ws update offer failure", e)
+              putQuotaIfAbsent(key, msg)
+            }
+          }
+        }
+      }
+    }
+
+    def onClusterState(elem: String, streamed: Boolean, compressed: Boolean): Unit = {
       val startTime = System.currentTimeMillis()
       ClusterLeaderStateMessage.format.reads(elem.parseJson) match {
         case JsError(e) => logger.error(s"ClusterLeaderStateMessage deserialization error: $e")
         case JsSuccess(csm, _) => {
 
-          debug("got new state")
+          debug(s"got new state of ${elem.byteString.size / 1024} Kb ${if (streamed) "streamed" else "strict"} and ${if (compressed) "compressed" else "uncompressed"}")
 
           val store = new UnboundedConcurrentHashMap[String, Any]()
           val expirations = new UnboundedConcurrentHashMap[String, Long]()
@@ -2298,6 +2317,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
           csm.state
             .chunks(64 * 1024)
+            .via(env.clusterConfig.gunzip())
             .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
             .alsoTo(Sink.foreach { item =>
               if (env.clusterConfig.backup.instanceCanWrite) {
@@ -2332,10 +2352,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val valid = (responseCount == counter.get()) && (responseDigest == cliDigest)
               if (!valid) {
                 Cluster.logger.warn(
-                  s"[${env.clusterConfig.mode.name}] state polling validation failed (${tryCount}): expected count: ${responseCount} / ${
-                    counter
-                      .get()
-                  } : ${responseCount.toLong == counter.get()}, expected hash: ${responseDigest} / ${cliDigest} : ${responseDigest == cliDigest}, trying again !"
+                  s"[${env.clusterConfig.mode.name}] state polling validation failed (${tryCount}): expected count: ${responseCount} / ${counter.get()} : ${responseCount.toLong == counter.get()}, expected hash: ${responseDigest} / ${cliDigest} : ${responseDigest == cliDigest}, trying again !"
                 )
               }
 
@@ -2418,17 +2435,21 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
           val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
           queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, stats.json).json.prettify))
-          oldQuotasIncr.values.foreach { incr =>
-            queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, incr.json).json.prettify))
+            .andThen(handleOfferFailure("routes:global", stats))
+          oldQuotasIncr.foreach {
+            case (key, incr) =>
+              queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, incr.json).json.prettify))
+                .andThen(handleOfferFailure(key, incr))
           }
         }
       }(env.otoroshiExecutionContext))
     }
-    // TODO: mtls ????
-    // TODO: web proxy ????
+
     val url: String = config.leader.urls.apply(attempt % config.leader.urls.size)
     val secured = url.startsWith("https")
     val uri = Uri(url).copy(scheme = if (secured) "wss" else "ws", path = Uri.Path("/api/cluster/state/ws"))
+    val port = uri.authority.port
+    val ipAddress = if (uri.authority.host.isIPv4() || uri.authority.host.isIPv6()) uri.authority.host.toString().some else None
     debug("connecting to cluster ws")
     val (fu, _) = env.Ws.ws(
       request = WebSocketRequest.fromTargetUri(uri).copy(
@@ -2440,14 +2461,37 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         )
       ),
       targetOpt = None,
-      customizer = identity,
+      mtlsConfigOpt = config.mtlsConfig.some.filter(_.mtls),
+      customizer = m => {
+        (ipAddress, config.proxy) match {
+          case (_, Some(proxySettings)) => {
+            val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+            val transport = (proxySettings.principal, proxySettings.password) match {
+              case (Some(principal), Some(password)) =>
+                ClientTransport.httpsProxy(
+                  proxyAddress,
+                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                )
+              case _ => ClientTransport.httpsProxy(proxyAddress)
+            }
+            m.withTransport(transport)
+          }
+          case (Some(addr), _) =>
+            m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
+          case _ => m
+        }
+      },
       clientFlow = Flow
         .fromSinkAndSource(
           Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => onClusterState(data)
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(data => onClusterState(data))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => logger.warn("unsupported ws message kind: BinaryMessage.Strict")
-            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) => logger.warn("unsupported ws message kind: BinaryMessage.Streamed")
+            case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => onClusterState(data, false, false)
+            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(data => onClusterState(data, true, false))
+            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) =>
+              debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
+              data.chunks(1024 * 32).via(config.gunzip()).runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, false, true))
+            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+              debug(s"uncompressing streamed at level ${env.clusterConfig.compression}")
+              source.runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, true, true))
           },
           source
         )
@@ -2461,6 +2505,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     fu.andThen {
       case Success(ValidUpgrade(response, chosenSubprotocol)) =>
         if (logger.isDebugEnabled) logger.debug(s"cluster ws upgrade successful and valid: ${response} - ${chosenSubprotocol}")
+        attempt = 1
         onUpgradeSuccessful()
       case Success(InvalidUpgradeResponse(response, cause)) =>
         if (logger.isDebugEnabled) logger.error(s"cluster ws upgrade successful but invalid: ${response} - ${cause}")
@@ -2476,7 +2521,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (Cluster.logger.isDebugEnabled)
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
       if (config.worker.useWs) {
-        Cluster.logger.warn("USING CLUSTER API THROUGH WEBSOCKET: THIS IS NOT READY YET !!!!")
+        // Cluster.logger.warn("USING CLUSTER API THROUGH WEBSOCKET: THIS IS NOT READY YET !!!!")
         callLeaderAkka(1)
       } else {
         pollRef.set(
@@ -3031,7 +3076,6 @@ sealed trait ClusterLeaderUpdateMessage {
 object ClusterLeaderUpdateMessage {
 
   def read(item: JsValue): Option[ClusterLeaderUpdateMessage] = {
-    // println(s"read: ${item.prettify}")
     item.select("typ").asOpt[String] match {
       case Some("globstats") => GlobalStatusUpdate.format.reads(item).asOpt
       case Some("apkincr") => ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
