@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
+import ReactSelect from 'react-select'
 
 import { Switch, Route } from 'react-router-dom';
 
@@ -34,9 +35,11 @@ function ModeWrapper({ mode, value, children }) {
   return null
 }
 
-function FilterSelector({ mode, onChange }) {
+function FilterSelector({ mode, onChange, ...props }) {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState(mode)
+  const [state, setState] = useState(mode);
+
+  const [groups, setGroups] = useState(props.groups)
 
   const addToState = value => {
     if (state === value)
@@ -52,8 +55,6 @@ function FilterSelector({ mode, onChange }) {
         setState(value)
     }
   }
-
-  console.log(state)
 
   return <div style={{
     position: 'absolute',
@@ -124,6 +125,17 @@ function FilterSelector({ mode, onChange }) {
               cursor: 'pointer'
             }}>DYNAMIC <i className='fas fa-bolt ms-2' /></div>
         </div>
+        <h3 style={{ color: 'var(--text)' }} className='mt-3'>Groups</h3>
+
+        <ReactSelect
+          value={groups}
+          isMulti
+          name="colors"
+          onChange={setGroups}
+          options={props.groups.map(g => ({ label: g.name, value: g.id }))}
+          className="basic-multi-select"
+          classNamePrefix="select" />
+
         <div className='mt-auto d-flex pt-3' style={{ gap: 8 }}>
           <button type="button" className='btn p-2' onClick={() => setOpen(false)} style={{
             flex: 1,
@@ -533,7 +545,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
 
-                <FilterSelector onChange={this.onModeChange} mode={mode} />
+                <FilterSelector onChange={this.onModeChange} mode={mode} groups={groups} />
 
                 <ModeWrapper mode={mode} value="static">
                   <GlobalScore
