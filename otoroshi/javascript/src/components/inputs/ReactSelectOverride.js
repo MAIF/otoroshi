@@ -38,7 +38,7 @@ export class ReactSelectOverride extends React.Component {
         this.setState({
             value: newItem
         }, () => {
-            this.props.onChange(newItem.value)
+            this.props.onChange((this.props.creatable || this.props.isMulti) ? newItem : newItem.value)
         })
     }
 
