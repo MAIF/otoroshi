@@ -39,13 +39,21 @@ function FilterSelector({ mode, onChange }) {
   const [state, setState] = useState(mode)
 
   const addToState = value => {
-    if (state === 'all')
-      setState(value)
-    else if (value === state)
-      setState('all')
-    else if (value !== state)
-      setState('all')
+    if (state === value)
+      setState()
+    else if (state === 'all')
+      setState(value === 'static' ? 'dynamic' : 'static');
+    else {
+      const values = [...new Set([state, value])].filter(f => f)
+
+      if (values.includes('dynamic') && values.includes('static'))
+        setState('all')
+      else
+        setState(value)
+    }
   }
+
+  console.log(state)
 
   return <div style={{
     position: 'absolute',
@@ -93,10 +101,11 @@ function FilterSelector({ mode, onChange }) {
         minWidth: 350,
       }}
         className='p-3 d-flex flex-column'>
+        <h3 style={{ color: 'var(--text)' }}>Modes</h3>
         <div className='d-flex' style={{ gap: '.5rem' }}>
           <div
             onClick={() => addToState('static')}
-            className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${state !== 'dynamic' ? 'date-hover--selected' : ''}`}
+            className={`d-flex align-items-center justify-content-center p-3 py-2 ${(state && state !== 'dynamic') ? 'date-hover--selected' : ''}`}
             style={{
               flex: 1,
               border: '1px solid var(--color-primary)',
@@ -106,7 +115,7 @@ function FilterSelector({ mode, onChange }) {
             }}>STATIC <i className='fas fa-spa ms-2' /></div>
           <div
             onClick={() => addToState('dynamic')}
-            className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${state !== 'static' ? 'date-hover--selected' : ''}`}
+            className={`d-flex align-items-center justify-content-center p-3 py-2 ${(state && state !== 'static') ? 'date-hover--selected' : ''}`}
             style={{
               flex: 1,
               border: '1px solid var(--color-primary)',
@@ -115,7 +124,7 @@ function FilterSelector({ mode, onChange }) {
               cursor: 'pointer'
             }}>DYNAMIC <i className='fas fa-bolt ms-2' /></div>
         </div>
-        <div className='mt-auto d-flex' style={{ gap: 8, }}>
+        <div className='mt-auto d-flex pt-3' style={{ gap: 8 }}>
           <button type="button" className='btn p-2' onClick={() => setOpen(false)} style={{
             flex: 1,
             borderRadius: 8,
@@ -510,7 +519,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                 gap: '.5rem',
                 marginBottom: '.5rem',
                 position: 'relative',
-                minHeight: 380
+                // minHeight: 380
               }}>
 
                 {availableDates.length > 1 && <DatePicker
@@ -638,7 +647,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                     { key: "headersOut", title: 'Headers out', unit: 'bytes' },
                     { key: "headersIn", title: 'Headers in', unit: 'bytes' },
                   ]
-                ].map((values, j) => <div className='d-flex justify-content-between' style={{ marginBottom: '.5rem', flex: 1, gap: '.5rem' }} key={`container${j}`}>
+                ].map((values, j) => <div className='d-flex justify-content-between' style={{ margin: '.5rem 0', flex: 1, gap: '.5rem' }} key={`container${j}`}>
                   {values
                     .map(({ key, title, unit }) => {
                       const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
