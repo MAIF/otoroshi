@@ -38,7 +38,7 @@ export class ReactSelectOverride extends React.Component {
         this.setState({
             value: newItem
         }, () => {
-            this.props.onChange(newItem.value)
+            this.props.onChange((this.props.creatable || this.props.isMulti) ? newItem : newItem.value)
         })
     }
 
@@ -78,6 +78,19 @@ export class ReactSelectOverride extends React.Component {
                 MenuList: provided => ({
                     ...provided,
                     background: 'red'
+                }),
+                multiValueLabel: provided => ({
+                    ...provided,
+                    color: 'var(--text)',
+                }),
+                multiValueRemove: provided => ({
+                    ...provided,
+                    background: 'var(--color-primary)'
+                }),
+                multiValue: (provided, { isFocused }) => ({
+                    ...provided,
+                    color: 'var(--text)',
+                    backgroundColor: isFocused ? 'var(--bg-color_level2)' : 'var(--bg-color_level3)'
                 }),
                 singleValue: provided => ({
                     ...provided,

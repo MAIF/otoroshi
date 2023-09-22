@@ -1,18 +1,21 @@
 package otoroshi.greenscore
 
 import akka.actor.{Actor, ActorRef, Props}
+import akka.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
-import otoroshi.cluster.ClusterQuotaIncr.RouteCallIncr
+import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.env.Env
 import otoroshi.events.{GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
+import otoroshi.next.utils.JsonHelpers.requestBody
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.SourceBody
 import play.api.mvc.Results
 
 import java.util.concurrent.atomic.AtomicLong
@@ -202,6 +205,38 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
           ))
         }
+      }
+    ),
+    AdminExtensionAdminApiRoute(
+      "POST",
+      "/api/extensions/green-score",
+      wantsBody = true,
+      (ctx, request, apk, body) => {
+        implicit val ec = env.otoroshiExecutionContext
+        implicit val ev = env
+
+        println(body, request)
+
+        body
+            .map(_.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
+            .map(r => Json.parse(r.utf8String)))
+            .getOrElse(Json.arr().vfuture)
+            .flatMap(ids => {
+              println(ids)
+              for {
+                scores <- datastores.greenscoresDatastore.findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
+              } yield {
+                val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
+
+                val globalScore = ecoMetrics.calculateGlobalScore(groupScores)
+
+                Results.Ok(Json.obj(
+                  "groups" -> scores.map(_.json),
+                  "scores" -> groupScores.map(_.json()),
+                  "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
+                ))
+              }
+            })
       }
     ),
     AdminExtensionAdminApiRoute(

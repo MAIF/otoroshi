@@ -16,6 +16,7 @@ import CustomTable from './CustomTable';
 import { ManagerTitle, Tab } from './TitleManager';
 import EditGroup from './EditGroup';
 import Wrapper from './Wrapper';
+import { NgSelectRenderer } from '../../components/nginputs';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -127,8 +128,11 @@ function FilterSelector({ mode, onChange, ...props }) {
         </div>
         <h3 style={{ color: 'var(--text)' }} className='mt-3'>Groups</h3>
 
-        <ReactSelect
+        <NgSelectRenderer
           value={groups}
+          ngOptions={{
+            spread: true
+          }}
           isMulti
           name="colors"
           onChange={setGroups}
@@ -144,7 +148,7 @@ function FilterSelector({ mode, onChange, ...props }) {
             color: 'var(--text)'
           }}>Cancel</button>
           <button type="button" className='btn p-2'
-            onClick={() => onChange(state)}
+            onClick={() => onChange(state, groups)}
             style={{
               flex: 1,
               borderRadius: 8,
@@ -291,6 +295,7 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
 
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
+    filteredGroups: [],
     routes: [],
     groups: [],
     rulesBySection: undefined,
@@ -338,6 +343,20 @@ export default class GreenScoreConfigsPage extends React.Component {
     this.props.setTitle(() => <ManagerTitle />);
 
     document.getElementById('content-scroll-container').addEventListener('scroll', this.reveal)
+  }
+
+  calculateForGroups = newGroups => {
+    fetch('/bo/api/proxy/api/extensions/green-score', {
+      credentials: 'include',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newGroups.map(g => g.value))
+    })
+      .then((r) => r.json())
+      .then(console.log)
   }
 
   reveal() {
@@ -491,14 +510,17 @@ export default class GreenScoreConfigsPage extends React.Component {
       return 0
   }
 
-  onModeChange = newMode => {
+  onFiltersChange = (newMode, newGroups) => {
     this.setState({
-      mode: newMode
+      mode: newMode,
+      filteredGroups: newGroups
+    }, () => {
+      this.calculateForGroups(newGroups)
     })
   }
 
   render() {
-    const { scores, global, dateSelectorOpened, groups, loading, mode } = this.state;
+    const { scores, global, dateSelectorOpened, groups, loading, mode, filteredGroups } = this.state;
 
     console.log(this.state)
 
@@ -545,7 +567,9 @@ export default class GreenScoreConfigsPage extends React.Component {
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
 
-                <FilterSelector onChange={this.onModeChange} mode={mode} groups={groups} />
+                <FilterSelector onChange={(mode, filteredGroups) => {
+                  this.onFiltersChange(mode, filteredGroups)
+                }} mode={mode} groups={groups} />
 
                 <ModeWrapper mode={mode} value="static">
                   <GlobalScore

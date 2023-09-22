@@ -300,9 +300,8 @@ class BackOfficeAppContainer extends Component {
           <div style={{ height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
             <div className='d-flex' style={{ position: 'relative' }}>
               <div
-                className={`sidebar ${
-                  !this.state.openedSidebar ? 'sidebar--closed' : ''
-                }`}
+                className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''
+                  }`}
                 id='sidebar'
               >
                 <i
@@ -320,9 +319,8 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${
-                    this.state.openedSidebar ? 'ps-2' : ''
-                  }`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''
+                    }`}
                   style={{
                     alignItems: this.state.openedSidebar
                       ? 'flex-start'
@@ -340,16 +338,14 @@ class BackOfficeAppContainer extends Component {
                   )}
                   <ul className='nav flex-column nav-sidebar mt-3'>
                     <li
-                      className={`nav-item mt-0 ${
-                        this.state.openedSidebar ? 'nav-item--open' : ''
-                      }`}>
+                      className={`nav-item mt-0 ${this.state.openedSidebar ? 'nav-item--open' : ''
+                        }`}>
                       <Link
                         to='/'
-                        className={`nav-link ${
-                          window.location.pathname === '/bo/dashboard/'
+                        className={`nav-link ${window.location.pathname === '/bo/dashboard/'
                             ? 'active'
                             : ''
-                        }`}
+                          }`}
                         {...createTooltip(
                           'Home dashboard of Otoroshi displaying global metrics'
                         )}
@@ -382,7 +378,7 @@ class BackOfficeAppContainer extends Component {
                       >
                         {this.state.env.snowMonkeyRunning &&
                           window.location.pathname !==
-                            '/bo/dashboard/snowmonkey' && (
+                          '/bo/dashboard/snowmonkey' && (
                             <div className='screen'>
                               <p>Snow monkey is running...</p>
                             </div>
@@ -393,7 +389,7 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
               <div className="flex-fill px-3">
-                <div className={classes.join(' ')}>
+                <div className={classes.join(' ')} id="content-scroll-container">
                   <DynamicTitle />
                   {!this.state.catchedError && (
                     <Switch>
@@ -1107,9 +1103,8 @@ class GlobalTenantSelector extends Component {
     return (
       <ul className='nav flex-column nav-sidebar mt-3'>
         <li
-          className={`nav-item mt-0 ${
-            this.props.openedSidebar ? 'nav-item--open' : ''
-          }`}
+          className={`nav-item mt-0 ${this.props.openedSidebar ? 'nav-item--open' : ''
+            }`}
         >
           <a
             className='nav-link'

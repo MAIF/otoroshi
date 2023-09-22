@@ -1,7 +1,7 @@
 package otoroshi.greenscore
 
 import com.codahale.metrics.UniformReservoir
-import otoroshi.cluster.ClusterQuotaIncr.RouteCallIncr
+import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
 import otoroshi.greenscore.Score.SectionScore
 import otoroshi.utils.cache.types.UnboundedTrieMap
