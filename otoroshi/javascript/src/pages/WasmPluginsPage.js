@@ -94,7 +94,6 @@ export class WasmSourcePath extends Component {
         },
       },
     };
-    console.log(this.props.value, this.state.manager);
     const source = this.props.rootValue || rawValue.config.source;
     const kind = source.kind.toLowerCase();
     if (kind === 'unknown') {

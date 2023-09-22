@@ -338,6 +338,7 @@ class ProxyEngine() extends RequestHandler {
     val reqNumber        = reqCounter.incrementAndGet()
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
+    val responseEndPromise = Promise[Done]()
     implicit val attrs   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey       -> report,
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
@@ -346,7 +347,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestStartKey      -> start,
       otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
       otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut,
+      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
     )
 
     val elCtx: Map[String, String] = Map(
@@ -509,6 +511,14 @@ class ProxyEngine() extends RequestHandler {
         // }
         res.withHeaders(addHeaders: _*)
       })
+      .map { result =>
+        result.copy(body = result.body match {
+          case HttpEntity.NoEntity => HttpEntity.NoEntity
+          case b @ HttpEntity.Strict(_, _) => b
+          case HttpEntity.Streamed(source, length, typ) => HttpEntity.Streamed(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), length, typ)
+          case HttpEntity.Chunked(source, typ) => HttpEntity.Chunked(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), typ)
+        })
+      }
   }
 
   @inline
@@ -2798,7 +2808,10 @@ class ProxyEngine() extends RequestHandler {
         )
       val theBody                                        = request.body
         .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { body =>
-          body.alsoTo(Sink.foreach(chunk => counterIn.addAndGet(chunk.size)))
+          body.map { chunk =>
+            counterIn.addAndGet(chunk.size)
+            chunk
+          }
         }
         .applyOnIf(request.hasBody && engineConfig.capture) { source =>
           var requestChunks = ByteString("")
@@ -3206,7 +3219,10 @@ class ProxyEngine() extends RequestHandler {
 
     val theBody = response.body
       .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
-        body.alsoTo(Sink.foreach(chunk => counterOut.addAndGet(chunk.size)))
+        body.map { chunk =>
+          counterOut.addAndGet(chunk.size)
+          chunk
+        }
       }
       .applyOnIf(engineConfig.capture) { source =>
         var responseChunks = ByteString("")
@@ -3467,7 +3483,7 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
-    Future {
+    attrs.get(otoroshi.plugins.Keys.ResponseEndPromiseKey).foreach(_.future.andThen { case _ =>
       val actualDuration: Long           = report.getDurationNow()
       val overhead: Long                 = report.getOverheadNow()
       val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
@@ -3602,7 +3618,7 @@ class ProxyEngine() extends RequestHandler {
         extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
       )
       evt.toAnalytics()
-    }(env.analyticsExecutionContext)
+    }(env.analyticsExecutionContext))
     FEither.right(Done)
   }
 }

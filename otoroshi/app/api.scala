@@ -368,12 +368,12 @@ object OtoroshiLoaderHelper {
     }
   }
 
-  def initOpenTelemetryLogger(configuration: Configuration): Unit = {
+  def initOpenTelemetryLogger(configuration: Configuration, env: Env): Unit = {
     val jsonConfig = configuration.json
     jsonConfig.select("otoroshi").select("open-telemetry").select("server-logs").asOpt[JsObject].foreach { config =>
       val enabled = config.select("enabled").asOpt[Boolean].getOrElse(false)
       if (enabled) {
-        val clusterConfig = ClusterConfig.fromRoot(configuration)
+        val clusterConfig = ClusterConfig.fromRoot(configuration, env)
         val otlpConfig    = OtlpSettings.format.reads(config).get
         val lc            = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
         val rootLogger    = lc.getLogger("root")
@@ -434,7 +434,6 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   LoggerConfigurator(environment.classLoader).foreach {
     _.configure(environment, configuration, Map.empty)
   }
-  OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration)
 
   lazy val controllerComponents: ControllerComponents = DefaultControllerComponents(
     defaultActionBuilder,
@@ -459,7 +458,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       getHttpsPort = None,
       testing = false
     )
-  )
+  ).seffectOn(ev => OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration, ev))
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 

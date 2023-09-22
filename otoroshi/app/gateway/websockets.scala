@@ -658,11 +658,12 @@ object WebSocketProxyActor {
       Source.asSubscriber[akka.http.scaladsl.model.ws.Message]
     )(Keep.both)
     val (connected, (publisher, subscriber)) = env.gatewayClient.ws(
-      request,
-      Some(target),
-      flow,
+      request = request,
+      targetOpt = Some(target),
+      mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
+      clientFlow = flow,
       //a => a
-      descriptor.clientConfig.proxy
+      customizer = descriptor.clientConfig.proxy
         .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
         .filter(p =>
           WSProxyServerUtils.isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
@@ -784,9 +785,10 @@ class WebSocketProxyActor(
         r.copy(extraHeaders = r.extraHeaders :+ header)
       )
       val (connected, materialized) = env.gatewayClient.ws(
-        request,
-        Some(target),
-        Flow
+        request = request,
+        targetOpt = Some(target),
+        mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
+        clientFlow = Flow
           .fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
               case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
@@ -812,7 +814,7 @@ class WebSocketProxyActor(
             Option(queueRef.get()).foreach(_.complete())
           // out ! PoisonPill
           }),
-        descriptor.clientConfig.proxy
+        customizer = descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
           .filter(p =>
             WSProxyServerUtils

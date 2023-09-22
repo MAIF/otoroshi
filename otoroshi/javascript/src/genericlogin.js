@@ -4,7 +4,6 @@ import 'core-js/es6/map';
 import 'core-js/es6/set';
 import './raf';
 
-import 'react-select/dist/react-select.css';
 import 'react-table/react-table.css';
 import './style/main.scss';
 

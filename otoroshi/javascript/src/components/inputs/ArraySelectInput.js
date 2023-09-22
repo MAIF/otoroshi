@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import Select, { Creatable } from 'react-select';
-import { Scripts } from '../Scripts';
 import { Separator } from '../Separator';
 import { Help } from './Help';
+import { ReactSelectOverride } from './ReactSelectOverride';
 
 export class ArraySelectInput extends Component {
   state = {
@@ -48,12 +47,11 @@ export class ArraySelectInput extends Component {
     this.props.onChange(newValues);
   };
 
-  changeKey = (e, oldName) => {
-    if (e && e.preventDefault) e.preventDefault();
+  changeKey = (value, oldName) => {
     const newValues = { ...this.props.value };
     const oldValue = newValues[oldName];
     delete newValues[oldName];
-    newValues[e.value] = oldValue;
+    newValues[value] = oldValue;
     this.props.onChange(newValues);
   };
 
@@ -118,20 +116,19 @@ export class ArraySelectInput extends Component {
 
   render() {
     const values = Object.keys(this.props.value || {}).map((k) => [k, this.props.value[k]]);
-    const Component = this.props.creatable ? Creatable : Select;
 
     const additional = this.props.creatable
       ? values
-          .map((arr) => {
-            const value = arr[0];
-            const found = this.state.possibleValues.find((v) => v.value === value);
-            if (!found) {
-              return { value: value, label: value };
-            } else {
-              return null;
-            }
-          })
-          .filter((v) => !!v)
+        .map((arr) => {
+          const value = arr[0];
+          const found = this.state.possibleValues.find((v) => v.value === value);
+          if (!found) {
+            return { value: value, label: value };
+          } else {
+            return null;
+          }
+        })
+        .filter((v) => !!v)
       : [];
 
     const possibleValues = [...this.state.possibleValues, ...additional];
@@ -153,7 +150,8 @@ export class ArraySelectInput extends Component {
               <div className="col-sm-10">
                 <div style={{ display: 'flex' }}>
                   <div style={{ flex: 1 }}>
-                    <Component
+                    <ReactSelectOverride
+                      creatable={this.props.creatable}
                       name={`selector-${idx}`}
                       value={value[0]}
                       isLoading={this.state.loading}

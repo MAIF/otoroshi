@@ -298,11 +298,6 @@
     "description" : "???",
     "properties" : { }
   },
-  "otoroshi.wasm.WasmSourceKind" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : { }
-  },
   "otoroshi.plugins.core.apikeys.JwtApikeyExtractor" : {
     "type" : "object",
     "description" : "???",
@@ -925,34 +920,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -971,25 +938,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -4252,6 +4200,16 @@
       }
     }
   },
+  "otoroshi.greenscore.SectionId" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "value" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.wasm.WasmConfig" : {
     "type" : "object",
     "description" : "???",
@@ -4267,34 +4225,6 @@
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
-      },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "allowedPaths" : {
         "type" : "object",
@@ -4314,25 +4244,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -5029,34 +4940,6 @@
             "format" : "int32",
             "description" : "???"
           },
-          "killOptions" : {
-            "description" : "???",
-            "properties" : {
-              "maxUnusedDuration" : {
-                "type" : "number",
-                "description" : "???"
-              },
-              "immortal" : {
-                "type" : "boolean",
-                "description" : "???"
-              },
-              "maxAvgCallDuration" : {
-                "type" : "number",
-                "description" : "???"
-              },
-              "maxMemoryUsage" : {
-                "type" : "number",
-                "format" : "double",
-                "description" : "???"
-              },
-              "maxCalls" : {
-                "type" : "integer",
-                "format" : "int32",
-                "description" : "???"
-              }
-            },
-            "type" : "object"
-          },
           "allowedPaths" : {
             "type" : "object",
             "additionalProperties" : {
@@ -5075,25 +4958,6 @@
               "type" : "string"
             },
             "description" : "???"
-          },
-          "source" : {
-            "description" : "???",
-            "properties" : {
-              "kind" : {
-                "description" : "???",
-                "properties" : { },
-                "type" : "object"
-              },
-              "path" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "opts" : {
-                "type" : "object",
-                "description" : "???"
-              }
-            },
-            "type" : "object"
           },
           "authorizations" : {
             "description" : "???",
@@ -5757,6 +5621,153 @@
   "LetsEncryptCertBody" : {
     "type" : "object",
     "description" : "PEM encoded certificate"
+  },
+  "otoroshi.greenscore.RouteScreenScore" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "routeId" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "rulesConfig" : {
+        "description" : "???",
+        "properties" : {
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "id" : {
+                  "description" : "???",
+                  "properties" : {
+                    "value" : {
+                      "type" : "string",
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "rules" : {
+                  "type" : "array",
+                  "items" : {
+                    "properties" : {
+                      "sectionWeight" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "???"
+                      },
+                      "advice" : {
+                        "description" : "null type",
+                        "type" : "string",
+                        "nullable" : true
+                      },
+                      "weight" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "???"
+                      },
+                      "enabled" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      },
+                      "id" : {
+                        "description" : "???",
+                        "properties" : {
+                          "value" : {
+                            "type" : "string",
+                            "description" : "???"
+                          }
+                        },
+                        "type" : "object"
+                      },
+                      "description" : {
+                        "description" : "null type",
+                        "type" : "string",
+                        "nullable" : true
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "???"
+          },
+          "thresholds" : {
+            "description" : "???",
+            "properties" : {
+              "plugins" : {
+                "description" : "???",
+                "properties" : {
+                  "excellent" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "sufficient" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "poor" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "dataOut" : {
+                "description" : "???",
+                "properties" : {
+                  "excellent" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "sufficient" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "poor" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "headersOut" : {
+                "description" : "???",
+                "properties" : {
+                  "excellent" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "sufficient" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "poor" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              }
+            },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "otoroshi.next.plugins.OIDCHeaders" : {
     "type" : "object",
@@ -9032,6 +9043,26 @@
       }
     }
   },
+  "otoroshi.models.FileSettings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "path" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "maxFileSize" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
+  },
   "otoroshi.plugins.workflow.WorkflowEndpoint" : {
     "type" : "object",
     "description" : "???",
@@ -9057,7 +9088,17 @@
     "oneOfConstraints" : [ {
       "required" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig" ]
     }, {
+      "required" : [ "type", "tlsTrustCertsFilePath", "tenant", "uri", "mtlsConfig", "topic", "namespace" ]
+    }, {
+      "required" : [ "type" ]
+    }, {
       "required" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
+    }, {
+      "required" : [ "type", "ref", "config" ]
+    }, {
+      "required" : [ "type", "path", "maxFileSize" ]
+    }, {
+      "required" : [ "type", "labels" ]
     }, {
       "required" : [ "type", "url", "headers", "mtlsConfig" ]
     }, {
@@ -9154,7 +9195,7 @@
       },
       "topic" : {
         "type" : "string",
-        "description" : "Optional kafka topic (otoroshi-events by default)"
+        "description" : "???"
       },
       "keyPass" : {
         "description" : "null type",
@@ -9178,6 +9219,23 @@
             "description" : "SASL login mechanism"
           }
         }
+      },
+      "tlsTrustCertsFilePath" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "tenant" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "uri" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "namespace" : {
+        "type" : "string",
+        "description" : "???"
       },
       "sendWorkers" : {
         "type" : "integer",
@@ -9251,6 +9309,30 @@
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "ref" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "description" : "???"
+      },
+      "path" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "maxFileSize" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "labels" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
       "url" : {
         "type" : "string",
@@ -9797,6 +9879,65 @@
     "properties" : {
       "id" : {
         "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.greenscore.RulesSection" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "id" : {
+        "description" : "???",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "rules" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "sectionWeight" : {
+              "type" : "number",
+              "format" : "double",
+              "description" : "???"
+            },
+            "advice" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            },
+            "weight" : {
+              "type" : "number",
+              "format" : "double",
+              "description" : "???"
+            },
+            "enabled" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
+            "id" : {
+              "description" : "???",
+              "properties" : {
+                "value" : {
+                  "type" : "string",
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            }
+          },
+          "type" : "object"
+        },
         "description" : "???"
       }
     }
@@ -13071,34 +13212,6 @@
     "description" : "???",
     "properties" : { }
   },
-  "otoroshi.wasm.WasmVmKillOptions" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : {
-      "maxUnusedDuration" : {
-        "type" : "number",
-        "description" : "???"
-      },
-      "immortal" : {
-        "type" : "boolean",
-        "description" : "???"
-      },
-      "maxAvgCallDuration" : {
-        "type" : "number",
-        "description" : "???"
-      },
-      "maxMemoryUsage" : {
-        "type" : "number",
-        "format" : "double",
-        "description" : "???"
-      },
-      "maxCalls" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "???"
-      }
-    }
-  },
   "otoroshi.models.UserRight" : {
     "type" : "object",
     "description" : "Represent a user right (teams, organizations) in otoroshi-ui",
@@ -14342,6 +14455,17 @@
     "type" : "object",
     "description" : "Otoroshi model for JWT token verifier"
   },
+  "otoroshi.models.ConsoleSettings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      }
+    },
+    "type" : "object",
+    "description" : "???"
+  },
   "otoroshi.models.TenantAccess" : {
     "type" : "object",
     "description" : "Access rights for organizations",
@@ -14618,6 +14742,65 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.models.S3ExporterSettings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "maxFileSize" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "writeEvery" : {
+            "type" : "number",
+            "description" : "Write every n milliseconds"
+          },
+          "chunkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Upload chunk max size"
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "Bucket name"
+          },
+          "key" : {
+            "type" : "string",
+            "description" : "File path in bucket"
+          },
+          "endpoint" : {
+            "type" : "string",
+            "description" : "Bucket endpoint"
+          },
+          "v4auth" : {
+            "type" : "boolean",
+            "description" : "Use V4 auth"
+          },
+          "access" : {
+            "type" : "string",
+            "description" : "Bucket access key"
+          },
+          "secret" : {
+            "type" : "string",
+            "description" : "Bucket access secret"
+          },
+          "region" : {
+            "type" : "string",
+            "description" : "Bucket region"
+          }
+        },
+        "type" : "object"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
   },
   "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
     "type" : "object",
@@ -14959,6 +15142,26 @@
       }
     }
   },
+  "otoroshi.models.DataExporterConfigFiltering" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "include" : {
+        "type" : "array",
+        "items" : {
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "exclude" : {
+        "type" : "array",
+        "items" : {
+          "type" : "object"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.EurekaServerSink" : {
     "type" : "object",
     "description" : "???",
@@ -15264,6 +15467,46 @@
           "type" : "string"
         },
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.greenscore.Rule" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "sectionWeight" : {
+        "type" : "number",
+        "format" : "double",
+        "description" : "???"
+      },
+      "advice" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "weight" : {
+        "type" : "number",
+        "format" : "double",
+        "description" : "???"
+      },
+      "enabled" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "id" : {
+        "description" : "???",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "description" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -16080,6 +16323,143 @@
   "otoroshi.models.ServiceDescriptorIdentifier" : {
     "type" : "string",
     "description" : "the id of a service prefixed by 'service_'"
+  },
+  "otoroshi.greenscore.GreenScoreConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "sections" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "id" : {
+              "description" : "???",
+              "properties" : {
+                "value" : {
+                  "type" : "string",
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
+            },
+            "rules" : {
+              "type" : "array",
+              "items" : {
+                "properties" : {
+                  "sectionWeight" : {
+                    "type" : "number",
+                    "format" : "double",
+                    "description" : "???"
+                  },
+                  "advice" : {
+                    "description" : "null type",
+                    "type" : "string",
+                    "nullable" : true
+                  },
+                  "weight" : {
+                    "type" : "number",
+                    "format" : "double",
+                    "description" : "???"
+                  },
+                  "enabled" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "id" : {
+                    "description" : "???",
+                    "properties" : {
+                      "value" : {
+                        "type" : "string",
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : {
+                    "description" : "null type",
+                    "type" : "string",
+                    "nullable" : true
+                  }
+                },
+                "type" : "object"
+              },
+              "description" : "???"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "thresholds" : {
+        "description" : "???",
+        "properties" : {
+          "plugins" : {
+            "description" : "???",
+            "properties" : {
+              "excellent" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "sufficient" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "poor" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "dataOut" : {
+            "description" : "???",
+            "properties" : {
+              "excellent" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "sufficient" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "poor" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "headersOut" : {
+            "description" : "???",
+            "properties" : {
+              "excellent" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "sufficient" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "poor" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "otoroshi.models.SecComHeaders" : {
     "type" : "object",
@@ -19578,34 +19958,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -19624,25 +19976,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -21436,7 +21769,362 @@
       "dataExporters" : {
         "type" : "array",
         "items" : {
-          "properties" : { },
+          "properties" : {
+            "desc" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "_loc" : {
+              "description" : "???",
+              "properties" : {
+                "tenant" : {
+                  "description" : "Organization of the current entity",
+                  "type" : "string"
+                },
+                "teams" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "Teams of the current entity"
+                }
+              },
+              "type" : "object"
+            },
+            "bufferSize" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "jsonWorkers" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "groupDuration" : {
+              "type" : "number",
+              "description" : "???"
+            },
+            "groupSize" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "type" : {
+              "description" : "Type of data exporter",
+              "type" : "string",
+              "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
+            },
+            "tags" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "sendWorkers" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "id" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "name" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "metadata" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "config" : {
+              "description" : "???",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "description" : "the kind of exporter",
+                  "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                },
+                "sendEvents" : {
+                  "type" : "boolean",
+                  "description" : "Send events to it, or just connect"
+                },
+                "truststore" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "hostValidation" : {
+                  "type" : "boolean",
+                  "description" : "Enabled TLS hostname validation"
+                },
+                "servers" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "URLs of the kafka servers"
+                },
+                "mtlsConfig" : {
+                  "description" : "TLS config when calling webhook",
+                  "properties" : {
+                    "mtls" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "loose" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustAll" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustedCerts" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    },
+                    "certs" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "securityProtocol" : {
+                  "type" : "string",
+                  "description" : "Used security protocol"
+                },
+                "keystore" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "topic" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "keyPass" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "saslConfig" : {
+                  "description" : "SASL configuration",
+                  "type" : "object",
+                  "properties" : {
+                    "username" : {
+                      "type" : "string",
+                      "description" : "SASL username"
+                    },
+                    "password" : {
+                      "type" : "string",
+                      "description" : "SASL password"
+                    },
+                    "mechanism" : {
+                      "type" : "string",
+                      "description" : "SASL login mechanism"
+                    }
+                  }
+                },
+                "tlsTrustCertsFilePath" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "tenant" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "uri" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "namespace" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "sendWorkers" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "applyTemplate" : {
+                  "type" : "boolean",
+                  "description" : "Enable template creation/update"
+                },
+                "uris" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                },
+                "version" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "maxBulkSize" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "headers" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "Sender headers"
+                },
+                "indexSettings" : {
+                  "description" : "Indexation settings",
+                  "properties" : {
+                    "clientSide" : {
+                      "type" : "boolean",
+                      "description" : "Enable index splitting on client side"
+                    },
+                    "numberOfShards" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "numberOfReplicas" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "interval" : {
+                      "description" : "Index splitting interval",
+                      "properties" : { },
+                      "type" : "object"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "user" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "index" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "password" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "ref" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "config" : {
+                  "type" : "object",
+                  "description" : "???"
+                },
+                "path" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "maxFileSize" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "???"
+                },
+                "labels" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                },
+                "url" : {
+                  "type" : "string",
+                  "description" : "Sender URL"
+                },
+                "to" : {
+                  "type" : "array",
+                  "items" : {
+                    "properties" : {
+                      "name" : {
+                        "type" : "string",
+                        "description" : "Destination name"
+                      },
+                      "email" : {
+                        "type" : "string",
+                        "description" : "Email address"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : "Destination email address"
+                },
+                "eu" : {
+                  "type" : "boolean",
+                  "description" : "European tenant"
+                },
+                "apiKey" : {
+                  "type" : "string",
+                  "description" : "Sendgrid apikey"
+                },
+                "domain" : {
+                  "type" : "string",
+                  "description" : "Mailgun domain"
+                },
+                "apiKeyPublic" : {
+                  "type" : "string",
+                  "description" : "Public key"
+                },
+                "apiKeyPrivate" : {
+                  "type" : "string",
+                  "description" : "Private key"
+                }
+              },
+              "type" : "object"
+            },
+            "projection" : {
+              "type" : "object",
+              "description" : "???"
+            },
+            "enabled" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
+            "filtering" : {
+              "description" : "???",
+              "properties" : {
+                "include" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  },
+                  "description" : "???"
+                },
+                "exclude" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  },
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
+            }
+          },
           "type" : "object"
         },
         "description" : "???"
@@ -25512,29 +26200,6 @@
               },
               "type" : "object"
             },
-            "wasmManagerSettings" : {
-              "description" : "???",
-              "type" : "object",
-              "properties" : {
-                "url" : {
-                  "type" : "string",
-                  "description" : "???"
-                },
-                "clientId" : {
-                  "type" : "string",
-                  "description" : "???"
-                },
-                "clientSecret" : {
-                  "type" : "string",
-                  "description" : "???"
-                },
-                "pluginsFilter" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                }
-              }
-            },
             "maintenanceMode" : {
               "type" : "boolean",
               "description" : "Global maintenant mode"
@@ -27385,34 +28050,6 @@
                   "format" : "int32",
                   "description" : "???"
                 },
-                "killOptions" : {
-                  "description" : "???",
-                  "properties" : {
-                    "maxUnusedDuration" : {
-                      "type" : "number",
-                      "description" : "???"
-                    },
-                    "immortal" : {
-                      "type" : "boolean",
-                      "description" : "???"
-                    },
-                    "maxAvgCallDuration" : {
-                      "type" : "number",
-                      "description" : "???"
-                    },
-                    "maxMemoryUsage" : {
-                      "type" : "number",
-                      "format" : "double",
-                      "description" : "???"
-                    },
-                    "maxCalls" : {
-                      "type" : "integer",
-                      "format" : "int32",
-                      "description" : "???"
-                    }
-                  },
-                  "type" : "object"
-                },
                 "allowedPaths" : {
                   "type" : "object",
                   "additionalProperties" : {
@@ -27431,25 +28068,6 @@
                     "type" : "string"
                   },
                   "description" : "???"
-                },
-                "source" : {
-                  "description" : "???",
-                  "properties" : {
-                    "kind" : {
-                      "description" : "???",
-                      "properties" : { },
-                      "type" : "object"
-                    },
-                    "path" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "opts" : {
-                      "type" : "object",
-                      "description" : "???"
-                    }
-                  },
-                  "type" : "object"
                 },
                 "authorizations" : {
                   "description" : "???",
@@ -30253,29 +30871,6 @@
         },
         "type" : "object"
       },
-      "wasmManagerSettings" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "url" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "clientId" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "clientSecret" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "pluginsFilter" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
       "maintenanceMode" : {
         "type" : "boolean",
         "description" : "Global maintenant mode"
@@ -30693,6 +31288,16 @@
       }
     }
   },
+  "otoroshi.greenscore.RuleId" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "value" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.BuildMode" : {
     "type" : "object",
     "description" : "???",
@@ -30718,6 +31323,25 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.models.ExporterRef" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "ref" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
   },
   "otoroshi.next.plugins.NgMultiAuthModuleConfig" : {
     "type" : "object",
@@ -31016,34 +31640,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -31062,25 +31658,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -31596,34 +32173,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -31642,25 +32191,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -33660,34 +34190,6 @@
                 "format" : "int32",
                 "description" : "???"
               },
-              "killOptions" : {
-                "description" : "???",
-                "properties" : {
-                  "maxUnusedDuration" : {
-                    "type" : "number",
-                    "description" : "???"
-                  },
-                  "immortal" : {
-                    "type" : "boolean",
-                    "description" : "???"
-                  },
-                  "maxAvgCallDuration" : {
-                    "type" : "number",
-                    "description" : "???"
-                  },
-                  "maxMemoryUsage" : {
-                    "type" : "number",
-                    "format" : "double",
-                    "description" : "???"
-                  },
-                  "maxCalls" : {
-                    "type" : "integer",
-                    "format" : "int32",
-                    "description" : "???"
-                  }
-                },
-                "type" : "object"
-              },
               "allowedPaths" : {
                 "type" : "object",
                 "additionalProperties" : {
@@ -33706,25 +34208,6 @@
                   "type" : "string"
                 },
                 "description" : "???"
-              },
-              "source" : {
-                "description" : "???",
-                "properties" : {
-                  "kind" : {
-                    "description" : "???",
-                    "properties" : { },
-                    "type" : "object"
-                  },
-                  "path" : {
-                    "type" : "string",
-                    "description" : "???"
-                  },
-                  "opts" : {
-                    "type" : "object",
-                    "description" : "???"
-                  }
-                },
-                "type" : "object"
               },
               "authorizations" : {
                 "description" : "???",
@@ -34620,34 +35103,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -34666,25 +35121,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -37062,34 +37498,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -37108,25 +37516,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -45968,6 +46357,75 @@
       }
     }
   },
+  "otoroshi.greenscore.Thresholds" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "plugins" : {
+        "description" : "???",
+        "properties" : {
+          "excellent" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "sufficient" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "poor" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "dataOut" : {
+        "description" : "???",
+        "properties" : {
+          "excellent" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "sufficient" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "poor" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "headersOut" : {
+        "description" : "???",
+        "properties" : {
+          "excellent" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "sufficient" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "poor" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.next.plugins.NgMirroringEvent" : {
     "type" : "object",
     "description" : "???",
@@ -46683,34 +47141,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -46729,25 +47159,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -47515,6 +47926,88 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.models.GoReplayS3Settings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "s3" : {
+        "description" : "???",
+        "properties" : {
+          "writeEvery" : {
+            "type" : "number",
+            "description" : "Write every n milliseconds"
+          },
+          "chunkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Upload chunk max size"
+          },
+          "bucket" : {
+            "type" : "string",
+            "description" : "Bucket name"
+          },
+          "key" : {
+            "type" : "string",
+            "description" : "File path in bucket"
+          },
+          "endpoint" : {
+            "type" : "string",
+            "description" : "Bucket endpoint"
+          },
+          "v4auth" : {
+            "type" : "boolean",
+            "description" : "Use V4 auth"
+          },
+          "access" : {
+            "type" : "string",
+            "description" : "Bucket access key"
+          },
+          "secret" : {
+            "type" : "string",
+            "description" : "Bucket access secret"
+          },
+          "region" : {
+            "type" : "string",
+            "description" : "Bucket region"
+          }
+        },
+        "type" : "object"
+      },
+      "methods" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "captureResponses" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "preferBackendResponse" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "maxFileSize" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "captureRequests" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "preferBackendRequest" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
+  },
   "otoroshi.utils.ConcurrentMutableTypedMap" : {
     "type" : "object",
     "description" : "???",
@@ -47741,6 +48234,205 @@
           "type" : "string"
         },
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.greenscore.GreenScoreEntity" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "routes" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "routeId" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "rulesConfig" : {
+              "description" : "???",
+              "properties" : {
+                "sections" : {
+                  "type" : "array",
+                  "items" : {
+                    "properties" : {
+                      "id" : {
+                        "description" : "???",
+                        "properties" : {
+                          "value" : {
+                            "type" : "string",
+                            "description" : "???"
+                          }
+                        },
+                        "type" : "object"
+                      },
+                      "rules" : {
+                        "type" : "array",
+                        "items" : {
+                          "properties" : {
+                            "sectionWeight" : {
+                              "type" : "number",
+                              "format" : "double",
+                              "description" : "???"
+                            },
+                            "advice" : {
+                              "description" : "null type",
+                              "type" : "string",
+                              "nullable" : true
+                            },
+                            "weight" : {
+                              "type" : "number",
+                              "format" : "double",
+                              "description" : "???"
+                            },
+                            "enabled" : {
+                              "type" : "boolean",
+                              "description" : "???"
+                            },
+                            "id" : {
+                              "description" : "???",
+                              "properties" : {
+                                "value" : {
+                                  "type" : "string",
+                                  "description" : "???"
+                                }
+                              },
+                              "type" : "object"
+                            },
+                            "description" : {
+                              "description" : "null type",
+                              "type" : "string",
+                              "nullable" : true
+                            }
+                          },
+                          "type" : "object"
+                        },
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : "???"
+                },
+                "thresholds" : {
+                  "description" : "???",
+                  "properties" : {
+                    "plugins" : {
+                      "description" : "???",
+                      "properties" : {
+                        "excellent" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "sufficient" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "poor" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "dataOut" : {
+                      "description" : "???",
+                      "properties" : {
+                        "excellent" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "sufficient" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "poor" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "headersOut" : {
+                      "description" : "???",
+                      "properties" : {
+                        "excellent" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "sufficient" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        },
+                        "poor" : {
+                          "type" : "integer",
+                          "format" : "int32",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    }
+                  },
+                  "type" : "object"
+                }
+              },
+              "type" : "object"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
       }
     }
   },
@@ -51424,6 +52116,366 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.models.DataExporterConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "desc" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      },
+      "bufferSize" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "jsonWorkers" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "groupDuration" : {
+        "type" : "number",
+        "description" : "???"
+      },
+      "groupSize" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "type" : {
+        "description" : "Type of data exporter",
+        "type" : "string",
+        "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "sendWorkers" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "description" : "the kind of exporter",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "sendEvents" : {
+            "type" : "boolean",
+            "description" : "Send events to it, or just connect"
+          },
+          "truststore" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "hostValidation" : {
+            "type" : "boolean",
+            "description" : "Enabled TLS hostname validation"
+          },
+          "servers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "URLs of the kafka servers"
+          },
+          "mtlsConfig" : {
+            "description" : "TLS config when calling webhook",
+            "properties" : {
+              "mtls" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "loose" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "trustAll" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "trustedCerts" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              },
+              "certs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "securityProtocol" : {
+            "type" : "string",
+            "description" : "Used security protocol"
+          },
+          "keystore" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "topic" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "keyPass" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "saslConfig" : {
+            "description" : "SASL configuration",
+            "type" : "object",
+            "properties" : {
+              "username" : {
+                "type" : "string",
+                "description" : "SASL username"
+              },
+              "password" : {
+                "type" : "string",
+                "description" : "SASL password"
+              },
+              "mechanism" : {
+                "type" : "string",
+                "description" : "SASL login mechanism"
+              }
+            }
+          },
+          "tlsTrustCertsFilePath" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "tenant" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "uri" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "namespace" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "sendWorkers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "applyTemplate" : {
+            "type" : "boolean",
+            "description" : "Enable template creation/update"
+          },
+          "uris" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "version" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "maxBulkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Sender headers"
+          },
+          "indexSettings" : {
+            "description" : "Indexation settings",
+            "properties" : {
+              "clientSide" : {
+                "type" : "boolean",
+                "description" : "Enable index splitting on client side"
+              },
+              "numberOfShards" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "numberOfReplicas" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "interval" : {
+                "description" : "Index splitting interval",
+                "properties" : { },
+                "type" : "object"
+              }
+            },
+            "type" : "object"
+          },
+          "user" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "index" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "password" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "ref" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "config" : {
+            "type" : "object",
+            "description" : "???"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "maxFileSize" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "???"
+          },
+          "labels" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "url" : {
+            "type" : "string",
+            "description" : "Sender URL"
+          },
+          "to" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "name" : {
+                  "type" : "string",
+                  "description" : "Destination name"
+                },
+                "email" : {
+                  "type" : "string",
+                  "description" : "Email address"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "Destination email address"
+          },
+          "eu" : {
+            "type" : "boolean",
+            "description" : "European tenant"
+          },
+          "apiKey" : {
+            "type" : "string",
+            "description" : "Sendgrid apikey"
+          },
+          "domain" : {
+            "type" : "string",
+            "description" : "Mailgun domain"
+          },
+          "apiKeyPublic" : {
+            "type" : "string",
+            "description" : "Public key"
+          },
+          "apiKeyPrivate" : {
+            "type" : "string",
+            "description" : "Private key"
+          }
+        },
+        "type" : "object"
+      },
+      "projection" : {
+        "type" : "object",
+        "description" : "???"
+      },
+      "enabled" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "filtering" : {
+        "description" : "???",
+        "properties" : {
+          "include" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object"
+            },
+            "description" : "???"
+          },
+          "exclude" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.next.plugins.NgEndlessHttpResponseConfig" : {
     "type" : "object",
     "description" : "???",
@@ -51506,34 +52558,6 @@
             "format" : "int32",
             "description" : "???"
           },
-          "killOptions" : {
-            "description" : "???",
-            "properties" : {
-              "maxUnusedDuration" : {
-                "type" : "number",
-                "description" : "???"
-              },
-              "immortal" : {
-                "type" : "boolean",
-                "description" : "???"
-              },
-              "maxAvgCallDuration" : {
-                "type" : "number",
-                "description" : "???"
-              },
-              "maxMemoryUsage" : {
-                "type" : "number",
-                "format" : "double",
-                "description" : "???"
-              },
-              "maxCalls" : {
-                "type" : "integer",
-                "format" : "int32",
-                "description" : "???"
-              }
-            },
-            "type" : "object"
-          },
           "allowedPaths" : {
             "type" : "object",
             "additionalProperties" : {
@@ -51552,25 +52576,6 @@
               "type" : "string"
             },
             "description" : "???"
-          },
-          "source" : {
-            "description" : "???",
-            "properties" : {
-              "kind" : {
-                "description" : "???",
-                "properties" : { },
-                "type" : "object"
-              },
-              "path" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "opts" : {
-                "type" : "object",
-                "description" : "???"
-              }
-            },
-            "type" : "object"
           },
           "authorizations" : {
             "description" : "???",
@@ -51983,6 +52988,24 @@
         "description" : "Use known JDK CAs to build trust for incoming request"
       }
     }
+  },
+  "otoroshi.models.MetricsSettings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "labels" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
   },
   "otoroshi.next.plugins.OIDCAccessTokenAsApikey" : {
     "type" : "object",
@@ -54808,6 +55831,70 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.events.PulsarConfig" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "tlsTrustCertsFilePath" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "tenant" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "uri" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "mtlsConfig" : {
+        "description" : "???",
+        "properties" : {
+          "mtls" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "loose" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustAll" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustedCerts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "certs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "topic" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "namespace" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
+  },
   "otoroshi.auth.SamlAuthModuleConfig" : {
     "properties" : {
       "type" : {
@@ -56159,29 +57246,6 @@
             },
             "type" : "object"
           },
-          "wasmManagerSettings" : {
-            "description" : "???",
-            "type" : "object",
-            "properties" : {
-              "url" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "clientId" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "clientSecret" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "pluginsFilter" : {
-                "description" : "null type",
-                "type" : "string",
-                "nullable" : true
-              }
-            }
-          },
           "maintenanceMode" : {
             "type" : "boolean",
             "description" : "Global maintenant mode"
@@ -57130,29 +58194,6 @@
       }
     }
   },
-  "otoroshi.models.WasmManagerSettings" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : {
-      "url" : {
-        "type" : "string",
-        "description" : "???"
-      },
-      "clientId" : {
-        "type" : "string",
-        "description" : "???"
-      },
-      "clientSecret" : {
-        "type" : "string",
-        "description" : "???"
-      },
-      "pluginsFilter" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      }
-    }
-  },
   "otoroshi.plugins.biscuit.SealedBiscuitToken" : {
     "type" : "object",
     "description" : "???",
@@ -57838,34 +58879,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -57884,25 +58897,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -60106,6 +61100,49 @@
     "type" : "object",
     "description" : "Settings for the generic mailer (http requests)"
   },
+  "otoroshi.models.GoReplayFileSettings" : {
+    "properties" : {
+      "type" : {
+        "type" : "string",
+        "description" : "the kind of exporter",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "path" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "methods" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "captureResponses" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "preferBackendResponse" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "maxFileSize" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "captureRequests" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "preferBackendRequest" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    },
+    "type" : "object",
+    "description" : "???"
+  },
   "Null" : {
     "type" : "object",
     "description" : "no value object, used to represent a None option value"
@@ -60349,25 +61386,6 @@
         }
       },
       "type" : "object"
-    }
-  },
-  "otoroshi.wasm.WasmSource" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : {
-      "kind" : {
-        "description" : "???",
-        "properties" : { },
-        "type" : "object"
-      },
-      "path" : {
-        "type" : "string",
-        "description" : "???"
-      },
-      "opts" : {
-        "type" : "object",
-        "description" : "???"
-      }
     }
   },
   "otoroshi.auth.Credential" : {
@@ -60966,34 +61984,6 @@
         "format" : "int32",
         "description" : "???"
       },
-      "killOptions" : {
-        "description" : "???",
-        "properties" : {
-          "maxUnusedDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "immortal" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
-          "maxAvgCallDuration" : {
-            "type" : "number",
-            "description" : "???"
-          },
-          "maxMemoryUsage" : {
-            "type" : "number",
-            "format" : "double",
-            "description" : "???"
-          },
-          "maxCalls" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
-      },
       "allowedPaths" : {
         "type" : "object",
         "additionalProperties" : {
@@ -61012,25 +62002,6 @@
           "type" : "string"
         },
         "description" : "???"
-      },
-      "source" : {
-        "description" : "???",
-        "properties" : {
-          "kind" : {
-            "description" : "???",
-            "properties" : { },
-            "type" : "object"
-          },
-          "path" : {
-            "type" : "string",
-            "description" : "???"
-          },
-          "opts" : {
-            "type" : "object",
-            "description" : "???"
-          }
-        },
-        "type" : "object"
       },
       "authorizations" : {
         "description" : "???",
@@ -61288,6 +62259,27 @@
       "enabled" : {
         "type" : "boolean",
         "description" : "User agent extraction enabled"
+      }
+    }
+  },
+  "otoroshi.greenscore.TripleBounds" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "excellent" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "sufficient" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "poor" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
       }
     }
   },

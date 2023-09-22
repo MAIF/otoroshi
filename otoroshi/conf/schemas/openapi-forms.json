@@ -828,35 +828,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -868,31 +839,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -1000,7 +946,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.next.models.NgTarget" : {
     "schema" : {
@@ -1458,6 +1404,26 @@
     },
     "flow" : [ "eureka_app", "eureka_server" ]
   },
+  "otoroshi.models.FileSettings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "maxFileSize", "path", "type" ]
+  },
   "otoroshi.plugins.apikeys.ClientCredentialFlow" : {
     "schema" : { },
     "flow" : [ ]
@@ -1587,35 +1553,6 @@
             "label" : "memoryPages",
             "type" : "number"
           },
-          "killOptions" : {
-            "label" : "killOptions",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "maxUnusedDuration" : {
-                "label" : "maxUnusedDuration",
-                "type" : "number"
-              },
-              "immortal" : {
-                "label" : "immortal",
-                "type" : "bool"
-              },
-              "maxAvgCallDuration" : {
-                "label" : "maxAvgCallDuration",
-                "type" : "number"
-              },
-              "maxMemoryUsage" : {
-                "label" : "maxMemoryUsage",
-                "type" : "number"
-              },
-              "maxCalls" : {
-                "label" : "maxCalls",
-                "type" : "number"
-              }
-            },
-            "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-          },
           "allowedPaths" : {
             "label" : "allowedPaths",
             "type" : "object"
@@ -1627,31 +1564,6 @@
           "config" : {
             "label" : "config",
             "type" : "object"
-          },
-          "source" : {
-            "label" : "source",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "kind" : {
-                "label" : "kind",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : { },
-                "flow" : [ ]
-              },
-              "path" : {
-                "label" : "path",
-                "type" : "string"
-              },
-              "opts" : {
-                "label" : "opts",
-                "type" : "object"
-              }
-            },
-            "flow" : [ "kind", "path", "opts" ]
           },
           "authorizations" : {
             "label" : "authorizations",
@@ -1759,7 +1671,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "allowedHosts", "memoryPages", "killOptions", "allowedPaths", "instances", "config", "source", "authorizations", "opa", "wasi", "functionName" ]
+        "flow" : [ "allowedHosts", "memoryPages", "allowedPaths", "instances", "config", "authorizations", "opa", "wasi", "functionName" ]
       },
       "interval" : {
         "label" : "interval",
@@ -2052,6 +1964,15 @@
     },
     "flow" : [ "openApiDescriptorUrl", "exposeApi" ]
   },
+  "otoroshi.greenscore.RuleId" : {
+    "schema" : {
+      "value" : {
+        "label" : "value",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "value" ]
+  },
   "otoroshi.next.plugins.WasmBackend" : {
     "schema" : {
       "allowedHosts" : {
@@ -2064,35 +1985,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -2104,31 +1996,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -2236,7 +2103,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "PemCsrBody" : {
     "schema" : { },
@@ -2668,6 +2535,147 @@
   "otoroshi.plugins.core.DefaultPlugins" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.greenscore.GreenScoreConfig" : {
+    "schema" : {
+      "sections" : {
+        "label" : "sections",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "id" : {
+            "label" : "id",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "value" : {
+                "label" : "value",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "value" ]
+          },
+          "rules" : {
+            "label" : "rules",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "sectionWeight" : {
+                "label" : "sectionWeight",
+                "type" : "number"
+              },
+              "advice" : {
+                "label" : "advice",
+                "type" : "string"
+              },
+              "weight" : {
+                "label" : "weight",
+                "type" : "number"
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "id" : {
+                "label" : "id",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "value" : {
+                    "label" : "value",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "value" ]
+              },
+              "description" : {
+                "label" : "description",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "sectionWeight", "advice", "weight", "enabled", "id", "description" ]
+          }
+        },
+        "flow" : [ "id", "rules" ]
+      },
+      "thresholds" : {
+        "label" : "thresholds",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "plugins" : {
+            "label" : "plugins",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "excellent" : {
+                "label" : "excellent",
+                "type" : "number"
+              },
+              "sufficient" : {
+                "label" : "sufficient",
+                "type" : "number"
+              },
+              "poor" : {
+                "label" : "poor",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "excellent", "sufficient", "poor" ]
+          },
+          "dataOut" : {
+            "label" : "dataOut",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "excellent" : {
+                "label" : "excellent",
+                "type" : "number"
+              },
+              "sufficient" : {
+                "label" : "sufficient",
+                "type" : "number"
+              },
+              "poor" : {
+                "label" : "poor",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "excellent", "sufficient", "poor" ]
+          },
+          "headersOut" : {
+            "label" : "headersOut",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "excellent" : {
+                "label" : "excellent",
+                "type" : "number"
+              },
+              "sufficient" : {
+                "label" : "sufficient",
+                "type" : "number"
+              },
+              "poor" : {
+                "label" : "poor",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "excellent", "sufficient", "poor" ]
+          }
+        },
+        "flow" : [ "plugins", "dataOut", "headersOut" ]
+      }
+    },
+    "flow" : [ "sections", "thresholds" ]
   },
   "otoroshi.next.plugins.OAuth2CallerConfig" : {
     "schema" : {
@@ -3199,6 +3207,23 @@
     },
     "flow" : [ "raw" ]
   },
+  "otoroshi.models.DataExporterConfigFiltering" : {
+    "schema" : {
+      "include" : {
+        "label" : "include",
+        "type" : "array",
+        "array" : true,
+        "format" : "form"
+      },
+      "exclude" : {
+        "label" : "exclude",
+        "type" : "array",
+        "array" : true,
+        "format" : "form"
+      }
+    },
+    "flow" : [ "exclude", "include" ]
+  },
   "otoroshi.models.LoadBalancing" : {
     "schema" : {
       "type" : {
@@ -3244,35 +3269,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -3284,31 +3280,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -3416,7 +3387,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.models.RouteIdentifier" : {
     "schema" : {
@@ -7160,6 +7131,15 @@
     },
     "flow" : [ "routeConfig", "izanamiClientSecret", "timeout", "izanamiUrl", "experimentId", "configId", "izanamiClientId", "mtls" ]
   },
+  "otoroshi.greenscore.SectionId" : {
+    "schema" : {
+      "value" : {
+        "label" : "value",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "value" ]
+  },
   "otoroshi.utils.http.MtlsConfig" : {
     "schema" : {
       "mtls" : {
@@ -7690,6 +7670,160 @@
       }
     },
     "flow" : [ "ca", "csr", "cert" ]
+  },
+  "otoroshi.greenscore.RouteScreenScore" : {
+    "schema" : {
+      "routeId" : {
+        "label" : "routeId",
+        "type" : "string"
+      },
+      "rulesConfig" : {
+        "label" : "rulesConfig",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "sections" : {
+            "label" : "sections",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "id" : {
+                "label" : "id",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "value" : {
+                    "label" : "value",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "value" ]
+              },
+              "rules" : {
+                "label" : "rules",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "sectionWeight" : {
+                    "label" : "sectionWeight",
+                    "type" : "number"
+                  },
+                  "advice" : {
+                    "label" : "advice",
+                    "type" : "string"
+                  },
+                  "weight" : {
+                    "label" : "weight",
+                    "type" : "number"
+                  },
+                  "enabled" : {
+                    "label" : "enabled",
+                    "type" : "bool"
+                  },
+                  "id" : {
+                    "label" : "id",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "value" : {
+                        "label" : "value",
+                        "type" : "string"
+                      }
+                    },
+                    "flow" : [ "value" ]
+                  },
+                  "description" : {
+                    "label" : "description",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "sectionWeight", "advice", "weight", "enabled", "id", "description" ]
+              }
+            },
+            "flow" : [ "id", "rules" ]
+          },
+          "thresholds" : {
+            "label" : "thresholds",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "plugins" : {
+                "label" : "plugins",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "excellent" : {
+                    "label" : "excellent",
+                    "type" : "number"
+                  },
+                  "sufficient" : {
+                    "label" : "sufficient",
+                    "type" : "number"
+                  },
+                  "poor" : {
+                    "label" : "poor",
+                    "type" : "number"
+                  }
+                },
+                "flow" : [ "excellent", "sufficient", "poor" ]
+              },
+              "dataOut" : {
+                "label" : "dataOut",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "excellent" : {
+                    "label" : "excellent",
+                    "type" : "number"
+                  },
+                  "sufficient" : {
+                    "label" : "sufficient",
+                    "type" : "number"
+                  },
+                  "poor" : {
+                    "label" : "poor",
+                    "type" : "number"
+                  }
+                },
+                "flow" : [ "excellent", "sufficient", "poor" ]
+              },
+              "headersOut" : {
+                "label" : "headersOut",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "excellent" : {
+                    "label" : "excellent",
+                    "type" : "number"
+                  },
+                  "sufficient" : {
+                    "label" : "sufficient",
+                    "type" : "number"
+                  },
+                  "poor" : {
+                    "label" : "poor",
+                    "type" : "number"
+                  }
+                },
+                "flow" : [ "excellent", "sufficient", "poor" ]
+              }
+            },
+            "flow" : [ "plugins", "dataOut", "headersOut" ]
+          }
+        },
+        "flow" : [ "sections", "thresholds" ]
+      }
+    },
+    "flow" : [ "routeId", "rulesConfig" ]
   },
   "otoroshi.next.plugins.RBACConfig" : {
     "schema" : {
@@ -8252,6 +8386,67 @@
   "otoroshi.plugins.mirror.MirroringPlugin" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.models.S3ExporterSettings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "writeEvery" : {
+            "label" : "writeEvery",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "label" : "chunkSize",
+            "type" : "number"
+          },
+          "bucket" : {
+            "label" : "bucket",
+            "type" : "string"
+          },
+          "key" : {
+            "label" : "key",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "label" : "endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "label" : "v4auth",
+            "type" : "bool"
+          },
+          "access" : {
+            "label" : "access",
+            "type" : "string"
+          },
+          "secret" : {
+            "label" : "secret",
+            "type" : "string"
+          },
+          "region" : {
+            "label" : "region",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+      }
+    },
+    "flow" : [ "maxFileSize", "type", "config" ]
   },
   "otoroshi.next.models.NgTlsConfig" : {
     "schema" : {
@@ -8859,6 +9054,89 @@
       }
     },
     "flow" : [ "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig" ]
+  },
+  "otoroshi.models.GoReplayS3Settings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "s3" : {
+        "label" : "s3",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "writeEvery" : {
+            "label" : "writeEvery",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "label" : "chunkSize",
+            "type" : "number"
+          },
+          "bucket" : {
+            "label" : "bucket",
+            "type" : "string"
+          },
+          "key" : {
+            "label" : "key",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "label" : "endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "label" : "v4auth",
+            "type" : "bool"
+          },
+          "access" : {
+            "label" : "access",
+            "type" : "string"
+          },
+          "secret" : {
+            "label" : "secret",
+            "type" : "string"
+          },
+          "region" : {
+            "label" : "region",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "captureResponses" : {
+        "label" : "captureResponses",
+        "type" : "bool"
+      },
+      "preferBackendResponse" : {
+        "label" : "preferBackendResponse",
+        "type" : "bool"
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "captureRequests" : {
+        "label" : "captureRequests",
+        "type" : "bool"
+      },
+      "preferBackendRequest" : {
+        "label" : "preferBackendRequest",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "preferBackendRequest", "captureRequests", "maxFileSize", "preferBackendResponse", "captureResponses", "methods", "type", "s3" ]
   },
   "otoroshi.next.plugins.TailscaleLocalApiClient" : {
     "schema" : { },
@@ -9970,31 +10248,6 @@
         },
         "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
       },
-      "wasmManagerSettings" : {
-        "label" : "wasmManagerSettings",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "url" : {
-            "label" : "url",
-            "type" : "string"
-          },
-          "clientId" : {
-            "label" : "clientId",
-            "type" : "string"
-          },
-          "clientSecret" : {
-            "label" : "clientSecret",
-            "type" : "string"
-          },
-          "pluginsFilter" : {
-            "label" : "pluginsFilter",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
-      },
       "maintenanceMode" : {
         "label" : "maintenanceMode",
         "type" : "bool"
@@ -10427,7 +10680,7 @@
         "flow" : [ "enabled" ]
       }
     },
-    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "extensions", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "useAkkaHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "env", "maxWebhookSize", "anonymousReporting", "throttlingQuota", "alertsEmails", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "wasmManagerSettings", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
+    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "extensions", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "useAkkaHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "env", "maxWebhookSize", "anonymousReporting", "throttlingQuota", "alertsEmails", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
   },
   "otoroshi.plugins.users.HasAllowedUsersValidator" : {
     "schema" : { },
@@ -10962,6 +11215,23 @@
       }
     },
     "flow" : [ "verifiers" ]
+  },
+  "otoroshi.greenscore.TripleBounds" : {
+    "schema" : {
+      "excellent" : {
+        "label" : "excellent",
+        "type" : "number"
+      },
+      "sufficient" : {
+        "label" : "sufficient",
+        "type" : "number"
+      },
+      "poor" : {
+        "label" : "poor",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "poor", "sufficient", "excellent" ]
   },
   "otoroshi.next.plugins.RBAC" : {
     "schema" : {
@@ -12446,35 +12716,6 @@
                 "label" : "memoryPages",
                 "type" : "number"
               },
-              "killOptions" : {
-                "label" : "killOptions",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "maxUnusedDuration" : {
-                    "label" : "maxUnusedDuration",
-                    "type" : "number"
-                  },
-                  "immortal" : {
-                    "label" : "immortal",
-                    "type" : "bool"
-                  },
-                  "maxAvgCallDuration" : {
-                    "label" : "maxAvgCallDuration",
-                    "type" : "number"
-                  },
-                  "maxMemoryUsage" : {
-                    "label" : "maxMemoryUsage",
-                    "type" : "number"
-                  },
-                  "maxCalls" : {
-                    "label" : "maxCalls",
-                    "type" : "number"
-                  }
-                },
-                "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-              },
               "allowedPaths" : {
                 "label" : "allowedPaths",
                 "type" : "object"
@@ -12486,31 +12727,6 @@
               "config" : {
                 "label" : "config",
                 "type" : "object"
-              },
-              "source" : {
-                "label" : "source",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "kind" : {
-                    "label" : "kind",
-                    "type" : "form",
-                    "collapsable" : true,
-                    "collapsed" : true,
-                    "schema" : { },
-                    "flow" : [ ]
-                  },
-                  "path" : {
-                    "label" : "path",
-                    "type" : "string"
-                  },
-                  "opts" : {
-                    "label" : "opts",
-                    "type" : "object"
-                  }
-                },
-                "flow" : [ "kind", "path", "opts" ]
               },
               "authorizations" : {
                 "label" : "authorizations",
@@ -12618,7 +12834,7 @@
                 "type" : "string"
               }
             },
-            "flow" : [ "allowedHosts", "memoryPages", "killOptions", "allowedPaths", "instances", "config", "source", "authorizations", "opa", "wasi", "functionName" ]
+            "flow" : [ "allowedHosts", "memoryPages", "allowedPaths", "instances", "config", "authorizations", "opa", "wasi", "functionName" ]
           },
           "interval" : {
             "label" : "interval",
@@ -12762,6 +12978,356 @@
       }
     },
     "flow" : [ "issuer", "subject", "sn" ]
+  },
+  "otoroshi.models.DataExporterConfig" : {
+    "schema" : {
+      "desc" : {
+        "label" : "desc",
+        "type" : "string"
+      },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      },
+      "bufferSize" : {
+        "label" : "bufferSize",
+        "type" : "number"
+      },
+      "jsonWorkers" : {
+        "label" : "jsonWorkers",
+        "type" : "number"
+      },
+      "groupDuration" : {
+        "label" : "groupDuration",
+        "type" : "number"
+      },
+      "groupSize" : {
+        "label" : "groupSize",
+        "type" : "number"
+      },
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
+        }
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "sendWorkers" : {
+        "label" : "sendWorkers",
+        "type" : "number"
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      },
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "type" : {
+            "type" : "select",
+            "props" : {
+              "label" : "type",
+              "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+            }
+          },
+          "sendEvents" : {
+            "label" : "sendEvents",
+            "type" : "bool"
+          },
+          "truststore" : {
+            "label" : "truststore",
+            "type" : "string"
+          },
+          "hostValidation" : {
+            "label" : "hostValidation",
+            "type" : "bool"
+          },
+          "servers" : {
+            "label" : "servers",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "mtlsConfig" : {
+            "label" : "mtlsConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "mtls" : {
+                "label" : "mtls",
+                "type" : "bool"
+              },
+              "loose" : {
+                "label" : "loose",
+                "type" : "bool"
+              },
+              "trustAll" : {
+                "label" : "trustAll",
+                "type" : "bool"
+              },
+              "trustedCerts" : {
+                "label" : "trustedCerts",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "certs" : {
+                "label" : "certs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              }
+            },
+            "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+          },
+          "securityProtocol" : {
+            "label" : "securityProtocol",
+            "type" : "string"
+          },
+          "keystore" : {
+            "label" : "keystore",
+            "type" : "string"
+          },
+          "topic" : {
+            "label" : "topic",
+            "type" : "string"
+          },
+          "keyPass" : {
+            "label" : "keyPass",
+            "type" : "string"
+          },
+          "saslConfig" : {
+            "label" : "saslConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "username" : {
+                "label" : "username",
+                "type" : "string"
+              },
+              "password" : {
+                "label" : "password",
+                "type" : "string"
+              },
+              "mechanism" : {
+                "label" : "mechanism",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "username", "password", "mechanism" ]
+          },
+          "tlsTrustCertsFilePath" : {
+            "label" : "tlsTrustCertsFilePath",
+            "type" : "string"
+          },
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "uri" : {
+            "label" : "uri",
+            "type" : "string"
+          },
+          "namespace" : {
+            "label" : "namespace",
+            "type" : "string"
+          },
+          "sendWorkers" : {
+            "label" : "sendWorkers",
+            "type" : "number"
+          },
+          "applyTemplate" : {
+            "label" : "applyTemplate",
+            "type" : "bool"
+          },
+          "uris" : {
+            "label" : "uris",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "version" : {
+            "label" : "version",
+            "type" : "string"
+          },
+          "maxBulkSize" : {
+            "label" : "maxBulkSize",
+            "type" : "number"
+          },
+          "headers" : {
+            "label" : "headers",
+            "type" : "object"
+          },
+          "indexSettings" : {
+            "label" : "indexSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "clientSide" : {
+                "label" : "clientSide",
+                "type" : "bool"
+              },
+              "numberOfShards" : {
+                "label" : "numberOfShards",
+                "type" : "number"
+              },
+              "numberOfReplicas" : {
+                "label" : "numberOfReplicas",
+                "type" : "number"
+              },
+              "interval" : {
+                "label" : "interval",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : { },
+                "flow" : [ ]
+              }
+            },
+            "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
+          },
+          "user" : {
+            "label" : "user",
+            "type" : "string"
+          },
+          "index" : {
+            "label" : "index",
+            "type" : "string"
+          },
+          "password" : {
+            "label" : "password",
+            "type" : "string"
+          },
+          "ref" : {
+            "label" : "ref",
+            "type" : "string"
+          },
+          "config" : {
+            "label" : "config",
+            "type" : "object"
+          },
+          "path" : {
+            "label" : "path",
+            "type" : "string"
+          },
+          "maxFileSize" : {
+            "label" : "maxFileSize",
+            "type" : "number"
+          },
+          "labels" : {
+            "label" : "labels",
+            "type" : "object"
+          },
+          "url" : {
+            "label" : "url",
+            "type" : "string"
+          },
+          "to" : {
+            "label" : "to",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "name" : {
+                "label" : "name",
+                "type" : "string"
+              },
+              "email" : {
+                "label" : "email",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "name", "email" ]
+          },
+          "eu" : {
+            "label" : "eu",
+            "type" : "bool"
+          },
+          "apiKey" : {
+            "label" : "apiKey",
+            "type" : "string"
+          },
+          "domain" : {
+            "label" : "domain",
+            "type" : "string"
+          },
+          "apiKeyPublic" : {
+            "label" : "apiKeyPublic",
+            "type" : "string"
+          },
+          "apiKeyPrivate" : {
+            "label" : "apiKeyPrivate",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
+      },
+      "projection" : {
+        "label" : "projection",
+        "type" : "object"
+      },
+      "enabled" : {
+        "label" : "enabled",
+        "type" : "bool"
+      },
+      "filtering" : {
+        "label" : "filtering",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "include" : {
+            "label" : "include",
+            "type" : "array",
+            "array" : true,
+            "format" : "form"
+          },
+          "exclude" : {
+            "label" : "exclude",
+            "type" : "array",
+            "array" : true,
+            "format" : "form"
+          }
+        },
+        "flow" : [ "include", "exclude" ]
+      }
+    },
+    "flow" : [ "enabled", "projection", "metadata", "name", "id", "sendWorkers", "tags", "type", "groupSize", "groupDuration", "jsonWorkers", "bufferSize", "desc", "_loc", "config", "filtering" ]
   },
   "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
     "schema" : { },
@@ -15227,6 +15793,22 @@
       }
     },
     "flow" : [ "nonProxyHosts", "encoding", "ntlmDomain", "password", "principal", "protocol", "port", "host" ]
+  },
+  "otoroshi.models.MetricsSettings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "labels" : {
+        "label" : "labels",
+        "type" : "object"
+      }
+    },
+    "flow" : [ "labels", "type" ]
   },
   "otoroshi.tcp.TcpRule" : {
     "schema" : {
@@ -22018,27 +22600,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.models.WasmManagerSettings" : {
-    "schema" : {
-      "url" : {
-        "label" : "url",
-        "type" : "string"
-      },
-      "clientId" : {
-        "label" : "clientId",
-        "type" : "string"
-      },
-      "clientSecret" : {
-        "label" : "clientSecret",
-        "type" : "string"
-      },
-      "pluginsFilter" : {
-        "label" : "pluginsFilter",
-        "type" : "string"
-      }
-    },
-    "flow" : [ "pluginsFilter", "clientSecret", "clientId", "url" ]
-  },
   "otoroshi.next.plugins.WasmResponseTransformer" : {
     "schema" : {
       "allowedHosts" : {
@@ -22051,35 +22612,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -22091,31 +22623,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -22223,7 +22730,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob" : {
     "schema" : { },
@@ -22254,35 +22761,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -22294,31 +22772,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -22426,7 +22879,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.script.PluginType" : {
     "schema" : { },
@@ -22611,35 +23064,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -22651,31 +23075,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -22783,7 +23182,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.plugins.geoloc.MaxMindGeolocationHelper" : {
     "schema" : { },
@@ -24362,8 +24761,354 @@
         "type" : "array",
         "array" : true,
         "format" : "form",
-        "schema" : { },
-        "flow" : [ ]
+        "schema" : {
+          "desc" : {
+            "label" : "desc",
+            "type" : "string"
+          },
+          "_loc" : {
+            "label" : "_loc",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "tenant" : {
+                "label" : "tenant",
+                "type" : "string"
+              },
+              "teams" : {
+                "label" : "teams",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              }
+            },
+            "flow" : [ "tenant", "teams" ]
+          },
+          "bufferSize" : {
+            "label" : "bufferSize",
+            "type" : "number"
+          },
+          "jsonWorkers" : {
+            "label" : "jsonWorkers",
+            "type" : "number"
+          },
+          "groupDuration" : {
+            "label" : "groupDuration",
+            "type" : "number"
+          },
+          "groupSize" : {
+            "label" : "groupSize",
+            "type" : "number"
+          },
+          "type" : {
+            "type" : "select",
+            "props" : {
+              "label" : "type",
+              "options" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
+            }
+          },
+          "tags" : {
+            "label" : "tags",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "sendWorkers" : {
+            "label" : "sendWorkers",
+            "type" : "number"
+          },
+          "id" : {
+            "label" : "id",
+            "type" : "string"
+          },
+          "name" : {
+            "label" : "name",
+            "type" : "string"
+          },
+          "metadata" : {
+            "label" : "metadata",
+            "type" : "object"
+          },
+          "config" : {
+            "label" : "config",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "sendEvents" : {
+                "label" : "sendEvents",
+                "type" : "bool"
+              },
+              "truststore" : {
+                "label" : "truststore",
+                "type" : "string"
+              },
+              "hostValidation" : {
+                "label" : "hostValidation",
+                "type" : "bool"
+              },
+              "servers" : {
+                "label" : "servers",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              },
+              "securityProtocol" : {
+                "label" : "securityProtocol",
+                "type" : "string"
+              },
+              "keystore" : {
+                "label" : "keystore",
+                "type" : "string"
+              },
+              "topic" : {
+                "label" : "topic",
+                "type" : "string"
+              },
+              "keyPass" : {
+                "label" : "keyPass",
+                "type" : "string"
+              },
+              "saslConfig" : {
+                "label" : "saslConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "username" : {
+                    "label" : "username",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "mechanism" : {
+                    "label" : "mechanism",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "username", "password", "mechanism" ]
+              },
+              "tlsTrustCertsFilePath" : {
+                "label" : "tlsTrustCertsFilePath",
+                "type" : "string"
+              },
+              "tenant" : {
+                "label" : "tenant",
+                "type" : "string"
+              },
+              "uri" : {
+                "label" : "uri",
+                "type" : "string"
+              },
+              "namespace" : {
+                "label" : "namespace",
+                "type" : "string"
+              },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
+              "applyTemplate" : {
+                "label" : "applyTemplate",
+                "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "version" : {
+                "label" : "version",
+                "type" : "string"
+              },
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "indexSettings" : {
+                "label" : "indexSettings",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "clientSide" : {
+                    "label" : "clientSide",
+                    "type" : "bool"
+                  },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
+                  "interval" : {
+                    "label" : "interval",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : { },
+                    "flow" : [ ]
+                  }
+                },
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
+              },
+              "user" : {
+                "label" : "user",
+                "type" : "string"
+              },
+              "index" : {
+                "label" : "index",
+                "type" : "string"
+              },
+              "password" : {
+                "label" : "password",
+                "type" : "string"
+              },
+              "ref" : {
+                "label" : "ref",
+                "type" : "string"
+              },
+              "config" : {
+                "label" : "config",
+                "type" : "object"
+              },
+              "path" : {
+                "label" : "path",
+                "type" : "string"
+              },
+              "maxFileSize" : {
+                "label" : "maxFileSize",
+                "type" : "number"
+              },
+              "labels" : {
+                "label" : "labels",
+                "type" : "object"
+              },
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "to" : {
+                "label" : "to",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "name" : {
+                    "label" : "name",
+                    "type" : "string"
+                  },
+                  "email" : {
+                    "label" : "email",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "name", "email" ]
+              },
+              "eu" : {
+                "label" : "eu",
+                "type" : "bool"
+              },
+              "apiKey" : {
+                "label" : "apiKey",
+                "type" : "string"
+              },
+              "domain" : {
+                "label" : "domain",
+                "type" : "string"
+              },
+              "apiKeyPublic" : {
+                "label" : "apiKeyPublic",
+                "type" : "string"
+              },
+              "apiKeyPrivate" : {
+                "label" : "apiKeyPrivate",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
+          },
+          "projection" : {
+            "label" : "projection",
+            "type" : "object"
+          },
+          "enabled" : {
+            "label" : "enabled",
+            "type" : "bool"
+          },
+          "filtering" : {
+            "label" : "filtering",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "include" : {
+                "label" : "include",
+                "type" : "array",
+                "array" : true,
+                "format" : "form"
+              },
+              "exclude" : {
+                "label" : "exclude",
+                "type" : "array",
+                "array" : true,
+                "format" : "form"
+              }
+            },
+            "flow" : [ "include", "exclude" ]
+          }
+        },
+        "flow" : [ "desc", "_loc", "bufferSize", "jsonWorkers", "groupDuration", "groupSize", "type", "tags", "sendWorkers", "id", "name", "config", "enabled", "filtering", "metadata", "projection" ]
       },
       "teams" : {
         "label" : "teams",
@@ -28354,31 +29099,6 @@
             },
             "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
           },
-          "wasmManagerSettings" : {
-            "label" : "wasmManagerSettings",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "url" : {
-                "label" : "url",
-                "type" : "string"
-              },
-              "clientId" : {
-                "label" : "clientId",
-                "type" : "string"
-              },
-              "clientSecret" : {
-                "label" : "clientSecret",
-                "type" : "string"
-              },
-              "pluginsFilter" : {
-                "label" : "pluginsFilter",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
-          },
           "maintenanceMode" : {
             "label" : "maintenanceMode",
             "type" : "bool"
@@ -28811,7 +29531,7 @@
             "flow" : [ "enabled" ]
           }
         },
-        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "wasmManagerSettings", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "env", "metadata", "extensions" ]
+        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "env", "metadata", "extensions" ]
       },
       "authModules" : {
         "label" : "authModules",
@@ -30137,35 +30857,6 @@
                 "label" : "memoryPages",
                 "type" : "number"
               },
-              "killOptions" : {
-                "label" : "killOptions",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "maxUnusedDuration" : {
-                    "label" : "maxUnusedDuration",
-                    "type" : "number"
-                  },
-                  "immortal" : {
-                    "label" : "immortal",
-                    "type" : "bool"
-                  },
-                  "maxAvgCallDuration" : {
-                    "label" : "maxAvgCallDuration",
-                    "type" : "number"
-                  },
-                  "maxMemoryUsage" : {
-                    "label" : "maxMemoryUsage",
-                    "type" : "number"
-                  },
-                  "maxCalls" : {
-                    "label" : "maxCalls",
-                    "type" : "number"
-                  }
-                },
-                "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-              },
               "allowedPaths" : {
                 "label" : "allowedPaths",
                 "type" : "object"
@@ -30177,31 +30868,6 @@
               "config" : {
                 "label" : "config",
                 "type" : "object"
-              },
-              "source" : {
-                "label" : "source",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "kind" : {
-                    "label" : "kind",
-                    "type" : "form",
-                    "collapsable" : true,
-                    "collapsed" : true,
-                    "schema" : { },
-                    "flow" : [ ]
-                  },
-                  "path" : {
-                    "label" : "path",
-                    "type" : "string"
-                  },
-                  "opts" : {
-                    "label" : "opts",
-                    "type" : "object"
-                  }
-                },
-                "flow" : [ "kind", "path", "opts" ]
               },
               "authorizations" : {
                 "label" : "authorizations",
@@ -30309,7 +30975,7 @@
                 "type" : "string"
               }
             },
-            "flow" : [ "allowedHosts", "memoryPages", "killOptions", "allowedPaths", "instances", "config", "source", "authorizations", "opa", "wasi", "functionName" ]
+            "flow" : [ "allowedHosts", "memoryPages", "allowedPaths", "instances", "config", "authorizations", "opa", "wasi", "functionName" ]
           }
         },
         "flow" : [ "_loc", "name", "tags", "steps", "id", "description", "config", "metadata" ]
@@ -34057,6 +34723,71 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.events.PulsarConfig" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "tlsTrustCertsFilePath" : {
+        "label" : "tlsTrustCertsFilePath",
+        "type" : "string"
+      },
+      "tenant" : {
+        "label" : "tenant",
+        "type" : "string"
+      },
+      "uri" : {
+        "label" : "uri",
+        "type" : "string"
+      },
+      "mtlsConfig" : {
+        "label" : "mtlsConfig",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "mtls" : {
+            "label" : "mtls",
+            "type" : "bool"
+          },
+          "loose" : {
+            "label" : "loose",
+            "type" : "bool"
+          },
+          "trustAll" : {
+            "label" : "trustAll",
+            "type" : "bool"
+          },
+          "trustedCerts" : {
+            "label" : "trustedCerts",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "certs" : {
+            "label" : "certs",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+      },
+      "topic" : {
+        "label" : "topic",
+        "type" : "string"
+      },
+      "namespace" : {
+        "label" : "namespace",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "namespace", "topic", "uri", "tenant", "tlsTrustCertsFilePath", "type", "mtlsConfig" ]
+  },
   "otoroshi.auth.SAMLProtocolBinding" : {
     "schema" : { },
     "flow" : [ ]
@@ -37518,6 +38249,44 @@
     },
     "flow" : [ "location", "mappingSettings" ]
   },
+  "otoroshi.greenscore.Rule" : {
+    "schema" : {
+      "sectionWeight" : {
+        "label" : "sectionWeight",
+        "type" : "number"
+      },
+      "advice" : {
+        "label" : "advice",
+        "type" : "string"
+      },
+      "weight" : {
+        "label" : "weight",
+        "type" : "number"
+      },
+      "enabled" : {
+        "label" : "enabled",
+        "type" : "bool"
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "value" : {
+            "label" : "value",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "value" ]
+      },
+      "description" : {
+        "label" : "description",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "description", "enabled", "weight", "advice", "sectionWeight", "id" ]
+  },
   "otoroshi.next.plugins.MockField" : {
     "schema" : {
       "field_name" : {
@@ -37662,6 +38431,48 @@
       }
     },
     "flow" : [ "path", "enabled", "type" ]
+  },
+  "otoroshi.models.GoReplayFileSettings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "captureResponses" : {
+        "label" : "captureResponses",
+        "type" : "bool"
+      },
+      "preferBackendResponse" : {
+        "label" : "preferBackendResponse",
+        "type" : "bool"
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "captureRequests" : {
+        "label" : "captureRequests",
+        "type" : "bool"
+      },
+      "preferBackendRequest" : {
+        "label" : "preferBackendRequest",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "preferBackendRequest", "captureRequests", "maxFileSize", "preferBackendResponse", "captureResponses", "methods", "path", "type" ]
   },
   "Empty" : {
     "schema" : { },
@@ -39051,35 +39862,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -39091,31 +39873,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -39223,7 +39980,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.next.plugins.NgJwtVerificationOnlyConfig" : {
     "schema" : {
@@ -39682,10 +40439,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.wasm.WasmSourceKind" : {
-    "schema" : { },
-    "flow" : [ ]
-  },
   "otoroshi.plugins.clientcert.HasClientCertMatchingHttpValidator" : {
     "schema" : { },
     "flow" : [ ]
@@ -39772,6 +40525,26 @@
   "otoroshi.plugins.jobs.kubernetes.KubernetesCertSyncJob" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.models.ExporterRef" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      },
+      "ref" : {
+        "label" : "ref",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      }
+    },
+    "flow" : [ "config", "ref", "type" ]
   },
   "otoroshi.models.ApiKey" : {
     "schema" : {
@@ -41482,6 +42255,18 @@
     },
     "flow" : [ "to", "apiKeyPrivate", "apiKeyPublic", "type" ]
   },
+  "otoroshi.models.ConsoleSettings" : {
+    "schema" : {
+      "type" : {
+        "type" : "select",
+        "props" : {
+          "label" : "type",
+          "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+        }
+      }
+    },
+    "flow" : [ "type" ]
+  },
   "otoroshi.next.plugins.NgLargeResponseFaultConfig" : {
     "schema" : {
       "ratio" : {
@@ -42236,35 +43021,6 @@
             "label" : "memoryPages",
             "type" : "number"
           },
-          "killOptions" : {
-            "label" : "killOptions",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "maxUnusedDuration" : {
-                "label" : "maxUnusedDuration",
-                "type" : "number"
-              },
-              "immortal" : {
-                "label" : "immortal",
-                "type" : "bool"
-              },
-              "maxAvgCallDuration" : {
-                "label" : "maxAvgCallDuration",
-                "type" : "number"
-              },
-              "maxMemoryUsage" : {
-                "label" : "maxMemoryUsage",
-                "type" : "number"
-              },
-              "maxCalls" : {
-                "label" : "maxCalls",
-                "type" : "number"
-              }
-            },
-            "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-          },
           "allowedPaths" : {
             "label" : "allowedPaths",
             "type" : "object"
@@ -42276,31 +43032,6 @@
           "config" : {
             "label" : "config",
             "type" : "object"
-          },
-          "source" : {
-            "label" : "source",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "kind" : {
-                "label" : "kind",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : { },
-                "flow" : [ ]
-              },
-              "path" : {
-                "label" : "path",
-                "type" : "string"
-              },
-              "opts" : {
-                "label" : "opts",
-                "type" : "object"
-              }
-            },
-            "flow" : [ "kind", "path", "opts" ]
           },
           "authorizations" : {
             "label" : "authorizations",
@@ -42408,7 +43139,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "allowedHosts", "memoryPages", "killOptions", "allowedPaths", "instances", "config", "source", "authorizations", "opa", "wasi", "functionName" ]
+        "flow" : [ "allowedHosts", "memoryPages", "allowedPaths", "instances", "config", "authorizations", "opa", "wasi", "functionName" ]
       }
     },
     "flow" : [ "description", "metadata", "id", "steps", "tags", "name", "_loc", "config" ]
@@ -43056,35 +43787,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -43096,31 +43798,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -43228,7 +43905,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.next.models.NgTreeRouter_Test" : {
     "schema" : { },
@@ -44318,6 +44995,66 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.greenscore.RulesSection" : {
+    "schema" : {
+      "id" : {
+        "label" : "id",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "value" : {
+            "label" : "value",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "value" ]
+      },
+      "rules" : {
+        "label" : "rules",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "sectionWeight" : {
+            "label" : "sectionWeight",
+            "type" : "number"
+          },
+          "advice" : {
+            "label" : "advice",
+            "type" : "string"
+          },
+          "weight" : {
+            "label" : "weight",
+            "type" : "number"
+          },
+          "enabled" : {
+            "label" : "enabled",
+            "type" : "bool"
+          },
+          "id" : {
+            "label" : "id",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "value" : {
+                "label" : "value",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "value" ]
+          },
+          "description" : {
+            "label" : "description",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "sectionWeight", "advice", "weight", "enabled", "id", "description" ]
+      }
+    },
+    "flow" : [ "rules", "id" ]
+  },
   "otoroshi.next.plugins.JQ" : {
     "schema" : {
       "request" : {
@@ -45202,6 +45939,74 @@
       }
     },
     "flow" : [ "baggage", "timeout", "endpoint", "kind" ]
+  },
+  "otoroshi.greenscore.Thresholds" : {
+    "schema" : {
+      "plugins" : {
+        "label" : "plugins",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "excellent" : {
+            "label" : "excellent",
+            "type" : "number"
+          },
+          "sufficient" : {
+            "label" : "sufficient",
+            "type" : "number"
+          },
+          "poor" : {
+            "label" : "poor",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "excellent", "sufficient", "poor" ]
+      },
+      "dataOut" : {
+        "label" : "dataOut",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "excellent" : {
+            "label" : "excellent",
+            "type" : "number"
+          },
+          "sufficient" : {
+            "label" : "sufficient",
+            "type" : "number"
+          },
+          "poor" : {
+            "label" : "poor",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "excellent", "sufficient", "poor" ]
+      },
+      "headersOut" : {
+        "label" : "headersOut",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "excellent" : {
+            "label" : "excellent",
+            "type" : "number"
+          },
+          "sufficient" : {
+            "label" : "sufficient",
+            "type" : "number"
+          },
+          "poor" : {
+            "label" : "poor",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "excellent", "sufficient", "poor" ]
+      }
+    },
+    "flow" : [ "plugins", "dataOut", "headersOut" ]
   },
   "otoroshi.plugins.jobs.kubernetes.OtoAnnotationConfig" : {
     "schema" : {
@@ -49239,31 +50044,6 @@
             },
             "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
           },
-          "wasmManagerSettings" : {
-            "label" : "wasmManagerSettings",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "url" : {
-                "label" : "url",
-                "type" : "string"
-              },
-              "clientId" : {
-                "label" : "clientId",
-                "type" : "string"
-              },
-              "clientSecret" : {
-                "label" : "clientSecret",
-                "type" : "string"
-              },
-              "pluginsFilter" : {
-                "label" : "pluginsFilter",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
-          },
           "maintenanceMode" : {
             "label" : "maintenanceMode",
             "type" : "bool"
@@ -49696,7 +50476,7 @@
             "flow" : [ "enabled" ]
           }
         },
-        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "env", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "metadata", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "extensions", "middleFingers", "analyticsWebhooks", "autoCert", "wasmManagerSettings", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings" ]
+        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "env", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "metadata", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "extensions", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings" ]
       }
     },
     "flow" : [ "config" ]
@@ -53553,6 +54333,22 @@
         },
         "flow" : [ "username", "password", "mechanism" ]
       },
+      "tlsTrustCertsFilePath" : {
+        "label" : "tlsTrustCertsFilePath",
+        "type" : "string"
+      },
+      "tenant" : {
+        "label" : "tenant",
+        "type" : "string"
+      },
+      "uri" : {
+        "label" : "uri",
+        "type" : "string"
+      },
+      "namespace" : {
+        "label" : "namespace",
+        "type" : "string"
+      },
       "sendWorkers" : {
         "label" : "sendWorkers",
         "type" : "number"
@@ -53620,6 +54416,26 @@
         "label" : "password",
         "type" : "string"
       },
+      "ref" : {
+        "label" : "ref",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "labels" : {
+        "label" : "labels",
+        "type" : "object"
+      },
       "url" : {
         "label" : "url",
         "type" : "string"
@@ -53662,7 +54478,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
+    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "labels", "maxFileSize", "path", "config", "ref", "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "namespace", "uri", "tenant", "tlsTrustCertsFilePath", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
   },
   "otoroshi.plugins.cache.ResponseCacheConfig" : {
     "schema" : {
@@ -53676,6 +54492,210 @@
   "otoroshi.next.plugins.TooComplexQueryError" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.greenscore.GreenScoreEntity" : {
+    "schema" : {
+      "routes" : {
+        "label" : "routes",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "routeId" : {
+            "label" : "routeId",
+            "type" : "string"
+          },
+          "rulesConfig" : {
+            "label" : "rulesConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "sections" : {
+                "label" : "sections",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "id" : {
+                    "label" : "id",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "value" : {
+                        "label" : "value",
+                        "type" : "string"
+                      }
+                    },
+                    "flow" : [ "value" ]
+                  },
+                  "rules" : {
+                    "label" : "rules",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : "form",
+                    "schema" : {
+                      "sectionWeight" : {
+                        "label" : "sectionWeight",
+                        "type" : "number"
+                      },
+                      "advice" : {
+                        "label" : "advice",
+                        "type" : "string"
+                      },
+                      "weight" : {
+                        "label" : "weight",
+                        "type" : "number"
+                      },
+                      "enabled" : {
+                        "label" : "enabled",
+                        "type" : "bool"
+                      },
+                      "id" : {
+                        "label" : "id",
+                        "type" : "form",
+                        "collapsable" : true,
+                        "collapsed" : true,
+                        "schema" : {
+                          "value" : {
+                            "label" : "value",
+                            "type" : "string"
+                          }
+                        },
+                        "flow" : [ "value" ]
+                      },
+                      "description" : {
+                        "label" : "description",
+                        "type" : "string"
+                      }
+                    },
+                    "flow" : [ "sectionWeight", "advice", "weight", "enabled", "id", "description" ]
+                  }
+                },
+                "flow" : [ "id", "rules" ]
+              },
+              "thresholds" : {
+                "label" : "thresholds",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "plugins" : {
+                    "label" : "plugins",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "excellent" : {
+                        "label" : "excellent",
+                        "type" : "number"
+                      },
+                      "sufficient" : {
+                        "label" : "sufficient",
+                        "type" : "number"
+                      },
+                      "poor" : {
+                        "label" : "poor",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "excellent", "sufficient", "poor" ]
+                  },
+                  "dataOut" : {
+                    "label" : "dataOut",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "excellent" : {
+                        "label" : "excellent",
+                        "type" : "number"
+                      },
+                      "sufficient" : {
+                        "label" : "sufficient",
+                        "type" : "number"
+                      },
+                      "poor" : {
+                        "label" : "poor",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "excellent", "sufficient", "poor" ]
+                  },
+                  "headersOut" : {
+                    "label" : "headersOut",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "excellent" : {
+                        "label" : "excellent",
+                        "type" : "number"
+                      },
+                      "sufficient" : {
+                        "label" : "sufficient",
+                        "type" : "number"
+                      },
+                      "poor" : {
+                        "label" : "poor",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "excellent", "sufficient", "poor" ]
+                  }
+                },
+                "flow" : [ "plugins", "dataOut", "headersOut" ]
+              }
+            },
+            "flow" : [ "sections", "thresholds" ]
+          }
+        },
+        "flow" : [ "routeId", "rulesConfig" ]
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      },
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
+      "description" : {
+        "label" : "description",
+        "type" : "string"
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      }
+    },
+    "flow" : [ "name", "tags", "description", "metadata", "id", "routes", "_loc" ]
   },
   "otoroshi.next.plugins.NgCertificateAsApikey" : {
     "schema" : {
@@ -54383,27 +55403,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.wasm.WasmSource" : {
-    "schema" : {
-      "kind" : {
-        "label" : "kind",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : { },
-        "flow" : [ ]
-      },
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "opts" : {
-        "label" : "opts",
-        "type" : "object"
-      }
-    },
-    "flow" : [ "opts", "path", "kind" ]
-  },
   "otoroshi.next.plugins.ErrorRewriteReport" : {
     "schema" : {
       "raw_response" : {
@@ -55047,31 +56046,6 @@
     },
     "flow" : [ "arrayFields", "fields" ]
   },
-  "otoroshi.wasm.WasmVmKillOptions" : {
-    "schema" : {
-      "maxUnusedDuration" : {
-        "label" : "maxUnusedDuration",
-        "type" : "number"
-      },
-      "immortal" : {
-        "label" : "immortal",
-        "type" : "bool"
-      },
-      "maxAvgCallDuration" : {
-        "label" : "maxAvgCallDuration",
-        "type" : "number"
-      },
-      "maxMemoryUsage" : {
-        "label" : "maxMemoryUsage",
-        "type" : "number"
-      },
-      "maxCalls" : {
-        "label" : "maxCalls",
-        "type" : "number"
-      }
-    },
-    "flow" : [ "maxCalls", "maxMemoryUsage", "maxAvgCallDuration", "immortal", "maxUnusedDuration" ]
-  },
   "otoroshi.next.plugins.WasmRequestHandler" : {
     "schema" : { },
     "flow" : [ ]
@@ -55639,35 +56613,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -55679,31 +56624,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -55811,7 +56731,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.next.plugins.WasmAccessValidator" : {
     "schema" : {
@@ -55825,35 +56745,6 @@
         "label" : "memoryPages",
         "type" : "number"
       },
-      "killOptions" : {
-        "label" : "killOptions",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "maxUnusedDuration" : {
-            "label" : "maxUnusedDuration",
-            "type" : "number"
-          },
-          "immortal" : {
-            "label" : "immortal",
-            "type" : "bool"
-          },
-          "maxAvgCallDuration" : {
-            "label" : "maxAvgCallDuration",
-            "type" : "number"
-          },
-          "maxMemoryUsage" : {
-            "label" : "maxMemoryUsage",
-            "type" : "number"
-          },
-          "maxCalls" : {
-            "label" : "maxCalls",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "maxUnusedDuration", "immortal", "maxAvgCallDuration", "maxMemoryUsage", "maxCalls" ]
-      },
       "allowedPaths" : {
         "label" : "allowedPaths",
         "type" : "object"
@@ -55865,31 +56756,6 @@
       "config" : {
         "label" : "config",
         "type" : "object"
-      },
-      "source" : {
-        "label" : "source",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "kind" : {
-            "label" : "kind",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : { },
-            "flow" : [ ]
-          },
-          "path" : {
-            "label" : "path",
-            "type" : "string"
-          },
-          "opts" : {
-            "label" : "opts",
-            "type" : "object"
-          }
-        },
-        "flow" : [ "kind", "path", "opts" ]
       },
       "authorizations" : {
         "label" : "authorizations",
@@ -55997,7 +56863,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "killOptions", "source", "authorizations" ]
+    "flow" : [ "functionName", "wasi", "opa", "config", "instances", "allowedPaths", "memoryPages", "allowedHosts", "authorizations" ]
   },
   "otoroshi.auth.BasicAuthUser" : {
     "schema" : {

@@ -393,8 +393,9 @@ POST    /api/auths                                            otoroshi.controlle
 
 GET     /api/cluster/sessions/:id                             otoroshi.controllers.adminapi.ClusterController.isSessionValid(id)
 POST    /api/cluster/sessions                                 otoroshi.controllers.adminapi.ClusterController.createSession()
-PUT     /api/cluster/quotas                                   otoroshi.controllers.adminapi.ClusterController.updateQuotas()
-GET     /api/cluster/state                                    otoroshi.controllers.adminapi.ClusterController.internalState()
+PUT     /api/cluster/quotas                                   otoroshi.controllers.adminapi.ClusterController.updateState()
+GET     /api/cluster/state/ws                                 otoroshi.controllers.adminapi.ClusterController.stateWs()
+GET     /api/cluster/state                                    otoroshi.controllers.adminapi.ClusterController.readState()
 POST    /api/cluster/relay                                    otoroshi.controllers.adminapi.ClusterController.relayRouting()
 GET     /api/cluster/members                                  otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 DELETE  /api/cluster/members                                  otoroshi.controllers.adminapi.ClusterController.clearClusterMembers()

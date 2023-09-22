@@ -118,6 +118,13 @@ case "${1}" in
     build_and_push_jar_template_version_multi_arch_temurin "$OTO_VERSION" "21"
     cleanup
     ;;
+  build-dev)
+    OTO_VERSION="dev"
+    JDK_VERSION="21"
+    copy_build
+    docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
+    cleanup
+    ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     OTO_VERSION="dev-${NBR}"

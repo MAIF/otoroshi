@@ -365,6 +365,7 @@ class TunnelAgent(env: Env) {
         subprotocols = immutable.Seq.empty[String]
       ),
       targetOpt = target.some,
+      mtlsConfigOpt = tls,
       clientFlow = Flow
         .fromSinkAndSource(
           Sink.foreach[akka.http.scaladsl.model.ws.Message] {
@@ -752,6 +753,7 @@ class LeaderConnection(
           ipAddress = ipAddress.some,
           mtlsConfig = env.clusterConfig.mtlsConfig
         ).some,
+        mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
@@ -818,6 +820,7 @@ class LeaderConnection(
           scheme = uri.scheme,
           mtlsConfig = env.clusterConfig.mtlsConfig
         ).some,
+        mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {

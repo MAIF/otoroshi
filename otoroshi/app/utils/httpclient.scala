@@ -239,25 +239,27 @@ class WsClientChooser(
   def ws[T](
       request: WebSocketRequest,
       targetOpt: Option[Target],
+      mtlsConfigOpt: Option[MtlsConfig],
       clientFlow: Flow[Message, Message, T],
       customizer: ClientConnectionSettings => ClientConnectionSettings
   ): (Future[WebSocketUpgradeResponse], T) = {
-    val certs: Seq[Cert]        = targetOpt
-      .filter(_.mtlsConfig.mtls)
+    val tlsConfigOpt = targetOpt.map(_.mtlsConfig).orElse(mtlsConfigOpt)
+    val certs: Seq[Cert]        = tlsConfigOpt
+      .filter(_.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.actualCerts)
+      .flatMap(_.actualCerts)
     //.flatMap(DynamicSSLEngineProvider.certificates.get)
-    val trustedCerts: Seq[Cert] = targetOpt
-      .filter(_.mtlsConfig.mtls)
+    val trustedCerts: Seq[Cert] = tlsConfigOpt
+      .filter(_.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.actualTrustedCerts)
+      .flatMap(_.actualTrustedCerts)
     // .flatMap(DynamicSSLEngineProvider.certificates.get)
     akkaClient.executeWsRequest(
       request,
-      targetOpt.exists(_.mtlsConfig.loose),
-      targetOpt
-        .filter(_.mtlsConfig.mtls)
-        .exists(_.mtlsConfig.trustAll),
+      tlsConfigOpt.exists(_.loose),
+      tlsConfigOpt
+        .filter(_.mtls)
+        .exists(_.trustAll),
       certs,
       trustedCerts,
       clientFlow,

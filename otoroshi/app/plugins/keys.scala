@@ -1,5 +1,6 @@
 package otoroshi.plugins
 
+import akka.Done
 import akka.util.ByteString
 
 import java.util.concurrent.atomic.AtomicLong
@@ -9,6 +10,8 @@ import otoroshi.gateway.GwError
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
+
+import scala.concurrent.Promise
 
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
 
@@ -44,4 +47,5 @@ object Keys {
   val MatchedInputTokenKey          = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")
   val MatchedOutputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
   val StrippedPathKey               = TypedKey[String]("otoroshi.core.StrippedPath")
+  val ResponseEndPromiseKey         = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
 }

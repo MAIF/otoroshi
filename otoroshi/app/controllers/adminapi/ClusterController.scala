@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import akka.NotUsed
-import akka.http.scaladsl.model.Uri
+import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
@@ -16,16 +16,12 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
-import play.api.libs.streams.Accumulator
-import play.api.libs.typedmap.TypedMap
-import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
+import play.api.libs.streams.{Accumulator, ActorFlow}
 import play.api.mvc._
 
-import java.net.{InetAddress, URI}
-import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic._
+import scala.concurrent.duration._
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     env: Env
@@ -290,7 +286,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def updateQuotas() =
+  def updateState() =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -301,36 +297,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
-                ClusterQuotaIncr.read(jsItem) match {
+                ClusterLeaderUpdateMessage.read(jsItem) match {
                   case None => FastFuture.successful(())
-                  case Some(quota) => quota.updateWorker()
+                  case Some(quota) => quota.updateWorker(MemberView.fromRequest(ctx.request))
                 }
-                // (jsItem \ "typ").asOpt[String] match {
-                //   case Some("globstats") => {
-                //     // TODO: membership + global stats ?
-                //     FastFuture.successful(())
-                //   }
-                //   case Some("srvincr")   => {
-                //     val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                //     val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                //     val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                //     val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                //     env.clusterAgent.incrementService(id, dataIn, dataOut)
-                //     if (calls - 1 > 0) {
-                //       (0L to (calls - 1L)).foreach { _ =>
-                //         env.clusterAgent.incrementService(id, 0L, 0L)
-                //       }
-                //     }
-                //     FastFuture.successful(())
-                //   }
-                //   case Some("apkincr")   => {
-                //     val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                //     val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                //     env.clusterAgent.incrementApi(id, increment)
-                //     FastFuture.successful(())
-                //   }
-                //   case _                 => FastFuture.successful(())
-                // }
               }
               .runWith(Sink.ignore)
               .map { _ =>
@@ -356,150 +326,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
                 .mapAsync(4) { item =>
                   val jsItem = Json.parse(item.utf8String)
-                  ClusterQuotaIncr.read(jsItem) match {
-                    case Some(quota) => quota.updateLeader()
-                    case None => {
-                      (jsItem \ "typ").asOpt[String] match {
-                        case Some("globstats") => {
-                          ctx.request.headers
-                            .get(ClusterAgent.OtoroshiWorkerNameHeader)
-                            .map { name =>
-                              env.datastores.clusterStateDataStore.registerMember(
-                                MemberView(
-                                  id = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerIdHeader)
-                                    .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
-                                  name = name,
-                                  os = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerOsHeader)
-                                    .map(OS.fromString)
-                                    .getOrElse(OS.default),
-                                  version = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerVersionHeader)
-                                    .getOrElse("undefined"),
-                                  javaVersion = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
-                                    .map(JavaVersion.fromString)
-                                    .getOrElse(JavaVersion.default),
-                                  memberType = ClusterMode.Worker,
-                                  location =
-                                    ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                                  httpPort = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-                                    .map(_.toInt)
-                                    .getOrElse(env.exposedHttpPortInt),
-                                  httpsPort = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-                                    .map(_.toInt)
-                                    .getOrElse(env.exposedHttpsPortInt),
-                                  internalHttpPort = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-                                    .map(_.toInt)
-                                    .getOrElse(env.httpPort),
-                                  internalHttpsPort = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-                                    .map(_.toInt)
-                                    .getOrElse(env.httpsPort),
-                                  lastSeen = DateTime.now(),
-                                  timeout = Duration(
-                                    env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-                                    TimeUnit.MILLISECONDS
-                                  ),
-                                  stats = jsItem.as[JsObject],
-                                  tunnels = Seq.empty,
-                                  relay = ctx.request.headers
-                                    .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
-                                    .flatMap(RelayRouting.parse)
-                                    .getOrElse(RelayRouting.default)
-                                )
-                              )
-                            }
-                            .getOrElse(FastFuture.successful(()))
-                        }
-                        case _ => FastFuture.successful(())
-                      }
-                    }
+                  ClusterLeaderUpdateMessage.read(jsItem) match {
+                    case Some(quota) => quota.updateLeader(MemberView.fromRequest(ctx.request))
+                    case None => FastFuture.successful(())
                   }
-                  //(jsItem \ "typ").asOpt[String] match {
-                  //  case Some("globstats") => {
-                  //    ctx.request.headers
-                  //      .get(ClusterAgent.OtoroshiWorkerNameHeader)
-                  //      .map { name =>
-                  //        env.datastores.clusterStateDataStore.registerMember(
-                  //          MemberView(
-                  //            id = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerIdHeader)
-                  //              .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
-                  //            name = name,
-                  //            os = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerOsHeader)
-                  //              .map(OS.fromString)
-                  //              .getOrElse(OS.default),
-                  //            version = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerVersionHeader)
-                  //              .getOrElse("undefined"),
-                  //            javaVersion = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerJavaVersionHeader)
-                  //              .map(JavaVersion.fromString)
-                  //              .getOrElse(JavaVersion.default),
-                  //            memberType = ClusterMode.Worker,
-                  //            location =
-                  //              ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                  //            httpPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.exposedHttpPortInt),
-                  //            httpsPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.exposedHttpsPortInt),
-                  //            internalHttpPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.httpPort),
-                  //            internalHttpsPort = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
-                  //              .map(_.toInt)
-                  //              .getOrElse(env.httpsPort),
-                  //            lastSeen = DateTime.now(),
-                  //            timeout = Duration(
-                  //              env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-                  //              TimeUnit.MILLISECONDS
-                  //            ),
-                  //            stats = jsItem.as[JsObject],
-                  //            tunnels = Seq.empty,
-                  //            relay = ctx.request.headers
-                  //              .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
-                  //              .flatMap(RelayRouting.parse)
-                  //              .getOrElse(RelayRouting.default)
-                  //          )
-                  //        )
-                  //      }
-                  //      .getOrElse(FastFuture.successful(()))
-                  //  }
-                  //  case Some("srvincr")   => {
-                  //    val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                  //    val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                  //    val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                  //    val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                  //    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-                  //      case Some(_) =>
-                  //        env.datastores.serviceDescriptorDataStore
-                  //          .updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
-                  //      case None    => FastFuture.successful(())
-                  //    }
-                  //  }
-                  //  case Some("apkincr")   => {
-                  //    val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                  //    val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                  //    env.datastores.apiKeyDataStore.findById(id).flatMap {
-                  //      case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
-                  //      case None         => FastFuture.successful(())
-                  //    }
-                  //  }
-                  //  case _                 => FastFuture.successful(())
-                  //}
-
                 }
                 .runWith(Sink.ignore)
                 .andThen { case _ =>
@@ -529,7 +359,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   val cachedCount  = new AtomicLong(0L)
   val cachedDigest = new AtomicReference[String]("--")
 
-  def internalState() =
+  def readState() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -601,108 +431,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 )
               )
             }
-
-            /*
-            def sendAndCache(): Future[Result] = {
-              // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
-              if (caching.compareAndSet(false, true)) {
-                val start: Long = System.currentTimeMillis()
-                // var stateCache = ByteString.empty
-                val counter     = new AtomicLong(0L)
-                val digest      = MessageDigest.getInstance("SHA-256")
-                env.datastores
-                  .rawExport(env.clusterConfig.leader.groupingBy)
-                  .map { item =>
-                    ByteString(Json.stringify(item) + "\n")
-                  }
-                  .alsoTo(Sink.foreach { item =>
-                    digest.update(item.asByteBuffer)
-                    counter.incrementAndGet()
-                  })
-                  .via(env.clusterConfig.gzip())
-                  // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
-                  // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-                  // .alsoTo(Sink.onComplete {
-                  //   case Success(_) =>
-                  //     if ((System.currentTimeMillis() - start) > budget) {
-                  //       Cluster.logger.warn(
-                  //         s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?"
-                  //       )
-                  //     }
-                  //     cachedRef.set(stateCache)
-                  //     cachedAt.set(System.currentTimeMillis())
-                  //     caching.compareAndSet(true, false)
-                  //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                  //     env.clusterConfig.leader.stateDumpPath
-                  //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                  //     Cluster.logger.debug(
-                  //       s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
-                  //     )
-                  //   case Failure(e) =>
-                  //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
-                  //       e)
-                  // })
-                  .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-                  .fold {
-                    case Success(stateCache) => {
-                      if ((System.currentTimeMillis() - start) > budget) {
-                        Cluster.logger.warn(
-                          s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?"
-                        )
-                      }
-                      cachedRef.set(stateCache)
-                      cachedAt.set(System.currentTimeMillis())
-                      cachedCount.set(counter.get())
-                      cachedDigest.set(Hex.encodeHexString(digest.digest()))
-                      caching.compareAndSet(true, false)
-                      env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                      env.clusterConfig.leader.stateDumpPath
-                        .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                      Cluster.logger.debug(
-                        s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
-                      )
-                      Ok.sendEntity(
-                        HttpEntity.Streamed(
-                          Source.single(stateCache),
-                          None,
-                          Some("application/x-ndjson")
-                        )
-                      ).withHeaders(
-                        "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                        "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                        "X-Data-Count"                 -> s"${cachedCount.get()}",
-                        "X-Data-Digest"                -> cachedDigest.get(),
-                        "X-Data-From"                  -> s"${System.currentTimeMillis()}",
-                        "X-Data-Fresh"                 -> "true"
-                      ) //.withHeaders("Content-Encoding" -> "gzip")
-                    }
-                    case Failure(err)        =>
-                      Cluster.logger.error(
-                        s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
-                        err
-                      )
-                      InternalServerError(
-                        Json.obj("error" -> "Stream error while exporting raw state", "message" -> err.getMessage)
-                      )
-                  }
-              } else {
-                Cluster.logger.debug(
-                  s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-                )
-                Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-                  .withHeaders(
-                    "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                    "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                    "X-Data-Count"                 -> s"${cachedCount.get()}",
-                    "X-Data-Digest"                -> cachedDigest.get(),
-                    "X-Data-From"                  -> s"${cachedAt.get()}",
-                    "X-Data-From-Cache"            -> "true"
-                  )
-                  .future
-              }
-            }
-             */
-            // if (env.clusterConfig.autoUpdateState) {
             if (Cluster.logger.isDebugEnabled)
               Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
@@ -733,39 +461,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 "X-Data-Auto"                  -> "true"
               ).vfuture
             }
-            // } else if (cachedValue == null) {
-            //   sendAndCache()
-            // } else if (caching.get()) {
-            //   Cluster.logger.debug(
-            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-            //   )
-            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-            //     .withHeaders(
-            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
-            //       "X-Data-Digest"                -> cachedDigest.get(),
-            //       "X-Data-From"                  -> s"${cachedAt.get()}",
-            //       "X-Data-From-Cache"            -> "true"
-            //     )
-            //     .future
-            // } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
-            //   sendAndCache()
-            // } else {
-            //   Cluster.logger.debug(
-            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-            //   )
-            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-            //     .withHeaders(
-            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
-            //       "X-Data-Digest"                -> cachedDigest.get(),
-            //       "X-Data-From"                  -> s"${cachedAt.get()}",
-            //       "X-Data-From-Cache"            -> "true"
-            //     )
-            //     .future
-            // }
           }
         }
       }
@@ -812,5 +507,82 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
         }
       }
     }
+  }
+
+  def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
+    val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
+    action.apply(req).run().flatMap { result =>
+      if (result.header.status == 204) {
+        ActorFlow.actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+      } else {
+        result.leftf
+      }
+    }
+  }
+}
+
+object ClusterStateActor {
+  def props(out: ActorRef, env: Env) = Props(new ClusterStateActor(out, env))
+}
+
+class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
+
+  private val ref = new AtomicReference[Cancellable]()
+
+  implicit val ec = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
+
+  def debug(msg: String): Unit = {
+    if (env.isDev) {
+      Cluster.logger.info(s"[CLUSTER-WS] $msg")
+    } else {
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(msg)
+    }
+  }
+
+  override def preStart(): Unit = {
+    ref.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, env.clusterConfig.worker.state.pollEvery.millis) { () =>
+      val msg = ClusterLeaderStateMessage(
+        state = env.clusterLeaderAgent.cachedState,
+        nodeName = env.clusterConfig.leader.name,
+        nodeVersion = env.otoroshiVersion,
+        dataCount = env.clusterLeaderAgent.cachedCount,
+        dataDigest = env.clusterLeaderAgent.cachedDigest,
+        dataFrom = env.clusterLeaderAgent.cachedTimestamp,
+      )
+      val mess = msg.json.stringify
+      if (env.clusterConfig.compression > -1) {
+        val data = mess.byteString
+        debug(s"ws pushing the state: ${data.size / 1024} Kb compressed")
+        out ! play.api.http.websocket.BinaryMessage(data)
+      } else {
+        debug(s"ws pushing the state: ${mess.byteString.size / 1024} Kb uncompressed")
+        out ! play.api.http.websocket.TextMessage(mess)
+      }
+    })
+  }
+
+  override def postStop(): Unit = {
+    Option(ref.get()).foreach(_.cancel())
+  }
+
+  override def receive: Receive = {
+    case play.api.http.websocket.TextMessage(data) => {
+      ClusterMessageFromWorker.format.reads(data.parseJson) match {
+        case JsSuccess(msgfw, _) =>
+          ClusterLeaderUpdateMessage.read(msgfw.payload) match {
+            case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case _ =>
+          }
+        case JsError(err) => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")
+      }
+    }
+    case play.api.http.websocket.PingMessage(_) => out ! play.api.http.websocket.PongMessage(ByteString.empty)
+    case play.api.http.websocket.CloseMessage(statusCode, reason) => self ! PoisonPill
+    case play.api.http.websocket.BinaryMessage(_) => Cluster.logger.warn("cannot handle binary message")
+    case play.api.http.websocket.PongMessage(_) => Cluster.logger.warn("cannot handle pong message")
+    case _ => Cluster.logger.warn("cannot handle unknown message")
   }
 }
