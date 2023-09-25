@@ -24,8 +24,6 @@ export class ReactSelectOverride extends React.Component {
         const isOptionObject = this.isAnObject(this.props.options[0]);
         const opt = this.props.options.find(o => o === this.props.value || (isOptionObject ? o.value === this.props.value : false));
 
-        console.log(this.props.options, this.props.value)
-
         if (opt) {
             this.setState({
                 value: {

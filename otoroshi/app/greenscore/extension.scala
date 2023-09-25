@@ -62,7 +62,8 @@ case class GreenScoreEntity(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    routes: Seq[RouteRules]
+    routes: Seq[RouteRules],
+    thresholds: Thresholds = Thresholds()
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = GreenScoreEntity.format.writes(this)
@@ -85,7 +86,8 @@ object GreenScoreEntity {
           "routeId"     -> route.routeId,
           "rulesConfig" -> route.rulesConfig.json
         )
-      }))
+      })),
+      "thresholds" -> o.thresholds.json()
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -96,6 +98,7 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads),
         routes = json
           .select("routes")
           .asOpt[JsArray]

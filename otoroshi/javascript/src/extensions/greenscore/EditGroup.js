@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { NgForm } from '../../components/nginputs';
-import GroupRoutes from './GroupRoutes';
+import { GroupRoutes, ThresholdsTable } from './GroupRoutes';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 
 function SaveButton({ saveAndExit, group, isNew, client, title }) {
@@ -89,6 +89,11 @@ export default function EditGroup({ }) {
         },
         {
             type: 'group',
+            name: 'Thresholds',
+            fields: ['thresholds']
+        },
+        {
+            type: 'group',
             name: 'Routes.',
             collapsed: false,
             collapsable: false,
@@ -132,13 +137,14 @@ export default function EditGroup({ }) {
                 allRoutes={routes}
                 rulesBySection={rulesBySection}
             />
+        },
+        thresholds: {
+            renderer: ThresholdsTable
         }
     };
 
     if (!group || !routes || !rulesBySection)
         return null;
-
-    console.log(group)
 
     return <div style={{ position: 'relative' }}>
         <div className='d-flex' style={{

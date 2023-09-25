@@ -8,7 +8,7 @@ const DEFAULT_VALUES = {
   poor: 15
 };
 
-export default class GroupRoutes extends React.Component {
+export class GroupRoutes extends React.Component {
   state = {
     editRoute: undefined,
     value: this.props.rootValue
@@ -22,17 +22,7 @@ export default class GroupRoutes extends React.Component {
         {
           routeId,
           rulesConfig: {
-            states: [],
-            thresholds: {
-              calls: DEFAULT_VALUES,
-              dataIn: DEFAULT_VALUES,
-              dataOut: DEFAULT_VALUES,
-              overhead: DEFAULT_VALUES,
-              duration: DEFAULT_VALUES,
-              backendDuration: DEFAULT_VALUES,
-              headersIn: DEFAULT_VALUES,
-              headersOut: DEFAULT_VALUES
-            }
+            states: []
           }
         },
       ],
@@ -195,25 +185,13 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
     return () => document.removeEventListener('keydown', listener);
   }, []);
 
-  const [activeTab, setActiveTab] = useState('thresholds');
-
   return (
     <div className="wizard">
       <div className="wizard-container">
         <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
           <div className='d-flex justify-content-between align-items-center'>
-            <h3>Rules and thresholds</h3>
+            <h3>Rules</h3>
             <div className='d-flex ms-auto'>
-              <Tab
-                icon="sliders-h"
-                title="Thresholds"
-                active={activeTab === "thresholds"}
-                onClick={() => setActiveTab("thresholds")} />
-              <Tab
-                icon="toolbox"
-                title="Rules"
-                active={activeTab === "rules"}
-                onClick={() => setActiveTab("rules")} />
               <FeedbackButton
                 style={{
                   backgroundColor: 'var(--color-primary)',
@@ -229,7 +207,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
               />
             </div>
           </div>
-          <GreenScoreForm route={route} onChange={onRulesChange} rulesBySection={rulesBySection} activeTab={activeTab} />
+          <GreenScoreForm route={route} onChange={onRulesChange} rulesBySection={rulesBySection} />
           <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
             <FeedbackButton
               className="me-2"
@@ -293,26 +271,8 @@ const RoutesSelector = ({ allRoutes, addRoute }) => {
   );
 };
 
-function Tab({ onClick, title, icon, active }) {
-  return <div className="ms-2" style={{ minHeight: 40 }}>
-    <button
-      type="button"
-      className="btn btn-sm d-flex align-items-center h-100"
-      onClick={onClick}
-      style={{
-        borderRadius: 6,
-        backgroundColor: 'transparent',
-        boxShadow: `0 0 0 1px ${active ? 'var(--color-primary,transparent)' : 'var(--bg-color_level3,transparent)'}`,
-        color: 'var(--text)'
-      }}>
-      <i className={`fas fa-${icon} me-2`} style={{ fontSize: '1.33333em' }} />
-      {title}
-    </button>
-  </div>
-}
-
 function GreenScoreForm({ route, ...rest }) {
-  const { states, thresholds } = route.rulesConfig;
+  const { states } = route.rulesConfig;
 
   const today = new Date()
   today.setDate(today.getDate() + 1) // TODO - remove this line
@@ -376,19 +336,13 @@ function GreenScoreForm({ route, ...rest }) {
     });
   };
 
-  const onBoundsChange = (thresholds) => {
-    rest.onChange({
-      ...route.rulesConfig,
-      thresholds,
-    });
-  };
-
-  return rest.activeTab === 'thresholds' ?
-    <ThresholdsTable thresholds={thresholds} onBoundsChange={onBoundsChange} /> :
-    <RulesTables rest={rest} states={states} onRulesChange={onRulesChange} today={today} />
+  return <RulesTables rest={rest} states={states} onRulesChange={onRulesChange} today={today} />
 };
 
-function ThresholdsTable({ thresholds, onBoundsChange }) {
+export function ThresholdsTable({ value, onChange }) {
+
+  const onBoundsChange = (thresholds) => onChange(thresholds);
+
   return <div className="p-3">
     <p style={{ padding: '1rem 1rem 3rem' }}>
       <i className='fas fa-bullhorn me-3' style={{ color: 'var(--text)', fontSize: '1.25rem' }}></i>
@@ -405,7 +359,6 @@ function ThresholdsTable({ thresholds, onBoundsChange }) {
       <span style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }} className='text-center'>Sufficient</span>
       <span style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }} className='text-center'>Poor</span>
     </div>
-
 
     {[
       { key: 'title', title: 'Duration' },
@@ -433,8 +386,10 @@ function ThresholdsTable({ thresholds, onBoundsChange }) {
             key={key}
             title={title}
             unit={unit}
-            bounds={thresholds[key]}
-            onChange={value => onBoundsChange({ ...thresholds, [key]: value })}
+            bounds={value[key]}
+            onChange={newValue => {
+              onBoundsChange({ ...value, [key]: newValue })
+            }}
           />
         </div>)}
   </div>

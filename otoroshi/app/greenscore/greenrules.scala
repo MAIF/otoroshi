@@ -374,12 +374,10 @@ object RulesManager {
   )
 }
 
-case class RulesRouteConfiguration(states: Seq[RuleStateRecord] = Seq.empty,
-                            thresholds: Thresholds = Thresholds()) extends NgPluginConfig {
+case class RulesRouteConfiguration(states: Seq[RuleStateRecord] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = {
     Json.obj(
-      "states" -> JsArray(states.map(RuleStateRecord.format.writes)),
-      "thresholds" -> thresholds.json()
+      "states" -> JsArray(states.map(RuleStateRecord.format.writes))
     )
   }
 }
@@ -398,8 +396,7 @@ object RulesRouteConfiguration {
       RulesRouteConfiguration(
         states = (json \ "states")
           .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format.reads))
-          .getOrElse(Seq.empty),
-        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads)
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

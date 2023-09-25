@@ -404,7 +404,7 @@ class EcoMetrics {
   }
 
   def calculateGroupScore(group: GreenScoreEntity): GroupScore = {
-    val scoreByRoute = group.routes.map(route => calculateRouteScore(route))
+    val scoreByRoute = group.routes.map(route => calculateRouteScore(route, group.thresholds))
 
     val groupScore: Seq[RouteScoreByDateAndSection] = mergeRoutesScoreByDateAndSection(scoreByRoute.flatMap(_.sectionsScoreByDate))
 
@@ -415,17 +415,18 @@ class EcoMetrics {
     )
   }
 
-  def calculateRouteScore(route: RouteRules): RouteScore = {
+  def calculateRouteScore(route: RouteRules, thresholds: Thresholds): RouteScore = {
     val sectionsScoreByDate = calculateRulesByDate(route.rulesConfig)
 
     val routeScore = registry.route(route.routeId).getOrElse(RouteReservoirs())
 
+    val raw = ScalingRouteReservoirs.from(routeScore)
     RouteScore(
       sectionsScoreByDate = sectionsScoreByDate.map(section => section.processRoute()),
       dynamicValues = Dynamicvalues(
-        scaling = ScalingRouteReservoirs.from(routeScore, route.rulesConfig.thresholds),
+        scaling = ScalingRouteReservoirs.from(routeScore, thresholds),
         raw = ScalingRouteReservoirs.from(routeScore),
-        counters = DynamicTripleBounds().from(routeScore, route.rulesConfig.thresholds)
+        counters = DynamicTripleBounds().from(routeScore, thresholds)
       )
     )
   }

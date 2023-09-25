@@ -1161,7 +1161,6 @@ export class NgSelectRenderer extends Component {
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
 
-    console.log(creatable, this.props.value)
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}

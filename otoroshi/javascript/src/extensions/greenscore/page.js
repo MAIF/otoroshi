@@ -35,7 +35,7 @@ function ModeWrapper({ mode, value, children }) {
   return null
 }
 
-function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, ...props }) {
+function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, enabledFilters, ...props }) {
   const [state, setState] = useState(mode);
 
   const [groups, setGroups] = useState(filteredGroups)
@@ -74,7 +74,7 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, .
         height: 42,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         width: 175,
         textAlign: 'center',
         cursor: 'pointer',
@@ -83,7 +83,13 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, .
         borderBottomLeftRadius: opened ? '0px' : '8px',
         borderBottomRightRadius: opened ? 0 : 8,
         transition: 'border .2s'
-      }}>Filters <i className='fas fa-filter ms-1'></i></div>
+      }}>
+      <div className='d-flex align-items-center'>
+        Filters <i className='fas fa-filter ms-1'></i>
+      </div>
+
+      <span>({enabledFilters})</span>
+    </div>
 
     {opened && <div style={{
       display: 'flex',
@@ -341,6 +347,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     this.props.setTitle(() => <ManagerTitle />);
 
     document.getElementById('content-scroll-container').addEventListener('scroll', this.reveal)
+
+    setTimeout(this.reveal, 1500)
   }
 
   calculateForGroups = newGroups => {
@@ -359,7 +367,8 @@ export default class GreenScoreConfigsPage extends React.Component {
           scores,
           global,
           date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
-          loading: scores.length <= 0
+          loading: scores.length <= 0,
+          filterStatusView: 'undefined'
         })
       })
   }
@@ -428,20 +437,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).getTime();
   }
 
-  mergeThresholds = (a1, a2) => {
-    return {
-      overhead: a1.overhead + a2.rulesConfig.thresholds.overhead.poor,
-      duration: a1.duration + a2.rulesConfig.thresholds.duration.poor,
-      backendDuration: a1.backendDuration + a2.rulesConfig.thresholds.backendDuration.poor,
-      calls: a1.calls + a2.rulesConfig.thresholds.calls.poor,
-      dataIn: a1.dataIn + a2.rulesConfig.thresholds.dataIn.poor,
-      dataOut: a1.dataOut + a2.rulesConfig.thresholds.dataOut.poor,
-      headersOut: a1.headersOut + a2.rulesConfig.thresholds.headersOut.poor,
-      headersIn: a1.headersIn + a2.rulesConfig.thresholds.headersIn.poor
-    }
-  }
-
   meanThresholds = (a1, length) => {
+    console.log(a1, length)
     return {
       overhead: Math.round(a1.overhead / length),
       duration: Math.round(a1.duration / length),
@@ -462,20 +459,17 @@ export default class GreenScoreConfigsPage extends React.Component {
     if (this.state.scores.length > 0)
       return this.meanThresholds(
         this.state.groups.reduce((acc, group) => {
-          const sum = this.meanThresholds(
-            group.routes.reduce((acc, route) => this.mergeThresholds(acc, route), DEFAULT),
-            group.routes?.length || 1
-          );
+          const sum = group.thresholds
 
           return {
-            overhead: acc.overhead + sum.overhead,
-            duration: acc.duration + sum.duration,
-            backendDuration: acc.backendDuration + sum.backendDuration,
-            calls: acc.calls + sum.calls,
-            dataIn: acc.dataIn + sum.dataIn,
-            dataOut: acc.dataOut + sum.dataOut,
-            headersOut: acc.headersOut + sum.headersOut,
-            headersIn: acc.headersIn + sum.headersIn
+            overhead: acc.overhead + sum.overhead.poor,
+            duration: acc.duration + sum.duration.poor,
+            backendDuration: acc.backendDuration + sum.backendDuration.poor,
+            calls: acc.calls + sum.calls.poor,
+            dataIn: acc.dataIn + sum.dataIn.poor,
+            dataOut: acc.dataOut + sum.dataOut.poor,
+            headersOut: acc.headersOut + sum.headersOut.poor,
+            headersIn: acc.headersIn + sum.headersIn.poor
           }
         }, DEFAULT),
         this.state.groups.length)
@@ -537,6 +531,8 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     const thresholds = this.getThresholds();
 
+    console.log(thresholds)
+
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength();
 
@@ -573,6 +569,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                   ].sort()} />}
 
                 <FilterSelector
+                  enabledFilters={(mode !== 'all' ? 1 : 0) + (this.state.date ? 1 : 0) + (filteredGroups.length > 0 ? 1 : 0)}
                   opened={filterStatusView === 'filter'}
                   close={() => this.setState({ filterStatusView: undefined })}
                   open={() => this.setState({ filterStatusView: 'filter' })}
@@ -600,6 +597,29 @@ export default class GreenScoreConfigsPage extends React.Component {
                     raw />
                 </ModeWrapper>
               </div>
+
+              <ModeWrapper mode={mode} value="static">
+                <Wrapper loading={loading}>
+                  <div style={{
+                    display: 'flex',
+                    margin: '.5rem 0'
+                  }} className='reveal'>
+                    <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
+                      if (acc[item.date]) {
+                        return {
+                          ...acc,
+                          [item.date]: [...acc[item.date], item]
+                        }
+                      } else {
+                        return {
+                          ...acc,
+                          [item.date]: [item]
+                        }
+                      }
+                    }, {})} />
+                  </div>
+                </Wrapper>
+              </ModeWrapper>
 
               <ModeWrapper mode={mode} value="dynamic">
                 <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
@@ -656,29 +676,7 @@ export default class GreenScoreConfigsPage extends React.Component {
               </ModeWrapper>
             </div>
 
-            <ModeWrapper mode={mode} value="static">
-              <Wrapper loading={loading}>
-                <div style={{
-                  display: 'flex',
-                  margin: '.5rem 0'
-                }} className='reveal'>
-                  <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
-                    if (acc[item.date]) {
-                      return {
-                        ...acc,
-                        [item.date]: [...acc[item.date], item]
-                      }
-                    } else {
-                      return {
-                        ...acc,
-                        [item.date]: [item]
-                      }
-                    }
-                  }, {})} />
-                </div>
-              </Wrapper>
 
-            </ModeWrapper>
             <ModeWrapper mode={mode} value="dynamic">
               <Wrapper loading={loading}>
                 {scores.length > 0 ? [
