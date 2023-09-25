@@ -215,16 +215,15 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         implicit val ec = env.otoroshiExecutionContext
         implicit val ev = env
 
-        println(body, request)
-
         body
             .map(_.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
             .map(r => Json.parse(r.utf8String)))
             .getOrElse(Json.arr().vfuture)
             .flatMap(ids => {
-              println(ids)
+              val identifiers = ids.asOpt[JsArray].getOrElse(Json.arr())
               for {
-                scores <- datastores.greenscoresDatastore.findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
+                scores <- if(identifiers.value.isEmpty) datastores.greenscoresDatastore.findAll() else
+                  datastores.greenscoresDatastore.findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
               } yield {
                 val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
 

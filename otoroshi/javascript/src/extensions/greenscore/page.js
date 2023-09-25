@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import ReactSelect from 'react-select'
 
 import { Switch, Route } from 'react-router-dom';
 
@@ -36,11 +35,10 @@ function ModeWrapper({ mode, value, children }) {
   return null
 }
 
-function FilterSelector({ mode, onChange, ...props }) {
-  const [open, setOpen] = useState(false);
+function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, ...props }) {
   const [state, setState] = useState(mode);
 
-  const [groups, setGroups] = useState(props.groups)
+  const [groups, setGroups] = useState(filteredGroups)
 
   const addToState = value => {
     if (state === value)
@@ -62,14 +60,14 @@ function FilterSelector({ mode, onChange, ...props }) {
     top: -52,
     bottom: 0,
     left: 0,
-    right: 0,
-    zIndex: 10,
-    background: open ? 'var(--bg-color_level1_opa80)' : 'transparent',
+    right: opened ? 0 : 'inherit',
+    zIndex: 100,
+    background: opened ? 'var(--bg-color_level1_opa80)' : 'transparent',
     display: 'flex',
     flexDirection: 'column'
   }}>
     <div className='date-hover'
-      onClick={() => setOpen(true)}
+      onClick={open}
       style={{
         boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
         padding: '.5rem 1rem',
@@ -82,12 +80,12 @@ function FilterSelector({ mode, onChange, ...props }) {
         cursor: 'pointer',
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
-        borderBottomLeftRadius: open ? '0px' : '8px',
-        borderBottomRightRadius: open ? 0 : 8,
+        borderBottomLeftRadius: opened ? '0px' : '8px',
+        borderBottomRightRadius: opened ? 0 : 8,
         transition: 'border .2s'
       }}>Filters <i className='fas fa-filter ms-1'></i></div>
 
-    {open && <div style={{
+    {opened && <div style={{
       display: 'flex',
       flex: 1,
       justifyContent: 'start'
@@ -134,14 +132,12 @@ function FilterSelector({ mode, onChange, ...props }) {
             spread: true
           }}
           isMulti
-          name="colors"
           onChange={setGroups}
-          options={props.groups.map(g => ({ label: g.name, value: g.id }))}
-          className="basic-multi-select"
-          classNamePrefix="select" />
+          options={props.groups}
+          optionsTransformer={groups => groups.map(g => ({ label: g.name, value: g.id }))} />
 
         <div className='mt-auto d-flex pt-3' style={{ gap: 8 }}>
-          <button type="button" className='btn p-2' onClick={() => setOpen(false)} style={{
+          <button type="button" className='btn p-2' onClick={close} style={{
             flex: 1,
             borderRadius: 8,
             border: '2px solid var(--bg-color_level3)',
@@ -161,7 +157,7 @@ function FilterSelector({ mode, onChange, ...props }) {
   </div>
 }
 
-function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, opened }) {
+function DatePicker({ date, onChange, options, open, onClose, opened }) {
   const [selectedDate, setSelectedDate] = useState(date);
 
   const dates = (options || []).map(option => {
@@ -200,12 +196,12 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
     position: 'absolute',
     top: -52,
     bottom: 0,
-    left: 0,
+    left: opened ? 0 : 182,
     right: 0,
-    zIndex: 10,
+    zIndex: 10
   }} className='d-flex flex-column'>
     <div className='date-hover'
-      onClick={() => onDateSelectorChange(true)}
+      onClick={open}
       style={{
         boxShadow: '0 0 0 1px var(--bg-color_level3,transparent)',
         padding: '.5rem 1rem',
@@ -220,14 +216,16 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
         borderTopRightRadius: 8,
         borderBottomLeftRadius: opened ? '0px' : '8px',
         borderBottomRightRadius: opened ? 0 : 8,
-        transition: 'border .2s'
+        transition: 'border .2s',
+        marginLeft: opened ? 182 : 0
       }}><i className='fas fa-calendar me-2' />{moment(date).format("DD MMMM YY").toString()}</div>
 
     {opened && <div style={{
       display: 'flex',
       flex: 1,
       justifyContent: 'start',
-      background: 'var(--bg-color_level1_opa80)'
+      background: 'var(--bg-color_level1_opa80)',
+      marginLeft: 182
     }}>
       <div style={{
         zIndex: 12,
@@ -296,12 +294,12 @@ function DatePicker({ date, onChange, options, onDateSelectorChange, onClose, op
 export default class GreenScoreConfigsPage extends React.Component {
   state = {
     filteredGroups: [],
+    filterStatusView: undefined,
     routes: [],
     groups: [],
     rulesBySection: undefined,
     scores: [],
     date: undefined,
-    dateSelectorOpened: false,
     loading: true,
     mode: 'all'
   };
@@ -356,13 +354,20 @@ export default class GreenScoreConfigsPage extends React.Component {
       body: JSON.stringify(newGroups.map(g => g.value))
     })
       .then((r) => r.json())
-      .then(console.log)
+      .then(({ scores, global }) => {
+        this.setState({
+          scores,
+          global,
+          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
+          loading: scores.length <= 0
+        })
+      })
   }
 
   reveal() {
     const reveals = [...document.querySelectorAll(".reveal")];
     const windowHeight = window.innerHeight;
-    const elementVisible = 120;
+    const elementVisible = 80;
 
     reveals.forEach(reveal => {
       const elementTop = reveal.getBoundingClientRect().top;
@@ -520,9 +525,9 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   render() {
-    const { scores, global, dateSelectorOpened, groups, loading, mode, filteredGroups } = this.state;
+    const { scores, global, filterStatusView, groups, loading, mode, filteredGroups } = this.state;
 
-    console.log(this.state)
+    // console.log(this.state)
 
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
@@ -557,19 +562,26 @@ export default class GreenScoreConfigsPage extends React.Component {
               }}>
 
                 {availableDates.length > 1 && <DatePicker
-                  opened={dateSelectorOpened}
-                  onDateSelectorChange={dateSelectorOpened => this.setState({ dateSelectorOpened })}
+                  opened={filterStatusView === 'date'}
+                  open={() => this.setState({ filterStatusView: 'date' })}
                   date={this.state.date}
-                  onChange={date => this.setState({ date, dateSelectorOpened: false })}
-                  onClose={() => this.setState({ dateSelectorOpened: false })}
+                  onChange={date => this.setState({ date, filterStatusView: undefined })}
+                  onClose={() => this.setState({ filterStatusView: undefined })}
                   options={[
                     ...availableDates,
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
 
-                <FilterSelector onChange={(mode, filteredGroups) => {
-                  this.onFiltersChange(mode, filteredGroups)
-                }} mode={mode} groups={groups} />
+                <FilterSelector
+                  opened={filterStatusView === 'filter'}
+                  close={() => this.setState({ filterStatusView: undefined })}
+                  open={() => this.setState({ filterStatusView: 'filter' })}
+                  onChange={(mode, filteredGroups) => {
+                    this.onFiltersChange(mode, filteredGroups)
+                  }}
+                  mode={mode}
+                  filteredGroups={filteredGroups}
+                  groups={groups} />
 
                 <ModeWrapper mode={mode} value="static">
                   <GlobalScore
@@ -612,7 +624,6 @@ export default class GreenScoreConfigsPage extends React.Component {
 
               <ModeWrapper mode={mode} value="dynamic">
                 <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
-                  {/* global.dynamic_values.counters */}
                   <GlobalScore
                     className='reveal'
                     loading={loading}

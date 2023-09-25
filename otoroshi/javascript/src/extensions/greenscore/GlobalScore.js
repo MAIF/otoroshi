@@ -72,7 +72,7 @@ export function GlobalScore(allProps) {
             style={{
                 flex: .5,
                 // maxWidth: 250,
-                minWidth: 250,
+                // minWidth: 250,
                 background: 'var(--bg-color_level2)',
                 borderRadius: '.2rem',
                 padding: '0 .5rem',

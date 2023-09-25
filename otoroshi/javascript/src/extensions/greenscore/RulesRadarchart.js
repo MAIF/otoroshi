@@ -51,13 +51,12 @@ export default class RulesRadarchart extends PureComponent {
     return <Wrapper loading={this.props.loading}>
       <div style={{
         flex: '1 1 50%',
-        // maxWidth: 420,
-        // maxWidth: '50%',
+        maxWidth: '50%',
         background: 'var(--bg-color_level2)',
         borderRadius: '.2rem',
         position: 'relative'
       }} className='p-3'>
-        <ResponsiveContainer height="100%" width="100%">
+        <ResponsiveContainer width="100%">
           <RadarChart
             outerRadius="90%"
             innerRadius="10%"
