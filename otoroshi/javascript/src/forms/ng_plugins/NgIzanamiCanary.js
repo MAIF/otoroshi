@@ -104,14 +104,14 @@ export default {
   config_flow: [
     'experiment_id',
     'config_id',
-    '---',
+    //'---',
     'izanami_url',
     'client_id',
     'client_secret',
     'timeout',
-    '---',
+    //'---',
     'tls',
-    '---',
+    //'---',
     'route_config',
   ],
 };
