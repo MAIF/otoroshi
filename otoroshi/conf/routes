@@ -609,6 +609,7 @@ DELETE  /apis/:group/:version/:entity/:id                     otoroshi.api.Gener
 GET     /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.findAll(group, version, entity)
 POST    /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.create(group, version, entity)
 DELETE  /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.deleteAll(group, version, entity)
+GET     /apis/entities                                        otoroshi.api.GenericApiController.entities()
 
 ########################################################################################################################
 
