@@ -16,6 +16,7 @@ import { ManagerTitle, Tab } from './TitleManager';
 import EditGroup from './EditGroup';
 import Wrapper from './Wrapper';
 import { NgSelectRenderer } from '../../components/nginputs';
+import Section from './Section';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -556,7 +557,6 @@ export default class GreenScoreConfigsPage extends React.Component {
                 position: 'relative',
                 // minHeight: 380
               }}>
-
                 {availableDates.length > 1 && <DatePicker
                   opened={filterStatusView === 'date'}
                   open={() => this.setState({ filterStatusView: 'date' })}
@@ -568,7 +568,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                     // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
                   ].sort()} />}
 
-                <FilterSelector
+                {groups.length > 0 && <FilterSelector
                   enabledFilters={(mode !== 'all' ? 1 : 0) + (this.state.date ? 1 : 0) + (filteredGroups.length > 0 ? 1 : 0)}
                   opened={filterStatusView === 'filter'}
                   close={() => this.setState({ filterStatusView: undefined })}
@@ -578,102 +578,115 @@ export default class GreenScoreConfigsPage extends React.Component {
                   }}
                   mode={mode}
                   filteredGroups={filteredGroups}
-                  groups={groups} />
+                  groups={groups} />}
 
-                <ModeWrapper mode={mode} value="static">
-                  <GlobalScore
-                    loading={loading}
-                    letter={String.fromCharCode(65 + Math.min(Math.floor((1 - scalingGlobalScore) * 5)))}
-                    color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingGlobalScore) * 5)]} />
+                <Section
+                  full={false}
+                  title="Static score"
+                  subTitle="Follow the progression of your values, grouped in four score : architecture, design, usage and log"
+                >
+                  <ModeWrapper mode={mode} value="static">
+                    <div className='d-flex' style={{ gap: '.5rem' }}>
+                      <GlobalScore
+                        loading={loading}
+                        letter={String.fromCharCode(65 + Math.min(Math.floor((1 - scalingGlobalScore) * 5)))}
+                        color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingGlobalScore) * 5)]} />
 
+                      <Wrapper loading={loading}>
+                        <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
+                          if (acc[item.date]) {
+                            return {
+                              ...acc,
+                              [item.date]: [...acc[item.date], item]
+                            }
+                          } else {
+                            return {
+                              ...acc,
+                              [item.date]: [item]
+                            }
+                          }
+                        }, {})} />
+                      </Wrapper>
+
+                      <GlobalScore
+                        loading={loading}
+                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                        maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
+                        raw />
+                    </div>
+                  </ModeWrapper>
+                </Section>
+              </div>
+
+              <Section title="Dynamic or static ... all in one place" subTitle="Dynamic and static values are computed and normalized between 0 and 1 for easy comparison.">
+                <ModeWrapper mode={mode} value="dynamic">
                   <RulesRadarchart
                     loading={loading}
                     values={valuesAtCurrentDate}
                     dynamic_values={global?.dynamic_values || {}} />
-                  <GlobalScore
-                    loading={loading}
-                    score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-                    maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
-                    raw />
                 </ModeWrapper>
-              </div>
-
-              <ModeWrapper mode={mode} value="static">
-                <Wrapper loading={loading}>
-                  <div style={{
-                    display: 'flex',
-                    margin: '.5rem 0'
-                  }} className='reveal'>
-                    <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
-                      if (acc[item.date]) {
-                        return {
-                          ...acc,
-                          [item.date]: [...acc[item.date], item]
-                        }
-                      } else {
-                        return {
-                          ...acc,
-                          [item.date]: [item]
-                        }
-                      }
-                    }, {})} />
-                  </div>
-                </Wrapper>
-              </ModeWrapper>
+              </Section>
 
               <ModeWrapper mode={mode} value="dynamic">
-                <div style={{ display: 'flex', flex: 1, gap: '.5rem' }}>
-                  <div style={{ flex: 1, gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
-                    <DynamicChart
-                      loading={loading}
-                      title="Dynamic values"
-                      values={Object.entries(global?.dynamic_values.scaling || {})} />
+                <Section title="Dynamic KPI" subTitle="The values come from observing traffic on your groups. These values are calculated automatically and live.">
+                  <div style={{ display: 'flex', gap: '.5rem' }}>
+                    <div style={{ flex: 1, gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                      <DynamicChart
+                        loading={loading}
+                        title="Dynamic values"
+                        values={Object.entries(global?.dynamic_values.scaling || {})} />
+                    </div>
+                    <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                      <GlobalScore
+                        loading={loading}
+                        letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
+                        color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingDynamicScore) * 5)]}
+                        dynamic
+                        title="Data"
+                        tag="dynamic" />
+                      <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                    </div>
                   </div>
-                  <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+                </Section>
+              </ModeWrapper>
+
+              <Section
+                title="Dynamic score"
+                subTitle="You need to define three thresholds for each of your KPI. These are used to group each of them into three different categories and allow each KPI to achieve the highest ranking."
+                full={false}>
+                <ModeWrapper mode={mode} value="dynamic">
+                  <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
                     <GlobalScore
+                      className='reveal'
                       loading={loading}
-                      letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
-                      color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingDynamicScore) * 5)]}
+                      score={dynamicCounters.excellent}
+                      maxScore={dynamicCountersLength}
                       dynamic
-                      title="Data"
+                      raw
+                      unit=" "
+                      title="Excellent"
                       tag="dynamic" />
-                    <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                    <GlobalScore
+                      className='reveal'
+                      loading={loading}
+                      score={dynamicCounters.sufficient}
+                      dynamic
+                      raw
+                      unit=" "
+                      title="Sufficient"
+                      tag="dynamic" />
+                    <GlobalScore
+                      className='reveal'
+                      loading={loading}
+                      score={dynamicCounters.poor}
+                      dynamic
+                      raw
+                      unit=" "
+                      title="Poor"
+                      tag="dynamic" />
                   </div>
-                </div>
-              </ModeWrapper>
-
-              <ModeWrapper mode={mode} value="dynamic">
-                <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
-                  <GlobalScore
-                    className='reveal'
-                    loading={loading}
-                    score={dynamicCounters.excellent}
-                    maxScore={dynamicCountersLength}
-                    dynamic
-                    raw
-                    unit=" "
-                    title="Excellent"
-                    tag="dynamic" />
-                  <GlobalScore
-                    className='reveal'
-                    loading={loading}
-                    score={dynamicCounters.sufficient}
-                    dynamic
-                    raw
-                    unit=" "
-                    title="Sufficient"
-                    tag="dynamic" />
-                  <GlobalScore
-                    className='reveal'
-                    loading={loading}
-                    score={dynamicCounters.poor}
-                    dynamic
-                    raw
-                    unit=" "
-                    title="Poor"
-                    tag="dynamic" />
-                </div>
-              </ModeWrapper>
+                </ModeWrapper>
+              </Section>
             </div>
 
 

@@ -20,8 +20,8 @@ export default class StackedBarChart extends PureComponent {
 
         return <div style={{
             flex: 1,
-            minHeight: 520,
-            maxHeight: 600,
+            // minHeight: 520,
+            maxHeight: 320,
             background: 'var(--bg-color_level2)',
             borderRadius: '.2rem',
             padding: '1rem 2rem 62px'
