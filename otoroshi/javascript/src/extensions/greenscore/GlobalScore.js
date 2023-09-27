@@ -84,7 +84,8 @@ export function GlobalScore(allProps) {
             }}>
             <div style={{
                 display: 'flex',
-                alignItems: 'baseline',
+                flexDirection: props.under ? 'column' : 'center',
+                alignItems: props.under ? 'center' : 'baseline',
                 justifyContent: 'center',
                 flex: 1
             }}>

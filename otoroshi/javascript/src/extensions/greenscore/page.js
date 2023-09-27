@@ -265,7 +265,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
           {months.length > 1 && <DatePickerSelector icon='fas fa-angles-right' onClick={goToEnd} />}
         </div>
 
-        <div className='d-flex flex-wrap mt-3' style={{ gap: 12 }}>
+        <div className='d-flex flex-wrap mt-3' style={{ gap: 2 }}>
           {dates
             .filter(date => date.month === months[currentMonthAndYear]?.month && date.year === months[currentMonthAndYear]?.year)
             .map(d => {
@@ -275,7 +275,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                 style={{
                   border: '1px solid var(--color-primary)',
                   color: 'var(--text)',
-                  borderRadius: 8,
+                  borderRadius: 4,
                   cursor: 'pointer'
                 }}>{moment(d.value).format("dddd DD")}</div>
             })
@@ -571,8 +571,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                 flex: 1,
                 gap: '.5rem',
                 marginBottom: '.5rem',
-                position: 'relative',
-                // minHeight: 380
+                position: 'relative'
               }}>
                 {availableDates.length > 1 && <DatePicker
                   opened={filterStatusView === 'date'}
@@ -712,9 +711,12 @@ export default class GreenScoreConfigsPage extends React.Component {
                         { key: "headersOut", title: 'Headers out', unit: 'bytes' },
                         { key: "headersIn", title: 'Headers in', unit: 'bytes' },
                       ]
-                    ].map((values, j) => <div style={{ flex: 1, margin: '0.5rem' }} key={`container${j}`}>
+                    ].map((values, j) => <div className='d-flex flex-column' style={{
+                      flex: 1,
+                      margin: '0.5rem'
+                    }} key={`container${j}`}>
                       <h3 className='text-center my-3 p-3' style={{ color: 'var(--text)' }}>{j === 0 ? 'Time spent calculating' : 'Data exchanged'}</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem',flex: 1 }}>
                         {values
                           .map(({ key, title, unit }) => {
                             const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
@@ -727,6 +729,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                               score={global.dynamic_values.raw[key]}
                               dynamic
                               raw
+                              under
                               unit={unit}
                               title={title}
                               tag="dynamic" />
@@ -742,9 +745,13 @@ export default class GreenScoreConfigsPage extends React.Component {
         <Route exact path='/extensions/green-score/groups'
           component={() => <CustomTable items={groups}
             scores={scores.map(group => {
-              const atDate = group.sections_score_by_date.filter(section => section.date === mostRecentDate);
+              const dates = [...new Set(group.sections_score_by_date.map(section => section.date))].sort().reverse();
+
+              const mostRecentDateOfGroup = dates.reduce((prev, curr) => (Math.abs(curr - mostRecentDate) < Math.abs(prev - mostRecentDate) ? curr : prev))
+
+              const atDate = group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup);
               return {
-                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === mostRecentDate),
+                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup),
                 score: atDate.reduce((acc, v) => v.score.score + acc, 0),
                 ...group,
                 dynamic_values: this.getDynamicScore(group.dynamic_values.scaling)
@@ -753,6 +760,7 @@ export default class GreenScoreConfigsPage extends React.Component {
 
         <Route exact path="/extensions/green-score/groups/:group_id"
           component={EditGroup} />
+
       </Switch>
     </div >
   }
