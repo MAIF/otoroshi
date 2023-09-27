@@ -470,8 +470,9 @@ case class TlsSettings(
     randomIfNotFound: Boolean = false,
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
-    trustedCAsServer: Seq[String] = Seq.empty
-)                  {
+    trustedCAsServer: Seq[String] = Seq.empty,
+    bannedProtocols: Map[String, Seq[String]] = Map.empty,
+) {
   def json: JsValue = TlsSettings.format.writes(this)
 }
 object TlsSettings {
@@ -482,7 +483,8 @@ object TlsSettings {
         "randomIfNotFound"   -> o.randomIfNotFound,
         "includeJdkCaServer" -> o.includeJdkCaServer,
         "includeJdkCaClient" -> o.includeJdkCaClient,
-        "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply))
+        "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply)),
+        "bannedProtocols" -> o.bannedProtocols,
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -492,7 +494,8 @@ object TlsSettings {
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
-          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty)
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
+          bannedProtocols = (json \ "bannedProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -970,6 +973,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
   def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]
+  def latestUnsafe: GlobalConfig
   def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]

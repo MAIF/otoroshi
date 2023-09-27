@@ -351,7 +351,7 @@ class ReactorNettyServer(env: Env) {
     new SSLContext(
       new SSLContextSpi() {
         override def engineCreateSSLEngine(): SSLEngine                     =
-          DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None)
+          DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None, env)
         override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
         override def engineInit(
             keyManagers: Array[KeyManager],

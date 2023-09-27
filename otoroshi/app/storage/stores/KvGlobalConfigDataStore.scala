@@ -203,6 +203,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   }
 
   override def latestSafe: Option[GlobalConfig] = Option(configCache.get())
+  override def latestUnsafe: GlobalConfig = configCache.get()
 
   override def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
     val time = System.currentTimeMillis

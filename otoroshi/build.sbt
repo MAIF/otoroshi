@@ -312,6 +312,8 @@ addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
+Revolver.enableDebugging(port = 5005, suspend = false)
+
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
 reStart / javaOptions ++= Seq(
