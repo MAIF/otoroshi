@@ -17,6 +17,7 @@ import EditGroup from './EditGroup';
 import Wrapper from './Wrapper';
 import { NgSelectRenderer } from '../../components/nginputs';
 import Section from './Section';
+import DynamicScore from './DynamicScore';
 
 function DatePickerSelector({ icon, onClick }) {
   return <div style={{
@@ -89,7 +90,12 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
         Filters <i className='fas fa-filter ms-1'></i>
       </div>
 
-      <span>({enabledFilters})</span>
+      <span style={{
+        background: 'var(--bg-color_level2)',
+        padding: '.2rem',
+        borderRadius: '25%',
+        minWidth: 32
+      }}>{enabledFilters}</span>
     </div>
 
     {opened && <div style={{
@@ -489,23 +495,32 @@ export default class GreenScoreConfigsPage extends React.Component {
 
   getCounters = () => {
     if (this.state.global?.dynamic_values)
-      return Object.values(this.state.global.dynamic_values.counters).reduce((acc, c) => {
-        return {
-          excellent: acc.excellent + c.excellent,
-          sufficient: acc.sufficient + c.sufficient,
-          poor: acc.poor + c.poor,
-        }
+      return Object.entries(this.state.global.dynamic_values.counters).reduce((acc, c) => {
+        if (c[1].excellent)
+          return {
+            ...acc,
+            excellent: [...acc.excellent, c[0]]
+          }
+        if (c[1].sufficient)
+          return {
+            ...acc,
+            sufficient: [...acc.sufficient, c[0]]
+          }
+        else
+          return {
+            ...acc,
+            poor: [...acc.poor, c[0]]
+          }
       }, {
-        excellent: 0, sufficient: 0, poor: 0
+        excellent: [], sufficient: [], poor: []
       });
 
     return {}
   }
 
-  getCountersLength = () => {
-    if (this.state.global)
-      return Object.values(this.state.global.dynamic_values.counters)
-        .reduce((acc, c) => acc + c.excellent + c.sufficient + c.poor, 0);
+  getCountersLength = dynamicCounters => {
+    if (dynamicCounters)
+      return dynamicCounters.excellent?.length + dynamicCounters.sufficient?.length + dynamicCounters.poor?.length;
     else
       return 0
   }
@@ -533,7 +548,9 @@ export default class GreenScoreConfigsPage extends React.Component {
     const thresholds = this.getThresholds();
 
     const dynamicCounters = this.getCounters();
-    const dynamicCountersLength = this.getCountersLength();
+    const dynamicCountersLength = this.getCountersLength(dynamicCounters);
+
+    console.log(dynamicCounters)
 
     const mostRecentDate = global ? [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0] : Date.now();
 
@@ -645,7 +662,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                         dynamic
                         title="Dynamic Score"
                         tag="dynamic" />
-                      <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
+                      <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Percentage" tag="dynamic" />
                     </div>
                   </div>
                 </Section>
@@ -654,78 +671,71 @@ export default class GreenScoreConfigsPage extends React.Component {
               <ModeWrapper mode={mode} value="dynamic">
                 <Section
                   title="Dynamic score"
-                  subTitle="You need to define three thresholds for each of your KPI. These are used to group each of them into three different categories and allow each KPI to achieve the highest ranking."
-                  full={false}>
+                  subTitle="Your group thresholds are set with three values: excellent, sufficient and poor. Each of the dynamic counters (overhead, backend duration, etc) is placed in one of these values, based ont its last recorded value."
+                >
                   <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
-                    <GlobalScore
-                      className='reveal'
+                    <DynamicScore
                       loading={loading}
-                      score={dynamicCounters.excellent}
+                      values={dynamicCounters.excellent}
                       maxScore={dynamicCountersLength}
-                      dynamic
-                      raw
-                      unit=" "
-                      title="Excellent"
-                      tag="dynamic" />
-                    <GlobalScore
-                      className='reveal'
+                      title="Excellent" />
+                    <DynamicScore
                       loading={loading}
-                      score={dynamicCounters.sufficient}
-                      dynamic
-                      raw
-                      unit=" "
-                      title="Sufficient"
-                      tag="dynamic" />
-                    <GlobalScore
-                      className='reveal'
+                      values={dynamicCounters.sufficient}
+                      title="Sufficient" />
+                    <DynamicScore
                       loading={loading}
-                      score={dynamicCounters.poor}
-                      dynamic
-                      raw
-                      unit=" "
-                      title="Poor"
-                      tag="dynamic" />
+                      values={dynamicCounters.poor}
+                      title="Poor" />
                   </div>
                 </Section>
               </ModeWrapper>
             </div>
 
-
             <ModeWrapper mode={mode} value="dynamic">
-              <Wrapper loading={loading}>
-                {scores.length > 0 ? [
-                  [
-                    { key: "overhead", title: 'Overhead', unit: 'ms' },
-                    { key: "duration", title: 'Duration', unit: 'ms' },
-                    { key: "backendDuration", title: 'Backend duration', unit: 'ms' },
-                    { key: "calls", title: 'Calls', unit: 's' },
-                  ],
-                  [
-                    { key: "dataIn", title: 'Data in', unit: 'bytes' },
-                    { key: "dataOut", title: 'Data out', unit: 'bytes' },
-                    { key: "headersOut", title: 'Headers out', unit: 'bytes' },
-                    { key: "headersIn", title: 'Headers in', unit: 'bytes' },
-                  ]
-                ].map((values, j) => <div className='d-flex justify-content-between' style={{ margin: '.5rem 0', flex: 1, gap: '.5rem' }} key={`container${j}`}>
-                  {values
-                    .map(({ key, title, unit }) => {
-                      const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
-                      return <GlobalScore
-                        className='reveal'
-                        key={key}
-                        loading={loading}
-                        color={Object.keys(GREEN_SCORE_GRADES)[Math.round(scalingValue < 0 ? 0 : scalingValue)]}
-                        maxScore={thresholds[key]}
-                        score={global.dynamic_values.raw[key]}
-                        dynamic
-                        raw
-                        unit={unit}
-                        title={title}
-                        tag="dynamic" />
-                    })}
-                </div>) : <div></div>}
-              </Wrapper>
-
+              <Section
+                title=""
+                subTitle="Thresholds are defined on all groups and are combined into two sections. The first represents the quantity of data exchanged and the second the time spent calculating requests and responses."
+                full={false}>
+                <Wrapper loading={loading}>
+                  <div className='d-flex justify-content-around' style={{ gap: '.5rem' }}>
+                    {scores.length > 0 && [
+                      [
+                        { key: "overhead", title: 'Overhead', unit: 'ms' },
+                        { key: "duration", title: 'Duration', unit: 'ms' },
+                        { key: "backendDuration", title: 'Backend duration', unit: 'ms' },
+                        { key: "calls", title: 'Calls', unit: 's' },
+                      ],
+                      [
+                        { key: "dataIn", title: 'Data in', unit: 'bytes' },
+                        { key: "dataOut", title: 'Data out', unit: 'bytes' },
+                        { key: "headersOut", title: 'Headers out', unit: 'bytes' },
+                        { key: "headersIn", title: 'Headers in', unit: 'bytes' },
+                      ]
+                    ].map((values, j) => <div style={{ flex: 1, margin: '0.5rem' }} key={`container${j}`}>
+                      <h3 className='text-center my-3 p-3' style={{ color: 'var(--text)' }}>{j === 0 ? 'Time spent calculating' : 'Data exchanged'}</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem' }}>
+                        {values
+                          .map(({ key, title, unit }) => {
+                            const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
+                            return <GlobalScore
+                              className='reveal'
+                              key={key}
+                              loading={loading}
+                              color={Object.keys(GREEN_SCORE_GRADES)[Math.round(scalingValue < 0 ? 0 : scalingValue)]}
+                              maxScore={thresholds[key]}
+                              score={global.dynamic_values.raw[key]}
+                              dynamic
+                              raw
+                              unit={unit}
+                              title={title}
+                              tag="dynamic" />
+                          })}
+                      </div>
+                    </div>)}
+                  </div>
+                </Wrapper>
+              </Section>
             </ModeWrapper>
           </>} />
 

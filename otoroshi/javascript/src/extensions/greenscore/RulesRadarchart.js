@@ -35,15 +35,17 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Design', value: values.find(v => v.section === "design")?.score.scaling_score || 0, fullMark: 1, domain: [0, 1] },
       { subject: 'Usage', value: values.find(v => v.section === "usage")?.score.scaling_score || 0, fullMark: 1, domain: [0, 1] },
       { subject: 'Log retention', value: values.find(v => v.section === "log")?.score.scaling_score || 0, fullMark: 1, domain: [0, 1] },
-      { subject: 'Backend duration', value: dynamic_values.plugins_instance, fullMark: 1, domain: [0, 1] },
-      { subject: 'Calls', value: dynamic_values.calls, fullMark: 1, domain: [0, 1] },
-      { subject: 'Data in', value: dynamic_values.dataIn, fullMark: 1, domain: [0, 1] },
-      { subject: 'Data out', value: dynamic_values.dataOut, fullMark: 1, domain: [0, 1] },
-      { subject: 'Duration', value: dynamic_values.duration, fullMark: 1, domain: [0, 1] },
-      { subject: 'Headers in', value: dynamic_values.headersIn, fullMark: 1, domain: [0, 1] },
-      { subject: 'Headers out', value: dynamic_values.headersOut, fullMark: 1, domain: [0, 1] },
-      { subject: 'Overhead', value: dynamic_values.overhead, fullMark: 1, domain: [0, 1] },
+      { subject: 'Backend duration', value: dynamic_values.scaling?.backendDuration, fullMark: 1, domain: [0, 1] },
+      { subject: 'Calls', value: dynamic_values.scaling?.calls, fullMark: 1, domain: [0, 1] },
+      { subject: 'Data in', value: dynamic_values.scaling?.dataIn, fullMark: 1, domain: [0, 1] },
+      { subject: 'Data out', value: dynamic_values.scaling?.dataOut, fullMark: 1, domain: [0, 1] },
+      { subject: 'Duration', value: dynamic_values.scaling?.duration, fullMark: 1, domain: [0, 1] },
+      { subject: 'Headers in', value: dynamic_values.scaling?.headersIn, fullMark: 1, domain: [0, 1] },
+      { subject: 'Headers out', value: dynamic_values.scaling?.headersOut, fullMark: 1, domain: [0, 1] },
+      { subject: 'Overhead', value: dynamic_values.scaling?.overhead, fullMark: 1, domain: [0, 1] },
     ];
+
+    console.log(this.props, data)
 
     return <Wrapper loading={this.props.loading}>
       <div style={{
