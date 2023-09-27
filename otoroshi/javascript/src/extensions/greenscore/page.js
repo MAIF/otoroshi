@@ -59,7 +59,7 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
 
   return <div style={{
     position: 'absolute',
-    top: -52,
+    top: 0,
     bottom: 0,
     left: 0,
     right: opened ? 0 : 'inherit',
@@ -77,7 +77,7 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: 175,
+        width: 145,
         textAlign: 'center',
         cursor: 'pointer',
         borderTopLeftRadius: 8,
@@ -114,7 +114,20 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
         minWidth: 350,
       }}
         className='p-3 d-flex flex-column'>
-        <h3 style={{ color: 'var(--text)' }}>Modes</h3>
+
+        <h3 style={{ color: 'var(--text)' }}>Groups</h3>
+
+        <NgSelectRenderer
+          value={groups}
+          ngOptions={{
+            spread: true
+          }}
+          isMulti
+          onChange={setGroups}
+          options={props.groups}
+          optionsTransformer={groups => groups.map(g => ({ label: g.name, value: g.id }))} />
+
+        <h3 style={{ color: 'var(--text)' }} className='mt-3'>Modes</h3>
         <div className='d-flex' style={{ gap: '.5rem' }}>
           <div
             onClick={() => addToState('static')}
@@ -137,17 +150,6 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
               cursor: 'pointer'
             }}>DYNAMIC <i className='fas fa-bolt ms-2' /></div>
         </div>
-        <h3 style={{ color: 'var(--text)' }} className='mt-3'>Groups</h3>
-
-        <NgSelectRenderer
-          value={groups}
-          ngOptions={{
-            spread: true
-          }}
-          isMulti
-          onChange={setGroups}
-          options={props.groups}
-          optionsTransformer={groups => groups.map(g => ({ label: g.name, value: g.id }))} />
 
         <div className='mt-auto d-flex pt-3' style={{ gap: 8 }}>
           <button type="button" className='btn p-2' onClick={close} style={{
@@ -207,9 +209,9 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
 
   return <div style={{
     position: 'absolute',
-    top: -52,
+    top: 0,
     bottom: 0,
-    left: opened ? 0 : 182,
+    left: opened ? 0 : 152,
     right: 0,
     zIndex: 10
   }} className='d-flex flex-column'>
@@ -230,7 +232,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
         borderBottomLeftRadius: opened ? '0px' : '8px',
         borderBottomRightRadius: opened ? 0 : 8,
         transition: 'border .2s',
-        marginLeft: opened ? 182 : 0
+        marginLeft: opened ? 152 : 0
       }}><i className='fas fa-calendar me-2' />{moment(date).format("DD MMMM YY").toString()}</div>
 
     {opened && <div style={{
@@ -238,7 +240,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
       flex: 1,
       justifyContent: 'start',
       background: 'var(--bg-color_level1_opa80)',
-      marginLeft: 182
+      marginLeft: 152
     }}>
       <div style={{
         zIndex: 12,
@@ -579,10 +581,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                   date={this.state.date}
                   onChange={date => this.setState({ date, filterStatusView: undefined })}
                   onClose={() => this.setState({ filterStatusView: undefined })}
-                  options={[
-                    ...availableDates,
-                    // ...Array(20).fill(0).map(() => this.randomDate("01/01/2018", "01/09/2023"))
-                  ].sort()} />}
+                  options={availableDates.sort()} />}
 
                 {groups.length > 0 && <FilterSelector
                   enabledFilters={(mode !== 'all' ? 1 : 0) + (this.state.date ? 1 : 0) + (filteredGroups.length > 0 ? 1 : 0)}
@@ -716,7 +715,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                       margin: '0.5rem'
                     }} key={`container${j}`}>
                       <h3 className='text-center my-3 p-3' style={{ color: 'var(--text)' }}>{j === 0 ? 'Time spent calculating' : 'Data exchanged'}</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem',flex: 1 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem', flex: 1 }}>
                         {values
                           .map(({ key, title, unit }) => {
                             const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
