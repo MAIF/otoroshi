@@ -1803,7 +1803,7 @@ export class TopBar extends Component {
                       {Otoroshi.extensions()
                         .flatMap((ext) => ext.creationItems)
                         .map((item) => (
-                          <li className="d-flex">
+                          <li className="d-flex" key={item.title}>
                             <Link to={item.path}>{item.title}</Link>
                           </li>
                         ))}

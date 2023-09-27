@@ -343,8 +343,8 @@ class BackOfficeAppContainer extends Component {
                       <Link
                         to='/'
                         className={`nav-link ${window.location.pathname === '/bo/dashboard/'
-                            ? 'active'
-                            : ''
+                          ? 'active'
+                          : ''
                           }`}
                         {...createTooltip(
                           'Home dashboard of Otoroshi displaying global metrics'
@@ -409,6 +409,7 @@ class BackOfficeAppContainer extends Component {
                         .map((item) => {
                           return (
                             <Route
+                              key={item.path}
                               path={item.path}
                               component={(props) =>
                                 this.decorate(item.component, props)

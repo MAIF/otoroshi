@@ -40,8 +40,8 @@ export default class CustomTable extends React.Component {
             notation: getLetter(this.props.scores[i].score),
             color: getColor(this.props.scores[i].score),
             net: this.props.scores[i].score,
-            data: String.fromCharCode(65 + (1 - this.props.scores[i].dynamic_values) * 5),
-            dynamicLetter: Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - this.props.scores[i].dynamic_values) * 5)],
+            data: String.fromCharCode(65 + Math.min(Math.floor((1 - this.props.scores[i].dynamic_values) * 5))),
+            dynamicLetter: Object.keys(GREEN_SCORE_GRADES)[Math.min(Math.floor(((1 - this.props.scores[i].dynamic_values) * 5)))],
             dynamic: parseFloat(this.props.scores[i].dynamic_values * 100, 2).toFixed(2)
         }
     }
@@ -58,6 +58,8 @@ export default class CustomTable extends React.Component {
             'v1',
             'green-scores'
         )
+
+        console.log(this.props)
     }
 
     componentDidUpdate(prevProps) {

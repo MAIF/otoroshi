@@ -420,7 +420,6 @@ class EcoMetrics {
 
     val routeScore = registry.route(route.routeId).getOrElse(RouteReservoirs())
 
-    val raw = ScalingRouteReservoirs.from(routeScore)
     RouteScore(
       sectionsScoreByDate = sectionsScoreByDate.map(section => section.processRoute()),
       dynamicValues = Dynamicvalues(

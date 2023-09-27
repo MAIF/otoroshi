@@ -7,7 +7,7 @@ export default class StackedBarChart extends PureComponent {
 
     render() {
         const mapValues = Object.entries(this.props.values || {});
-        const data = [...mapValues, mapValues[0]]
+        const data = (mapValues.length < 2 ? [...mapValues, mapValues[0]] : mapValues)
             .filter(f => f)
             .map(([date, section]) => {
                 return {

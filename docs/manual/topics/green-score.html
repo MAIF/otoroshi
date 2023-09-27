@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Routes · Otoroshi</title>
+<title>Green Score · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -52,7 +52,7 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
-    <li><a href="../entities/routes.html" class="active page">Routes</a></li>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
@@ -89,7 +89,7 @@
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
-    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/green-score.html" class="active page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -186,7 +186,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
-    <li><a href="../entities/routes.html" class="active page">Routes</a></li>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
@@ -223,7 +223,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
-    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/green-score.html" class="active page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -284,8 +284,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Routes</li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Green Score</li>
 </ul>
 </div>
 </div>
@@ -293,103 +293,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#routes" name="routes" class="anchor"><span class="anchor-link"></span></a>Routes</h1>
-<p>A route is an unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins and eventually forward the request to the backend application.</p>
-<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
-<p>You can find all routes <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes">here</a></p>
-<h2><a href="#global-properties" name="global-properties" class="anchor"><span class="anchor-link"></span></a>Global Properties</h2>
+<h1><a href="#green-score" name="green-score" class="anchor"><span class="anchor-link"></span></a>Green Score</h1>
+<p>The Green Score is an aggregation of static and dynamic values that are coming from the usage of routes in Otoroshi. The main objective is to advise users on the consumption of their APIs and services.</p>
+<img src="../imgs/greenscore.png" />
+<p>Otoroshi has a complete integration of the collective rules, divided into four concerns: <strong>Architecture</strong>, <strong>Design</strong>, <strong>Usage</strong> and <strong>Logs retention</strong>. The 6000 score points are spread over the four parts and a final note is given for each group of routes.</p>
+<p>The API green score is available on 16.8.0 or later version of Otoroshi. You can find the feature on the search bar of your Otoroshi UI or directly in the sidebar by clicking on <strong>Green score</strong>.</p>
+<p>To start the process, click on Add New Group, give a name and select a first route to audit. After clicking on the hammer icon, you can select the rules respected by your route. Before saving, you can adjust the values used to calculate the dynamic score. These thresholds are used to calculate a second green score depending on the amount of data you want not to exceed from your downstream service and the following other values: </p>
 <ul>
-  <li><code>location</code>: the location of the entity</li>
-  <li><code>id</code>: the id of the route</li>
-  <li><code>name</code>: the name of the route</li>
-  <li><code>description</code>: the description of the route</li>
-  <li><code>tags</code>: the tags of the route. can be useful for api automation</li>
-  <li><code>metadata</code>: the metadata of the route. can be useful for api automation. There are a few reserved metadata used by otorshi that can be found <a href="routes.html#reserved-metadata">below</a></li>
-  <li><code>enabled</code>: is the route enabled ? if not, the router will not consider this route</li>
-  <li><code>debugFlow</code>: the debug flag. If enabled, the execution report for this route will contain all input/output values through steps of the proxy engine. For more informations, check the <a href="../topics/engine.html#reporting">engine documentation</a></li>
-  <li><code>capture</code>: if enabled, otoroshi will generate events containing the whole content of each request. Use with caution ! For more informations, check the <a href="../topics/engine.html#http-traffic-capture">engine documentation</a></li>
-  <li><code>exportReporting</code>: if enabled, execution reports of the proxy engine will be generated for each request. Those reports are exportable using <a href="data-exporters.html">data exporters</a> . For more informations, check the <a href="../topics/engine.html#reporting">engine documentation</a></li>
-  <li><code>groups</code>: each route is attached to a group. A group can have one or more services/routes. Each API key is linked to groups/routes/services and allow access to every entities in the groups.</li>
+  <li><strong>Overhead</strong>: Otoroshi&rsquo;s calculation time to handle the request and response</li>
+  <li><strong>Duration</strong>: the complete duration from the recpetion of the request by Otoroshi until the client gets a response</li>
+  <li><strong>Backend duration</strong>: the time required for downstream service to respond to Otoroshi</li>
+  <li><strong>Calls</strong>: the rate of calls by seconds</li>
+  <li><strong>Data in</strong>: the amount of data received by the downstream service</li>
+  <li><strong>Data out</strong>: the amount of data produced by the downstream service</li>
+  <li><strong>Headers in</strong>: the amount of headers received by the downstream service</li>
+  <li><strong>Headers out</strong>: the amount of headers produced by the downstream service</li>
 </ul>
-<h3><a href="#reserved-metadata" name="reserved-metadata" class="anchor"><span class="anchor-link"></span></a>Reserved metadata</h3>
-<p>some metadata are reserved for otoroshi usage. Here is the list of reserved metadata</p>
-<ul>
-  <li><code>otoroshi-core-user-facing</code>: is this a user facing app for the snow monkey</li>
-  <li><code>otoroshi-core-use-akka-http-client</code>: use the pure akka http client</li>
-  <li><code>otoroshi-core-use-netty-http-client</code>: use the pure netty http client</li>
-  <li><code>otoroshi-core-use-akka-http-ws-client</code>: use the modern websocket client</li>
-  <li><code>otoroshi-core-issue-lets-encrypt-certificate</code>: enabled let&rsquo;s encrypt certificate issue for this route. true or false</li>
-  <li><code>otoroshi-core-issue-certificate</code>: enabled certificate issue for this route. true or false</li>
-  <li><code>otoroshi-core-issue-certificate-ca</code>: the id of the CA cert to generate the certificate for this route</li>
-  <li><code>otoroshi-core-openapi-url</code>: the openapi url for this route</li>
-  <li><code>otoroshi-core-env</code>: the env for this route. here for legacy reasons</li>
-  <li><code>otoroshi-deployment-providers</code>: in the case of relay routing, the providers for this route</li>
-  <li><code>otoroshi-deployment-regions</code>: in the case of relay routing, the network regions for this route</li>
-  <li><code>otoroshi-deployment-zones</code>: in the case of relay routing, the network zone for this route</li>
-  <li><code>otoroshi-deployment-dcs</code>: in the case of relay routing, the datacenter for this route</li>
-  <li><code>otoroshi-deployment-racks</code>: in the case of relay routing, the rack for this route</li>
-</ul>
-<h2><a href="#frontend-configuration" name="frontend-configuration" class="anchor"><span class="anchor-link"></span></a>Frontend configuration</h2>
-<ul>
-  <li><code>frontend</code>: the frontend of the route. It&rsquo;s the configuration that will configure how otoroshi router will match this route. A frontend has the following shape.</li>
-</ul>
-<pre class="prettyprint"><code class="language-javascript">{
-  &quot;domains&quot;: [ // the matched domains and paths
-    &quot;new-route.oto.tools/path&quot; // here you can use wildcard in domain and path, also you can use named path params
-  ],
-  &quot;strip_path&quot;: true, // is the matched path stripped in the forwarded request
-  &quot;exact&quot;: false, // perform exact matching on path, if not, will be matched on /path*
-  &quot;headers&quot;: {}, // the matched http headers. if none provided, any header will be matched
-  &quot;query&quot;: {}, // the matched http query params. if none provided, any query params will be matched
-  &quot;methods&quot;: [] // the matched http methods. if none provided, any method will be matched
-}
-</code></pre>
-<p>For more informations about routing, check the <a href="../topics/engine.html#routing">engine documentation</a></p>
-<h2><a href="#backend-configuration" name="backend-configuration" class="anchor"><span class="anchor-link"></span></a>Backend configuration</h2>
-<ul>
-  <li><code>backend</code>: a backend to forward requests to. For more informations, go to the <a href="backends.html">backend documentation</a></li>
-  <li><code>backendRef</code>: a reference to an existing backend id</li>
-</ul>
-<h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
-<p>the liste of plugins used on this route. Each plugin definition has the following shape:</p>
-<pre class="prettyprint"><code class="language-javascript">{
-  &quot;enabled&quot;: false, // is the plugin enabled
-  &quot;debug&quot;: false, // is debug enabled of this specific plugin
-  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.Redirection&quot;, // the id of the plugin
-  &quot;include&quot;: [], // included paths. if none, all paths are included
-  &quot;exclude&quot;: [], // excluded paths. if none, none paths are excluded
-  &quot;config&quot;: { // the configuration of the plugin
-    &quot;code&quot;: 303,
-    &quot;to&quot;: &quot;https://www.otoroshi.io&quot;
-  },
-  &quot;plugin_index&quot;: { // the position of the plugin. if none provided, otoroshi will use the order in the plugin array
-    &quot;pre_route&quot;: 0
-  }
-}
-</code></pre>
-<p>for more informations about the available plugins, go <a href="../plugins/built-in-plugins.html">here</a></p>
+<p>The Green Score works for all architectures, including simple leader or more advanced concept like <a href="https://maif.github.io/otoroshi/manual/deploy/clustering.html">clustering</a>.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/backends.html">Backends</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
-<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
-<div class="page-nav">
-<div class="nav-title">On this page:</div>
-<div class="nav-toc">
-<ul>
-  <li><a href="../entities/routes.html#routes" class="header">Routes</a>
-  <ul>
-    <li><a href="../entities/routes.html#ui-page" class="header">UI page</a></li>
-    <li><a href="../entities/routes.html#global-properties" class="header">Global Properties</a></li>
-    <li><a href="../entities/routes.html#frontend-configuration" class="header">Frontend configuration</a></li>
-    <li><a href="../entities/routes.html#backend-configuration" class="header">Backend configuration</a></li>
-    <li><a href="../entities/routes.html#plugins" class="header">Plugins</a></li>
-  </ul></li>
-</ul>
-</div>
-</div>
-</nav>
 </div>
 </div>
 

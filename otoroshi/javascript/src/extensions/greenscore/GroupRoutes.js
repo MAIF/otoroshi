@@ -2,12 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 
-const DEFAULT_VALUES = {
-  excellent: 1,
-  sufficient: 10,
-  poor: 15
-};
-
 export class GroupRoutes extends React.Component {
   state = {
     editRoute: undefined,
@@ -274,18 +268,37 @@ const RoutesSelector = ({ allRoutes, addRoute }) => {
 function GreenScoreForm({ route, ...rest }) {
   const { states } = route.rulesConfig;
 
+  const [statesWithSection, setStatesWithSection] = useState([])
+
   const today = new Date()
-  today.setDate(today.getDate() + 1) // TODO - remove this line
-  today.setMonth(today.getMonth() - 4) // TODO - remove this line
+  // today.setDate(today.getDate() + 1) // TODO - remove this line
+  // today.setMonth(today.getMonth() - 4) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
+  const getSectionOfRule = ruleId => Object.values(rest.rulesBySection)
+    .flatMap(r => r)
+    .find(r => r.id === ruleId).section;
+
+
+  useEffect(() => {
+    setStatesWithSection(states.map(date => {
+      return {
+        ...date,
+        states: date.states.map(rule => ({
+          ...rule,
+          section: getSectionOfRule(rule.id)
+        }))
+      }
+    }))
+  }, [states])
+
   const onRulesChange = (enabled, ruleId, allRulesOfTheSection) => {
-    let statesOfCurrentDate = states.find(f => f.date === today.getTime());
+    let statesOfCurrentDate = statesWithSection.find(f => f.date === today.getTime());
 
     if (!statesOfCurrentDate) {
       statesOfCurrentDate = {
-        states: states.length > 0 ? states[states.length - 1] : [],
-        date: today.getTime()
+        date: today.getTime(),
+        states: statesWithSection.length > 0 ? statesWithSection[statesWithSection.length - 1].states : []
       }
     }
 
@@ -294,12 +307,19 @@ function GreenScoreForm({ route, ...rest }) {
       .find(r => r.id === ruleId).section;
 
     statesOfCurrentDate = {
-      states: statesOfCurrentDate.states.filter(item => item.id !== ruleId && (allRulesOfTheSection ? item.section !== section : true)),
-      date: today.getTime()
+      date: today.getTime(),
+      states: statesOfCurrentDate.states.filter(item => {
+        if (allRulesOfTheSection) {
+          return item.section !== section
+        } else {
+          return item.id !== ruleId
+        }
+      })
     }
 
     if (allRulesOfTheSection) {
       statesOfCurrentDate = {
+        date: today.getTime(),
         states: [
           ...statesOfCurrentDate.states,
           ...Object.values(rest.rulesBySection)
@@ -311,10 +331,10 @@ function GreenScoreForm({ route, ...rest }) {
               enabled
             }))
         ],
-        date: today.getTime()
       }
     } else {
       statesOfCurrentDate = {
+        date: today.getTime(),
         states: [
           ...statesOfCurrentDate.states,
           {
@@ -322,8 +342,7 @@ function GreenScoreForm({ route, ...rest }) {
             section,
             enabled
           }
-        ],
-        date: today.getTime()
+        ]
       }
     }
 
@@ -336,7 +355,7 @@ function GreenScoreForm({ route, ...rest }) {
     });
   };
 
-  return <RulesTables rest={rest} states={states} onRulesChange={onRulesChange} today={today} />
+  return <RulesTables rest={rest} states={statesWithSection} onRulesChange={onRulesChange} today={today} />
 };
 
 export function ThresholdsTable({ value, onChange }) {
@@ -372,9 +391,12 @@ export function ThresholdsTable({ value, onChange }) {
       { key: "headersOut", title: "Headers Out", unit: "bytes" },
       { key: "headersIn", title: "Headers In", unit: "bytes" },
     ]
-      .map(({ key, title, unit }, i) => key === "title" ? <div key={`${key}${i}`}
-        style={{ color: 'var(--text)', fontSize: '1rem', fontWeight: 'bold' }} className='mt-3'>{title}</div> :
-        <div style={{
+      .map(({ key, title, unit }, i) => key === "title" ?
+        <div key={`${key}${i}`}
+          style={{ color: 'var(--text)', fontSize: '1rem', fontWeight: 'bold' }} className='mt-3'>
+          {title}
+        </div> :
+        <div key={`${key}${i}`} style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           alignItems: 'center',
@@ -383,7 +405,6 @@ export function ThresholdsTable({ value, onChange }) {
           gap: '.25rem'
         }}>
           <BoundsInput
-            key={key}
             title={title}
             unit={unit}
             bounds={value[key]}

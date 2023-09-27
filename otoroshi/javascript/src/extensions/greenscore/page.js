@@ -340,7 +340,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           rulesBySection: this.rulesTemplateToRulesBySection(rulesTemplate),
           scores,
           global,
-          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
+          date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
           loading: scores.length <= 0
         })
       });
@@ -367,7 +367,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         this.setState({
           scores,
           global,
-          date: [...new Set(global.sections_score_by_date.map(section => section.date))][0],
+          date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
           loading: scores.length <= 0,
           filterStatusView: 'undefined'
         })
@@ -522,7 +522,7 @@ export default class GreenScoreConfigsPage extends React.Component {
   render() {
     const { scores, global, filterStatusView, groups, loading, mode, filteredGroups } = this.state;
 
-    // console.log(this.state)
+    console.log(this.state)
 
     const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
     const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
@@ -532,10 +532,10 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     const thresholds = this.getThresholds();
 
-    console.log(thresholds)
-
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength();
+
+    const mostRecentDate = global ? [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0] : Date.now();
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
@@ -580,12 +580,13 @@ export default class GreenScoreConfigsPage extends React.Component {
                   filteredGroups={filteredGroups}
                   groups={groups} />}
 
-                <Section
-                  full={false}
-                  title="Static score"
-                  subTitle="Follow the progression of your values, grouped in four score : architecture, design, usage and log"
-                >
-                  <ModeWrapper mode={mode} value="static">
+
+                <ModeWrapper mode={mode} value="static">
+                  <Section
+                    full={false}
+                    title="Static score"
+                    subTitle="Follow the progression of your values, grouped in four score : architecture, design, usage and log"
+                  >
                     <div className='d-flex' style={{ gap: '.5rem' }}>
                       <GlobalScore
                         loading={loading}
@@ -614,18 +615,18 @@ export default class GreenScoreConfigsPage extends React.Component {
                         maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
                         raw />
                     </div>
-                  </ModeWrapper>
-                </Section>
+                  </Section>
+                </ModeWrapper>
               </div>
 
-              <Section title="Dynamic or static ... all in one place" subTitle="Dynamic and static values are computed and normalized between 0 and 1 for easy comparison.">
-                <ModeWrapper mode={mode} value="dynamic">
+              <ModeWrapper mode={mode} value="dynamic">
+                <Section title="Dynamic or static ... all in one place" subTitle="Dynamic and static values are computed and normalized between 0 and 1 for easy comparison.">
                   <RulesRadarchart
                     loading={loading}
                     values={valuesAtCurrentDate}
                     dynamic_values={global?.dynamic_values || {}} />
-                </ModeWrapper>
-              </Section>
+                </Section>
+              </ModeWrapper>
 
               <ModeWrapper mode={mode} value="dynamic">
                 <Section title="Dynamic KPI" subTitle="The values come from observing traffic on your groups. These values are calculated automatically and live.">
@@ -650,11 +651,11 @@ export default class GreenScoreConfigsPage extends React.Component {
                 </Section>
               </ModeWrapper>
 
-              <Section
-                title="Dynamic score"
-                subTitle="You need to define three thresholds for each of your KPI. These are used to group each of them into three different categories and allow each KPI to achieve the highest ranking."
-                full={false}>
-                <ModeWrapper mode={mode} value="dynamic">
+              <ModeWrapper mode={mode} value="dynamic">
+                <Section
+                  title="Dynamic score"
+                  subTitle="You need to define three thresholds for each of your KPI. These are used to group each of them into three different categories and allow each KPI to achieve the highest ranking."
+                  full={false}>
                   <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
                     <GlobalScore
                       className='reveal'
@@ -685,8 +686,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                       title="Poor"
                       tag="dynamic" />
                   </div>
-                </ModeWrapper>
-              </Section>
+                </Section>
+              </ModeWrapper>
             </div>
 
 
@@ -731,16 +732,10 @@ export default class GreenScoreConfigsPage extends React.Component {
         <Route exact path='/extensions/green-score/groups'
           component={() => <CustomTable items={groups}
             scores={scores.map(group => {
-              const atDate = group.sections_score_by_date.filter(section => section.date === this.state.date);
-              const t = [
-                atDate.find(v => v.section === "architecture")?.score["score"] || 0,
-                atDate.find(v => v.section === "design")?.score["score"] || 0,
-                atDate.find(v => v.section === "usage")?.score["score"] || 0,
-                atDate.find(v => v.section === "log")?.score["score"] || 0
-              ];
+              const atDate = group.sections_score_by_date.filter(section => section.date === mostRecentDate);
               return {
-                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === this.state.date),
-                score: t.reduce((a, i) => a + i, 0),
+                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === mostRecentDate),
+                score: atDate.reduce((acc, v) => v.score.score + acc, 0),
                 ...group,
                 dynamic_values: this.getDynamicScore(group.dynamic_values.scaling)
               }

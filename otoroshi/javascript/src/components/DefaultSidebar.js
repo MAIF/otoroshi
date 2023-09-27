@@ -121,6 +121,7 @@ export function DefaultSidebar(props) {
         .flatMap((ext) => ext.sidebarItems)
         .map((item) => (
           <SidebarLink
+            key={item.text}
             rootClassName={rootClassName}
             openedSidebar={openedSidebar}
             clearSidebar={clearSidebar}
@@ -136,12 +137,11 @@ export function DefaultSidebar(props) {
           className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
           {...createTooltip('All features')}
           onClick={clearSidebar}>
-          <div
+          <img
             className="icon-menu icon-svg"
+            src="/assets/images/svgs/menu-icon.svg"
             style={{
               marginRight: openedSidebar ? '1em' : '',
-              '-webkit-mask': `url('/assets/images/svgs/menu-icon.svg') no-repeat center`,
-              mask: `url('/assets/images/svgs/menu-icon.svg') no-repeat center`,
             }}
           />
           {!openedSidebar ? '' : 'Features'}
