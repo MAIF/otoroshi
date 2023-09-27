@@ -1,12 +1,12 @@
 # Green Score
 
-The Green Score is an aggregation of static and dynamic values that are coming from the usage of routes in Otoroshi. The main objective is to advise users on the consumption of their APIs and services.
+The Green Score provide aggregated, quantitative data about the performance and behavior of an API over time. It is an aggregation of static and dynamic values that are coming from the usage of routes in Otoroshi. The main objective is to advise users on the consumption of their APIs and services.
 
 <img src="../imgs/greenscore.png" />
 
 Otoroshi has a complete integration of the collective rules, divided into four concerns: **Architecture**, **Design**, **Usage** and **Logs retention**. The 6000 score points are spread over the four parts and a final note is given for each group of routes.
 
-The API green score is available on 16.8.0 or later version of Otoroshi. You can find the feature on the search bar of your Otoroshi UI or directly in the sidebar by clicking on **Green score**.
+The API green score is available on 16.9.0 or later version of Otoroshi. You can find the feature on the search bar of your Otoroshi UI or directly in the sidebar by clicking on **Green score**.
 
 To start the process, click on Add New Group, give a name and select a first route to audit. After clicking on the hammer icon, you can select the rules respected by your route. Before saving, you can adjust the values used to calculate the dynamic score. These thresholds are used to calculate a second green score depending on the amount of data you want not to exceed from your downstream service and the following other values: 
 
