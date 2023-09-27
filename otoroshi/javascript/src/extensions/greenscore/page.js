@@ -642,7 +642,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                         letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
                         color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingDynamicScore) * 5)]}
                         dynamic
-                        title="Data"
+                        title="Dynamic Score"
                         tag="dynamic" />
                       <GlobalScore loading={loading} score={scalingDynamicScore * 100} raw dynamic title="Net score" tag="dynamic" />
                     </div>

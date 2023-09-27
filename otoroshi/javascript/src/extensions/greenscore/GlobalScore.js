@@ -93,10 +93,10 @@ export function GlobalScore(allProps) {
             </div>
 
             <h3 style={{
-                color: 'var(--color_level2)',
+                color: 'var(--text)',
                 fontWeight: 100,
             }} className='m-0 mt-1'>
-                {props.title ? props.title : props.raw ? 'Net score' : 'Global score'}
+                {props.title ? props.title : props.raw ? 'Raw Value' : 'Static Score'}
             </h3>
 
             <Tag value={tag} />
@@ -121,8 +121,8 @@ export function GlobalScore(allProps) {
                     <i className={`fas fa-${props.dynamic ? 'bolt' : 'spa'}`} style={{ fontSize: 'initial' }} />
                 </div>
 
-                {props.dynamic && props.raw && <i className="fa fa-leaf scale-in-ver-top"
-                    style={{ color, fontSize: '1.25rem', }} />}
+                {props.dynamic && props.raw && color && <i className="fa fa-leaf scale-in-ver-top"
+                    style={{ color, fontSize: '1.25rem' }} />}
             </div>
         </div>
     </Wrapper >

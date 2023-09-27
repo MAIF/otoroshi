@@ -8,21 +8,18 @@ export default class RulesRadarchart extends PureComponent {
 
   renderPolarAngleAxis = props => {
     const newPoint = this.movePointAtAngle([props.x, props.y], this.degToRad((360 / 12) * props.payload.index), 10);
-    const texts = [props.payload.value] // props.payload.value.split(" ");
+    const texts = [props.payload.value];
 
-    return texts
-      .map((text, i) => <Text
-        key={text}
-        {...props}
-        verticalAnchor="middle"
-        x={newPoint[0]}
-        y={newPoint[1]}
-      // x={props.payload.index % 2 !== 0 ? newPoint[0] : props.x}
-      // y={(props.payload.index % 2 === 0 ? newPoint[1] : props.y) + (i * 20)}
-      >
-        {text}
-      </Text>
-      );
+    return texts.map(text => <Text
+      key={text}
+      {...props}
+      verticalAnchor="middle"
+      x={newPoint[0]}
+      y={newPoint[1]}
+      style={{
+        fill: 'var(--text)'
+      }}>{text}</Text>
+    );
   }
 
   movePointAtAngle = (point, angle, distance) => [
