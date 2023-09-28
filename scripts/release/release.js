@@ -317,7 +317,7 @@ async function publishMavenCentral(location, version) {
     cd $LOCATION/otoroshi
     export JAVA_HOME=$JDK8_HOME
     export PATH=\${JAVA_HOME}/bin:\${PATH}
-    sbt ";doc;packageDoc;publishSigned;sonatypeBundleRelease"
+    sbt ";doc;packageDoc;publish;publishSigned;sonatypeBundleRelease"
     cd $LOCATION
     `, 
     location, 

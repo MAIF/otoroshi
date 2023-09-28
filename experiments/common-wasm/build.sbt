@@ -5,9 +5,34 @@ lazy val scala213 = "2.13.11"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 ThisBuild / scalaVersion     := scala212
-ThisBuild / version          := "16.8.0-dev"
+ThisBuild / version          := "16.9.0-dev"
 ThisBuild / organization     := "io.otoroshi.common"
 ThisBuild / organizationName := "wasm"
+
+inThisBuild(
+  List(
+    description := "Library to run wasm vm in a play scala app",
+    startYear := Some(2023),
+    organization := "io.otoroshi.common",
+    homepage := Some(url("https://github.com/MAIF/otoroshi/experiments/common-wasm")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/MAIF/otoroshi"),
+        "scm:git@github.com:MAIF/otoroshi.git"
+      )
+    ),
+    publishMavenStyle := true,
+    developers := List(
+      Developer(
+        "mathieuancelin",
+        "Mathieu Ancelin",
+        "mathieu.ancelin@serli.com",
+        url("https://github.com/mathieuancelin")
+      )
+    )
+  )
+)
 
 
 lazy val playJsonVersion = "2.9.3"
@@ -33,6 +58,9 @@ lazy val root = (project in file("."))
   .settings(
     name := "common-wasm",
     crossScalaVersions := supportedScalaVersions,
+    githubOwner := "MAIF",
+    githubRepository := "otoroshi",
+    githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN"),
     libraryDependencies ++= Seq(
       munit % Test,
       "com.typesafe.play"     %% "play-ws"        % playWsVersion % "provided",
