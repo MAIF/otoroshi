@@ -297,6 +297,7 @@ object EcoMetrics {
 }
 
 case class RouteScoreByDateAndSection(date: Long,
+                                      length: Int,
                                       section: String,
                                       sectionWeight: Double,
                                       score: SectionScore,
@@ -304,6 +305,7 @@ case class RouteScoreByDateAndSection(date: Long,
                                       color: String = "") {
   def json() = Json.obj(
     "date" -> date,
+    "length" -> length,
     "section" -> section,
     "section_weight" -> sectionWeight,
     "score" -> score.json,
@@ -353,8 +355,9 @@ class EcoMetrics {
                   score = SectionScore(
                     id = rule.section,
                     date = state.date,
-                    score = item.score.score + value,
-                  )
+                    score = item.score.score + value
+                  ),
+                  length = 1
                 )
               })
               .getOrElse(acc :+ RouteScoreByDateAndSection(
@@ -364,8 +367,9 @@ class EcoMetrics {
                 score = SectionScore(
                   id = rule.section,
                   date = state.date,
-                  score = value
-                )
+                  score = value,
+                ),
+                length = 1
               ))
         })
   }
@@ -378,7 +382,8 @@ class EcoMetrics {
             date = state.date,
             section = state.section,
             score = item.score.merge(state.score),
-            sectionWeight = item.sectionWeight
+            sectionWeight = item.sectionWeight,
+            length = item.length + 1
           )
         })
         .getOrElse(acc :+ state)

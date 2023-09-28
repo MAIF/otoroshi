@@ -37,104 +37,104 @@ export function ManagerTitle({ }) {
     const isOnCreation = location.pathname.endsWith('new');
 
 
-    // const generate = async () => {
-    //     const client = BackOfficeServices.apisClient(
-    //         'green-score.extensions.otoroshi.io',
-    //         'v1',
-    //         'green-scores'
-    //     );
-    //     const routes = await BackOfficeServices.nextClient
-    //         .forEntity(BackOfficeServices.nextClient.ENTITIES.ROUTES)
-    //         .findAll();
+    const generate = async () => {
+        const client = BackOfficeServices.apisClient(
+            'green-score.extensions.otoroshi.io',
+            'v1',
+            'green-scores'
+        );
+        const routes = await BackOfficeServices.nextClient
+            .forEntity(BackOfficeServices.nextClient.ENTITIES.ROUTES)
+            .findAll();
 
-    //     const rules = await fetch('/bo/api/proxy/api/extensions/green-score/template', {
-    //         credentials: 'include',
-    //         headers: {
-    //             Accept: 'application/json',
-    //         },
-    //     })
-    //         .then((r) => r.json());
+        const rules = await fetch('/bo/api/proxy/api/extensions/green-score/template', {
+            credentials: 'include',
+            headers: {
+                Accept: 'application/json',
+            },
+        })
+            .then((r) => r.json());
 
-    //     const getRandomInt = (min, max) => min + Math.floor(Math.random() * max);
+        const getRandomInt = (min, max) => min + Math.floor(Math.random() * max);
 
-    //     const dates = new Array(4).fill(0).map(() => {
-    //         const today = new Date()
-    //         today.setDate(today.getDate() - getRandomInt(2, 20)) // TODO - remove this line
-    //         today.setUTCHours(0, 0, 0, 0);
-    //         return today.getTime()
-    //     }).sort().reverse()
+        const dates = new Array(4).fill(0).map(() => {
+            const today = new Date()
+            today.setDate(today.getDate() - getRandomInt(2, 20)) // TODO - remove this line
+            today.setUTCHours(0, 0, 0, 0);
+            return today.getTime()
+        }).sort().reverse()
 
-    //     const route = routes.find(r => r.name.includes('static'));
+        const route = routes.find(r => r.name.includes('static'));
 
-    //     new Array(10).fill(0).map(async () => {
-    //         const groupTemplate = await client.template();
-    //         return client.create({
-    //             ...groupTemplate,
-    //             name: faker.name.firstName(),
-    //             description: faker.lorem.words(),
-    //             routes: [
-    //                 {
-    //                     routeId: route.id,
-    //                     rulesConfig: {
-    //                         states: dates.map(date => {
-    //                             return {
-    //                                 date,
-    //                                 states: rules.slice(0, getRandomInt(2, rules.length)).map(rule => {
-    //                                     return {
-    //                                         ...rule,
-    //                                         "enabled": true
-    //                                     }
-    //                                 })
-    //                             }
-    //                         })
-    //                     }
-    //                 }
-    //             ],
-    //             thresholds: {
-    //                 "overhead": {
-    //                     "excellent": getRandomInt(2, 5),
-    //                     "sufficient": getRandomInt(10, 15),
-    //                     "poor": getRandomInt(15, 50)
-    //                 },
-    //                 "duration": {
-    //                     "excellent": getRandomInt(2, 5),
-    //                     "sufficient": getRandomInt(10, 15),
-    //                     "poor": getRandomInt(15, 50)
-    //                 },
-    //                 "backendDuration": {
-    //                     "excellent": getRandomInt(2, 5),
-    //                     "sufficient": getRandomInt(10, 15),
-    //                     "poor": getRandomInt(15, 50)
-    //                 },
-    //                 "calls": {
-    //                     "excellent": getRandomInt(2, 5),
-    //                     "sufficient": getRandomInt(10, 15),
-    //                     "poor": getRandomInt(15, 50)
-    //                 },
-    //                 "dataIn": {
-    //                     "excellent": getRandomInt(20, 100),
-    //                     "sufficient": getRandomInt(100, 300),
-    //                     "poor": getRandomInt(300, 5000)
-    //                 },
-    //                 "dataOut": {
-    //                     "excellent": getRandomInt(20, 100),
-    //                     "sufficient": getRandomInt(100, 300),
-    //                     "poor": getRandomInt(300, 5000)
-    //                 },
-    //                 "headersOut": {
-    //                     "excellent": getRandomInt(20, 100),
-    //                     "sufficient": getRandomInt(100, 300),
-    //                     "poor": getRandomInt(300, 5000)
-    //                 },
-    //                 "headersIn": {
-    //                     "excellent": getRandomInt(20, 100),
-    //                     "sufficient": getRandomInt(100, 300),
-    //                     "poor": getRandomInt(300, 5000)
-    //                 }
-    //             }
-    //         })
-    //     })
-    // }
+        new Array(10).fill(0).map(async () => {
+            const groupTemplate = await client.template();
+            return client.create({
+                ...groupTemplate,
+                name: faker.name.firstName(),
+                description: faker.lorem.words(),
+                routes: [
+                    {
+                        routeId: route.id,
+                        rulesConfig: {
+                            states: dates.map(date => {
+                                return {
+                                    date,
+                                    states: rules.slice(0, getRandomInt(2, rules.length)).map(rule => {
+                                        return {
+                                            ...rule,
+                                            "enabled": true
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    }
+                ],
+                thresholds: {
+                    "overhead": {
+                        "excellent": getRandomInt(2, 5),
+                        "sufficient": getRandomInt(10, 15),
+                        "poor": getRandomInt(15, 50)
+                    },
+                    "duration": {
+                        "excellent": getRandomInt(2, 5),
+                        "sufficient": getRandomInt(10, 15),
+                        "poor": getRandomInt(15, 50)
+                    },
+                    "backendDuration": {
+                        "excellent": getRandomInt(2, 5),
+                        "sufficient": getRandomInt(10, 15),
+                        "poor": getRandomInt(15, 50)
+                    },
+                    "calls": {
+                        "excellent": getRandomInt(2, 5),
+                        "sufficient": getRandomInt(10, 15),
+                        "poor": getRandomInt(15, 50)
+                    },
+                    "dataIn": {
+                        "excellent": getRandomInt(20, 100),
+                        "sufficient": getRandomInt(100, 300),
+                        "poor": getRandomInt(300, 5000)
+                    },
+                    "dataOut": {
+                        "excellent": getRandomInt(20, 100),
+                        "sufficient": getRandomInt(100, 300),
+                        "poor": getRandomInt(300, 5000)
+                    },
+                    "headersOut": {
+                        "excellent": getRandomInt(20, 100),
+                        "sufficient": getRandomInt(100, 300),
+                        "poor": getRandomInt(300, 5000)
+                    },
+                    "headersIn": {
+                        "excellent": getRandomInt(20, 100),
+                        "sufficient": getRandomInt(100, 300),
+                        "poor": getRandomInt(300, 5000)
+                    }
+                }
+            })
+        })
+    }
 
     return (
         <PageTitle
@@ -146,9 +146,9 @@ export function ManagerTitle({ }) {
             className="container-sm"
             title={"Green score"}>
             {!editingGroup && !isOnCreation && <>
-                {/* <button type="button" onClick={() => {
+                <button type="button" onClick={() => {
                     generate()
-                }}>Generate</button> */}
+                }}>Generate</button>
 
                 <Tab title="Dashboard" icon="globe" to='/extensions/green-score' isActive={location.pathname === '/extensions/green-score'} />
 

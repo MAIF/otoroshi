@@ -13,10 +13,12 @@ export default class StackedBarChart extends PureComponent {
                 return {
                     name: moment(new Date(Number(date))).format("DD MMMM YY"),
                     rawDate: date,
-                    ...section.reduce((acc, s) => ({ ...acc, [s.section]: s.score.score }), {})
+                    ...section.reduce((acc, s) => ({ ...acc, [s.section]: s.score.score / s.length }), {})
                 }
             })
             .sort((a, b) => a.rawDate - b.rawDate)
+
+        console.log(this.props.values, data)
 
         return <div style={{
             flex: 1,

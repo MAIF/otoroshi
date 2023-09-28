@@ -45,8 +45,6 @@ export default class RulesRadarchart extends PureComponent {
       { subject: 'Overhead', value: dynamic_values.scaling?.overhead, fullMark: 1, domain: [0, 1] },
     ];
 
-    console.log(this.props, data)
-
     return <Wrapper loading={this.props.loading}>
       <div style={{
         background: 'var(--bg-color_level2)',

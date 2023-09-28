@@ -439,15 +439,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     return scores.reduce((a, i) => a + i, 0) / scores.length
   }
 
-  // TODO - delete this
-  randomDate(s, e) {
-    const start = new Date(s);
-    const end = new Date(e)
-    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).getTime();
-  }
-
   meanThresholds = (a1, length) => {
-    console.log(a1, length)
     return {
       overhead: Math.round(a1.overhead / length),
       duration: Math.round(a1.duration / length),
@@ -552,7 +544,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
 
-    console.log(dynamicCounters)
+    console.log(sectionsAtCurrentDate)
 
     const mostRecentDate = global ? [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0] : Date.now();
 
@@ -609,25 +601,26 @@ export default class GreenScoreConfigsPage extends React.Component {
                         color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingGlobalScore) * 5)]} />
 
                       <Wrapper loading={loading}>
-                        <StackedBarChart values={global?.sections_score_by_date.reduce((acc, item) => {
-                          if (acc[item.date]) {
-                            return {
-                              ...acc,
-                              [item.date]: [...acc[item.date], item]
+                        <StackedBarChart
+                          values={global?.sections_score_by_date.reduce((acc, item) => {
+                            if (acc[item.date]) {
+                              return {
+                                ...acc,
+                                [item.date]: [...acc[item.date], item]
+                              }
+                            } else {
+                              return {
+                                ...acc,
+                                [item.date]: [item]
+                              }
                             }
-                          } else {
-                            return {
-                              ...acc,
-                              [item.date]: [item]
-                            }
-                          }
-                        }, {})} />
+                          }, {})} />
                       </Wrapper>
 
                       <GlobalScore
                         loading={loading}
                         score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-                        maxScore={MAX_GREEN_SCORE_NOTE * groups.reduce((acc, i) => acc + i.routes.length, 0)}
+                        maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate[0]?.length}
                         raw />
                     </div>
                   </Section>
