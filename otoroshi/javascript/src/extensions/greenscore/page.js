@@ -534,6 +534,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
 
+    console.log(sectionsAtCurrentDate)
+
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
         <Route exact path='/extensions/green-score'
@@ -605,8 +607,8 @@ export default class GreenScoreConfigsPage extends React.Component {
 
                       <GlobalScore
                         loading={loading}
-                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score / section.length, 0)}
-                        maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate[0]?.length}
+                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                        maxScore={MAX_GREEN_SCORE_NOTE * Math.max(...sectionsAtCurrentDate.map(r => r.length))}
                         raw />
                     </div>
                   </Section>
