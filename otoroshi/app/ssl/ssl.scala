@@ -1764,7 +1764,7 @@ object DynamicSSLEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine                 = new CustomSSLEngine(rawEngine, appProto, env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedProtocols)
+    val engine                 = new CustomSSLEngine(rawEngine, appProto, env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols)
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 

@@ -1084,11 +1084,11 @@ export class DangerZonePage extends Component {
         help: 'The percentage of monthly calls before sending alerts',
       },
     },
-    'tlsSettings.bannedAppProtocols': {
+    'tlsSettings.bannedAlpnProtocols': {
       type: 'jsonobjectcode',
       props: {
-        label: 'Banned protocols',
-        help: 'a key/value object that list banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
+        label: 'Banned ALPN protocols',
+        help: 'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
         mode: 'json',
       },
     },
@@ -1204,7 +1204,7 @@ export class DangerZonePage extends Component {
     'tlsSettings.includeJdkCaServer',
     'tlsSettings.includeJdkCaClient',
     'tlsSettings.trustedCAsServer',
-    'tlsSettings.bannedAppProtocols',
+    'tlsSettings.bannedAlpnProtocols',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
     'autoCert.replyNicely',

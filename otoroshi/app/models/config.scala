@@ -471,7 +471,7 @@ case class TlsSettings(
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
-    bannedProtocols: Map[String, Seq[String]] = Map.empty,
+    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
 ) {
   def json: JsValue = TlsSettings.format.writes(this)
 }
@@ -484,7 +484,7 @@ object TlsSettings {
         "includeJdkCaServer" -> o.includeJdkCaServer,
         "includeJdkCaClient" -> o.includeJdkCaClient,
         "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply)),
-        "bannedProtocols" -> o.bannedProtocols,
+        "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -495,7 +495,7 @@ object TlsSettings {
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
           trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
-          bannedProtocols = (json \ "bannedProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
+          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
