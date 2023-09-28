@@ -73,6 +73,8 @@ export class GroupRoutes extends React.Component {
     const { editRoute, value } = this.state;
     const { routes } = value;
 
+    console.log(this.state)
+
     return <>
       {editRoute && (
         <RulesWizard
@@ -271,7 +273,7 @@ function GreenScoreForm({ route, ...rest }) {
   const [statesWithSection, setStatesWithSection] = useState([])
 
   const today = new Date()
-  // today.setDate(today.getDate() + 1) // TODO - remove this line
+  today.setDate(today.getDate() - 0) // TODO - remove this line
   // today.setMonth(today.getMonth() - 4) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
@@ -355,7 +357,7 @@ function GreenScoreForm({ route, ...rest }) {
     });
   };
 
-  return <RulesTables rest={rest} states={statesWithSection} onRulesChange={onRulesChange} today={today} />
+  return <RulesTables rest={rest} states={statesWithSection} onRulesChange={onRulesChange} />
 };
 
 export function ThresholdsTable({ value, onChange }) {
@@ -416,15 +418,25 @@ export function ThresholdsTable({ value, onChange }) {
   </div>
 }
 
-function RulesTables({ rest, states, onRulesChange, today }) {
+function RulesTables({ rest, states, onRulesChange }) {
   const ruleIsEabled = ruleId => {
-    let statesAtDate = states.find(s => s.date === today.getTime());
 
-    if (!statesAtDate && states.length > 0) {
-      statesAtDate = states[states.length - 1]
-    }
+    const state = states
+      .sort((a, b) => a.date - b.date)
+      .reduce((acc, item) => {
+        return {
+          ...acc,
+          ...item.states.reduce((states, state) => {
+            const { id, enabled } = state;
+            return {
+              ...states,
+              [id]: enabled
+            }
+          }, {})
+        }
+      }, {});
 
-    return statesAtDate ? statesAtDate.states.find(f => f.id === ruleId)?.enabled : false
+    return state[ruleId]
   }
 
   const getSectionStatus = rules => rules.reduce((acc, rule) => acc && ruleIsEabled(rule.id), true)
@@ -451,6 +463,8 @@ function RulesTables({ rest, states, onRulesChange, today }) {
           </div>
           {(rules || []).map(({ id, description, advice }) => {
             const enabled = ruleIsEabled(id);
+
+            console.log("enabled", enabled)
 
             return <div key={id}
               className="align-items-center"

@@ -3,7 +3,7 @@ import moment from 'moment';
 
 import { Switch, Route } from 'react-router-dom';
 
-import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE } from './util';
+import { GREEN_SCORE_GRADES, MAX_GREEN_SCORE_NOTE, getColor, getLetter } from './util';
 
 import { nextClient } from '../../services/BackOfficeServices';
 
@@ -412,17 +412,6 @@ export default class GreenScoreConfigsPage extends React.Component {
     }, {})
   }
 
-  getAllScalingScore = (values, scaling = true) => {
-    const field = scaling ? 'scaling_score' : 'score';
-    const scores = [
-      values.find(v => v.section === "architecture")?.score[field] || 0,
-      values.find(v => v.section === "design")?.score[field] || 0,
-      values.find(v => v.section === "usage")?.score[field] || 0,
-      values.find(v => v.section === "log")?.score[field] || 0
-    ];
-
-    return scores.reduce((a, i) => a + i, 0) / scores.length
-  }
 
   getDynamicScore = (dynamic_values) => {
     const scores = [
@@ -533,20 +522,17 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     console.log(this.state)
 
-    const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === this.state.date) : [];
-    const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
-    const scalingGlobalScore = scores.length > 0 ? this.getAllScalingScore(valuesAtCurrentDate) : 0;
-    const scalingDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_values.scaling) : 0;
     const availableDates = [...new Set(global?.sections_score_by_date.map(section => section.date))];
+    const closestDate = availableDates.reduce((prev, curr) => (Math.abs(curr - this.state.date) < Math.abs(prev - this.state.date) ? curr : prev), availableDates[availableDates.length - 1])
+
+    const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === closestDate) : [];
+    const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
+    const scalingDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_values.scaling) : 0;
 
     const thresholds = this.getThresholds();
 
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
-
-    console.log(sectionsAtCurrentDate)
-
-    const mostRecentDate = global ? [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0] : Date.now();
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
@@ -597,8 +583,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                     <div className='d-flex' style={{ gap: '.5rem' }}>
                       <GlobalScore
                         loading={loading}
-                        letter={String.fromCharCode(65 + Math.min(Math.floor((1 - scalingGlobalScore) * 5)))}
-                        color={Object.keys(GREEN_SCORE_GRADES)[Math.round((1 - scalingGlobalScore) * 5)]} />
+                        letter={getLetter(valuesAtCurrentDate.reduce((acc, v) => v.score.score / v.length + acc, 0))}
+                        color={getColor(valuesAtCurrentDate.reduce((acc, v) => v.score.score / v.length + acc, 0))} />
 
                       <Wrapper loading={loading}>
                         <StackedBarChart
@@ -619,7 +605,7 @@ export default class GreenScoreConfigsPage extends React.Component {
 
                       <GlobalScore
                         loading={loading}
-                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score / section.length, 0)}
                         maxScore={MAX_GREEN_SCORE_NOTE * sectionsAtCurrentDate[0]?.length}
                         raw />
                     </div>
@@ -739,12 +725,14 @@ export default class GreenScoreConfigsPage extends React.Component {
             scores={scores.map(group => {
               const dates = [...new Set(group.sections_score_by_date.map(section => section.date))].sort().reverse();
 
-              const mostRecentDateOfGroup = dates.reduce((prev, curr) => (Math.abs(curr - mostRecentDate) < Math.abs(prev - mostRecentDate) ? curr : prev))
+              const mostRecentDateOfGroup = dates.reduce((prev, curr) => (Math.abs(curr - Date.now()) < Math.abs(prev - Date.now()) ? curr : prev), dates[dates.length - 1])
 
               const atDate = group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup);
+
+              console.log(group.informations.name, atDate.reduce((acc, v) => v.score.score + acc, 0), atDate)
               return {
                 sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup),
-                score: atDate.reduce((acc, v) => v.score.score + acc, 0),
+                score: atDate.reduce((acc, v) => v.score.score / v.length + acc, 0),
                 ...group,
                 dynamic_values: this.getDynamicScore(group.dynamic_values.scaling)
               }

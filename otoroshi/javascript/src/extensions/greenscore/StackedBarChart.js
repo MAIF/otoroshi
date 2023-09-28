@@ -18,8 +18,6 @@ export default class StackedBarChart extends PureComponent {
             })
             .sort((a, b) => a.rawDate - b.rawDate)
 
-        console.log(this.props.values, data)
-
         return <div style={{
             flex: 1,
             // minHeight: 520,
