@@ -35,6 +35,12 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.9.0
 - Backend : Cannot reach HTTP/1.1 (no SSL) Backend  ? (#1711)
 - admin rights sometimes fails when super admin (#1712)
 
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @ptitFicus 
+* @baudelotphilippe 
 
 ## [16.8.1] - 2023-09-07
 
