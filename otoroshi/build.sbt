@@ -226,7 +226,7 @@ sonatypeCredentialHost := "s01.oss.sonatype.org"
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 githubOwner := "MAIF"
 githubRepository := "otoroshi"
-githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
+// githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
