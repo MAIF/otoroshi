@@ -50,12 +50,12 @@ case class ResourceVersion(
     deprecated: Boolean,
     storage: Boolean,
     schema: Option[JsValue] = None
-){
+)                                                   {
   def json: JsValue = Json.obj(
-    "name" -> name,
-    "served" -> served,
+    "name"       -> name,
+    "served"     -> served,
     "deprecated" -> deprecated,
-    "storage" -> storage
+    "storage"    -> storage
   )
 }
 case class Resource(
@@ -65,13 +65,13 @@ case class Resource(
     group: String,
     version: ResourceVersion,
     access: ResourceAccessApi[_]
-) {
+)                                                   {
   def json: JsValue = Json.obj(
-    "kind" -> kind,
-    "plural_name" -> pluralName,
+    "kind"          -> kind,
+    "plural_name"   -> pluralName,
     "singular_name" -> singularName,
-    "group" -> group,
-    "version" -> version.json,
+    "group"         -> group,
+    "version"       -> version.json
   )
 }
 trait ResourceAccessApi[T <: EntityLocationSupport] {
@@ -104,8 +104,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
         val userValidators: Seq[JsonValidator] =
           user.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ user.adminEntityValidators
             .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
-        val validators                             = envValidators ++ userValidators
-        val failedValidators                       = validators.filterNot(_.validate(json))
+        val validators                         = envValidators ++ userValidators
+        val failedValidators                   = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {
           readEntity()
         } else {
@@ -927,10 +927,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   // GET /apis/entities
   def entities() = ApiAction { ctx =>
-    Ok(Json.obj(
-      "version" -> env.otoroshiVersion,
-      "resources" -> JsArray(env.allResources.resources.map(_.json))
-    ))
+    Ok(
+      Json.obj(
+        "version"   -> env.otoroshiVersion,
+        "resources" -> JsArray(env.allResources.resources.map(_.json))
+      )
+    )
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk

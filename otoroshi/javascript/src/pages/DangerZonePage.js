@@ -1088,7 +1088,8 @@ export class DangerZonePage extends Component {
       type: 'jsonobjectcode',
       props: {
         label: 'Banned ALPN protocols',
-        help: 'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
+        help:
+          'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
         mode: 'json',
       },
     },

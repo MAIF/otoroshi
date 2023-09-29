@@ -1755,7 +1755,7 @@ object DynamicSSLEngineProvider {
       cipherSuites: Option[Seq[String]],
       protocols: Option[Seq[String]],
       appProto: Option[String],
-      env: => Env,
+      env: => Env
   ): SSLEngine = {
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
@@ -1764,7 +1764,11 @@ object DynamicSSLEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine                 = new CustomSSLEngine(rawEngine, appProto, env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols)
+    val engine                 = new CustomSSLEngine(
+      rawEngine,
+      appProto,
+      env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols
+    )
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
@@ -2183,7 +2187,8 @@ object FakeKeyStore {
   }
 }
 
-class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProtos: Map[String, Seq[String]]) extends SSLEngine {
+class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProtos: Map[String, Seq[String]])
+    extends SSLEngine {
 
   // println(delegate.getClass.getName)
   // sun.security.ssl.SSLEngineImpl
@@ -2320,19 +2325,19 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
           Try(t.getPeerHost)
             .orElse(Try(t.getHandshakeSession).map(_.getPeerHost))
             .orElse(Try(t.getSession).map(_.getPeerHost)) match {
-              case Failure(_) => selector.apply(t, u)
-              case Success(peerHost) => {
-                // println(s"get selector on : ${peerHost} - ${u.toArray.mkString(", ")}")
-                bannedProtos.get(peerHost) match {
-                  case None => selector.apply(t, u)
-                  case Some(banned) => {
-                    val withoutBanned = u.asScala.filterNot(v => banned.contains(v))
-                    // println(s"can just use: ${withoutBanned.mkString(", ")}")
-                    selector.apply(t, withoutBanned.asJava)
-                  }
+            case Failure(_)        => selector.apply(t, u)
+            case Success(peerHost) => {
+              // println(s"get selector on : ${peerHost} - ${u.toArray.mkString(", ")}")
+              bannedProtos.get(peerHost) match {
+                case None         => selector.apply(t, u)
+                case Some(banned) => {
+                  val withoutBanned = u.asScala.filterNot(v => banned.contains(v))
+                  // println(s"can just use: ${withoutBanned.mkString(", ")}")
+                  selector.apply(t, withoutBanned.asJava)
                 }
               }
             }
+          }
         }
       })
     }

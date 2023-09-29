@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react';
 
-import Async from 'react-select/async'
+import Async from 'react-select/async';
 import last from 'lodash/last';
 import isString from 'lodash/isString';
 import fuzzy from 'fuzzy';
@@ -1604,7 +1604,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-          // style={{ zIndex: 100 }}
+            // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1652,7 +1652,7 @@ export class TopBar extends Component {
                       loadOptions={this.searchServicesOptions}
                       openMenuOnFocus={true}
                       onFocus={() => {
-                        this.selector.onInputChange(" ")
+                        this.selector.onInputChange(' ');
                       }}
                       onChange={(i) => i.action()}
                       filterOptions={(opts, value, excluded, conf) => {
@@ -1672,7 +1672,7 @@ export class TopBar extends Component {
                           width: 400,
                           color: 'var(--text)',
                           backgroundColor: 'var(--bg-color_level2)',
-                          boxShadow: 'none'
+                          boxShadow: 'none',
                         }),
                         menu: (baseStyles) => ({
                           ...baseStyles,
@@ -1680,16 +1680,16 @@ export class TopBar extends Component {
                           borderTopLeftRadius: 0,
                           borderTopRightRadius: 0,
                           backgroundColor: 'var(--bg-color_level2)',
-                          color: 'var(--text)'
+                          color: 'var(--text)',
                         }),
-                        input: provided => ({
+                        input: (provided) => ({
                           ...provided,
-                          color: 'var(--text)'
-                        })
+                          color: 'var(--text)',
+                        }),
                       }}
                       components={{
                         NoOptionsMessage: () => null,
-                        Option: props => {
+                        Option: (props) => {
                           const p = props.data;
                           const env =
                             p.env && isString(p.env)
@@ -1698,11 +1698,17 @@ export class TopBar extends Component {
                                 : p.env
                               : null;
                           return (
-                            <div style={{
-                              display: 'flex', alignItems: 'center', padding: '.5rem',
-                              background: props.isFocused ? 'var(--bg-color_level2)' : 'var(--bg-color_level3)'
-                            }}
-                              ref={props.innerRef} {...props.innerProps}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '.5rem',
+                                background: props.isFocused
+                                  ? 'var(--bg-color_level2)'
+                                  : 'var(--bg-color_level3)',
+                              }}
+                              ref={props.innerRef}
+                              {...props.innerProps}>
                               <div
                                 style={{
                                   width: 60,
@@ -1738,12 +1744,15 @@ export class TopBar extends Component {
                                     height="19"
                                     rx="3"
                                   />
-                                  <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
+                                  <path
+                                    fill="#979A9C"
+                                    d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
+                                  />
                                 </g>
                               </svg>
                             </span>
                           );
-                        }
+                        },
                       }}
                     />
                   </div>
@@ -1866,8 +1875,9 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                        } py-2 pb-4`}
+                      className={`custom-dropdown ${
+                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                      } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });

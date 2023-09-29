@@ -278,8 +278,8 @@ trait ApiActionContextCapable {
         val userValidators: Seq[JsonValidator] =
           user.adminEntityValidators.getOrElse("all", Seq.empty[JsonValidator]) ++ user.adminEntityValidators
             .getOrElse(singularName.toLowerCase, Seq.empty[JsonValidator])
-        val validators                             = envValidators ++ userValidators
-        val failedValidators                       = validators.filterNot(_.validate(json))
+        val validators                         = envValidators ++ userValidators
+        val failedValidators                   = validators.filterNot(_.validate(json))
         if (failedValidators.isEmpty) {
           Right(json)
         } else {

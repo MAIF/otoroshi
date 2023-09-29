@@ -446,9 +446,8 @@ class WasmAccessValidator extends NgAccessValidator {
                 maybeRoute = ctx.route.some
               )
               .map(r => NgAccess.NgDenied(r))
-        }.andThen {
-          case e =>
-            vm.release()
+        }.andThen { case e =>
+          vm.release()
         }
     }
     //} else {
@@ -1112,14 +1111,14 @@ class WasmOPA extends NgAccessValidator {
     vm.callOpa("execute", ctx.wasmJson.stringify)
       .flatMap {
         case Right((rawResult, _)) =>
-          val response = Json.parse(rawResult)
-          val result = response.asOpt[JsArray].getOrElse(Json.arr())
+          val response  = Json.parse(rawResult)
+          val result    = response.asOpt[JsArray].getOrElse(Json.arr())
           val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           if (canAccess)
             NgAccess.NgAllowed.vfuture
           else
             onError("Forbidden access", ctx, 403.some)
-        case Left(err) => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+        case Left(err)             => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
       }
       .andThen { case _ =>
         vm.release()
@@ -1145,23 +1144,23 @@ class WasmOPA extends NgAccessValidator {
           )
           .map(r => NgAccess.NgDenied(r))
       case Some((vm, localConfig)) => execute(vm, ctx)
-        // if (!vm.initialized()) {
-        //   vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
-        //     .flatMap {
-        //       case Left(error)  => onError(error.stringify, ctx)
-        //       case Right(value) =>
-        //         vm.initialize {
-        //           val pointers = Json.parse(value._1)
-        //           vm.opaPointers = OPAWasmVm(
-        //             opaDataAddr = (pointers \ "dataAddr").as[Int],
-        //             opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
-        //           ).some
-        //         }
-        //         execute(vm, ctx)
-        //     }
-        // } else {
-        //   execute(vm, ctx)
-        // }
+      // if (!vm.initialized()) {
+      //   vm.call(WasmFunctionParameters.OPACall("initialize", in = ctx.wasmJson.stringify), None)
+      //     .flatMap {
+      //       case Left(error)  => onError(error.stringify, ctx)
+      //       case Right(value) =>
+      //         vm.initialize {
+      //           val pointers = Json.parse(value._1)
+      //           vm.opaPointers = OPAWasmVm(
+      //             opaDataAddr = (pointers \ "dataAddr").as[Int],
+      //             opaBaseHeapPtr = (pointers \ "baseHeapPtr").as[Int]
+      //           ).some
+      //         }
+      //         execute(vm, ctx)
+      //     }
+      // } else {
+      //   execute(vm, ctx)
+      // }
     }
   }
 }

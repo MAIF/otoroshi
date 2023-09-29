@@ -298,7 +298,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
                 ClusterLeaderUpdateMessage.read(jsItem) match {
-                  case None => FastFuture.successful(())
+                  case None        => FastFuture.successful(())
                   case Some(quota) => quota.updateWorker(MemberView.fromRequest(ctx.request))
                 }
               }
@@ -328,7 +328,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   val jsItem = Json.parse(item.utf8String)
                   ClusterLeaderUpdateMessage.read(jsItem) match {
                     case Some(quota) => quota.updateLeader(MemberView.fromRequest(ctx.request))
-                    case None => FastFuture.successful(())
+                    case None        => FastFuture.successful(())
                   }
                 }
                 .runWith(Sink.ignore)
@@ -513,7 +513,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
-        ActorFlow.actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+        ActorFlow
+          .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          .rightf
       } else {
         result.leftf
       }
@@ -529,7 +531,7 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
 
   private val ref = new AtomicReference[Cancellable]()
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
   def debug(msg: String): Unit = {
@@ -541,24 +543,25 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
   }
 
   override def preStart(): Unit = {
-    ref.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, env.clusterConfig.worker.state.pollEvery.millis) { () =>
-      val msg = ClusterLeaderStateMessage(
-        state = env.clusterLeaderAgent.cachedState,
-        nodeName = env.clusterConfig.leader.name,
-        nodeVersion = env.otoroshiVersion,
-        dataCount = env.clusterLeaderAgent.cachedCount,
-        dataDigest = env.clusterLeaderAgent.cachedDigest,
-        dataFrom = env.clusterLeaderAgent.cachedTimestamp,
-      )
-      val mess = msg.json.stringify
-      if (env.clusterConfig.compression > -1) {
-        val data = mess.byteString
-        debug(s"ws pushing the state: ${data.size / 1024} Kb compressed")
-        out ! play.api.http.websocket.BinaryMessage(data)
-      } else {
-        debug(s"ws pushing the state: ${mess.byteString.size / 1024} Kb uncompressed")
-        out ! play.api.http.websocket.TextMessage(mess)
-      }
+    ref.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, env.clusterConfig.worker.state.pollEvery.millis) {
+      () =>
+        val msg  = ClusterLeaderStateMessage(
+          state = env.clusterLeaderAgent.cachedState,
+          nodeName = env.clusterConfig.leader.name,
+          nodeVersion = env.otoroshiVersion,
+          dataCount = env.clusterLeaderAgent.cachedCount,
+          dataDigest = env.clusterLeaderAgent.cachedDigest,
+          dataFrom = env.clusterLeaderAgent.cachedTimestamp
+        )
+        val mess = msg.json.stringify
+        if (env.clusterConfig.compression > -1) {
+          val data = mess.byteString
+          debug(s"ws pushing the state: ${data.size / 1024} Kb compressed")
+          out ! play.api.http.websocket.BinaryMessage(data)
+        } else {
+          debug(s"ws pushing the state: ${mess.byteString.size / 1024} Kb uncompressed")
+          out ! play.api.http.websocket.TextMessage(mess)
+        }
     })
   }
 
@@ -567,22 +570,25 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
   }
 
   override def receive: Receive = {
-    case play.api.http.websocket.TextMessage(data) => {
+    case play.api.http.websocket.TextMessage(data)                => {
       ClusterMessageFromWorker.format.reads(data.parseJson) match {
         case JsSuccess(msgfw, _) =>
           ClusterLeaderUpdateMessage.read(msgfw.payload) match {
-            case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
-            case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
-            case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) => msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
-            case _ =>
+            case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr)     =>
+              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr)      =>
+              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) =>
+              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+            case _                                                        =>
           }
-        case JsError(err) => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")
+        case JsError(err)        => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")
       }
     }
-    case play.api.http.websocket.PingMessage(_) => out ! play.api.http.websocket.PongMessage(ByteString.empty)
+    case play.api.http.websocket.PingMessage(_)                   => out ! play.api.http.websocket.PongMessage(ByteString.empty)
     case play.api.http.websocket.CloseMessage(statusCode, reason) => self ! PoisonPill
-    case play.api.http.websocket.BinaryMessage(_) => Cluster.logger.warn("cannot handle binary message")
-    case play.api.http.websocket.PongMessage(_) => Cluster.logger.warn("cannot handle pong message")
-    case _ => Cluster.logger.warn("cannot handle unknown message")
+    case play.api.http.websocket.BinaryMessage(_)                 => Cluster.logger.warn("cannot handle binary message")
+    case play.api.http.websocket.PongMessage(_)                   => Cluster.logger.warn("cannot handle pong message")
+    case _                                                        => Cluster.logger.warn("cannot handle unknown message")
   }
 }

@@ -200,7 +200,12 @@ class ReactorNettyRequestHeader(
   lazy val method: String               = req.method().toString
   lazy val version: String              = httpVersion
   lazy val headers: Headers             = Headers(
-    (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)).filterNot(_._1.toLowerCase == "otoroshi-tls-version") ++ sessionOpt.toSeq.flatMap(s =>
+    (req
+      .requestHeaders()
+      .entries()
+      .asScala
+      .map(e => (e.getKey, e.getValue))
+      .filterNot(_._1.toLowerCase == "otoroshi-tls-version") ++ sessionOpt.toSeq.flatMap(s =>
       Seq(
         ("Tls-Session-Info", s.toString)
       )
@@ -371,7 +376,12 @@ class NettyRequestHeader(
   lazy val method: String               = req.method().toString
   lazy val version: String              = req.protocolVersion().toString
   lazy val headers: Headers             = Headers(
-    (req.headers().entries().asScala.map(e => (e.getKey, e.getValue)).filterNot(_._1.toLowerCase == "otoroshi-tls-version") ++ sessionOpt.toSeq.flatMap(s =>
+    (req
+      .headers()
+      .entries()
+      .asScala
+      .map(e => (e.getKey, e.getValue))
+      .filterNot(_._1.toLowerCase == "otoroshi-tls-version") ++ sessionOpt.toSeq.flatMap(s =>
       Seq(
         ("Tls-Session-Info", s.toString)
       )

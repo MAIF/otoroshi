@@ -331,24 +331,24 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                                      = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
-    implicit val mat     = env.otoroshiMaterializer
-    val snowflake        = env.snowflakeGenerator.nextIdStr()
-    val callDate         = DateTime.now()
-    val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val reqNumber        = reqCounter.incrementAndGet()
-    val counterIn        = new AtomicLong(0L)
-    val counterOut       = new AtomicLong(0L)
+    implicit val mat       = env.otoroshiMaterializer
+    val snowflake          = env.snowflakeGenerator.nextIdStr()
+    val callDate           = DateTime.now()
+    val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber          = reqCounter.incrementAndGet()
+    val counterIn          = new AtomicLong(0L)
+    val counterOut         = new AtomicLong(0L)
     val responseEndPromise = Promise[Done]()
-    implicit val attrs   = TypedMap.empty.put(
-      otoroshi.next.plugins.Keys.ReportKey       -> report,
-      otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
-      otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
-      otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
-      otoroshi.plugins.Keys.RequestStartKey      -> start,
-      otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
-      otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut,
-      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
+    implicit val attrs     = TypedMap.empty.put(
+      otoroshi.next.plugins.Keys.ReportKey        -> report,
+      otoroshi.plugins.Keys.RequestNumberKey      -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey          -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey   -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey       -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey   -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey   -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey  -> counterOut,
+      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise
     )
 
     val elCtx: Map[String, String] = Map(
@@ -513,10 +513,13 @@ class ProxyEngine() extends RequestHandler {
       })
       .map { result =>
         result.copy(body = result.body match {
-          case HttpEntity.NoEntity => HttpEntity.NoEntity
-          case b @ HttpEntity.Strict(_, _) => b
-          case HttpEntity.Streamed(source, length, typ) => HttpEntity.Streamed(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), length, typ)
-          case HttpEntity.Chunked(source, typ) => HttpEntity.Chunked(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), typ)
+          case HttpEntity.NoEntity                      => HttpEntity.NoEntity
+          case b @ HttpEntity.Strict(_, _)              => b
+          case HttpEntity.Streamed(source, length, typ) =>
+            HttpEntity
+              .Streamed(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), length, typ)
+          case HttpEntity.Chunked(source, typ)          =>
+            HttpEntity.Chunked(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), typ)
         })
       }
   }
@@ -2796,12 +2799,18 @@ class ProxyEngine() extends RequestHandler {
       val extractedTimeout                               =
         route.backend.client.legacy
           .extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
-      val isTargetHttp1 = finalTarget.protocol == HttpProtocols.HTTP_1_0 || finalTarget.protocol == HttpProtocols.HTTP_1_1
-      val isTargetHttp2 = finalTarget.protocol == HttpProtocols.HTTP_2_0
-      val version = rawRequest.version.toLowerCase
-      val isRequestAboveHttp1 = (!version.startsWith("http/1")) && (version.startsWith("http/2") || version.startsWith("http3"))
-      val isRequestAboveHttp2 = (!version.startsWith("http/1") && !version.startsWith("http/2")) && version.startsWith("http3")
-      val requestHeaders = request.headers.filterNot(_._1.toLowerCase == "cookie").+("Host" -> host).toSeq
+      val isTargetHttp1                                  =
+        finalTarget.protocol == HttpProtocols.HTTP_1_0 || finalTarget.protocol == HttpProtocols.HTTP_1_1
+      val isTargetHttp2                                  = finalTarget.protocol == HttpProtocols.HTTP_2_0
+      val version                                        = rawRequest.version.toLowerCase
+      val isRequestAboveHttp1                            =
+        (!version.startsWith("http/1")) && (version.startsWith("http/2") || version.startsWith("http3"))
+      val isRequestAboveHttp2                            =
+        (!version.startsWith("http/1") && !version.startsWith("http/2")) && version.startsWith("http3")
+      val requestHeaders                                 = request.headers
+        .filterNot(_._1.toLowerCase == "cookie")
+        .+("Host" -> host)
+        .toSeq
         .applyOnIf(isTargetHttp1 && isRequestAboveHttp1) { s =>
           s
             .filterNot(_._1.toLowerCase().startsWith("x-http2"))
@@ -3497,142 +3506,144 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
-    attrs.get(otoroshi.plugins.Keys.ResponseEndPromiseKey).foreach(_.future.andThen { case _ =>
-      val actualDuration: Long           = report.getDurationNow()
-      val overhead: Long                 = report.getOverheadNow()
-      val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
-      val apiKey                         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-      val paUsr                          = attrs.get(otoroshi.plugins.Keys.UserKey)
-      val callDate                       = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
-      val counterIn                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
-      val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
-      val fromOtoroshi                   = rawRequest.headers
-        .get(env.Headers.OtoroshiRequestId)
-        .orElse(rawRequest.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-      val noContentLengthHeader: Boolean =
-        rawResponse.contentLength.isEmpty
-      val hasChunkedHeader: Boolean      = rawResponse
-        .header("Transfer-Encoding")
-        .exists(h => h.toLowerCase().contains("chunked"))
-      val isContentLengthZero: Boolean   = rawResponse.header("Content-Length").contains("0")
-      val isChunked: Boolean             = rawResponse.isChunked() match {
-        case _ if isContentLengthZero                                                              => false
-        case Some(chunked)                                                                         => chunked
-        case None if !env.emptyContentLengthIsChunked                                              =>
-          hasChunkedHeader // false
-        case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
-          true
-        case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
-          true
-        case _                                                                                     => false
-      }
-      val duration: Long = {
-        if (route.id == env.backOfficeServiceId && actualDuration > 300L)
-          300L
-        else actualDuration
-      }
-      // increments calls for service and globally
-      env.analyticsQueue ! AnalyticsQueueEvent(
-        route.serviceDescriptor,
-        duration,
-        overhead,
-        counterIn.get(),
-        counterOut.get(),
-        upstreamLatency,
-        globalConfig
-      )
-      route.backend.loadBalancing match {
-        case BestResponseTime            =>
-          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
-        case WeightedBestResponseTime(_) =>
-          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
-        case _                           =>
-      }
-      val fromLbl                        =
-        rawRequest.headers
-          .get(env.Headers.OtoroshiVizFromLabel)
-          .getOrElse("internet")
-      val viz: OtoroshiViz               = OtoroshiViz(
-        to = route.id,
-        toLbl = route.name,
-        from = rawRequest.headers
-          .get(env.Headers.OtoroshiVizFrom)
-          .getOrElse("internet"),
-        fromLbl = fromLbl,
-        fromTo = s"$fromLbl###${route.name}"
-      )
-      val cbDuration                     = System.currentTimeMillis() - sb.cbStart
-      val evt                            = GatewayEvent(
-        `@id` = env.snowflakeGenerator.nextIdStr(),
-        reqId = snowflake,
-        parentReqId = fromOtoroshi,
-        `@timestamp` = DateTime.now(),
-        `@calledAt` = callDate,
-        protocol = rawRequest.version,
-        to = Location(
-          scheme = rawRequest.theProtocol,
-          host = rawRequest.theHost,
-          uri = rawRequest.relativeUri
-        ),
-        target = Location(
-          scheme = backend.toTarget.scheme,
-          host = backend.toTarget.host,
-          uri = rawRequest.relativeUri
-        ),
-        backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
-        duration = duration,
-        overhead = overhead,
-        cbDuration = cbDuration,
-        overheadWoCb = Math.abs(overhead - cbDuration),
-        callAttempts = sb.attempts,
-        url = rawRequest.theUrl,
-        method = rawRequest.method,
-        from = rawRequest.theIpAddress,
-        env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
-        data = DataInOut(
-          dataIn = counterIn.get(),
-          dataOut = counterOut.get()
-        ),
-        status = rawResponse.status,
-        headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-        headersOut = rawResponse.headers.mapValues(_.last).toSeq.map(Header.apply),
-        otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
-        otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
-        extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
-        identity = apiKey
-          .map(k =>
-            Identity(
-              identityType = "APIKEY",
-              identity = k.clientId,
-              label = k.clientName
-            )
-          )
-          .orElse(
-            paUsr.map(k =>
+    attrs
+      .get(otoroshi.plugins.Keys.ResponseEndPromiseKey)
+      .foreach(_.future.andThen { case _ =>
+        val actualDuration: Long           = report.getDurationNow()
+        val overhead: Long                 = report.getOverheadNow()
+        val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
+        val apiKey                         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+        val paUsr                          = attrs.get(otoroshi.plugins.Keys.UserKey)
+        val callDate                       = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
+        val counterIn                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+        val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
+        val fromOtoroshi                   = rawRequest.headers
+          .get(env.Headers.OtoroshiRequestId)
+          .orElse(rawRequest.headers.get(env.Headers.OtoroshiGatewayParentRequest))
+        val noContentLengthHeader: Boolean =
+          rawResponse.contentLength.isEmpty
+        val hasChunkedHeader: Boolean      = rawResponse
+          .header("Transfer-Encoding")
+          .exists(h => h.toLowerCase().contains("chunked"))
+        val isContentLengthZero: Boolean   = rawResponse.header("Content-Length").contains("0")
+        val isChunked: Boolean             = rawResponse.isChunked() match {
+          case _ if isContentLengthZero                                                              => false
+          case Some(chunked)                                                                         => chunked
+          case None if !env.emptyContentLengthIsChunked                                              =>
+            hasChunkedHeader // false
+          case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
+            true
+          case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
+            true
+          case _                                                                                     => false
+        }
+        val duration: Long = {
+          if (route.id == env.backOfficeServiceId && actualDuration > 300L)
+            300L
+          else actualDuration
+        }
+        // increments calls for service and globally
+        env.analyticsQueue ! AnalyticsQueueEvent(
+          route.serviceDescriptor,
+          duration,
+          overhead,
+          counterIn.get(),
+          counterOut.get(),
+          upstreamLatency,
+          globalConfig
+        )
+        route.backend.loadBalancing match {
+          case BestResponseTime            =>
+            BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
+          case WeightedBestResponseTime(_) =>
+            BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
+          case _                           =>
+        }
+        val fromLbl                        =
+          rawRequest.headers
+            .get(env.Headers.OtoroshiVizFromLabel)
+            .getOrElse("internet")
+        val viz: OtoroshiViz               = OtoroshiViz(
+          to = route.id,
+          toLbl = route.name,
+          from = rawRequest.headers
+            .get(env.Headers.OtoroshiVizFrom)
+            .getOrElse("internet"),
+          fromLbl = fromLbl,
+          fromTo = s"$fromLbl###${route.name}"
+        )
+        val cbDuration                     = System.currentTimeMillis() - sb.cbStart
+        val evt                            = GatewayEvent(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          reqId = snowflake,
+          parentReqId = fromOtoroshi,
+          `@timestamp` = DateTime.now(),
+          `@calledAt` = callDate,
+          protocol = rawRequest.version,
+          to = Location(
+            scheme = rawRequest.theProtocol,
+            host = rawRequest.theHost,
+            uri = rawRequest.relativeUri
+          ),
+          target = Location(
+            scheme = backend.toTarget.scheme,
+            host = backend.toTarget.host,
+            uri = rawRequest.relativeUri
+          ),
+          backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+          duration = duration,
+          overhead = overhead,
+          cbDuration = cbDuration,
+          overheadWoCb = Math.abs(overhead - cbDuration),
+          callAttempts = sb.attempts,
+          url = rawRequest.theUrl,
+          method = rawRequest.method,
+          from = rawRequest.theIpAddress,
+          env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
+          data = DataInOut(
+            dataIn = counterIn.get(),
+            dataOut = counterOut.get()
+          ),
+          status = rawResponse.status,
+          headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
+          headersOut = rawResponse.headers.mapValues(_.last).toSeq.map(Header.apply),
+          otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
+          otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
+          extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
+          identity = apiKey
+            .map(k =>
               Identity(
-                identityType = "PRIVATEAPP",
-                identity = k.email,
-                label = k.name
+                identityType = "APIKEY",
+                identity = k.clientId,
+                label = k.clientName
               )
             )
-          ),
-        responseChunked = isChunked,
-        `@serviceId` = route.id,
-        `@service` = route.name,
-        descriptor = Some(route.legacy),
-        route = Some(route),
-        `@product` = route.metadata.getOrElse("product", "--"),
-        remainingQuotas = attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()),
-        viz = Some(viz),
-        clientCertChain = rawRequest.clientCertChainPem,
-        err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
-        gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
-        userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
-        geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-        extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
-      )
-      evt.toAnalytics()
-    }(env.analyticsExecutionContext))
+            .orElse(
+              paUsr.map(k =>
+                Identity(
+                  identityType = "PRIVATEAPP",
+                  identity = k.email,
+                  label = k.name
+                )
+              )
+            ),
+          responseChunked = isChunked,
+          `@serviceId` = route.id,
+          `@service` = route.name,
+          descriptor = Some(route.legacy),
+          route = Some(route),
+          `@product` = route.metadata.getOrElse("product", "--"),
+          remainingQuotas = attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()),
+          viz = Some(viz),
+          clientCertChain = rawRequest.clientCertChainPem,
+          err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
+          gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
+          userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+          geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+        )
+        evt.toAnalytics()
+      }(env.analyticsExecutionContext))
     FEither.right(Done)
   }
 }

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import otoroshi.controllers.{LocalCredentialRepository, routes}
+import otoroshi.controllers.{routes, LocalCredentialRepository}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
@@ -240,7 +240,9 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit env: Env): Either[String, PrivateAppsUser] = {
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+      env: Env
+  ): Either[String, PrivateAppsUser] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {

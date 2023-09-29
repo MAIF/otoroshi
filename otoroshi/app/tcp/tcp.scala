@@ -633,7 +633,11 @@ class TcpEngineProvider {
     if (DynamicSSLEngineProvider.logger.isDebugEnabled)
       DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
-    val engine                 = new CustomSSLEngine(rawEngine, None, env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols)
+    val engine                 = new CustomSSLEngine(
+      rawEngine,
+      None,
+      env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols
+    )
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))

@@ -20,9 +20,9 @@ object JsonValidator {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
       val kind = json.select("kind").asOpt[String].getOrElse("json-path-validator").toLowerCase()
       kind match {
-        case "json-path-validator" => JsonPathValidator.format.reads(json)
+        case "json-path-validator"   => JsonPathValidator.format.reads(json)
         case "wasm-plugin-validator" => WasmPluginValidator.format.reads(json)
-        case "opa-plugin-validator" => OpaPluginValidator.format.reads(json)
+        case "opa-plugin-validator"  => OpaPluginValidator.format.reads(json)
       }
     } catch {
       case e: Throwable => JsError(e.getMessage)
@@ -35,10 +35,12 @@ object JsonValidator {
 object WasmPluginValidator {
   val format = new Format[JsonValidator] {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
-      JsSuccess(WasmPluginValidator(
-        ref = json.select("ref").asString,
-        error = json.select("error").asOpt[String],
-      ))
+      JsSuccess(
+        WasmPluginValidator(
+          ref = json.select("ref").asString,
+          error = json.select("error").asOpt[String]
+        )
+      )
     } catch {
       case e: Throwable => JsError(e.getMessage)
     }
@@ -55,18 +57,19 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
 
   override def json: JsValue = Json.obj(
     "kind" -> kind,
-    "ref" -> ref
+    "ref"  -> ref
   )
 
   override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
-      vm.callExtismFunction("validate", ctx.prettify)(env.otoroshiExecutionContext).map {
-        case Right(rawResult) => {
-          val result = Json.parse(rawResult)
-          (result \ "result").asOpt[Boolean].getOrElse(false)
-        }
-        case Left(_) => false
-      }(env.otoroshiExecutionContext)
+      vm.callExtismFunction("validate", ctx.prettify)(env.otoroshiExecutionContext)
+        .map {
+          case Right(rawResult) => {
+            val result = Json.parse(rawResult)
+            (result \ "result").asOpt[Boolean].getOrElse(false)
+          }
+          case Left(_)          => false
+        }(env.otoroshiExecutionContext)
     }
     Await.result(fu, 30.seconds)
   }
@@ -75,10 +78,12 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
 object OpaPluginValidator {
   val format = new Format[JsonValidator] {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
-      JsSuccess(OpaPluginValidator(
-        ref = json.select("ref").asString,
-        error = json.select("error").asOpt[String],
-      ))
+      JsSuccess(
+        OpaPluginValidator(
+          ref = json.select("ref").asString,
+          error = json.select("error").asOpt[String]
+        )
+      )
     } catch {
       case e: Throwable => JsError(e.getMessage)
     }
@@ -95,19 +100,20 @@ case class OpaPluginValidator(ref: String, error: Option[String] = None) extends
 
   override def json: JsValue = Json.obj(
     "kind" -> kind,
-    "ref" -> ref
+    "ref"  -> ref
   )
 
   override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
-      vm.callOpa("execute", ctx.prettify)(env.otoroshiExecutionContext).map {
-        case Right((rawResult, _)) => {
-          val response = Json.parse(rawResult)
-          val result = response.asOpt[JsArray].getOrElse(Json.arr())
-          (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
-        }
-        case Left(_) => false
-      }(env.otoroshiExecutionContext)
+      vm.callOpa("execute", ctx.prettify)(env.otoroshiExecutionContext)
+        .map {
+          case Right((rawResult, _)) => {
+            val response = Json.parse(rawResult)
+            val result   = response.asOpt[JsArray].getOrElse(Json.arr())
+            (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
+          }
+          case Left(_)               => false
+        }(env.otoroshiExecutionContext)
     }
     Await.result(fu, 30.seconds)
   }

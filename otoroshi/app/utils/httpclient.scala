@@ -243,7 +243,7 @@ class WsClientChooser(
       clientFlow: Flow[Message, Message, T],
       customizer: ClientConnectionSettings => ClientConnectionSettings
   ): (Future[WebSocketUpgradeResponse], T) = {
-    val tlsConfigOpt = targetOpt.map(_.mtlsConfig).orElse(mtlsConfigOpt)
+    val tlsConfigOpt            = targetOpt.map(_.mtlsConfig).orElse(mtlsConfigOpt)
     val certs: Seq[Cert]        = tlsConfigOpt
       .filter(_.mtls)
       .toSeq

@@ -277,8 +277,10 @@ class ReactorNettyServer(env: Env) {
   ): Publisher[Void] = {
     val parent      = channel.parent()
     val sslHandler  =
-      Option(parent.pipeline().get(classOf[OtoroshiSslHandler])).orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
-    val version = sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
+      Option(parent.pipeline().get(classOf[OtoroshiSslHandler]))
+        .orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
+    val version     =
+      sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
     val sessionOpt  = sslHandler.map(_.engine.getSession)
     sessionOpt.foreach(s => req.requestHeaders().set("Otoroshi-Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
@@ -307,7 +309,8 @@ class ReactorNettyServer(env: Env) {
   ): Publisher[Void] = {
     val parent      = channel.parent()
     val sslHandler  =
-      Option(parent.pipeline().get(classOf[OtoroshiSslHandler])).orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
+      Option(parent.pipeline().get(classOf[OtoroshiSslHandler]))
+        .orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
     sessionOpt.foreach(s => req.requestHeaders().set("Otoroshi-Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
@@ -316,7 +319,8 @@ class ReactorNettyServer(env: Env) {
         .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val version = sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
+      val version            =
+        sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
       val otoReq             = new ReactorNettyRequest(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
       val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
       reqHandler match {
@@ -481,7 +485,7 @@ class ReactorNettyServer(env: Env) {
         )
         .idleTimeout(config.idleTimeout)
         .doOnChannelInit { (observer, channel, socket) =>
-          val engine = setupSslContext().createSSLEngine()
+          val engine              = setupSslContext().createSSLEngine()
           val applicationProtocol = new AtomicReference[String]("http/1.1")
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
             val chosen = protocols match {
@@ -533,12 +537,12 @@ class ReactorNettyServer(env: Env) {
 }
 
 class OtoroshiSslHandler(engine: SSLEngine, appProto: AtomicReference[String]) extends SslHandler(engine) {
-  def useH2: Boolean = Option(appProto.get()).contains("h2")
+  def useH2: Boolean                    = Option(appProto.get()).contains("h2")
   def chosenApplicationProtocol: String = Option(appProto.get()).getOrElse("http/1.1")
 }
 
 class OtoroshiErrorHandler(logger: Logger) extends ChannelHandler {
-  override def handlerAdded(ctx: ChannelHandlerContext): Unit = ()
+  override def handlerAdded(ctx: ChannelHandlerContext): Unit   = ()
   override def handlerRemoved(ctx: ChannelHandlerContext): Unit = ()
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     logger.error("error caught in netty pipeline", cause)

@@ -672,7 +672,9 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit env: Env): Either[String, PrivateAppsUser] = {
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+      env: Env
+  ): Either[String, PrivateAppsUser] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         PrivateAppsUser(
