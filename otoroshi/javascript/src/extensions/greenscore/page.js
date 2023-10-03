@@ -59,7 +59,7 @@ function FilterSelector({ mode, onChange, filteredGroups, open, close, opened, e
 
   return <div style={{
     position: 'absolute',
-    top: 0,
+    top: -32,
     bottom: 0,
     left: 0,
     right: opened ? 0 : 'inherit',
@@ -209,7 +209,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
 
   return <div style={{
     position: 'absolute',
-    top: 0,
+    top: -32,
     bottom: 0,
     left: opened ? 0 : 152,
     right: 0,
@@ -431,14 +431,14 @@ export default class GreenScoreConfigsPage extends React.Component {
 
   meanThresholds = (a1, length) => {
     return {
-      overhead: Math.round(a1.overhead / length),
-      duration: Math.round(a1.duration / length),
-      backendDuration: Math.round(a1.backendDuration / length),
-      calls: Math.round(a1.calls / length),
-      dataIn: Math.round(a1.dataIn / length),
-      dataOut: Math.round(a1.dataOut / length),
-      headersOut: Math.round(a1.headersOut / length),
-      headersIn: Math.round(a1.headersIn / length)
+      overhead: a1.overhead / length,
+      duration: a1.duration / length,
+      backendDuration: a1.backendDuration / length,
+      calls: a1.calls / length,
+      dataIn: a1.dataIn / length,
+      dataOut: a1.dataOut / length,
+      headersOut: a1.headersOut / length,
+      headersIn: a1.headersIn / length
     }
   }
 
@@ -751,31 +751,38 @@ export default class GreenScoreConfigsPage extends React.Component {
                   const [groupId, routes] = groupInformations;
 
                   let dynamicValues = this.state.dynamicValuesByRoutes
-                    .filter(f => f.group_id === groupId)
+                    .filter(f => f.group_id === groupId);
 
                   dynamicValues = this.meanThresholds(
                     dynamicValues.reduce((acc, group) => {
-                      const sum = group.dynamic_values.scaling;
+                      const { scaling } = group.dynamic_values;
                       return {
-                        overhead: acc.overhead + sum.overhead,
-                        duration: acc.duration + sum.duration,
-                        backendDuration: acc.backendDuration + sum.backendDuration,
-                        calls: acc.calls + sum.calls,
-                        dataIn: acc.dataIn + sum.dataIn,
-                        dataOut: acc.dataOut + sum.dataOut,
-                        headersOut: acc.headersOut + sum.headersOut,
-                        headersIn: acc.headersIn + sum.headersIn
+                        overhead: acc.overhead + scaling.overhead,
+                        duration: acc.duration + scaling.duration,
+                        backendDuration: acc.backendDuration + scaling.backendDuration,
+                        calls: acc.calls + scaling.calls,
+                        dataIn: acc.dataIn + scaling.dataIn,
+                        dataOut: acc.dataOut + scaling.dataOut,
+                        headersOut: acc.headersOut + scaling.headersOut,
+                        headersIn: acc.headersIn + scaling.headersIn
                       }
                     }, {
                       overhead: 0, duration: 0, backendDuration: 0, calls: 0, dataIn: 0, dataOut: 0, headersOut: 0, headersIn: 0
                     }),
-                    dynamicValues.length)
+                    dynamicValues.length);
+
+                  // console.log(groupId,
+                  //   this.state.dynamicValuesByRoutes
+                  //     .filter(f => f.group_id === groupId),
+                  //   dynamicValues,
+                  //   Object.values(dynamicValues).reduce((acc, i) => acc + i, 0), Object.keys(dynamicValues).length,
+                  //   Object.values(dynamicValues).reduce((acc, i) => acc + i, 0) / Object.keys(dynamicValues).length)
 
                   return {
                     sectionsAtCurrentDate: routes,
                     score: routes.flatMap(r => r.sections).reduce((acc, v) => v.score.score + acc, 0) / routes.length,
                     ...this.state.groups.find(g => g.id === groupId),
-                    dynamic_values: this.getDynamicScore(dynamicValues, routes.length)
+                    dynamic_values: this.getDynamicScore(dynamicValues)
                   }
                 })}
           />} />

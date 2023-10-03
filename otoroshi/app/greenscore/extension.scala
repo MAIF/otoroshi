@@ -32,6 +32,7 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
       val routeId = evt.route.map(_.id).getOrElse(evt.`@serviceId`)
       ext.ecoMetrics.updateRoute(RouteCallIncr(
         routeId = routeId,
+        calls = new AtomicLong(1),
         overhead = new AtomicLong(evt.overhead),
         duration = new AtomicLong(evt.duration),
         backendDuration = new AtomicLong(evt.backendDuration),

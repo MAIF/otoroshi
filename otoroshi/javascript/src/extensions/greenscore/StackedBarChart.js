@@ -7,13 +7,17 @@ export default class StackedBarChart extends PureComponent {
 
     render() {
         const mapValues = Object.entries(this.props.values || {});
+        
         const data = (mapValues.length < 2 ? [...mapValues, mapValues[0]] : mapValues)
             .filter(f => f)
             .map(([date, section]) => {
+                const sections = section.reduce((acc, s) => ({ ...acc, [s.section]: (acc[s.section] || 0) + s.score.score }), {});
+                const length = section.length / 4;
+                
                 return {
                     name: moment(new Date(Number(date))).format("DD MMMM YY"),
                     rawDate: date,
-                    ...section.reduce((acc, s) => ({ ...acc, [s.section]: s.score.score }), {})
+                    ...Object.fromEntries(Object.entries(sections).map(s => [s[0], s[1] / length]))
                 }
             })
             .sort((a, b) => a.rawDate - b.rawDate);

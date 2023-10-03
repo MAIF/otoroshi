@@ -228,7 +228,7 @@ export default class CustomTable extends React.Component {
                                     const net = score;
 
                                     const dynamicValues = this.props.getDynamicScore(
-                                        this.props.dynamicValuesByRoutes.find(f => f.id === routeInformations.id).dynamic_values.scaling
+                                        this.props.dynamicValuesByRoutes.find(f => f.id === routeInformations.id && f.group_id === group.id).dynamic_values.scaling
                                     );
 
                                     const data = String.fromCharCode(65 + Math.min(Math.floor((1 - dynamicValues) * 5)));
