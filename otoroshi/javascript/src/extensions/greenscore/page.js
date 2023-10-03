@@ -341,15 +341,16 @@ export default class GreenScoreConfigsPage extends React.Component {
       })
         .then((r) => r.json())
     ])
-      .then(([routes, rulesTemplate, { scores, global, groups }]) => {
+      .then(([routes, rulesTemplate, { groups, scores }]) => {
         this.setState({
           routes,
           groups,
           rulesBySection: this.rulesTemplateToRulesBySection(rulesTemplate),
-          scores,
-          global,
-          date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
-          loading: scores.length <= 0
+          scores: scores.score_by_route,
+          dynamicValues: scores.dynamic_values,
+          dynamicValuesByRoutes: scores.dynamic_values_by_routes,
+          date: [...new Set(scores.score_by_route.map(section => section.date))].sort().reverse()[0],
+          loading: scores.score_by_route.length <= 0
         })
       });
 
@@ -361,25 +362,25 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   calculateForGroups = newGroups => {
-    fetch('/bo/api/proxy/api/extensions/green-score', {
-      credentials: 'include',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(newGroups.map(g => g.value))
-    })
-      .then((r) => r.json())
-      .then(({ scores, global }) => {
-        this.setState({
-          scores,
-          global,
-          date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
-          loading: scores.length <= 0,
-          filterStatusView: 'undefined'
-        })
-      })
+    // fetch('/bo/api/proxy/api/extensions/green-score', {
+    //   credentials: 'include',
+    //   method: 'POST',
+    //   headers: {
+    //     Accept: 'application/json',
+    //     'Content-Type': 'application/json'
+    //   },
+    //   body: JSON.stringify(newGroups.map(g => g.value))
+    // })
+    //   .then((r) => r.json())
+    //   .then(({ scores, global }) => {
+    //     this.setState({
+    //       scores,
+    //       global,
+    //       date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
+    //       loading: scores.length <= 0,
+    //       filterStatusView: 'undefined'
+    //     })
+    //   })
   }
 
   reveal() {
@@ -413,7 +414,7 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
 
-  getDynamicScore = (dynamic_values) => {
+  getDynamicScore = (dynamic_values, factor = 1) => {
     const scores = [
       dynamic_values.backendDuration,
       dynamic_values.calls,
@@ -425,7 +426,7 @@ export default class GreenScoreConfigsPage extends React.Component {
       dynamic_values.duration,
     ];
 
-    return scores.reduce((a, i) => a + i, 0) / scores.length
+    return scores.reduce((a, i) => a + i, 0) / (scores.length * factor)
   }
 
   meanThresholds = (a1, length) => {
@@ -477,8 +478,8 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   getCounters = () => {
-    if (this.state.global?.dynamic_values)
-      return Object.entries(this.state.global.dynamic_values.counters).reduce((acc, c) => {
+    if (this.state.dynamicValues)
+      return Object.entries(this.state.dynamicValues.counters).reduce((acc, c) => {
         if (c[1].excellent)
           return {
             ...acc,
@@ -517,24 +518,40 @@ export default class GreenScoreConfigsPage extends React.Component {
     })
   }
 
+  groupRoutesByGroupId = routes => {
+    return routes.reduce((groups, route) => {
+      if (groups[route.group_id]) {
+        return {
+          ...groups,
+          [route.group_id]: [...groups[route.group_id], route]
+        }
+      } else {
+        return {
+          ...groups,
+          [route.group_id]: [route]
+        }
+      }
+    }, {})
+  }
+
   render() {
-    const { scores, global, filterStatusView, groups, loading, mode, filteredGroups } = this.state;
+    const { scores, filterStatusView, groups, loading, mode, filteredGroups, dynamicValues } = this.state;
 
     console.log(this.state)
 
-    const availableDates = [...new Set(global?.sections_score_by_date.map(section => section.date))];
+    const availableDates = [...new Set(scores.map(section => section.date))];
     const closestDate = availableDates.reduce((prev, curr) => (Math.abs(curr - this.state.date) < Math.abs(prev - this.state.date) ? curr : prev), availableDates[availableDates.length - 1])
 
-    const sectionsAtCurrentDate = scores.length > 0 ? global.sections_score_by_date.filter(section => section.date === closestDate) : [];
-    const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate : [];
-    const scalingDynamicScore = scores.length > 0 ? this.getDynamicScore(global.dynamic_values.scaling) : 0;
+    const sectionsAtCurrentDate = scores.length > 0 ? scores.filter(section => section.date === closestDate).flatMap(r => r.routes) : [];
+    const valuesAtCurrentDate = scores.length > 0 ? sectionsAtCurrentDate.flatMap(r => r.sections) : [];
+    const scalingDynamicScore = scores.length > 0 ? this.getDynamicScore(dynamicValues?.scaling) : 0;
 
     const thresholds = this.getThresholds();
 
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
 
-    console.log(sectionsAtCurrentDate)
+    console.log(valuesAtCurrentDate)
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
@@ -585,21 +602,21 @@ export default class GreenScoreConfigsPage extends React.Component {
                     <div className='d-flex' style={{ gap: '.5rem' }}>
                       <GlobalScore
                         loading={loading}
-                        letter={getLetter(valuesAtCurrentDate.reduce((acc, v) => v.score.score / v.length + acc, 0))}
-                        color={getColor(valuesAtCurrentDate.reduce((acc, v) => v.score.score / v.length + acc, 0))} />
+                        letter={getLetter(valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) / (valuesAtCurrentDate.length / 4))}
+                        color={getColor(valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) / (valuesAtCurrentDate.length / 4))} />
 
                       <Wrapper loading={loading}>
                         <StackedBarChart
-                          values={global?.sections_score_by_date.reduce((acc, item) => {
+                          values={scores.reduce((acc, item) => {
                             if (acc[item.date]) {
                               return {
                                 ...acc,
-                                [item.date]: [...acc[item.date], item]
+                                [item.date]: [...acc[item.date], ...item.routes.flatMap(r => r.sections)]
                               }
                             } else {
                               return {
                                 ...acc,
-                                [item.date]: [item]
+                                [item.date]: item.routes.flatMap(r => r.sections)
                               }
                             }
                           }, {})} />
@@ -607,8 +624,8 @@ export default class GreenScoreConfigsPage extends React.Component {
 
                       <GlobalScore
                         loading={loading}
-                        score={sectionsAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
-                        maxScore={MAX_GREEN_SCORE_NOTE * Math.max(...sectionsAtCurrentDate.map(r => r.length))}
+                        score={valuesAtCurrentDate.reduce((acc, section) => acc + section.score.score, 0)}
+                        maxScore={MAX_GREEN_SCORE_NOTE * (valuesAtCurrentDate.length / 4)}
                         raw />
                     </div>
                   </Section>
@@ -620,7 +637,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                   <RulesRadarchart
                     loading={loading}
                     values={valuesAtCurrentDate}
-                    dynamic_values={global?.dynamic_values || {}} />
+                    dynamic_values={dynamicValues || {}} />
                 </Section>
               </ModeWrapper>
 
@@ -631,7 +648,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                       <DynamicChart
                         loading={loading}
                         title="Dynamic values"
-                        values={Object.entries(global?.dynamic_values.scaling || {})} />
+                        values={Object.entries(dynamicValues?.scaling || {})} />
                     </div>
                     <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
                       <GlobalScore
@@ -699,14 +716,14 @@ export default class GreenScoreConfigsPage extends React.Component {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '.5rem', flex: 1 }}>
                         {values
                           .map(({ key, title, unit }) => {
-                            const scalingValue = Math.abs((this.scaling(global.dynamic_values.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
+                            const scalingValue = Math.abs((this.scaling(dynamicValues.raw[key], thresholds[key]) / thresholds[key]) * 5) - 1;
                             return <GlobalScore
                               className='reveal'
                               key={key}
                               loading={loading}
                               color={Object.keys(GREEN_SCORE_GRADES)[Math.round(scalingValue < 0 ? 0 : scalingValue)]}
                               maxScore={thresholds[key]}
-                              score={global.dynamic_values.raw[key]}
+                              score={dynamicValues.raw[key]}
                               dynamic
                               raw
                               under
@@ -723,22 +740,45 @@ export default class GreenScoreConfigsPage extends React.Component {
           </>} />
 
         <Route exact path='/extensions/green-score/groups'
-          component={() => <CustomTable items={groups}
-            scores={scores.map(group => {
-              const dates = [...new Set(group.sections_score_by_date.map(section => section.date))].sort().reverse();
+          component={() => <CustomTable
+            items={groups}
+            routes={this.state.routes}
+            dynamicValuesByRoutes={this.state.dynamicValuesByRoutes}
+            getDynamicScore={this.getDynamicScore}
+            scores={
+              Object.entries(scores.length > 0 ? this.groupRoutesByGroupId(scores.sort((a, b) => b.date - a.date)[0].routes) : {})
+                .map(groupInformations => {
+                  const [groupId, routes] = groupInformations;
 
-              const mostRecentDateOfGroup = dates.reduce((prev, curr) => (Math.abs(curr - Date.now()) < Math.abs(prev - Date.now()) ? curr : prev), dates[dates.length - 1])
+                  let dynamicValues = this.state.dynamicValuesByRoutes
+                    .filter(f => f.group_id === groupId)
 
-              const atDate = group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup);
+                  dynamicValues = this.meanThresholds(
+                    dynamicValues.reduce((acc, group) => {
+                      const sum = group.dynamic_values.scaling;
+                      return {
+                        overhead: acc.overhead + sum.overhead,
+                        duration: acc.duration + sum.duration,
+                        backendDuration: acc.backendDuration + sum.backendDuration,
+                        calls: acc.calls + sum.calls,
+                        dataIn: acc.dataIn + sum.dataIn,
+                        dataOut: acc.dataOut + sum.dataOut,
+                        headersOut: acc.headersOut + sum.headersOut,
+                        headersIn: acc.headersIn + sum.headersIn
+                      }
+                    }, {
+                      overhead: 0, duration: 0, backendDuration: 0, calls: 0, dataIn: 0, dataOut: 0, headersOut: 0, headersIn: 0
+                    }),
+                    dynamicValues.length)
 
-              console.log(group.informations.name, atDate.reduce((acc, v) => v.score.score + acc, 0), atDate)
-              return {
-                sectionsAtCurrentDate: group.sections_score_by_date.filter(section => section.date === mostRecentDateOfGroup),
-                score: atDate.reduce((acc, v) => v.score.score / v.length + acc, 0),
-                ...group,
-                dynamic_values: this.getDynamicScore(group.dynamic_values.scaling)
-              }
-            })} />} />
+                  return {
+                    sectionsAtCurrentDate: routes,
+                    score: routes.flatMap(r => r.sections).reduce((acc, v) => v.score.score + acc, 0) / routes.length,
+                    ...this.state.groups.find(g => g.id === groupId),
+                    dynamic_values: this.getDynamicScore(dynamicValues, routes.length)
+                  }
+                })}
+          />} />
 
         <Route exact path="/extensions/green-score/groups/:group_id"
           component={EditGroup} />

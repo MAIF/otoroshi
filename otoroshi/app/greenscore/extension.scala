@@ -196,16 +196,13 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         implicit val ev = env
 
         for {
-          scores <- datastores.greenscoresDatastore.findAll()
+          groups <- datastores.greenscoresDatastore.findAll()
         } yield {
-          val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
-
-          val globalScore = ecoMetrics.calculateGlobalScore(groupScores)
+          val globalScore = ecoMetrics.calculateGlobalScore(groups)
 
           Results.Ok(Json.obj(
-            "groups" -> scores.map(_.json),
-            "scores" -> groupScores.map(_.json()),
-            "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
+            "groups" -> groups.map(_.json),
+            "scores" -> globalScore.json()
           ))
         }
       }
@@ -225,17 +222,14 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             .flatMap(ids => {
               val identifiers = ids.asOpt[JsArray].getOrElse(Json.arr())
               for {
-                scores <- if(identifiers.value.isEmpty) datastores.greenscoresDatastore.findAll() else
+                groups <- if(identifiers.value.isEmpty) datastores.greenscoresDatastore.findAll() else
                   datastores.greenscoresDatastore.findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
               } yield {
-                val groupScores = scores.map(group => ecoMetrics.calculateGroupScore(group))
-
-                val globalScore = ecoMetrics.calculateGlobalScore(groupScores)
+                val globalScore = ecoMetrics.calculateGlobalScore(groups)
 
                 Results.Ok(Json.obj(
-                  "groups" -> scores.map(_.json),
-                  "scores" -> groupScores.map(_.json()),
-                  "global" -> globalScore.copy(sectionsScoreByDate = globalScore.sectionsScoreByDate.map(_.processGroup(scores.length))).json()
+                  "groups" -> groups.map(_.json),
+                  "scores" -> globalScore.json()
                 ))
               }
             })

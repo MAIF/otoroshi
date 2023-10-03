@@ -35,6 +35,7 @@ export default class CustomTable extends React.Component {
     formatGroup = (group, i) => {
         return {
             ...group,
+            opened: true,
             name: firstLetterUppercase(group.name),
             description: firstLetterUppercase(group.description),
             notation: getLetter(this.props.scores[i].score),
@@ -58,8 +59,6 @@ export default class CustomTable extends React.Component {
             'v1',
             'green-scores'
         )
-
-        console.log(this.props)
     }
 
     componentDidUpdate(prevProps) {
@@ -70,17 +69,17 @@ export default class CustomTable extends React.Component {
     }
 
     openScore = group => {
-        // this.setState({
-        //     items: this.state.items.map(g => {
-        //         if (g.id === group.id) {
-        //             return {
-        //                 ...g,
-        //                 opened: !g.opened
-        //             }
-        //         }
-        //         return g;
-        //     })
-        // })
+        this.setState({
+            items: this.state.items.map(g => {
+                if (g.id === group.id) {
+                    return {
+                        ...g,
+                        opened: !g.opened
+                    }
+                }
+                return g;
+            })
+        })
     }
 
     openActions = i => {
@@ -120,7 +119,7 @@ export default class CustomTable extends React.Component {
     render() {
         const { items } = this.state;
 
-        console.log(this.state.columns)
+        console.log(this.props)
 
         return <div>
             <Headings sort={column => {
@@ -156,7 +155,6 @@ export default class CustomTable extends React.Component {
                         style={{
                             marginBottom: '.2rem',
                             background: 'var(--bg-color_level2)',
-                            padding: '.5rem 1rem',
                             borderRadius: '.25rem',
                             cursor: 'pointer'
                         }} onClick={() => this.openScore(group)}>
@@ -164,10 +162,11 @@ export default class CustomTable extends React.Component {
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: '62px 1fr 2fr repeat(4, 1fr) 64px',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            padding: '.5rem 1rem',
                         }}>
-                            <div>#{i}</div>
-                            {/* <div style={{
+                            {/* <div>#{i}</div> */}
+                            <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -179,7 +178,7 @@ export default class CustomTable extends React.Component {
                                 marginRight: 12
                             }} onClick={() => this.openScore(group)}>
                                 <i className={`fas fa-chevron-${group.opened ? 'up' : 'down'}`} />
-                            </div> */}
+                            </div>
                             <span style={{ minWidth: '30%', color: 'var(--text)' }}>
                                 {group.name}
                             </span>
@@ -211,20 +210,71 @@ export default class CustomTable extends React.Component {
                                 openAction={() => this.openActions(i)}
                                 editLink={`/extensions/green-score/groups/${group.id}`} />
                         </div>
-                        {group.opened && <div className='mt-3'>
-                            {group.routes.map(route => {
-                                return <div key={route.routeId} className='mt-1' style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ minWidth: '30%' }}>
-                                    </span>
 
+                        {group.opened && <div style={{ background: 'var(--bg-color_level3)', padding: '.5rem 1rem', }}>
+                            {this.props.scores[i].routes
+                                .map((_, routeIndex) => {
+                                    const routeInformations = this.props.routes.find(r => r.id === items[i].routes[routeIndex]?.routeId);
 
-                                </div>
-                            })}
-                        </div>}
+                                    if (!routeInformations)
+                                        return null
+
+                                    const sections = this.props.scores[i].sectionsAtCurrentDate[routeIndex].sections;
+
+                                    const score = sections.reduce((acc, item) => acc + item.score.score, 0);
+
+                                    const notation = getLetter(score);
+                                    const color = getColor(score);
+                                    const net = score;
+
+                                    const dynamicValues = this.props.getDynamicScore(
+                                        this.props.dynamicValuesByRoutes.find(f => f.id === routeInformations.id).dynamic_values.scaling
+                                    );
+
+                                    const data = String.fromCharCode(65 + Math.min(Math.floor((1 - dynamicValues) * 5)));
+                                    const dynamicLetter = Object.keys(GREEN_SCORE_GRADES)[Math.min(Math.floor(((1 - dynamicValues) * 5)))];
+                                    const dynamic = parseFloat(dynamicValues * 100, 2).toFixed(2);
+
+                                    return <div className="mt-1" key={routeInformations.id} style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '62px 1fr 2fr repeat(4, 1fr) 64px',
+                                        alignItems: 'center',
+                                        padding: '0.5rem 0'
+                                    }}>
+                                        <div />
+                                        <span style={{ minWidth: '30%', color: 'var(--text)' }}>
+                                            {routeInformations.name}
+                                        </span>
+
+                                        <span style={{ minWidth: '30%', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                            {routeInformations.description}
+                                        </span>
+
+                                        <span className='mx-3 text-center'>
+                                            {notation}
+                                            <i className="fa fa-leaf ms-1"
+                                                style={{ color: color, fontSize: '1.1rem' }} />
+                                        </span>
+                                        <div className='text-center d-flex justify-content-center'>
+                                            <div style={{ minWidth: 40 }}>
+                                                <span>{net}</span>
+                                            </div>
+                                            <span style={{ borderLeft: '2px solid var(--bg-color_level3)' }} className='ps-1'>6000</span>
+                                        </div>
+                                        <span className='text-center'>
+                                            {data}
+                                            <i className="fa fa-leaf ms-1"
+                                                style={{ color: dynamicLetter, fontSize: '1.1rem' }} />
+                                        </span>
+                                        <span className='text-center'>{dynamic}%</span>
+                                    </div>
+                                })}
+                        </div>
+                        }
                     </div>
                 })
             }
-        </div >
+        </div>
     }
 }
 

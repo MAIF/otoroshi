@@ -375,7 +375,7 @@ object RulesManager {
 }
 
 case class RulesRouteConfiguration(states: Seq[RuleStateRecord] = Seq.empty) extends NgPluginConfig {
-  def json: JsValue = {
+  def json(): JsValue = {
     Json.obj(
       "states" -> JsArray(states.map(RuleStateRecord.format.writes))
     )
