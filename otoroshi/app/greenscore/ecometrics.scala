@@ -3,9 +3,8 @@ package otoroshi.greenscore
 import com.codahale.metrics.UniformReservoir
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
-import otoroshi.greenscore.Score.SectionScore
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json._
 
 import java.util.{Timer => _}
@@ -189,6 +188,13 @@ sealed trait Score {
   def letter: String
 }
 
+object SectionScore {
+  def from(o: JsValue) = SectionScore(
+    score = o.select("score").as[Double],
+    scalingScore = o.select("scaling_score").as[Double]
+  )
+}
+
 object Score {
   case class Excellent(color: String = "#2ecc71", letter: String = "A")       extends Score
   case class Acceptable(color: String = "#27ae60", letter: String = "B")      extends Score
@@ -210,24 +216,25 @@ object Score {
       case v => v
     }
   }
-
-  case class SectionScore(score: Double = 0.0,
-                          scalingScore: Double = 0.0) {
-    def json() = {
-      Json.obj(
-        "score" -> score,
-        "scaling_score" -> avgDouble(scalingScore)
-      )
-    }
-
-    def merge(other: SectionScore): SectionScore = SectionScore(
-      score = score + other.score,
-      scalingScore = scalingScore + other.scalingScore
-    )
-
-    def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
-  }
 }
+
+case class SectionScore(score: Double = 0.0,
+                        scalingScore: Double = 0.0) {
+  def json() = {
+    Json.obj(
+      "score" -> score,
+      "scaling_score" -> Score.avgDouble(scalingScore)
+    )
+  }
+
+  def merge(other: SectionScore): SectionScore = SectionScore(
+    score = score + other.score,
+    scalingScore = scalingScore + other.scalingScore
+  )
+
+  def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
+}
+
 
 case class RouteDynamicValues(routeId: String, groupId: String, dynamicValues: Dynamicvalues) {
   def json() = Json.obj(
@@ -286,26 +293,37 @@ case class GroupScore(
 object EcoMetrics {
   val MAX_GREEN_SCORE_NOTE = 6000
 
-  private def scoreToColor(rank: Double): Score = {
-    if (rank >= MAX_GREEN_SCORE_NOTE) {
+  private def scoreToColor(rank: Double, max: Double): Score = {
+    if (rank >= max) {
       Score.Excellent()
-    } else if (rank >= 3000) {
+    } else if (rank >= max/2) {
       Score.Acceptable()
-    } else if (rank >= 2000) {
+    } else if (rank >= max/3) {
       Score.Sufficient()
-    } else if (rank >= 1000) {
+    } else if (rank >= max/6) {
       Score.Poor()
-    } else // rank < 1000
+    } else // rank < max/6
       Score.ExtremelyPoor()
   }
 
-  def letterFromScore(rank: Double): String = {
-    scoreToColor(rank).letter
+  def letterFromScore(rank: Double, max: Double = MAX_GREEN_SCORE_NOTE): String = {
+    scoreToColor(rank, max).letter
   }
 
-  def colorFromScore(rank: Double): String = {
-    scoreToColor(rank).color
+  def colorFromScore(rank: Double, max: Double = MAX_GREEN_SCORE_NOTE): String = {
+    scoreToColor(rank, max).color
   }
+}
+
+object RouteScoreByDateAndSection {
+  def from(o: JsValue) = RouteScoreByDateAndSection(
+    date = o.select("date").as[Long],
+    section = o.select("section").as[String],
+    sectionWeight = o.select("section_weight").as[Double],
+    score = SectionScore.from(o.select("score").as[JsValue]),
+    letter = o.select("letter").as[String],
+    color = o.select("color").as[String],
+  )
 }
 
 case class RouteScoreByDateAndSection(date: Long,
@@ -325,8 +343,8 @@ case class RouteScoreByDateAndSection(date: Long,
 
   def processRoute(): RouteScoreByDateAndSection = {
     copy(
-      letter = letterFromScore(score.score),
-      color = colorFromScore(score.score),
+      letter = letterFromScore(score.score, max = (sectionWeight / 100) * MAX_GREEN_SCORE_NOTE),
+      color = colorFromScore(score.score, max = (sectionWeight / 100) * MAX_GREEN_SCORE_NOTE),
       score = score.copy(
         scalingScore = if(score.score == 0)  0 else score.score / ((sectionWeight / 100) * MAX_GREEN_SCORE_NOTE)
       ))
@@ -341,6 +359,14 @@ case class RouteScoreAtDateItem(groupId: String, routeId: String, scores: Seq[Ro
   )
 }
 
+object RouteScoreAtDateItem {
+  def from(json: JsValue) = RouteScoreAtDateItem(
+    groupId = json.select("group_id").as[String],
+    routeId = json.select("id").as[String],
+    scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from),
+  )
+}
+
 
 case class RouteScoreAtDate(
                              date: Long,
@@ -348,6 +374,13 @@ case class RouteScoreAtDate(
   def json() = Json.obj(
     "date" -> date,
     "routes" -> routes.map(_.json())
+  )
+}
+
+object RouteScoreAtDate {
+  def from(o: JsValue) = RouteScoreAtDate(
+    date = o.select("date").as[Long],
+    routes = o.select("routes").as[JsArray].value.map(RouteScoreAtDateItem.from)
   )
 }
 

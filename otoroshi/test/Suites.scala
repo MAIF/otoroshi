@@ -1,11 +1,9 @@
-import java.io.File
-
 import com.typesafe.config.ConfigFactory
 import functional._
-import tools._
-import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
+import otoroshi.greenscore.GreenScoreTestSpec
 import play.api.Configuration
+import tools._
 
 import scala.util.Try
 

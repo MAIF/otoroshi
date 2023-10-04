@@ -157,7 +157,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
   private[greenscore] val logger     = Logger("otoroshi-extension-green-score")
   private[greenscore] val ecoMetrics = new EcoMetrics()
   private val listener: ActorRef     = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
-  private lazy val datastores        = new GreenScoreAdminExtensionDatastores(env, id)
+  private[greenscore] lazy val datastores        = new GreenScoreAdminExtensionDatastores(env, id)
   private lazy val states            = new GreenScoreAdminExtensionState(env)
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.GreenScore")
