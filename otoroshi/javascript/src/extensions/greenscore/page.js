@@ -535,9 +535,7 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   render() {
-    const { scores, filterStatusView, groups, loading, mode, filteredGroups, dynamicValues } = this.state;
-
-    console.log(this.state)
+    const { scores, filterStatusView, groups, loading, mode, filteredGroups, dynamicValues } = this.state
 
     const availableDates = [...new Set(scores.map(section => section.date))];
     const closestDate = availableDates.reduce((prev, curr) => (Math.abs(curr - this.state.date) < Math.abs(prev - this.state.date) ? curr : prev), availableDates[availableDates.length - 1])
@@ -551,6 +549,8 @@ export default class GreenScoreConfigsPage extends React.Component {
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
 
+
+    console.log(this.state)
     console.log(valuesAtCurrentDate)
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>

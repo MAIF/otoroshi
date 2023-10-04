@@ -35,7 +35,7 @@ export default class CustomTable extends React.Component {
     formatGroup = (group, i) => {
         return {
             ...group,
-            opened: true,
+            opened: false,
             name: firstLetterUppercase(group.name),
             description: firstLetterUppercase(group.description),
             notation: getLetter(this.props.scores[i].score),
@@ -118,8 +118,6 @@ export default class CustomTable extends React.Component {
 
     render() {
         const { items } = this.state;
-
-        console.log(this.props)
 
         return <div>
             <Headings sort={column => {

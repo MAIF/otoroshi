@@ -180,3 +180,8 @@ class AnalyticsTests
     extends Suites(
       new AlertAndAnalyticsSpec("InMemory", Configurations.InMemoryConfiguration)
     )
+
+class GreenScoreTest
+  extends Suites(
+    new GreenScoreTestSpec("GreenScore", Configurations.InMemoryConfiguration)
+  )
