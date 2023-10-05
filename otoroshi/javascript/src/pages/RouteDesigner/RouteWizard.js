@@ -182,7 +182,7 @@ const ProcessStep = ({ state, history }) => {
 
   useEffect(() => {
     Promise.all([
-      Promise.resolve(Plugins),
+      Promise.resolve(Plugins()),
       getOldPlugins(),
       getPlugins(),
       nextClient.template(nextClient.ENTITIES.ROUTES),
