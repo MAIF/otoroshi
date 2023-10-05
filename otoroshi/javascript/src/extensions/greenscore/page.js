@@ -362,25 +362,26 @@ export default class GreenScoreConfigsPage extends React.Component {
   }
 
   calculateForGroups = newGroups => {
-    // fetch('/bo/api/proxy/api/extensions/green-score', {
-    //   credentials: 'include',
-    //   method: 'POST',
-    //   headers: {
-    //     Accept: 'application/json',
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify(newGroups.map(g => g.value))
-    // })
-    //   .then((r) => r.json())
-    //   .then(({ scores, global }) => {
-    //     this.setState({
-    //       scores,
-    //       global,
-    //       date: [...new Set(global.sections_score_by_date.map(section => section.date))].sort().reverse()[0],
-    //       loading: scores.length <= 0,
-    //       filterStatusView: 'undefined'
-    //     })
-    //   })
+    fetch('/bo/api/proxy/api/extensions/green-score', {
+      credentials: 'include',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newGroups.map(g => g.value))
+    })
+      .then((r) => r.json())
+      .then(({ scores }) => {
+        this.setState({
+          scores: scores.score_by_route,
+          dynamicValues: scores.dynamic_values,
+          dynamicValuesByRoutes: scores.dynamic_values_by_routes,
+          date: [...new Set(scores.score_by_route.map(section => section.date))].sort().reverse()[0],
+          loading: scores.score_by_route.length <= 0,
+          filterStatusView: 'undefined'
+        })
+      })
   }
 
   reveal() {
@@ -548,10 +549,6 @@ export default class GreenScoreConfigsPage extends React.Component {
 
     const dynamicCounters = this.getCounters();
     const dynamicCountersLength = this.getCountersLength(dynamicCounters);
-
-
-    console.log(this.state)
-    console.log(valuesAtCurrentDate)
 
     return <div style={{ margin: '0 auto' }} className='container-sm'>
       <Switch>
@@ -770,13 +767,6 @@ export default class GreenScoreConfigsPage extends React.Component {
                       overhead: 0, duration: 0, backendDuration: 0, calls: 0, dataIn: 0, dataOut: 0, headersOut: 0, headersIn: 0
                     }),
                     dynamicValues.length);
-
-                  // console.log(groupId,
-                  //   this.state.dynamicValuesByRoutes
-                  //     .filter(f => f.group_id === groupId),
-                  //   dynamicValues,
-                  //   Object.values(dynamicValues).reduce((acc, i) => acc + i, 0), Object.keys(dynamicValues).length,
-                  //   Object.values(dynamicValues).reduce((acc, i) => acc + i, 0) / Object.keys(dynamicValues).length)
 
                   return {
                     sectionsAtCurrentDate: routes,

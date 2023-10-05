@@ -9,6 +9,9 @@ export class GroupRoutes extends React.Component {
   };
 
   addRoute = (routeId) => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
     this.props.rootOnChange({
       ...this.props.rootValue,
       routes: [
@@ -16,7 +19,10 @@ export class GroupRoutes extends React.Component {
         {
           routeId,
           rulesConfig: {
-            states: []
+            states: [{
+              date: today.getTime(),
+              states: []
+            }]
           }
         },
       ],
@@ -72,8 +78,6 @@ export class GroupRoutes extends React.Component {
 
     const { editRoute, value } = this.state;
     const { routes } = value;
-
-    console.log(this.state)
 
     return <>
       {editRoute && (
@@ -273,7 +277,7 @@ function GreenScoreForm({ route, ...rest }) {
   const [statesWithSection, setStatesWithSection] = useState([])
 
   const today = new Date()
-  today.setDate(today.getDate() - 0) // TODO - remove this line
+  // today.setDate(today.getDate() - 0) // TODO - remove this line
   // today.setMonth(today.getMonth() - 4) // TODO - remove this line
   today.setUTCHours(0, 0, 0, 0);
 
@@ -463,8 +467,6 @@ function RulesTables({ rest, states, onRulesChange }) {
           </div>
           {(rules || []).map(({ id, description, advice }) => {
             const enabled = ruleIsEabled(id);
-
-            console.log("enabled", enabled)
 
             return <div key={id}
               className="align-items-center"

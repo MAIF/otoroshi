@@ -146,9 +146,9 @@ export function ManagerTitle({ }) {
             className="container-sm"
             title={"Green score"}>
             {!editingGroup && !isOnCreation && <>
-                <button type="button" onClick={() => {
+                {/* <button type="button" onClick={() => {
                     generate()
-                }}>Generate</button>
+                }}>Generate</button> */}
 
                 <Tab title="Dashboard" icon="globe" to='/extensions/green-score' isActive={location.pathname === '/extensions/green-score'} />
 

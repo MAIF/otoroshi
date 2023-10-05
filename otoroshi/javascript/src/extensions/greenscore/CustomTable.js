@@ -33,17 +33,21 @@ export default class CustomTable extends React.Component {
     formatGroups = items => items.map((item, i) => this.formatGroup(item, i))
 
     formatGroup = (group, i) => {
+        const entity = this.props.scores[i] || {
+            score: 0,
+            dynamic_values: 0
+        };
         return {
             ...group,
             opened: false,
             name: firstLetterUppercase(group.name),
             description: firstLetterUppercase(group.description),
-            notation: getLetter(this.props.scores[i].score),
-            color: getColor(this.props.scores[i].score),
-            net: this.props.scores[i].score,
-            data: String.fromCharCode(65 + Math.min(Math.floor((1 - this.props.scores[i].dynamic_values) * 5))),
-            dynamicLetter: Object.keys(GREEN_SCORE_GRADES)[Math.min(Math.floor(((1 - this.props.scores[i].dynamic_values) * 5)))],
-            dynamic: parseFloat(this.props.scores[i].dynamic_values * 100, 2).toFixed(2)
+            notation: getLetter(entity.score),
+            color: getColor(entity.score),
+            net: entity.score,
+            data: String.fromCharCode(65 + Math.min(Math.floor((1 - entity.dynamic_values) * 5))),
+            dynamicLetter: Object.keys(GREEN_SCORE_GRADES)[Math.min(Math.floor(((1 - entity.dynamic_values) * 5)))],
+            dynamic: parseFloat(entity.dynamic_values * 100, 2).toFixed(2)
         }
     }
 
@@ -108,9 +112,7 @@ export default class CustomTable extends React.Component {
                 if (ok) {
                     this.client.deleteById(id)
                         .then(() => {
-                            this.setState({
-                                items: this.state.items.filter(g => g.id !== id)
-                            })
+                            window.location.reload()
                         })
                 }
             });
@@ -214,7 +216,7 @@ export default class CustomTable extends React.Component {
                                 .map((_, routeIndex) => {
                                     const routeInformations = this.props.routes.find(r => r.id === items[i].routes[routeIndex]?.routeId);
 
-                                    if (!routeInformations)
+                                    if (!routeInformations || !this.props.scores[i].sectionsAtCurrentDate[routeIndex])
                                         return null
 
                                     const sections = this.props.scores[i].sectionsAtCurrentDate[routeIndex].sections;
