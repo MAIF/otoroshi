@@ -22,6 +22,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[HTTP3 support](./http3.md)
 * @ref:[Anonymous reporting](./anonymous-reporting.md)
 * @ref:[OpenTelemetry support](./opentelemetry.md)
+* @ref:[Green score](./green-score.md)
 
 @@@ index
 
@@ -45,5 +46,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [HTTP3 support](./http3.md)
 * [Anonymous reporting](./anonymous-reporting.md)
 * [OpenTelemetry support](./opentelemetry.md)
+* [Green score](./green-score.md)
   
 @@@

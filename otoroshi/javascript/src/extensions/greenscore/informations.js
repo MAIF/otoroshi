@@ -9,7 +9,7 @@ export default function GreenScoreExtension(extensionId, ctx) {
       {
         title: 'Green scores',
         text: 'All your Green Scores',
-        path: 'extensions/green-score/green-score-configs',
+        path: 'extensions/green-score',
         icon: 'leaf',
       },
     ],
@@ -20,7 +20,7 @@ export default function GreenScoreExtension(extensionId, ctx) {
         title: 'Green Score configs.',
         description: 'All your Green Score configs.',
         img: 'leaf', // TODO: change image
-        link: '/extensions/green-score/green-score-configs',
+        link: '/extensions/green-score',
         display: () => true,
         icon: () => 'fa-leaf', // TODO: change icon
       },
@@ -28,29 +28,29 @@ export default function GreenScoreExtension(extensionId, ctx) {
     searchItems: [
       {
         action: () => {
-          window.location.href = `/bo/dashboard/green-score/green-score-configs`;
+          window.location.href = `/bo/dashboard/extensions/green-score`;
         },
         env: <span className="fas fa-leaf" />,
-        label: 'Green Score configs.',
-        value: 'green-score-configs',
+        label: 'Green Score Dashboard',
+        value: '/',
       },
     ],
     routes: [
       // TODO: add more route here if needed
       {
-        path: '/extensions/green-score/green-score-configs/:taction/:titem',
+        path: '/extensions/green-score/:taction/:titem',
         component: (props) => {
           return <GreenScoreConfigsPage {...props} />;
         },
       },
       {
-        path: '/extensions/green-score/green-score-configs/:taction',
+        path: '/extensions/green-score/:taction',
         component: (props) => {
           return <GreenScoreConfigsPage {...props} />;
         },
       },
       {
-        path: '/extensions/green-score/green-score-configs',
+        path: '/extensions/green-score',
         component: (props) => {
           return <GreenScoreConfigsPage {...props} />;
         },

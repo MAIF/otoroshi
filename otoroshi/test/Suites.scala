@@ -1,11 +1,9 @@
-import java.io.File
-
 import com.typesafe.config.ConfigFactory
 import functional._
-import tools._
-import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
+import otoroshi.greenscore.GreenScoreTestSpec
 import play.api.Configuration
+import tools._
 
 import scala.util.Try
 
@@ -180,3 +178,8 @@ class AnalyticsTests
     extends Suites(
       new AlertAndAnalyticsSpec("InMemory", Configurations.InMemoryConfiguration)
     )
+
+class GreenScoreTest
+  extends Suites(
+    new GreenScoreTestSpec("GreenScore", Configurations.InMemoryConfiguration)
+  )

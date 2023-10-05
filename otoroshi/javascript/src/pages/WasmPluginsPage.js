@@ -70,6 +70,7 @@ export class WasmSourcePath extends Component {
           .map((plugin) => {
             const wasmName = (this.isAString(plugin) ? plugin : plugin.name) || '';
             const parts = wasmName.split('.wasm');
+
             return {
               label: `${parts[0]} - ${parts[0].endsWith('-dev') ? '[DEV]' : '[RELEASE]'}`,
               value: this.isAString(plugin) ? plugin : plugin.name,

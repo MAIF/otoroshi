@@ -214,6 +214,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   private val hasExtensions = _extensions.nonEmpty
 
   private val extensions: Seq[AdminExtension]                                            = _extensions.filter(_.enabled)
+
   private val entitiesMap: Map[String, Seq[AdminExtensionEntity[EntityLocationSupport]]] =
     extensions.map(v => (v.id.cleanup, v.entities())).toMap
   private val entities: Seq[AdminExtensionEntity[EntityLocationSupport]]                 = entitiesMap.values.flatten.toSeq
