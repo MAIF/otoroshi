@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Secure an app with OAuth2 client_credential flow · Otoroshi</title>
+<title>Green Score · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -89,7 +89,7 @@
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
-    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/green-score.html" class="active page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -105,7 +105,7 @@
     <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
     <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
-    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="active page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
@@ -223,7 +223,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
-    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/green-score.html" class="active page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -239,7 +239,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
     <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
-    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="active page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
@@ -284,8 +284,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Secure an app with OAuth2 client_credential flow</li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Green Score</li>
 </ul>
 </div>
 </div>
@@ -293,124 +293,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#secure-an-app-with-oauth2-client-credential-flow" name="secure-an-app-with-oauth2-client-credential-flow" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth2 client_credential flow</h1>
-<p>Otoroshi makes it easy for your app to implement the <a href="https://auth0.com/docs/authorization/flows/client-credentials-flow">OAuth2 Client Credentials Flow</a>. </p>
-<p>With machine-to-machine (M2M) applications, the system authenticates and authorizes the app rather than a user. With the client credential flow, applications will pass along their Client ID and Client Secret to authenticate themselves and get a token.</p>
-<h2><a href="#deployed-the-client-credential-service" name="deployed-the-client-credential-service" class="anchor"><span class="anchor-link"></span></a>Deployed the Client Credential Service</h2>
-<p>The Client Credential Service must be enabled as a global plugin on your Otoroshi instance. Once enabled, it will expose three endpoints to issue and validate tokens for your routes.</p>
-<p>Let&rsquo;s navigate to your otoroshi instance (in our case <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>) on the danger zone (<code>top right cog icon / Danger zone</code> or at <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone">/bo/dashboard/dangerzone</a>).</p>
-<p>To enable a plugin in global on Otoroshi, you must add it in the <code>Global Plugins</code> section.</p>
-<ol>
-  <li>Open the <code>Global Plugin</code> section</li>
-  <li>Click on <code>enabled</code> (if not already done)</li>
-  <li>Search the plugin named <code>Client Credential Service</code> of type <code>Sink</code> (you need to enabled it on the old or new Otoroshi engine, depending on your use case)</li>
-  <li>Inject the default configuration by clicking on the button (if you are using the old Otoroshi engine)</li>
-</ol>
-<p>If you click on the arrow near each plugin, you will have the documentation of the plugin and its default configuration.</p>
-<p>The client credential plugin has by default 4 parameters : </p>
+<h1><a href="#green-score" name="green-score" class="anchor"><span class="anchor-link"></span></a>Green Score</h1>
+<p>The Green Score provide aggregated, quantitative data about the performance and behavior of an API over time. It is an aggregation of static and dynamic values that are coming from the usage of routes in Otoroshi. The main objective is to advise users on the consumption of their APIs and services.</p>
+<img src="../imgs/greenscore.png" />
+<p>Otoroshi has a complete integration of the collective rules, divided into four concerns: <strong>Architecture</strong>, <strong>Design</strong>, <strong>Usage</strong> and <strong>Logs retention</strong>. The 6000 score points are spread over the four parts and a final note is given for each group of routes.</p>
+<p>The API green score is available on 16.9.0 or later version of Otoroshi. You can find the feature on the search bar of your Otoroshi UI or directly in the sidebar by clicking on <strong>Green score</strong>.</p>
+<p>To start the process, click on Add New Group, give a name and select a first route to audit. After clicking on the hammer icon, you can select the rules respected by your route. Before saving, you can adjust the values used to calculate the dynamic score. These thresholds are used to calculate a second green score depending on the amount of data you want not to exceed from your downstream service and the following other values: </p>
 <ul>
-  <li><code>domain</code>: a regex used to expose the three endpoints (<code>default</code>: *)
-</li>
-  <li><code>expiration</code>: duration until the token expire (in ms) (<code>default</code>: 3600000)</li>
-  <li><code>defaultKeyPair</code>: a key pair used to sign the jwt token. By default, Otoroshi is deployed with an otoroshi-jwt-signing that you can visualize on the jwt verifiers certificates (<code>default</code>: &ldquo;otoroshi-jwt-signing&rdquo;)</li>
-  <li><code>secure</code>: if enabled, Otoroshi will expose routes only in the https requests case (<code>default</code>: true)</li>
+  <li><strong>Overhead</strong>: Otoroshi&rsquo;s calculation time to handle the request and response</li>
+  <li><strong>Duration</strong>: the complete duration from the recpetion of the request by Otoroshi until the client gets a response</li>
+  <li><strong>Backend duration</strong>: the time required for downstream service to respond to Otoroshi</li>
+  <li><strong>Calls</strong>: the rate of calls by seconds</li>
+  <li><strong>Data in</strong>: the amount of data received by the downstream service</li>
+  <li><strong>Data out</strong>: the amount of data produced by the downstream service</li>
+  <li><strong>Headers in</strong>: the amount of headers received by the downstream service</li>
+  <li><strong>Headers out</strong>: the amount of headers produced by the downstream service</li>
 </ul>
-<p>In this tutorial, we will set the configuration as following : </p>
-<ul>
-  <li><code>domain</code>: oauth.oto.tools</li>
-  <li><code>expiration</code>: 3600000</li>
-  <li><code>defaultKeyPair</code>: otoroshi-jwt-signing</li>
-  <li><code>secure</code>: false</li>
-</ul>
-<p>Now that the plugin is running, third routes are exposed on each matching domain of the regex.</p>
-<ul>
-  <li><code>GET  /.well-known/otoroshi/oauth/jwks.json</code> : retrieve all public keys presents in Otoroshi</li>
-  <li><code>POST /.well-known/otoroshi/oauth/token/introspect</code> : validate and decode the token</li>
-  <li><code>POST /.well-known/otoroshi/oauth/token</code> : generate a token with the fields provided</li>
-</ul>
-<p>Once the global configuration saved, we can deployed a simple service to test it.</p>
-<p>Let&rsquo;s navigate to the routes page, and create a new route with : </p>
-<ol>
-  <li><code>foo.oto.tools</code> as <code>domain</code> in the frontend node</li>
-  <li><code>mirror.otoroshi.io</code> as hostname in the list of targets of the backend node, and <code>443</code> as <code>port</code>.</li>
-  <li>Search in the list of plugins and add the <code>Apikeys</code> plugin to the flow</li>
-  <li>In the extractors section of the <code>Apikeys</code> plugin, disabled the <code>Basic</code>, <code>Client id</code> and <code>Custom headers</code> option.</li>
-  <li>Save your route</li>
-</ol>
-<p>Let&rsquo;s make a first call, to check if the jwks are already exposed :</p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://oauth.oto.tools:8080/.well-known/otoroshi/oauth/jwks.json&#39;
-</code></pre>
-<p>The output should look like a list of public keys : </p>
-<pre class="prettyprint"><code class="language-sh">{
-  &quot;keys&quot;: [
-    {
-      &quot;kty&quot;: &quot;RSA&quot;,
-      &quot;e&quot;: &quot;AQAB&quot;,
-      &quot;kid&quot;: &quot;otoroshi-intermediate-ca&quot;,
-      ...
-    }
-    ...
-  ]
-}
-</code></pre>
-<p>Let&rsquo;s make a call to your route. </p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://foo.oto.tools:8080/&#39;
-</code></pre>
-<p>This should output the expected error: </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;Otoroshi-Error&quot;: &quot;No ApiKey provided&quot;
-}
-</code></pre>
-<p>The first step is to generate an api key. Navigate to the api keys page, and create an item with the following values (it will be more easy to use them in the next step)</p>
-<ul>
-  <li><code>my-id</code> as <code>ApiKey Id</code></li>
-  <li><code>my-secret</code> as <code>ApiKey Secret</code></li>
-</ul>
-<p>The next step is to get a token by calling the endpoint <code>http://oauth.oto.tools:8080/.well-known/otoroshi/oauth/jwks.json</code>. The required fields are the grand type, the client and the client secret corresponding to our generated api key.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://oauth.oto.tools:8080/.well-known/otoroshi/oauth/token \
--H &quot;Content-Type: application/json&quot; \
--d @- &lt;&lt;&#39;EOF&#39;
-{
-  &quot;grant_type&quot;: &quot;client_credentials&quot;,
-  &quot;client_id&quot;:&quot;my-id&quot;,
-  &quot;client_secret&quot;:&quot;my-secret&quot;
-}
-EOF
-</code></pre>
-<p>This request have one more optional field, named <code>scope</code>. The scope can be used to set a bunch of scope on the generated access token.</p>
-<p>The last command should look like : </p>
-<pre class="prettyprint"><code class="language-sh">{
-  &quot;access_token&quot;: &quot;generated-token-xxxxx&quot;,
-  &quot;token_type&quot;: &quot;Bearer&quot;,
-  &quot;expires_in&quot;: 3600
-}
-</code></pre>
-<p>Now we can call our api with the generated token</p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://foo.oto.tools:8080/&#39; \
-  -H &quot;Authorization: Bearer generated-token-xxxxx&quot;
-</code></pre>
-<p>This should output a successful call with the list of headers with a field named <code>Authorization</code> containing the previous access token.</p>
-<h2><a href="#other-possible-configuration" name="other-possible-configuration" class="anchor"><span class="anchor-link"></span></a>Other possible configuration</h2>
-<p>By default, Otoroshi generate the access token with the specified key pair in the configuration. But, in some case, you want a specific key pair by client_id/client_secret. The <code>jwt-sign-keypair</code> metadata can be set on any api key with the id of the key pair as value. </p>
+<p>The Green Score works for all architectures, including simple leader or more advanced concept like <a href="https://maif.github.io/otoroshi/manual/deploy/clustering.html">clustering</a>.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../how-to-s/setup-otoroshi-cluster.html">Setup an Otoroshi cluster</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
-<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
-<div class="page-nav">
-<div class="nav-title">On this page:</div>
-<div class="nav-toc">
-<ul>
-  <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html#secure-an-app-with-oauth2-client-credential-flow" class="header">Secure an app with OAuth2 client_credential flow</a>
-  <ul>
-    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html#deployed-the-client-credential-service" class="header">Deployed the Client Credential Service</a></li>
-    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html#other-possible-configuration" class="header">Other possible configuration</a></li>
-  </ul></li>
-</ul>
-</div>
-</div>
-</nav>
 </div>
 </div>
 

@@ -89,6 +89,7 @@
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -222,6 +223,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -1899,6 +1901,8 @@ otoroshi {
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
     enable-json-media-type-with-open-charset = false # allow application/json media type with charset even if its not standard
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
+    dynamicBodySizeCompute = true
+    dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
   }
   wasm {
   	cache {
@@ -2210,6 +2214,9 @@ otoroshi {
       modern = false # use a modern store implementation
       modern = ${?CLUSTER_WORKER_STORE_MODERN}
       modern = ${?OTOROSHI_CLUSTER_WORKER_STORE_MODERN}
+      useWs = false
+      useWs = ${?CLUSTER_WORKER_USE_WS}
+      useWs = ${?OTOROSHI_CLUSTER_WORKER_USE_WS}
       state {
         retries = ${otoroshi.cluster.worker.retries} # the number of retries when pulling state
         retries = ${?CLUSTER_WORKER_STATE_RETRIES} # the number of retries when pulling state
@@ -2427,6 +2434,10 @@ otoroshi {
   		otoroshi_extensions_foo {
   			enabled = false
   		}
+      otoroshi_extensions_greenscore {
+        enabled = false
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
+      }
   	}
   }
 }
@@ -3218,6 +3229,7 @@ otoroshi {
     disableFunnyLogos = ${?OTOROSHI_OPTIONS_DISABLE_FUNNY_LOGOS}
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
+    dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
   }
   wasm {
   	cache {
@@ -3450,6 +3462,8 @@ otoroshi {
       swapStrategy = ${?OTOROSHI_CLUSTER_WORKER_SWAP_STRATEGY} # the internal memory store strategy, can be Replace or Merge
       modern = ${?CLUSTER_WORKER_STORE_MODERN}
       modern = ${?OTOROSHI_CLUSTER_WORKER_STORE_MODERN}
+      useWs = ${?CLUSTER_WORKER_USE_WS}
+      useWs = ${?OTOROSHI_CLUSTER_WORKER_USE_WS}
       state {
         retries = ${otoroshi.cluster.worker.retries} # the number of retries when pulling state
         retries = ${?CLUSTER_WORKER_STATE_RETRIES} # the number of retries when pulling state
@@ -3568,6 +3582,9 @@ otoroshi {
   	configurations {
   		otoroshi_extensions_foo {
   		}
+      otoroshi_extensions_greenscore {
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
+      }
   	}
   }
 }
