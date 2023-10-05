@@ -1,6 +1,6 @@
 # Otoroshi dev environment for quick patches
 
-this docker image provide a functionnal dev environement to patch Otoroshi quickly without installing a lot of stuff, you just need `Docker` and a web browser available on your machine.
+this docker image provides a functional dev environment to patch Otoroshi quickly without installing a lot of stuff, you just need `Docker` and a web browser available on your machine.
 
 ## Build
 

@@ -6,7 +6,7 @@
   <img style="width: 45%;" src="https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png" alt="Otoroshi http reverse proxy and api management"/>
 </p>
 
-**Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
+**Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developed by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamically at runtime.
 
 **Otoroshi** is built on top of <a href="https://akka.io">akka</a> and <a href="https://www.playframework.com">playframework</a>.
 
