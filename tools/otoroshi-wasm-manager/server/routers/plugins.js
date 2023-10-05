@@ -13,6 +13,7 @@ const manager = require('../logger');
 const { InformationsReader } = require('../services/informationsReader');
 const { WebSocket } = require('../services/websocket');
 const { Publisher } = require('../services/publish-job');
+const { ENV } = require('../configuration');
 const log = manager.createLogger('plugins');
 
 const router = express.Router()
@@ -23,13 +24,13 @@ router.post('/github', (req, res) => {
   fetch(`https://api.github.com/repos/${owner}/${repo}/zipball/${ref || "main"}`, {
     redirect: 'follow',
     headers: private ? {
-      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_TOKEN}`
+      Authorization: `Bearer ${ENV.GITHUB_PERSONAL_TOKEN}`
     } : {}
   })
     .then(r => {
       const contentType = r.headers.get('Content-Type');
       const contentLength = r.headers.get('Content-Length');
-      if (contentLength > process.env.GITHUB_MAX_REPO_SIZE) {
+      if (contentLength > ENV.GITHUB_MAX_REPO_SIZE) {
         return {
           status: 400,
           result: 'this repo exceed the limit of the manager'
@@ -125,7 +126,7 @@ router.post('/github/repo', (req, res) => {
   fetch(`https://api.github.com/repos/${req.body.owner}/${req.body.repo}/branches/${req.body.ref || "main"}`, {
     redirect: 'follow',
     headers: req.body.private ? {
-      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_TOKEN}`
+      Authorization: `Bearer ${ENV.GITHUB_PERSONAL_TOKEN}`
     } : {}
   })
     .then(r => {
@@ -445,7 +446,7 @@ router.post('/:id/build', async (req, res) => {
 })
 
 router.post('/:id/publish', (req, res) => {
-  if (!process.env.WAPM_REGISTRY_TOKEN) {
+  if (!ENV.WAPM_REGISTRY_TOKEN) {
     res.status(400)
       .json({
         error: 'WAPM registry is not configured!'

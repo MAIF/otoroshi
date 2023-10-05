@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const express = require('express');
 const path = require('path');
 const { FileSystem } = require('../services/file-system');
+const { ENV } = require('../configuration');
 
 const router = express.Router()
 
@@ -35,7 +36,7 @@ function getTemplatesFromPath(type, res) {
 }
 
 function getTemplates(type, res) {
-  const source = process.env.MANAGER_TEMPLATES;
+  const source = ENV.MANAGER_TEMPLATES;
   const zipName = `${type}.zip`;
 
   if (!source) {

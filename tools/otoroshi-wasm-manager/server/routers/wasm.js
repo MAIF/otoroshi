@@ -1,5 +1,4 @@
 const express = require('express');
-const { Context } = require('@extism/extism');
 const { S3 } = require('../s3');
 const { UserManager } = require('../services/user');
 
@@ -33,7 +32,7 @@ router.post('/:pluginId', (req, res) => {
 });
 
 function run(wasm, { input, functionName, wasi }, res) {
-  const { s3, Bucket } = S3.state()
+  const { s3, Bucket } = S3.state();
 
   s3.getObject({
     Bucket,
@@ -41,6 +40,7 @@ function run(wasm, { input, functionName, wasi }, res) {
   })
     .promise()
     .then(async data => {
+      const { Context } = require('@extism/extism');
       const ctx = new Context();
       const plugin = ctx.plugin(data.Body, wasi);
 

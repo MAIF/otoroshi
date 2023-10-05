@@ -7,10 +7,11 @@ const manager = require('../logger');
 const { FileSystem } = require('./file-system');
 const { unzipTo } = require('../utils');
 const { S3 } = require('../s3');
+const { ENV } = require('../configuration');
 
 const log = manager.createLogger('PUBLISHER');
 
-const PUBLISH_COMMAND = process.env.DOCKER_USAGE ? '/root/.wasmer/bin/wapm' : 'wapm'
+const PUBLISH_COMMAND = ENV.DOCKER_USAGE ? '/root/.wasmer/bin/wapm' : 'wapm'
 const PUBLISH_ARGS = ['publish']
 
 const queue = []
@@ -110,8 +111,8 @@ const loop = () => {
 const publishIsAlreadyRunning = folder => FileSystem.folderAlreadyExits('/tmp', folder)
 
 const initialize = () => {
-  if (process.env.WAPM_REGISTRY_TOKEN) {
-    const child = spawn('wapm', ['login', process.env.WAPM_REGISTRY_TOKEN], { cwd: '/tmp' });
+  if (ENV.WAPM_REGISTRY_TOKEN) {
+    const child = spawn('wapm', ['login', ENV.WAPM_REGISTRY_TOKEN], { cwd: '/tmp' });
     child.stdout.on('data', data => log.info(data.toString()));
     child.stderr.on('data', data => log.error(data.toString()));
     child.on('error', (error) => log.error(error.toString()));

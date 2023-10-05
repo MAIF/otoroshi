@@ -6,6 +6,7 @@ const compression = require('compression');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { S3 } = require('./s3');
+const { ENV } = require('./configuration');
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
@@ -51,7 +52,7 @@ S3.initializeS3Connection()
 
     WebSocket.createLogsWebSocket(server);
 
-    const PORT = process.env.MANAGER_PORT || 5001;
+    const PORT = ENV.MANAGER_PORT || 5001;
 
     server.listen(PORT, () => log.info(`listening on ${PORT}`));
   })

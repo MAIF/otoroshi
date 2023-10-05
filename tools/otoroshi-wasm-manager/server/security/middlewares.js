@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { ENV } = require('../configuration');
 
-const secret = process.env.OTOROSHI_TOKEN_SECRET || 'veryverysecret';
+const secret = ENV.OTOROSHI_TOKEN_SECRET || 'veryverysecret';
 
 const missingCredentials = res => {
   res
@@ -11,7 +12,7 @@ const missingCredentials = res => {
 }
 
 function extractedUserOrApikey(req) {
-  const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
+  const jwtUser = req.headers[ENV.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
   if (jwtUser) {
     try {
       const decodedToken = jwt.verify(jwtUser, secret, { algorithms: ['HS512'] });
@@ -27,8 +28,8 @@ function extractedUserOrApikey(req) {
 }
 
 const extractUserFromQuery = (req, res, next) => {
-  if (process.env.AUTH_MODE === 'AUTH') {
-    const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
+  if (ENV.AUTH_MODE === 'AUTH') {
+    const jwtUser = req.headers[ENV.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
     if (jwtUser) {
       try {
         const decodedToken = jwt.verify(jwtUser, secret, { algorithms: ['HS512'] });
@@ -42,7 +43,7 @@ const extractUserFromQuery = (req, res, next) => {
       console.log(`Missing jwt user ${jwtUser}`)
       missingCredentials(res)
     }
-  } else if (process.env.AUTH_MODE === 'NO_AUTH') {
+  } else if (ENV.AUTH_MODE === 'NO_AUTH') {
     req.user = { email: 'admin@otoroshi.io' }
     next()
   } else {

@@ -9,6 +9,7 @@ const rustCompiler = require('./compiler/rust');
 const opaCompiler = require('./compiler/opa');
 
 const { BuildOptions, CompilerOptions } = require('./compiler/compiler');
+const { ENV } = require('../configuration');
 
 const COMPILERS = {
   'js': JsCompiler,
@@ -23,7 +24,7 @@ const log = manager.createLogger('BUILDER');
 let running = 0;
 const queue = [];
 
-const MAX_JOBS = process.env.MANAGER_MAX_PARALLEL_JOBS || 2;
+const MAX_JOBS = ENV.MANAGER_MAX_PARALLEL_JOBS || 2;
 
 const loop = () => {
   log.info(`Running jobs: ${running} - BuildingJob size: ${queue.length}`)

@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 const dns = require('dns');
 const url = require('url');
 const manager = require('./logger');
+const { ENV } = require('./configuration');
 const log = manager.createLogger('wasm-manager');
 
 let state = {
@@ -11,31 +12,31 @@ let state = {
 
 const initializeS3Connection = () => {
   AWS.config.update({
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+    accessKeyId: ENV.S3_ACCESS_KEY_ID,
+    secretAccessKey: ENV.S3_SECRET_ACCESS_KEY
   });
 
-  if (process.env.DOCKER_USAGE) {
-    const URL = url.parse(process.env.S3_ENDPOINT)
+  if (ENV.DOCKER_USAGE) {
+    const URL = url.parse(ENV.S3_ENDPOINT)
 
     return new Promise(resolve => dns.lookup(URL.hostname, function (err, ip) {
       log.debug(`${URL.protocol}//${ip}:${URL.port}${URL.pathname}`)
       state = {
         s3: new AWS.S3({
           endpoint: `${URL.protocol}//${ip}:${URL.port}${URL.pathname}`,
-          s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE
+          s3ForcePathStyle: ENV.S3_FORCE_PATH_STYLE
         }),
-        Bucket: process.env.S3_BUCKET
+        Bucket: ENV.S3_BUCKET
       }
       resolve()
     }))
   } else {
     state = {
       s3: new AWS.S3({
-        endpoint: process.env.S3_ENDPOINT,
-        s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE
+        endpoint: ENV.S3_ENDPOINT,
+        s3ForcePathStyle: ENV.S3_FORCE_PATH_STYLE
       }),
-      Bucket: process.env.S3_BUCKET
+      Bucket: ENV.S3_BUCKET
     }
     return Promise.resolve();
   }

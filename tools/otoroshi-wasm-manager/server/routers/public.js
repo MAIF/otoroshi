@@ -3,17 +3,18 @@ const { S3 } = require('../s3');
 const { UserManager } = require("../services/user");
 const { format } = require('../utils');
 const { Security } = require('../security/middlewares');
+const { ENV } = require('../configuration');
 
 const router = express.Router()
 
-const DOMAINS = (process.env.MANAGER_ALLOWED_DOMAINS || "")
+const DOMAINS = (ENV.MANAGER_ALLOWED_DOMAINS || "")
   .split(',')
 
 router.use((req, res, next) => {
-  if (process.env.AUTH_MODE === 'NO_AUTH') {
+  if (ENV.AUTH_MODE === 'NO_AUTH') {
     next()
   } else if (
-    process.env.AUTH_MODE === 'AUTH' &&
+    ENV.AUTH_MODE === 'AUTH' &&
     DOMAINS.includes(req.headers.host) &&
     Security.extractedUserOrApikey(req)
   ) {
@@ -21,7 +22,7 @@ router.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', true)
     next()
   } else {
-    console.log(process.env.AUTH_MODE === 'AUTH')
+    console.log(ENV.AUTH_MODE === 'AUTH')
     console.log(DOMAINS.includes(req.headers.host))
     console.log(Security.extractedUserOrApikey(req))
     console.log(req.headers.host)
