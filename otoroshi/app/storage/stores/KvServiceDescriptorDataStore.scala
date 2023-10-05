@@ -230,7 +230,17 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
         redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
         redisCli.expire(dataOutForServiceStatsKey("global"), 10)
       }
-      env.clusterAgent.incrementService(id, 1L, dataIn, dataOut, callOverhead, callDuration, callDuration - upstreamLatency, 0L, 0L)
+      env.clusterAgent.incrementService(
+        id,
+        1L,
+        dataIn,
+        dataOut,
+        callOverhead,
+        callDuration,
+        callDuration - upstreamLatency,
+        0L,
+        0L
+      )
       // now wait for all
       for {
         // incrementCalls

@@ -40,6 +40,7 @@ import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -1753,7 +1754,8 @@ object DynamicSSLEngineProvider {
       clientAuth: ClientAuth,
       cipherSuites: Option[Seq[String]],
       protocols: Option[Seq[String]],
-      appProto: Option[String]
+      appProto: Option[String],
+      env: => Env
   ): SSLEngine = {
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
@@ -1762,7 +1764,11 @@ object DynamicSSLEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine                 = new CustomSSLEngine(rawEngine, appProto)
+    val engine                 = new CustomSSLEngine(
+      rawEngine,
+      appProto,
+      env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols
+    )
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
@@ -1835,7 +1841,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   }
 
   override def createSSLEngine(): SSLEngine = {
-    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
+    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None, OtoroshiEnvHolder.get())
   }
 
   private def setupSslContext(): SSLContext = {
@@ -2181,7 +2187,8 @@ object FakeKeyStore {
   }
 }
 
-class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String]) extends SSLEngine {
+class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProtos: Map[String, Seq[String]])
+    extends SSLEngine {
 
   // println(delegate.getClass.getName)
   // sun.security.ssl.SSLEngineImpl
@@ -2311,8 +2318,28 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String]) extends SSL
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
+    import scala.jdk.CollectionConverters._
     if (!lock) {
-      delegate.setHandshakeApplicationProtocolSelector(selector)
+      delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
+        override def apply(t: SSLEngine, u: util.List[String]): String = {
+          Try(t.getPeerHost)
+            .orElse(Try(t.getHandshakeSession).map(_.getPeerHost))
+            .orElse(Try(t.getSession).map(_.getPeerHost)) match {
+            case Failure(_)        => selector.apply(t, u)
+            case Success(peerHost) => {
+              // println(s"get selector on : ${peerHost} - ${u.toArray.mkString(", ")}")
+              bannedProtos.get(peerHost) match {
+                case None         => selector.apply(t, u)
+                case Some(banned) => {
+                  val withoutBanned = u.asScala.filterNot(v => banned.contains(v))
+                  // println(s"can just use: ${withoutBanned.mkString(", ")}")
+                  selector.apply(t, withoutBanned.asJava)
+                }
+              }
+            }
+          }
+        }
+      })
     }
   }
 

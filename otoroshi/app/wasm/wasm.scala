@@ -46,15 +46,15 @@ object WasmDataRights {
 }
 
 case class WasmAuthorizations(
-                               httpAccess: Boolean = false,
-                               globalDataStoreAccess: WasmDataRights = WasmDataRights(),
-                               pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
-                               globalMapAccess: WasmDataRights = WasmDataRights(),
-                               pluginMapAccess: WasmDataRights = WasmDataRights(),
-                               proxyStateAccess: Boolean = false,
-                               configurationAccess: Boolean = false,
-                               proxyHttpCallTimeout: Int = 5000
-                             ) {
+    httpAccess: Boolean = false,
+    globalDataStoreAccess: WasmDataRights = WasmDataRights(),
+    pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
+    globalMapAccess: WasmDataRights = WasmDataRights(),
+    pluginMapAccess: WasmDataRights = WasmDataRights(),
+    proxyStateAccess: Boolean = false,
+    configurationAccess: Boolean = false,
+    proxyHttpCallTimeout: Int = 5000
+) {
   def json: JsValue = WasmAuthorizations.format.writes(this)
 }
 
@@ -97,24 +97,25 @@ object WasmAuthorizations {
 }
 
 case class WasmConfig(
-   source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
-   memoryPages: Int = 20,
-   functionName: Option[String] = None,
-   config: Map[String, String] = Map.empty,
-   allowedHosts: Seq[String] = Seq.empty,
-   allowedPaths: Map[String, String] = Map.empty,
-   ////
-   // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
-   wasi: Boolean = false,
-   opa: Boolean = false,
-   instances: Int = 1,
-   killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
-   authorizations: WasmAuthorizations = WasmAuthorizations()
- ) extends NgPluginConfig with WasmConfiguration {
+    source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
+    memoryPages: Int = 20,
+    functionName: Option[String] = None,
+    config: Map[String, String] = Map.empty,
+    allowedHosts: Seq[String] = Seq.empty,
+    allowedPaths: Map[String, String] = Map.empty,
+    ////
+    // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
+    wasi: Boolean = false,
+    opa: Boolean = false,
+    instances: Int = 1,
+    killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
+    authorizations: WasmAuthorizations = WasmAuthorizations()
+) extends NgPluginConfig
+    with WasmConfiguration {
   // still here for compat reason
-  def lifetime: WasmVmLifetime              = WasmVmLifetime.Forever
+  def lifetime: WasmVmLifetime = WasmVmLifetime.Forever
   //def wasmPool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
-  def json: JsValue                         = Json.obj(
+  def json: JsValue            = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,
     "functionName"   -> functionName,
@@ -204,19 +205,19 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   implicit val ec = env.otoroshiExecutionContext
   implicit val ev = env
 
-  val logger: Logger = Logger("otoroshi-wasm-integration")
-  val materializer: Materializer = env.otoroshiMaterializer
-  val executionContext: ExecutionContext = env.otoroshiExecutionContext
-  val wasmCacheTtl: Long = env.wasmCacheTtl
-  val wasmQueueBufferSize: Int = env.wasmQueueBufferSize
+  val logger: Logger                                        = Logger("otoroshi-wasm-integration")
+  val materializer: Materializer                            = env.otoroshiMaterializer
+  val executionContext: ExecutionContext                    = env.otoroshiExecutionContext
+  val wasmCacheTtl: Long                                    = env.wasmCacheTtl
+  val wasmQueueBufferSize: Int                              = env.wasmQueueBufferSize
   val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
-  val wasmExecutor: ExecutionContext = ExecutionContext.fromExecutorService(
+  val wasmExecutor: ExecutionContext                        = ExecutionContext.fromExecutorService(
     Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
   )
 
   override def url(path: String, tlsConfigOpt: Option[TlsConfig] = None): WSRequest = {
     tlsConfigOpt match {
-      case None => env.Ws.url(path)
+      case None            => env.Ws.url(path)
       case Some(tlsConfig) => {
         val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
         env.MtlsWs.url(path, cfg)
@@ -224,13 +225,18 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
     }
   }
 
-  override def wasmManagerSettings: Future[Option[WasmManagerSettings]] = env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
+  override def wasmManagerSettings: Future[Option[WasmManagerSettings]] =
+    env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
 
-  override def wasmConfig(path: String): Future[Option[WasmConfiguration]] = env.proxyState.wasmPlugin(path).map(_.config).vfuture
+  override def wasmConfig(path: String): Future[Option[WasmConfiguration]] =
+    env.proxyState.wasmPlugin(path).map(_.config).vfuture
 
   override def wasmConfigs(): Future[Seq[WasmConfiguration]] = env.proxyState.allWasmPlugins().map(_.config).vfuture
 
-  override def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
+  override def hostFunctions(
+      config: WasmConfiguration,
+      pluginId: String
+  ): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
     HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)
   }
 }
@@ -257,7 +263,7 @@ class WasmVmPoolCleaner extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val config                = env.datastores.globalConfigDataStore
+    val config = env.datastores.globalConfigDataStore
       .latest()
       .plugins
       .config

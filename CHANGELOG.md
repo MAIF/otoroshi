@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.9.0] - 2023-09-29
+
+https://github.com/MAIF/otoroshi/milestone/74?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.8.1...v16.9.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.9.0
+
+### Added
+
+- support entity validators per admin api consumer (user or apikey) using opa rules (#1629)
+- support Infisical as secret vault (#1688)
+- add JDK21 docker image (#1705)
+- add support for custom vaults in admin extensions (#1708)
+- restore request size computation if not too sluggish (#1710)
+- ALPN customization per domain name (#1720)
+- remove protocol specific headers when backend target use lower protocol version (#1721)
+
+### Changed 
+
+- split wasm runtime into a separate library (#1702)
+- rework on the cluster protocol (#1713)
+- react-select 1.2.1 -> 5.x (#1718)
+
+### Fixed 
+
+- WasmManager : it should be launched with pm2 or similar tool (#1698)
+- Wasm manager docker image build warnings (#1699)
+- wasm manager project query param sometimes has bad value (#1703)
+- wasm manager is not built with a version (#1707)
+- Backend : Cannot reach HTTP/1.1 (no SSL) Backend  ? (#1711)
+- admin rights sometimes fails when super admin (#1712)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @ptitFicus 
+* @baudelotphilippe 
 
 ## [16.8.1] - 2023-09-07
 

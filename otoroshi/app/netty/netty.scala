@@ -3,7 +3,7 @@ package otoroshi.netty
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{Channel, ChannelPipeline, EventLoopGroup}
+import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, ChannelPipeline, EventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
@@ -34,6 +34,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.{Failure, Success, Try}
 import reactor.netty.resources.LoopResources
+
+import java.util.concurrent.atomic.AtomicReference
 
 case class HttpServerBodyResponse(
     body: Publisher[Array[Byte]],
@@ -243,11 +245,12 @@ class ReactorNettyServer(env: Env) {
   private def handleWebsocket(
       req: HttpServerRequest,
       res: HttpServerResponse,
+      version: String,
       secure: Boolean,
       session: Option[SSLSession]
   ): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq = new ReactorNettyRequestHeader(req, secure, session, sessionCookieBaker, flashCookieBaker)
+      val otoReq = new ReactorNettyRequestHeader(req, version, secure, session, sessionCookieBaker, flashCookieBaker)
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow)  => {
@@ -274,19 +277,22 @@ class ReactorNettyServer(env: Env) {
   ): Publisher[Void] = {
     val parent      = channel.parent()
     val sslHandler  =
-      Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
+      Option(parent.pipeline().get(classOf[OtoroshiSslHandler]))
+        .orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
+    val version     =
+      sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
     val sessionOpt  = sslHandler.map(_.engine.getSession)
-    sessionOpt.foreach(s => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
+    sessionOpt.foreach(s => req.requestHeaders().set("Otoroshi-Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
         .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     if (isWebSocket) {
-      handleWebsocket(req, res, secure, sessionOpt)
+      handleWebsocket(req, res, version, secure, sessionOpt)
     } else {
       ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-        val otoReq = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+        val otoReq = new ReactorNettyRequest(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
         engine.handle(otoReq, engine.badDefaultRoutingHttp).map { result =>
           sendResultAsHttpResponse(result, res)
         }
@@ -303,16 +309,19 @@ class ReactorNettyServer(env: Env) {
   ): Publisher[Void] = {
     val parent      = channel.parent()
     val sslHandler  =
-      Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
+      Option(parent.pipeline().get(classOf[OtoroshiSslHandler]))
+        .orElse(Option(channel.pipeline().get(classOf[OtoroshiSslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
-    sessionOpt.foreach(s => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
+    sessionOpt.foreach(s => req.requestHeaders().set("Otoroshi-Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
         .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq             = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+      val version            =
+        sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
+      val otoReq             = new ReactorNettyRequest(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
       val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
       reqHandler match {
         case a: EssentialAction          => {
@@ -351,7 +360,7 @@ class ReactorNettyServer(env: Env) {
     new SSLContext(
       new SSLContextSpi() {
         override def engineCreateSSLEngine(): SSLEngine                     =
-          DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None)
+          DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None, env)
         override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
         override def engineInit(
             keyManagers: Array[KeyManager],
@@ -438,7 +447,7 @@ class ReactorNettyServer(env: Env) {
       val defaultLogFormat                           = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
       val logCustom                                  = new AccessLogFactory {
         override def apply(args: AccessLogArgProvider): AccessLog = {
-          val tlsVersion = args.requestHeader("Tls-Version")
+          val tlsVersion = args.requestHeader("Otoroshi-Tls-Version")
           AccessLog.create(
             defaultLogFormat,
             applyAddress(args.remoteAddress()),
@@ -476,16 +485,20 @@ class ReactorNettyServer(env: Env) {
         )
         .idleTimeout(config.idleTimeout)
         .doOnChannelInit { (observer, channel, socket) =>
-          val engine = setupSslContext().createSSLEngine()
+          val engine              = setupSslContext().createSSLEngine()
+          val applicationProtocol = new AtomicReference[String]("http/1.1")
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
-            protocols match {
+            val chosen = protocols match {
               case ps if ps.contains("h2") && config.http2.enabled => "h2"
               case ps if ps.contains("spdy/3")                     => "spdy/3"
               case _                                               => "http/1.1"
             }
+            applicationProtocol.set(chosen)
+            chosen
           })
           // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
-          channel.pipeline().addFirst(new SslHandler(engine))
+          channel.pipeline().addFirst(new OtoroshiSslHandler(engine, applicationProtocol))
+          channel.pipeline().addLast(new OtoroshiErrorHandler(logger))
         }
         .handle(handleFunction(true))
         .bindNow()
@@ -520,5 +533,18 @@ class ReactorNettyServer(env: Env) {
     } else {
       ()
     }
+  }
+}
+
+class OtoroshiSslHandler(engine: SSLEngine, appProto: AtomicReference[String]) extends SslHandler(engine) {
+  def useH2: Boolean                    = Option(appProto.get()).contains("h2")
+  def chosenApplicationProtocol: String = Option(appProto.get()).getOrElse("http/1.1")
+}
+
+class OtoroshiErrorHandler(logger: Logger) extends ChannelHandler {
+  override def handlerAdded(ctx: ChannelHandlerContext): Unit   = ()
+  override def handlerRemoved(ctx: ChannelHandlerContext): Unit = ()
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
+    logger.error("error caught in netty pipeline", cause)
   }
 }

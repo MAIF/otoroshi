@@ -8,7 +8,22 @@ import net.minidev.json.{JSONArray, JSONObject}
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json, Reads, Writes}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json,
+  Reads,
+  Writes
+}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.jackson.JacksonJson
 
@@ -107,7 +122,7 @@ case class JsonPathReadError(message: String, path: String, payload: String, err
 case class JsonPathReadErrorException(err: JsonPathReadError) extends RuntimeException with NoStackTrace
 
 case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) extends JsonValidator {
-  def json: JsValue = JsonPathValidator.format.writes(this)
+  def json: JsValue         = JsonPathValidator.format.writes(this)
   override def kind: String = "json-path-validator"
   def validate(ctx: JsValue)(implicit env: Env): Boolean = {
     ctx.atPath(path).asOpt[JsValue] match {
@@ -238,7 +253,7 @@ case class JsonPathValidator(path: String, value: JsValue, error: Option[String]
 object JsonPathValidator {
   val format = new Format[JsonPathValidator] {
     override def writes(o: JsonPathValidator): JsValue             = Json.obj(
-      "kind" -> "json-path-validator",
+      "kind"  -> "json-path-validator",
       "path"  -> o.path,
       "value" -> o.value,
       "error" -> o.error.map(JsString.apply).orJsNull

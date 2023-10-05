@@ -316,7 +316,7 @@ object TcpService {
                 }
                 Tcp().outgoingConnectionWithTls(
                   remoteAddress,
-                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None)
+                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
                 )
               }
               case false => {
@@ -479,7 +479,7 @@ object TcpService {
                       }
                       Tcp().outgoingConnectionWithTls(
                         remoteAddress,
-                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None)
+                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
                       )
                     }
                     case false => {
@@ -633,7 +633,11 @@ class TcpEngineProvider {
     if (DynamicSSLEngineProvider.logger.isDebugEnabled)
       DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
-    val engine                 = new CustomSSLEngine(rawEngine, None)
+    val engine                 = new CustomSSLEngine(
+      rawEngine,
+      None,
+      env.datastores.globalConfigDataStore.latestUnsafe.tlsSettings.bannedAlpnProtocols
+    )
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))

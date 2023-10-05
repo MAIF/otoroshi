@@ -446,19 +446,21 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = OtoroshiEnvHolder.set(
-    new Env(
-      _configuration = configuration,
-      environment = environment,
-      lifecycle = applicationLifecycle,
-      httpConfiguration = httpConfiguration,
-      wsClient = wsClient,
-      circuitBeakersHolder = circuitBreakersHolder,
-      getHttpPort = None,
-      getHttpsPort = None,
-      testing = false
+  implicit lazy val env: Env = OtoroshiEnvHolder
+    .set(
+      new Env(
+        _configuration = configuration,
+        environment = environment,
+        lifecycle = applicationLifecycle,
+        httpConfiguration = httpConfiguration,
+        wsClient = wsClient,
+        circuitBeakersHolder = circuitBreakersHolder,
+        getHttpPort = None,
+        getHttpsPort = None,
+        testing = false
+      )
     )
-  ).seffectOn(ev => OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration, ev))
+    .seffectOn(ev => OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration, ev))
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 

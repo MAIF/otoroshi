@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.8.0-dev"
+version := "16.10.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -224,6 +224,9 @@ sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.anceli
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+githubOwner := "MAIF"
+githubRepository := "otoroshi"
+// githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
@@ -311,6 +314,8 @@ addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
+
+Revolver.enableDebugging(port = 5005, suspend = false)
 
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")

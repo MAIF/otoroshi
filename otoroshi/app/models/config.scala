@@ -127,17 +127,16 @@ object ElasticAnalyticsConfig {
       )
     override def reads(json: JsValue)              =
       Try {
-        val clusterUriValue: Seq[String] = (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
-        val urisValue: Seq[String] = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
-        val uris: Seq[String] = (clusterUriValue ++ urisValue)
-          .flatMap { uri =>
-            if (uri.contains(",")) {
-              uri.split(",").map(_.trim)
-            } else {
-              Seq(uri)
-            }
+        val clusterUriValue: Seq[String] =
+          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
+        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
+        val uris: Seq[String]            = (clusterUriValue ++ urisValue).flatMap { uri =>
+          if (uri.contains(",")) {
+            uri.split(",").map(_.trim)
+          } else {
+            Seq(uri)
           }
-          .distinct
+        }.distinct
         if (uris.isEmpty) {
           JsError("no cluster uri found at all")
         } else {
@@ -470,7 +469,8 @@ case class TlsSettings(
     randomIfNotFound: Boolean = false,
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
-    trustedCAsServer: Seq[String] = Seq.empty
+    trustedCAsServer: Seq[String] = Seq.empty,
+    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
 }
@@ -478,11 +478,12 @@ object TlsSettings {
   val format = new Format[TlsSettings] {
     override def writes(o: TlsSettings): JsValue =
       Json.obj(
-        "defaultDomain"      -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "randomIfNotFound"   -> o.randomIfNotFound,
-        "includeJdkCaServer" -> o.includeJdkCaServer,
-        "includeJdkCaClient" -> o.includeJdkCaClient,
-        "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply))
+        "defaultDomain"       -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "randomIfNotFound"    -> o.randomIfNotFound,
+        "includeJdkCaServer"  -> o.includeJdkCaServer,
+        "includeJdkCaClient"  -> o.includeJdkCaClient,
+        "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
+        "bannedAlpnProtocols" -> o.bannedAlpnProtocols
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -492,7 +493,8 @@ object TlsSettings {
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
-          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty)
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
+          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -970,6 +972,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
   def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]
+  def latestUnsafe: GlobalConfig
   def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]

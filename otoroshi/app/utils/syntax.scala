@@ -290,7 +290,7 @@ object implicits {
     def json: JsValue = JsNumber(obj)
   }
   implicit class BetterInt(private val obj: Int)                       extends AnyVal {
-    def json: JsValue = JsNumber(obj)
+    def json: JsValue         = JsNumber(obj)
     def atomic: AtomicInteger = new AtomicInteger(obj)
     def bytes: Array[Byte] = {
       Array[Byte](
@@ -302,7 +302,7 @@ object implicits {
     }
   }
   implicit class BetterLong(private val obj: Long)                     extends AnyVal {
-    def json: JsValue = JsNumber(obj)
+    def json: JsValue      = JsNumber(obj)
     def atomic: AtomicLong = new AtomicLong(obj)
     def bytes: Array[Byte] = {
       Array[Byte](

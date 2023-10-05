@@ -88,7 +88,8 @@ case class VmData(
     respRef: AtomicReference[play.api.mvc.Result],
     bodyInRef: AtomicReference[ByteString],
     bodyOutRef: AtomicReference[ByteString]
-) extends WasmOtoroshiHostUserData with WasmVmData {
+) extends WasmOtoroshiHostUserData
+    with WasmVmData {
   def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
       .from(request, attrs)

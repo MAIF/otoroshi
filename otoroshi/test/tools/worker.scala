@@ -24,13 +24,12 @@ object OtoWsWorker {
             .seffectOn(_.setProperty("otoroshi.cluster.worker.useWs", "true"))
         ),
         ConfigFactory
-          .parseString(
-            s"""
+          .parseString(s"""
                |otoroshi.next.state-sync-interval=5
                |""".stripMargin)
           .resolve()
       )
-      val server = otoroshi.start()
+      val server   = otoroshi.start()
     }
   }
 

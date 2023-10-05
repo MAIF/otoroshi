@@ -139,8 +139,9 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                    } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${
+                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                  } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -243,12 +244,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-        ? props.margin
-        : _props.rawSchema?.props?.margin !== undefined
-          ? _props.rawSchema?.props?.margin
-          : _props.readOnly
-            ? 'mb-0'
-            : 'mb-3';
+      ? props.margin
+      : _props.rawSchema?.props?.margin !== undefined
+      ? _props.rawSchema?.props?.margin
+      : _props.readOnly
+      ? 'mb-0'
+      : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -569,20 +570,20 @@ export class NgBoxBooleanRenderer extends Component {
       this.props.margin !== undefined
         ? this.props.margin
         : props.margin !== undefined
-          ? props.margin
-          : this.props.rawSchema?.margin !== undefined
-            ? this.props.rawSchema?.margin
-            : 3;
+        ? props.margin
+        : this.props.rawSchema?.margin !== undefined
+        ? this.props.rawSchema?.margin
+        : 3;
 
     const className = this.props.className;
 
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-        <div className={`row mb-${margin} ${className || ''}`}>
-          <div className="col-sm-10 ms-auto">{children}</div>
-        </div>
-      );
+          <div className={`row mb-${margin} ${className || ''}`}>
+            <div className="col-sm-10 ms-auto">{children}</div>
+          </div>
+        );
 
     return (
       <Container>
@@ -660,8 +661,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => { },
-    json: () => { },
+    object: () => {},
+    json: () => {},
   });
 
   generateDefaultValue = (obj) => {
@@ -844,21 +845,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                  <ItemRenderer
-                    embedded
-                    flow={this.props.flow}
-                    schema={this.props.schema}
-                    value={value}
-                    key={key}
-                    idx={idx}
-                    onChange={(e) => {
-                      const newObject = this.props.value ? { ...this.props.value } : {};
-                      newObject[key] = e;
-                      this.props.onChange(newObject);
-                    }}
-                    {...props}
-                  />
-                )
+                    <ItemRenderer
+                      embedded
+                      flow={this.props.flow}
+                      schema={this.props.schema}
+                      value={value}
+                      key={key}
+                      idx={idx}
+                      onChange={(e) => {
+                        const newObject = this.props.value ? { ...this.props.value } : {};
+                        newObject[key] = e;
+                        this.props.onChange(newObject);
+                      }}
+                      {...props}
+                    />
+                  )
                 : null
             }
           />
@@ -947,7 +948,7 @@ export class NgArraySelectRenderer extends Component {
                           border: '1px solid var(--bg-color_level3)',
                           color: 'var(--text)',
                           backgroundColor: 'var(--bg-color_level2)',
-                          boxShadow: 'none'
+                          boxShadow: 'none',
                         }),
                         menu: (baseStyles) => ({
                           ...baseStyles,
@@ -955,16 +956,16 @@ export class NgArraySelectRenderer extends Component {
                           borderTopLeftRadius: 0,
                           borderTopRightRadius: 0,
                           backgroundColor: 'var(--bg-color_level2)',
-                          color: 'var(--text)'
+                          color: 'var(--text)',
                         }),
-                        input: provided => ({
+                        input: (provided) => ({
                           ...provided,
-                          color: 'var(--text)'
+                          color: 'var(--text)',
                         }),
-                        singleValue: provided => ({
+                        singleValue: (provided) => ({
                           ...provided,
-                          color: 'var(--text)'
-                        })
+                          color: 'var(--text)',
+                        }),
                       }}
                     />
                   </div>
@@ -1195,7 +1196,7 @@ export class NgSelectRenderer extends Component {
                 border: '1px solid var(--bg-color_level3)',
                 color: 'var(--text)',
                 backgroundColor: 'var(--bg-color_level2)',
-                boxShadow: 'none'
+                boxShadow: 'none',
               }),
               menu: (baseStyles) => ({
                 ...baseStyles,
@@ -1203,16 +1204,16 @@ export class NgSelectRenderer extends Component {
                 borderTopLeftRadius: 0,
                 borderTopRightRadius: 0,
                 backgroundColor: 'var(--bg-color_level2)',
-                color: 'var(--text)'
+                color: 'var(--text)',
               }),
-              input: provided => ({
+              input: (provided) => ({
                 ...provided,
-                color: 'var(--text)'
+                color: 'var(--text)',
               }),
-              singleValue: provided => ({
+              singleValue: (provided) => ({
                 ...provided,
-                color: 'var(--text)'
-              })
+                color: 'var(--text)',
+              }),
             }}
           />
         )}

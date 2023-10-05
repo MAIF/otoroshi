@@ -172,7 +172,7 @@ case class WorkerConfig(
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
     tenants: Seq[TenantId] = Seq.empty,
     swapStrategy: SwapStrategy = SwapStrategy.Replace,
-    useWs: Boolean = false,
+    useWs: Boolean = false
     //initialCacert: Option[String] = None
 )                                                                                             {
   def json: JsValue = Json.obj(
@@ -185,7 +185,7 @@ case class WorkerConfig(
     "quotas"           -> quotas.json,
     "tenants"          -> tenants.map(_.value),
     "swap_strategy"    -> swapStrategy.name,
-    "use_ws"           -> useWs,
+    "use_ws"           -> useWs
   )
 }
 
@@ -540,8 +540,8 @@ object ClusterConfig {
           .getOptionalWithFileSupport[String]("worker.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i"))
           .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}")
-          .applyOnWithOpt(Option(System.getenv("INSTANCE_NUMBER"))) {
-            case (str, instanceNumber) => str.replace("${env.INSTANCE_NUMBER}", instanceNumber)
+          .applyOnWithOpt(Option(System.getenv("INSTANCE_NUMBER"))) { case (str, instanceNumber) =>
+            str.replace("${env.INSTANCE_NUMBER}", instanceNumber)
           },
         retries = configuration.getOptionalWithFileSupport[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptionalWithFileSupport[Long]("worker.timeout").getOrElse(2000),
@@ -569,7 +569,7 @@ object ClusterConfig {
           case Some("Merge") => SwapStrategy.Merge
           case _             => SwapStrategy.Replace
         },
-        useWs = configuration.getOptionalWithFileSupport[Boolean]("worker.useWs").getOrElse(false),
+        useWs = configuration.getOptionalWithFileSupport[Boolean]("worker.useWs").getOrElse(false)
       )
     )
   }
@@ -778,8 +778,7 @@ object MemberView {
         .map(JavaVersion.fromString)
         .getOrElse(JavaVersion.default),
       memberType = ClusterMode.Worker,
-      location =
-        request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+      location = request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
       httpPort = request.headers
         .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
         .map(_.toInt)
@@ -1468,13 +1467,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   // private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
   //   new UnboundedTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   // )
-  private val quotaIncrs = new AtomicReference[TrieMap[String, ClusterLeaderUpdateMessage]](new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
+  private val quotaIncrs = new AtomicReference[TrieMap[String, ClusterLeaderUpdateMessage]](
+    new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]()
+  )
 
-  private val workerSessionsCache   = Scaffeine()
+  private val workerSessionsCache = Scaffeine()
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
-  private[cluster] val counters     = new UnboundedTrieMap[String, AtomicLong]()
+  private[cluster] val counters   = new UnboundedTrieMap[String, AtomicLong]()
   /////////////
 
   private def putQuotaIfAbsent[A <: ClusterLeaderUpdateMessage](key: String, f: => A): Unit = {
@@ -1840,10 +1841,20 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def incrementService(id: String, calls: Long, dataIn: Long, dataOut: Long, overhead: Long, duration: Long, backendDuration: Long, headersIn: Long, headersOut: Long): Unit = {
+  def incrementService(
+      id: String,
+      calls: Long,
+      dataIn: Long,
+      dataOut: Long,
+      overhead: Long,
+      duration: Long,
+      backendDuration: Long,
+      headersIn: Long,
+      headersOut: Long
+  ): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
-      val key = s"routes:$id"
+      val key  = s"routes:$id"
       val gkey = s"routes:global"
       putQuotaIfAbsent(gkey, ClusterLeaderUpdateMessage.RouteCallIncr("global"))
       getQuotaIncr[ClusterLeaderUpdateMessage.RouteCallIncr](gkey).foreach { quota =>
@@ -1855,7 +1866,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           duration,
           backendDuration,
           headersIn,
-          headersOut,
+          headersOut
         )
       }
       putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.RouteCallIncr(id))
@@ -1868,7 +1879,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           duration,
           backendDuration,
           headersIn,
-          headersOut,
+          headersOut
         )
       }
     }
@@ -2139,7 +2150,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
         val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
-        val start          = System.currentTimeMillis()
+        val start         = System.currentTimeMillis()
         Retry
           .retry(
             times = if (cannotServeRequests()) 10 else config.worker.quotas.retries,
@@ -2155,11 +2166,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             GlobalStatusUpdate.build().map(v => (v.json.stringify + "\n").byteString).flatMap { stats =>
               /// push other data here !
               val quotaIncrSource = Source(oldQuotasIncr.toList.map(v => (v._2.json.stringify + "\n").byteString))
-              val globalSource      = Source.single(stats)
+              val globalSource    = Source.single(stats)
               // val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
-              val body              = quotaIncrSource.concat(globalSource).via(env.clusterConfig.gzip())
-              val wsBody            = SourceBody(body)
-              val request           = env.MtlsWs
+              val body            = quotaIncrSource.concat(globalSource).via(env.clusterConfig.gzip())
+              val wsBody          = SourceBody(body)
+              val request         = env.MtlsWs
                 .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
                 .withHttpHeaders(
                   "Host"                                             -> config.leader.host,
@@ -2204,18 +2215,28 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           .recover { case e =>
             e.printStackTrace()
             oldQuotasIncr.foreach {
-              case (key, incr: ClusterLeaderUpdateMessage.ApikeyCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterLeaderUpdateMessage.ApikeyCallIncr(incr.clientId)).asInstanceOf[ClusterLeaderUpdateMessage.ApikeyCallIncr].increment(incr.calls.get())
-              case (key, incr: ClusterLeaderUpdateMessage.RouteCallIncr) => quotaIncrs.get().getOrElseUpdate(key, ClusterLeaderUpdateMessage.RouteCallIncr(incr.routeId)).asInstanceOf[ClusterLeaderUpdateMessage.RouteCallIncr].increment(
-                incr.calls.get(),
-                incr.dataIn.get(),
-                incr.dataOut.get(),
-                incr.overhead.get(),
-                incr.duration.get(),
-                incr.backendDuration.get(),
-                incr.headersIn.get(),
-                incr.headersOut.get(),
-              )
-              case _ => ()
+              case (key, incr: ClusterLeaderUpdateMessage.ApikeyCallIncr) =>
+                quotaIncrs
+                  .get()
+                  .getOrElseUpdate(key, ClusterLeaderUpdateMessage.ApikeyCallIncr(incr.clientId))
+                  .asInstanceOf[ClusterLeaderUpdateMessage.ApikeyCallIncr]
+                  .increment(incr.calls.get())
+              case (key, incr: ClusterLeaderUpdateMessage.RouteCallIncr)  =>
+                quotaIncrs
+                  .get()
+                  .getOrElseUpdate(key, ClusterLeaderUpdateMessage.RouteCallIncr(incr.routeId))
+                  .asInstanceOf[ClusterLeaderUpdateMessage.RouteCallIncr]
+                  .increment(
+                    incr.calls.get(),
+                    incr.dataIn.get(),
+                    incr.dataOut.get(),
+                    incr.overhead.get(),
+                    incr.duration.get(),
+                    incr.backendDuration.get(),
+                    incr.headersIn.get(),
+                    incr.headersOut.get()
+                  )
+              case _                                                      => ()
             }
             Cluster.logger.error(
               s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
@@ -2271,17 +2292,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
 
     debug(s"callLeaderAkka: ${attempt}")
-    val alreadyReLaunched = new AtomicBoolean(false)
-    val pushCancelSource = new AtomicReference[Cancellable]()
-    val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
-    val pushSource: Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue { q =>
-        queueRef.set(q)
-        q
+    val alreadyReLaunched                                                                                           = new AtomicBoolean(false)
+    val pushCancelSource                                                                                            = new AtomicReference[Cancellable]()
+    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val pushSource
+        : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
+      Source.queue[akka.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
+        q =>
+          queueRef.set(q)
+          q
       }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource
+    val source: Source[akka.http.scaladsl.model.ws.Message, _]                                                      = pushSource
 
-    def handleOfferFailure(key: String, msg: ClusterLeaderUpdateMessage): PartialFunction[Try[QueueOfferResult], Unit] = {
+    def handleOfferFailure(
+        key: String,
+        msg: ClusterLeaderUpdateMessage
+    ): PartialFunction[Try[QueueOfferResult], Unit] = {
       new PartialFunction[Try[QueueOfferResult], Unit] {
         def isDefinedAt(x: Try[QueueOfferResult]): Boolean = x.isFailure
         def apply(x: Try[QueueOfferResult]): Unit = {
@@ -2299,21 +2325,21 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     def onClusterState(elem: String, streamed: Boolean, compressed: Boolean): Unit = {
       val startTime = System.currentTimeMillis()
       ClusterLeaderStateMessage.format.reads(elem.parseJson) match {
-        case JsError(e) => logger.error(s"ClusterLeaderStateMessage deserialization error: $e")
+        case JsError(e)        => logger.error(s"ClusterLeaderStateMessage deserialization error: $e")
         case JsSuccess(csm, _) => {
 
           debug(s"got new state of ${elem.byteString.size / 1024} Kb ${if (streamed) "streamed" else "strict"} and ${if (compressed) "compressed" else "uncompressed"}")
 
-          val store = new UnboundedConcurrentHashMap[String, Any]()
-          val expirations = new UnboundedConcurrentHashMap[String, Long]()
-          val responseFrom = csm.dataFrom
+          val store          = new UnboundedConcurrentHashMap[String, Any]()
+          val expirations    = new UnboundedConcurrentHashMap[String, Long]()
+          val responseFrom   = csm.dataFrom
           val responseDigest = csm.dataDigest
-          val responseCount = csm.dataCount
-          val fromVersion = Version(csm.nodeVersion)
-          val counter = new AtomicLong(0L)
-          val digest = MessageDigest.getInstance("SHA-256")
-          val from = new DateTime(responseFrom)
-          val fullBody = new AtomicReference[ByteString](ByteString.empty)
+          val responseCount  = csm.dataCount
+          val fromVersion    = Version(csm.nodeVersion)
+          val counter        = new AtomicLong(0L)
+          val digest         = MessageDigest.getInstance("SHA-256")
+          val from           = new DateTime(responseFrom)
+          val fullBody       = new AtomicReference[ByteString](ByteString.empty)
 
           csm.state
             .chunks(64 * 1024)
@@ -2329,30 +2355,29 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .map(bs => Try(Json.parse(bs.utf8String)))
             .collect { case Success(item) => item }
             .runWith(Sink.foreach { item =>
-              val key = (item \ "k").as[String]
+              val key   = (item \ "k").as[String]
               val value = (item \ "v").as[JsValue]
-              val what = (item \ "w").as[String]
-              val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+              val what  = (item \ "w").as[String]
+              val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
               fromJson(what, value, _modern).foreach(v => store.put(key, v))
               if (ttl > -1L) {
                 expirations.put(key, ttl)
               }
             })
             .flatMap { _ =>
-              val tryCount = 1
+              val tryCount  = 1
               val cliDigest = Hex.encodeHexString(digest.digest())
               if (Cluster.logger.isDebugEnabled)
                 Cluster.logger.debug(
-                  s"[${env.clusterConfig.mode.name}] Consumed state in ${
-                    System
-                      .currentTimeMillis() - startTime
-                  } ms at try $tryCount. (${DateTime.now()})"
+                  s"[${env.clusterConfig.mode.name}] Consumed state in ${System
+                    .currentTimeMillis() - startTime} ms at try $tryCount. (${DateTime.now()})"
                 )
 
               val valid = (responseCount == counter.get()) && (responseDigest == cliDigest)
               if (!valid) {
                 Cluster.logger.warn(
-                  s"[${env.clusterConfig.mode.name}] state polling validation failed (${tryCount}): expected count: ${responseCount} / ${counter.get()} : ${responseCount.toLong == counter.get()}, expected hash: ${responseDigest} / ${cliDigest} : ${responseDigest == cliDigest}, trying again !"
+                  s"[${env.clusterConfig.mode.name}] state polling validation failed (${tryCount}): expected count: ${responseCount} / ${counter
+                    .get()} : ${responseCount.toLong == counter.get()}, expected hash: ${responseDigest} / ${cliDigest} : ${responseDigest == cliDigest}, trying again !"
                 )
               }
 
@@ -2408,87 +2433,106 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
 
     def onUpgradeSuccessful(): Unit = {
-      pushCancelSource.set(env.otoroshiScheduler.scheduleWithFixedDelay(1.second, config.worker.quotas.pushEvery.millis) { () =>
-        /// push other data here !
-        debug("push quotas")
-        val member = MemberView(
-          id = ClusterConfig.clusterNodeId,
-          name = config.worker.name,
-          version = env.otoroshiVersion,
-          javaVersion = env.theJavaVersion,
-          os = env.os,
-          location = s"$hostAddress",
-          httpPort = env.exposedHttpPortInt,
-          httpsPort = env.exposedHttpsPortInt,
-          internalHttpPort = env.httpPort,
-          internalHttpsPort = env.httpsPort,
-          lastSeen = DateTime.now(),
-          timeout = Duration(
-            env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
-            TimeUnit.MILLISECONDS
-          ),
-          memberType = ClusterMode.Worker,
-          relay = env.clusterConfig.relay,
-          tunnels = env.tunnelManager.currentTunnels.toSeq,
-          stats = Json.obj(),
-        )
-        GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
-          val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
-          queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, stats.json).json.prettify))
-            .andThen(handleOfferFailure("routes:global", stats))
-          oldQuotasIncr.foreach {
-            case (key, incr) =>
-              queueRef.get().offer(akka.http.scaladsl.model.ws.TextMessage.Strict(ClusterMessageFromWorker(member, incr.json).json.prettify))
+      pushCancelSource.set(
+        env.otoroshiScheduler.scheduleWithFixedDelay(1.second, config.worker.quotas.pushEvery.millis) { () =>
+          /// push other data here !
+          debug("push quotas")
+          val member = MemberView(
+            id = ClusterConfig.clusterNodeId,
+            name = config.worker.name,
+            version = env.otoroshiVersion,
+            javaVersion = env.theJavaVersion,
+            os = env.os,
+            location = s"$hostAddress",
+            httpPort = env.exposedHttpPortInt,
+            httpsPort = env.exposedHttpsPortInt,
+            internalHttpPort = env.httpPort,
+            internalHttpsPort = env.httpsPort,
+            lastSeen = DateTime.now(),
+            timeout = Duration(
+              env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+              TimeUnit.MILLISECONDS
+            ),
+            memberType = ClusterMode.Worker,
+            relay = env.clusterConfig.relay,
+            tunnels = env.tunnelManager.currentTunnels.toSeq,
+            stats = Json.obj()
+          )
+          GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
+            val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
+            queueRef
+              .get()
+              .offer(
+                akka.http.scaladsl.model.ws.TextMessage
+                  .Strict(ClusterMessageFromWorker(member, stats.json).json.prettify)
+              )
+              .andThen(handleOfferFailure("routes:global", stats))
+            oldQuotasIncr.foreach { case (key, incr) =>
+              queueRef
+                .get()
+                .offer(
+                  akka.http.scaladsl.model.ws.TextMessage
+                    .Strict(ClusterMessageFromWorker(member, incr.json).json.prettify)
+                )
                 .andThen(handleOfferFailure(key, incr))
+            }
           }
-        }
-      }(env.otoroshiExecutionContext))
+        }(env.otoroshiExecutionContext)
+      )
     }
 
     val url: String = config.leader.urls.apply(attempt % config.leader.urls.size)
-    val secured = url.startsWith("https")
-    val uri = Uri(url).copy(scheme = if (secured) "wss" else "ws", path = Uri.Path("/api/cluster/state/ws"))
-    val port = uri.authority.port
-    val ipAddress = if (uri.authority.host.isIPv4() || uri.authority.host.isIPv6()) uri.authority.host.toString().some else None
+    val secured     = url.startsWith("https")
+    val uri         = Uri(url).copy(scheme = if (secured) "wss" else "ws", path = Uri.Path("/api/cluster/state/ws"))
+    val port        = uri.authority.port
+    val ipAddress   =
+      if (uri.authority.host.isIPv4() || uri.authority.host.isIPv6()) uri.authority.host.toString().some else None
     debug("connecting to cluster ws")
-    val (fu, _) = env.Ws.ws(
-      request = WebSocketRequest.fromTargetUri(uri).copy(
-        extraHeaders = List(
-          RawHeader("Host", config.leader.host),
-          RawHeader("Authorization", s"Basic ${s"${config.leader.clientId}:${config.leader.clientSecret}".base64}"),
-          RawHeader(env.Headers.OtoroshiClientId, config.leader.clientId),
-          RawHeader(env.Headers.OtoroshiClientSecret, config.leader.clientSecret)
-        )
-      ),
+    val (fu, _)     = env.Ws.ws(
+      request = WebSocketRequest
+        .fromTargetUri(uri)
+        .copy(
+          extraHeaders = List(
+            RawHeader("Host", config.leader.host),
+            RawHeader("Authorization", s"Basic ${s"${config.leader.clientId}:${config.leader.clientSecret}".base64}"),
+            RawHeader(env.Headers.OtoroshiClientId, config.leader.clientId),
+            RawHeader(env.Headers.OtoroshiClientSecret, config.leader.clientSecret)
+          )
+        ),
       targetOpt = None,
       mtlsConfigOpt = config.mtlsConfig.some.filter(_.mtls),
       customizer = m => {
         (ipAddress, config.proxy) match {
           case (_, Some(proxySettings)) => {
             val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
-            val transport = (proxySettings.principal, proxySettings.password) match {
+            val transport    = (proxySettings.principal, proxySettings.password) match {
               case (Some(principal), Some(password)) =>
                 ClientTransport.httpsProxy(
                   proxyAddress,
                   akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 )
-              case _ => ClientTransport.httpsProxy(proxyAddress)
+              case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
             m.withTransport(transport)
           }
-          case (Some(addr), _) =>
+          case (Some(addr), _)          =>
             m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
-          case _ => m
+          case _                        => m
         }
       },
       clientFlow = Flow
         .fromSinkAndSource(
           Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => onClusterState(data, false, false)
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(data => onClusterState(data, true, false))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) =>
+            case akka.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, false, false)
+            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+              source.runFold("")(_ + _).map(data => onClusterState(data, true, false))
+            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
               debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
-              data.chunks(1024 * 32).via(config.gunzip()).runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, false, true))
+              data
+                .chunks(1024 * 32)
+                .via(config.gunzip())
+                .runFold(ByteString.empty)(_ ++ _)
+                .map(data => onClusterState(data.utf8String, false, true))
             case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               debug(s"uncompressing streamed at level ${env.clusterConfig.compression}")
               source.runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, true, true))
@@ -2504,13 +2548,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     )
     fu.andThen {
       case Success(ValidUpgrade(response, chosenSubprotocol)) =>
-        if (logger.isDebugEnabled) logger.debug(s"cluster ws upgrade successful and valid: ${response} - ${chosenSubprotocol}")
+        if (logger.isDebugEnabled)
+          logger.debug(s"cluster ws upgrade successful and valid: ${response} - ${chosenSubprotocol}")
         attempt = 1
         onUpgradeSuccessful()
-      case Success(InvalidUpgradeResponse(response, cause)) =>
+      case Success(InvalidUpgradeResponse(response, cause))   =>
         if (logger.isDebugEnabled) logger.error(s"cluster ws upgrade successful but invalid: ${response} - ${cause}")
         reLaunchWs()
-      case Failure(ex) =>
+      case Failure(ex)                                        =>
         logger.error(s"cluster ws upgrade failure", ex)
         reLaunchWs()
     }
@@ -3009,7 +3054,7 @@ object ClusterLeaderStateMessage {
         nodeVersion = json.select("node_version").asString,
         dataCount = json.select("data_count").asLong,
         dataDigest = json.select("data_digest").asString,
-        dataFrom = json.select("data_from").asLong,
+        dataFrom = json.select("data_from").asLong
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -3029,22 +3074,22 @@ case class ClusterLeaderStateMessage(
     dataFrom: Long
 ) {
   def json: JsValue = Json.obj(
-    "state" -> state,
-    "node_name" -> nodeName,
+    "state"        -> state,
+    "node_name"    -> nodeName,
     "node_version" -> nodeVersion,
-    "data_count" -> dataCount,
-    "data_digest" -> dataDigest,
-    "data_from" -> dataFrom,
+    "data_count"   -> dataCount,
+    "data_digest"  -> dataDigest,
+    "data_from"    -> dataFrom
   )
 }
 
-object ClusterMessageFromWorker {
+object ClusterMessageFromWorker                                           {
   val format = new Format[ClusterMessageFromWorker] {
 
     override def reads(json: JsValue): JsResult[ClusterMessageFromWorker] = Try {
       ClusterMessageFromWorker(
         member = MemberView.fromJsonSafe(json.select("member").asValue)(OtoroshiEnvHolder.get()).get,
-        payload = json.select("payload").asValue,
+        payload = json.select("payload").asValue
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -3052,8 +3097,8 @@ object ClusterMessageFromWorker {
     }
 
     override def writes(o: ClusterMessageFromWorker): JsValue = Json.obj(
-      "member" -> o.member.json,
-      "payload" -> o.payload,
+      "member"  -> o.member.json,
+      "payload" -> o.payload
     )
   }
 }
@@ -3065,7 +3110,7 @@ sealed trait ClusterLeaderUpdateMessage {
   def json: JsValue
   def update(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.clusterConfig.mode match {
-      case ClusterMode.Off => ().vfuture
+      case ClusterMode.Off    => ().vfuture
       case ClusterMode.Worker => updateWorker(member)
       case ClusterMode.Leader => updateLeader(member)
     }
@@ -3073,24 +3118,26 @@ sealed trait ClusterLeaderUpdateMessage {
   def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit]
   def updateWorker(member: MemberView)(implicit env: Env): Future[Unit]
 }
-object ClusterLeaderUpdateMessage {
+object ClusterLeaderUpdateMessage       {
 
   def read(item: JsValue): Option[ClusterLeaderUpdateMessage] = {
     item.select("typ").asOpt[String] match {
       case Some("globstats") => GlobalStatusUpdate.format.reads(item).asOpt
-      case Some("apkincr") => ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
-      case Some("srvincr") => RouteCallIncr(
-        routeId = item.select("srv").asString,
-        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic,
-        dataIn = item.select("di").asOpt[Long].getOrElse(0L).atomic,
-        dataOut = item.select("do").asOpt[Long].getOrElse(0L).atomic,
-        overhead = item.select("oh").asOpt[Long].getOrElse(0L).atomic,
-        duration = item.select("du").asOpt[Long].getOrElse(0L).atomic,
-        backendDuration = item.select("bdu").asOpt[Long].getOrElse(0L).atomic,
-        headersIn = item.select("hi").asOpt[Long].getOrElse(0L).atomic,
-        headersOut = item.select("ho").asOpt[Long].getOrElse(0L).atomic,
-      ).some
-      case _ => None
+      case Some("apkincr")   =>
+        ApikeyCallIncr(item.select("apk").asString, item.select("i").asOpt[Long].getOrElse(0L).atomic).some
+      case Some("srvincr")   =>
+        RouteCallIncr(
+          routeId = item.select("srv").asString,
+          calls = item.select("c").asOpt[Long].getOrElse(0L).atomic,
+          dataIn = item.select("di").asOpt[Long].getOrElse(0L).atomic,
+          dataOut = item.select("do").asOpt[Long].getOrElse(0L).atomic,
+          overhead = item.select("oh").asOpt[Long].getOrElse(0L).atomic,
+          duration = item.select("du").asOpt[Long].getOrElse(0L).atomic,
+          backendDuration = item.select("bdu").asOpt[Long].getOrElse(0L).atomic,
+          headersIn = item.select("hi").asOpt[Long].getOrElse(0L).atomic,
+          headersOut = item.select("ho").asOpt[Long].getOrElse(0L).atomic
+        ).some
+      case _                 => None
     }
   }
 
@@ -3113,7 +3160,7 @@ object ClusterLeaderUpdateMessage {
           overhead = json.select("overhead").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
           dataInRate = json.select("dataInRate").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
           dataOutRate = json.select("dataOutRate").asOpt[BigDecimal].getOrElse(BigDecimal(0)),
-          concurrentHandledRequests = json.select("concurrentHandledRequests").asOpt[Long].getOrElse(0L),
+          concurrentHandledRequests = json.select("concurrentHandledRequests").asOpt[Long].getOrElse(0L)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -3121,31 +3168,31 @@ object ClusterLeaderUpdateMessage {
       }
 
       override def writes(o: GlobalStatusUpdate): JsValue = Json.obj(
-        "typ" -> "globstats",
-        "cpu_usage" -> o.cpuUsage,
-        "load_average" -> o.loadAverage,
-        "heap_used" -> o.heapUsed,
-        "heap_size" -> o.heapSize,
-        "live_threads" -> o.liveThreads,
-        "live_peak_threads" -> o.livePeakThreads,
-        "daemon_threads" -> o.daemonThreads,
-        "counters" -> o.counters,
-        "rate" -> o.rate,
-        "duration" -> o.duration,
-        "overhead" -> o.overhead,
-        "dataInRate" -> o.dataInRate,
-        "dataOutRate" -> o.dataOutRate,
+        "typ"                       -> "globstats",
+        "cpu_usage"                 -> o.cpuUsage,
+        "load_average"              -> o.loadAverage,
+        "heap_used"                 -> o.heapUsed,
+        "heap_size"                 -> o.heapSize,
+        "live_threads"              -> o.liveThreads,
+        "live_peak_threads"         -> o.livePeakThreads,
+        "daemon_threads"            -> o.daemonThreads,
+        "counters"                  -> o.counters,
+        "rate"                      -> o.rate,
+        "duration"                  -> o.duration,
+        "overhead"                  -> o.overhead,
+        "dataInRate"                -> o.dataInRate,
+        "dataOutRate"               -> o.dataOutRate,
         "concurrentHandledRequests" -> o.concurrentHandledRequests
       )
     }
 
     def build()(implicit env: Env, ec: ExecutionContext): Future[GlobalStatusUpdate] = {
       for {
-        rate <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
-        duration <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
-        overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-        dataInRate <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
-        dataOutRate <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
+        rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
+        duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
+        overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+        dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
+        dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
         concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
       } yield {
         val rt = Runtime.getRuntime
@@ -3190,20 +3237,20 @@ object ClusterLeaderUpdateMessage {
   }
 
   case class GlobalStatusUpdate(
-    cpuUsage: Double,
-    loadAverage: Double,
-    heapUsed: Long,
-    heapSize: Long,
-    liveThreads: Long,
-    livePeakThreads: Long,
-    daemonThreads: Long,
-    counters: JsObject,
-    rate: BigDecimal,
-    duration: BigDecimal,
-    overhead: BigDecimal,
-    dataInRate: BigDecimal,
-    dataOutRate: BigDecimal,
-    concurrentHandledRequests: Long,
+      cpuUsage: Double,
+      loadAverage: Double,
+      heapUsed: Long,
+      heapSize: Long,
+      liveThreads: Long,
+      livePeakThreads: Long,
+      daemonThreads: Long,
+      counters: JsObject,
+      rate: BigDecimal,
+      duration: BigDecimal,
+      overhead: BigDecimal,
+      dataInRate: BigDecimal,
+      dataOutRate: BigDecimal,
+      concurrentHandledRequests: Long
   ) extends ClusterLeaderUpdateMessage {
 
     override def json: JsValue = GlobalStatusUpdate.format.writes(this)
@@ -3218,14 +3265,15 @@ object ClusterLeaderUpdateMessage {
     }
   }
 
-  case class ApikeyCallIncr(clientId: String, calls: AtomicLong = new AtomicLong(0L)) extends ClusterLeaderUpdateMessage {
+  case class ApikeyCallIncr(clientId: String, calls: AtomicLong = new AtomicLong(0L))
+      extends ClusterLeaderUpdateMessage {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, calls.get()).map(_ => ())
-        case None => FastFuture.successful(())
+        case None         => FastFuture.successful(())
       }
     }
 
@@ -3234,32 +3282,34 @@ object ClusterLeaderUpdateMessage {
     }
 
     def json: JsValue = Json.obj(
-      "typ" -> "apkincr", "apk" -> clientId, "i" -> calls.get()
+      "typ" -> "apkincr",
+      "apk" -> clientId,
+      "i"   -> calls.get()
     )
   }
 
   case class RouteCallIncr(
-    routeId: String,
-    calls: AtomicLong = new AtomicLong(0L),
-    dataIn: AtomicLong = new AtomicLong(0L),
-    dataOut: AtomicLong = new AtomicLong(0L),
-    overhead: AtomicLong = new AtomicLong(0L),
-    duration: AtomicLong = new AtomicLong(0L),
-    backendDuration: AtomicLong = new AtomicLong(0L),
-    headersIn: AtomicLong = new AtomicLong(0L),
-    headersOut: AtomicLong = new AtomicLong(0L),
+      routeId: String,
+      calls: AtomicLong = new AtomicLong(0L),
+      dataIn: AtomicLong = new AtomicLong(0L),
+      dataOut: AtomicLong = new AtomicLong(0L),
+      overhead: AtomicLong = new AtomicLong(0L),
+      duration: AtomicLong = new AtomicLong(0L),
+      backendDuration: AtomicLong = new AtomicLong(0L),
+      headersIn: AtomicLong = new AtomicLong(0L),
+      headersOut: AtomicLong = new AtomicLong(0L)
   ) extends ClusterLeaderUpdateMessage {
 
     def increment(
-      callsInc: Long,
-      dataInInc: Long,
-      dataOutInc: Long,
-      overheadInc: Long,
-      durationInc: Long,
-      backendDurationInc: Long,
-      headersInInc: Long,
-      headersOutInc: Long,
-   ): Long = {
+        callsInc: Long,
+        dataInInc: Long,
+        dataOutInc: Long,
+        overheadInc: Long,
+        durationInc: Long,
+        backendDurationInc: Long,
+        headersInInc: Long,
+        headersOutInc: Long
+    ): Long = {
       calls.addAndGet(callsInc)
       dataIn.addAndGet(dataInInc)
       dataOut.addAndGet(dataOutInc)
@@ -3285,31 +3335,32 @@ object ClusterLeaderUpdateMessage {
     }
 
     def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
-      env.clusterAgent.incrementService(
-        routeId,
-        calls.get(),
-        dataIn.get(),
-        dataOut.get(),
-        overhead.get(),
-        duration.get(),
-        backendDuration.get(),
-        headersIn.get(),
-        headersOut.get(),
-      ).vfuture
+      env.clusterAgent
+        .incrementService(
+          routeId,
+          calls.get(),
+          dataIn.get(),
+          dataOut.get(),
+          overhead.get(),
+          duration.get(),
+          backendDuration.get(),
+          headersIn.get(),
+          headersOut.get()
+        )
+        .vfuture
     }
 
     def json: JsValue = Json.obj(
       "typ" -> "srvincr",
       "srv" -> routeId,
-      "c" -> calls.get(),
-      "di" -> dataIn.get(),
-      "do" -> dataOut.get(),
-      "oh" -> overhead.get(),
-      "du" -> duration.get(),
+      "c"   -> calls.get(),
+      "di"  -> dataIn.get(),
+      "do"  -> dataOut.get(),
+      "oh"  -> overhead.get(),
+      "du"  -> duration.get(),
       "bdu" -> backendDuration.get(),
-      "hi" -> headersIn.get(),
-      "ho" -> headersOut.get(),
+      "hi"  -> headersIn.get(),
+      "ho"  -> headersOut.get()
     )
   }
 }
-

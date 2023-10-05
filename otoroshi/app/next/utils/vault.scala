@@ -866,23 +866,26 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
 
   private val serviceTokenDataHolder = new AtomicReference[(JsValue, Option[String])](null)
 
-  private def getServiceToken()(implicit env: Env, ec: ExecutionContext): Future[Either[String, (JsValue, Option[String])]] = {
+  private def getServiceToken()(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, (JsValue, Option[String])]] = {
     Option(serviceTokenDataHolder.get()) match {
       case Some(tuple) => tuple.right.vfuture
-      case None => {
+      case None        => {
         env.Ws
           .url(s"${baseUrl}/api/v2/service-token")
           .withRequestTimeout(timeout)
           .withHttpHeaders(
-            "Accept" -> "application/json",
+            "Accept"        -> "application/json",
             "Authorization" -> s"Bearer ${serviceToken}"
           )
           .get()
           .map { resp =>
             if (resp.status == 200) {
               val serviceTokenData = resp.json
-              val secretKeyOpt = decryptKey(serviceTokenData)
-              val tuple = (serviceTokenData, secretKeyOpt)
+              val secretKeyOpt     = decryptKey(serviceTokenData)
+              val tuple            = (serviceTokenData, secretKeyOpt)
               serviceTokenDataHolder.set(tuple)
               Right(tuple)
             } else {
@@ -896,16 +899,16 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
   private def decryptKey(serviceTokenData: JsValue): Option[String] = {
     for {
       secretValueCiphertext <- serviceTokenData.select("encryptedKey").asOpt[String]
-      secretValueIV <- serviceTokenData.select("iv").asOpt[String]
-      secretValueTag <- serviceTokenData.select("tag").asOpt[String]
+      secretValueIV         <- serviceTokenData.select("iv").asOpt[String]
+      secretValueTag        <- serviceTokenData.select("tag").asOpt[String]
     } yield {
       val decryptedValue = {
-        val ivBytes = Base64.getDecoder().decode(secretValueIV)
-        val tagBytes = Base64.getDecoder().decode(secretValueTag)
-        val keyBytes = serviceTokenSecret.getBytes(Charsets.UTF_8)
-        val encryptedBytes = Base64.getDecoder().decode(secretValueCiphertext)
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val keySpec = new SecretKeySpec(keyBytes, "AES")
+        val ivBytes          = Base64.getDecoder().decode(secretValueIV)
+        val tagBytes         = Base64.getDecoder().decode(secretValueTag)
+        val keyBytes         = serviceTokenSecret.getBytes(Charsets.UTF_8)
+        val encryptedBytes   = Base64.getDecoder().decode(secretValueCiphertext)
+        val cipher           = Cipher.getInstance("AES/GCM/NoPadding")
+        val keySpec          = new SecretKeySpec(keyBytes, "AES")
         val gcmParameterSpec = new GCMParameterSpec(128, ivBytes)
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
         new String(cipher.doFinal(Array.concat(encryptedBytes, tagBytes)), "UTF-8")
@@ -914,20 +917,25 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
     }
   }
 
-  private def decryptValue(resp: JsValue, serviceTokenData: JsValue, serviceTokenKey: Option[String], options: Map[String, String]): CachedVaultSecretStatus = {
+  private def decryptValue(
+      resp: JsValue,
+      serviceTokenData: JsValue,
+      serviceTokenKey: Option[String],
+      options: Map[String, String]
+  ): CachedVaultSecretStatus = {
     (for {
-      secretKey <- serviceTokenKey.orElse(decryptKey(serviceTokenData))
+      secretKey             <- serviceTokenKey.orElse(decryptKey(serviceTokenData))
       secretValueCiphertext <- resp.select("secretValueCiphertext").asOpt[String]
-      secretValueIV <- resp.select("secretValueIV").asOpt[String]
-      secretValueTag <- resp.select("secretValueTag").asOpt[String]
+      secretValueIV         <- resp.select("secretValueIV").asOpt[String]
+      secretValueTag        <- resp.select("secretValueTag").asOpt[String]
     } yield {
       val decryptedValue = {
-        val ivBytes = Base64.getDecoder().decode(secretValueIV)
-        val tagBytes = Base64.getDecoder().decode(secretValueTag)
-        val keyBytes = secretKey.getBytes(Charsets.UTF_8)
-        val encryptedBytes = Base64.getDecoder().decode(secretValueCiphertext)
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val keySpec = new SecretKeySpec(keyBytes, "AES");
+        val ivBytes          = Base64.getDecoder().decode(secretValueIV)
+        val tagBytes         = Base64.getDecoder().decode(secretValueTag)
+        val keyBytes         = secretKey.getBytes(Charsets.UTF_8)
+        val encryptedBytes   = Base64.getDecoder().decode(secretValueCiphertext)
+        val cipher           = Cipher.getInstance("AES/GCM/NoPadding")
+        val keySpec          = new SecretKeySpec(keyBytes, "AES");
         val gcmParameterSpec = new GCMParameterSpec(128, ivBytes)
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
         new String(cipher.doFinal(Array.concat(encryptedBytes, tagBytes)))
@@ -938,16 +946,17 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
 
   private def selectValue(value: String, options: Map[String, String]): CachedVaultSecretStatus = try {
     options.get("json_pointer") match {
-      case None => CachedVaultSecretStatus.SecretReadSuccess(value)
-      case Some(pointer) => Json.parse(value).atPointer(pointer).asOpt[JsValue] match {
-        case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
-        case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
-        case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-        case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-        case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-        case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
-        case _ => CachedVaultSecretStatus.SecretValueNotFound
-      }
+      case None          => CachedVaultSecretStatus.SecretReadSuccess(value)
+      case Some(pointer) =>
+        Json.parse(value).atPointer(pointer).asOpt[JsValue] match {
+          case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+          case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+          case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
+          case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+          case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+          case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+          case _                      => CachedVaultSecretStatus.SecretValueNotFound
+        }
     }
   } catch {
     case e: Throwable =>
@@ -956,64 +965,77 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
   }
 
   override def get(_path: String, options: Map[String, String])(implicit
-                                                               env: Env,
-                                                               ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    getServiceToken().flatMap {
-      case Left(err) => CachedVaultSecretStatus.SecretReadError(err).vfuture
-      case Right((serviceTokenData, secretKeyOpt)) => {
-        val path = _path.tail
-        val url = if (e2ee) {
-          s"$baseUrl/api/v3/secrets/${path}"
-        } else {
-          s"$baseUrl/api/v3/secrets/raw/${path}"
-        }
-        val workspaceId: Option[String] = defaultWorkspaceId
-          .orElse(options.get("workspaceId"))
-          .orElse(serviceTokenData.select("workspace").asOpt[String])
-        val environment: Option[String] = defaultEnvironment
-          .orElse(options.get("environment"))
-          .orElse(serviceTokenData.select("scopes").select(0).select("environment").asOpt[String])
-        val secretType: Option[String] = defaultSecretType
-          .orElse(options.get("type"))
-        val finalUrl = url
-          .applyOnWithOpt(workspaceId) { case (url, w) => if (url.contains("?")) s"$url&workspaceId=${w}" else s"$url?workspaceId=${w}" }
-          .applyOnWithOpt(environment) { case (url, e) => if (url.contains("?")) s"$url&environment=${e}" else s"$url?environment=${e}" }
-          .applyOnWithOpt(secretType)  { case (url, s) => if (url.contains("?")) s"$url&type=${s}" else s"$url?type=${s}" }
-        env.Ws
-          .url(finalUrl)
-          .withRequestTimeout(timeout)
-          .withHttpHeaders(
-            "Accept" -> "application/json",
-            "Authorization" -> s"Bearer ${serviceToken}"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              if (e2ee) {
-                decryptValue(resp.json.select("secret").asOpt[JsObject].getOrElse(Json.obj()), serviceTokenData, secretKeyOpt, options)
-              } else {
-                resp.json.select("secret").select("secretValue").asOpt[String] match {
-                  case None => CachedVaultSecretStatus.SecretReadError(s"unable to read secret ${path} in ${resp.json}")
-                  case Some(secretValue) => selectValue(secretValue, options)
-                }
-              }
-            } else if (resp.status == 401) {
-              CachedVaultSecretStatus.SecretReadUnauthorized
-            } else if (resp.status == 403) {
-              CachedVaultSecretStatus.SecretReadForbidden
-            } else if (resp.status == 404) {
-              CachedVaultSecretStatus.SecretNotFound
-            } else {
-              CachedVaultSecretStatus.SecretReadError(resp.status + " - " + resp.body)
-            }
+    getServiceToken()
+      .flatMap {
+        case Left(err)                               => CachedVaultSecretStatus.SecretReadError(err).vfuture
+        case Right((serviceTokenData, secretKeyOpt)) => {
+          val path                        = _path.tail
+          val url                         = if (e2ee) {
+            s"$baseUrl/api/v3/secrets/${path}"
+          } else {
+            s"$baseUrl/api/v3/secrets/raw/${path}"
           }
+          val workspaceId: Option[String] = defaultWorkspaceId
+            .orElse(options.get("workspaceId"))
+            .orElse(serviceTokenData.select("workspace").asOpt[String])
+          val environment: Option[String] = defaultEnvironment
+            .orElse(options.get("environment"))
+            .orElse(serviceTokenData.select("scopes").select(0).select("environment").asOpt[String])
+          val secretType: Option[String]  = defaultSecretType
+            .orElse(options.get("type"))
+          val finalUrl                    = url
+            .applyOnWithOpt(workspaceId) { case (url, w) =>
+              if (url.contains("?")) s"$url&workspaceId=${w}" else s"$url?workspaceId=${w}"
+            }
+            .applyOnWithOpt(environment) { case (url, e) =>
+              if (url.contains("?")) s"$url&environment=${e}" else s"$url?environment=${e}"
+            }
+            .applyOnWithOpt(secretType) { case (url, s) =>
+              if (url.contains("?")) s"$url&type=${s}" else s"$url?type=${s}"
+            }
+          env.Ws
+            .url(finalUrl)
+            .withRequestTimeout(timeout)
+            .withHttpHeaders(
+              "Accept"        -> "application/json",
+              "Authorization" -> s"Bearer ${serviceToken}"
+            )
+            .get()
+            .map { resp =>
+              if (resp.status == 200) {
+                if (e2ee) {
+                  decryptValue(
+                    resp.json.select("secret").asOpt[JsObject].getOrElse(Json.obj()),
+                    serviceTokenData,
+                    secretKeyOpt,
+                    options
+                  )
+                } else {
+                  resp.json.select("secret").select("secretValue").asOpt[String] match {
+                    case None              =>
+                      CachedVaultSecretStatus.SecretReadError(s"unable to read secret ${path} in ${resp.json}")
+                    case Some(secretValue) => selectValue(secretValue, options)
+                  }
+                }
+              } else if (resp.status == 401) {
+                CachedVaultSecretStatus.SecretReadUnauthorized
+              } else if (resp.status == 403) {
+                CachedVaultSecretStatus.SecretReadForbidden
+              } else if (resp.status == 404) {
+                CachedVaultSecretStatus.SecretNotFound
+              } else {
+                CachedVaultSecretStatus.SecretReadError(resp.status + " - " + resp.body)
+              }
+            }
+        }
       }
-    }
-    .recover { case e: Throwable =>
-      e.printStackTrace()
-      CachedVaultSecretStatus.SecretReadError(e.getMessage)
-    }
+      .recover { case e: Throwable =>
+        e.printStackTrace()
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
   }
 }
 
@@ -1100,7 +1122,7 @@ class Vaults(env: Env) {
           // TODO: support square https://github.com/square/keywhiz ?
           // TODO: support pinterest https://github.com/pinterest/knox ?
           env.adminExtensions.vault(typ) match {
-            case None => logger.error(s"unknown vault type '${typ}'")
+            case None             => logger.error(s"unknown vault type '${typ}'")
             case Some(adminVault) => {
               logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
               vaults.put(key, adminVault.build(key, vaultConfig.get[Configuration](key), env))

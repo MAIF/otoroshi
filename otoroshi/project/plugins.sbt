@@ -6,5 +6,6 @@ addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "3.9.14")
 addSbtPlugin("ch.epfl.scala"     % "sbt-bloop"    % "1.5.4")
 addDependencyTreePlugin
 
-addSbtPlugin("com.jsuereth" % "sbt-pgp"        % "2.1.1")
-addSbtPlugin("com.geirsson" % "sbt-ci-release" % "1.5.7")
+addSbtPlugin("com.jsuereth"   % "sbt-pgp"             % "2.1.1")
+addSbtPlugin("com.geirsson"   % "sbt-ci-release"      % "1.5.7")
+addSbtPlugin("com.codecommit" % "sbt-github-packages" % "0.5.3")

@@ -1084,6 +1084,15 @@ export class DangerZonePage extends Component {
         help: 'The percentage of monthly calls before sending alerts',
       },
     },
+    'tlsSettings.bannedAlpnProtocols': {
+      type: 'jsonobjectcode',
+      props: {
+        label: 'Banned ALPN protocols',
+        help:
+          'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
+        mode: 'json',
+      },
+    },
     templates: {
       type: 'code',
       props: {
@@ -1196,6 +1205,7 @@ export class DangerZonePage extends Component {
     'tlsSettings.includeJdkCaServer',
     'tlsSettings.includeJdkCaClient',
     'tlsSettings.trustedCAsServer',
+    'tlsSettings.bannedAlpnProtocols',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
     'autoCert.replyNicely',
@@ -1443,13 +1453,6 @@ export class DangerZonePage extends Component {
     if (this.state.changed) {
       delete propsDisabled.disabled;
     }
-    console.log(
-      Otoroshi.extensions()
-        .flatMap((ext) => ext.dangerZoneParts)
-        .flatMap((part) => {
-          return ['>>>' + part.title]; //, ...part.flow]
-        })
-    );
     return (
       <div>
         <div className="displayGroupBtn">
@@ -2033,7 +2036,6 @@ class GlobalPlugins extends Component {
           .flatMap((r) => [r.plugin, (r.config || {}).plugin])
           .filter((p) => p && !p.includes('.wrappers.'));
 
-        console.log(plugins);
         return (
           <NgForm
             value={{ plugins }}

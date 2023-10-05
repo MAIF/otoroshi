@@ -170,7 +170,7 @@ trait AdminExtension {
   def privateAppAuthRoutes(): Seq[AdminExtensionPrivateAppAuthRoute]     = Seq.empty
   def privateAppPublicRoutes(): Seq[AdminExtensionPrivateAppPublicRoute] = Seq.empty
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
-  def vaults(): Seq[AdminExtensionVault] = Seq.empty
+  def vaults(): Seq[AdminExtensionVault]                                 = Seq.empty
 
   def configuration: Configuration = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
