@@ -35,7 +35,7 @@ export function GlobalScore(allProps) {
                 '--dynamic-raw-score-to': Math.round(score)
             }}
                 className='dynamic-raw-score'></span>
-            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`${maxScore ? `/${maxScore} ` : ''}`}
+            <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{`${maxScore ? `/${maxScore.toFixed(0)} ` : ''}`}
                 <span style={{ fontWeight: 'normal' }}>{unit || '%'}</span>
             </span>
         </>
