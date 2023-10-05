@@ -396,7 +396,9 @@ class EcoMetrics {
       .foldLeft(Seq.empty[RuleStateRecord]) {
         case(acc, (item, i)) =>
           acc :+ item.copy(
-          states = rules.states.slice(0, i+1).flatMap(_.states)
+          states = rules.states
+            .slice(0, i+1)
+            .flatMap(_.states)
             .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
             case (acc, i) => acc.map(p => if(p.id == i.id) i else p)
           })
@@ -429,45 +431,53 @@ class EcoMetrics {
       .map(_.processRoute())
   }
 
-  private def calculateRulesAtDate(rules: RulesRouteConfiguration, date: Long): Seq[RouteScoreByDateAndSection] = {
-    val record: RuleStateRecord = RuleStateRecord(
-        date = date,
-        states = rules.states
-          .sortBy(_.date)(Ordering.Long)
-          .flatMap(r => r.states.map(state => (r.date, state)))
-          .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
-            case (acc, (recordState, state)) => {
-              if(recordState <= date) {
-                acc.map(p => if (p.id == state.id) state else p)
-              } else {
-                acc
+  private def calculateRulesAtDate(rules: RulesRouteConfiguration, date: Long): Option[Seq[RouteScoreByDateAndSection]] = {
+    if (rules.states
+      .sortBy(_.date)(Ordering.Long)
+      .headOption.exists(createdAt => createdAt.date <= date)) {
+
+      val record: RuleStateRecord = RuleStateRecord(
+          date = date,
+          states = rules.states
+            .sortBy(_.date)(Ordering.Long)
+            .flatMap(r => r.states.map(state => (r.date, state)))
+            .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
+              case (acc, (recordState, state)) => {
+                if(recordState <= date) {
+                  acc.map(p => if (p.id == state.id) state else p)
+                } else {
+                  acc
+                }
               }
             }
-          }
-      )
+        )
 
-    record.states
-      .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
-        case (acc, rule) =>
-          val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
-          val value = if(rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100) else 0
+      record.states
+        .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
+          case (acc, rule) =>
+            val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
+            val value = if(rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100) else 0
 
-          acc.find(score => score.section == ruleWeight.section) match {
-            case None => acc :+ RouteScoreByDateAndSection(
-              date = date,
-              section = ruleWeight.section,
-              sectionWeight = ruleWeight.sectionWeight,
-              score = SectionScore(score = value)
-            )
-            case Some(item) => acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
-              date = date,
-              section = ruleWeight.section,
-              sectionWeight = ruleWeight.sectionWeight,
-              score = SectionScore(score = item.score.score + value)
-            )
-          }
-      }
-      .map(_.processRoute())
+            acc.find(score => score.section == ruleWeight.section) match {
+              case None => acc :+ RouteScoreByDateAndSection(
+                date = date,
+                section = ruleWeight.section,
+                sectionWeight = ruleWeight.sectionWeight,
+                score = SectionScore(score = value)
+              )
+              case Some(item) => acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
+                date = date,
+                section = ruleWeight.section,
+                sectionWeight = ruleWeight.sectionWeight,
+                score = SectionScore(score = item.score.score + value)
+              )
+            }
+        }
+        .map(_.processRoute())
+        .some
+    } else {
+      None
+    }
   }
 
   private def mergeRoutesScoreByDateAndSection(routes: Seq[(RouteRules, RouteScore)]) = {
@@ -479,7 +489,12 @@ class EcoMetrics {
     dates.foldLeft(Seq.empty[RouteScoreAtDate]) { case (acc, date) =>
       acc :+ RouteScoreAtDate(
         date = date,
-        routes = routes.map(route => RouteScoreAtDateItem(route._2.groupId, route._1.routeId, calculateRulesAtDate(route._1.rulesConfig, date)))
+        routes = routes.map(route => {
+          val rules = calculateRulesAtDate(route._1.rulesConfig, date)
+          (route._2.groupId, route._1.routeId, rules)
+        })
+          .filter(item => item._3.nonEmpty)
+          .map(item => RouteScoreAtDateItem(item._1, item._2, item._3.get))
       )
     }
   }
@@ -510,7 +525,7 @@ class EcoMetrics {
     )
   }
 
-  def calculateRouteScore(route: RouteRules, group: GreenScoreEntity) = {
+  private def calculateRouteScore(route: RouteRules, group: GreenScoreEntity) = {
     val sectionsScoreByDate: Seq[RouteScoreByDateAndSection] = calculateRulesByDate(route.rulesConfig)
 
     val routeScore = registry.route(route.routeId).getOrElse(RouteReservoirs())

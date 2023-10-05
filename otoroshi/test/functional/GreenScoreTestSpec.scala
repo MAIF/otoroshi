@@ -105,6 +105,8 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
       getOtoroshiRoutes().futureValue
+
+      wait(createOtoroshiRoute(initialRoute))
     }
 
     "initiale state" in {
@@ -115,11 +117,12 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value mustBe empty
     }
 
+    // create an empty group without routes called TEMPLATE_WITHOUT_CHANGE_OR_DATES
     "create group" in {
       val result = fetch(path = "/_template")
 
       val template =  GreenScoreEntity.format.reads(result.json).get
-      val created = fetch(method = "post", body = template.json.some).status
+      val created = fetch(method = "post", body = template.copy(id = "TEMPLATE_WITHOUT_CHANGE_OR_DATES").json.some).status
       created mustBe 201
     }
 
@@ -131,6 +134,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value mustBe empty
     }
 
+    // create an group with the apdmin api route called LESS_OLD_GROUP at LESS_OLD_DATE
     "create group with rules" in {
       val routes = env.proxyState.allRoutes()
       val template = GreenScoreEntity.format.reads(fetch(path ="/_template").json).get
@@ -174,6 +178,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       groupScore.routes.head.scores.find(s => s.section == "log").get.letter mustBe "A"
     }
 
+    // update LESS_OLD_GROUP by adding on new record at TODAY_DATE
     "put new record to the group" in {
       val greenScoreEntities = env.adminExtensions.extension[GreenScoreExtension].get.datastores
 
@@ -200,6 +205,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       created mustBe 200
     }
 
+    // we have 2 groups, one empty and the second LESS_OLD_GROUP with 1 routes and 2 records TODAY_DATE + LESS_OLD_DATE
     "get new score" in {
       val result = getScore()
 
@@ -217,7 +223,6 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     }
 
     "create group with two routes added in same time" in {
-      wait(createOtoroshiRoute(initialRoute))
       val routes = env.proxyState.allRoutes()
 
       val template = GreenScoreEntity.format.reads(fetch(path = "/_template").json).get
@@ -257,20 +262,34 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
 
       val scoreByRoute = result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.map(RouteScoreAtDate.from)
 
-      val groupScore = scoreByRoute.find(p => p.date == OLD_DATE).get
-      groupScore.routes.length mustBe 3
+      val oldScore = scoreByRoute.find(p => p.date == OLD_DATE).get
+      oldScore.routes.length mustBe 2
 
+      val lessOldScore = scoreByRoute.find(p => p.date == LESS_OLD_DATE).get
+      lessOldScore.routes.length mustBe 3
 
-      // MANAGE LE FAIT QUE DES ROUTES PUISSENT NE PAS ETRE PRESENT DANS LE TEMPS ET DONC NE PAS LES COMPTER SI C'EST LE CAS PLUTOT QUE DE METTRE 0
+      val todayScore = scoreByRoute.find(p => p.date == TODAY_DATE).get
+      todayScore.routes.length mustBe 3
 
-      println(result)
+      oldScore
+        .routes
+        .flatMap(_.scores)
+        .foldLeft(0.0) { case (acc, section) => acc + section.score.score } mustBe (MAX_SCORE_BY_SECTIONS("usage") + MAX_SCORE_BY_SECTIONS("design"))
 
-//      groupScore.routes.head.scores.foldLeft(0.0) { case (acc, section) => acc + section.score.score } mustBe (MAX_SCORE_BY_SECTIONS("architecture") + MAX_SCORE_BY_SECTIONS("usage"))
+      lessOldScore
+        .routes
+        .flatMap(_.scores)
+        .foldLeft(0.0) { case (acc, section) => acc + section.score.score } mustBe (MAX_SCORE_BY_SECTIONS("usage") + MAX_SCORE_BY_SECTIONS("design") + MAX_SCORE_BY_SECTIONS("log"))
 
-//      val minScore: RouteScoreAtDate = scoreByRoute.minBy(_.date)
-//      minScore.routes.head.scores.foldLeft(0.0) { case (acc, section) => acc + section.score.score } mustBe MAX_SCORE_BY_SECTIONS("log")
+      todayScore
+        .routes
+        .flatMap(_.scores)
+        .foldLeft(0.0) { case (acc, section) => acc + section.score.score } mustBe (
+        MAX_SCORE_BY_SECTIONS("usage") + // OLD_SCORE
+        MAX_SCORE_BY_SECTIONS("design") + // OLD_SCORE
+        MAX_SCORE_BY_SECTIONS("usage") + // TODAY
+        MAX_SCORE_BY_SECTIONS("architecture"))// TODAY
     }
-
 
     "shutdown" in {
       stopAll()
