@@ -25,7 +25,8 @@
     &:hover{
       color: var(--color_level3);
     }
-    display: flex;
+    display: grid;
+    grid-template-columns: 30px auto;
     align-items: center;
   }
   

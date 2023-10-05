@@ -358,7 +358,7 @@ class BackOfficeAppContainer extends Component {
                           className={`fab fa-fort-awesome ${this.state.openedSidebar ? 'me-3' : ''
                             }`}
                         />
-                        {this.state.openedSidebar ? 'Dashboard' : ''}
+                        <span style={{marginTop:"6px"}}>{this.state.openedSidebar ? 'Dashboard' : ''}</span>
                       </Link>
                     </li>
                   </ul>
