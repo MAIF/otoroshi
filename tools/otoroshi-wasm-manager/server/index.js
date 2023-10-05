@@ -54,5 +54,13 @@ S3.initializeS3Connection()
 
     const PORT = ENV.MANAGER_PORT || 5001;
 
+    if(ENV.AUTH_MODE === "NO_AUTH") {
+      console.log("###########################################################")
+      console.log("###########################################################")
+      console.log('The manager will start without authentication configured !!')
+      console.log("###########################################################")
+      console.log("###########################################################")
+    }
+
     server.listen(PORT, () => log.info(`listening on ${PORT}`));
   })

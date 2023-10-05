@@ -1,8 +1,11 @@
 const express = require('express');
 const { S3 } = require('../s3');
 const { UserManager } = require('../services/user');
+const { ENV } = require('../configuration');
 
 const router = express.Router()
+
+router.get('/runtime', (_, res) => res.json(ENV.EXTISM_RUNTIME_ENVIRONMENT === 'true'))
 
 router.post('/:pluginId', (req, res) => {
   if (!req.params) {
@@ -18,7 +21,13 @@ router.post('/:pluginId', (req, res) => {
       .then(data => {
         const plugin = data.plugins.find(plugin => plugin.pluginId === pluginId);
 
-        if (plugin) {
+        if (!ENV.EXTISM_RUNTIME_ENVIRONMENT) {
+          res
+            .status(400)
+            .json({
+              error: 'Runtime environment is not enabled.'
+            })
+        } else if (plugin) {
           run(plugin.wasm, req.body, res)
         } else {
           res

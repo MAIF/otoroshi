@@ -11,10 +11,11 @@ module.exports = {
         GITHUB_MAX_REPO_SIZE: process.env.GITHUB_MAX_REPO_SIZE,
         WAPM_REGISTRY_TOKEN: process.env.WAPM_REGISTRY_TOKEN,
         MANAGER_ALLOWED_DOMAINS: process.env.MANAGER_ALLOWED_DOMAINS,
-        AUTH_MODE: process.env.AUTH_MODE,
+        AUTH_MODE: process.env.AUTH_MODE || 'NO_AUTH',
         MANAGER_TEMPLATES: process.env.MANAGER_TEMPLATES,
         OTOROSHI_TOKEN_SECRET: process.env.OTOROSHI_TOKEN_SECRET || 'veryverysecret',
         OTOROSHI_USER_HEADER: process.env.OTOROSHI_USER_HEADER,
-        MANAGER_MAX_PARALLEL_JOBS: process.env.MANAGER_MAX_PARALLEL_JOBS || 2
+        MANAGER_MAX_PARALLEL_JOBS: process.env.MANAGER_MAX_PARALLEL_JOBS || 2,
+        EXTISM_RUNTIME_ENVIRONMENT: process.env.EXTISM_RUNTIME_ENVIRONMENT || false
     }
 }
