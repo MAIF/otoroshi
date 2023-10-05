@@ -575,9 +575,6 @@ export class Table extends Component {
             </div>
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
-                style={{
-                  border: "none"
-                }}
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 manual
@@ -704,7 +701,7 @@ export class Table extends Component {
             ]}
             {!this.props.formComponent &&
               !this.props.formFunction &&
-              ((Array.isArray(this.props.formFlow) && this.props.formFlow.find((item) => this.isAnObject(item))) ? (
+              (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -779,7 +776,7 @@ export class Table extends Component {
             ]}
             {!this.props.formComponent &&
               !this.props.formFunction &&
-              ((Array.isArray(this.props.formFlow) && this.props.formFlow.find((item) => this.isAnObject(item))) ? (
+              (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}

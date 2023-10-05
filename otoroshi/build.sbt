@@ -224,8 +224,8 @@ sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.anceli
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
-githubOwner := "MAIF"
-githubRepository := "otoroshi"
+//githubOwner := "MAIF"
+//githubRepository := "otoroshi"
 // githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
