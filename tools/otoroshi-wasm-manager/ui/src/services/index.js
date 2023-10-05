@@ -125,3 +125,5 @@ export const getGithubSources = (repo, owner, ref, isPrivate) => rawFetch('/plug
     repo, owner, ref, private: isPrivate
   })
 })
+
+export const getRuntimeEnvironmentState = () => jsonFetch('/wasm/runtime')

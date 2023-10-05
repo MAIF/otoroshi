@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react"
 import { SidebarContext } from "./Sidebar"
+import * as Service from './services'
 
 export function TabsHeader({
   selectedPlugin, onSave, onBuild, onDownload,
@@ -20,6 +22,13 @@ function Header({
   children, onSave, onBuild, showActions, onDownload,
   showPlaySettings, showPublishSettings, selectedPluginType }) {
 
+  const [runtimeState, setRuntimeEnvironment] = useState(false);
+
+  useEffect(() => {
+    Service.getRuntimeEnvironmentState()
+      .then(setRuntimeEnvironment)
+  }, [])
+
   return <SidebarContext.Consumer>
     {({ open, sidebarSize }) => (
       <div className='d-flex align-items-center justify-content-between bg-light'
@@ -34,7 +43,7 @@ function Header({
             <Download onDownload={onDownload} />
             {/* {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />} */}
           </>}
-          <Play showPlaySettings={showPlaySettings} />
+          {runtimeState && <Play showPlaySettings={showPlaySettings} />}
         </div>
       </div>
     )}

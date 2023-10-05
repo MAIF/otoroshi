@@ -28,16 +28,6 @@ h1 {
   outline: none !important;
 }
 
-.project-confirm-box:before {
-  content: "";
-  display: inline-block;
-  width: 0;
-  height: 0;
-  border-top: 24px solid #fff;
-  border-bottom: 24px solid #fff;
-  border-right: 16px solid #ccc;
-}
-
 .sidebar-header {
   background-color: rgb(255 255 255);
   padding: 6px 12px;

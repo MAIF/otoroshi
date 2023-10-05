@@ -41,7 +41,7 @@ class PluginManager extends React.Component {
   }
 }
 
-function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
+function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active }) {
   const [showGithubModal, setGithubModal] = useState(false);
 
   const [repo, setRepo] = useState("");
@@ -133,38 +133,73 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
 
   return <div style={{
     position: 'absolute',
-    left: 252,
+    top: 0,
+    bottom: 0,
+    left: 250,
     zIndex: 100,
-    background: '#ccc'
-  }} className="d-flex justify-content-center project-confirm-box rounded">
-    {[
-      { icon: <Rust style={{ height: 30, width: 32, marginLeft: -4, transform: 'scale(1.5)' }} />, onClick: () => onNewPlugin('rust') },
-      { icon: <Js style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('js') },
-      { icon: <Ts style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('ts') },
-      { icon: <Go style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('go') },
-      { icon: <OPA style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('opa') },
-      {
-        icon: <Github style={{ height: 32, width: 32 }} />, onClick: e => {
-          e.stopPropagation()
-          setGithubModal(true)
-        }
-      },
-      {
-        icon: <i className='fas fa-times fa-lg' style={{
-          width: 22
-        }} />,
-        onClick: () => setProjectSelector(false)
-      }
-    ].map(({ icon, onClick }, i) => {
-      return <button
-        type="button"
-        key={`action-${i}`}
-        className='p-1 px-2 my-1 me-1 btn btn-sm btn-light'
-        onClick={onClick}
-        style={{ border: 'none' }}>
-        {icon}
-      </button>
-    })}
+    width: active ? 225 : 0,
+    background: '#eee',
+    gap: '.5rem',
+    transition: 'width .25s'
+  }}>
+    {active && <>
+      <h3 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 'bold', background: 'rgb(249, 176, 0)', color: '#fff', height: 42, margin: 0 }}
+        className='d-flex align-items-center justify-content-center'>Languages</h3>
+      <div className='d-flex flex-column' style={{ padding: '.5rem .5rem' }}>
+        {[
+          {
+            icon: <Rust style={{ height: 30, width: 32, marginLeft: -4, transform: 'scale(1.5)' }} />,
+            title: 'Rust',
+            onClick: () => onNewPlugin('rust')
+          },
+          {
+            icon: <Js style={{ height: 32, width: 32 }} />,
+            title: 'Javascript',
+            onClick: () => onNewPlugin('js')
+          },
+          {
+            icon: <Ts style={{ height: 32, width: 32 }} />,
+            title: 'Typescript',
+            onClick: () => onNewPlugin('ts')
+          },
+          {
+            icon: <Go style={{ height: 32, width: 32 }} />,
+            title: 'Golang',
+            onClick: () => onNewPlugin('go')
+          },
+          {
+            icon: <OPA style={{ height: 32, width: 32 }} />,
+            title: 'Open Policy Agent',
+            onClick: () => onNewPlugin('opa')
+          },
+          {
+            icon: <Github style={{ height: 32, width: 32 }} />,
+            title: 'Github',
+            onClick: e => {
+              e.stopPropagation()
+              setGithubModal(true)
+            }
+          },
+          {
+            icon: <i className='fas fa-chevron-left fa-lg' style={{
+              width: 22
+            }} />,
+            title: 'Cancel',
+            onClick: () => setProjectSelector(false)
+          }
+        ].map(({ icon, onClick, title }, i) => {
+          return <button
+            type="button"
+            key={`action-${i}`}
+            className='btn btn-sm btn-light d-flex align-items-center mb-2'
+            onClick={onClick}
+            style={{ border: 'none', gap: '.5rem', padding: '.5rem 1rem', borderRadius: 0, minHeight: 46 }}>
+            {icon}
+            {title}
+          </button>
+        })}
+      </div>
+    </>}
   </div>
 }
 
@@ -177,7 +212,6 @@ function Header({ onNewPlugin, reloadPlugins }) {
       setProjectSelector(!showProjectSelector)
     }}
     style={{
-      position: 'relative',
       cursor: 'pointer'
     }}>
     <div className='d-flex align-items-center'>
@@ -193,10 +227,12 @@ function Header({ onNewPlugin, reloadPlugins }) {
     </div>
 
 
-    {showProjectSelector && <NewPluginModal
+
+    <NewPluginModal
+      active={showProjectSelector}
       onNewPlugin={onNewPlugin}
       reloadPlugins={reloadPlugins}
-      setProjectSelector={setProjectSelector} />}
+      setProjectSelector={setProjectSelector} />
   </div>
 }
 
