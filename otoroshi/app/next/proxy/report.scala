@@ -143,7 +143,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   var gduration_ns                      = -1L
   var overheadIn_ns                     = -1L
   var overheadOut_ns                    = -1L
-  var overheadOutStart_ns               = start_ns // creation.toDate.getTime
+  var overheadOutStart_ns               = -1L //start_ns // creation.toDate.getTime
   var termination                       = creation
   var ctx: JsValue                      = JsNull
 
@@ -209,8 +209,12 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
 
   def markOverheadOut(): NgExecutionReport = {
     if (reporting) {
-      // overheadOut = System.currentTimeMillis() - overheadOutStart
-      overheadOut_ns = System.nanoTime() - overheadOutStart_ns
+      if (overheadOutStart_ns == -1L) {
+        overheadOut_ns = 0L
+      } else {
+        // overheadOut = System.currentTimeMillis() - overheadOutStart
+        overheadOut_ns = System.nanoTime() - overheadOutStart_ns
+      }
     }
     this
   }

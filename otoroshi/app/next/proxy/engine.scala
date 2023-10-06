@@ -2898,8 +2898,8 @@ class ProxyEngine() extends RequestHandler {
             response.some
           )
         }
-        .andThen { case Success(_) =>
-          report.startOverheadOut()
+        .andThen {
+          case _ => report.startOverheadOut()
         }
       FEither.fright(fu)
     }
