@@ -874,3 +874,19 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
     }
   }
 }
+
+class JsonPathSpec extends WordSpec with MustMatchers with OptionValues {
+
+  "json-path" should {
+    "work in projection" in {
+      val res = otoroshi.utils.JsonPathUtils.getAtPolyF(
+        """{
+          |  "otoroshiHeadersIn": [
+          |     { "keyk":"key1","value":"value1"}
+          |  ]
+          |}""".stripMargin, "$.otoroshiHeadersIn.*.key")
+
+      println("res", res)
+    }
+  }
+}
