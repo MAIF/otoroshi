@@ -826,7 +826,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       res: Results.Status,
       _entity: JsValue,
       request: RequestHeader,
-      resEntity: Option[Resource]
+      resEntity: Option[Resource],
+      addHeaders: Map[String, String] = Map.empty,
   ): Result = {
     val entity = if (request.method == "GET") {
       (for {
@@ -848,6 +849,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               contentType = "application/x-ndjson".some
             )
           )
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
@@ -855,13 +859,20 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case _ if !request.accepts("application/json") && request.accepts("application/yaml")                =>
         res(Yaml.write(entity)) // TODO: writes a k8s resource ?
           .as("application/yaml")
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
       case _                                                                                               =>
-        res(entity).applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
-          r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
-        }
+        res(entity)
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
+          .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
+            r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
+          }
     }
   }
 
@@ -1457,22 +1468,22 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(__body) => {
           val _body = __body.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
-          resource.access.findOne(version, id).flatMap {
-            case None                                                =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
-                ctx.request,
-                resource.some
-              ).vfuture
-            case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                ctx.request,
-                resource.some
-              ).vfuture
-            case Some(oldEntity)                                     => {
+          //resource.access.findOne(version, id).flatMap {
+          //  case None                                                =>
+          //    result(
+          //      Results.Unauthorized,
+          //      Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
+          //      ctx.request,
+          //      resource.some
+          //    ).vfuture
+          //  case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
+          //    result(
+          //      Results.Unauthorized,
+          //      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+          //      ctx.request,
+          //      resource.some
+          //    ).vfuture
+          //  case Some(oldEntity)                                     => {
               resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
                 case err @ JsError(_)                                =>
                   result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
@@ -1496,9 +1507,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             body,
                             s"${resource.singularName}Created".some
                           )
-                          result(Results.Ok, res, ctx.request, resource.some)
+                          result(Results.Created, res, ctx.request, resource.some)
                       }
-                    case Some(_) =>
+                    case Some(old) =>
+                      val oldEntity = resource.access.format.reads(old).get
+                      val newEntity = resource.access.format.reads(body).get
+                      val hasChanged = oldEntity == newEntity
                       resource.access.create(version, resource.singularName, id.some, body).map {
                         case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                         case Right(res) =>
@@ -1509,12 +1523,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             body,
                             s"${resource.singularName}Updated".some
                           )
-                          result(Results.Ok, res, ctx.request, resource.some)
+                          result(Results.Ok, res, ctx.request, resource.some, Map("Otoroshi-Entity-Updated" -> hasChanged.toString))
                       }
                   }
                 }
-              }
-            }
+            //  }
+            //}
           }
         }
       }
