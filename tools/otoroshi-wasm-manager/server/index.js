@@ -6,7 +6,7 @@ const compression = require('compression');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { S3 } = require('./s3');
-const { ENV } = require('./configuration');
+const { ENV, STORAGE } = require('./configuration');
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
@@ -21,9 +21,26 @@ const manager = require('./logger');
 const { Publisher } = require('./services/publish-job');
 const log = manager.createLogger('wasm-manager');
 
-S3.initializeS3Connection()
-  .then(() => {
-    S3.createBucketIfMissing();
+function initializeStorage() {
+  if (ENV.STORAGE === STORAGE.S3)
+    return S3.initializeS3Connection()
+      .then(() => S3.createBucketIfMissing())
+  else
+    return Promise.resolve()
+}
+
+if (ENV.STORAGE === STORAGE.S3 && !S3.configured()) {
+  console.log("[S3 INITIALIZATION](failed): S3 Bucket is missing");
+  process.exit(1);
+}
+// else if  manage GITHUG
+
+initializeStorage()
+  .then(error => {
+    if (error) {
+      throw error;
+    }
+
     FileSystem.cleanBuildsAndLogsFolders();
     // Publisher.initialize();
     // S3.cleanBucket()
@@ -54,7 +71,7 @@ S3.initializeS3Connection()
 
     const PORT = ENV.MANAGER_PORT || 5001;
 
-    if(ENV.AUTH_MODE === "NO_AUTH") {
+    if (ENV.AUTH_MODE === "NO_AUTH") {
       console.log("###########################################################")
       console.log("###########################################################")
       console.log('The manager will start without authentication configured !!')

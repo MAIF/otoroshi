@@ -2,13 +2,15 @@ const AWS = require('aws-sdk');
 const dns = require('dns');
 const url = require('url');
 const manager = require('./logger');
-const { ENV } = require('./configuration');
+const { ENV, STORAGE } = require('./configuration');
 const log = manager.createLogger('wasm-manager');
 
 let state = {
   s3: undefined,
   Bucket: undefined
 }
+
+const configured = () => ENV.S3_BUCKET;
 
 const initializeS3Connection = () => {
   AWS.config.update({
@@ -38,11 +40,12 @@ const initializeS3Connection = () => {
       }),
       Bucket: ENV.S3_BUCKET
     }
-    return Promise.resolve();
+
+    console.log("[S3 INITIALIZATION](ok): S3 Bucket initialized");
+    return Promise.resolve()
   }
 }
 
-// TODO cacth error
 const createBucketIfMissing = () => {
   const params = { Bucket: state.Bucket }
 
@@ -51,7 +54,7 @@ const createBucketIfMissing = () => {
     .then(() => log.info("Using existing bucket"))
     .catch(res => {
       if (res.statusCode === 404) {
-        log.info(`Bucket ${state.Bucket} is missing.`)
+        log.error(`Bucket ${state.Bucket} is missing.`)
         return new Promise(resolve => {
           state.s3.createBucket(params, err => {
             if (err) {
@@ -62,6 +65,8 @@ const createBucketIfMissing = () => {
             }
           });
         })
+      } else {
+        return res
       }
     })
 }
@@ -103,6 +108,7 @@ const listObjects = () => {
 
 module.exports = {
   S3: {
+    configured,
     initializeS3Connection,
     createBucketIfMissing,
     cleanBucket,

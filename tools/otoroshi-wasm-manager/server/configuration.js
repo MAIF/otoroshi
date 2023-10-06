@@ -1,7 +1,13 @@
+const STORAGE = {
+    S3: "S3",
+    GITHUB: "GITHUB"
+};
+
 module.exports = {
+    STORAGE,
     ENV: {
         PORT: process.env.MANAGER_PORT || 5001,
-        ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+        S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
         S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
         DOCKER_USAGE: process.env.DOCKER_USAGE,
         S3_ENDPOINT: process.env.S3_ENDPOINT,
@@ -16,6 +22,7 @@ module.exports = {
         OTOROSHI_TOKEN_SECRET: process.env.OTOROSHI_TOKEN_SECRET || 'veryverysecret',
         OTOROSHI_USER_HEADER: process.env.OTOROSHI_USER_HEADER,
         MANAGER_MAX_PARALLEL_JOBS: process.env.MANAGER_MAX_PARALLEL_JOBS || 2,
-        EXTISM_RUNTIME_ENVIRONMENT: process.env.EXTISM_RUNTIME_ENVIRONMENT || false
+        EXTISM_RUNTIME_ENVIRONMENT: process.env.EXTISM_RUNTIME_ENVIRONMENT || false,
+        STORAGE: process.env.STORAGE || STORAGE.S3
     }
 }
