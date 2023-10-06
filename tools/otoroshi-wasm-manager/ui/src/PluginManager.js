@@ -42,7 +42,7 @@ class PluginManager extends React.Component {
 }
 
 function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active }) {
-  const [showGithubModal, setGithubModal] = useState(false);
+  const [showGithubModal, setGithubModal] = useState(false)
 
   const [repo, setRepo] = useState("");
   const [owner, setOwner] = useState("");
@@ -53,81 +53,89 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active
   if (showGithubModal) {
     return <div style={{
       position: 'absolute',
-      left: 252,
       top: 0,
+      bottom: 0,
+      left: 250,
       zIndex: 100,
-      width: 300,
-      maxWidth: 500,
-      background: '#ddd',
-      borderTopLeftRadius: 0,
-      borderBottomLeftRadius: 0,
-      borderTopRightRadius: 4,
-      borderBottomRightRadius: 4
-    }} className="justify-content-center p-3"
+      width: true ? 325 : 0, // active 
+      background: '#eee',
+      gap: '.5rem',
+      transition: 'width .25s'
+    }}
       onClick={e => e.stopPropagation()}>
-      <div className='d-flex flex-column' style={{ position: 'relative' }}>
-        {error && <pre className="alert alert-warning" role="alert">
-          {JSON.stringify(error, null, 4)}
-        </pre>}
+      {active && <div className='d-flex flex-column h-100'>
+        <h3 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 'bold', background: '#000', color: '#fff', height: 42, margin: 0 }}
+          className='d-flex align-items-center justify-content-center'>Github repository</h3>
 
-        <i className='fa fa-lg fa-times' style={{
-          color: '#000',
-          position: 'absolute',
-          top: 4,
-          right: 6,
-          cursor: 'pointer',
-          left: 252
-        }} onClick={e => {
-          e.stopPropagation();
-          setGithubModal(false)
-        }} />
+        <div className='d-flex flex-column' style={{ flex: 1, padding: '.5rem 1rem' }}>
+          {error && <pre className="alert alert-warning" role="alert">
+            {JSON.stringify(error, null, 4)}
+          </pre>}
+          <div className='mt-2'>
+            <label htmlFor="owner" className='form-label' style={{ fontWeight: 'bold' }}>Owner</label>
+            <input type="text" className="form-control form-control-md" placeholder='octocat' value={owner} id="owner" onChange={e => {
+              setError(undefined);
+              setOwner(e.target.value)
+            }} />
+          </div>
 
-        <div className='mb-2'>
-          <label htmlFor="owner" className='form-label'>Owner</label>
-          <input type="text" className="form-control form-control-sm" placeholder='octocat' value={owner} id="owner" onChange={e => {
-            setError(undefined);
-            setOwner(e.target.value)
-          }} />
+          <div className='mt-2'>
+            <label htmlFor="repository" className='form-label' style={{ fontWeight: 'bold' }}>Repository</label>
+            <input type="text" value={repo} className="form-control form-control-md" placeholder='my-wasm-epo' id="repository" onChange={e => {
+              setError(undefined);
+              setRepo(e.target.value)
+            }} />
+          </div>
+
+          <div className='mt-2'>
+            <label htmlFor="branch" className='form-label' style={{ fontWeight: 'bold' }}>Branch</label>
+            <input type="text" value={branch} className="form-control form-control-md" id="branch" onChange={e => {
+              setError(undefined);
+              setBranch(e.target.value)
+            }} />
+          </div>
+
+          <div className="mt-3 d-flex flex-column align-items-center justify-content-center p-3"
+            style={{
+              backgroundColor: isPrivate ? '#f9b0002e' : '#fff',
+              border: isPrivate ? '2px solid #f9b000' : 'transparent',
+              borderRadius: 6
+            }}
+            onClick={() => setStatus(!isPrivate)} >
+            <i className='fas fa-shield-alt mb-2' style={{ color: "#f9b000", fontSize: 32 }} />
+            <span style={{
+              fontWeight: 'bold', color: '#f9b000', fontSize: 12, letterSpacing: 3, background: '#f9b0005e',
+              padding: '.1rem .75rem', borderRadius: 12
+            }} className='mb-2'>PRIVATE</span>
+            Is private repository ?
+          </div>
+
+          <div className='d-flex align-items-center mt-auto' style={{ gap: '.5rem' }}>
+            <button type="button" className='btn btn-secondary'
+              style={{ flex: .5, border: 'none', borderRadius: 6, padding: '.5rem 1rem', background: '#000' }}
+              onClick={e => {
+                e.stopPropagation();
+                setGithubModal(false)
+              }} >Cancel </button>
+            <button type="button"
+              className='btn btn-secondary'
+              style={{ flex: 1, background: '#f9b000', border: 'none', borderRadius: 6, padding: '.5rem 1rem' }}
+              onClick={e => {
+                e.stopPropagation();
+                setError(undefined)
+                createGithubRepo(owner, repo, branch, isPrivate)
+                  .then(r => {
+                    if (r.status > 300) {
+                      setError(r);
+                    } else {
+                      setGithubModal(false)
+                      reloadPlugins()
+                    }
+                  })
+              }}>Import sources</button>
+          </div>
         </div>
-
-        <div className='mb-2'>
-          <label htmlFor="repository" className='form-label'>Repository</label>
-          <input type="text" value={repo} className="form-control form-control-sm" placeholder='my-wasm-epo' id="repository" onChange={e => {
-            setError(undefined);
-            setRepo(e.target.value)
-          }} />
-        </div>
-
-        <div className='mb-3'>
-          <label htmlFor="branch" className='form-label'>Branch</label>
-          <input type="text" value={branch} className="form-control form-control-sm" id="branch" onChange={e => {
-            setError(undefined);
-            setBranch(e.target.value)
-          }} />
-        </div>
-
-        <div className="form-check">
-          <input className="form-check-input" type="checkbox" checked={isPrivate} id="flexCheckChecked" onChange={() => setStatus(!isPrivate)} />
-          <label className="form-check-label" htmlFor="flexCheckChecked">
-            Private repository
-          </label>
-        </div>
-
-        <button type="button" className='btn btn-secondary mt-3'
-          onClick={e => {
-            e.stopPropagation();
-            setError(undefined)
-            createGithubRepo(owner, repo, branch, isPrivate)
-              .then(r => {
-                if (r.status > 300) {
-                  setError(r);
-                } else {
-                  setGithubModal(false)
-                  reloadPlugins()
-                }
-              })
-          }}>Import sources</button>
-      </div>
+      </div>}
     </div>
   }
 
@@ -142,10 +150,10 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active
     gap: '.5rem',
     transition: 'width .25s'
   }}>
-    {active && <>
-      <h3 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 'bold', background: 'rgb(249, 176, 0)', color: '#fff', height: 42, margin: 0 }}
+    {active && <div className='d-flex flex-column h-100'>
+      <h3 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 'bold', background: '#000', color: '#fff', height: 42, margin: 0 }}
         className='d-flex align-items-center justify-content-center'>Languages</h3>
-      <div className='d-flex flex-column' style={{ padding: '.5rem .5rem' }}>
+      <div className='d-flex flex-column' style={{ flex: 1, padding: '.5rem 1rem' }}>
         {[
           {
             icon: <Rust style={{ height: 30, width: 32, marginLeft: -4, transform: 'scale(1.5)' }} />,
@@ -179,13 +187,6 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active
               e.stopPropagation()
               setGithubModal(true)
             }
-          },
-          {
-            icon: <i className='fas fa-chevron-left fa-lg' style={{
-              width: 22
-            }} />,
-            title: 'Cancel',
-            onClick: () => setProjectSelector(false)
           }
         ].map(({ icon, onClick, title }, i) => {
           return <button
@@ -199,7 +200,16 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins, active
           </button>
         })}
       </div>
-    </>}
+
+      <div className='mt-auto d-flex' style={{ margin: '.5rem 1rem' }}>
+        <button type="button" className='btn btn-secondary'
+          style={{ border: 'none', borderRadius: 6, padding: '.5rem 1rem', background: '#000', flex: 1 }}
+          onClick={e => {
+            e.stopPropagation();
+            setProjectSelector(false)
+          }} >Cancel </button>
+      </div>
+    </div>}
   </div>
 }
 
