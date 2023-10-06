@@ -2,10 +2,13 @@ const express = require('express');
 const { S3 } = require('../s3');
 const { UserManager } = require('../services/user');
 const { ENV } = require('../configuration');
+const { getWasm } = require('../services/wasm-s3');
 
 const router = express.Router()
 
-router.get('/runtime', (_, res) => res.json(ENV.EXTISM_RUNTIME_ENVIRONMENT === 'true'))
+router.get('/runtime', (_, res) => res.json(ENV.EXTISM_RUNTIME_ENVIRONMENT === 'true'));
+
+router.get('/:id', (req, res) => getWasm(`${req.params.id}.wasm`, res));
 
 router.post('/:pluginId', (req, res) => {
   if (!req.params) {

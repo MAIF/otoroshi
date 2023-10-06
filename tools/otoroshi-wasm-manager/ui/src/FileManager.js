@@ -1,4 +1,5 @@
 import React from 'react';
+import ReleasesMenu from './ReleasesMenu';
 import { LOGOS } from './FilesLogo';
 
 function File({ newFilename, filename, content, ext, onClick, ...props }) {
@@ -41,20 +42,23 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
   </button>
 }
 
-function Group({ items, folder, onFileClick, ...props }) {
+function Group({ items, folder, onFileClick, component, ...props }) {
+  const Component = component;
+
   return <>
     <div style={{ background: '#ddd', color: '#000', fontWeight: 'bold' }} className="ps-3 mb-1">
       <span>{folder}</span>
     </div>
     <div className='d-flex flex-column'>
-      {items
-        .sort((a, b) => a.ext.localeCompare(b.ext))
-        .map((item, i) => {
-          return <File {...item}
-            key={`item.filename-${i}`}
-            {...props}
-            onClick={() => onFileClick(item)} />
-        })}
+      {component ? <Component {...props} /> :
+        items
+          .sort((a, b) => a.ext.localeCompare(b.ext))
+          .map((item, i) => {
+            return <File {...item}
+              key={`item.filename-${i}`}
+              {...props}
+              onClick={() => onFileClick(item)} />
+          })}
     </div>
   </>
 }
@@ -83,28 +87,34 @@ const GROUPS = [
   {
     folder: 'Miscellaneous',
     filter: () => false
+  },
+  {
+    filter: () => false,
+    folder: 'Releases',
+    component: ReleasesMenu
   }
 ]
 
 function FileManager({
-  files, onNewFile, onFileClick, onFileChange, selectedPlugin,
-  configFiles, currentTab, removeFile
+  onNewFile, onFileClick, onFileChange, selectedPlugin, currentTab, removeFile, ...props
 }) {
+
+  const files = [...props.files, ...props.configFiles].filter(f => f.filename !== '.DS_Store')
+
   return (
     <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee', flex: 1 }}>
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} readOnly={selectedPlugin.type === "github"} />
 
       <div className='d-flex flex-column scroll-container mt-1'>
-        {[...[...files, ...configFiles]
-          .filter(f => f.filename !== '.DS_Store')]
-          .reduce((acc, item) => {
-            const idx = GROUPS.findIndex(group => group.filter(item));
+        {[...files]
+          .reduce((acc, file) => {
+            const idx = GROUPS.findIndex(group => group.filter(file));
             if (idx !== -1) {
               return acc.map((c, i) => {
                 if (i === idx) {
                   return {
                     ...c,
-                    items: [...c.items, item]
+                    items: [...c.items, file]
                   }
                 } else {
                   return c;
@@ -115,17 +125,19 @@ function FileManager({
                 if (c.folder === 'Miscellaneous') {
                   return {
                     ...c,
-                    items: [...c.items, item]
+                    items: [...c.items, file]
                   }
                 } else {
                   return c;
                 }
               });
             }
-          }, GROUPS.map(g => ({ ...g, items: [] })))
-          .filter(group => group.items.length > 0)
+          }, GROUPS.map(g => ({ items: [], ...g })))
+          .filter(group => group.items.length > 0 || group.folder === 'Releases')
           .map(group => {
-            return <Group {...group}
+            return <Group
+              files={files}
+              {...group}
               key={`${group.folder}`}
               readOnly={selectedPlugin.type === "github"}
               currentTab={currentTab}

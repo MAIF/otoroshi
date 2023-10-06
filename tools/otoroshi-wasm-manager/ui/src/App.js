@@ -30,7 +30,7 @@ class App extends React.Component {
     if (prevState.selectedPlugin !== this.state.selectedPlugin) {
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
-        params.set('plugin', this.state.selectedPlugin.pluginId);
+        params.set('plugin', this.state.selectedPlugin?.pluginId);
         window.history.replaceState(null, null, '?' + params.toString());
       } else {
         window.history.replaceState(null, null, '?plugin=' + this.state.selectedPlugin.pluginId);

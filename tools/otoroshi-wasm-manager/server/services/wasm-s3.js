@@ -87,8 +87,38 @@ function putWasmInformationsToS3(userMail, pluginId, newHash, generateWasmName) 
     }))
 }
 
+function getWasm(Key, res) {
+  const { s3, Bucket } = S3.state()
+
+  return new Promise(resolve => {
+    s3.getObject({
+      Bucket,
+      Key
+    })
+      .promise()
+      .then(data => {
+        resolve({ content: data.Body });
+      })
+      .catch(err => {
+        resolve({
+          error: err.code,
+          status: err.statusCode
+        })
+      });
+  })
+    .then(({ content, error, status }) => {
+      if (error) {
+        res.status(status).json({ error, status })
+      } else {
+        res.attachment(Key);
+        res.send(content);
+      }
+    });
+}
+
 module.exports = {
   putWasmFileToS3,
   putBuildLogsToS3,
-  putWasmInformationsToS3
+  putWasmInformationsToS3,
+  getWasm
 }

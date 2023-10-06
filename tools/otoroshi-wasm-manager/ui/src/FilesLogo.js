@@ -6,6 +6,7 @@ import { ReactComponent as Ts } from './assets/ts.svg';
 import { ReactComponent as Go } from './assets/go.svg';
 import { ReactComponent as OPA } from './assets/opa.svg';
 import { ReactComponent as Github } from './assets/github.svg';
+import { ReactComponent as Release } from './assets/bolt.svg';
 
 const LOGOS = {
   js: <Js style={{ height: 20, width: 20 }} />,
@@ -21,6 +22,7 @@ const LOGOS = {
   github: <Github style={{ height: 22, width: 22 }} />,
   logo: <img src={window.location.origin + "/android-chrome-512x512.png"}
     style={{ width: 42, userSelect: 'none' }} />,
+  release: <Release style={{ height: 22, width: 22 }} />
 };
 
 LOGOS.rust = LOGOS.rs;
