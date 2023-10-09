@@ -6,31 +6,33 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y 
 RUN apt-get install -y build-essential git curl software-properties-common
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get install -y nodejs --no-install-recommends tzdata python3-distutils python3.9
-# RUN apt-get update -y
-# RUN apt-get install -y 
+RUN apt-get install -y --no-install-recommends tzdata golang-1.20
 
-# RUN python3.9 -m pip install --upgrade pip
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3 get-pip.py
-RUN echo 'export PATH=~/.local/bin/:$PATH' >> ~/.bashrc
+RUN set -uex; \
+    apt-get install -y ca-certificates curl gnupg; \
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+     | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    NODE_MAJOR=18; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" \
+     > /etc/apt/sources.list.d/nodesource.list; \
+    apt-get update; \
+    apt-get install nodejs -y
 
-RUN pip3 install poetry git+https://github.com/extism/cli
-RUN extism install latest
+ENV PATH="/usr/lib/go-1.20/bin:${PATH}"
+
+RUN go install github.com/extism/cli/extism@latest
 
 # Get rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile=minimal -y
 
 ENV PATH="/root/.cargo/bin:${PATH}"
-# Add wasm-unknown-unknown target
 RUN rustup target add wasm32-unknown-unknown
 
-RUN apt-get install -y golang-go wget
+RUN apt-get install -y wget
 RUN wget https://github.com/tinygo-org/tinygo/releases/download/v0.27.0/tinygo_0.27.0_amd64.deb
 RUN dpkg -i tinygo_0.27.0_amd64.deb
 
-#RUN apt-get install -y libc6
-# RUN curl -L -O "https://github.com/extism/js-pdk/releases/download/v0.3.4/extism-js-aarch64-linux-v0.3.4.gz"
 RUN curl -L -O "https://github.com/extism/js-pdk/releases/download/v0.3.4/extism-js-x86_64-linux-v0.3.4.gz"
 RUN gunzip extism-js*.gz
 RUN mv extism-js-* /usr/local/bin/extism-js
@@ -53,10 +55,12 @@ RUN npm install
 RUN npm run build
 RUN rm -rf node_modules
 
-WORKDIR $HOME/server
 RUN npm install pm2@latest -g
+
+WORKDIR $HOME/server
 RUN npm install
 
+RUN echo node -v
+
 EXPOSE 5001
-# CMD ["node", "index.js"]
-CMD ["pm2", "start", "index.js"]
+CMD ["pm2-runtime", "index.js"]
