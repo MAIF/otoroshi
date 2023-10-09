@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.1] - 2023-10-09
+
+https://github.com/MAIF/otoroshi/milestone/77?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.9.0...v16.9.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.9.1
+
+### Added
+
+- make optional Extism runtime for launching the wasm manager (#1727)
+- add button in plugin view to download WASM binaries (#1729)
+
+### Fixed
+
+- bad overhead out computing in case of circuit breaker opening (#1731)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+
 ## [16.9.0] - 2023-09-29
 
 https://github.com/MAIF/otoroshi/milestone/74?closed=1
