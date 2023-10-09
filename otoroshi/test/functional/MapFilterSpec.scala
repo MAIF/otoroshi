@@ -884,7 +884,9 @@ class JsonPathSpec extends WordSpec with MustMatchers with OptionValues {
           |  "otoroshiHeadersIn": [
           |     { "keyk":"key1","value":"value1"}
           |  ]
-          |}""".stripMargin, "$.otoroshiHeadersIn.*.key")
+          |}""".stripMargin,
+        "$.otoroshiHeadersIn.*.key"
+      )
 
       println("res", res)
     }

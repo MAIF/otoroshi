@@ -2,7 +2,7 @@ package otoroshi.greenscore
 
 import com.codahale.metrics.UniformReservoir
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
-import otoroshi.greenscore.EcoMetrics.{MAX_GREEN_SCORE_NOTE, colorFromScore, letterFromScore}
+import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore, MAX_GREEN_SCORE_NOTE}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json._
@@ -25,25 +25,25 @@ class ThresholdsRegistry {
 }
 
 case class DynamicTripleBounds(
-                                overhead: TripleBounds = TripleBounds(),
-                                duration: TripleBounds = TripleBounds(),
-                                backendDuration: TripleBounds = TripleBounds(),
-                                calls: TripleBounds = TripleBounds(),
-                                dataIn: TripleBounds = TripleBounds(),
-                                dataOut: TripleBounds = TripleBounds(),
-                                headersOut: TripleBounds = TripleBounds(),
-                                headersIn: TripleBounds = TripleBounds()
-                              ) {
+    overhead: TripleBounds = TripleBounds(),
+    duration: TripleBounds = TripleBounds(),
+    backendDuration: TripleBounds = TripleBounds(),
+    calls: TripleBounds = TripleBounds(),
+    dataIn: TripleBounds = TripleBounds(),
+    dataOut: TripleBounds = TripleBounds(),
+    headersOut: TripleBounds = TripleBounds(),
+    headersIn: TripleBounds = TripleBounds()
+) {
 
   def json() = Json.obj(
-    "overhead" -> overhead.json(),
-    "duration" -> duration.json(),
+    "overhead"        -> overhead.json(),
+    "duration"        -> duration.json(),
     "backendDuration" -> backendDuration.json(),
-    "calls" -> calls.json(),
-    "dataIn" -> dataIn.json(),
-    "dataOut" -> dataOut.json(),
-    "headersOut" -> headersOut.json(),
-    "headersIn" -> headersIn.json(),
+    "calls"           -> calls.json(),
+    "dataIn"          -> dataIn.json(),
+    "dataOut"         -> dataOut.json(),
+    "headersOut"      -> headersOut.json(),
+    "headersIn"       -> headersIn.json()
   )
 
   def +(other: DynamicTripleBounds) = copy(
@@ -54,14 +54,14 @@ case class DynamicTripleBounds(
     dataIn = dataIn + other.dataIn,
     headersOut = headersOut + other.headersOut,
     headersIn = headersIn + other.headersIn,
-    dataOut = dataOut + other.dataOut,
+    dataOut = dataOut + other.dataOut
   )
 
   def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
     DynamicTripleBounds(
       overhead.incr(reservoirs.overhead.getSnapshot.getMean.toInt, thresholds.overhead),
       duration.incr(reservoirs.duration.getSnapshot.getMean.toInt, thresholds.duration),
-      backendDuration.incr( reservoirs.backendDuration.getSnapshot.getMean.toInt, thresholds.backendDuration),
+      backendDuration.incr(reservoirs.backendDuration.getSnapshot.getMean.toInt, thresholds.backendDuration),
       calls.incr(reservoirs.calls.getSnapshot.getMean.toInt, thresholds.calls),
       dataIn.incr(reservoirs.dataIn.getSnapshot.getMean.toInt, thresholds.dataIn),
       dataOut.incr(reservoirs.dataOut.getSnapshot.getMean.toInt, thresholds.dataOut),
@@ -71,23 +71,25 @@ case class DynamicTripleBounds(
   }
 }
 
-case class ScalingRouteReservoirs(overhead: Float = 0,
-                                  duration: Float = 0,
-                                  backendDuration: Float = 0,
-                                  calls: Float = 0,
-                                  dataIn: Float = 0,
-                                  dataOut: Float = 0,
-                                  headersOut: Float = 0,
-                                  headersIn: Float = 0) {
+case class ScalingRouteReservoirs(
+    overhead: Float = 0,
+    duration: Float = 0,
+    backendDuration: Float = 0,
+    calls: Float = 0,
+    dataIn: Float = 0,
+    dataOut: Float = 0,
+    headersOut: Float = 0,
+    headersIn: Float = 0
+) {
   def json() = Json.obj(
-    "overhead" -> overhead,
-    "duration" -> duration,
+    "overhead"        -> overhead,
+    "duration"        -> duration,
     "backendDuration" -> backendDuration,
-    "calls" -> calls,
-    "dataIn" -> dataIn,
-    "dataOut" -> dataOut,
-    "headersOut" -> headersOut,
-    "headersIn" -> headersIn,
+    "calls"           -> calls,
+    "dataIn"          -> dataIn,
+    "dataOut"         -> dataOut,
+    "headersOut"      -> headersOut,
+    "headersIn"       -> headersIn
   )
 
   def merge(other: ScalingRouteReservoirs) = copy(
@@ -98,7 +100,7 @@ case class ScalingRouteReservoirs(overhead: Float = 0,
     dataIn = dataIn + other.dataIn,
     headersOut = headersOut + other.headersOut,
     headersIn = headersIn + other.headersIn,
-    dataOut = dataOut + other.dataOut,
+    dataOut = dataOut + other.dataOut
   )
 
   def mean(length: Int) = copy(
@@ -109,7 +111,7 @@ case class ScalingRouteReservoirs(overhead: Float = 0,
     dataIn = dataIn / length,
     headersOut = headersOut / length,
     headersIn = headersIn / length,
-    dataOut = dataOut / length,
+    dataOut = dataOut / length
   )
 }
 
@@ -130,7 +132,7 @@ object ScalingRouteReservoirs {
       reservoirs.dataIn.getSnapshot.getMean.toLong,
       reservoirs.dataOut.getSnapshot.getMean.toLong,
       reservoirs.headersOut.getSnapshot.getMean.toLong,
-      reservoirs.headersIn.getSnapshot.getMean.toLong,
+      reservoirs.headersIn.getSnapshot.getMean.toLong
     )
   }
 
@@ -138,7 +140,8 @@ object ScalingRouteReservoirs {
     ScalingRouteReservoirs(
       overhead = 1 - this.scalingReservoir(reservoirs.overhead.getSnapshot.getMean, thresholds.overhead.poor),
       duration = 1 - this.scalingReservoir(reservoirs.duration.getSnapshot.getMean, thresholds.duration.poor),
-      backendDuration = 1 - this.scalingReservoir(reservoirs.backendDuration.getSnapshot.getMean, thresholds.backendDuration.poor),
+      backendDuration =
+        1 - this.scalingReservoir(reservoirs.backendDuration.getSnapshot.getMean, thresholds.backendDuration.poor),
       calls = 1 - this.scalingReservoir(reservoirs.calls.getSnapshot.getMean, thresholds.calls.poor),
       dataIn = 1 - this.scalingReservoir(reservoirs.dataIn.getSnapshot.getMean, thresholds.dataIn.poor),
       dataOut = 1 - this.scalingReservoir(reservoirs.dataOut.getSnapshot.getMean, thresholds.dataOut.poor),
@@ -149,15 +152,14 @@ object ScalingRouteReservoirs {
 }
 
 case class RouteReservoirs(
-  overhead: UniformReservoir         = new UniformReservoir(),
-  duration: UniformReservoir         = new UniformReservoir(),
-  backendDuration: UniformReservoir  = new UniformReservoir(),
-  calls: UniformReservoir            = new UniformReservoir(),
-  dataIn: UniformReservoir           = new UniformReservoir(),
-  headersOut: UniformReservoir       = new UniformReservoir(),
-  dataOut: UniformReservoir          = new UniformReservoir(),
-  headersIn: UniformReservoir        = new UniformReservoir()
-
+    overhead: UniformReservoir = new UniformReservoir(),
+    duration: UniformReservoir = new UniformReservoir(),
+    backendDuration: UniformReservoir = new UniformReservoir(),
+    calls: UniformReservoir = new UniformReservoir(),
+    dataIn: UniformReservoir = new UniformReservoir(),
+    headersOut: UniformReservoir = new UniformReservoir(),
+    dataOut: UniformReservoir = new UniformReservoir(),
+    headersIn: UniformReservoir = new UniformReservoir()
 ) {
   def update(routeCallIncr: RouteCallIncr) = {
     overhead.update(routeCallIncr.overhead.get())
@@ -172,14 +174,14 @@ case class RouteReservoirs(
   }
 
   def json(): JsValue = Json.obj(
-    "overhead"               -> overhead.getSnapshot.getMean,
-    "duration"                      -> duration.getSnapshot.getMean,
-    "backendDuration"               -> backendDuration.getSnapshot.getMean,
-    "dataIn"                        -> dataIn.getSnapshot.getMean,
-    "dataOut"                       -> dataOut.getSnapshot.getMean,
-    "headersIn"                     -> headersIn.getSnapshot.getMean,
-    "headersOut"                    -> headersOut.getSnapshot.getMean,
-    "calls"                         -> calls.getSnapshot.getMean
+    "overhead"        -> overhead.getSnapshot.getMean,
+    "duration"        -> duration.getSnapshot.getMean,
+    "backendDuration" -> backendDuration.getSnapshot.getMean,
+    "dataIn"          -> dataIn.getSnapshot.getMean,
+    "dataOut"         -> dataOut.getSnapshot.getMean,
+    "headersIn"       -> headersIn.getSnapshot.getMean,
+    "headersOut"      -> headersOut.getSnapshot.getMean,
+    "calls"           -> calls.getSnapshot.getMean
   )
 }
 
@@ -196,33 +198,32 @@ object SectionScore {
 }
 
 object Score {
-  case class Excellent(color: String = "#2ecc71", letter: String = "A")       extends Score
-  case class Acceptable(color: String = "#27ae60", letter: String = "B")      extends Score
-  case class Sufficient(color: String = "#f1c40f", letter: String = "C")      extends Score
-  case class Poor(color: String = "#d35400", letter: String = "D")            extends Score
-  case class ExtremelyPoor(color: String = "#c0392b", letter: String = "E")   extends Score
+  case class Excellent(color: String = "#2ecc71", letter: String = "A")     extends Score
+  case class Acceptable(color: String = "#27ae60", letter: String = "B")    extends Score
+  case class Sufficient(color: String = "#f1c40f", letter: String = "C")    extends Score
+  case class Poor(color: String = "#d35400", letter: String = "D")          extends Score
+  case class ExtremelyPoor(color: String = "#c0392b", letter: String = "E") extends Score
 
   def avgDouble(value: Double): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
-      0.0
-    } else {
-      value
-    }).applyOn {
-      case Double.NaN => 0.0
-      case Double.NegativeInfinity => 0.0
-      case Double.PositiveInfinity => 0.0
-      case v if v.toString == "NaN" => 0.0
+       0.0
+     } else {
+       value
+     }).applyOn {
+      case Double.NaN                    => 0.0
+      case Double.NegativeInfinity       => 0.0
+      case Double.PositiveInfinity       => 0.0
+      case v if v.toString == "NaN"      => 0.0
       case v if v.toString == "Infinity" => 0.0
-      case v => v
+      case v                             => v
     }
   }
 }
 
-case class SectionScore(score: Double = 0.0,
-                        scalingScore: Double = 0.0) {
+case class SectionScore(score: Double = 0.0, scalingScore: Double = 0.0) {
   def json() = {
     Json.obj(
-      "score" -> score,
+      "score"         -> score,
       "scaling_score" -> Score.avgDouble(scalingScore)
     )
   }
@@ -235,33 +236,34 @@ case class SectionScore(score: Double = 0.0,
   def merge(other: RouteScoreByDateAndSection): SectionScore = this.merge(other.score)
 }
 
-
 case class RouteDynamicValues(routeId: String, groupId: String, dynamicValues: Dynamicvalues) {
   def json() = Json.obj(
-    "id" -> routeId,
-    "group_id" -> groupId,
+    "id"             -> routeId,
+    "group_id"       -> groupId,
     "dynamic_values" -> dynamicValues.json()
   )
 }
 
 case class RouteScore(
-                       groupId: String,
-                       sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
-                       dynamicValues: Dynamicvalues
-                     ) {
+    groupId: String,
+    sectionsScoreByDate: Seq[RouteScoreByDateAndSection],
+    dynamicValues: Dynamicvalues
+) {
   def json(): JsObject = Json.obj(
-    "group_id" -> groupId,
+    "group_id"               -> groupId,
     "sections_score_by_date" -> sectionsScoreByDate.map(_.json()),
-    "dynamic_values" -> dynamicValues.json()
+    "dynamic_values"         -> dynamicValues.json()
   )
 }
 
-case class Dynamicvalues(scaling: ScalingRouteReservoirs = ScalingRouteReservoirs(),
-                         raw: ScalingRouteReservoirs = ScalingRouteReservoirs(),
-                         counters: DynamicTripleBounds = DynamicTripleBounds()) {
+case class Dynamicvalues(
+    scaling: ScalingRouteReservoirs = ScalingRouteReservoirs(),
+    raw: ScalingRouteReservoirs = ScalingRouteReservoirs(),
+    counters: DynamicTripleBounds = DynamicTripleBounds()
+) {
   def json() = Json.obj(
-    "scaling" -> scaling.json(),
-    "raw" -> raw.json(),
+    "scaling"  -> scaling.json(),
+    "raw"      -> raw.json(),
     "counters" -> counters.json()
   )
 
@@ -278,17 +280,16 @@ case class Dynamicvalues(scaling: ScalingRouteReservoirs = ScalingRouteReservoir
 }
 
 case class GroupScore(
-                       dynamicValuesByRoutes: Seq[RouteDynamicValues],
-                       dynamicValues: Dynamicvalues,
-                       routeScoreByDate: Seq[RouteScoreAtDate]
-                     ) {
+    dynamicValuesByRoutes: Seq[RouteDynamicValues],
+    dynamicValues: Dynamicvalues,
+    routeScoreByDate: Seq[RouteScoreAtDate]
+) {
   def json() = Json.obj(
     "dynamic_values_by_routes" -> dynamicValuesByRoutes.map(_.json()),
-    "dynamic_values" -> dynamicValues.json(),
-    "score_by_route" -> routeScoreByDate.map(_.json())
+    "dynamic_values"           -> dynamicValues.json(),
+    "score_by_route"           -> routeScoreByDate.map(_.json())
   )
 }
-
 
 object EcoMetrics {
   val MAX_GREEN_SCORE_NOTE = 6000
@@ -296,11 +297,11 @@ object EcoMetrics {
   private def scoreToColor(rank: Double, max: Double): Score = {
     if (rank >= max) {
       Score.Excellent()
-    } else if (rank >= max/2) {
+    } else if (rank >= max / 2) {
       Score.Acceptable()
-    } else if (rank >= max/3) {
+    } else if (rank >= max / 3) {
       Score.Sufficient()
-    } else if (rank >= max/6) {
+    } else if (rank >= max / 6) {
       Score.Poor()
     } else // rank < max/6
       Score.ExtremelyPoor()
@@ -322,23 +323,25 @@ object RouteScoreByDateAndSection {
     sectionWeight = o.select("section_weight").as[Double],
     score = SectionScore.from(o.select("score").as[JsValue]),
     letter = o.select("letter").as[String],
-    color = o.select("color").as[String],
+    color = o.select("color").as[String]
   )
 }
 
-case class RouteScoreByDateAndSection(date: Long,
-                                      section: String = "",
-                                      sectionWeight: Double = 0.0,
-                                      score: SectionScore = SectionScore(),
-                                      letter: String = "",
-                                      color: String = "") {
+case class RouteScoreByDateAndSection(
+    date: Long,
+    section: String = "",
+    sectionWeight: Double = 0.0,
+    score: SectionScore = SectionScore(),
+    letter: String = "",
+    color: String = ""
+) {
   def json() = Json.obj(
-    "date" -> date,
-    "section" -> section,
+    "date"           -> date,
+    "section"        -> section,
     "section_weight" -> sectionWeight,
-    "score" -> score.json,
-    "letter" -> letter,
-    "color" -> color
+    "score"          -> score.json,
+    "letter"         -> letter,
+    "color"          -> color
   )
 
   def processRoute(): RouteScoreByDateAndSection = {
@@ -346,15 +349,16 @@ case class RouteScoreByDateAndSection(date: Long,
       letter = letterFromScore(score.score, max = (sectionWeight / 100) * MAX_GREEN_SCORE_NOTE),
       color = colorFromScore(score.score, max = (sectionWeight / 100) * MAX_GREEN_SCORE_NOTE),
       score = score.copy(
-        scalingScore = if(score.score == 0)  0 else score.score / ((sectionWeight / 100) * MAX_GREEN_SCORE_NOTE)
-      ))
+        scalingScore = if (score.score == 0) 0 else score.score / ((sectionWeight / 100) * MAX_GREEN_SCORE_NOTE)
+      )
+    )
   }
 }
 
 case class RouteScoreAtDateItem(groupId: String, routeId: String, scores: Seq[RouteScoreByDateAndSection]) {
   def json() = Json.obj(
     "group_id" -> groupId,
-    "id" -> routeId,
+    "id"       -> routeId,
     "sections" -> scores.map(_.json())
   )
 }
@@ -363,16 +367,13 @@ object RouteScoreAtDateItem {
   def from(json: JsValue) = RouteScoreAtDateItem(
     groupId = json.select("group_id").as[String],
     routeId = json.select("id").as[String],
-    scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from),
+    scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from)
   )
 }
 
-
-case class RouteScoreAtDate(
-                             date: Long,
-                             routes: Seq[RouteScoreAtDateItem]) {
+case class RouteScoreAtDate(date: Long, routes: Seq[RouteScoreAtDateItem]) {
   def json() = Json.obj(
-    "date" -> date,
+    "date"   -> date,
     "routes" -> routes.map(_.json())
   )
 }
@@ -384,7 +385,6 @@ object RouteScoreAtDate {
   )
 }
 
-
 class EcoMetrics {
 
   private val registry = new ThresholdsRegistry()
@@ -393,85 +393,96 @@ class EcoMetrics {
     val enrichedRules = rules.states
       .sortBy(_.date)(Ordering.Long)
       .zipWithIndex
-      .foldLeft(Seq.empty[RuleStateRecord]) {
-        case(acc, (item, i)) =>
-          acc :+ item.copy(
+      .foldLeft(Seq.empty[RuleStateRecord]) { case (acc, (item, i)) =>
+        acc :+ item.copy(
           states = rules.states
-            .slice(0, i+1)
+            .slice(0, i + 1)
             .flatMap(_.states)
-            .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
-            case (acc, i) => acc.map(p => if(p.id == i.id) i else p)
-          })
+            .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) { case (acc, i) =>
+              acc.map(p => if (p.id == i.id) i else p)
+            }
+        )
       }
 
     enrichedRules
       .foldLeft(Seq.empty[RouteScoreByDateAndSection]) { case (acc, state) =>
         acc ++ state.states
-          .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
-            case (acc, rule) =>
-              val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
-              val value = if(rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100) else 0
+          .foldLeft(Seq.empty[RouteScoreByDateAndSection]) { case (acc, rule) =>
+            val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
+            val value      =
+              if (rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100)
+              else 0
 
-              acc.find(score => score.section == ruleWeight.section) match {
-                case None => acc :+ RouteScoreByDateAndSection(
+            acc.find(score => score.section == ruleWeight.section) match {
+              case None       =>
+                acc :+ RouteScoreByDateAndSection(
                   date = state.date,
                   section = ruleWeight.section,
                   sectionWeight = ruleWeight.sectionWeight,
                   score = SectionScore(score = value)
                 )
-                case Some(item) => acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
+              case Some(item) =>
+                acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
                   date = state.date,
                   section = ruleWeight.section,
                   sectionWeight = ruleWeight.sectionWeight,
                   score = SectionScore(score = item.score.score + value)
                 )
-              }
+            }
           }
       }
       .map(_.processRoute())
   }
 
-  private def calculateRulesAtDate(rules: RulesRouteConfiguration, date: Long): Option[Seq[RouteScoreByDateAndSection]] = {
-    if (rules.states
-      .sortBy(_.date)(Ordering.Long)
-      .headOption.exists(createdAt => createdAt.date <= date)) {
+  private def calculateRulesAtDate(
+      rules: RulesRouteConfiguration,
+      date: Long
+  ): Option[Seq[RouteScoreByDateAndSection]] = {
+    if (
+      rules.states
+        .sortBy(_.date)(Ordering.Long)
+        .headOption
+        .exists(createdAt => createdAt.date <= date)
+    ) {
 
       val record: RuleStateRecord = RuleStateRecord(
-          date = date,
-          states = rules.states
-            .sortBy(_.date)(Ordering.Long)
-            .flatMap(r => r.states.map(state => (r.date, state)))
-            .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
-              case (acc, (recordState, state)) => {
-                if(recordState <= date) {
-                  acc.map(p => if (p.id == state.id) state else p)
-                } else {
-                  acc
-                }
+        date = date,
+        states = rules.states
+          .sortBy(_.date)(Ordering.Long)
+          .flatMap(r => r.states.map(state => (r.date, state)))
+          .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
+            case (acc, (recordState, state)) => {
+              if (recordState <= date) {
+                acc.map(p => if (p.id == state.id) state else p)
+              } else {
+                acc
               }
             }
-        )
+          }
+      )
 
       record.states
-        .foldLeft(Seq.empty[RouteScoreByDateAndSection]) {
-          case (acc, rule) =>
-            val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
-            val value = if(rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100) else 0
+        .foldLeft(Seq.empty[RouteScoreByDateAndSection]) { case (acc, rule) =>
+          val ruleWeight = RulesManager.rules.find(r => r.id == rule.id).get
+          val value      =
+            if (rule.enabled) MAX_GREEN_SCORE_NOTE * (ruleWeight.sectionWeight / 100) * (ruleWeight.weight / 100) else 0
 
-            acc.find(score => score.section == ruleWeight.section) match {
-              case None => acc :+ RouteScoreByDateAndSection(
+          acc.find(score => score.section == ruleWeight.section) match {
+            case None       =>
+              acc :+ RouteScoreByDateAndSection(
                 date = date,
                 section = ruleWeight.section,
                 sectionWeight = ruleWeight.sectionWeight,
                 score = SectionScore(score = value)
               )
-              case Some(item) => acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
+            case Some(item) =>
+              acc.filter(score => !(score.section == ruleWeight.section)) :+ RouteScoreByDateAndSection(
                 date = date,
                 section = ruleWeight.section,
                 sectionWeight = ruleWeight.sectionWeight,
                 score = SectionScore(score = item.score.score + value)
               )
-            }
+          }
         }
         .map(_.processRoute())
         .some
@@ -489,10 +500,11 @@ class EcoMetrics {
     dates.foldLeft(Seq.empty[RouteScoreAtDate]) { case (acc, date) =>
       acc :+ RouteScoreAtDate(
         date = date,
-        routes = routes.map(route => {
-          val rules = calculateRulesAtDate(route._1.rulesConfig, date)
-          (route._2.groupId, route._1.routeId, rules)
-        })
+        routes = routes
+          .map(route => {
+            val rules = calculateRulesAtDate(route._1.rulesConfig, date)
+            (route._2.groupId, route._1.routeId, rules)
+          })
           .filter(item => item._3.nonEmpty)
           .map(item => RouteScoreAtDateItem(item._1, item._2, item._3.get))
       )
@@ -511,12 +523,14 @@ class EcoMetrics {
   }
 
   def calculateGlobalScore(groups: Seq[GreenScoreEntity]): GroupScore = {
-    val routes: Seq[(RouteRules, RouteScore)] = groups.flatMap(group => group.routes.map(route => calculateRouteScore(route, group)))
+    val routes: Seq[(RouteRules, RouteScore)] =
+      groups.flatMap(group => group.routes.map(route => calculateRouteScore(route, group)))
 
     // x date -> n routes -> 4 sections
     val routesAtDate: Seq[RouteScoreAtDate] = mergeRoutesScoreByDateAndSection(routes)
 
-    val dynamicValuesByRoutes = routes.map(route => RouteDynamicValues(route._1.routeId, route._2.groupId, route._2.dynamicValues))
+    val dynamicValuesByRoutes =
+      routes.map(route => RouteDynamicValues(route._1.routeId, route._2.groupId, route._2.dynamicValues))
 
     GroupScore(
       dynamicValuesByRoutes = dynamicValuesByRoutes,
@@ -531,16 +545,16 @@ class EcoMetrics {
     val routeScore = registry.route(route.routeId).getOrElse(RouteReservoirs())
 
     (
-        route,
-        RouteScore(
-          groupId = group.id,
-          sectionsScoreByDate = sectionsScoreByDate,
-          dynamicValues = Dynamicvalues(
-            scaling = ScalingRouteReservoirs.from(routeScore, group.thresholds),
-            raw = ScalingRouteReservoirs.from(routeScore),
-            counters = DynamicTripleBounds().from(routeScore, group.thresholds)
-          )
+      route,
+      RouteScore(
+        groupId = group.id,
+        sectionsScoreByDate = sectionsScoreByDate,
+        dynamicValues = Dynamicvalues(
+          scaling = ScalingRouteReservoirs.from(routeScore, group.thresholds),
+          raw = ScalingRouteReservoirs.from(routeScore),
+          counters = DynamicTripleBounds().from(routeScore, group.thresholds)
         )
+      )
     )
   }
 

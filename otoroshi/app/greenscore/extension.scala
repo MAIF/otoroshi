@@ -30,26 +30,30 @@ class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
   override def receive: Receive = {
     case evt: GatewayEvent =>
       val routeId = evt.route.map(_.id).getOrElse(evt.`@serviceId`)
-      ext.ecoMetrics.updateRoute(RouteCallIncr(
-        routeId = routeId,
-        calls = new AtomicLong(1),
-        overhead = new AtomicLong(evt.overhead),
-        duration = new AtomicLong(evt.duration),
-        backendDuration = new AtomicLong(evt.backendDuration),
-        dataIn = new AtomicLong(evt.data.dataIn),
-        dataOut = new AtomicLong(evt.data.dataOut),
-        headersIn = new AtomicLong(evt.headers.foldLeft(0L) { case (acc, item) =>
-          acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
-        } + evt.method.byteString.size + evt.url.byteString.size + evt.protocol.byteString.size + 2),
-        headersOut = new AtomicLong(evt.headersOut.foldLeft(0L) { case (acc, item) =>
-          acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
-        } + evt.protocol.byteString.size + 1 + 3 + Results
-          .Status(evt.status)
-          .header
-          .reasonPhrase
-          .map(_.byteString.size)
-          .getOrElse(0))
-      ))
+      ext.ecoMetrics.updateRoute(
+        RouteCallIncr(
+          routeId = routeId,
+          calls = new AtomicLong(1),
+          overhead = new AtomicLong(evt.overhead),
+          duration = new AtomicLong(evt.duration),
+          backendDuration = new AtomicLong(evt.backendDuration),
+          dataIn = new AtomicLong(evt.data.dataIn),
+          dataOut = new AtomicLong(evt.data.dataOut),
+          headersIn = new AtomicLong(evt.headers.foldLeft(0L) { case (acc, item) =>
+            acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
+          } + evt.method.byteString.size + evt.url.byteString.size + evt.protocol.byteString.size + 2),
+          headersOut = new AtomicLong(
+            evt.headersOut.foldLeft(0L) { case (acc, item) =>
+              acc + item.key.byteString.size + item.value.byteString.size + 3 // 3 = ->
+            } + evt.protocol.byteString.size + 1 + 3 + Results
+              .Status(evt.status)
+              .header
+              .reasonPhrase
+              .map(_.byteString.size)
+              .getOrElse(0)
+          )
+        )
+      )
     case _                 =>
   }
 }
@@ -88,7 +92,7 @@ object GreenScoreEntity {
           "rulesConfig" -> route.rulesConfig.json
         )
       })),
-      "thresholds" -> o.thresholds.json()
+      "thresholds"  -> o.thresholds.json()
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -154,11 +158,11 @@ class GreenScoreAdminExtensionState(env: Env) {
 
 class GreenScoreExtension(val env: Env) extends AdminExtension {
 
-  private[greenscore] val logger     = Logger("otoroshi-extension-green-score")
-  private[greenscore] val ecoMetrics = new EcoMetrics()
-  private val listener: ActorRef     = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
-  private[greenscore] lazy val datastores        = new GreenScoreAdminExtensionDatastores(env, id)
-  private lazy val states            = new GreenScoreAdminExtensionState(env)
+  private[greenscore] val logger          = Logger("otoroshi-extension-green-score")
+  private[greenscore] val ecoMetrics      = new EcoMetrics()
+  private val listener: ActorRef          = env.analyticsActorSystem.actorOf(OtoroshiEventListener.props(this, env))
+  private[greenscore] lazy val datastores = new GreenScoreAdminExtensionDatastores(env, id)
+  private lazy val states                 = new GreenScoreAdminExtensionState(env)
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.GreenScore")
 
@@ -201,10 +205,12 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         } yield {
           val globalScore = ecoMetrics.calculateGlobalScore(groups)
 
-          Results.Ok(Json.obj(
-            "groups" -> groups.map(_.json),
-            "scores" -> globalScore.json()
-          ))
+          Results.Ok(
+            Json.obj(
+              "groups" -> groups.map(_.json),
+              "scores" -> globalScore.json()
+            )
+          )
         }
       }
     ),
@@ -217,23 +223,29 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         implicit val ev = env
 
         body
-            .map(_.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
-            .map(r => Json.parse(r.utf8String)))
-            .getOrElse(Json.arr().vfuture)
-            .flatMap(ids => {
-              val identifiers = ids.asOpt[JsArray].getOrElse(Json.arr())
-              for {
-                groups <- if(identifiers.value.isEmpty) datastores.greenscoresDatastore.findAll() else
-                  datastores.greenscoresDatastore.findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
-              } yield {
-                val globalScore = ecoMetrics.calculateGlobalScore(groups)
+          .map(
+            _.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
+              .map(r => Json.parse(r.utf8String))
+          )
+          .getOrElse(Json.arr().vfuture)
+          .flatMap(ids => {
+            val identifiers = ids.asOpt[JsArray].getOrElse(Json.arr())
+            for {
+              groups <- if (identifiers.value.isEmpty) datastores.greenscoresDatastore.findAll()
+                        else
+                          datastores.greenscoresDatastore
+                            .findAllById(ids.asOpt[JsArray].getOrElse(Json.arr()).as[Seq[String]])
+            } yield {
+              val globalScore = ecoMetrics.calculateGlobalScore(groups)
 
-                Results.Ok(Json.obj(
+              Results.Ok(
+                Json.obj(
                   "groups" -> groups.map(_.json),
                   "scores" -> globalScore.json()
-                ))
-              }
-            })
+                )
+              )
+            }
+          })
       }
     ),
     AdminExtensionAdminApiRoute(
@@ -262,15 +274,16 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
             stateUpdate = values => states.updateGreenScores(values),
-            tmpl = () => GreenScoreEntity(
-              id = IdGenerator.namedId("green-score", env),
-              name = "green score group",
-              description = "screen score for the routes of this group",
-              metadata = Map.empty,
-              tags = Seq.empty,
-              routes = Seq.empty,
-              location = EntityLocation.default
-            ).json
+            tmpl = () =>
+              GreenScoreEntity(
+                id = IdGenerator.namedId("green-score", env),
+                name = "green score group",
+                description = "screen score for the routes of this group",
+                metadata = Map.empty,
+                tags = Seq.empty,
+                routes = Seq.empty,
+                location = EntityLocation.default
+              ).json
           )
         )
       )

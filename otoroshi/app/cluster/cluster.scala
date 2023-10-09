@@ -3326,11 +3326,13 @@ object ClusterLeaderUpdateMessage       {
           val config = env.datastores.globalConfigDataStore.latest()
           env.datastores.serviceDescriptorDataStore
             .updateIncrementableMetrics(routeId, calls.get(), dataIn.get(), dataOut.get(), config)
-          env.adminExtensions.extension[otoroshi.greenscore.GreenScoreExtension].foreach(adminExtension => {
-            adminExtension.updateFromQuotas(this)
-          })
+          env.adminExtensions
+            .extension[otoroshi.greenscore.GreenScoreExtension]
+            .foreach(adminExtension => {
+              adminExtension.updateFromQuotas(this)
+            })
           FastFuture.successful(())
-        case None => FastFuture.successful(())
+        case None    => FastFuture.successful(())
       }
     }
 

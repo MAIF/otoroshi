@@ -88,44 +88,46 @@ export function FeedbackButton({
             });
         }
       }}>
-      {icon && <div
-        className="me-1"
-        style={{
-          width: '16px',
-          display: 'inline-block',
-        }}>
-        {waiting && !uploading && <Icon />}
+      {icon && (
+        <div
+          className="me-1"
+          style={{
+            width: '16px',
+            display: 'inline-block',
+          }}>
+          {waiting && !uploading && <Icon />}
 
-        {loading && (
-          <i
-            className="fas fa-spinner fa-spin fa-sm"
-            style={{
-              opacity: loading ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
+          {loading && (
+            <i
+              className="fas fa-spinner fa-spin fa-sm"
+              style={{
+                opacity: loading ? 1 : 0,
+                transition: 'opacity 2s',
+              }}
+            />
+          )}
 
-        {successed && (
-          <i
-            className="fas fa-check"
-            style={{
-              opacity: successed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
+          {successed && (
+            <i
+              className="fas fa-check"
+              style={{
+                opacity: successed ? 1 : 0,
+                transition: 'opacity 2s',
+              }}
+            />
+          )}
 
-        {failed && (
-          <i
-            className="fas fa-times"
-            style={{
-              opacity: failed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
-      </div>}
+          {failed && (
+            <i
+              className="fas fa-times"
+              style={{
+                opacity: failed ? 1 : 0,
+                transition: 'opacity 2s',
+              }}
+            />
+          )}
+        </div>
+      )}
       {text}
     </button>
   );

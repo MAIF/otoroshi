@@ -270,13 +270,12 @@ class BackOfficeAppContainer extends Component {
           <div style={{ height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
-                className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''
-                  }`}
-                id='sidebar'
-              >
+                className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
+                id="sidebar">
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
-                    } sidebar-toggle`}
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -289,8 +288,7 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''
-                    }`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''}`}
                   style={{
                     alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                   }}>
@@ -303,24 +301,23 @@ class BackOfficeAppContainer extends Component {
                   )}
                   <ul className="nav flex-column nav-sidebar mt-3">
                     <li
-                      className={`nav-item mt-0 ${this.state.openedSidebar ? 'nav-item--open' : ''
-                        }`}>
+                      className={`nav-item mt-0 ${
+                        this.state.openedSidebar ? 'nav-item--open' : ''
+                      }`}>
                       <Link
-                        to='/'
-                        className={`nav-link ${window.location.pathname === '/bo/dashboard/'
-                          ? 'active'
-                          : ''
-                          }`}
-                        {...createTooltip(
-                          'Home dashboard of Otoroshi displaying global metrics'
-                        )}
+                        to="/"
+                        className={`nav-link ${
+                          window.location.pathname === '/bo/dashboard/' ? 'active' : ''
+                        }`}
+                        {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                         onClick={() => {
                           DynamicTitle.setContent(null);
                           DynamicSidebar.setContent(null);
                         }}>
                         <i
-                          className={`fab fa-fort-awesome ${this.state.openedSidebar ? 'me-3' : ''
-                            }`}
+                          className={`fab fa-fort-awesome ${
+                            this.state.openedSidebar ? 'me-3' : ''
+                          }`}
                         />
                         {this.state.openedSidebar ? 'Dashboard' : ''}
                       </Link>
@@ -337,9 +334,8 @@ class BackOfficeAppContainer extends Component {
                     {this.state.env && (
                       <span onClick={(e) => (window.location = '/bo/dashboard/snowmonkey')}>
                         {this.state.env.snowMonkeyRunning &&
-                          window.location.pathname !==
-                          '/bo/dashboard/snowmonkey' && (
-                            <div className='screen'>
+                          window.location.pathname !== '/bo/dashboard/snowmonkey' && (
+                            <div className="screen">
                               <p>Snow monkey is running...</p>
                             </div>
                           )}
@@ -957,11 +953,8 @@ class GlobalTenantSelector extends Component {
     }
 
     return (
-      <ul className='nav flex-column nav-sidebar mt-3'>
-        <li
-          className={`nav-item mt-0 ${this.props.openedSidebar ? 'nav-item--open' : ''
-            }`}
-        >
+      <ul className="nav flex-column nav-sidebar mt-3">
+        <li className={`nav-item mt-0 ${this.props.openedSidebar ? 'nav-item--open' : ''}`}>
           <a
             className="nav-link"
             data-toggle="tooltip"

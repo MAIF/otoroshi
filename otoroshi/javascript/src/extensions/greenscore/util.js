@@ -9,7 +9,7 @@ export const GREEN_SCORE_GRADES = {
 };
 
 export function getColorFromLetter(letter) {
-  return Object.keys(GREEN_SCORE_GRADES)[letter.charCodeAt(0) - 65]
+  return Object.keys(GREEN_SCORE_GRADES)[letter.charCodeAt(0) - 65];
 }
 
 export function getLetter(score) {

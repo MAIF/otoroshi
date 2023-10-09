@@ -827,7 +827,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       _entity: JsValue,
       request: RequestHeader,
       resEntity: Option[Resource],
-      addHeaders: Map[String, String] = Map.empty,
+      addHeaders: Map[String, String] = Map.empty
   ): Result = {
     val entity = if (request.method == "GET") {
       (for {
@@ -1484,49 +1484,55 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           //      resource.some
           //    ).vfuture
           //  case Some(oldEntity)                                     => {
-              resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
-                case err @ JsError(_)                                =>
-                  result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
-                case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
-                  result(
-                    Results.Unauthorized,
-                    Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                    ctx.request,
-                    resource.some
-                  ).vfuture
-                case JsSuccess(body, _)                              => {
-                  resource.access.findOne(version, id).flatMap {
-                    case None    =>
-                      resource.access.create(version, resource.singularName, None, body).map {
-                        case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
-                        case Right(res) =>
-                          adminApiEvent(
-                            ctx,
-                            s"CREATE_${resource.singularName.toUpperCase()}",
-                            s"User bulk created a ${resource.singularName}",
-                            body,
-                            s"${resource.singularName}Created".some
-                          )
-                          result(Results.Created, res, ctx.request, resource.some)
-                      }
-                    case Some(old) =>
-                      val oldEntity = resource.access.format.reads(old).get
-                      val newEntity = resource.access.format.reads(body).get
-                      val hasChanged = oldEntity == newEntity
-                      resource.access.create(version, resource.singularName, id.some, body).map {
-                        case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
-                        case Right(res) =>
-                          adminApiEvent(
-                            ctx,
-                            s"UPDATE_${resource.singularName.toUpperCase()}",
-                            s"User bulk updated a ${resource.singularName}",
-                            body,
-                            s"${resource.singularName}Updated".some
-                          )
-                          result(Results.Ok, res, ctx.request, resource.some, Map("Otoroshi-Entity-Updated" -> hasChanged.toString))
-                      }
+          resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
+            case err @ JsError(_)                                =>
+              result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
+            case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
+              result(
+                Results.Unauthorized,
+                Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+                ctx.request,
+                resource.some
+              ).vfuture
+            case JsSuccess(body, _)                              => {
+              resource.access.findOne(version, id).flatMap {
+                case None      =>
+                  resource.access.create(version, resource.singularName, None, body).map {
+                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                    case Right(res) =>
+                      adminApiEvent(
+                        ctx,
+                        s"CREATE_${resource.singularName.toUpperCase()}",
+                        s"User bulk created a ${resource.singularName}",
+                        body,
+                        s"${resource.singularName}Created".some
+                      )
+                      result(Results.Created, res, ctx.request, resource.some)
                   }
-                }
+                case Some(old) =>
+                  val oldEntity  = resource.access.format.reads(old).get
+                  val newEntity  = resource.access.format.reads(body).get
+                  val hasChanged = oldEntity == newEntity
+                  resource.access.create(version, resource.singularName, id.some, body).map {
+                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                    case Right(res) =>
+                      adminApiEvent(
+                        ctx,
+                        s"UPDATE_${resource.singularName.toUpperCase()}",
+                        s"User bulk updated a ${resource.singularName}",
+                        body,
+                        s"${resource.singularName}Updated".some
+                      )
+                      result(
+                        Results.Ok,
+                        res,
+                        ctx.request,
+                        resource.some,
+                        Map("Otoroshi-Entity-Updated" -> hasChanged.toString)
+                      )
+                  }
+              }
+            }
             //  }
             //}
           }
