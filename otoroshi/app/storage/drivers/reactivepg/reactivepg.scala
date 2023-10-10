@@ -19,7 +19,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
+import otoroshi.script.{JobContext, JobId, KvScriptDataStore, OneTimeJob, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -230,6 +230,10 @@ class ReactivePgDataStores(
   )
 
   private val cancel = new AtomicReference[Cancellable]()
+
+  def setMissingEntityKind(): Future[Unit] = {
+    redis.setMissingEntityKind()
+  }
 
   def runSchemaCreation(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
@@ -614,6 +618,45 @@ class ReactivePgRedis(
   @inline
   private def measure[A](what: String)(fut: => Future[A]): Future[A] = {
     env.metrics.withTimerAsync(what)(fut)
+  }
+
+  def setEntityKind(key: String, kind: String, value: String): Future[Unit] = {
+    val jsonValue = value.replace("'", "''")
+    queryOne(s"""update  $schemaDotTable set kind = $$1, jvalue = $$3::jsonb where key = $$2;""", Seq(kind, key, new JsonObject(jsonValue))) { row =>
+      None
+    }.map(_ => ())
+  }
+
+  def setMissingEntityKind(): Future[Unit] = {
+    querySeq(s"select key, value from $schemaDotTable where kind is null or kind = '' and type = 'string';") { row =>
+      for {
+        key <- row.optString("key")
+        value <- row.optString("value")
+      } yield (key, value)
+    }.map { rows =>
+      val ds = env.datastores
+      Source(rows.toList)
+        .mapAsync(1) {
+          case (key, value) if key.startsWith(ds.serviceDescriptorDataStore.key("")) => setEntityKind(key, "service-descriptor", value)
+          case (key, value) if key.startsWith(ds.apiKeyDataStore.key("")) => setEntityKind(key, "apikey", value)
+          case (key, value) if key.startsWith(ds.certificatesDataStore.key("")) => setEntityKind(key, "certificate", value)
+          case (key, value) if key.startsWith(ds.serviceGroupDataStore.key("")) => setEntityKind(key, "service-group", value)
+          case (key, value) if key.startsWith(ds.globalJwtVerifierDataStore.key("")) => setEntityKind(key, "jwt-verifier", value)
+          case (key, value) if key.startsWith(ds.authConfigsDataStore.key("")) => setEntityKind(key, "auth-module", value)
+          case (key, value) if key.startsWith(ds.scriptDataStore.key("")) => setEntityKind(key, "script", value)
+          case (key, value) if key.startsWith(ds.dataExporterConfigDataStore.key("")) => setEntityKind(key, "data-exporter", value)
+          case (key, value) if key.startsWith(ds.teamDataStore.key("")) => setEntityKind(key, "team", value)
+          case (key, value) if key.startsWith(ds.tenantDataStore.key("")) => setEntityKind(key, "tenant", value)
+          case (key, value) if key.startsWith(ds.tcpServiceDataStore.key("")) => setEntityKind(key, "tcp-service", value)
+          case (key, value) if key.startsWith(ds.globalConfigDataStore.key("")) => setEntityKind(key, "global-config", value)
+          case (key, value) if key.startsWith(ds.routeDataStore.key("")) => setEntityKind(key, "route", value)
+          case (key, value) if key.startsWith(ds.routeCompositionDataStore.key("")) => setEntityKind(key, "route-composition", value)
+          case (key, value) if key.startsWith(ds.backendsDataStore.key("")) => setEntityKind(key, "backend", value)
+          case (key, value) if key.startsWith(ds.wasmPluginsDataStore.key("")) => setEntityKind(key, "wasm-plugin", value)
+          case _ => ().vfuture
+        }
+        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+    }
   }
 
   def typ(key: String): Future[String] =
@@ -1212,4 +1255,16 @@ class ReactivePgRedis(
       //   row.optJsArray("json").flatMap(_.value.headOption).map(_.asObject ++ Json.obj("pttl" -> ttl))
       // }
     }
+}
+
+class SetMissingEntityKind extends OneTimeJob {
+
+  override def uniqueId: JobId = JobId("io.otoroshi.core.storage.pg.SetMissingEntityKind")
+
+  override def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.datastores match {
+      case ds: ReactivePgDataStores => ds.setMissingEntityKind()
+      case _ => funit
+    }
+  }
 }
