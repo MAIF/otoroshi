@@ -831,7 +831,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                               ]
                             }
                             dynamic
-                            title="Dynamic Score"
+                            title="Dynamic score"
                             tag="dynamic"
                           />
                           <GlobalScore

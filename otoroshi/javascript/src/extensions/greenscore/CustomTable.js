@@ -34,9 +34,9 @@ function Headings({ sort }) {
       <Heading title="Name" onClick={() => sort('name')} />
       <Heading title="Description" onClick={() => sort('description')} />
       <Heading title="Notation" onClick={() => sort('notation')} textCenter />
-      <Heading title="Net Score" onClick={() => sort('net')} textCenter />
+      <Heading title="Net score" onClick={() => sort('net')} textCenter />
       <Heading title="Data" onClick={() => sort('data')} textCenter />
-      <Heading title="Dynamic Score" onClick={() => sort('dynamic')} textCenter />
+      <Heading title="Dynamic score" onClick={() => sort('dynamic')} textCenter />
     </div>
   );
 }

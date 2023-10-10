@@ -143,7 +143,7 @@ export function GlobalScore(allProps) {
           }}
           className="m-0 mt-1"
         >
-          {props.title ? props.title : props.raw ? "Raw Value" : "Static Score"}
+          {props.title ? props.title : props.raw ? "Raw value" : "Static score"}
         </h3>
 
         <div
