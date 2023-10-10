@@ -69,11 +69,11 @@ export default ({ route, setSidebarContent }) => {
         <li className="nav-item mb-1">
           <Link
             to={`/${entity.link}/${route.id}?tab=flow`}
-            className="d-flex align-items-center m-0 p-2 nav-link">
+            className="m-0 p-2 nav-link">
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className="fas fa-road"></i>
             </div>
-            <div className="title" style={{ marginLeft: '4px' }}>
+            <div className="title" style={{ marginLeft: '4px',marginTop:"4px" }}>
               {' '}
               {openedSidebar ? route.name : ''}
             </div>

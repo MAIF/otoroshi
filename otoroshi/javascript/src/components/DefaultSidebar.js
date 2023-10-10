@@ -14,7 +14,7 @@ function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, roo
         {...createTooltip(text)}
         onClick={clearSidebar}>
         <i className={`fas fa-${icon}`} />{' '}
-        {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+        <span style={{marginTop:"4px"}}>{!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}</span>
       </Link>
     </li>
   );
@@ -144,7 +144,7 @@ export function DefaultSidebar(props) {
               marginRight: openedSidebar ? '1em' : '',
             }}
           />
-          {!openedSidebar ? '' : 'Features'}
+          <span style={{marginTop:"4px"}}>{!openedSidebar ? '' : 'Features'}</span>
         </Link>
       </li>
     </ul>

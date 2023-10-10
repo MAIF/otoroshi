@@ -319,7 +319,7 @@ class BackOfficeAppContainer extends Component {
                             this.state.openedSidebar ? 'me-3' : ''
                           }`}
                         />
-                        {this.state.openedSidebar ? 'Dashboard' : ''}
+                        <span style={{marginTop:"6px"}}>{this.state.openedSidebar ? 'Dashboard' : ''}</span>
                       </Link>
                     </li>
                   </ul>
