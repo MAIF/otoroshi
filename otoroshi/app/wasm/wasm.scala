@@ -245,7 +245,7 @@ class WasmVmPoolCleaner extends Job {
 
   private val logger = Logger("otoroshi-wasm-vm-pool-cleaner")
 
-  override def uniqueId: JobId = JobId("otoroshi.wasm.WasmVmPoolCleaner")
+  override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.wasm.WasmVmPoolCleaner")
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
