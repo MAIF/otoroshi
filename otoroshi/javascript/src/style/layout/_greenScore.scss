@@ -1,0 +1,23 @@
+.card-picto {
+  top: 6px;
+  right: 6px;
+  border-radius: 50%;
+  background: rgb(249, 176, 0);
+  opacity: 0.6;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bgColor 2s infinite alternate;
+}
+
+@keyframes bgColor {
+  0% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}

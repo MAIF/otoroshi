@@ -362,20 +362,14 @@ function ItemActions({ unfold, openAction, editLink, onDelete }) {
           <Link
             to={editLink}
             type="button"
-            className="btn btn-sm me-1 date-hover"
-            style={{
-              border: '1px solid var(--text)',
-            }}>
-            <i className="fas fa-pencil-alt" style={{ color: 'var(--text)' }} />
+            className="btn btn-sm btn-success me-1">
+            <i className="fas fa-pencil-alt"  />
           </Link>
           <button
             type="button"
-            className="btn btn-sm date-hover"
-            style={{
-              border: '1px solid var(--text)',
-            }}
+            className="btn btn-sm btn-danger"           
             onClick={onDelete}>
-            <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
+            <i className="fas fa-trash" />
           </button>
         </div>
       ) : (

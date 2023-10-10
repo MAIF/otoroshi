@@ -150,18 +150,12 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
               <button
                 onClick={() => editRoute(routeId)}
                 type="button"
-                className="btn btn-sm me-1 date-hover"
-                style={{
-                  border: '1px solid var(--text)',
-                }}>
-                <i className="fa fa-pencil-alt" style={{ color: 'var(--text)' }} />
+                className="btn btn-sm me-1 btn-success">
+                <i className="fa fa-pencil-alt" />
               </button>
               <button
                 type="button"
-                className="btn btn-sm date-hover"
-                style={{
-                  border: '1px solid var(--text)',
-                }}
+                className="btn btn-sm btn-danger"
                 onClick={() => {
                   window
                     .newConfirm('Delete this route from the configuration ?', {
@@ -207,6 +201,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
                 style={{
                   backgroundColor: 'var(--color-primary)',
                   borderColor: 'var(--color-primary)',
+                  color:'var(--color-white)'
                 }}
                 className="ms-2"
                 onPress={() => {
@@ -275,7 +270,7 @@ const RoutesSelector = ({ allRoutes, addRoute }) => {
             addRoute(route);
             setRoute(route);
           }}>
-          Link
+          Add route
         </button>
       </div>
     </div>

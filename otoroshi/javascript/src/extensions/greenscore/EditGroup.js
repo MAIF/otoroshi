@@ -11,7 +11,8 @@ function SaveButton({ saveAndExit, group, isNew, client, title }) {
   return (
     <FeedbackButton
       className="ms-2"
-      text={title ? title : isNew ? 'Create' : 'Save'}
+      text={title ? title : isNew ? 'Create group' : 'Save'}
+      type="save"
       style={{
         maxHeight: 32,
         display: 'flex',
@@ -153,7 +154,7 @@ export default function EditGroup({}) {
         style={{
           position: 'absolute',
           top: 0,
-          marginTop: 'calc(-2.5rem - 34px)',
+          marginTop: 'calc(-2.5rem - 20px)',
           right: 0,
         }}>
         <FeedbackButton

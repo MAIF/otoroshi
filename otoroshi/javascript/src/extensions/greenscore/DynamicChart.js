@@ -71,22 +71,7 @@ export function DynamicChart(props) {
           {props.title}
         </h3>
 
-        <Tag value="Dynamic" />
-
-        <div
-          style={{
-            position: 'absolute',
-            top: 6,
-            right: 6,
-            borderRadius: '50%',
-            background: 'rgba(249, 176, 0, 0.46)',
-            color: '#fff',
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+        <div className='card-picto position-absolute'>
           <i className="fas fa-bolt" style={{ fontSize: 'initial' }} />
         </div>
       </div>

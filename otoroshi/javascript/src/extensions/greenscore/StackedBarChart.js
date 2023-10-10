@@ -43,38 +43,7 @@ export default class StackedBarChart extends PureComponent {
           borderRadius: '.2rem',
           padding: '1rem 2rem 62px',
         }}>
-        <div className="d-flex justify-content-between" style={{ minHeight: 48 }}>
-          <div
-            style={{
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: '500',
-              fontSize: '.75rem',
-              lineHeight: '1.2rem',
-              letterSpacing: '.125em',
-              textTransform: 'uppercase',
-              color: '#f9b000',
-              marginBottom: '10px',
-              display: 'block',
-            }}>
-            static
-          </div>
-          <div
-            style={{
-              borderRadius: '50%',
-              background: 'rgba(249, 176, 0, 0.46)',
-              color: '#fff',
-              width: 32,
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <i className="fas fa-chart-line" style={{ fontSize: 'initial' }} />
-          </div>
-        </div>
+        
         <ResponsiveContainer height="100%" width="100%">
           <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />

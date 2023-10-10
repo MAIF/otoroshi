@@ -162,7 +162,7 @@ function FilterSelector({
                   borderRadius: 8,
                   cursor: 'pointer',
                 }}>
-                STATIC <i className="fas fa-spa ms-2" />
+                STATIC
               </div>
               <div
                 onClick={() => addToState('dynamic')}
