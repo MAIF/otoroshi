@@ -10,6 +10,7 @@ import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import otoroshi.models.GlobalConfig
@@ -17,7 +18,7 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils
-import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
+import otoroshi.utils.{JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -760,6 +761,74 @@ class StalledJobsDetector extends Job {
         }
         .runWith(Sink.ignore)
         .map(_ => ())
+    }
+  }
+}
+
+trait OneTimeJob extends Job {
+
+  private val canRun = new AtomicBoolean(false)
+
+  def singleStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+  def singleStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+  def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+
+  final override def cronExpression(ctx: JobContext, env: Env): Option[String] = None
+  final override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.second.some
+  final override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  final override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  final override def jobVisibility: JobVisibility = JobVisibility.Internal
+  final override def starting: JobStarting = JobStarting.Automatically
+
+  private def unregisterSelf(env: Env): Unit = {
+    env.jobManager.unregisterJob(this)
+  }
+
+  private def stopJob(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    if (canRun.get()) {
+      env.datastores.rawDataStore.set(
+        s"${env.storageRoot}:jobs:one-time-done:${uniqueId.id}",
+        Json.obj("done" -> true, "date" -> DateTime.now().toString()).stringify.byteString,
+        None
+      ).flatMap { res =>
+        canRun.set(false)
+        unregisterSelf(env)
+        if (canRun.get()) {
+          singleStop(ctx)
+        } else {
+          funit
+        }
+      }
+    } else {
+      funit
+    }
+  }
+
+  final override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.datastores.rawDataStore.get(s"${env.storageRoot}:jobs:one-time-done:${uniqueId.id}").flatMap {
+      case None => {
+        canRun.set(true)
+        singleStart(ctx)
+      }
+      case Some(_) => {
+        canRun.set(false)
+        unregisterSelf(env)
+        funit
+      }
+    }
+  }
+
+  final override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    stopJob(ctx)
+  }
+
+  final override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    if (canRun.get()) {
+        singleRun(ctx).andThen {
+          case _ => stopJob(ctx)
+        }
+    } else {
+      funit
     }
   }
 }
