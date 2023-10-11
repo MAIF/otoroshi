@@ -35,7 +35,8 @@ class BuildOptions {
     pluginType,
     metadata,
     isReleaseBuild,
-    wasi
+    wasi,
+    saveInLocal
   }) {
     this.folderPath = folderPath;
     this.userEmail = userEmail;
@@ -47,6 +48,7 @@ class BuildOptions {
     this.metadata = metadata;
     this.isReleaseBuild = isReleaseBuild;
     this.wasi = wasi;
+    this.saveInLocal = saveInLocal;
   }
 }
 
@@ -140,16 +142,16 @@ class Compiler {
       (message, onError = false) => this.#websocketEmitMessage(buildOptions, message, onError)
     )
       .then(() => {
-        return Promise.all(
-          [
-            WasmS3.putWasmFileToS3(buildOptions.plugin.id, this.outputWasmFolder(buildOptions))
+        return (buildOptions.saveInLocal ?
+          FileSystem.storeWasm(this.outputWasmFolder(buildOptions), `${buildOptions.folderPath}.wasm`) :
+          Promise.all([
+            WasmS3.putWasmFileToS3(this.outputWasmFolder(buildOptions))
               .then(() => this.#websocketEmitMessage(buildOptions, "WASM has been saved ...")),
             WasmS3.putBuildLogsToS3(`${buildOptions.plugin.id}-logs.zip`, buildOptions.logsFolder)
               .then(() => this.#websocketEmitMessage(buildOptions, "Logs has been saved ...")),
             WasmS3.putWasmInformationsToS3(buildOptions.userEmail, buildOptions.plugin.id, buildOptions.plugin.hash, `${this.options.wasmName}.wasm`)
               .then(() => this.#websocketEmitMessage(buildOptions, "Informations has been updated"))
-          ]
-        )
+          ]))
           .then(() => {
             FileSystem.cleanFolders(buildOptions.buildFolder, buildOptions.logsFolder)
               .then(callback)

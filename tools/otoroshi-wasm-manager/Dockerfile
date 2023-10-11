@@ -9,9 +9,6 @@ WORKDIR /usr/src/app/ui
 RUN npm install
 RUN npm run build
 
-WORKDIR /usr/src/app/server
-RUN npm install
-
 FROM ubuntu:22.04
 
 # Install Node
@@ -31,7 +28,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y 
 RUN apt-get install -y build-essential git curl software-properties-common
-RUN apt-get install -y --no-install-recommends tzdata golang-1.20 binaryen
+RUN apt-get install -y --no-install-recommends tzdata golang-1.20 binaryen python3-distutils python3.9
+
+# RUN python3.9 -m pip install --upgrade pip
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3 get-pip.py
+RUN echo 'export PATH=~/.local/bin/:$PATH' >> ~/.bashrc
 
 ENV PATH="/usr/lib/go-1.20/bin:${PATH}"
 
@@ -60,12 +61,14 @@ RUN mv opa /usr/local/bin
 
 RUN npm install pm2@latest -g
 
-RUN mkdir /server
 COPY --from=node /usr/src/app/ui/build /ui/build
-COPY --from=node /usr/src/app/server /server
 
+RUN mkdir /server
 WORKDIR /server
+
+RUN npm install
 EXPOSE 5001
+
 CMD ["pm2-runtime", "index.js"]
 
 

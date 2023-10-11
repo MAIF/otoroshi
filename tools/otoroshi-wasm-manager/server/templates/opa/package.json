@@ -1,6 +1,6 @@
 {
   "name": "@@PLUGIN_NAME@@",
-  "version": "1.0.0",
+  "version": "@@PLUGIN_VERSION@@",
   "metadata": {
     "entrypoint": "example/can_access"
   }

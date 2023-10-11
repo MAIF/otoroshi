@@ -9,12 +9,10 @@ const { S3 } = require('../s3');
 const { Queue } = require('../services/queue');
 const { FileSystem } = require('../services/file-system');
 
-const manager = require('../logger');
 const { InformationsReader } = require('../services/informationsReader');
 const { WebSocket } = require('../services/websocket');
 const { Publisher } = require('../services/publish-job');
 const { ENV } = require('../configuration');
-const log = manager.createLogger('plugins');
 
 const router = express.Router()
 
@@ -328,6 +326,134 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
+router.post('/build', async (req, res) => {
+  const pluginId = crypto.randomUUID();
+
+  const { metadata, files } = req.body;
+
+  if (!metadata.type) {
+    return res
+      .status(400)
+      .json({ error: "unknown plugin type" });
+  }
+
+  if (!files || files.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "missing files" });
+  }
+
+  const isRustBuild = metadata.type === 'rust';
+
+  const zip = await fetch(`http://localhost:${ENV.PORT}/api/templates?type=${metadata.type}`)
+    .then(res => res.blob())
+    .then(res => res.arrayBuffer())
+
+  FileSystem.createBuildFolder(metadata.type, pluginId)
+    .then(folder => {
+      unzip(isRustBuild,
+        Buffer.from(zip),
+        folder,
+        [
+          { key: '@@PLUGIN_NAME@@', value: metadata.name },
+          { key: '@@PLUGIN_VERSION@@', value: metadata.version || '1.0.0' }
+        ])
+        .then(() => {
+          FileSystem.writeFiles(files, folder, isRustBuild)
+            .then(() => {
+              const saveInLocal = true;
+              addPluginToBuildQueue(
+                folder,
+                {
+                  filename: metadata.name,
+                  type: metadata.type,
+                  pluginId,
+                  last_hash: " ",
+                  versions: []
+                },
+                req,
+                res,
+                "zipHashToTest",
+                metadata.release,
+                saveInLocal
+              );
+            });
+        });
+    });
+})
+
+function addPluginToBuildQueue(folder, plugin, req, res, zipHash, release, saveInLocal) {
+  FileSystem.checkIfInformationsFileExists(folder, plugin.type)
+    .then(() => InformationsReader.extractInformations(folder, plugin.type))
+    .then(({ pluginName, pluginVersion, metadata, err }) => {
+      if (err) {
+        WebSocket.emitError(plugin.pluginId, release, err);
+        FileSystem.removeFolder('build', folder)
+          .then(() => {
+            res
+              .status(400)
+              .json({
+                error: err
+              });
+          });
+      } else {
+        (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve(undefined))
+          .then(opaMetadata => {
+            const wasmName = `${pluginName}-${pluginVersion}${release ? '' : '-dev'}`;
+            Queue.isBinaryExists(wasmName, release)
+              .then(exists => {
+                if (exists) {
+                  FileSystem.removeFolder('build', folder)
+                    .then(() => {
+                      res
+                        .status(400)
+                        .json({
+                          error: 'binary already exists'
+                        });
+                    });
+                } else {
+                  Queue.addBuildToQueue({
+                    folder,
+                    plugin: plugin.pluginId,
+                    wasmName,
+                    user: req.user ? req.user.email : 'admin@otoroshi.io',
+                    zipHash,
+                    isRustBuild: plugin.type === 'rust',
+                    pluginType: plugin.type,
+                    metadata: opaMetadata ? opaMetadata : (metadata ? metadata : {}),
+                    release,
+                    saveInLocal
+                  });
+
+                  res.json({
+                    queue_id: folder
+                  });
+                }
+              })
+          })
+          .catch(err => {
+            WebSocket.emitError(plugin.pluginId, release, err)
+            res
+              .status(400)
+              .json({
+                error: err
+              })
+          })
+      }
+    })
+    .catch(err => {
+      WebSocket.emitError(plugin.pluginId, release, err);
+      FileSystem.removeFolder('build', folder)
+        .then(() => {
+          res
+            .status(400)
+            .json({
+              error: err
+            });
+        });
+    });
+}
+
 router.post('/:id/build', async (req, res) => {
   const pluginId = req.params.id;
   const release = req.query.release === 'true';
@@ -354,74 +480,7 @@ router.post('/:id/build', async (req, res) => {
             .digest('hex');
 
           if (release || plugin['last_hash'] !== zipHash) {
-            FileSystem.checkIfInformationsFileExists(folder, plugin.type)
-              .then(() => InformationsReader.extractInformations(folder, plugin.type))
-              .then(({ pluginName, pluginVersion, metadata, err }) => {
-                if (err) {
-                  WebSocket.emitError(plugin.pluginId, release, err);
-                  FileSystem.removeFolder('build', folder)
-                    .then(() => {
-                      res
-                        .status(400)
-                        .json({
-                          error: err
-                        });
-                    });
-                } else {
-                  (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve(undefined))
-                    .then(opaMetadata => {
-                      const wasmName = `${pluginName}-${pluginVersion}${release ? '' : '-dev'}`;
-                      Queue.isBinaryExists(wasmName, release)
-                        .then(exists => {
-                          if (exists) {
-                            FileSystem.removeFolder('build', folder)
-                              .then(() => {
-                                res
-                                  .status(400)
-                                  .json({
-                                    error: 'binary already exists'
-                                  });
-                              });
-                          } else {
-                            Queue.addBuildToQueue({
-                              folder,
-                              plugin: pluginId,
-                              wasmName,
-                              user: req.user ? req.user.email : 'admin@otoroshi.io',
-                              zipHash,
-                              isRustBuild,
-                              pluginType: plugin.type,
-                              metadata: opaMetadata ? opaMetadata : (metadata ? metadata : {}),
-                              release
-                            });
-
-                            res.json({
-                              queue_id: folder
-                            });
-                          }
-                        })
-                    })
-                    .catch(err => {
-                      WebSocket.emitError(plugin.pluginId, release, err)
-                      res
-                        .status(400)
-                        .json({
-                          error: err
-                        })
-                    })
-                }
-              })
-              .catch(err => {
-                WebSocket.emitError(plugin.pluginId, release, err);
-                FileSystem.removeFolder('build', folder)
-                  .then(() => {
-                    res
-                      .status(400)
-                      .json({
-                        error: err
-                      });
-                  });
-              });
+            addPluginToBuildQueue(folder, plugin, req, res, zipHash, release)
           } else {
             FileSystem.removeFolder('build', folder)
               .then(() => {

@@ -51,6 +51,7 @@ const loop = () => {
       metadata: nextBuild.metadata,
       isReleaseBuild: nextBuild.release,
       wasi: nextBuild.metadata?.wasi,
+      saveInLocal: nextBuild.saveInLocal
     }))
       .then(() => {
         WebSocket.emit(nextBuild.plugin, "JOB", "You can now use the generated wasm")

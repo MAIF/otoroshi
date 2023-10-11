@@ -1,4 +1,4 @@
-module @@PLUGIN_NAME@@
+module @@PLUGIN_NAME@@/@@PLUGIN_VERSION@@
 
 go 1.19
 
