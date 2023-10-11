@@ -199,7 +199,7 @@ class BackOfficeController(
       apikey: ApiKey
   ): Future[Result] = {
     logger.debug(s"using play for ${ctx.request.method} ${ctx.request.theUrl}")
-    val host               = env.adminApiExposedHost
+    val host               = env.adminApiHost
     val request            = new BackOfficeRequest(ctx.request, host, apikey, ctx.user, env)
     val (nreq, reqHandler) = handler.handlerForRequest(request)
     reqHandler match {

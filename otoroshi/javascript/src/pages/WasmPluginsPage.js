@@ -55,10 +55,10 @@ export class WasmSourcePath extends Component {
 
   componentDidMount() {
     fetch('/bo/api/plugins/wasm', {
+      method: 'GET',
       credentials: 'include',
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
       },
     })
       .catch((e) => ({ json: () => [] }))

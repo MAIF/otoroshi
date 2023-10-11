@@ -7,8 +7,9 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, BackOfficeUser}
+import otoroshi.models.{AlgoSettings, ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.Json
 import play.api.libs.typedmap.TypedMap
@@ -18,6 +19,7 @@ import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarg
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.util.Base64
+import scala.concurrent.duration.DurationInt
 
 class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]])
     extends Request[Source[ByteString, _]] {
@@ -110,7 +112,19 @@ class BackOfficeRequest(
       case map                 => path
     }
   }
+  val otoClaim = InfoTokenHelper.generateInfoToken(
+    name = "Backoffice",
+    secComInfoTokenVersion = SecComInfoTokenVersion.Latest,
+    secComTtl = 30.seconds,
+    apiKey = apikey.some,
+    paUsr = None,
+    requestHeader = request.some,
+    issuer = None,
+    sub = None,
+    addFields = None,
+  )(env).serialize(HSAlgoSettings(256, env.sharedKey))(env)
   private val addHeaders = Seq(
+    env.Headers.OtoroshiClaim        -> otoClaim,
     "Host"                           -> host,
     "X-Forwarded-For"                -> request.theIpAddress(env),
     env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",

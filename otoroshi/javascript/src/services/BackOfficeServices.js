@@ -2085,16 +2085,20 @@ export function jsonToGraphqlSchema(schema, types) {
 }
 // NgRoutes
 
-const fetchWrapper = (url, method = 'GET', body) =>
-  fetch(`/bo/api/proxy/api${url}`, {
+const fetchWrapper = (url, method = 'GET', body) => {
+  const headers = {
+    Accept: 'application/json',
+  };
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return fetch(`/bo/api/proxy/api${url}`, {
     method,
     credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
+    headers: headers,
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
+}
 
 export const findAllWithPagination = (
   route,
@@ -2184,7 +2188,6 @@ export const getOldPlugins = () =>
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
     },
   }).then((r) => r.json());
 
