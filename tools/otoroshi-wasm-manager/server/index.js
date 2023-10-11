@@ -94,5 +94,5 @@ Promise.all([initializeStorage(), getAppVersion()])
 
     WebSocket.createLogsWebSocket(server);
 
-    server.listen(ENV.PORT, () => log.info(`OTO WASM ${version}, listening on ${ENV.PORT}`));
+    server.listen(ENV.PORT, () => log.info(`Wasmo ${version}, listening on ${ENV.PORT}`));
   });
