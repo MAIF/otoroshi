@@ -6,4 +6,3 @@ server/.env
 /dev.env
 /lib
 server/wasm
-server/build
