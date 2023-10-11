@@ -7,6 +7,9 @@ cleanup () {
 }
 
 build () {
+  cd ./ui
+  npm install && npm run build && rm -rf node_modules
+  cd ..
   docker build --no-cache -t otoroshi-wasm-manager .
   docker tag otoroshi-wasm-manager "maif/otoroshi-wasm-manager:$1"
   docker tag otoroshi-wasm-manager "maif/otoroshi-wasm-manager:latest"
