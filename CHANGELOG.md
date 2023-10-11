@@ -4,7 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [16.0.1] - 2023-10-09
+
+## [16.9.2] - 2023-10-11
+
+https://github.com/MAIF/otoroshi/milestone/78?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.9.1...v16.9.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.9.2
+
+### Added
+
+- support one time jobs (#670)
+
+### Fixed
+
+- missing entity kind in postgresql datastore implementation (#1735)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+
+
+## [16.9.1] - 2023-10-09
 
 https://github.com/MAIF/otoroshi/milestone/77?closed=1
 https://github.com/MAIF/otoroshi/compare/v16.9.0...v16.9.1
