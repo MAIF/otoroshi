@@ -248,7 +248,7 @@ object KindExtractorHelper {
   def findKind(key: String)(implicit env: Env): Option[String] = {
     cache.get(key) match {
       case Some(value) => value
-      case None => {
+      case None        => {
         env.allResources.resources
           .collectFirst {
             case res if key.startsWith(res.access.key("")) => res.singularName

@@ -622,7 +622,10 @@ class ReactivePgRedis(
 
   def setEntityKind(key: String, kind: String, value: String): Future[Unit] = {
     val jsonValue = value.replace("'", "''")
-    queryOne(s"""update  $schemaDotTable set kind = $$1, jvalue = $$3::jsonb where key = $$2;""", Seq(kind, key, new JsonObject(jsonValue))) { row =>
+    queryOne(
+      s"""update  $schemaDotTable set kind = $$1, jvalue = $$3::jsonb where key = $$2;""",
+      Seq(kind, key, new JsonObject(jsonValue))
+    ) { row =>
       None
     }.map(_ => ())
   }
@@ -630,17 +633,16 @@ class ReactivePgRedis(
   def setMissingEntityKind(): Future[Unit] = {
     querySeq(s"select key, value from $schemaDotTable where kind is null or kind = '' and type = 'string';") { row =>
       for {
-        key <- row.optString("key")
+        key   <- row.optString("key")
         value <- row.optString("value")
       } yield (key, value)
     }.map { rows =>
       Source(rows.toList)
-        .mapAsync(1) {
-          case (key, value) =>
-            KindExtractorHelper.findKind(key)(env) match {
-              case Some(kind) => setEntityKind(key, kind, value)
-              case None => ().vfuture
-            }
+        .mapAsync(1) { case (key, value) =>
+          KindExtractorHelper.findKind(key)(env) match {
+            case Some(kind) => setEntityKind(key, kind, value)
+            case None       => ().vfuture
+          }
         }
         .runWith(Sink.ignore)(env.otoroshiMaterializer)
     }
@@ -1251,7 +1253,7 @@ class SetMissingEntityKind extends OneTimeJob {
   override def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores match {
       case ds: ReactivePgDataStores => ds.setMissingEntityKind()
-      case _ => funit
+      case _                        => funit
     }
   }
 }
