@@ -84,4 +84,4 @@ initializeStorage()
     WebSocket.createLogsWebSocket(server);
 
     server.listen(ENV.PORT, () => log.info(`listening on ${ENV.PORT}`));
-  })
+  });

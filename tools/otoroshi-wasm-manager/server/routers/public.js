@@ -4,6 +4,7 @@ const { format } = require('../utils');
 const { Security } = require('../security/middlewares');
 const { ENV } = require('../configuration');
 const { getWasm } = require('../services/wasm-s3');
+const { FileSystem } = require('../services/file-system');
 
 const router = express.Router()
 
@@ -38,7 +39,9 @@ router.use((req, res, next) => {
   } else {
     forbiddenAccess(req, res, next);
   }
-})
+});
+
+router.get('/local/wasm/:id', (req, res) => FileSystem.getLocalWasm(`${req.params.id}.wasm`, res))
 
 router.get('/wasm/:pluginId/:version', (req, res) => getWasm(`${req.params.pluginId}-${req.params.version}.wasm`, res));
 router.get('/wasm/:id', (req, res) => getWasm(req.params.id, res));

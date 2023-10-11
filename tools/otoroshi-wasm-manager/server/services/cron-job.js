@@ -14,6 +14,7 @@ const cleaningWasm = () => {
 
   fs.readdir(root)
     .then(files => Promise.all(files
+      .filter(file => !file.includes('.gitkeep'))
       .map(file => {
         const filepath = path.join(root, file);
         return fs.stat(filepath)
@@ -32,8 +33,6 @@ const cleaningWasm = () => {
 
 const initialize = () => {
   cron.schedule('*/60 * * * *', cleaningWasm);
-
-  cleaningWasm()
 }
 
 module.exports = {
