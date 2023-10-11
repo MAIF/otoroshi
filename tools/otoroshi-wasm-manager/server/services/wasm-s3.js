@@ -7,7 +7,7 @@ const { UserManager } = require('./user');
 
 const isAString = variable => typeof variable === 'string' || variable instanceof String;
 
-const putWasmFileToS3 = (pluginId, wasmFolder) => {
+const putWasmFileToS3 = (wasmFolder) => {
   const { s3, Bucket } = S3.state()
 
   return new Promise((resolve, reject) => {

@@ -69,7 +69,7 @@ initializeStorage()
 
     WebSocket.createLogsWebSocket(server);
 
-    const PORT = ENV.MANAGER_PORT || 5001;
+    const PORT = ENV.PORT;
 
     if (ENV.AUTH_MODE === "NO_AUTH") {
       console.log("###########################################################")

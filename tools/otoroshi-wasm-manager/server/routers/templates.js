@@ -43,6 +43,7 @@ function getTemplates(type, res) {
     return getTemplatesFromPath(type, res);
   } else if (source.startsWith('file://')) {
     const paths = [source.replace('file://', ''), zipName];
+    
     FileSystem.existsFile(...paths)
       .then(() => {
         res.download(FileSystem.pathsToPath(...paths), zipName)

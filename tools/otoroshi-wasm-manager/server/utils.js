@@ -5,13 +5,16 @@ const pako = require('pako');
 
 const format = value => value.replace(/[^a-zA-Z ]/g, "");
 
-const unzip = (isRustBuild, zipString, outputFolder) => {
+const unzip = (isRustBuild, zipString, outputFolder, rules = []) => {
   const zip = new AdmZip(zipString);
   const entries = zip.getEntries()
 
-  return Promise.all(entries.map(entry => {
+  return entries.reduce((p, entry) => p.then(() => new Promise(resolve => {
     try {
       const content = pako.inflateRaw(entry.getCompressedData(), { to: 'string' });
+
+      if (!content)
+        return resolve();
 
       let filePath = '';
 
@@ -19,14 +22,17 @@ const unzip = (isRustBuild, zipString, outputFolder) => {
         filePath = entry.entryName === 'Cargo.toml' ? '' : 'src';
       }
 
-      return fs.writeFile(
-        path.join(process.cwd(), 'build', outputFolder, filePath, entry.entryName),
-        content
+      fs.writeFile(
+        path.join(process.cwd(), 'build', outputFolder, filePath, entry.entryName.split('/').slice(-1).join('/')),
+        rules.reduce((acc, rule) => {
+          return acc.replace(new RegExp(rule.key, "g"), rule.value)
+        }, content)
       )
-    } catch (err) {
-      return Promise.reject(err)
+        .then(resolve)
+    } catch (_) {
+      resolve()
     }
-  }))
+  })), Promise.resolve())
 }
 
 const unzipTo = (zipString, outputPaths) => {

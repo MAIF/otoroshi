@@ -75,8 +75,25 @@ const existsFile = (...paths) => {
 
 const pathsToPath = (...paths) => path.join(process.cwd(), ...paths);
 
+const writeFiles = (files, folder, isRustBuild) => {
+  return Promise.all(files.map(({ name, content }) => {
+    const filePath = isRustBuild ? (filePath = name === 'Cargo.toml' ? '' : 'src') : '';
+
+    return fs.writeFile(
+      path.join(process.cwd(), 'build', folder, filePath, name),
+      content
+    )
+  }));
+}
+
+const storeWasm = (fromFolder, filename) => {
+  console.log(fromFolder, pathsToPath(`/wasm/${filename}`))
+  fs.move(fromFolder, pathsToPath(`/wasm/${filename}`));
+}
+
 module.exports = {
   FileSystem: {
+    writeFiles,
     createBuildFolder,
     createFolderAtPath,
     cleanFolders,
@@ -86,6 +103,7 @@ module.exports = {
     cleanBuildsAndLogsFolders,
     checkIfInformationsFileExists,
     existsFile,
-    pathsToPath
+    pathsToPath,
+    storeWasm
   }
 }
