@@ -23,6 +23,7 @@ module.exports = {
         OTOROSHI_USER_HEADER: process.env.OTOROSHI_USER_HEADER,
         MANAGER_MAX_PARALLEL_JOBS: process.env.MANAGER_MAX_PARALLEL_JOBS || 2,
         EXTISM_RUNTIME_ENVIRONMENT: process.env.EXTISM_RUNTIME_ENVIRONMENT || false,
-        STORAGE: process.env.STORAGE || STORAGE.S3
+        STORAGE: process.env.STORAGE || STORAGE.S3,
+        LOCAL_WASM_JOB_CLEANING: process.envLOCAL_WASM_JOB_CLEANING || (60 * 60 * 1000) // 1 hour
     }
 }

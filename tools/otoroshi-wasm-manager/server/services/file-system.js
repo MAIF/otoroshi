@@ -86,10 +86,7 @@ const writeFiles = (files, folder, isRustBuild) => {
   }));
 }
 
-const storeWasm = (fromFolder, filename) => {
-  console.log(fromFolder, pathsToPath(`/wasm/${filename}`))
-  fs.move(fromFolder, pathsToPath(`/wasm/${filename}`));
-}
+const storeWasm = (fromFolder, filename) => fs.move(fromFolder, pathsToPath(`/wasm/${filename}`));
 
 module.exports = {
   FileSystem: {

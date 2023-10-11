@@ -142,16 +142,16 @@ class Compiler {
       (message, onError = false) => this.#websocketEmitMessage(buildOptions, message, onError)
     )
       .then(() => {
-        return Promise.all(
-          buildOptions.saveInLocal ? [FileSystem.storeWasm(this.outputWasmFolder(buildOptions), `${this.options.wasmName}.wasm`)] : [
+        return (buildOptions.saveInLocal ?
+          FileSystem.storeWasm(this.outputWasmFolder(buildOptions), `${buildOptions.folderPath}.wasm`) :
+          Promise.all([
             WasmS3.putWasmFileToS3(this.outputWasmFolder(buildOptions))
               .then(() => this.#websocketEmitMessage(buildOptions, "WASM has been saved ...")),
             WasmS3.putBuildLogsToS3(`${buildOptions.plugin.id}-logs.zip`, buildOptions.logsFolder)
               .then(() => this.#websocketEmitMessage(buildOptions, "Logs has been saved ...")),
             WasmS3.putWasmInformationsToS3(buildOptions.userEmail, buildOptions.plugin.id, buildOptions.plugin.hash, `${this.options.wasmName}.wasm`)
               .then(() => this.#websocketEmitMessage(buildOptions, "Informations has been updated"))
-          ]
-        )
+          ]))
           .then(() => {
             FileSystem.cleanFolders(buildOptions.buildFolder, buildOptions.logsFolder)
               .then(callback)

@@ -329,9 +329,9 @@ router.delete('/:id', async (req, res) => {
 router.post('/build', async (req, res) => {
   const pluginId = crypto.randomUUID();
 
-  const { plugin_type, plugin_filename, release, files } = req.body;
+  const { metadata, files } = req.body;
 
-  if (!plugin_type) {
+  if (!metadata.type) {
     return res
       .status(400)
       .json({ error: "unknown plugin type" });
@@ -343,17 +343,21 @@ router.post('/build', async (req, res) => {
       .json({ error: "missing files" });
   }
 
-  const isRustBuild = plugin_type === 'rust';
+  const isRustBuild = metadata.type === 'rust';
 
-  const zip = await fetch(`http://localhost:${ENV.PORT}/api/templates?type=${plugin_type}`)
+  const zip = await fetch(`http://localhost:${ENV.PORT}/api/templates?type=${metadata.type}`)
     .then(res => res.blob())
     .then(res => res.arrayBuffer())
 
-  FileSystem.createBuildFolder(plugin_type, pluginId)
+  FileSystem.createBuildFolder(metadata.type, pluginId)
     .then(folder => {
-      unzip(isRustBuild, Buffer.from(zip), folder, [{
-        key: '@@PLUGIN_NAME@@', value: plugin_filename
-      }])
+      unzip(isRustBuild,
+        Buffer.from(zip),
+        folder,
+        [
+          { key: '@@PLUGIN_NAME@@', value: metadata.name },
+          { key: '@@PLUGIN_VERSION@@', value: metadata.version || '1.0.0' }
+        ])
         .then(() => {
           FileSystem.writeFiles(files, folder, isRustBuild)
             .then(() => {
@@ -361,8 +365,8 @@ router.post('/build', async (req, res) => {
               addPluginToBuildQueue(
                 folder,
                 {
-                  filename: plugin_filename,
-                  type: plugin_type,
+                  filename: metadata.name,
+                  type: metadata.type,
                   pluginId,
                   last_hash: " ",
                   versions: []
@@ -370,7 +374,7 @@ router.post('/build', async (req, res) => {
                 req,
                 res,
                 "zipHashToTest",
-                release,
+                metadata.release,
                 saveInLocal
               );
             });

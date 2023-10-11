@@ -7,36 +7,41 @@ const { getWasm } = require('../services/wasm-s3');
 
 const router = express.Router()
 
-const DOMAINS = (ENV.MANAGER_ALLOWED_DOMAINS || "")
-  .split(',')
+const DOMAINS = (ENV.MANAGER_ALLOWED_DOMAINS || "").split(',');
+
+const noAuth = (req, res, next) => next();
+
+const auth = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin)
+  res.header('Access-Control-Allow-Credentials', true)
+  next()
+}
+
+const forbiddenAccess = (req, res, next) => {
+  console.log(ENV.AUTH_MODE === 'AUTH')
+  console.log(DOMAINS.includes(req.headers.host))
+  console.log(Security.extractedUserOrApikey(req))
+  console.log(req.headers.host)
+  console.log(DOMAINS)
+  res
+    .status(403)
+    .json({
+      error: 'forbidden access'
+    })
+}
 
 router.use((req, res, next) => {
   if (ENV.AUTH_MODE === 'NO_AUTH') {
-    next()
-  } else if (
-    ENV.AUTH_MODE === 'AUTH' &&
-    DOMAINS.includes(req.headers.host) &&
-    Security.extractedUserOrApikey(req)
-  ) {
-    res.header('Access-Control-Allow-Origin', req.headers.origin)
-    res.header('Access-Control-Allow-Credentials', true)
-    next()
+    noAuth(req, res, next);
+  } else if (ENV.AUTH_MODE === 'AUTH' && DOMAINS.includes(req.headers.host) && Security.extractedUserOrApikey(req)) {
+    auth(req, res, next);
   } else {
-    console.log(ENV.AUTH_MODE === 'AUTH')
-    console.log(DOMAINS.includes(req.headers.host))
-    console.log(Security.extractedUserOrApikey(req))
-    console.log(req.headers.host)
-    console.log(DOMAINS)
-    res
-      .status(403)
-      .json({
-        error: 'forbidden access'
-      })
+    forbiddenAccess(req, res, next);
   }
 })
 
 router.get('/wasm/:pluginId/:version', (req, res) => getWasm(`${req.params.pluginId}-${req.params.version}.wasm`, res));
-router.get('/wasm/:id', (req, res) => getWasm(req.params.id, res))
+router.get('/wasm/:id', (req, res) => getWasm(req.params.id, res));
 
 router.get('/plugins', (req, res) => {
   const reg = req.headers['kind'] || '*';

@@ -19,22 +19,23 @@ class App extends React.Component {
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
         const pluginId = params.get('plugin');
-        if (pluginId) {
+        if (pluginId && pluginId !== "undefined") {
           this.onPluginClick(pluginId);
         }
       }
     })
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.selectedPlugin !== this.state.selectedPlugin) {
-      if (window.location.search) {
-        const params = new URLSearchParams(window.location.search);
-        params.set('plugin', this.state.selectedPlugin?.pluginId);
-        window.history.replaceState(null, null, '?' + params.toString());
-      } else {
-        window.history.replaceState(null, null, '?plugin=' + this.state.selectedPlugin.pluginId);
-      }
+  componentDidUpdate() {
+    const { selectedPlugin } = this.state;
+
+    const params = new URLSearchParams(window.location.search);
+    const pluginId = params.get('plugin');
+
+    if (selectedPlugin && selectedPlugin.pluginId !== pluginId) {
+      window.history.replaceState(null, "", '?plugin=' + selectedPlugin.pluginId);
+    } else if (!selectedPlugin) {
+      window.history.replaceState(null, null, '/');
     }
   }
 
@@ -296,7 +297,9 @@ class App extends React.Component {
           if (file.filename === INFORMATIONS_FILENAME[selectedPlugin.type]) {
             return {
               ...file,
-              content: file.content.replace('@@PLUGIN_NAME@@', selectedPlugin.filename)
+              content: file.content
+                .replace('@@PLUGIN_NAME@@', selectedPlugin.filename)
+                .replace('@@PLUGIN_VERSION@@', '1.0.0')
             }
           }
           return file;
