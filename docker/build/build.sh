@@ -112,7 +112,7 @@ case "${1}" in
     build_and_push_jar_template_version_multi_arch_latest "$OTO_VERSION" "17"
     # build_graal "$OTO_VERSION"
     cleanup
-    push_graal "$OTO_VERSION"
+    # push_graal "$OTO_VERSION"
     ;;
   test-release-builds)
     OTO_VERSION="dev"

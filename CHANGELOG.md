@@ -23,6 +23,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.9.2
 
 * @mathieuancelin 
 * @Zwiterrion 
+* @baudelotphilippe 
 
 
 ## [16.9.1] - 2023-10-09
