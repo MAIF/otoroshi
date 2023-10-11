@@ -254,9 +254,7 @@ object KindExtractorHelper {
             case res if key.startsWith(res.access.key("")) => res.singularName
           }
           .seffectOn { res =>
-            println(s"for key: '${key}' extracted kind '${res}'")
-          }
-          .seffectOn { res =>
+            // println(s"for key: '${key}' extracted kind '${res}'")
             cache.putIfAbsent(key, res)
           }
       }
