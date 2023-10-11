@@ -61,7 +61,7 @@ function TabsManager({ plugins, ...props }) {
     <SidebarContext.Provider value={sidebarContext}>
       <>
         <Sidebar setContext={setSidebarContext} context={sidebarContext}>
-          <SidebarHeader />
+          <SidebarHeader version={props.version} />
           <SidebarContext.Consumer>
             {({ open, ButtonWhenHidden }) => !open ? ButtonWhenHidden() : <>
               <PluginManager
@@ -168,7 +168,7 @@ function TabsManager({ plugins, ...props }) {
   </div>
 }
 
-function SidebarHeader({ }) {
+function SidebarHeader({ version }) {
   return <SidebarContext.Consumer>
     {({ open }) => open ? <h1 style={{
       userSelect: 'none',
@@ -177,7 +177,7 @@ function SidebarHeader({ }) {
       background: '#f9b000',
       color: 'white',
       height: 42
-    }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1> : <div className='d-flex justify-content-center p-1'>
+    }} className="p-2 m-0 d-flex align-items-center">OTO WASM <span style={{ fontSize: '1rem', marginTop: 'auto' }} className="ms-auto">{version}</span></h1> : <div className='d-flex justify-content-center p-1'>
       {LOGOS.logo}
     </div>
     }

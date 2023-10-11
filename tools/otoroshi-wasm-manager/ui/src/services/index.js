@@ -129,3 +129,5 @@ export const getGithubSources = (repo, owner, ref, isPrivate) => rawFetch('/plug
 export const getRuntimeEnvironmentState = () => jsonFetch('/wasm/runtime');
 
 export const getWasmRelease = wasmId => rawFetch(`/wasm/${wasmId}`);
+
+export const getAppVersion = () => jsonFetch('/version');

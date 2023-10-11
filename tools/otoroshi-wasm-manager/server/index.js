@@ -1,10 +1,12 @@
 require('dotenv').config();
 
+const fs = require('fs-extra');
+const path = require('path')
 const express = require('express');
 const http = require('http');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-const path = require('path');
+
 const { S3 } = require('./s3');
 const { ENV, STORAGE } = require('./configuration');
 
@@ -22,7 +24,6 @@ const { Publisher } = require('./services/publish-job');
 const { Cron } = require('./services/cron-job');
 const log = manager.createLogger('wasm-manager');
 
-
 if (ENV.AUTH_MODE === "NO_AUTH") {
   console.log("###############################################################")
   console.log("#                                                             #")
@@ -39,7 +40,7 @@ function initializeStorage() {
     return Promise.resolve()
 }
 
-function createServer() {
+function createServer(appVersion) {
   const app = express();
   app.use(express.static(path.join(__dirname, '..', 'ui/build')));
   app.use(compression());
@@ -55,11 +56,21 @@ function createServer() {
   app.use('/api/plugins', pluginsRouter);
   app.use('/api/templates', templatesRouter);
   app.use('/api/wasm', wasmRouter);
+  app.use('/api/version', (_, res) => res.json(appVersion));
+
+
+  app.use('/health', (_, res) => res.json({ status: true }))
 
   app.use('/', publicRouter);
   app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 
   return http.createServer(app);
+}
+
+function getAppVersion() {
+  return fs.readFile(path.join(process.cwd(), "package.json"))
+    .then(file => JSON.parse(file))
+    .then(file => file.version);
 }
 
 if (ENV.STORAGE === STORAGE.S3 && !S3.configured()) {
@@ -68,8 +79,8 @@ if (ENV.STORAGE === STORAGE.S3 && !S3.configured()) {
 }
 // else if  manage GITHUG
 
-initializeStorage()
-  .then(error => {
+Promise.all([initializeStorage(), getAppVersion()])
+  .then(([error, version]) => {
     if (error) {
       throw error;
     }
@@ -79,9 +90,9 @@ initializeStorage()
 
     Cron.initialize();
 
-    const server = createServer();
+    const server = createServer(version);
 
     WebSocket.createLogsWebSocket(server);
 
-    server.listen(ENV.PORT, () => log.info(`listening on ${ENV.PORT}`));
+    server.listen(ENV.PORT, () => log.info(`OTO WASM ${version}, listening on ${ENV.PORT}`));
   });

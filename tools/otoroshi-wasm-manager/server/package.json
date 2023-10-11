@@ -1,6 +1,6 @@
 {
-  "name": "node-server",
-  "version": "1.0.0",
+  "name": "wasm-manager",
+  "version": "16.9.2",
   "main": "index.js",
   "license": "MIT",
   "scripts": {

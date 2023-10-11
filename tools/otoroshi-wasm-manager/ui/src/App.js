@@ -1,5 +1,5 @@
 import React from 'react';
-import JsZip from 'jszip';
+import JsZip, { version } from 'jszip';
 import Pako from 'pako'
 
 import * as Service from './services'
@@ -11,10 +11,14 @@ class App extends React.Component {
     editorState: undefined,
     plugins: [],
     selectedPlugin: undefined,
-    configFiles: []
+    configFiles: [],
+    version: 'unknown'
   }
 
   componentDidMount() {
+    Service.getAppVersion()
+      .then(version => this.setState({ version }));
+
     this.reloadPlugins().then(() => {
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
@@ -591,7 +595,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { selectedPlugin, plugins, configFiles, editorState } = this.state;
+    const { selectedPlugin, plugins, configFiles, editorState, version } = this.state;
 
     return <div className='d-flex flex-column'
       style={{ flex: 1, outline: 'none' }}
@@ -599,6 +603,7 @@ class App extends React.Component {
       onClick={this.onClick}
       tabIndex="0">
       <TabsManager
+        version={version}
         editorState={editorState}
         plugins={plugins}
         reloadPlugins={this.reloadPlugins}
