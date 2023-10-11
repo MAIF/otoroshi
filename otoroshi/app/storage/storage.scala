@@ -239,32 +239,53 @@ trait OptimizedRedisLike {
     }
   }
   def extractKind(key: String, env: Env): Option[String] = {
-    import otoroshi.utils.syntax.implicits._
-    val ds = env.datastores
-    key match {
-      case _ if key.startsWith(ds.serviceDescriptorDataStore.key(""))  => "service-descriptor".some
-      case _ if key.startsWith(ds.apiKeyDataStore.key(""))             => "apikey".some
-      case _ if key.startsWith(ds.certificatesDataStore.key(""))       => "certificate".some
-      case _ if key.startsWith(ds.serviceGroupDataStore.key(""))       => "service-group".some
-      case _ if key.startsWith(ds.globalJwtVerifierDataStore.key(""))  => "jwt-verifier".some
-      case _ if key.startsWith(ds.authConfigsDataStore.key(""))        => "auth-module".some
-      case _ if key.startsWith(ds.scriptDataStore.key(""))             => "script".some
-      case _ if key.startsWith(ds.dataExporterConfigDataStore.key("")) => "data-exporter".some
-      case _ if key.startsWith(ds.teamDataStore.key(""))               => "team".some
-      case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
-      case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some
-      case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
-      case _ if key.startsWith(ds.routeDataStore.key(""))              => "route".some
-      case _ if key.startsWith(ds.routeCompositionDataStore.key(""))   => "route-composition".some
-      case _ if key.startsWith(ds.backendsDataStore.key(""))           => "backend".some
-      case _ if key.startsWith(ds.wasmPluginsDataStore.key(""))        => "wasm-plugin".some
-      case _                                                           => {
+    KindExtractorHelper.findKind(key)(env)
+    //key match {
+    //  case _ if key.startsWith(ds.serviceDescriptorDataStore.key(""))  => "service-descriptor".some v
+    //  case _ if key.startsWith(ds.apiKeyDataStore.key(""))             => "apikey".some  v
+    //  case _ if key.startsWith(ds.certificatesDataStore.key(""))       => "certificate".some  v
+    //  case _ if key.startsWith(ds.serviceGroupDataStore.key(""))       => "service-group".some  v
+    //  case _ if key.startsWith(ds.globalJwtVerifierDataStore.key(""))  => "jwt-verifier".some  v
+    //  case _ if key.startsWith(ds.authConfigsDataStore.key(""))        => "auth-module".some  v
+    //  case _ if key.startsWith(ds.scriptDataStore.key(""))             => "script".some  v
+    //  case _ if key.startsWith(ds.dataExporterConfigDataStore.key("")) => "data-exporter".some  v
+    //  case _ if key.startsWith(ds.teamDataStore.key(""))               => "team".some  v
+    //  case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
+    //  case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some  v
+    //  case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
+    //  case _ if key.startsWith(ds.routeDataStore.key(""))              => "route".some  v
+    //  case _ if key.startsWith(ds.routeCompositionDataStore.key(""))   => "route-composition".some  v
+    //  case _ if key.startsWith(ds.backendsDataStore.key(""))           => "backend".some  v
+    //  case _ if key.startsWith(ds.wasmPluginsDataStore.key(""))        => "wasm-plugin".some v
+    //  case _                                                           => {
+    //    env.allResources.resources
+    //      .collectFirst {
+    //        case res if key.startsWith(res.access.key("")) => res.singularName
+    //      }
+    //      .seffectOn { res =>
+    //        println(s"for key: '${key}' extracted kind '${res}'")
+    //      }
+    //  }
+    //}
+  }
+}
+
+object KindExtractorHelper {
+  private val cache = new UnboundedTrieMap[String, Option[String]]()
+  def findKind(key: String)(implicit env: Env): Option[String] = {
+    cache.get(key) match {
+      case Some(value) => value
+      case None => {
         env.allResources.resources
-          .map { res =>
-            (key.startsWith(res.access.key("")), res.singularName)
+          .collectFirst {
+            case res if key.startsWith(res.access.key("")) => res.singularName
           }
-          .find(_._1)
-          .map(_._2)
+          .seffectOn { res =>
+            println(s"for key: '${key}' extracted kind '${res}'")
+          }
+          .seffectOn { res =>
+            cache.putIfAbsent(key, res)
+          }
       }
     }
   }
