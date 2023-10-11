@@ -240,33 +240,6 @@ trait OptimizedRedisLike {
   }
   def extractKind(key: String, env: Env): Option[String] = {
     KindExtractorHelper.findKind(key)(env)
-    //key match {
-    //  case _ if key.startsWith(ds.serviceDescriptorDataStore.key(""))  => "service-descriptor".some v
-    //  case _ if key.startsWith(ds.apiKeyDataStore.key(""))             => "apikey".some  v
-    //  case _ if key.startsWith(ds.certificatesDataStore.key(""))       => "certificate".some  v
-    //  case _ if key.startsWith(ds.serviceGroupDataStore.key(""))       => "service-group".some  v
-    //  case _ if key.startsWith(ds.globalJwtVerifierDataStore.key(""))  => "jwt-verifier".some  v
-    //  case _ if key.startsWith(ds.authConfigsDataStore.key(""))        => "auth-module".some  v
-    //  case _ if key.startsWith(ds.scriptDataStore.key(""))             => "script".some  v
-    //  case _ if key.startsWith(ds.dataExporterConfigDataStore.key("")) => "data-exporter".some  v
-    //  case _ if key.startsWith(ds.teamDataStore.key(""))               => "team".some  v
-    //  case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
-    //  case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some  v
-    //  case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
-    //  case _ if key.startsWith(ds.routeDataStore.key(""))              => "route".some  v
-    //  case _ if key.startsWith(ds.routeCompositionDataStore.key(""))   => "route-composition".some  v
-    //  case _ if key.startsWith(ds.backendsDataStore.key(""))           => "backend".some  v
-    //  case _ if key.startsWith(ds.wasmPluginsDataStore.key(""))        => "wasm-plugin".some v
-    //  case _                                                           => {
-    //    env.allResources.resources
-    //      .collectFirst {
-    //        case res if key.startsWith(res.access.key("")) => res.singularName
-    //      }
-    //      .seffectOn { res =>
-    //        println(s"for key: '${key}' extracted kind '${res}'")
-    //      }
-    //  }
-    //}
   }
 }
 
