@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Anonymous reporting · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+16.9.2
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="active page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+16.9.2
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="active page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Anonymous reporting</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#anonymous-reporting" name="anonymous-reporting" class="anchor"><span class="anchor-link"></span></a>Anonymous reporting</h1>
+<p>The best way of supporting us in Otoroshi developement is to enable Anonymous reporting.</p>
+<h2><a href="#details" name="details" class="anchor"><span class="anchor-link"></span></a>Details</h2>
+<p>When this feature is active, Otoroshi perdiodically send anonymous information about its configuration.</p>
+<p>This information helps us to know how Otoroshi is used, it&rsquo;s a precious hint to prioritise our roadmap.</p>
+<p>Below is an example of what is send by Otoroshi. You can find more information about these fields either on <a href="../entities/index.html">entities documentation</a> or <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/jobs/reporting.scala#L174-L458">by reading the source code</a>.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;@timestamp&quot;: 1679514537259,
+  &quot;timestamp_str&quot;: &quot;2023-03-22T20:48:57.259+01:00&quot;,
+  &quot;@id&quot;: &quot;4edb54171-8156-4947-b821-41d6c2bd1ba7&quot;,
+  &quot;otoroshi_cluster_id&quot;: &quot;1148aee35-a487-47b0-b494-a2a44862c618&quot;,
+  &quot;otoroshi_version&quot;: &quot;16.0.0-dev&quot;,
+  &quot;java_version&quot;: {
+    &quot;version&quot;: &quot;11.0.16.1&quot;,
+    &quot;vendor&quot;: &quot;Eclipse Adoptium&quot;
+  },
+  &quot;os&quot;: {
+    &quot;name&quot;: &quot;Mac OS X&quot;,
+    &quot;version&quot;: &quot;13.1&quot;,
+    &quot;arch&quot;: &quot;x86_64&quot;
+  },
+  &quot;datastore&quot;: &quot;file&quot;,
+  &quot;env&quot;: &quot;dev&quot;,
+  &quot;features&quot;: {
+    &quot;snow_monkey&quot;: false,
+    &quot;clever_cloud&quot;: false,
+    &quot;kubernetes&quot;: false,
+    &quot;elastic_read&quot;: true,
+    &quot;lets_encrypt&quot;: false,
+    &quot;auto_certs&quot;: false,
+    &quot;wasm_manager&quot;: true,
+    &quot;backoffice_login&quot;: false
+  },
+  &quot;stats&quot;: {
+    &quot;calls&quot;: 3823,
+    &quot;data_in&quot;: 480406,
+    &quot;data_out&quot;: 4698261,
+    &quot;rate&quot;: 0,
+    &quot;duration&quot;: 35.89899494949495,
+    &quot;overhead&quot;: 24.696984848484846,
+    &quot;data_in_rate&quot;: 0,
+    &quot;data_out_rate&quot;: 0,
+    &quot;concurrent_requests&quot;: 0
+  },
+  &quot;engine&quot;: {
+    &quot;uses_new&quot;: true,
+    &quot;uses_new_full&quot;: false
+  },
+  &quot;cluster&quot;: {
+    &quot;mode&quot;: &quot;Leader&quot;,
+    &quot;all_nodes&quot;: 1,
+    &quot;alive_nodes&quot;: 1,
+    &quot;leaders_count&quot;: 1,
+    &quot;workers_count&quot;: 0,
+    &quot;nodes&quot;: [
+      {
+        &quot;id&quot;: &quot;node_15ac62ec3-3e0d-48c1-a8ea-15de97088e3c&quot;,
+        &quot;os&quot;: {
+          &quot;name&quot;: &quot;Mac OS X&quot;,
+          &quot;version&quot;: &quot;13.1&quot;,
+          &quot;arch&quot;: &quot;x86_64&quot;
+        },
+        &quot;java_version&quot;: {
+          &quot;version&quot;: &quot;11.0.16.1&quot;,
+          &quot;vendor&quot;: &quot;Eclipse Adoptium&quot;
+        },
+        &quot;version&quot;: &quot;16.0.0-dev&quot;,
+        &quot;type&quot;: &quot;Leader&quot;,
+        &quot;cpu_usage&quot;: 10.992902320605205,
+        &quot;load_average&quot;: 44.38720703125,
+        &quot;heap_used&quot;: 527,
+        &quot;heap_size&quot;: 2048,
+        &quot;relay&quot;: true,
+        &quot;tunnels&quot;: 0
+      }
+    ]
+  },
+  &quot;entities&quot;: {
+    &quot;scripts&quot;: {
+      &quot;count&quot;: 0,
+      &quot;by_kind&quot;: {}
+    },
+    &quot;routes&quot;: {
+      &quot;count&quot;: 24,
+      &quot;plugins&quot;: {
+        &quot;min&quot;: 1,
+        &quot;max&quot;: 26,
+        &quot;avg&quot;: 4
+      }
+    },
+    &quot;router_routes&quot;: {
+      &quot;count&quot;: 27,
+      &quot;http_clients&quot;: {
+        &quot;ahc&quot;: 25,
+        &quot;akka&quot;: 2,
+        &quot;netty&quot;: 0,
+        &quot;akka_ws&quot;: 0
+      },
+      &quot;plugins&quot;: {
+        &quot;min&quot;: 1,
+        &quot;max&quot;: 26,
+        &quot;avg&quot;: 4
+      }
+    },
+    &quot;route_compositions&quot;: {
+      &quot;count&quot;: 1,
+      &quot;plugins&quot;: {
+        &quot;min&quot;: 1,
+        &quot;max&quot;: 1,
+        &quot;avg&quot;: 1
+      },
+      &quot;by_kind&quot;: {
+        &quot;global&quot;: 1
+      }
+    },
+    &quot;apikeys&quot;: {
+      &quot;count&quot;: 6,
+      &quot;by_kind&quot;: {
+        &quot;disabled&quot;: 0,
+        &quot;with_rotation&quot;: 0,
+        &quot;with_read_only&quot;: 0,
+        &quot;with_client_id_only&quot;: 0,
+        &quot;with_constrained_services&quot;: 0,
+        &quot;with_meta&quot;: 2,
+        &quot;with_tags&quot;: 1
+      },
+      &quot;authorized_on&quot;: {
+        &quot;min&quot;: 1,
+        &quot;max&quot;: 4,
+        &quot;avg&quot;: 2
+      }
+    },
+    &quot;jwt_verifiers&quot;: {
+      &quot;count&quot;: 6,
+      &quot;by_strategy&quot;: {
+        &quot;pass_through&quot;: 6
+      },
+      &quot;by_alg&quot;: {
+        &quot;HSAlgoSettings&quot;: 6
+      }
+    },
+    &quot;certificates&quot;: {
+      &quot;count&quot;: 9,
+      &quot;by_kind&quot;: {
+        &quot;auto_renew&quot;: 6,
+        &quot;exposed&quot;: 6,
+        &quot;client&quot;: 1,
+        &quot;keypair&quot;: 1
+      }
+    },
+    &quot;auth_modules&quot;: {
+      &quot;count&quot;: 8,
+      &quot;by_kind&quot;: {
+        &quot;basic&quot;: 7,
+        &quot;oauth2&quot;: 1
+      }
+    },
+    &quot;service_descriptors&quot;: {
+      &quot;count&quot;: 3,
+      &quot;plugins&quot;: {
+        &quot;old&quot;: 0,
+        &quot;new&quot;: 0
+      },
+      &quot;by_kind&quot;: {
+        &quot;disabled&quot;: 1,
+        &quot;fault_injection&quot;: 0,
+        &quot;health_check&quot;: 1,
+        &quot;gzip&quot;: 0,
+        &quot;jwt&quot;: 0,
+        &quot;cors&quot;: 1,
+        &quot;auth&quot;: 0,
+        &quot;protocol&quot;: 0,
+        &quot;restrictions&quot;: 0
+      }
+    },
+    &quot;teams&quot;: {
+      &quot;count&quot;: 2
+    },
+    &quot;tenants&quot;: {
+      &quot;count&quot;: 2
+    },
+    &quot;service_groups&quot;: {
+      &quot;count&quot;: 2
+    },
+    &quot;data_exporters&quot;: {
+      &quot;count&quot;: 10,
+      &quot;by_kind&quot;: {
+        &quot;elastic&quot;: 5,
+        &quot;file&quot;: 2,
+        &quot;metrics&quot;: 1,
+        &quot;console&quot;: 1,
+        &quot;s3&quot;: 1
+      }
+    },
+    &quot;otoroshi_admins&quot;: {
+      &quot;count&quot;: 5,
+      &quot;by_kind&quot;: {
+        &quot;simple&quot;: 2,
+        &quot;webauthn&quot;: 3
+      }
+    },
+    &quot;backoffice_sessions&quot;: {
+      &quot;count&quot;: 1,
+      &quot;by_kind&quot;: {
+        &quot;simple&quot;: 1
+      }
+    },
+    &quot;private_apps_sessions&quot;: {
+      &quot;count&quot;: 0,
+      &quot;by_kind&quot;: {}
+    },
+    &quot;tcp_services&quot;: {
+      &quot;count&quot;: 0
+    }
+  },
+  &quot;plugins_usage&quot;: {
+    &quot;cp:otoroshi.next.plugins.AdditionalHeadersOut&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.DisableHttp10&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.OverrideHost&quot;: 27,
+    &quot;cp:otoroshi.next.plugins.TailscaleFetchCertificate&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.OtoroshiInfos&quot;: 6,
+    &quot;cp:otoroshi.next.plugins.MissingHeadersOut&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.Redirection&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.OtoroshiChallenge&quot;: 5,
+    &quot;cp:otoroshi.next.plugins.BuildMode&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.XForwardedHeaders&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.NgLegacyAuthModuleCall&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.Cors&quot;: 4,
+    &quot;cp:otoroshi.next.plugins.OtoroshiHeadersIn&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.NgDefaultRequestBody&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.NgHttpClientCache&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.ReadOnlyCalls&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.RemoveHeadersIn&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.JwtVerificationOnly&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.WasmAccessValidator&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.WasmBackend&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.IpAddressAllowedList&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.AuthModule&quot;: 4,
+    &quot;cp:otoroshi.next.plugins.RemoveHeadersOut&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.IpAddressBlockList&quot;: 2,
+    &quot;cp:otoroshi.next.proxy.ProxyEngine&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.JwtVerification&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.GzipResponseCompressor&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.SendOtoroshiHeadersBack&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.AdditionalHeadersIn&quot;: 4,
+    &quot;cp:otoroshi.next.plugins.SOAPAction&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.NgLegacyApikeyCall&quot;: 6,
+    &quot;cp:otoroshi.next.plugins.ForceHttpsTraffic&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.NgErrorRewriter&quot;: 1,
+    &quot;cp:otoroshi.next.plugins.MissingHeadersIn&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.MaintenanceMode&quot;: 3,
+    &quot;cp:otoroshi.next.plugins.RoutingRestrictions&quot;: 2,
+    &quot;cp:otoroshi.next.plugins.HeadersValidation&quot;: 2
+  }
+}
+</code></pre>
+<h2><a href="#toggling" name="toggling" class="anchor"><span class="anchor-link"></span></a>Toggling</h2>
+<p>Anonymous reporting can be toggled any time using :</p>
+<ul>
+  <li>the UI (Features &gt; Danger zone &gt; Send anonymous reports)</li>
+  <li><code>otoroshi.anonymous-reporting.enabled</code> configuration</li>
+  <li><code>OTOROSHI_ANONYMOUS_REPORTING_ENABLED</code> env variable</li>
+</ul>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/opentelemetry.html">OpenTelemetry support</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/anonymous-reporting.html#anonymous-reporting" class="header">Anonymous reporting</a>
+  <ul>
+    <li><a href="../topics/anonymous-reporting.html#details" class="header">Details</a></li>
+    <li><a href="../topics/anonymous-reporting.html#toggling" class="header">Toggling</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2023</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
