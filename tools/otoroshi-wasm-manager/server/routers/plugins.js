@@ -13,6 +13,8 @@ const { InformationsReader } = require('../services/informationsReader');
 const { WebSocket } = require('../services/websocket');
 const { Publisher } = require('../services/publish-job');
 const { ENV } = require('../configuration');
+const { GetObjectCommand, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { copySync } = require('fs-extra');
 
 const router = express.Router()
 
@@ -63,25 +65,25 @@ router.get('/:id', (req, res) => {
     Key: `${filename}.zip`
   }
 
-  s3
-    .getObject(params)
-    .promise()
+  s3.send(new GetObjectCommand(params))
+    .then(data => new fetch.Response(data.Body).buffer())
     .then(data => {
       res.attachment('plugin.zip');
-      res.send(data.Body);
+      res.send(data);
     })
-    .catch(err => {
+    .catch((err) => {
       res
-        .status(err.statusCode)
+        .status(err.$metadata.httpStatusCode)
         .json({
-          error: err.code,
-          status: err.statusCode
+          error: err.Code,
+          status: err.$metadata.httpStatusCode
         })
     })
 })
 
 router.get('/:id/configurations', (req, res) => {
-  const { s3, Bucket } = S3.state()
+  const { s3, Bucket } = S3.state();
+
   UserManager.getUser(req)
     .then(data => {
       const plugin = data.plugins.find(f => f.pluginId === req.params.id)
@@ -95,11 +97,11 @@ router.get('/:id/configurations', (req, res) => {
         }, null, 4)
       }]
 
-      s3.getObject({
+      s3.send(new GetObjectCommand({
         Bucket,
         Key: `${plugin.pluginId}-logs.zip`
-      })
-        .promise()
+      }))
+        .then(data => new fetch.Response(data.Body).buffer())
         .then(data => {
           res.json([
             ...files,
@@ -107,7 +109,7 @@ router.get('/:id/configurations', (req, res) => {
               ext: 'zip',
               filename: 'logs',
               readOnly: true,
-              content: data.Body
+              content: data
             }
           ])
         })
@@ -115,8 +117,6 @@ router.get('/:id/configurations', (req, res) => {
           console.log(err)
           res.json(files)
         })
-
-
     })
 })
 
@@ -180,17 +180,19 @@ function createPluginFromGithub(req) {
         }
 
         // create and add new plugin to the user
-        s3.upload(params, err => {
-          if (err) {
-            resolve({
-              status: err.statusCode,
-              result: err.code
-            });
-          }
-          else {
-            resolve({ status: 201 })
-          }
-        });
+        s3.send(new PutObjectCommand(params))
+          .then(() => resolve({ status: 201 }))
+          .catch(err => {
+            if (err) {
+              resolve({
+                status: err.$metadata.httpStatusCode,
+                result: err.Code
+              });
+            }
+            else {
+              resolve({ status: 201 })
+            }
+          });
       });
   })
     .catch(err => {
@@ -228,24 +230,21 @@ router.post('/', (req, res) => {
             })
           }
 
-          s3.upload(params, (err, data) => {
-            if (err) {
+          s3.send(new PutObjectCommand(params))
+            .then(() => res
+              .status(201)
+              .json({
+                plugins
+              }))
+            .catch(err => {
               console.log(err)
               res
-                .status(err.statusCode)
+                .status(err.$metadata.httpStatusCode)
                 .json({
-                  error: err.code,
-                  status: err.statusCode
+                  error: err.Code,
+                  status: err.$metadata.httpStatusCode
                 })
-            }
-            else {
-              res
-                .status(201)
-                .json({
-                  plugins
-                })
-            }
-          })
+            })
         })
     })
     .catch(err => {
@@ -266,20 +265,18 @@ router.put('/:id', (req, res) => {
     Body: req.body
   }
 
-  s3.putObject(params, (err, data) => {
-    if (err) {
+  s3.send(new PutObjectCommand(params))
+    .then(() => res
+      .status(204)
+      .json(null))
+    .catch(err => {
       res
-        .status(err.statusCode)
+        .status(err.$metadata.httpStatusCode)
         .json({
-          error: err.code,
-          status: err.statusCode
+          error: err.Code,
+          status: err.$metadata.httpStatusCode
         })
-    } else {
-      res
-        .status(204)
-        .json(null)
-    }
-  })
+    })
 })
 
 router.delete('/:id', async (req, res) => {
@@ -302,20 +299,18 @@ router.delete('/:id', async (req, res) => {
           Key: `${pluginHash}.zip`
         }
 
-        s3.deleteObject(params, (err, data) => {
-          if (err) {
+        s3.send(new DeleteObjectCommand(params))
+          .then(() => res
+            .status(204)
+            .json(null))
+          .catch(err => {
             res
-              .status(err.statusCode)
+              .status(err.$metadata.httpStatusCode)
               .json({
-                error: err.code,
-                status: err.statusCode
+                error: err.Code,
+                status: err.$metadata.httpStatusCode
               })
-          } else {
-            res
-              .status(204)
-              .json(null)
-          }
-        })
+          })
       })
   } else {
     res
@@ -522,16 +517,15 @@ router.post('/:id/publish', (req, res) => {
           });
         } else {
           const { s3, Bucket } = S3.state();
-          s3
-            .getObject({
-              Bucket,
-              Key: `${pluginId}.zip`
-            })
-            .promise()
+          s3.send(new GetObjectCommand({
+            Bucket,
+            Key: `${pluginId}.zip`
+          }))
+            .then(data => new fetch.Response(data.Body).buffer())
             .then(data => {
               Publisher.addPluginToQueue({
                 plugin: pluginId,
-                zipString: data.Body
+                zipString: data
               })
               res.json({
                 queue_id: pluginId
@@ -540,10 +534,10 @@ router.post('/:id/publish', (req, res) => {
             .catch(err => {
               console.log(err)
               res
-                .status(err.statusCode)
+                .status(err.$metadata.httpStatusCode)
                 .json({
-                  error: err.code,
-                  status: err.statusCode
+                  error: err.Code,
+                  status: err.$metadata.httpStatusCode
                 })
             })
         }

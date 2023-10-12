@@ -1,55 +1,48 @@
+const consumers = require('node:stream/consumers')
+const { GetObjectCommand, PutObjectCommand, HeadObjectCommand } = require("@aws-sdk/client-s3");
 const manager = require("../logger");
 const { S3 } = require("../s3");
 const { format } = require("../utils");
+const fetch = require('node-fetch');
 
 const log = manager.createLogger('[user SERVICE]')
 
 const getUsers = () => {
   const { s3, Bucket } = S3.state()
 
-  return new Promise(resolve => {
-    s3.getObject({
-      Bucket,
-      Key: 'users.json'
-    }, (err, data) => {
-      if (err) {
-        resolve([])
-      } else {
-        try {
-          resolve(JSON.parse(data.Body.toString('utf-8')))
-        } catch (err) {
-          console.log(err)
-          resolve([])
-        }
-      }
-    })
-  })
+  return s3.send(new GetObjectCommand({
+    Bucket,
+    Key: 'users.json'
+  }))
+    .then(data => new fetch.Response(data.Body).json())
+    .catch(err => console.log(err))
 }
 
 const addUser = user => {
   const { s3, Bucket } = S3.state()
 
-  return new Promise(resolve => {
-    s3.getObject({
+  return new Promise((resolve, reject) => {
+    s3.send(new GetObjectCommand({
       Bucket,
       Key: 'users.json'
-    }, (err, data) => {
-      let users = []
-      if (!err) {
+    }))
+      .then(data => {
+        let users = []
         try {
           users = JSON.parse(data.Body.toString('utf-8'))
         } catch (err) { }
-      }
 
-      s3.putObject({
-        Bucket,
-        Key: 'users.json',
-        Body: JSON.stringify([
-          ...users,
-          user
-        ])
-      }, resolve)
-    })
+        s3.send(new PutObjectCommand({
+          Bucket,
+          Key: 'users.json',
+          Body: JSON.stringify([
+            ...users,
+            user
+          ])
+        }))
+          .then(resolve)
+      })
+      .catch(err => reject(err))
   })
 }
 
@@ -58,23 +51,24 @@ const createUserIfNotExists = req => {
 
   const user = format(req.user.email)
 
-  return new Promise((resolve, reject) => {
-    s3.getObject({
-      Bucket,
-      Key: `${user}.json`
-    }, (err, data) => {
+  return new Promise((resolve, reject) => s3.send(new HeadObjectCommand({
+    Bucket,
+    Key: `${user}.json`
+  }))
+    .then(() => resolve(true))
+    .catch(err => {
       if (err) {
-        if (err.code === 'NoSuchKey') {
+        if (err.Code === 'NoSuchKey') {
           addUser(user)
             .then(resolve)
+            .catch(reject)
         } else {
           reject(err)
         }
       } else {
         resolve(true)
       }
-    })
-  })
+    }))
 }
 
 const _getUser = key => {
@@ -82,23 +76,25 @@ const _getUser = key => {
 
   log.debug(`search user: ${key}`)
 
+
   return new Promise(resolve => {
-    s3.getObject({
+    s3.send(new GetObjectCommand({
       Bucket,
       Key: `${key}.json`
-    }, (err, data) => {
-      if (err) {
-        resolve({})
-      }
-      try {
-        if (data && data.Body)
-          resolve(JSON.parse(data.Body.toString('utf-8')))
-        else
+    }))
+      .then(data => {
+        try {
+          if (data && data.Body) {
+            consumers.json(data.Body)
+              .then(resolve)
+          }
+          else
+            resolve({})
+        } catch (err) {
           resolve({})
-      } catch (err) {
-        resolve({})
-      }
-    })
+        }
+      })
+      .catch(_ => resolve({}))
   })
 }
 
@@ -117,22 +113,21 @@ const updateUser = (req, content) => {
   // log.info(`updateUser ${jsonProfile}`)
 
   return new Promise(resolve => {
-    s3.putObject({
+    s3.send(new PutObjectCommand({
       Bucket,
       Key: `${jsonProfile}.json`,
       Body: JSON.stringify(content)
-    }, (err, data) => {
-      if (err) {
+    }))
+      .then(_ => resolve({
+        status: 200
+      }))
+      .catch(err => {
         log.info('updateUser', err)
         resolve({
-          error: err.code,
-          status: err.statusCode
+          error: err.Code,
+          status: err.$metadata.httpStatusCode
         })
-      }
-      resolve({
-        status: 200
       })
-    })
   })
 }
 

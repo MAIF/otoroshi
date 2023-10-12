@@ -8,6 +8,8 @@ const { FileSystem } = require('./file-system');
 const { unzipTo } = require('../utils');
 const { S3 } = require('../s3');
 const { ENV } = require('../configuration');
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
+const fetch = require('node-fetch');
 
 const log = manager.createLogger('PUBLISHER');
 
@@ -44,9 +46,9 @@ const build = ({ plugin, zipString }) => {
 
           const { s3, Bucket } = S3.state()
 
-          s3.getObject({ Bucket, Key: source })
-            .promise()
-            .then(data => fs.writeFile(`${folder}/${source}`, data.Body))
+          s3.send(new GetObjectCommand({ Bucket, Key: source }))
+            .then(data => new fetch.Response(data.Body).buffer())
+            .then(data => fs.writeFile(`${folder}/${source}`, data))
             .then(err => {
               if (err) {
                 throw err;
@@ -65,7 +67,7 @@ const build = ({ plugin, zipString }) => {
             })
             .catch(err => {
               console.log(err)
-              onFailedProcess(folder, { error: err.code, status: err.statusCode }, reject)
+              onFailedProcess(folder, { error: err.Code, status: err.$metadata.httpStatusCode }, reject)
             });
         });
       }

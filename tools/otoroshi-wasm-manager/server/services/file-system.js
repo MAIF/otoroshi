@@ -64,7 +64,7 @@ const existsFile = (...paths) => {
     fs.stat(path.join(process.cwd(), ...paths), function (err, stat) {
       if (err == null) {
         resolve();
-      } else if (err.code === 'ENOENT') {
+      } else if (err.Code === 'ENOENT') {
         reject("file does not exist");
       } else {
         reject(err);
