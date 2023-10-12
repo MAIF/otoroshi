@@ -9,6 +9,27 @@
     const uuid      = dependencies.uuid;
     const Table     = dependencies.Components.Inputs.Table;
     const BackOfficeServices     = dependencies.BackOfficeServices;
+
+    class FooTab extends Component {
+
+      componentDidMount() {
+        const { FeedbackButton, setSaveButton, isCreation } = this.props.settings;
+        setSaveButton(
+          React.createElement(FeedbackButton, {
+            className: "ms-2 mb-1",
+            onPress: () => console.log("onPress"),
+            text: isCreation ? `Create route` : `Save route`,
+            icon: () =>  React.createElement('i', { className: "fas fa-paper-plane" }),
+          })
+        );
+      }
+
+      render() {
+        return (
+          React.createElement('div', null, React.createElement('h1', { style: { color: 'white' }}, 'Tab extension !'))
+        );
+      }
+    }
     
     class FoosPage extends Component {
   
@@ -86,6 +107,14 @@
     
     return {
       id: extensionId,
+      routeDesignerTabs: [
+        {
+          id: "foo",
+          label: "Foo",
+          icon: 'fas fa-pencil',
+          render: (settings) =>  React.createElement(FooTab, { settings }),
+        }
+      ],
       pluginForms: [
         {
           id: 'cp:otoroshi.next.extensions.FooPlugin',

@@ -21,8 +21,10 @@ import { SquareButton } from '../../components/SquareButton';
 import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
 import { Dropdown } from '../../components/Dropdown';
+import { FeedbackButton } from './FeedbackButton';
 import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
+import _ from 'lodash';
 
 function DeleteRouteButton(props) {
   const what = window.location.pathname.split('/')[3];
@@ -182,6 +184,35 @@ function DesignerTab({ isActive, entity, value, history }) {
   );
 }
 
+function ExtensionTab({ isActive, entity, value, history, item }) {
+  return (
+    <div className="ms-2">
+      <button
+        type="button"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
+        onClick={() => {
+          const to = `/${entity.link}/${value.id}?tab=${item.id}`;
+          if (!window.location.href.includes(to))
+            history.replace({
+              pathname: to,
+              state: {
+                value,
+              },
+            });
+        }}
+        style={{
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
+          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
+        }}>
+        <i className={`${item.icon} me-2`} style={{ fontSize: '1.33333em' }} />
+        {item.label}
+      </button>
+    </div>
+  );
+}
+
 function TesterButton({
   disabled,
   setForceTester,
@@ -285,6 +316,14 @@ function ManagerTitle({
       visible: () => !isOnViewPlugins,
       component: () => <DesignerTab isActive={query === 'flow'} {...commonsProps} />,
     },
+    Otoroshi.extensions()
+        .flatMap((ext) => ext.routeDesignerTabs || [])
+        .map((item) => {
+          return {
+            visible: () => item.visible ? item.visible(entity, value, isOnViewPlugins) : true,
+            component: () => <ExtensionTab isActive={query === item.id} {...commonsProps} item={item} />,
+          };
+        }),
     {
       component: () => (
         <TesterButton
@@ -305,8 +344,16 @@ function ManagerTitle({
         <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
       ),
     },
-  ];
+  ].flatMap(item => {
+    if (Array.isArray(item)) {
+      return item;
+    } else {
+      return [item];
+    }
+  });
 
+  const maybeExtensionTab = Otoroshi.extensions().flatMap((ext) => ext.routeDesignerTabs || []).find(item => item.id === query);
+  const maybeExtensionTabLabel = maybeExtensionTab ? maybeExtensionTab.label : '';
   return (
     <PageTitle
       style={{
@@ -318,7 +365,7 @@ function ManagerTitle({
           informations: 'Informations',
           routes: 'Routes',
           route_plugins: 'Route plugins',
-        }[query]
+        }[query] || maybeExtensionTabLabel
       }>
       {!isCreation &&
         tabs
@@ -515,7 +562,31 @@ class Manager extends React.Component {
             />
           ),
       },
-    ];
+      Otoroshi.extensions()
+        .flatMap((ext) => ext.routeDesignerTabs || [])
+        .map((item) => {
+          return {
+            predicate: query && query === item.id,
+            render: () => item.render({ 
+              value: this.state.value, 
+              history,
+              query, 
+              isCreation, 
+              setValue: (v) => this.setState({ value: v }, this.setTitle),
+              setSaveButton: (n) => this.setState({ saveButton: n, saveTypeButton: item.id }),
+              setMenu: (n) => this.setState({ menu: n, menuRefreshed: Date.now() }),
+              FeedbackButton: FeedbackButton,
+              props: this.props 
+            }),
+          };
+        }),
+    ].flatMap(item => {
+      if (Array.isArray(item)) {
+        return item;
+      } else {
+        return [item];
+      }
+    });
 
     const component = divs.filter((p) => p.predicate);
 
