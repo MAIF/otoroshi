@@ -168,7 +168,7 @@ export default class CustomTable extends React.Component {
                 boxShadow: `0 0 0 1px var(--color-primary,transparent)`,
                 color: 'var(--text)',
               }}>
-              Start New Group
+              Start new group
             </Link>
           </div>
         )}

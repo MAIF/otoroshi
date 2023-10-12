@@ -158,10 +158,7 @@ export function ManagerTitle({}) {
 
   return (
     <PageTitle
-      style={{
-        paddingBottom: 0,
-      }}
-      className="ms-0 mb-3"
+      className="ms-0 mb-3 pb-0"
       title={"Green score"}
     >
       {!editingGroup && !isOnCreation && (
@@ -186,9 +183,6 @@ export function ManagerTitle({}) {
 
           <div
             className="ms-2 pb-1"
-            style={{
-              height: "100%",
-            }}
           >
             <button
               type="button"
@@ -205,7 +199,6 @@ export function ManagerTitle({}) {
             >
               <i
                 className="fas fa-plus-circle me-2"
-                style={{ fontSize: "1.33333em" }}
               />
               Add new group
             </button>
