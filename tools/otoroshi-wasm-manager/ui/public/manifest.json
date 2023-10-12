@@ -1,6 +1,6 @@
 {
-  "name": "OTO WASM",
-  "short_name": "WASM COMPILER",
+  "name": "Wasmo",
+  "short_name": "wasmo",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

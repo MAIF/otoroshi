@@ -1,8 +1,9 @@
-const AWS = require('aws-sdk');
+const { S3Client, HeadBucketCommand, CreateBucketCommand, DeleteObjectCommand, ListObjectsCommand } = require('@aws-sdk/client-s3');
+
 const dns = require('dns');
 const url = require('url');
 const manager = require('./logger');
-const { ENV, STORAGE } = require('./configuration');
+const { ENV } = require('./configuration');
 const log = manager.createLogger('wasm-manager');
 
 let state = {
@@ -13,18 +14,13 @@ let state = {
 const configured = () => ENV.S3_BUCKET;
 
 const initializeS3Connection = () => {
-  AWS.config.update({
-    accessKeyId: ENV.S3_ACCESS_KEY_ID,
-    secretAccessKey: ENV.S3_SECRET_ACCESS_KEY
-  });
-
   if (ENV.DOCKER_USAGE) {
     const URL = url.parse(ENV.S3_ENDPOINT)
-
     return new Promise(resolve => dns.lookup(URL.hostname, function (err, ip) {
       log.debug(`${URL.protocol}//${ip}:${URL.port}${URL.pathname}`)
       state = {
-        s3: new AWS.S3({
+        s3: new S3Client({
+          region: ENV.S3_REGION,
           endpoint: `${URL.protocol}//${ip}:${URL.port}${URL.pathname}`,
           s3ForcePathStyle: ENV.S3_FORCE_PATH_STYLE
         }),
@@ -34,9 +30,10 @@ const initializeS3Connection = () => {
     }))
   } else {
     state = {
-      s3: new AWS.S3({
+      s3: new S3Client({
+        region: ENV.S3_REGION,
         endpoint: ENV.S3_ENDPOINT,
-        s3ForcePathStyle: ENV.S3_FORCE_PATH_STYLE
+        s3ForcePathStyle: ENV.S3_FORCE_PATH_STYLE,
       }),
       Bucket: ENV.S3_BUCKET
     }
@@ -49,14 +46,13 @@ const initializeS3Connection = () => {
 const createBucketIfMissing = () => {
   const params = { Bucket: state.Bucket }
 
-  return state.s3.headBucket(params)
-    .promise()
+  return state.s3.send(new HeadBucketCommand(params))
     .then(() => log.info("Using existing bucket"))
     .catch(res => {
-      if (res.statusCode === 404) {
+      if (res.httpStatusCode === 404) {
         log.error(`Bucket ${state.Bucket} is missing.`)
         return new Promise(resolve => {
-          state.s3.createBucket(params, err => {
+          state.s3.send(new CreateBucketCommand(params), err => {
             if (err) {
               throw err;
             } else {
@@ -82,12 +78,12 @@ const cleanBucket = () => {
           reject(err)
         else
           Promise.all(data.Contents.map(({ Key }) => {
-            return state.s3.deleteObject({
+            return state.s3.send(new DeleteObjectCommand({
               Bucket: state.Bucket,
               Key
-            }, (err, d) => {
-              reject(err)
-            })
+            }))
+              .then(resolve)
+              .catch(reject)
           }))
             .then(resolve)
       })
@@ -95,15 +91,11 @@ const cleanBucket = () => {
 }
 
 const listObjects = () => {
-  state.s3
-    .listObjects({
-      Bucket: state.Bucket
-    }, (err, data) => {
-      if (err)
-        console.log(err)
-      else
-        console.log(data)
-    })
+  state.s3.send(new ListObjectsCommand({
+    Bucket: state.Bucket
+  }))
+    .then(console.log)
+    .catch(console.log)
 }
 
 module.exports = {

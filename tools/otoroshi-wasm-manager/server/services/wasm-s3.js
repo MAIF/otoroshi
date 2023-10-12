@@ -3,6 +3,8 @@ const fs = require('fs-extra');
 const AdmZip = require('adm-zip');
 
 const { UserManager } = require('./user');
+const { GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
+const fetch = require("node-fetch");
 
 
 const isAString = variable => typeof variable === 'string' || variable instanceof String;
@@ -15,11 +17,13 @@ const putWasmFileToS3 = (wasmFolder) => {
       if (err)
         reject(err)
       else
-        s3.upload({
+        s3.send(new PutObjectCommand({
           Bucket,
           Key: wasmFolder.split('/').slice(-1)[0],
           Body: data
-        }, err => err ? reject(err) : resolve())
+        }))
+          .then(resolve)
+          .catch(reject)
     })
   })
 }
@@ -32,11 +36,13 @@ const putBuildLogsToS3 = (logId, logsFolder) => {
   zip.addLocalFolder(logsFolder, 'logs')
 
   return new Promise((resolve, reject) => {
-    s3.upload({
+    s3.send(new PutObjectCommand({
       Bucket,
       Key: logId,
       Body: zip.toBuffer()
-    }, err => err ? reject(err) : resolve())
+    }))
+      .then(resolve)
+      .catch(reject)
   })
 }
 
@@ -91,18 +97,18 @@ function getWasm(Key, res) {
   const { s3, Bucket } = S3.state()
 
   return new Promise(resolve => {
-    s3.getObject({
+    s3.send(new GetObjectCommand({
       Bucket,
       Key
-    })
-      .promise()
+    }))
+      .then(data => new fetch.Response(data.Body).buffer())
       .then(data => {
-        resolve({ content: data.Body });
+        resolve({ content: data });
       })
       .catch(err => {
         resolve({
-          error: err.code,
-          status: err.statusCode
+          error: err.Code,
+          status: err.$metadata.httpStatusCode
         })
       });
   })

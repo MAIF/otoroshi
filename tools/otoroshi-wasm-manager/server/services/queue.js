@@ -10,6 +10,7 @@ const opaCompiler = require('./compiler/opa');
 
 const { BuildOptions, CompilerOptions } = require('./compiler/compiler');
 const { ENV } = require('../configuration');
+const { GetObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 
 const COMPILERS = {
   'js': JsCompiler,
@@ -85,10 +86,12 @@ module.exports = {
       if (!release) {
         return Promise.resolve(false);
       } else {
-        return new Promise(resolve => s3.getObject({
+        return s3.send(new HeadObjectCommand({
           Bucket,
           Key: `${name}.wasm`
-        }, err => err && err.code === 'NoSuchKey' ? resolve(false) : resolve(true)))
+        }))
+          .then(() => true)
+          .catch(() => false)
       }
     }
   }
