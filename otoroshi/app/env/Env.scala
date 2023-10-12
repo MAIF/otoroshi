@@ -528,8 +528,8 @@ class Env(
   lazy val adminApiAdditionalExposedDomain: Option[String] =
     configuration.getOptionalWithFileSupport[String]("app.adminapi.additionalExposedDomain")
 
-  lazy val backofficeUseNewEngine: Boolean =
-    configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.useNewEngine").getOrElse(false)
+  // lazy val backofficeUseNewEngine: Boolean =
+  //   configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.useNewEngine").getOrElse(false)
   lazy val backofficeUsePlay: Boolean      =
     configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.usePlay").getOrElse(true)
   lazy val backOfficeSubDomain: String     =

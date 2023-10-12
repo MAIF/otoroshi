@@ -188,9 +188,8 @@ class BackOfficeController(
             )
           )
         )
-      case Some(apikey) if env.backofficeUsePlay                                 => passWithPlay(ctx, apikey)
-      case Some(apikey) if !env.backofficeUsePlay && env.backofficeUseNewEngine  => passWithNewEngine(ctx, apikey)
-      case Some(apikey) if !env.backofficeUsePlay && !env.backofficeUseNewEngine => passWithOldEngine(ctx, apikey, path)
+      case Some(apikey) if env.backofficeUsePlay => passWithPlay(ctx, apikey)
+      case Some(apikey)                          => passWithOldEngine(ctx, apikey, path)
     }
   }
 
@@ -208,24 +207,24 @@ class BackOfficeController(
     }
   }
 
-  private def passWithNewEngine(
-      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
-      apikey: ApiKey
-  ): Future[Result] = {
-    logger.debug(s"using new engine for ${ctx.request.method} ${ctx.request.theUrl}")
-    env.scriptManager.getAnyScript[RequestHandler](NgPluginHelper.pluginId[ProxyEngine]) match {
-      case Left(err)         =>
-        Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
-      case Right(raw_engine) => {
-        val engine          = raw_engine.asInstanceOf[ProxyEngine]
-        implicit val global = env.datastores.globalConfigDataStore.latest()
-        val raw_request     = ctx.request
-        val host            = env.adminApiExposedHost
-        val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
-        engine.handleRequest(request, engine.getConfig())
-      }
-    }
-  }
+  // private def passWithNewEngine(
+  //     ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+  //     apikey: ApiKey
+  // ): Future[Result] = {
+  //   logger.debug(s"using new engine for ${ctx.request.method} ${ctx.request.theUrl}")
+  //   env.scriptManager.getAnyScript[RequestHandler](NgPluginHelper.pluginId[ProxyEngine]) match {
+  //     case Left(err)         =>
+  //       Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
+  //     case Right(raw_engine) => {
+  //       val engine          = raw_engine.asInstanceOf[ProxyEngine]
+  //       implicit val global = env.datastores.globalConfigDataStore.latest()
+  //       val raw_request     = ctx.request
+  //       val host            = env.adminApiExposedHost
+  //       val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
+  //       engine.handleRequest(request, engine.getConfig())
+  //     }
+  //   }
+  // }
 
   private def passWithOldEngine(
       ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
