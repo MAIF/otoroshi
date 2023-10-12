@@ -84,8 +84,7 @@ build_and_push_jar_templates () {
   OTO_VERSION="$1"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "11"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "17"
-  # build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "21"
-  build_and_push_jar_template_version_multi_arch_correto_and_dev "$OTO_VERSION" "21"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "21"
 }
 
 setup_docker_builder () {
@@ -130,8 +129,7 @@ case "${1}" in
     OTO_VERSION="dev"
     JDK_VERSION="21"
     copy_build
-    # docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
-    docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
+    docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
     cleanup
     ;;
   build-and-push-snapshot)
