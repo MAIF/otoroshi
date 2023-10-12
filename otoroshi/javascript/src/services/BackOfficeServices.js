@@ -365,7 +365,6 @@ export function fetchServiceStatus(serviceId) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
     },
   })
     .then((r) => {
