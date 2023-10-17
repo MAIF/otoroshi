@@ -61,7 +61,7 @@ lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "2.9.3"
 lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
-lazy val bouncyCastleVersion     = "1.70"
+lazy val bouncyCastleVersion     = "1.76"
 lazy val pulsarVersion           = "2.8.1"
 lazy val openTelemetryVersion    = "1.28.0"
 lazy val jacksonVersion          = "2.13.4"
@@ -132,9 +132,9 @@ libraryDependencies ++= Seq(
   "org.scala-lang"                   % "scala-library"                             % scalaLangVersion,
   "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcpkix-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-ext-jdk15on"                        % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
+  "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
+  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                        % bouncyCastleVersion excludeAll (excludesJackson: _*),
+  "org.bouncycastle"                 % "bcprov-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),

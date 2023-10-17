@@ -34,9 +34,11 @@ import javax.net.ssl._
 import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
+import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
+import org.bouncycastle.operator.DefaultAlgorithmNameFinder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
@@ -1097,7 +1099,8 @@ object DynamicSSLEngineProvider {
   import org.bouncycastle.jce.provider.BouncyCastleProvider
   import java.security.Security
 
-  Security.addProvider(new BouncyCastleProvider())
+  val bouncyCastleProvider = new BouncyCastleProvider()
+  Security.addProvider(bouncyCastleProvider)
 
   type KeyStoreError = String
 
@@ -1573,7 +1576,7 @@ object DynamicSSLEngineProvider {
                 keyStore.setKeyEntry(
                   if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
                   key,
-                  cert.password.getOrElse("").toCharArray,
+                  "".toCharArray, 
                   certificateChain.toArray[java.security.cert.Certificate]
                 )
 
@@ -1585,7 +1588,7 @@ object DynamicSSLEngineProvider {
                       keyStore.setKeyEntry(
                         name,
                         key,
-                        cert.password.getOrElse("").toCharArray,
+                        "".toCharArray, 
                         certificateChain.toArray[java.security.cert.Certificate]
                       )
                     }
@@ -1600,7 +1603,7 @@ object DynamicSSLEngineProvider {
               }
             }
           } match {
-            case Failure(e) => logger.error(s"Error while handling certificate: ${cert.name}: " + e.getMessage)
+            case Failure(e) => logger.error(s"Error while handling certificate: ${cert.name}: " + e.getMessage, e)
             case Success(e) =>
           }
         }
@@ -1656,8 +1659,11 @@ object DynamicSSLEngineProvider {
     Try(KeyFactory.getInstance("RSA").generatePrivate(encodedKeySpec))
       .orElse(Try(KeyFactory.getInstance("EC").generatePrivate(encodedKeySpec)))
       .orElse(Try(KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec)))
-    //.orElse(Try(KeyFactory.getInstance("DiffieHellman")).map(_.generatePrivate(encodedKeySpec)))
-    //.get
+      .orElse(Try(KeyFactory.getInstance("DiffieHellman").generatePrivate(encodedKeySpec)))
+      .orElse(Try(KeyFactory.getInstance("XDH").generatePrivate(encodedKeySpec)))
+      .orElse(Try(KeyFactory.getInstance("X25519").generatePrivate(encodedKeySpec)))
+      .orElse(Try(KeyFactory.getInstance("X25519").generatePrivate(encodedKeySpec)))
+      .orElse(Try(KeyFactory.getInstance("RSASSA-PSS").generatePrivate(encodedKeySpec)))
   }
 
   def _readPrivateKeySpec(
@@ -1675,12 +1681,14 @@ object DynamicSSLEngineProvider {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
       keyPassword
         .map { kpv =>
-          val encryptedPrivateKeyInfo      = new EncryptedPrivateKeyInfo(encodedKey)
-          val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivateKeyInfo.getAlgName)
-          val secretKey: SecretKey         = keyFactory.generateSecret(new PBEKeySpec(kpv.toCharArray))
-          val cipher: Cipher               = Cipher.getInstance(encryptedPrivateKeyInfo.getAlgName)
+          val encryptedPrivateKeyInfo = new EncryptedPrivateKeyInfo(encodedKey)
+          val algName = encryptedPrivateKeyInfo.getAlgParameters.toString
+          val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(algName)
+          val secretKey: SecretKey = keyFactory.generateSecret(new PBEKeySpec(kpv.toCharArray))
+          val cipher: Cipher = Cipher.getInstance(algName)
           cipher.init(DECRYPT_MODE, secretKey, encryptedPrivateKeyInfo.getAlgParameters)
-          Right(encryptedPrivateKeyInfo.getKeySpec(cipher))
+          val spec = encryptedPrivateKeyInfo.getKeySpec(cipher)
+          Right(spec)
         }
         .getOrElse {
           Right(new PKCS8EncodedKeySpec(encodedKey))
@@ -1714,7 +1722,12 @@ object DynamicSSLEngineProvider {
           case ukp: PEMKeyPair                                   =>
             val kp = converter.getKeyPair(ukp)
             kp.getPrivate.some
-          case _                                                 => None
+          case upk: org.bouncycastle.asn1.pkcs.PrivateKeyInfo if keyPassword.isEmpty =>
+            val kp = converter.getPrivateKey(upk)
+            kp.some
+          case _: org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo if keyPassword.nonEmpty =>
+            CertInfo.stringToPrivateKey(content, keyPassword.get).some
+          case _ => None
         }
       } match {
         case Failure(e)         =>
