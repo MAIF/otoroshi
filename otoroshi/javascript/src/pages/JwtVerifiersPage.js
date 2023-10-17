@@ -24,7 +24,7 @@ export class JwtVerifiersPage extends Component {
   ];
 
   componentDidMount() {
-    this.setTitle('Global Jwt Verifiers');
+    this.setTitle('Jwt verifiers');
   }
 
   setTitle = (title, onPress, verifier) => {
@@ -95,7 +95,7 @@ export class JwtVerifiersPage extends Component {
           }}
           selfUrl="jwt-verifiers"
           defaultTitle="Global Jwt Verifiers"
-          itemName="Jwt Verifier"
+          itemName="Jwt verifier"
           kubernetesKind="JwtVerifier"
           export={false}
           displayTrash={false}

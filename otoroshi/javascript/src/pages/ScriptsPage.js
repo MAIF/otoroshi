@@ -494,7 +494,7 @@ export class ScriptsPage extends Component {
   formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'tags', 'metadata'];
 
   componentDidMount() {
-    this.props.setTitle(`All Plugins`);
+    this.props.setTitle(`Plugins`);
   }
 
   render() {

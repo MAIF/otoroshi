@@ -2072,7 +2072,7 @@ export class ServicePage extends Component {
               <div className="col-sm-10 input-group-btn">
                 {!this.state.service.authConfigRef && (
                   <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
-                    <i className="fas fa-plus" /> Create a new auth. module
+                    <i className="fas fa-plus" /> Create a new authentication module
                   </Link>
                 )}
                 {this.state.service.authConfigRef && (

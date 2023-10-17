@@ -17,7 +17,7 @@ export class AuthModuleConfigsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global auth. modules`);
+    this.props.setTitle(`Authentication modules`);
   }
 
   gotoConfig = (config) => {
@@ -69,7 +69,7 @@ export class AuthModuleConfigsPage extends Component {
             };
             return defv;
           }}
-          itemName="Auth. module"
+          itemName="Authentication module"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           columns={this.columns}

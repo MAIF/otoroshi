@@ -172,7 +172,7 @@ export class WasmPluginsPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle('All Wasm Plugins');
+    this.props.setTitle('Wasm plugins');
   }
 
   gotoWasmPlugin = (wasmPlugin) => {
@@ -536,7 +536,7 @@ export class WasmPluginsPage extends Component {
           formFlow={this.formFlow}
           defaultTitle={this.title}
           defaultValue={BackOfficeServices.createNewWasmPlugin}
-          itemName="WasmPlugin"
+          itemName="Wasm plugin"
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={(paginationState) =>

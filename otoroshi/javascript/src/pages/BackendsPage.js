@@ -41,7 +41,7 @@ export class BackendsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`All backends`);
+    this.props.setTitle(`Backends`);
   }
 
   render() {
@@ -52,7 +52,7 @@ export class BackendsPage extends Component {
         selfUrl="backends"
         defaultTitle="All backends"
         defaultValue={() => client.template()}
-        itemName="backend"
+        itemName="Backend"
         formSchema={this.formSchema}
         formFlow={this.formFlow}
         columns={this.columns}

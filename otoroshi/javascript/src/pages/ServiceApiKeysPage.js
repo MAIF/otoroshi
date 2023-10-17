@@ -780,7 +780,7 @@ export class ApiKeysPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle(`All apikeys`);
+    this.props.setTitle(`Apikeys`);
   }
 
   fetchAllApiKeys = (paginationState) => {

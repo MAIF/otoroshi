@@ -189,13 +189,13 @@ export class ServicesPage extends Component {
     const env = this.props.location.query.env;
     const group = this.props.location.query.group;
     if (env && group) {
-      this.title = `All services for '${env}' and group '${this.props.location.query.group}'`;
+      this.title = `Services for '${env}' and group '${this.props.location.query.group}'`;
     } else if (env) {
-      this.title = `All services for '${env}'`;
+      this.title = `Services for '${env}'`;
     } else if (group) {
-      this.title = `All services for '${this.props.location.query.group}'`;
+      this.title = `Services for '${this.props.location.query.group}'`;
     } else {
-      this.title = `All services`;
+      this.title = `Services`;
     }
     this.props.setTitle(this.title);
 
