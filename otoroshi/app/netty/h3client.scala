@@ -220,7 +220,13 @@ class NettyHttp3Client(val env: Env) {
           promise.tryFailure(exception)
         }
 
-        override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame, isLast: Boolean): Unit = {
+        override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
+          ctx.close()
+          hotSource.tryEmitComplete()
+        }
+
+        override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame): Unit = {
+          val isLast = false
           if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast}")
           if (headersReceived) {
             val trailerHeaders = frame
@@ -244,7 +250,8 @@ class NettyHttp3Client(val env: Env) {
           }
         }
 
-        override def channelRead(ctx: ChannelHandlerContext, frame: Http3DataFrame, isLast: Boolean): Unit = {
+        override def channelRead(ctx: ChannelHandlerContext, frame: Http3DataFrame): Unit = {
+          val isLast = false
           val content = frame.content().toString(CharsetUtil.US_ASCII)
           val chunk   = ByteString(content)
           if (logger.isDebugEnabled) logger.debug(s"got data frame !!! - ${isLast}")
@@ -264,6 +271,12 @@ class NettyHttp3Client(val env: Env) {
             ctx.close()
             hotSource.tryEmitComplete()
           }
+        }
+
+        override def channelInputClosed(ctx: ChannelHandlerContext): Unit = {
+          // TODO: check if right
+          ctx.close()
+          hotSource.tryEmitComplete()
         }
       }
     )

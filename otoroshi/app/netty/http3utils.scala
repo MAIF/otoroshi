@@ -36,14 +36,15 @@ import otoroshi.utils.syntax.implicits._
 
 import java.net.SocketAddress;
 
-class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler with ChannelOutboundHandler {
+class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler with ChannelOutboundHandler {
 
   val validateHeaders = true
 
-  override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame, isLast: Boolean): Unit = {
+  override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame): Unit = {
+    val isLast = false
     val headers = frame.headers()
-    val id      = ctx.channel().asInstanceOf[QuicStreamChannel].streamId()
     val status  = headers.status()
+    val id      = ctx.channel().asInstanceOf[QuicStreamChannel].streamId()
     if (null != status && HttpResponseStatus.CONTINUE.codeAsText().contentEquals(status)) {
       val fullMsg = newFullMessage(id, headers, ctx.alloc())
       ctx.fireChannelRead(fullMsg)
@@ -67,11 +68,19 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
     }
   }
 
+  override def channelInputClosed(ctx: ChannelHandlerContext): Unit = {
+    ctx.close()
+  }
+
+  override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
+    ctx.fireChannelReadComplete()
+  }
+
   override def channelRead(
       ctx: ChannelHandlerContext,
       frame: io.netty.incubator.codec.http3.Http3DataFrame,
-      isLast: Boolean
   ): Unit = {
+    val isLast = false
     if (isLast) {
       ctx.fireChannelRead(new DefaultLastHttpContent(frame.content()))
     } else {
