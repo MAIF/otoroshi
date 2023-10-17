@@ -66,7 +66,7 @@ export class GroupsPage extends Component {
   formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata'];
 
   componentDidMount() {
-    this.props.setTitle(`All service groups`);
+    this.props.setTitle(`Groups`);
   }
 
   render() {
@@ -74,9 +74,9 @@ export class GroupsPage extends Component {
       <Table
         parentProps={this.props}
         selfUrl="groups"
-        defaultTitle="All service groups"
+        defaultTitle="Groups"
         defaultValue={BackOfficeServices.createNewGroup}
-        itemName="group"
+        itemName="Group"
         formSchema={this.formSchema}
         formFlow={this.formFlow}
         columns={this.columns}

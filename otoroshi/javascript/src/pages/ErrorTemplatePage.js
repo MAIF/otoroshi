@@ -136,7 +136,7 @@ export class ErrorTemplatesPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle('All Error Templates');
+    this.props.setTitle('Error templates');
     BackOfficeServices.findAllServicesWithPagination({
       page: 1,
       pageSize: 999,
