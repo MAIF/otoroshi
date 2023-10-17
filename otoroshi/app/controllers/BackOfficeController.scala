@@ -1826,6 +1826,7 @@ class BackOfficeController(
             case ElasticVersion.UnderSeven(_)      => ElasticTemplates.indexTemplate_v6
             case ElasticVersion.AboveSeven(_)      => ElasticTemplates.indexTemplate_v7
             case ElasticVersion.AboveSevenEight(_) => ElasticTemplates.indexTemplate_v7_8
+            case ElasticVersion.AboveEight(_) => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
             strTpl

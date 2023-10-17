@@ -374,6 +374,7 @@ object ElasticWritesAnalytics {
         config.version match {
           case Some(rawVersion) => {
             val version = Version(rawVersion) match {
+              case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(rawVersion)
               case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(rawVersion)
               case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(rawVersion)
               case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(rawVersion)
@@ -390,12 +391,31 @@ object ElasticWritesAnalytics {
 
 sealed trait ElasticVersion {
   def underSeven: Boolean
+  def underEight: Boolean
+  def aboveOrEqualsEight: Boolean
 }
 object ElasticVersion       {
 
-  case class UnderSeven(raw: String)      extends ElasticVersion { def underSeven: Boolean = true  }
-  case class AboveSeven(raw: String)      extends ElasticVersion { def underSeven: Boolean = false }
-  case class AboveSevenEight(raw: String) extends ElasticVersion { def underSeven: Boolean = false }
+  case class UnderSeven(raw: String)      extends ElasticVersion {
+    def underSeven: Boolean = true
+    def underEight: Boolean = true
+    def aboveOrEqualsEight: Boolean = false
+  }
+  case class AboveSeven(raw: String)      extends ElasticVersion {
+    def underSeven: Boolean = false
+    def underEight: Boolean = true
+    def aboveOrEqualsEight: Boolean = false
+  }
+  case class AboveSevenEight(raw: String) extends ElasticVersion {
+    def underSeven: Boolean = false
+    def underEight: Boolean = true
+    def aboveOrEqualsEight: Boolean = false
+  }
+  case class AboveEight(raw: String) extends ElasticVersion {
+    def underSeven: Boolean = false
+    def underEight: Boolean = false
+    def aboveOrEqualsEight: Boolean = true
+  }
 
   val defaultStr: String      = "6.0.0"
   val default: ElasticVersion = UnderSeven(defaultStr)
@@ -450,6 +470,7 @@ object ElasticUtils {
     config.version match {
       case Some(version) => {
         (Version(version) match {
+          case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(version)
           case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(version)
           case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(version)
           case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(version)
@@ -463,6 +484,7 @@ object ElasticUtils {
             case Left(err) => ElasticVersion.default
             case Right(_v) => {
               Version(_v) match {
+                case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(_v)
                 case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
                 case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
                 case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
@@ -510,6 +532,8 @@ object ElasticUtils {
         case ElasticVersion.UnderSeven(_)      => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
         case ElasticVersion.AboveSeven(_)      => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
         case ElasticVersion.AboveSevenEight(_) =>
+          (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
+        case ElasticVersion.AboveEight(_) =>
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
@@ -657,6 +681,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       config.version match {
         case Some(versionRaw) => {
           val version = Version(versionRaw) match {
+            case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(versionRaw)
             case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
             case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
             case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
@@ -669,6 +694,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
             case Left(err)         => ElasticWritesAnalytics.initialized(config, ElasticVersion.default)
             case Right(versionRaw) => {
               val version = Version(versionRaw) match {
+                case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(versionRaw)
                 case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
                 case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
                 case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
@@ -772,6 +798,22 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   }
 }
 
+object ElasticReadsAnalytics {
+  private val cache = new UnboundedTrieMap[String, ElasticVersion]()
+  def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger)(implicit env: Env): ElasticVersion = {
+    val key: String = config.uris.mkString(",")
+    cache.get(key) match {
+      case Some(version) =>
+        version
+      case None => {
+        val version = Await.result(ElasticUtils.getElasticVersion(config, logger, env)(env.otoroshiExecutionContext), 30.seconds)
+        cache.putIfAbsent(key, version)
+        version
+      }
+    }
+  }
+}
+
 class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsReadsService {
 
   private val executionContext: ExecutionContext = env.analyticsExecutionContext
@@ -787,6 +829,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private implicit val mat                      = Materializer(system)
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
+
+  private lazy val version = ElasticReadsAnalytics.getElasticVersion(config, logger)(env)
 
   private def authHeader(): Option[String] = ElasticUtils.authHeader(config)
 
@@ -974,9 +1018,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                        "aggs"  -> Json.obj(
                          "codesOverTime" -> Json.obj(
                            "date_histogram" -> Json.obj(
-                             "interval" -> "hour",
                              "field"    -> "@timestamp"
                            )
+                           .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "hour") }
+                           .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "hour") }
                          )
                        ),
                        "range" -> Json.obj(
@@ -1006,9 +1051,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                          "aggs"  -> Json.obj(
                            "codesOverTime" -> Json.obj(
                              "date_histogram" -> Json.obj(
-                               "interval" -> "hour",
                                "field"    -> "@timestamp"
                              )
+                             .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "hour") }
+                             .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "hour") }
                            )
                          ),
                          "range" -> Json.obj(
@@ -1189,8 +1235,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                      "stats" -> Json.obj(
                        "date_histogram" -> Json.obj(
                          "field"    -> "@timestamp",
-                         "interval" -> calcInterval(mayBeFrom, mayBeTo)
-                       ),
+                       )
+                       .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> calcInterval(mayBeFrom, mayBeTo)) }
+                       .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> calcInterval(mayBeFrom, mayBeTo)) },
                        "aggs"           -> Json.obj(
                          "stats" -> Json.obj(
                            "extended_stats" -> Json.obj(
@@ -1213,8 +1260,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                        "stats" -> Json.obj(
                          "date_histogram" -> Json.obj(
                            "field"    -> "@timestamp",
-                           "interval" -> calcInterval(mayBeFrom, mayBeTo)
-                         ),
+                         )
+                         .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> calcInterval(mayBeFrom, mayBeTo)) }
+                         .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> calcInterval(mayBeFrom, mayBeTo)) },
                          "aggs"           -> Json.obj(
                            "stats" -> Json.obj(
                              "extended_stats" -> Json.obj(
@@ -1260,8 +1308,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                      "stats" -> Json.obj(
                        "date_histogram" -> Json.obj(
                          "field"    -> "@timestamp",
-                         "interval" -> calcInterval(mayBeFrom, mayBeTo)
-                       ),
+                       )
+                       .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> calcInterval(mayBeFrom, mayBeTo)) }
+                       .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> calcInterval(mayBeFrom, mayBeTo)) },
                        "aggs"           -> Json.obj(
                          "stats" -> Json.obj(
                            "percentiles" -> Json.obj(
@@ -1284,8 +1333,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                        "stats" -> Json.obj(
                          "date_histogram" -> Json.obj(
                            "field"    -> "@timestamp",
-                           "interval" -> calcInterval(mayBeFrom, mayBeTo)
-                         ),
+                         )
+                         .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> calcInterval(mayBeFrom, mayBeTo)) }
+                         .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> calcInterval(mayBeFrom, mayBeTo)) },
                          "aggs"           -> Json.obj(
                            "stats" -> Json.obj(
                              "percentiles" -> Json.obj(
@@ -1450,7 +1500,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                        "terms" -> Json.obj(
                          "field" -> field,
                          "order" -> Json.obj(
-                           "_term" -> "asc"
+                           "_key" -> "asc"
                          ),
                          "size"  -> size
                        )
@@ -1470,7 +1520,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                          "terms" -> Json.obj(
                            "field" -> field,
                            "order" -> Json.obj(
-                             "_term" -> "asc"
+                             "_key" -> "asc"
                            ),
                            "size"  -> size
                          )
@@ -1821,11 +1871,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                          "date" -> Json.obj(
                            "date_histogram" -> Json.obj(
                              "field"           -> "@timestamp",
-                             "interval"        -> "day",
                              "format"          -> "yyyy-MM-dd",
                              "min_doc_count"   -> 0,
                              "extended_bounds" -> extendedBounds
-                           ),
+                           )
+                           .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "day") }
+                           .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "day") }
+                           .debugPrintln,
                            "aggs"           -> Json.obj(
                              "status" -> Json.obj(
                                "terms" -> Json.obj(
@@ -1865,11 +1917,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                            "date" -> Json.obj(
                              "date_histogram" -> Json.obj(
                                "field"           -> "@timestamp",
-                               "interval"        -> "day",
                                "format"          -> "yyyy-MM-dd",
                                "min_doc_count"   -> 0,
                                "extended_bounds" -> extendedBounds
-                             ),
+                             )
+                             .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "day") }
+                             .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "day") },
                              "aggs"           -> Json.obj(
                                "status" -> Json.obj(
                                  "terms" -> Json.obj(
@@ -1972,11 +2025,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                      "dates" -> Json.obj(
                        "date_histogram" -> Json.obj(
                          "field"           -> "@timestamp",
-                         "interval"        -> "hour",
                          "format"          -> "yyyy-MM-dd",
                          "min_doc_count"   -> 0,
                          "extended_bounds" -> extendedBounds
-                       ),
+                       )
+                       .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "hour") }
+                       .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "hour") },
                        "aggs"           -> Json.obj(
                          "duration" -> Json.obj(
                            "avg" -> Json.obj(
@@ -2006,11 +2060,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                        "dates" -> Json.obj(
                          "date_histogram" -> Json.obj(
                            "field"           -> "@timestamp",
-                           "interval"        -> "hour",
                            "format"          -> "yyyy-MM-dd",
                            "min_doc_count"   -> 0,
                            "extended_bounds" -> extendedBounds
-                         ),
+                         )
+                         .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "hour") }
+                         .applyOnIf(version.aboveOrEqualsEight) { obj => obj ++ Json.obj("calendar_interval" -> "hour") },
                          "aggs"           -> Json.obj(
                            "duration" -> Json.obj(
                              "avg" -> Json.obj(
