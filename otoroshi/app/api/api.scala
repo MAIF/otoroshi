@@ -886,7 +886,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     env.allResources.resources
       .filter(_.version.served)
       .find(r =>
-        (group == "any" || r.group == group) && (version == "any" || r.version.name == version) && r.pluralName == entity
+        (group == "any" || group == "all" || r.group == group) && (version == "any" || version == "all" || r.version.name == version) && r.pluralName == entity
       ) match {
       case None                                               => result(Results.NotFound, notFoundBody, request, None).vfuture
       case Some(resource) if !resource.access.canBulk && bulk =>

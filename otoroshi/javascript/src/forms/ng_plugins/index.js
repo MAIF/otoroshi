@@ -31,6 +31,7 @@ import HMACValidator from './HMACValidator';
 import HeadersValidation from './HeadersValidation';
 import HtmlPatcher from './HtmlPatcher';
 import Http3Switch from './Http3Switch';
+import ImageReplacer from './ImageReplacer';
 import IpAddressAllowedList from './IpAddressAllowedList';
 import IpAddressBlockList from './IpAddressBlockList';
 import JQ from './JQ';
@@ -165,6 +166,7 @@ const pluginsArray = [
   HeadersValidation,
   HtmlPatcher,
   Http3Switch,
+  ImageReplacer,
   IpAddressAllowedList,
   IpAddressBlockList,
   JQ,
