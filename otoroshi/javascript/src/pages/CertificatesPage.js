@@ -609,7 +609,7 @@ export class CertificatesPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`All certificates`);
+    this.props.setTitle(`Certificates`);
     if (
       (window.history.state && window.history.state.cert) ||
       (this.props.location && this.props.location.state && this.props.location.state.cert)
@@ -850,7 +850,7 @@ export class CertificatesPage extends Component {
         defaultTitle="All SSL/TLS certificates"
         _defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
         defaultValue={BackOfficeServices.createNewCertificate}
-        itemName="certificate"
+        itemName="Certificate"
         formSchema={this.formSchema}
         formFlow={this.formFlow}
         columns={this.columns}

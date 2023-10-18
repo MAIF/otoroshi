@@ -7,8 +7,8 @@ export default function GreenScoreExtension(extensionId, ctx) {
     id: extensionId,
     sidebarItems: [
       {
-        title: 'Green scores',
-        text: 'All your Green Scores',
+        title: 'Green score',
+        text: 'All your Green score',
         path: 'extensions/green-score',
         icon: 'leaf',
       },

@@ -788,7 +788,7 @@ export class TopBar extends Component {
         options.push({
           action: () => this.routeTo('/jwt-verifiers'),
           env: <span className="fas fa-circle-check" />,
-          label: 'Global Jwt Verifiers',
+          label: 'Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
         options.push({
@@ -1780,7 +1780,7 @@ export class TopBar extends Component {
                       }}>
                       {this.props && !this.props.env.initWithNewEngine && (
                         <li className="d-flex">
-                          <Link to="/services">Service desc.</Link>
+                          <Link to="/services">Service</Link>
                         </li>
                       )}
                       <li className="d-flex">
@@ -1793,13 +1793,13 @@ export class TopBar extends Component {
                         <Link to="/apikeys/add">Apikey</Link>
                       </li>
                       <li className="d-flex">
-                        <Link to="/certificates/add">Certificates</Link>
+                        <Link to="/certificates/add">Certificate</Link>
                       </li>
                       <li className="d-flex">
                         <Link to="/auth-configs/add">Auth. module</Link>
                       </li>
                       <li className="d-flex">
-                        <Link to="/jwt-verifiers/add">Jwt Verifier</Link>
+                        <Link to="/jwt-verifiers/add">Jwt verifier</Link>
                       </li>
                       <li className="d-flex">
                         <Link to="/tcp/services/add">TCP service</Link>
@@ -1813,7 +1813,7 @@ export class TopBar extends Component {
                         .flatMap((ext) => ext.creationItems)
                         .map((item) => (
                           <li className="d-flex" key={item.title}>
-                            <Link to={item.path}>{item.title}</Link>
+                            <Link to={`/${item.path}`}>{item.title}</Link>
                           </li>
                         ))}
                     </ul>

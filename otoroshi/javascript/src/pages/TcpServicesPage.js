@@ -234,7 +234,7 @@ export class TcpServicesPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle('All Tcp Services');
+    this.props.setTitle('Tcp services');
   }
 
   gotoService = (service) => {
@@ -356,7 +356,7 @@ export class TcpServicesPage extends Component {
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           defaultValue={BackOfficeServices.createNewTcpService}
-          itemName="Tcp Service"
+          itemName="Tcp service"
           defaultTitle="All Tcp Services"
           columns={this.columns}
           stayAfterSave={true}

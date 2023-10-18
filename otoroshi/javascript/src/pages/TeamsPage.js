@@ -30,7 +30,7 @@ export class TeamsPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle('All Teams');
+    this.props.setTitle('Teams');
   }
 
   gotoTeam = (team) => {

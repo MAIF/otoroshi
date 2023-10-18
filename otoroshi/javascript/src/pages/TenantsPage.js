@@ -30,7 +30,7 @@ export class TenantsPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle('All Organizations');
+    this.props.setTitle('Organizations');
   }
 
   gotoTenant = (tenant) => {

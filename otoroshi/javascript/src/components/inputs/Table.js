@@ -675,7 +675,7 @@ export class Table extends Component {
                         buttons: (
                           <button
                             type="button"
-                            className="btn btn-sm btn-primary me-1"
+                            className="btn btn-sm btn-success me-1"
                             onClick={this.createItem}>
                             <i className="fas fa-hdd" /> Create {this.props.itemName}
                           </button>
@@ -726,12 +726,12 @@ export class Table extends Component {
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-success"
                       onClick={this.createItemAndStay}>
                       <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
+                  <button type="button" className="btn btn-success" onClick={this.createItem}>
                     <i className="fas fa-hdd" /> Create {this.props.itemName}
                   </button>
                 </div>

@@ -84,6 +84,7 @@ export function DefaultSidebar(props) {
         openedSidebar={openedSidebar}
         clearSidebar={clearSidebar}
         path="auth-configs"
+        title="auth. modules"
         text="List all auth. modules declared in Otoroshi"
         icon="lock"
       />
@@ -92,6 +93,7 @@ export function DefaultSidebar(props) {
         openedSidebar={openedSidebar}
         clearSidebar={clearSidebar}
         path="jwt-verifiers"
+        title="Jwt verifiers"
         text="List all jwt verifiers declared in Otoroshi"
         icon="circle-check"
       />
@@ -100,6 +102,7 @@ export function DefaultSidebar(props) {
         openedSidebar={openedSidebar}
         clearSidebar={clearSidebar}
         path="tcp/services"
+        title="TCP services"
         text="List all Tcp services declared in Otoroshi"
         icon="cubes"
       />
@@ -108,6 +111,7 @@ export function DefaultSidebar(props) {
         openedSidebar={openedSidebar}
         clearSidebar={clearSidebar}
         path="exporters"
+        title="Data exporters"
         text="List all data exporters declared in Otoroshi"
         icon="paper-plane"
       />
@@ -116,6 +120,7 @@ export function DefaultSidebar(props) {
         openedSidebar={openedSidebar}
         clearSidebar={clearSidebar}
         path="wasm-plugins"
+        title="wasm plugins"
         text="List all wasm-plugins declared in Otoroshi"
         icon="plug"
       />

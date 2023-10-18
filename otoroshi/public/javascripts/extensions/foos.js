@@ -69,7 +69,7 @@
       formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata'];
     
       componentDidMount() {
-        this.props.setTitle(`All foos`);
+        this.props.setTitle(`Foos`);
       }
 
       client = BackOfficeServices.apisClient('foo.extensions.otoroshi.io', 'v1', 'foos');
@@ -81,7 +81,7 @@
               selfUrl: "extensions/foo/foos",
               defaultTitle: "All foos",
               defaultValue: () => ({ id: 'foo_' + uuid(), name: 'Foo', description: 'New foo', tags: [], metadata: {}}),
-              itemName: "foo",
+              itemName: "Foo",
               formSchema: this.formSchema,
               formFlow: this.formFlow,
               columns: this.columns,

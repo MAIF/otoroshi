@@ -362,7 +362,7 @@ function ManagerTitle({
       title={
         {
           flow: 'Designer',
-          informations: 'Informations',
+          informations: isCreation ? `Create a new Route`: `Update a Route`,
           routes: 'Routes',
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
