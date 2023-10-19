@@ -1,21 +1,34 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext } from "react";
+import { Link } from "react-router-dom";
 
-import { createTooltip } from '../tooltips';
-import { SidebarContext } from '../apps/BackOfficeApp';
-import { firstLetterUppercase } from '../util';
+import { createTooltip } from "../tooltips";
+import { SidebarContext } from "../apps/BackOfficeApp";
+import { firstLetterUppercase } from "../util";
 
-function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, rootClassName }) {
+function SidebarLink({
+  openedSidebar,
+  clearSidebar,
+  path,
+  title,
+  text,
+  icon,
+  rootClassName,
+}) {
   return (
-    <li className={`nav-item mt-0 ${openedSidebar ? 'nav-item--open' : ''}`}>
+    <li className={`nav-item mt-0 ${openedSidebar ? "nav-item--open" : ""}`}>
       <Link
         to={`/${path}`}
         className={`nav-link ${rootClassName(path)}`}
         {...createTooltip(text)}
-        onClick={clearSidebar}>
-        <i className={`fas fa-${icon}`} />{' '}
-        <span style={{ marginTop: '4px' }}>
-          {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+        onClick={clearSidebar}
+      >
+        <i className={`fas fa-${icon}`} />{" "}
+        <span style={{ marginTop: "4px" }}>
+          {!openedSidebar
+            ? ""
+            : title
+            ? firstLetterUppercase(title)
+            : firstLetterUppercase(path)}
         </span>
       </Link>
     </li>
@@ -24,9 +37,20 @@ function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, roo
 
 export function DefaultSidebar(props) {
   const pathname = window.location.pathname;
-  const search = (window.location.search || '?').substring(1);
-  const rootClassName = (part) =>
-    pathname === `/bo/dashboard/${part}` && search === '' ? 'active' : '';
+  const rootClassName = (part) => {
+    if (pathname.startsWith("/bo/dashboard/routes")) {
+      if (
+        pathname.startsWith("/bo/dashboard/routes/new") ||
+        pathname === "/bo/dashboard/routes"
+      ) {
+        return pathname.startsWith(`/bo/dashboard/${part}`) ? "active" : "";
+      } else {
+        return "";
+      }
+    } else {
+      return pathname.startsWith(`/bo/dashboard/${part}`) ? "active" : "";
+    }
+  };
 
   const clearSidebar = () => {
     if (props.setSidebarContent) props.setSidebarContent(null);
@@ -138,20 +162,29 @@ export function DefaultSidebar(props) {
             icon={item.icon}
           />
         ))}
-      <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} pt-3 mt-1`}>
+      <li
+        className={`nav-item ${
+          openedSidebar ? "nav-item--open" : ""
+        } pt-3 mt-1`}
+      >
         <Link
           to="/features"
-          className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
-          {...createTooltip('All features')}
-          onClick={clearSidebar}>
+          className={`nav-link ${rootClassName(
+            "features"
+          )} d-flex align-items-center`}
+          {...createTooltip("All features")}
+          onClick={clearSidebar}
+        >
           <img
             className="icon-menu icon-svg"
             src="/assets/images/svgs/menu-icon.svg"
             style={{
-              marginRight: openedSidebar ? '1em' : '',
+              marginRight: openedSidebar ? "1em" : "",
             }}
           />
-          <span style={{ marginTop: '4px' }}>{!openedSidebar ? '' : 'Features'}</span>
+          <span style={{ marginTop: "4px" }}>
+            {!openedSidebar ? "" : "Features"}
+          </span>
         </Link>
       </li>
     </ul>
