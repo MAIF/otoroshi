@@ -1,7 +1,0 @@
-{
-  "name": "foo",
-  "version": "0.0.1",
-  "devDependencies": {
-    "esbuild": "^0.17.9"
-  }
-}
