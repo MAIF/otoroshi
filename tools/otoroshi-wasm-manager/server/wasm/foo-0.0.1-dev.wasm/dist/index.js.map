@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../index.js"],
+  "sourcesContent": ["export default function execute() { Host.outputString(\"{}\") }"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAe,SAAR,UAA2B;AAAE,OAAK,aAAa,IAAI;AAAE;",
+  "names": []
+}
