@@ -636,7 +636,7 @@ const RoutesView = ({ history, globalEnv }) => {
             <>
               <button
                 onClick={() => setCreation(true)}
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
                 style={{
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',
@@ -646,7 +646,7 @@ const RoutesView = ({ history, globalEnv }) => {
               </button>
               <button
                 onClick={() => setImportServiceDescriptor(true)}
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
                 style={{
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',

@@ -551,11 +551,11 @@ export class Table extends Component {
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
-            <div className="row" style={{ marginBottom: 10, marginTop: 2 }}>
-              <div className="" style={{ position: 'absolute', right: 0, top: 24, width: 'fit-content' }}>
+            <div className="row">
+              <div className="" style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-sm"
                   {...createTooltip('Reload the current table')}
                   onClick={this.update}>
                   <span className="fas fa-sync" />
@@ -563,7 +563,7 @@ export class Table extends Component {
                 {this.props.showActions && !this.props.hideAddItemAction && (
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}>
@@ -573,7 +573,7 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow" style={{ position: 'relative' }}>
+            <div className="rrow" style={{ position: 'relative', marginTop:20 }}>
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"

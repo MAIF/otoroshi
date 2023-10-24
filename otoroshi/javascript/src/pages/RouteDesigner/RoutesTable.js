@@ -139,7 +139,7 @@ export function RoutesTable(props) {
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary" to={`${entity.link}/new?tab=informations`}>
+            <Link className="btn btn-primary btn-sm" to={`${entity.link}/new?tab=informations`}>
               <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
             </Link>
             {props.injectTopBar}
