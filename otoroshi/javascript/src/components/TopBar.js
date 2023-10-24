@@ -621,7 +621,7 @@ export class TopBar extends Component {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query: query.trim() }),
     })
       .then((r) => r.json())
       .then((results) => {
