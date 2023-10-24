@@ -252,7 +252,7 @@ export default class CustomTable extends React.Component {
 
               {group.opened && (
                 <div style={{ background: 'var(--bg-color_level3)', padding: '.5rem 1rem' }}>
-                  {this.props.scores[i].routes.map((_, routeIndex) => {
+                  {this.props.scores[i]?.routes.map((_, routeIndex) => {
                     const routeInformations = this.props.routes.find(
                       (r) => r.id === items[i].routes[routeIndex]?.routeId
                     );
