@@ -18,6 +18,8 @@ import Wrapper from './Wrapper';
 import { NgSelectRenderer } from '../../components/nginputs';
 import Section from './Section';
 import DynamicScore from './DynamicScore';
+import { Link } from 'react-router-dom';
+
 
 function DatePickerSelector({ icon, onClick }) {
   return (
@@ -162,7 +164,7 @@ function FilterSelector({
                   borderRadius: 8,
                   cursor: 'pointer',
                 }}>
-                STATIC <i className="fas fa-spa ms-2" />
+                STATIC
               </div>
               <div
                 onClick={() => addToState('dynamic')}
@@ -691,13 +693,19 @@ export default class GreenScoreConfigsPage extends React.Component {
                   {scores.length === 0 && (
                     <div className="d-flex flex-column justify-content-center align-items-center m-0 mb-3">
                       <p style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-                        No enough data to display the dashboard
+                        Not enough data to display the dashboard
                       </p>
-                      <Tab
-                        title="Start New Group"
-                        fillBackground
+                      <Link
                         to="/extensions/green-score/groups/new"
-                      />
+                        className="btn btn-sm d-flex align-items-center"
+                        style={{
+                          borderRadius: 6,
+                          backgroundColor: 'var(--color-primary)',
+                          boxShadow: `0 0 0 1px var(--color-primary,transparent)`,
+                          color: 'var(--text)',
+                        }}>
+                        Start new group
+                      </Link>
                     </div>
                   )}
                   <div
@@ -831,7 +839,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                               ]
                             }
                             dynamic
-                            title="Dynamic Score"
+                            title="Dynamic score"
                             tag="dynamic"
                           />
                           <GlobalScore

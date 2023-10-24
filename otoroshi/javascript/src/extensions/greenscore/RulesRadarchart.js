@@ -168,22 +168,6 @@ export default class RulesRadarchart extends PureComponent {
               />
             </RadarChart>
           </ResponsiveContainer>
-          <div
-            style={{
-              position: 'absolute',
-              top: 6,
-              right: 6,
-              borderRadius: '50%',
-              background: 'rgba(249, 176, 0, 0.46)',
-              color: '#fff',
-              width: 32,
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <i className="fas fa-chart-area" style={{ fontSize: 'initial' }} />
-          </div>
         </div>
       </Wrapper>
     );
