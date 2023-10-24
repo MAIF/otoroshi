@@ -486,15 +486,15 @@ export class Table extends Component {
         id: 'actions',
         minWidth: 160,
         maxWidth: 160,
-        style: { textAlign: 'center' },
+        style: { textAlign: 'left' },
         filterable: false,
         sortable: false,
         accessor: (item) => (
-          <div style={{ textAlign: 'center' }}>
-            <div className="displayGroupBtn">
+          <div style={{ textAlign: 'left' }}>
+            <div>
               <button
                 type="button"
-                className="btn btn-sm btn-success"
+                className="btn btn-sm btn-success me-2"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
                 onClick={(e) =>
                   this.props.navigateOnEdit
@@ -505,7 +505,7 @@ export class Table extends Component {
               </button>
               {this.props.showLink && (
                 <a
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
                   _onClick={(e) => this.gotoItem(e, item)}>
@@ -515,7 +515,7 @@ export class Table extends Component {
               {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   disabled
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -524,7 +524,7 @@ export class Table extends Component {
               {this.props.displayTrash && !this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   onClick={(e) => this.deleteItem(e, item)}
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -533,7 +533,7 @@ export class Table extends Component {
               {!this.props.displayTrash && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => this.deleteItem(e, item)}>
                   <i className="fas fa-trash" />
@@ -675,7 +675,7 @@ export class Table extends Component {
                         buttons: (
                           <button
                             type="button"
-                            className="btn btn-sm btn-success me-1"
+                            className="btn btn-sm btn-primary me-1"
                             onClick={this.createItem}>
                             <i className="fas fa-hdd" /> Create {this.props.itemName}
                           </button>
@@ -726,12 +726,12 @@ export class Table extends Component {
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
-                      className="btn btn-success"
+                      className="btn btn-primary"
                       onClick={this.createItemAndStay}>
                       <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-success" onClick={this.createItem}>
+                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
                     <i className="fas fa-hdd" /> Create {this.props.itemName}
                   </button>
                 </div>
