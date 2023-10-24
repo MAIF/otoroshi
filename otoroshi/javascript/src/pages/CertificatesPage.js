@@ -907,21 +907,21 @@ export class CertificatesPage extends Component {
                 type="button"
                 onClick={this.createLetsEncrypt}
                 style={{ marginLeft: '5px' }}
-                className="btn btn-primary">
+                className="btn btn-primary btn-sm">
                 <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
               <button
                 type="button"
                 onClick={this.createCertificate}
                 style={{ marginRight: 0 }}
-                className="btn btn-primary">
+                className="btn btn-primary btn-sm">
                 <i className="fas fa-plus-circle" /> Create Certificate
               </button>
               <input
                 type="file"
                 name="export"
                 id="export"
-                className="inputfile btn btn-primary"
+                className="inputfile btn btn-primary btn-sm"
                 ref={(ref) => (this.fileUpload = ref)}
                 style={{ display: 'none' }}
                 onChange={this.importP12}
@@ -929,7 +929,7 @@ export class CertificatesPage extends Component {
               <label
                 htmlFor="export"
                 style={{ marginRight: 0 }}
-                className="fake-inputfile btn btn-primary ">
+                className="fake-inputfile btn btn-primary btn-sm">
                 <i className="fas fa-file" /> Import .p12/.pfx file
               </label>
             </div>

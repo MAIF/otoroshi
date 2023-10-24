@@ -149,6 +149,7 @@ export class JwtVerifiersPage extends Component {
                   showWizard: true,
                 });
               }}
+              className="btn-sm"
               style={{
                 _backgroundColor: 'var(--color-primary)',
                 _borderColor: 'var(--color-primary)',
