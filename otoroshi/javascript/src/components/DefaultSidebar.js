@@ -1,9 +1,10 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { createTooltip } from "../tooltips";
 import { SidebarContext } from "../apps/BackOfficeApp";
 import { firstLetterUppercase } from "../util";
+import { graph } from "../pages/FeaturesPage";
 
 function SidebarLink({
   openedSidebar,
@@ -14,6 +15,12 @@ function SidebarLink({
   icon,
   rootClassName,
 }) {
+  const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || "[]");
+
+  console.log(title, path)
+  if (!shortcuts.includes(title) && !shortcuts.includes(path))
+    return null
+
   return (
     <li className={`nav-item mt-0 ${openedSidebar ? "nav-item--open" : ""}`}>
       <Link
@@ -27,8 +34,8 @@ function SidebarLink({
           {!openedSidebar
             ? ""
             : title
-            ? firstLetterUppercase(title)
-            : firstLetterUppercase(path)}
+              ? firstLetterUppercase(title)
+              : firstLetterUppercase(path)}
         </span>
       </Link>
     </li>
@@ -59,7 +66,9 @@ export function DefaultSidebar(props) {
   const sidebarContext = useContext(SidebarContext);
   const { openedSidebar } = sidebarContext;
 
-  return (
+  const links = graph(props.env);
+
+  return <>
     <ul className="nav flex-column nav-sidebar" style={{ marginTop: 20 }}>
       {props.env && !props.env.initWithNewEngine && (
         <SidebarLink
@@ -162,11 +171,13 @@ export function DefaultSidebar(props) {
             icon={item.icon}
           />
         ))}
-      <li
-        className={`nav-item ${
-          openedSidebar ? "nav-item--open" : ""
-        } pt-3 mt-1`}
-      >
+    </ul>
+    <ul className="nav flex-column nav-sidebar" style={{ marginTop: 20 }}>
+      {links.map((item, i) => {
+        return <Block key={item.title} {...item} first={i === 0} last={i === (links.length - 1)} />
+      })}
+
+      <li className={`nav-item ${openedSidebar ? "nav-item--open" : ""} pt-3 mt-1`}>
         <Link
           to="/features"
           className={`nav-link ${rootClassName(
@@ -188,5 +199,52 @@ export function DefaultSidebar(props) {
         </Link>
       </li>
     </ul>
-  );
+  </>
+}
+
+function Block({ title, features, first, last }) {
+  const [open, setOpen] = useState(false)
+
+  return <div key={title} style={{
+    background: 'var(--bg-color_level1)',
+    borderTopLeftRadius: first ? 6 : 0,
+    borderTopRightRadius: first ? 6 : 0,
+    borderBottomLeftRadius: last ? 6 : 0,
+    borderBottomRightRadius: last ? 6 : 0,
+    cursor: 'pointer',
+    marginBottom: 1
+  }} className="p-2 me-2" onClick={() => setOpen(!open)}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    }}>
+      {title}
+      <i className="fas fa-chevron-down" />
+    </div>
+
+    {open && <div style={{ display: 'flex', flexDirection: 'column' }} className="p-2">
+      {features
+        .filter((d) => d.display === undefined || d.display())
+        .map(({
+          title, link, icon,
+        }) => {
+          const iconValue = icon ? icon() : null;
+          const className = _.isString(iconValue)
+            ? iconValue.indexOf(' ') > -1
+              ? iconValue
+              : `fa ${iconValue}`
+            : null;
+          const zeIcon = iconValue ? _.isString(iconValue) ? <i className={className} /> : iconValue : null;
+          return <Link to={link} key={title} onClick={() => {
+            const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || "[]");
+
+            localStorage.setItem("shortcuts", JSON.stringify([...new Set([...shortcuts, title.toLowerCase()])]))
+          }}>
+            {zeIcon}
+            {title}
+          </Link>
+        })}
+    </div>}
+  </div>
 }

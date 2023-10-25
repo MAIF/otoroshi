@@ -289,7 +289,7 @@ class BackOfficeAppContainer extends Component {
                 <div
                   className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''}`}
                   style={{
-                    alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
+                    // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                   }}>
                   {this.state.env && (
                     <GlobalTenantSelector
