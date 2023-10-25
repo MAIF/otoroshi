@@ -18,11 +18,12 @@
 }
 
 .active,
-.active *{
+.active * {
   color: var(--color-primary) !important;
 }
-.active .icon-svg{
-  background-color:var(--color-primary) ;
+
+.active .icon-svg {
+  background-color: var(--color-primary);
 }
 
 .dashboard-button:hover {
@@ -32,7 +33,7 @@
   border-radius: 5px;
 }
 
-.add-menu > li > a {
+.add-menu>li>a {
   border-radius: 5px;
   padding: 5px;
   width: 100%;
@@ -49,16 +50,54 @@
 .nav-link {
   padding: 0 1rem;
   color: #fff;
-  &:focus{
+
+  &:focus {
     color: $primaryColor;
   }
 }
 
-li:not(.nav-item--open) .nav-link{
+li:not(.nav-item--open) .nav-link {
   padding: .25rem 1rem !important;
-
 }
-.nav-item--open .nav-link .title{
+
+.nav-item {
+  cursor: pointer;
+  border-radius: 6px;
+  margin-right: .5rem;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-item * {
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+}
+
+.sidebar .nav>li>a:hover {
+  background: none !important;
+}
+
+.nav-item-eye {
+  display: none !important;
+}
+
+.sidebar-feature:hover {
+  background-color: var(--bg-color_level2);
+}
+
+.nav-item:hover {
+  background-color: var(--bg-color_level1);
+}
+
+.nav-item:hover .nav-item-eye {
+  display: inline-flex !important;
+}
+
+.nav-item--open .nav-link .title {
   margin-left: 4px;
 }
 
@@ -67,7 +106,7 @@ li:not(.nav-item--open) .nav-link{
 }
 
 
-.navbar-toggler-icon{
+.navbar-toggler-icon {
   width: auto;
   height: auto;
 }

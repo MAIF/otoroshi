@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link, useHistory, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { useEntityFromURI } from '../../util';
 import { SidebarContext } from '../../apps/BackOfficeApp';
@@ -43,8 +43,7 @@ const LINKS = (entity, route) =>
     },
   ].filter((link) => !link.enabled || link.enabled.includes(entity));
 
-export default ({ route, setSidebarContent }) => {
-  const history = useHistory();
+export default ({ route }) => {
   const entity = useEntityFromURI();
   const location = useLocation();
   const { openedSidebar } = useContext(SidebarContext);
@@ -60,9 +59,6 @@ export default ({ route, setSidebarContent }) => {
     <div
       className="d-flex"
       style={{
-        // flexDirection: 'column',
-        // position: 'relative',
-        // borderBottom: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}>
       <ul className="nav flex-column nav-sidebar">
@@ -82,9 +78,8 @@ export default ({ route, setSidebarContent }) => {
             <Link
               to={to}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                openedSidebar ? 'ms-3' : ''
-              } m-0 ${isActive(tab)}`}>
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                } m-0 ${isActive(tab)}`}>
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
               </div>

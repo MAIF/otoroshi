@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import _ from 'lodash';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 
-const graph = (env) => {
+export const graph = (env) => {
   return [
     {
       title: 'Tooling',
