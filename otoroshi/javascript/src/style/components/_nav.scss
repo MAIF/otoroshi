@@ -69,12 +69,20 @@ li:not(.nav-item--open) .nav-link {
   white-space: nowrap;
 }
 
+.nav-item * {
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+}
+
 .sidebar .nav>li>a:hover {
   background: none !important;
 }
 
 .nav-item-eye {
-  display: none;
+  display: none !important;
 }
 
 .sidebar-feature:hover {
@@ -86,7 +94,7 @@ li:not(.nav-item--open) .nav-link {
 }
 
 .nav-item:hover .nav-item-eye {
-  display: block;
+  display: inline-flex !important;
 }
 
 .nav-item--open .nav-link .title {
