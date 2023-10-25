@@ -66,16 +66,12 @@ export function DefaultSidebar(props) {
   const setPosition = (offset) => {
     const index = Math.round(draggingIndex + offset)
 
-    console.log(draggingIndex, index)
-
     const item = shortcuts[draggingIndex];
     const b = shortcuts[index];
 
     let newShortcuts = [...shortcuts];
     newShortcuts[draggingIndex] = b;
     newShortcuts[index] = item;
-
-    // localStorage.setItem('shortcuts', JSON.stringify(newShortcuts.filter(f => f)))
 
     setDraggingIndex(index)
     setShortcuts(newShortcuts)
@@ -117,6 +113,7 @@ export function DefaultSidebar(props) {
       onMouseUp={() => {
         setTimeout(() => {
           setDraggingIndex(undefined)
+          localStorage.setItem('shortcuts', JSON.stringify(shortcuts.filter(f => f)))
         }, 50) // delay to avoid simple click
       }}
     >
