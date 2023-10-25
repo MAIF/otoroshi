@@ -287,7 +287,7 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''}`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'mx-1'}`}
                   style={{
                     // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                   }}>
