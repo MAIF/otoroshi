@@ -106,6 +106,13 @@ GET     /bo/api/plugins/wasm                                  otoroshi.controlle
 GET     /bo/api/test_match_and_project_input                  otoroshi.controllers.BackOfficeController.testFilteringAndProjectionInputDoc()
 POST    /bo/api/test_match_and_project                        otoroshi.controllers.BackOfficeController.testFilteringAndProjection()
 
+GET     /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.getUserPreference(id)
+GET     /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.getUserPreferences()
+POST    /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.setUserPreference(id)
+POST    /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.setUserPreferences()
+DELETE  /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.clearUserPreference(id)
+DELETE  /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.clearUserPreferences()
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

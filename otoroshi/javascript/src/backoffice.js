@@ -219,13 +219,17 @@ function mkCtx(more = {}) {
   return ctx;
 }
 
-export function registerExtension(name, thunk) {
-  const ctx = mkCtx({
-    registerPlugins: (pgs) => pgs(ctx).forEach((plugin) => Forms.addPluginForm(plugin)),
-  });
-  _extensions[name] = thunk(ctx);
-  if (_extensions[name].pluginForms) {
-    registerPlugins(() => _extensions[name].pluginForms);
+export function registerExtension(name, checkServer, thunk) {
+  const enabledExtensions = window.__enabled_extensions;
+  const display = !checkServer || enabledExtensions[name] === true;
+  if (display) {
+    const ctx = mkCtx({
+      registerPlugins: (pgs) => pgs(ctx).forEach((plugin) => Forms.addPluginForm(plugin)),
+    });
+    _extensions[name] = thunk(ctx);
+    if (_extensions[name].pluginForms) {
+      registerPlugins(() => _extensions[name].pluginForms);
+    }
   }
 }
 

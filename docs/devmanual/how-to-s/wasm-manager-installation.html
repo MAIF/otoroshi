@@ -300,7 +300,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The wasm manager is a code editor in the browser that will help you to write and compile your plugin to WASM using Rust or Assembly Script. You can install your own man ager instance using a docker image.</p>
 <pre class="prettyprint"><code class="language-sh">docker run -p 5001:5001 maif/otoroshi-wasm-manager
 </code></pre>
-<p>This should download and run the latest version of the manager. Once launched, you can navigate <a href="[http://localhost:5001">http://localhost:5001</a> (or any other binding port). </p>
+<p>This should download and run the latest version of the manager. Once launched, you can navigate <a href="http://localhost:5001">http://localhost:5001</a> (or any other binding port). </p>
 <p>This should show an authentication error. The manager can run with or without authentication, and you can confige it using the <code>AUTH_MODE</code> environment variable (<code>AUTH</code> or <code>NO_AUTH</code> values).</p>
 <p>The manager is configurable by environment variables. The manager uses an object storage (S3 compatible) as storage solution. You can configure your S3 with the four variables <code>S3_ACCESS_KEY_ID</code>, <code>S3_SECRET_ACCESS_KEY</code>, <code>S3_ENDPOINT</code> and <code>S3_BUCKET</code>.</p>
 <p>Feel free to change the following variables:</p>
@@ -353,15 +353,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </tbody>
 </table>
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
-<ol>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#deploy-the-manager-using-docker">Deploy the manager using Docker</a></li>
-  <li><a href="#create-a-route-to-expose-and-protect-the-manager-with-authentication">Create a route to expose and protect the manager with authentication</a></li>
-  <li><a href="#create-a-first-validator-plugin-using-the-manager">Create a first validator plugin using the manager</a></li>
-  <li><a href="#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager">Configure the danger zone of Otoroshi to bind Otoroshi and the manager</a></li>
-  <li><a href="#create-a-route-using-the-generated-wasm-file">Create a route using the generated wasm file</a></li>
-  <li><a href="#test-your-route">Test your route</a></li>
-</ol>
+<ul>
+  <li><a href="#deploy-your-own-wasm-manager">Deploy your own WASM Manager</a></li>
+  <li><a href="#managers-configuration">Manager&rsquo;s configuration</a></li>
+  <li><a href="#tutorial">Tutorial</a>
+    <ul>
+      <li><a href="#before-your-start">Before your start</a></li>
+      <li><a href="#deploy-the-manager-using-docker">Deploy the manager using Docker</a></li>
+      <li><a href="#create-a-route-to-expose-and-protect-the-manager-with-authentication">Create a route to expose and protect the manager with authentication</a></li>
+      <li><a href="#create-a-first-validator-plugin-using-the-manager">Create a first validator plugin using the manager</a></li>
+      <li><a href="#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager">Configure the danger zone of Otoroshi to bind Otoroshi and the manager</a></li>
+      <li><a href="#create-a-route-using-the-generated-wasm-file">Create a route using the generated wasm file</a></li>
+      <li><a href="#test-your-route">Test your route</a></li>
+    </ul>
+  </li>
+</ul>
 <p>After completing these steps you will have a running Otoroshi instance and our owm WASM manager linked together.</p>
 <h3><a href="#before-your-start" name="before-your-start" class="anchor"><span class="anchor-link"></span></a>Before your start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">

@@ -1,6 +1,6 @@
 (function() {
   const extensionId = "otoroshi.extensions.Foo";
-  Otoroshi.registerExtension(extensionId, (ctx) => {
+  Otoroshi.registerExtension(extensionId, false, (ctx) => {
 
     const dependencies = ctx.dependencies;  
   

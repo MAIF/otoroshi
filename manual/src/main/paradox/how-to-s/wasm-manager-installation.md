@@ -15,7 +15,7 @@ You can install your own man ager instance using a docker image.
 docker run -p 5001:5001 maif/otoroshi-wasm-manager
 ```
 
-This should download and run the latest version of the manager. Once launched, you can navigate  [http://localhost:5001]([http://localhost:5001) (or any other binding port). 
+This should download and run the latest version of the manager. Once launched, you can navigate  [http://localhost:5001](http://localhost:5001) (or any other binding port). 
 
 This should show an authentication error. The manager can run with or without authentication, and you can confige it using the `AUTH_MODE` environment variable (`AUTH` or `NO_AUTH` values).
 
@@ -40,13 +40,16 @@ The following variables are useful to bind the manager with Otoroshi and to run 
 
 ## Tutorial
 
-1. [Before you start](#before-you-start)
-2. [Deploy the manager using Docker](#deploy-the-manager-using-docker)
-3. [Create a route to expose and protect the manager with authentication](#create-a-route-to-expose-and-protect-the-manager-with-authentication)
-4. [Create a first validator plugin using the manager](#create-a-first-validator-plugin-using-the-manager)
-5. [Configure the danger zone of Otoroshi to bind Otoroshi and the manager](#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager)
-6. [Create a route using the generated wasm file](#create-a-route-using-the-generated-wasm-file)
-7. [Test your route](#test-your-route)
+- [Deploy your own WASM Manager](#deploy-your-own-wasm-manager)
+  - [Manager's configuration](#managers-configuration)
+  - [Tutorial](#tutorial)
+    - [Before your start](#before-your-start)
+    - [Deploy the manager using Docker](#deploy-the-manager-using-docker)
+    - [Create a route to expose and protect the manager with authentication](#create-a-route-to-expose-and-protect-the-manager-with-authentication)
+    - [Create a first validator plugin using the manager](#create-a-first-validator-plugin-using-the-manager)
+    - [Configure the danger zone of Otoroshi to bind Otoroshi and the manager](#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager)
+    - [Create a route using the generated wasm file](#create-a-route-using-the-generated-wasm-file)
+    - [Test your route](#test-your-route)
 
 After completing these steps you will have a running Otoroshi instance and our owm WASM manager linked together.
 

@@ -1052,8 +1052,8 @@ play.http {
     domains = []  # the backoffice domains
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
-    useNewEngine = true # avoid backoffice admin api proxy
-    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    # useNewEngine = false # avoid backoffice admin api proxy
+    # useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
     usePlay = true # avoid backoffice http call for admin api
     usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
@@ -2720,7 +2720,7 @@ akka { # akka specific configuration
     subdomain = ${?OTOROSHI_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
-    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    # useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
     usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration

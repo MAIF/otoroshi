@@ -251,3 +251,104 @@ trait WebAuthnAdminDataStore {
   def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
+
+case class AdminPreferences(userId: String, preferences: Map[String, JsValue]) {
+  def json: JsValue = AdminPreferences.format.writes(this)
+  def set(id: String, value: JsValue): AdminPreferences = {
+    copy(preferences = preferences ++ Map(id -> value))
+  }
+  def delete(id: String): AdminPreferences = {
+    copy(preferences = preferences - id)
+  }
+  def save()(implicit env: Env, ec: ExecutionContext): Future[AdminPreferences] = {
+    env.datastores.adminPreferencesDatastore.setPreferences(userId, this)
+  }
+}
+
+object AdminPreferences {
+  val format = new Format[AdminPreferences] {
+    override def reads(json: JsValue): JsResult[AdminPreferences] = Try {
+      AdminPreferences(
+        userId = json.select("user_id").asString,
+        preferences = json.select("preferences").asOpt[Map[String, JsValue]].getOrElse(Map.empty)
+      )
+    } match {
+      case Success(prefs) => JsSuccess(prefs)
+      case Failure(err) => JsError(err.getMessage)
+    }
+    override def writes(o: AdminPreferences): JsValue = Json.obj(
+      "user_id" -> o.userId,
+      "preferences" -> o.preferences,
+    )
+  }
+  def defaultValue(id: String): AdminPreferences = {
+    AdminPreferences(
+      userId = id,
+      preferences = Map(
+        "backoffice_sidebar_shortcuts" -> Json.arr(
+          "routes",
+          "backends",
+          "apikeys",
+          "certificates",
+          "auth. modules",
+          "jwt verifiers",
+          "tcp services",
+          "data exporters",
+          "wasm plugins",
+          "danger zone"
+        )
+      )
+    )
+  }
+}
+
+class AdminPreferencesDatastore(env: Env) {
+
+  private implicit val ev = env
+
+  def computeKey(id: String): String = s"${env.storageRoot}:admins_prefs:${id}"
+
+  def getPreferencesOrSetDefault(userId: String)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
+    getPreferences(userId).flatMap {
+      case None => setPreferences(userId, AdminPreferences.defaultValue(userId))
+      case Some(prefs) => prefs.vfuture
+    }
+  }
+
+  def getPreferences(userId: String)(implicit ec: ExecutionContext): Future[Option[AdminPreferences]] = {
+    val key = computeKey(userId)
+    env.datastores.rawDataStore.get(key).map(_.flatMap(bs => AdminPreferences.format.reads(bs.utf8String.parseJson).asOpt))
+  }
+
+  def getPreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
+    getPreferencesOrSetDefault(userId) map { prefs =>
+      prefs.preferences.get(prefKey)
+    }
+  }
+
+  def setPreferences(userId: String, preferences: AdminPreferences)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
+    val key = computeKey(userId)
+    env.datastores.rawDataStore.set(key, preferences.json.stringify.byteString, None).map(_ => preferences)
+  }
+
+  def setPreference(userId: String, prefKey: String, value: JsValue)(implicit ec: ExecutionContext): Future[JsValue] = {
+    getPreferencesOrSetDefault(userId).flatMap { prefs =>
+      prefs.set(prefKey, value).save().map { prefs =>
+        value
+      }
+    }
+  }
+
+  def deletePreferences(userId: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    val key = computeKey(userId)
+    env.datastores.rawDataStore.del(Seq(key)).map(_ => ())
+  }
+
+  def deletePreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    getPreferencesOrSetDefault(userId).flatMap { prefs =>
+      prefs.delete(prefKey).save().map { _ =>
+        ()
+      }
+    }
+  }
+}

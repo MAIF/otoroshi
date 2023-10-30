@@ -1026,7 +1026,7 @@ export class TopBar extends Component {
           value: 'SnowMonkey',
         });
         Otoroshi.extensions().map((ext) => {
-          ext.searchItems.map((item) => {
+          (ext.searchItems || []).map((item) => {
             options.push(item);
           });
         });
@@ -1810,7 +1810,7 @@ export class TopBar extends Component {
                         </li>
                       )}
                       {Otoroshi.extensions()
-                        .flatMap((ext) => ext.creationItems)
+                        .flatMap((ext) => ext.creationItems || [])
                         .map((item) => (
                           <li className="d-flex" key={item.title}>
                             <Link to={`/${item.path}`}>{item.title}</Link>

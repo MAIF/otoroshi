@@ -287,9 +287,9 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : ''}`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'mx-1'}`}
                   style={{
-                    alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
+                    // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                   }}>
                   {this.state.env && (
                     <GlobalTenantSelector
@@ -359,7 +359,7 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         {Otoroshi.extensions()
-                          .flatMap((ext) => ext.routes)
+                          .flatMap((ext) => ext.routes || [])
                           .map((item) => {
                             return (
                               <Route

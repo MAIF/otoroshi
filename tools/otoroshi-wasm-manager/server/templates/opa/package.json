@@ -1,7 +1,0 @@
-{
-  "name": "@@PLUGIN_NAME@@",
-  "version": "@@PLUGIN_VERSION@@",
-  "metadata": {
-    "entrypoint": "example/can_access"
-  }
-}
