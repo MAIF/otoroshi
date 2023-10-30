@@ -186,7 +186,7 @@ export const graph = (env) => {
     {
       title: 'Extensions',
       description: 'All the features provided by your installed extensions',
-      features: Otoroshi.extensions().flatMap((ext) => ext.features),
+      features: Otoroshi.extensions().flatMap((ext) => ext.features || []),
     },
     {
       title: 'Analytics',

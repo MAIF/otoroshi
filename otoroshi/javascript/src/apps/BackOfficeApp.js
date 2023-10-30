@@ -359,7 +359,7 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         {Otoroshi.extensions()
-                          .flatMap((ext) => ext.routes)
+                          .flatMap((ext) => ext.routes || [])
                           .map((item) => {
                             return (
                               <Route

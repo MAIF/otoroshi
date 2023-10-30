@@ -436,79 +436,80 @@ class BackOfficeController(
   def getEnv() =
     BackOfficeActionAuth.async { ctx =>
       val hash = BCrypt.hashpw("password", BCrypt.gensalt())
-      env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-        env.datastores.simpleAdminDataStore.findAll().flatMap { users =>
-          env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused").map {
-            refusedOpt =>
-              val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
-              val refusedDate               = refusedOpt.map(_.utf8String).map(DateTime.parse)
-              val refused: JsValue          = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
-              val (shouldAsk, shouldEnable) = if (reporting.enabled) {
-                if (!config.anonymousReporting) {
-                  refusedDate match {
-                    case None                                                      => (true, false)
-                    case Some(date) if date.plusMonths(6).isBefore(DateTime.now()) => (true, false)
-                    case _                                                         => (false, false)
-                  }
-                } else {
-                  (false, false)
-                }
-              } else {
-                (true, true)
-              }
-              val changePassword            = users.filter { user =>
-                //(user \ "password").as[String] == hash &&
-                user.username == "admin@otoroshi.io"
-              }.nonEmpty
-              Ok(
-                Json.obj(
-                  "newEngineEnabled"        -> NewEngine.enabledFromConfig(config, env),
-                  "initWithNewEngine"       -> config.initWithNewEngine,
-                  "scriptingEnabled"        -> env.scriptingEnabled,
-                  "otoroshiLogo"            -> env.otoroshiLogo,
-                  "clusterRole"             -> env.clusterConfig.mode.name,
-                  "snowMonkeyRunning"       -> config.snowMonkeyConfig.enabled,
-                  "changePassword"          -> changePassword,
-                  "mailgun"                 -> config.mailerSettings.isDefined,
-                  "clevercloud"             -> config.cleverSettings.isDefined,
-                  "apiReadOnly"             -> config.apiReadOnly,
-                  "u2fLoginOnly"            -> config.u2fLoginOnly,
-                  "env"                     -> env.env,
-                  "redirectToDev"           -> false,
-                  "userAdmin"               -> ctx.user.rights.superAdmin,
-                  "superAdmin"              -> ctx.user.rights.superAdmin,
-                  "tenantAdmin"             -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
-                  "currentTenant"           -> ctx.currentTenant.value,
-                  "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
-                  "clientIdHeader"          -> env.Headers.OtoroshiClientId,
-                  "clientSecretHeader"      -> env.Headers.OtoroshiClientSecret,
-                  "version"                 -> SoftwareUpdatesJobs.latestVersionHolder.get(),
-                  "currentVersion"          -> env.otoroshiVersion,
-                  "commitVersion"           -> commitVersion,
-                  "adminApiId"              -> env.backOfficeServiceId,
-                  "adminGroupId"            -> env.backOfficeGroupId,
-                  "adminApikeyId"           -> env.backOfficeApiKeyClientId,
-                  "user"                    -> ctx.user.email,
-                  "instanceId"              -> config.otoroshiId,
-                  "staticExposedDomain"     -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                  "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                  "providerDashboardTitle"  -> env.providerDashboardTitle,
-                  "providerDashboardSecret" -> env.providerDashboardSecret,
-                  "instanceId"              -> config.otoroshiId,
-                  "instanceName"            -> env.name,
-                  "anonymousReporting"      -> Json.obj(
-                    "static"        -> reporting.enabled,
-                    "global"        -> config.anonymousReporting,
-                    "refused"       -> refused,
-                    "should_ask"    -> shouldAsk,
-                    "should_enable" -> shouldEnable
-                  )
-                )
-              )
+      for {
+        config <- env.datastores.globalConfigDataStore.singleton()
+        users <- env.datastores.simpleAdminDataStore.findAll()
+        refusedOpt <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
+        preferences <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
+      } yield {
+        val reporting = AnonymousReportingJobConfig.fromEnv(env)
+        val refusedDate = refusedOpt.map(_.utf8String).map(DateTime.parse)
+        val refused: JsValue = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
+        val (shouldAsk, shouldEnable) = if (reporting.enabled) {
+          if (!config.anonymousReporting) {
+            refusedDate match {
+              case None => (true, false)
+              case Some(date) if date.plusMonths(6).isBefore(DateTime.now()) => (true, false)
+              case _ => (false, false)
+            }
+          } else {
+            (false, false)
           }
+        } else {
+          (true, true)
         }
+        val changePassword = users.filter { user =>
+          //(user \ "password").as[String] == hash &&
+          user.username == "admin@otoroshi.io"
+        }.nonEmpty
+        Ok(
+          Json.obj(
+            "user_preferences" -> preferences.json,
+            "newEngineEnabled" -> NewEngine.enabledFromConfig(config, env),
+            "initWithNewEngine" -> config.initWithNewEngine,
+            "scriptingEnabled" -> env.scriptingEnabled,
+            "otoroshiLogo" -> env.otoroshiLogo,
+            "clusterRole" -> env.clusterConfig.mode.name,
+            "snowMonkeyRunning" -> config.snowMonkeyConfig.enabled,
+            "changePassword" -> changePassword,
+            "mailgun" -> config.mailerSettings.isDefined,
+            "clevercloud" -> config.cleverSettings.isDefined,
+            "apiReadOnly" -> config.apiReadOnly,
+            "u2fLoginOnly" -> config.u2fLoginOnly,
+            "env" -> env.env,
+            "redirectToDev" -> false,
+            "userAdmin" -> ctx.user.rights.superAdmin,
+            "superAdmin" -> ctx.user.rights.superAdmin,
+            "tenantAdmin" -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
+            "currentTenant" -> ctx.currentTenant.value,
+            "bypassUserRightsCheck" -> env.bypassUserRightsCheck,
+            "clientIdHeader" -> env.Headers.OtoroshiClientId,
+            "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
+            "version" -> SoftwareUpdatesJobs.latestVersionHolder.get(),
+            "currentVersion" -> env.otoroshiVersion,
+            "commitVersion" -> commitVersion,
+            "adminApiId" -> env.backOfficeServiceId,
+            "adminGroupId" -> env.backOfficeGroupId,
+            "adminApikeyId" -> env.backOfficeApiKeyClientId,
+            "user" -> ctx.user.email,
+            "instanceId" -> config.otoroshiId,
+            "staticExposedDomain" -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "providerDashboardUrl" -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "providerDashboardTitle" -> env.providerDashboardTitle,
+            "providerDashboardSecret" -> env.providerDashboardSecret,
+            "instanceId" -> config.otoroshiId,
+            "instanceName" -> env.name,
+            "anonymousReporting" -> Json.obj(
+              "static" -> reporting.enabled,
+              "global" -> config.anonymousReporting,
+              "refused" -> refused,
+              "should_ask" -> shouldAsk,
+              "should_enable" -> shouldEnable
+            )
+          )
+        )
       }
-    }
+  }
 
   def index =
     BackOfficeAction.async { ctx =>
@@ -2122,5 +2123,58 @@ class BackOfficeController(
         extraAnalyticsData = None
       ).toJson
     )
+  }
+
+  def getUserPreferences() = BackOfficeActionAuth.async { ctx =>
+    env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).map { prefs =>
+      Ok(prefs.json)
+    }
+  }
+
+  def getUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).map { prefs =>
+      prefs.preferences.get(id) match {
+        case None => NotFound(Json.obj("error" -> "preference not found"))
+        case Some(pref) => Ok(pref)
+      }
+    }
+  }
+
+  def setUserPreferences() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      AdminPreferences.format.reads(bodyRaw.utf8String.parseJson) match {
+        case JsError(err) => BadRequest(Json.obj("error" -> "bad_request")).vfuture
+        case JsSuccess(prefs, _) => {
+          env.datastores.adminPreferencesDatastore.setPreferences(ctx.user.email, prefs).map { prefs =>
+            Ok(prefs.json)
+          }
+        }
+      }
+    }
+  }
+
+  def setUserPreference(id: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      val value = bodyRaw.utf8String.parseJson
+      env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).flatMap { prefs =>
+        prefs.set(id, value).save().map { prefs =>
+          Ok(value)
+        }
+      }
+    }
+  }
+
+  def clearUserPreferences() = BackOfficeActionAuth.async { ctx =>
+    env.datastores.adminPreferencesDatastore.deletePreferences(ctx.user.email).map { _ =>
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def clearUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).flatMap { prefs =>
+      prefs.delete(id).save().map { _ =>
+        Ok(Json.obj("done" -> true))
+      }
+    }
   }
 }

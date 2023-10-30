@@ -1116,7 +1116,7 @@ export class DangerZonePage extends Component {
       },
     },
     ...Otoroshi.extensions()
-      .flatMap((ext) => ext.dangerZoneParts)
+      .flatMap((ext) => ext.dangerZoneParts || [])
       .map((part) => part.schema)
       .reduce((a, b) => ({ ...a, ...b }), {}),
   });
@@ -1224,7 +1224,7 @@ export class DangerZonePage extends Component {
     'metadata',
     'env',
     ...Otoroshi.extensions()
-      .flatMap((ext) => ext.dangerZoneParts)
+      .flatMap((ext) => ext.dangerZoneParts || [])
       .flatMap((part) => {
         return ['>>>' + part.title, ...part.flow];
       }),

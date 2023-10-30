@@ -27,28 +27,59 @@ export function DefaultSidebar(props) {
     if (props.setSidebarContent) props.setSidebarContent(null);
   };
 
-  const [shortcuts, setShortcuts] = useState([]);
+  const preferences = (props.env.user_preferences || { preferences: {}}).preferences;
+  const stored_shortcuts = preferences.backoffice_sidebar_shortcuts || [];
+  const [shortcuts, setShortcuts] = useState(stored_shortcuts);
   const [hightlighted, setHighlighted] = useState();
 
   const [start, setStart] = useState({ clientY: 0 });
   const [client, setClient] = useState({ clientY: 0 });
   const [draggingIndex, setDraggingIndex] = useState(-1);
 
-  useEffect(() => {
-    reloadStorage()
-  }, [])
+  // useEffect(() => {
+  //   reloadStorage()
+  // }, [])
 
   const reloadStorage = () => {
-    setShortcuts(JSON.parse(localStorage.getItem('shortcuts') || "[]"))
+    fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(r => {
+      if (r.status === 200) {
+        return r.json();
+      } else {
+        return [];
+      }
+    })
+    .then(newShortCuts => {
+      setShortcuts(newShortCuts)
+    });
   }
 
+  const writeStorage = (newShortCuts) => {
+    fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newShortCuts)
+    })
+    .then(r => r.json())
+    .then(newShortCuts => {
+      setShortcuts(newShortCuts)
+    });
+  }
+
+
   const removeShortcut = shortcut => {
-    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || "[]");
-
     const newShortcuts = shortcuts.filter(f => !f.includes(shortcut));
-    localStorage.setItem('shortcuts', JSON.stringify(newShortcuts));
-
-    reloadStorage();
+    writeStorage(newShortcuts);
   }
 
   const sortCategory = (a, b) => {
@@ -95,7 +126,7 @@ export function DefaultSidebar(props) {
           if (start.clientY === 0) {
             setStart({ clientY: ev.clientY })
           } else {
-            console.log(Math.floor(ev.clientY - start.clientY), Math.floor(ev.clientY - start.clientY) / 32)
+            // console.log(Math.floor(ev.clientY - start.clientY), Math.floor(ev.clientY - start.clientY) / 32)
             setClient({ clientY: ev.clientY })
 
             const offset = Math.floor(ev.clientY - start.clientY) / 32;
@@ -112,8 +143,10 @@ export function DefaultSidebar(props) {
       }}
       onMouseUp={() => {
         setTimeout(() => {
-          setDraggingIndex(undefined)
-          localStorage.setItem('shortcuts', JSON.stringify(shortcuts.filter(f => f)))
+          if (!isNaN(draggingIndex) && draggingIndex !== -1) {
+            setDraggingIndex(undefined)
+            writeStorage(shortcuts.filter(f => f));
+          }
         }, 50) // delay to avoid simple click
       }}
     >
@@ -149,7 +182,8 @@ export function DefaultSidebar(props) {
               {...item}
               first={i === 0}
               last={i === (links.length - 1)}
-              reloadStorage={reloadStorage}
+              shortcuts={shortcuts}
+              writeStorage={writeStorage}
               hightlighted={!hightlighted || item.title === hightlighted}
               setHighlighted={() => setHighlighted(item.title)}
               onClose={() => setHighlighted(undefined)} />
@@ -193,7 +227,7 @@ function CustomIcon({ icon }) {
   return zeIcon;
 }
 
-function Block({ title, features, first, last, reloadStorage, hightlighted, setHighlighted, onClose }) {
+function Block({ title, features, first, last, hightlighted, setHighlighted, onClose, shortcuts, writeStorage }) {
   const [open, setOpen] = useState(false)
 
   return <div key={title} style={{
@@ -235,9 +269,7 @@ function Block({ title, features, first, last, reloadStorage, hightlighted, setH
                 borderRadius: 6
               }}
               onClick={() => {
-                const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || "[]");
-                localStorage.setItem("shortcuts", JSON.stringify([...new Set([...shortcuts, title.toLowerCase()])]))
-                reloadStorage()
+                writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
               }}>
               <CustomIcon icon={icon} />
               <span style={{
@@ -277,6 +309,7 @@ function SidebarLink({
       background: dragging ? 'var(--bg-color_level1)' : 'inherit'
     }}>
     <i className="fas fa-grip-vertical nav-item-eye d-flex align-items-center m-0"
+      title="Move shortcut"
       onMouseDown={e => {
         startDragging(e.clientY)
       }}
@@ -302,6 +335,6 @@ function SidebarLink({
             : firstLetterUppercase(path)}
       </span>
     </Link>
-    <i className="fas fa-eye nav-item-eye ms-auto" onClick={removeShortcut} />
+    <i className="fas fa-eye nav-item-eye ms-auto" onClick={removeShortcut} title="Remove shortcut" />
   </li>
 }
