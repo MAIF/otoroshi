@@ -486,15 +486,15 @@ export class Table extends Component {
         id: 'actions',
         minWidth: 160,
         maxWidth: 160,
-        style: { textAlign: 'center' },
+        style: { textAlign: 'left' },
         filterable: false,
         sortable: false,
         accessor: (item) => (
-          <div style={{ textAlign: 'center' }}>
-            <div className="displayGroupBtn">
+          <div style={{ textAlign: 'left' }}>
+            <div>
               <button
                 type="button"
-                className="btn btn-sm btn-success"
+                className="btn btn-sm btn-success me-2"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
                 onClick={(e) =>
                   this.props.navigateOnEdit
@@ -505,7 +505,7 @@ export class Table extends Component {
               </button>
               {this.props.showLink && (
                 <a
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
                   _onClick={(e) => this.gotoItem(e, item)}>
@@ -515,7 +515,7 @@ export class Table extends Component {
               {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   disabled
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -524,7 +524,7 @@ export class Table extends Component {
               {this.props.displayTrash && !this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   onClick={(e) => this.deleteItem(e, item)}
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -533,7 +533,7 @@ export class Table extends Component {
               {!this.props.displayTrash && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-sm btn-danger me-2"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => this.deleteItem(e, item)}>
                   <i className="fas fa-trash" />
@@ -551,11 +551,11 @@ export class Table extends Component {
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
-            <div className="row" style={{ marginBottom: 10, marginTop: 2 }}>
-              <div className="" style={{ position: 'absolute', right: 0, top: 24, width: 'fit-content' }}>
+            <div className="row">
+              <div className="" style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-sm"
                   {...createTooltip('Reload the current table')}
                   onClick={this.update}>
                   <span className="fas fa-sync" />
@@ -563,7 +563,7 @@ export class Table extends Component {
                 {this.props.showActions && !this.props.hideAddItemAction && (
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}>
@@ -573,7 +573,7 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow" style={{ position: 'relative' }}>
+            <div className="rrow" style={{ position: 'relative', marginTop:20 }}>
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
@@ -675,7 +675,7 @@ export class Table extends Component {
                         buttons: (
                           <button
                             type="button"
-                            className="btn btn-sm btn-success me-1"
+                            className="btn btn-sm btn-primary me-1"
                             onClick={this.createItem}>
                             <i className="fas fa-hdd" /> Create {this.props.itemName}
                           </button>
@@ -726,12 +726,12 @@ export class Table extends Component {
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
-                      className="btn btn-success"
+                      className="btn btn-primary"
                       onClick={this.createItemAndStay}>
                       <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-success" onClick={this.createItem}>
+                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
                     <i className="fas fa-hdd" /> Create {this.props.itemName}
                   </button>
                 </div>
