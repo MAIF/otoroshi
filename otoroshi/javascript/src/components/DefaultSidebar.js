@@ -335,6 +335,6 @@ function SidebarLink({
             : firstLetterUppercase(path)}
       </span>
     </Link>
-    <i className="fas fa-eye nav-item-eye ms-auto" onClick={removeShortcut} title="Remove shortcut" />
+    <i className="fas fa-eye-slash nav-item-eye ms-auto" onClick={removeShortcut} title="Remove shortcut" />
   </li>
 }
