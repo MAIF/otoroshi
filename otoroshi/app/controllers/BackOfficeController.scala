@@ -2132,11 +2132,9 @@ class BackOfficeController(
   }
 
   def getUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).map { prefs =>
-      prefs.preferences.get(id) match {
-        case None => NotFound(Json.obj("error" -> "preference not found"))
-        case Some(pref) => Ok(pref)
-      }
+    env.datastores.adminPreferencesDatastore.getPreference(ctx.user.email, id) map {
+      case None => NotFound(Json.obj("error" -> "preference not found"))
+      case Some(pref) => Ok(pref)
     }
   }
 
@@ -2155,11 +2153,8 @@ class BackOfficeController(
 
   def setUserPreference(id: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      val value = bodyRaw.utf8String.parseJson
-      env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).flatMap { prefs =>
-        prefs.set(id, value).save().map { prefs =>
-          Ok(value)
-        }
+      env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id,  bodyRaw.utf8String.parseJson).map { value =>
+        Ok(value)
       }
     }
   }
@@ -2171,10 +2166,8 @@ class BackOfficeController(
   }
 
   def clearUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).flatMap { prefs =>
-      prefs.delete(id).save().map { _ =>
-        Ok(Json.obj("done" -> true))
-      }
+    env.datastores.adminPreferencesDatastore.deletePreference(ctx.user.email, id).map { _ =>
+      Ok(Json.obj("done" -> true))
     }
   }
 }

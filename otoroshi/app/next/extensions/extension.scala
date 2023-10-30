@@ -254,6 +254,16 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
 
   private val extCache = new UnboundedTrieMap[Class[_], Any]
 
+  def enabledExtensions(): JsValue = {
+    JsObject(extensions.map(e => (e.id.value, e.enabled.json)))
+  }
+
+  def enabledExtensionsHtml(): Html = {
+    Html(
+      enabledExtensions().stringify
+    )
+  }
+
   def vault(name: String): Option[AdminExtensionVault] = vaults.find(_.name == name)
 
   def extension[A](implicit ct: ClassTag[A]): Option[A] = {

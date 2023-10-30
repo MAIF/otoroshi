@@ -16,7 +16,8 @@
         window.__currentVersion = '@version';
         window.__initWithNewEngine = @config.initWithNewEngine;
         window.__user = @Html(Json.stringify(user.toJson));
-        window.__user.superAdmin = @(user.rights.superAdmin(_env))
+        window.__user.superAdmin = @(user.rights.superAdmin(_env));
+        window.__enabled_extensions = @(_env.adminExtensions.enabledExtensionsHtml());
         var tenant = window.localStorage.getItem("Otoroshi-Tenant");
         var possibleTenants = [@Html(possibleTenants.map(v => s""""$v"""").mkString(", "))];
         if (tenant) {

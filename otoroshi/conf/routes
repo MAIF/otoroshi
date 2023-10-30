@@ -110,6 +110,7 @@ GET     /bo/api/me/preferences/:id                            otoroshi.controlle
 GET     /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.getUserPreferences()
 POST    /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.setUserPreference(id)
 POST    /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.setUserPreferences()
+DELETE  /bo/api/me/preferences/:id                            otoroshi.controllers.BackOfficeController.clearUserPreference(id)
 DELETE  /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.clearUserPreferences()
 
 # Admin API proxy

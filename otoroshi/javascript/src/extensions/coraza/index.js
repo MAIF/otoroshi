@@ -7,7 +7,7 @@ import { Table } from '../../components/inputs/Table';
 const extensionId = 'otoroshi.extensions.CorazaWAF';
 
 export function setupCorazaExtension(registerExtension) {
-  registerExtension(extensionId, (ctx) => {
+  registerExtension(extensionId, true, (ctx) => {
     class CorazaWafConfigsPage extends Component {
       formSchema = {
         _loc: {

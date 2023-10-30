@@ -320,13 +320,35 @@ class AdminPreferencesDatastore(env: Env) {
     env.datastores.rawDataStore.get(key).map(_.flatMap(bs => AdminPreferences.format.reads(bs.utf8String.parseJson).asOpt))
   }
 
+  def getPreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
+    getPreferencesOrSetDefault(userId) map { prefs =>
+      prefs.preferences.get(prefKey)
+    }
+  }
+
   def setPreferences(userId: String, preferences: AdminPreferences)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore.set(key, preferences.json.stringify.byteString, None).map(_ => preferences)
   }
 
+  def setPreference(userId: String, prefKey: String, value: JsValue)(implicit ec: ExecutionContext): Future[JsValue] = {
+    getPreferencesOrSetDefault(userId).flatMap { prefs =>
+      prefs.set(prefKey, value).save().map { prefs =>
+        value
+      }
+    }
+  }
+
   def deletePreferences(userId: String)(implicit ec: ExecutionContext): Future[Unit] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore.del(Seq(key)).map(_ => ())
+  }
+
+  def deletePreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    getPreferencesOrSetDefault(userId).flatMap { prefs =>
+      prefs.delete(prefKey).save().map { _ =>
+        ()
+      }
+    }
   }
 }

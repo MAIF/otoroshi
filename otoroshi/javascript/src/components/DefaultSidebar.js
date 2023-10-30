@@ -153,6 +153,7 @@ export function DefaultSidebar(props) {
       {openedSidebar && <p className="ps-2">Shortcuts</p>}
       {shortcuts
         .map(shortcut => features.find(feat => feat.title.includes(shortcut)))
+        .filter(s => s)
         .map((shortcut, initialIndex) => {
           return <SidebarLink
             key={shortcut.title}
