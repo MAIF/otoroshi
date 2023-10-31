@@ -218,14 +218,14 @@ export function DefaultSidebar(props) {
   </>
 }
 
-function CustomIcon({ icon }) {
+function CustomIcon({ icon, title }) {
   const iconValue = icon ? (typeof icon === 'function' ? icon() : icon) : null;
   const className = _.isString(iconValue)
     ? iconValue.indexOf(' ') > -1
       ? iconValue
       : `fa ${iconValue}`
     : null;
-  const zeIcon = iconValue ? _.isString(iconValue) ? <i className={className} /> : iconValue : null;
+  const zeIcon = iconValue ? _.isString(iconValue) ? <i className={className} title={title} /> : iconValue : null;
 
   return zeIcon;
 }
@@ -283,7 +283,7 @@ function Block({ title, description, features, first, last, hightlighted, setHig
                 }
               }}>
               <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                <CustomIcon icon={icon} />
+                <CustomIcon icon={icon} title={`${title} - ${description}`} />
                 <div title={`${title} - ${description}`} style={{
                   overflow: 'hidden',
                   whiteSpace: 'nowrap',
@@ -315,6 +315,7 @@ function SidebarLink({
   openedSidebar,
   clearSidebar,
   title,
+  description,
   text,
   icon,
   rootClassName,
@@ -331,11 +332,11 @@ function SidebarLink({
     style={{
       position: dragging ? 'asbolute' : 'relative',
       top: dragging ? dragging.clientY : 'initial',
-      border: dragging ? '1px solid var(--bg-color_level3)' : '2px solid transparent',
+      border: openedSidebar ? (dragging ? '1px solid var(--bg-color_level3)' : '2px solid transparent') : 'none',
       zIndex: dragging ? 100 : 1,
       background: dragging ? 'var(--bg-color_level1)' : 'inherit'
     }}>
-    <i className="fas fa-grip-vertical nav-item-eye d-flex align-items-center m-0"
+    {openedSidebar && <i className="fas fa-grip-vertical nav-item-eye d-flex align-items-center m-0"
       title="Move shortcut"
       onMouseDown={e => {
         startDragging(e.clientY)
@@ -345,16 +346,16 @@ function SidebarLink({
         top: 0,
         left: 6,
         bottom: 0
-      }} />
+      }} />}
     <Link
       to={`/${path}`.replace('//', '/')}
       className={`nav-link ${rootClassName(path)}`}
       {...createTooltip(text)}
       onClick={clearSidebar}
-      style={{ flex: 1, marginLeft: 4 }}
+      style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
     >
-      <CustomIcon icon={icon} />{" "}
-      <span style={{ marginTop: "4px" }}>
+      <CustomIcon icon={icon} title={`${title} - ${description}`} />{" "}
+      <span style={{ marginTop: "4px" }} title={`${title} - ${description}`}>
         {!openedSidebar
           ? ""
           : title
