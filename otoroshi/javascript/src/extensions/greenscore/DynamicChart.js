@@ -71,7 +71,7 @@ export function DynamicChart(props) {
           {props.title}
         </h3>
 
-        <div className='card-picto position-absolute'>
+        <div className="card-picto position-absolute">
           <i className="fas fa-bolt" style={{ fontSize: 'initial' }} />
         </div>
       </div>

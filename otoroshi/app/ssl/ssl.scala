@@ -36,7 +36,11 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.jcajce.{
+  JcaPEMKeyConverter,
+  JceOpenSSLPKCS8DecryptorProviderBuilder,
+  JcePEMDecryptorProviderBuilder
+}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -1576,7 +1580,7 @@ object DynamicSSLEngineProvider {
                 keyStore.setKeyEntry(
                   if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
                   key,
-                  "".toCharArray, 
+                  "".toCharArray,
                   certificateChain.toArray[java.security.cert.Certificate]
                 )
 
@@ -1588,7 +1592,7 @@ object DynamicSSLEngineProvider {
                       keyStore.setKeyEntry(
                         name,
                         key,
-                        "".toCharArray, 
+                        "".toCharArray,
                         certificateChain.toArray[java.security.cert.Certificate]
                       )
                     }
@@ -1681,13 +1685,13 @@ object DynamicSSLEngineProvider {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
       keyPassword
         .map { kpv =>
-          val encryptedPrivateKeyInfo = new EncryptedPrivateKeyInfo(encodedKey)
-          val algName = encryptedPrivateKeyInfo.getAlgParameters.toString
+          val encryptedPrivateKeyInfo      = new EncryptedPrivateKeyInfo(encodedKey)
+          val algName                      = encryptedPrivateKeyInfo.getAlgParameters.toString
           val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(algName)
-          val secretKey: SecretKey = keyFactory.generateSecret(new PBEKeySpec(kpv.toCharArray))
-          val cipher: Cipher = Cipher.getInstance(algName)
+          val secretKey: SecretKey         = keyFactory.generateSecret(new PBEKeySpec(kpv.toCharArray))
+          val cipher: Cipher               = Cipher.getInstance(algName)
           cipher.init(DECRYPT_MODE, secretKey, encryptedPrivateKeyInfo.getAlgParameters)
-          val spec = encryptedPrivateKeyInfo.getKeySpec(cipher)
+          val spec                         = encryptedPrivateKeyInfo.getKeySpec(cipher)
           Right(spec)
         }
         .getOrElse {
@@ -1714,20 +1718,20 @@ object DynamicSSLEngineProvider {
         val parser    = new PEMParser(new StringReader(content))
         val converter = new JcaPEMKeyConverter().setProvider("BC")
         parser.readObject() match {
-          case ckp: PEMEncryptedKeyPair if keyPassword.isEmpty   => None
-          case ckp: PEMEncryptedKeyPair if keyPassword.isDefined =>
+          case ckp: PEMEncryptedKeyPair if keyPassword.isEmpty                               => None
+          case ckp: PEMEncryptedKeyPair if keyPassword.isDefined                             =>
             val decProv = new JcePEMDecryptorProviderBuilder().build(keyPassword.get.toCharArray)
             val kp      = converter.getKeyPair(ckp.decryptKeyPair(decProv))
             kp.getPrivate.some
-          case ukp: PEMKeyPair                                   =>
+          case ukp: PEMKeyPair                                                               =>
             val kp = converter.getKeyPair(ukp)
             kp.getPrivate.some
-          case upk: org.bouncycastle.asn1.pkcs.PrivateKeyInfo if keyPassword.isEmpty =>
+          case upk: org.bouncycastle.asn1.pkcs.PrivateKeyInfo if keyPassword.isEmpty         =>
             val kp = converter.getPrivateKey(upk)
             kp.some
           case _: org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo if keyPassword.nonEmpty =>
             CertInfo.stringToPrivateKey(content, keyPassword.get).some
-          case _ => None
+          case _                                                                             => None
         }
       } match {
         case Failure(e)         =>

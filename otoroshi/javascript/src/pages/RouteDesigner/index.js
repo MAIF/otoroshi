@@ -317,13 +317,15 @@ function ManagerTitle({
       component: () => <DesignerTab isActive={query === 'flow'} {...commonsProps} />,
     },
     Otoroshi.extensions()
-        .flatMap((ext) => ext.routeDesignerTabs || [])
-        .map((item) => {
-          return {
-            visible: () => item.visible ? item.visible(entity, value, isOnViewPlugins) : true,
-            component: () => <ExtensionTab isActive={query === item.id} {...commonsProps} item={item} />,
-          };
-        }),
+      .flatMap((ext) => ext.routeDesignerTabs || [])
+      .map((item) => {
+        return {
+          visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),
+          component: () => (
+            <ExtensionTab isActive={query === item.id} {...commonsProps} item={item} />
+          ),
+        };
+      }),
     {
       component: () => (
         <TesterButton
@@ -344,7 +346,7 @@ function ManagerTitle({
         <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
       ),
     },
-  ].flatMap(item => {
+  ].flatMap((item) => {
     if (Array.isArray(item)) {
       return item;
     } else {
@@ -352,7 +354,9 @@ function ManagerTitle({
     }
   });
 
-  const maybeExtensionTab = Otoroshi.extensions().flatMap((ext) => ext.routeDesignerTabs || []).find(item => item.id === query);
+  const maybeExtensionTab = Otoroshi.extensions()
+    .flatMap((ext) => ext.routeDesignerTabs || [])
+    .find((item) => item.id === query);
   const maybeExtensionTabLabel = maybeExtensionTab ? maybeExtensionTab.label : '';
   return (
     <PageTitle
@@ -362,7 +366,7 @@ function ManagerTitle({
       title={
         {
           flow: 'Designer',
-          informations: isCreation ? `Create a new Route`: `Update a Route`,
+          informations: isCreation ? `Create a new Route` : `Update a Route`,
           routes: 'Routes',
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
@@ -567,20 +571,21 @@ class Manager extends React.Component {
         .map((item) => {
           return {
             predicate: query && query === item.id,
-            render: () => item.render({ 
-              value: this.state.value, 
-              history,
-              query, 
-              isCreation, 
-              setValue: (v) => this.setState({ value: v }, this.setTitle),
-              setSaveButton: (n) => this.setState({ saveButton: n, saveTypeButton: item.id }),
-              setMenu: (n) => this.setState({ menu: n, menuRefreshed: Date.now() }),
-              FeedbackButton: FeedbackButton,
-              props: this.props 
-            }),
+            render: () =>
+              item.render({
+                value: this.state.value,
+                history,
+                query,
+                isCreation,
+                setValue: (v) => this.setState({ value: v }, this.setTitle),
+                setSaveButton: (n) => this.setState({ saveButton: n, saveTypeButton: item.id }),
+                setMenu: (n) => this.setState({ menu: n, menuRefreshed: Date.now() }),
+                FeedbackButton: FeedbackButton,
+                props: this.props,
+              }),
           };
         }),
-    ].flatMap(item => {
+    ].flatMap((item) => {
       if (Array.isArray(item)) {
         return item;
       } else {

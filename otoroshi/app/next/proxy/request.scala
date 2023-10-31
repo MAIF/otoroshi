@@ -112,17 +112,19 @@ class BackOfficeRequest(
       case map                 => path
     }
   }
-  val otoClaim = InfoTokenHelper.generateInfoToken(
-    name = "Backoffice",
-    secComInfoTokenVersion = SecComInfoTokenVersion.Latest,
-    secComTtl = 30.seconds,
-    apiKey = apikey.some,
-    paUsr = None,
-    requestHeader = request.some,
-    issuer = None,
-    sub = None,
-    addFields = None,
-  )(env).serialize(HSAlgoSettings(256, env.sharedKey))(env)
+  val otoClaim           = InfoTokenHelper
+    .generateInfoToken(
+      name = "Backoffice",
+      secComInfoTokenVersion = SecComInfoTokenVersion.Latest,
+      secComTtl = 30.seconds,
+      apiKey = apikey.some,
+      paUsr = None,
+      requestHeader = request.some,
+      issuer = None,
+      sub = None,
+      addFields = None
+    )(env)
+    .serialize(HSAlgoSettings(256, env.sharedKey))(env)
   private val addHeaders = Seq(
     env.Headers.OtoroshiClaim        -> otoClaim,
     "Host"                           -> host,

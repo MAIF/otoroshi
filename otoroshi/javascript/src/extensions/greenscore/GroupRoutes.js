@@ -201,7 +201,7 @@ const RulesWizard = ({ onWizardClose, route, onRulesChange, rulesBySection, save
                 style={{
                   backgroundColor: 'var(--color-primary)',
                   borderColor: 'var(--color-primary)',
-                  color:'var(--color-white)'
+                  color: 'var(--color-white)',
                 }}
                 className="ms-2"
                 onPress={() => {

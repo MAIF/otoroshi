@@ -149,10 +149,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-        ...paginationState,
-        pageSize: this.state.rowsPerPage,
-        page: page + 1,
-      })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -552,7 +552,9 @@ export class Table extends Component {
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
             <div className="row">
-              <div className="" style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}>
+              <div
+                className=""
+                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}>
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
@@ -573,7 +575,7 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow" style={{ position: 'relative', marginTop:20 }}>
+            <div className="rrow" style={{ position: 'relative', marginTop: 20 }}>
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"

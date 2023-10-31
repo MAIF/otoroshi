@@ -20,7 +20,6 @@ import Section from './Section';
 import DynamicScore from './DynamicScore';
 import { Link } from 'react-router-dom';
 
-
 function DatePickerSelector({ icon, onClick }) {
   return (
     <div

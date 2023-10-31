@@ -1,7 +1,7 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -320,13 +320,16 @@ case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bo
 
 case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) extends WSResponse with TrailerSupport {
 
-  private lazy val _body: Source[ByteString, _] = Try {
-    Source.fromPublisher(resp.bodyFlux).filter(_.nonEmpty).alsoTo(Sink.onComplete {
-      case Failure(e) => e.printStackTrace()
-      case Success(_) => ()
-    })
+  private lazy val _body: Source[ByteString, _]          = Try {
+    Source
+      .fromPublisher(resp.bodyFlux)
+      .filter(_.nonEmpty)
+      .alsoTo(Sink.onComplete {
+        case Failure(e) => e.printStackTrace()
+        case Success(_) => ()
+      })
   } match {
-    case Failure(e) =>
+    case Failure(e)      =>
       e.printStackTrace()
       Source.empty
     case Success(source) => source

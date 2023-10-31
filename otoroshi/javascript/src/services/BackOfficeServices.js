@@ -2097,7 +2097,7 @@ const fetchWrapper = (url, method = 'GET', body) => {
     headers: headers,
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
-}
+};
 
 export const findAllWithPagination = (
   route,

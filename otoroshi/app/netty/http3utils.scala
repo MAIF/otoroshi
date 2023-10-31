@@ -41,7 +41,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
   val validateHeaders = true
 
   override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame): Unit = {
-    val isLast = false
+    val isLast  = false
     val headers = frame.headers()
     val status  = headers.status()
     val id      = ctx.channel().asInstanceOf[QuicStreamChannel].streamId()
@@ -78,7 +78,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
 
   override def channelRead(
       ctx: ChannelHandlerContext,
-      frame: io.netty.incubator.codec.http3.Http3DataFrame,
+      frame: io.netty.incubator.codec.http3.Http3DataFrame
   ): Unit = {
     val isLast = false
     if (isLast) {

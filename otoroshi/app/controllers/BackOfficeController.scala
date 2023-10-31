@@ -180,7 +180,7 @@ class BackOfficeController(
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
-      case None                                                                  =>
+      case None                                  =>
         FastFuture.successful(
           NotFound(
             Json.obj(
@@ -437,20 +437,20 @@ class BackOfficeController(
     BackOfficeActionAuth.async { ctx =>
       val hash = BCrypt.hashpw("password", BCrypt.gensalt())
       for {
-        config <- env.datastores.globalConfigDataStore.singleton()
-        users <- env.datastores.simpleAdminDataStore.findAll()
-        refusedOpt <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
+        config      <- env.datastores.globalConfigDataStore.singleton()
+        users       <- env.datastores.simpleAdminDataStore.findAll()
+        refusedOpt  <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
         preferences <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
       } yield {
-        val reporting = AnonymousReportingJobConfig.fromEnv(env)
-        val refusedDate = refusedOpt.map(_.utf8String).map(DateTime.parse)
-        val refused: JsValue = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
+        val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
+        val refusedDate               = refusedOpt.map(_.utf8String).map(DateTime.parse)
+        val refused: JsValue          = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
         val (shouldAsk, shouldEnable) = if (reporting.enabled) {
           if (!config.anonymousReporting) {
             refusedDate match {
-              case None => (true, false)
+              case None                                                      => (true, false)
               case Some(date) if date.plusMonths(6).isBefore(DateTime.now()) => (true, false)
-              case _ => (false, false)
+              case _                                                         => (false, false)
             }
           } else {
             (false, false)
@@ -458,58 +458,58 @@ class BackOfficeController(
         } else {
           (true, true)
         }
-        val changePassword = users.filter { user =>
+        val changePassword            = users.filter { user =>
           //(user \ "password").as[String] == hash &&
           user.username == "admin@otoroshi.io"
         }.nonEmpty
         Ok(
           Json.obj(
-            "user_preferences" -> preferences.json,
-            "newEngineEnabled" -> NewEngine.enabledFromConfig(config, env),
-            "initWithNewEngine" -> config.initWithNewEngine,
-            "scriptingEnabled" -> env.scriptingEnabled,
-            "otoroshiLogo" -> env.otoroshiLogo,
-            "clusterRole" -> env.clusterConfig.mode.name,
-            "snowMonkeyRunning" -> config.snowMonkeyConfig.enabled,
-            "changePassword" -> changePassword,
-            "mailgun" -> config.mailerSettings.isDefined,
-            "clevercloud" -> config.cleverSettings.isDefined,
-            "apiReadOnly" -> config.apiReadOnly,
-            "u2fLoginOnly" -> config.u2fLoginOnly,
-            "env" -> env.env,
-            "redirectToDev" -> false,
-            "userAdmin" -> ctx.user.rights.superAdmin,
-            "superAdmin" -> ctx.user.rights.superAdmin,
-            "tenantAdmin" -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
-            "currentTenant" -> ctx.currentTenant.value,
-            "bypassUserRightsCheck" -> env.bypassUserRightsCheck,
-            "clientIdHeader" -> env.Headers.OtoroshiClientId,
-            "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
-            "version" -> SoftwareUpdatesJobs.latestVersionHolder.get(),
-            "currentVersion" -> env.otoroshiVersion,
-            "commitVersion" -> commitVersion,
-            "adminApiId" -> env.backOfficeServiceId,
-            "adminGroupId" -> env.backOfficeGroupId,
-            "adminApikeyId" -> env.backOfficeApiKeyClientId,
-            "user" -> ctx.user.email,
-            "instanceId" -> config.otoroshiId,
-            "staticExposedDomain" -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-            "providerDashboardUrl" -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-            "providerDashboardTitle" -> env.providerDashboardTitle,
+            "user_preferences"        -> preferences.json,
+            "newEngineEnabled"        -> NewEngine.enabledFromConfig(config, env),
+            "initWithNewEngine"       -> config.initWithNewEngine,
+            "scriptingEnabled"        -> env.scriptingEnabled,
+            "otoroshiLogo"            -> env.otoroshiLogo,
+            "clusterRole"             -> env.clusterConfig.mode.name,
+            "snowMonkeyRunning"       -> config.snowMonkeyConfig.enabled,
+            "changePassword"          -> changePassword,
+            "mailgun"                 -> config.mailerSettings.isDefined,
+            "clevercloud"             -> config.cleverSettings.isDefined,
+            "apiReadOnly"             -> config.apiReadOnly,
+            "u2fLoginOnly"            -> config.u2fLoginOnly,
+            "env"                     -> env.env,
+            "redirectToDev"           -> false,
+            "userAdmin"               -> ctx.user.rights.superAdmin,
+            "superAdmin"              -> ctx.user.rights.superAdmin,
+            "tenantAdmin"             -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
+            "currentTenant"           -> ctx.currentTenant.value,
+            "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
+            "clientIdHeader"          -> env.Headers.OtoroshiClientId,
+            "clientSecretHeader"      -> env.Headers.OtoroshiClientSecret,
+            "version"                 -> SoftwareUpdatesJobs.latestVersionHolder.get(),
+            "currentVersion"          -> env.otoroshiVersion,
+            "commitVersion"           -> commitVersion,
+            "adminApiId"              -> env.backOfficeServiceId,
+            "adminGroupId"            -> env.backOfficeGroupId,
+            "adminApikeyId"           -> env.backOfficeApiKeyClientId,
+            "user"                    -> ctx.user.email,
+            "instanceId"              -> config.otoroshiId,
+            "staticExposedDomain"     -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "providerDashboardTitle"  -> env.providerDashboardTitle,
             "providerDashboardSecret" -> env.providerDashboardSecret,
-            "instanceId" -> config.otoroshiId,
-            "instanceName" -> env.name,
-            "anonymousReporting" -> Json.obj(
-              "static" -> reporting.enabled,
-              "global" -> config.anonymousReporting,
-              "refused" -> refused,
-              "should_ask" -> shouldAsk,
+            "instanceId"              -> config.otoroshiId,
+            "instanceName"            -> env.name,
+            "anonymousReporting"      -> Json.obj(
+              "static"        -> reporting.enabled,
+              "global"        -> config.anonymousReporting,
+              "refused"       -> refused,
+              "should_ask"    -> shouldAsk,
               "should_enable" -> shouldEnable
             )
           )
         )
       }
-  }
+    }
 
   def index =
     BackOfficeAction.async { ctx =>
@@ -1827,7 +1827,7 @@ class BackOfficeController(
             case ElasticVersion.UnderSeven(_)      => ElasticTemplates.indexTemplate_v6
             case ElasticVersion.AboveSeven(_)      => ElasticTemplates.indexTemplate_v7
             case ElasticVersion.AboveSevenEight(_) => ElasticTemplates.indexTemplate_v7_8
-            case ElasticVersion.AboveEight(_) => ElasticTemplates.indexTemplate_v7_8
+            case ElasticVersion.AboveEight(_)      => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
             strTpl
@@ -2133,7 +2133,7 @@ class BackOfficeController(
 
   def getUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.getPreference(ctx.user.email, id) map {
-      case None => NotFound(Json.obj("error" -> "preference not found"))
+      case None       => NotFound(Json.obj("error" -> "preference not found"))
       case Some(pref) => Ok(pref)
     }
   }
@@ -2141,7 +2141,7 @@ class BackOfficeController(
   def setUserPreferences() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       AdminPreferences.format.reads(bodyRaw.utf8String.parseJson) match {
-        case JsError(err) => BadRequest(Json.obj("error" -> "bad_request")).vfuture
+        case JsError(err)        => BadRequest(Json.obj("error" -> "bad_request")).vfuture
         case JsSuccess(prefs, _) => {
           env.datastores.adminPreferencesDatastore.setPreferences(ctx.user.email, prefs).map { prefs =>
             Ok(prefs.json)
@@ -2153,8 +2153,9 @@ class BackOfficeController(
 
   def setUserPreference(id: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id,  bodyRaw.utf8String.parseJson).map { value =>
-        Ok(value)
+      env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id, bodyRaw.utf8String.parseJson).map {
+        value =>
+          Ok(value)
       }
     }
   }

@@ -530,13 +530,13 @@ class Env(
 
   // lazy val backofficeUseNewEngine: Boolean =
   //   configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.useNewEngine").getOrElse(false)
-  lazy val backofficeUsePlay: Boolean      =
+  lazy val backofficeUsePlay: Boolean   =
     configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.usePlay").getOrElse(true)
-  lazy val backOfficeSubDomain: String     =
+  lazy val backOfficeSubDomain: String  =
     configuration.getOptionalWithFileSupport[String]("app.backoffice.subdomain").getOrElse("otoroshi")
-  lazy val privateAppsSubDomain: String    =
+  lazy val privateAppsSubDomain: String =
     configuration.getOptionalWithFileSupport[String]("app.privateapps.subdomain").getOrElse("privateapps")
-  lazy val retries: Int                    = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
+  lazy val retries: Int                 = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
 
   lazy val backOfficeServiceId          =
     configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeServiceId").get

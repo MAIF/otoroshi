@@ -359,16 +359,10 @@ function ItemActions({ unfold, openAction, editLink, onDelete }) {
       }}>
       {unfold ? (
         <div className="d-flex">
-          <Link
-            to={editLink}
-            type="button"
-            className="btn btn-sm btn-success me-1">
-            <i className="fas fa-pencil-alt"  />
+          <Link to={editLink} type="button" className="btn btn-sm btn-success me-1">
+            <i className="fas fa-pencil-alt" />
           </Link>
-          <button
-            type="button"
-            className="btn btn-sm btn-danger"           
-            onClick={onDelete}>
+          <button type="button" className="btn btn-sm btn-danger" onClick={onDelete}>
             <i className="fas fa-trash" />
           </button>
         </div>

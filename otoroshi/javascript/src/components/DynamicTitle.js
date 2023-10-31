@@ -24,20 +24,24 @@ export class DynamicTitle extends Component {
     if (!this.state.content) {
       return this.props.children;
     }
-    
+
     if (typeof this.state.content === 'function') {
-      return <div style={{ position: 'relative' }}>
-        {this.state.content()}
-        {this.props.children}
-      </div>
+      return (
+        <div style={{ position: 'relative' }}>
+          {this.state.content()}
+          {this.props.children}
+        </div>
+      );
     }
 
-    return <div style={{ position: 'relative' }}>
-      <div className="page-header">
-        <h3 className="page-header_title">{this.state.content}</h3>
+    return (
+      <div style={{ position: 'relative' }}>
+        <div className="page-header">
+          <h3 className="page-header_title">{this.state.content}</h3>
+        </div>
+        {this.props.children}
       </div>
-      {this.props.children}
-    </div>
+    );
   }
 
   static getContent() {

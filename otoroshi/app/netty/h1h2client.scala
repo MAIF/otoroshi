@@ -1,7 +1,7 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -20,7 +20,21 @@ import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{BodyWritable, DefaultWSCookie, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
+import play.api.libs.ws.{
+  BodyWritable,
+  DefaultWSCookie,
+  EmptyBody,
+  InMemoryBody,
+  SourceBody,
+  WSAuthScheme,
+  WSBody,
+  WSCookie,
+  WSProxyServer,
+  WSRequest,
+  WSRequestFilter,
+  WSResponse,
+  WSSignatureCalculator
+}
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Mono}
 import reactor.netty.ByteBufFlux

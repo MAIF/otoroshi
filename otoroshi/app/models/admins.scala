@@ -274,11 +274,11 @@ object AdminPreferences {
       )
     } match {
       case Success(prefs) => JsSuccess(prefs)
-      case Failure(err) => JsError(err.getMessage)
+      case Failure(err)   => JsError(err.getMessage)
     }
-    override def writes(o: AdminPreferences): JsValue = Json.obj(
-      "user_id" -> o.userId,
-      "preferences" -> o.preferences,
+    override def writes(o: AdminPreferences): JsValue             = Json.obj(
+      "user_id"     -> o.userId,
+      "preferences" -> o.preferences
     )
   }
   def defaultValue(id: String): AdminPreferences = {
@@ -310,14 +310,16 @@ class AdminPreferencesDatastore(env: Env) {
 
   def getPreferencesOrSetDefault(userId: String)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
     getPreferences(userId).flatMap {
-      case None => setPreferences(userId, AdminPreferences.defaultValue(userId))
+      case None        => setPreferences(userId, AdminPreferences.defaultValue(userId))
       case Some(prefs) => prefs.vfuture
     }
   }
 
   def getPreferences(userId: String)(implicit ec: ExecutionContext): Future[Option[AdminPreferences]] = {
     val key = computeKey(userId)
-    env.datastores.rawDataStore.get(key).map(_.flatMap(bs => AdminPreferences.format.reads(bs.utf8String.parseJson).asOpt))
+    env.datastores.rawDataStore
+      .get(key)
+      .map(_.flatMap(bs => AdminPreferences.format.reads(bs.utf8String.parseJson).asOpt))
   }
 
   def getPreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
@@ -326,7 +328,9 @@ class AdminPreferencesDatastore(env: Env) {
     }
   }
 
-  def setPreferences(userId: String, preferences: AdminPreferences)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
+  def setPreferences(userId: String, preferences: AdminPreferences)(implicit
+      ec: ExecutionContext
+  ): Future[AdminPreferences] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore.set(key, preferences.json.stringify.byteString, None).map(_ => preferences)
   }

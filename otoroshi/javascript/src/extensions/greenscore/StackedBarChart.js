@@ -43,7 +43,6 @@ export default class StackedBarChart extends PureComponent {
           borderRadius: '.2rem',
           padding: '1rem 2rem 62px',
         }}>
-        
         <ResponsiveContainer height="100%" width="100%">
           <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
