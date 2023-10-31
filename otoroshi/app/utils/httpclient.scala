@@ -1482,15 +1482,17 @@ case class AkkaWsClientRequest(
   ///////////
 
   override def withCookies(cookies: WSCookie*): WSRequest = {
-    val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
-    val newCookies = oldCookies :+ cookies.toList
-      .map { c =>
-        s"${c.name}=${c.value}"
-      }
-      .mkString(";")
-    copy(
-      headers = headers + ("Cookie" -> newCookies)
-    )
+    if (cookies.nonEmpty) {
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val newCookies = oldCookies :+ cookies.toList
+        .map { c =>
+          s"${c.name}=${c.value}"
+        }
+        .mkString(";")
+      copy(
+        headers = headers + ("Cookie" -> newCookies)
+      )
+    } else this
   }
 
   override lazy val followRedirects: Option[Boolean]                                                     = Some(false)

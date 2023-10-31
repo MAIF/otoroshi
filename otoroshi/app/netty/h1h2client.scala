@@ -1,12 +1,12 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import io.netty.buffer.Unpooled
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
@@ -20,21 +20,7 @@ import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{
-  BodyWritable,
-  DefaultWSCookie,
-  EmptyBody,
-  InMemoryBody,
-  SourceBody,
-  WSAuthScheme,
-  WSBody,
-  WSCookie,
-  WSProxyServer,
-  WSRequest,
-  WSRequestFilter,
-  WSResponse,
-  WSSignatureCalculator
-}
+import play.api.libs.ws.{BodyWritable, DefaultWSCookie, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Mono}
 import reactor.netty.ByteBufFlux
@@ -208,15 +194,17 @@ case class NettyWsClientRequest(
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
-    val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
-    val newCookies = oldCookies :+ cookies.toList
-      .map { c =>
-        s"${c.name}=${c.value}"
-      }
-      .mkString(";")
-    copy(
-      headers = headers + ("Cookie" -> newCookies)
-    )
+    if (cookies.nonEmpty) {
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val newCookies = oldCookies :+ cookies.toList
+        .map { c =>
+          s"${c.name}=${c.value}"
+        }
+        .mkString(";")
+      copy(
+        headers = headers + ("Cookie" -> newCookies)
+      )
+    } else this
   }
   override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers: _*)
   override def withHttpHeaders(headers: (String, String)*): WSRequest = {

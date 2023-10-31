@@ -508,15 +508,17 @@ case class NettyHttp3ClientWsRequest(
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
-    val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
-    val newCookies = oldCookies :+ cookies.toList
-      .map { c =>
-        s"${c.name}=${c.value}"
-      }
-      .mkString(";")
-    copy(
-      headers = headers + ("Cookie" -> newCookies)
-    )
+    if (cookies.nonEmpty) {
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val newCookies = oldCookies :+ cookies.toList
+        .map { c =>
+          s"${c.name}=${c.value}"
+        }
+        .mkString(";")
+      copy(
+        headers = headers + ("Cookie" -> newCookies)
+      )
+    } else this
   }
   override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers: _*)
   override def withHttpHeaders(headers: (String, String)*): WSRequest = {
