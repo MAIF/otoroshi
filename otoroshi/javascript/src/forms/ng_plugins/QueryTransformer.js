@@ -1,6 +1,10 @@
 export default {
   id: 'cp:otoroshi.next.plugins.QueryTransformer',
   config_schema: {
+    add: {
+      label: 'add',
+      type: 'object',
+    },
     rename: {
       label: 'rename',
       type: 'object',
@@ -12,5 +16,5 @@ export default {
       format: null,
     },
   },
-  config_flow: ['rename', 'remove'],
+  config_flow: ['add', 'rename', 'remove'],
 };

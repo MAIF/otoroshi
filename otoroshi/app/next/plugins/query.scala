@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -13,7 +14,7 @@ import scala.util._
 case class QueryTransformerConfig(
     remove: Seq[String] = Seq.empty,
     rename: Map[String, String] = Map.empty,
-    add: Map[String, List[String]] = Map.empty
+    add: Map[String, String] = Map.empty
 ) extends NgPluginConfig {
   def json: JsValue = QueryTransformerConfig.format.writes(this)
 }
@@ -29,7 +30,7 @@ object QueryTransformerConfig {
       QueryTransformerConfig(
         remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty),
         rename = json.select("rename").asOpt[Map[String, String]].getOrElse(Map.empty),
-        add = json.select("add").asOpt[Map[String, List[String]]].getOrElse(Map.empty)
+        add = json.select("add").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -59,8 +60,7 @@ class QueryTransformer extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config                                  = ctx.cachedConfig(internalName)(QueryTransformerConfig.format).getOrElse(QueryTransformerConfig())
     val uri                                     = ctx.otoroshiRequest.uri
-    val query: Map[String, List[String]]        = uri.query().toMultiMap
-    val queryRemoved: Map[String, List[String]] = config.remove.foldLeft(query) { case (query, name) =>
+    val queryRemoved: Map[String, List[String]] = config.remove.foldLeft(uri.query().toMultiMap) { case (query, name) =>
       query.-(name)
     }
     val queryRenamed: Map[String, List[String]] = config.rename.foldLeft(queryRemoved) { case (query, (key, value)) =>
@@ -70,13 +70,10 @@ class QueryTransformer extends NgRequestTransformer {
       }
     }
     val queryAdded: Map[String, List[String]]   = config.add.foldLeft(queryRenamed) { case (query, (key, value)) =>
-      query.+((key, value))
+      query.+((key, List(value)))
     }
-    if (queryAdded.isEmpty) {
-      ctx.otoroshiRequest.right
-    } else {
-      val newUri = uri.copy(rawQueryString = queryAdded.toString().some)
-      ctx.otoroshiRequest.copy(url = newUri.toString()).right
-    }
+    val added: Seq[(String, String)] = queryAdded.toSeq.flatMap(t => t._2.map(v => (t._1, v)))
+    val newUri = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added:_*))
+    ctx.otoroshiRequest.copy(url = newUri.toString()).right
   }
 }
