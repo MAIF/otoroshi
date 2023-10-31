@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [16.10.0] - 2023-10-31
+
+https://github.com/MAIF/otoroshi/milestone/73?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.9.2...v16.10.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.10.0
+
+### Added
+
+- support route designer tabs in admin extensions (#1693)
+- provide an extension to compute green score of your apis (#1704)
+- WasmManager : create a public API (#1725)
+- Github version of the Wasm Manager (#1728)
+- display version in wasm-manager (#1737)
+- add jdk21 temuring build back in release process (#1741)
+- add the ability to customize otoroshi sidebar per user (#1746)
+
+### Changed
+
+- Migration to aws-sdk v3 (#1743)
+- Migrate from wapm to wasmer (#1745)
+- moving wasm-manager in its own repository (#1740)
+
+### Fixed 
+
+- analytics dashboard seems to be broken with elastic 8 (#1709)
+- WasmManager : endpoint /wasm/name/version does not work in 16.9.0 (#1724)
+- Delete groups on greenscore generate errors (#1734)
+- investigate around local backoffice proxy that behaves weirdly (#1739)
+- missing algorithm on encrypted private key (#1747)
+- netty http client sends empty cookie header in some cases (#1751)
+- query param transformer is broken in some cases (#1752)"
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
+
 ## [16.9.2] - 2023-10-11
 
 https://github.com/MAIF/otoroshi/milestone/78?closed=1
