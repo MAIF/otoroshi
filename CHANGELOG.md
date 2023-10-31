@@ -31,7 +31,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.10.0
 
 - analytics dashboard seems to be broken with elastic 8 (#1709)
 - WasmManager : endpoint /wasm/name/version does not work in 16.9.0 (#1724)
-- Delete groups on greenscore generate errors (#1734)
+- delete groups on greenscore generate errors (#1734)
 - investigate around local backoffice proxy that behaves weirdly (#1739)
 - missing algorithm on encrypted private key (#1747)
 - netty http client sends empty cookie header in some cases (#1751)

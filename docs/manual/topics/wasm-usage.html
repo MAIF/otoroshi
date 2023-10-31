@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Otoroshi and WASM · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+16.10.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+16.10.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Otoroshi and WASM</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#otoroshi-and-wasm" name="otoroshi-and-wasm" class="anchor"><span class="anchor-link"></span></a>Otoroshi and WASM</h1>
+<p>WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:</p>
+<ul>
+  <li><code>WasmRouteMatcher</code>: useful to define if a route can handle a request</li>
+  <li><code>WasmPreRoute</code>: useful to check request and extract useful stuff for the other plugins</li>
+  <li><code>WasmAccessValidator</code>: useful to control access to a route (jump to the next section to learn more about it)</li>
+  <li><code>WasmRequestTransformer</code>: transform the content of an incoming request (body, headers, etc &hellip;)</li>
+  <li><code>WasmBackend</code>: execute a WASM file as Otoroshi target. Useful to implement user defined logic and function at the edge</li>
+  <li><code>WasmResponseTransformer</code>: transform the content of the response produced by the target</li>
+  <li><code>WasmSink</code>: create a sink plugin to handle unmatched requests</li>
+  <li><code>WasmRequestHandler</code>: create a plugin that can handle the whole request lifecycle</li>
+  <li><code>WasmJob</code>: create a job backed by a wasm function</li>
+</ul>
+<p>To simplify the process of WASM creation and usage, Otoroshi provides:</p>
+<ul>
+  <li>otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route</li>
+  <li>otoroshi <code>wasm-manager</code>: a code editor in the browser that let you write your plugin in <code>Rust</code>, <code>TinyGo</code>, <code>Javascript</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="../how-to-s/wasm-manager-installation.html">here</a>)</li>
+</ul><div class="centered-img">
+<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" /></div>
+<h2><a href="#available-tutorials" name="available-tutorials" class="anchor"><span class="anchor-link"></span></a>Available tutorials</h2>
+<p>here is the list of available tutorials about wasm in Otoroshi</p>
+<ol>
+  <li><a href="../how-to-s/wasm-manager-installation.html">install a wasm manager</a></li>
+  <li><a href="../how-to-s/wasm-usage.html">use a wasm plugin</a></li>
+</ol>
+<h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>Wasm plugins entities</h2>
+<p>Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places. </p>
+<p>You can find wasm plugin entities at <code>/bo/dashboard/wasm-plugins</code></p>
+<p>In a wasm plugin entity, you can define the source of your wasm plugin. You can choose between</p>
+<ul>
+  <li><code>base64</code>: a base64 encoded wasm script</li>
+  <li><code>file</code>: the path to a wasm script file</li>
+  <li><code>http</code>: the url to a wasm script file</li>
+  <li><code>wasm-manager</code>: the name of a wasm script compiled by a wasm manager instance</li>
+</ul>
+<p>then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps</p><div class="centered-img">
+<img src="../imgs/wasm-plugin.png" title="screenshot of wasm plugin" /></div>
+<h2><a href="#otoroshi-plugins-api" name="otoroshi-plugins-api" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins api</h2>
+<p>the following parts illustrates the apis for the different plugins. Otoroshi uses <a href="https://extism.org/">Extism</a> to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. </p>
+<p>for instance, if we want to write a <code>WasmBackendCall</code> plugin using javascript, we could write something like</p>
+<pre class="prettyprint"><code class="language-js">function backend_call() {
+  const input_str = Host.inputString(); // here we get the context passed by otoroshi as json string
+  const backend_call_context = JSON.parse(input_str); // and parse it
+  if (backend_call_context.path === &#39;/hello&#39;) {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the &quot;backend&quot; call result
+      headers: { 
+        &#39;content-type&#39;: &#39;application/json&#39; 
+      },
+      body_json: { 
+        message: `Hello ${ctx.request.query.name[0]}!` 
+      },
+      status: 200,
+    }));
+  } else {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the &quot;backend&quot; call result
+      headers: { 
+        &#39;content-type&#39;: &#39;application/json&#39; 
+      },
+      body_json: { 
+        error: &quot;not found&quot;
+      },
+      status: 404,
+    }));
+  }
+  return 0; // we return 0 to tell otoroshi that everything went fine
+}
+</code></pre>
+<p>the following examples are written in rust. the rust macros provided by extism makes the usage of <code>Host.inputString</code> and <code>Host.outputString</code> useless. Remember that it&rsquo;s still used under the hood and that the structures are passed as json strings.</p>
+<p>do not forget to add the extism pdk library to your project to make it compile</p>
+<dl>
+  <dt>Cargo.toml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-toml">[package]
+name = &quot;@@PLUGIN_NAME@@&quot;
+version = &quot;@@PLUGIN_VERSION@@&quot;
+edition = &quot;2021&quot;
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata]
+wasi = false
+
+[dependencies]
+extism-pdk = &quot;0.1.1&quot;
+serde = &quot;1.0.152&quot;
+serde_json = &quot;1.0.91&quot;
+
+[lib]
+crate_type = [&quot;cdylib&quot;]
+path = &quot;src/lib.rs&quot;</code></pre></dd>
+  <dt>go.mod
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-mod">module @@PLUGIN_NAME@@/@@PLUGIN_VERSION@@
+
+go 1.19
+
+require github.com/buger/jsonparser v1.1.1 // indirect</code></pre></dd>
+  <dt>package.json
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-json">{
+  &quot;name&quot;: &quot;@@PLUGIN_NAME@@&quot;,
+  &quot;version&quot;: &quot;@@PLUGIN_VERSION@@&quot;,
+  &quot;devDependencies&quot;: {
+    &quot;esbuild&quot;: &quot;^0.17.9&quot;
+  }
+}</code></pre></dd>
+</dl>
+<h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
+<p>A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it&rsquo;s a function that returns a boolean answer.</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmMatchRouteResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteResponse {
+  pub result: bool,
+}
+</code></pre>
+<h3><a href="#wasmpreroute" name="wasmpreroute" class="anchor"><span class="anchor-link"></span></a>WasmPreRoute</h3>
+<p>A pre-route plugin can be used to short-circuit a request or enrich it (maybe extracting your own kind of auth. token, etc) a the very beginning of the request handling process, just after the routing part, when a route has bee chosen by the otoroshi router.</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn pre_route(Json(_context): Json&lt;types::WasmPreRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmPreRouteResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteResponse {
+    pub error: bool,
+    pub attrs: Option&lt;HashMap&lt;String, String&gt;&gt;,
+    pub status: Option&lt;u32&gt;,
+    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
+}
+</code></pre>
+<h3><a href="#wasmaccessvalidator" name="wasmaccessvalidator" class="anchor"><span class="anchor-link"></span></a>WasmAccessValidator</h3>
+<p>An access validator plugin is typically used to verify if the request can continue or must be cancelled. For instance, the otoroshi apikey plugin is an access validator that check if the current apikey provided by the client is legit and authorized on the current route.</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorError {
+    pub message: String,
+    pub status: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorResponse {
+    pub result: bool,
+    pub error: Option&lt;WasmAccessValidatorError&gt;,
+}
+</code></pre>
+<h3><a href="#wasmrequesttransformer" name="wasmrequesttransformer" class="anchor"><span class="anchor-link"></span></a>WasmRequestTransformer</h3>
+<p>A request transformer plugin can be used to compose or transform the request that will be sent to the backend</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn transform_request(Json(_context): Json&lt;types::WasmRequestTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmRequestTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_request: OtoroshiRequest,
+    pub otoroshi_request: OtoroshiRequest,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+</code></pre>
+<h3><a href="#wasmbackendcall" name="wasmbackendcall" class="anchor"><span class="anchor-link"></span></a>WasmBackendCall</h3>
+<p>A backend call plugin can be used to simulate a backend behavior in otoroshi. For instance the static backend of otoroshi return the content of a file</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn call_backend(Json(_context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmBackendContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub raw_request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub request: OtoroshiRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmBackendResponse {
+    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
+    pub status: u32,
+}
+</code></pre>
+<h3><a href="#wasmresponsetransformer" name="wasmresponsetransformer" class="anchor"><span class="anchor-link"></span></a>WasmResponseTransformer</h3>
+<p>A response transformer plugin can be used to compose or transform the response that will be sent back to the client</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn transform_response(Json(_context): Json&lt;types::WasmResponseTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmResponseTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_response: OtoroshiResponse,
+    pub otoroshi_response: OtoroshiResponse,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub response_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmTransformerResponse {
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
+}
+</code></pre>
+<h3><a href="#wasmsink" name="wasmsink" class="anchor"><span class="anchor-link"></span></a>WasmSink</h3>
+<p>A sink is a kind of plugin that can be used to respond to any unmatched request before otoroshi sends back a 404 response</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn sink_matches(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
+    ///
+}
+
+#[plugin_fn]
+pub fn sink_handle(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkHandleResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub origin: String,
+    pub status: u32,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkMatchesResponse {
+    pub result: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkHandleResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
+}
+</code></pre>
+<h3><a href="#wasmrequesthandler" name="wasmrequesthandler" class="anchor"><span class="anchor-link"></span></a>WasmRequestHandler</h3>
+<p>A request handler is a very special kind of plugin that can bypass the otoroshi proxy engine on specific domains and completely handles the request/response lifecycle on it&rsquo;s own.</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn can_handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
+    ///
+}
+
+#[plugin_fn]
+pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmRequestHandlerResponse&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerContext {
+    pub request: RawRequest
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
+}
+</code></pre>
+<h3><a href="#wasmjob" name="wasmjob" class="anchor"><span class="anchor-link"></span></a>WasmJob</h3>
+<p>A job is a plugin that can run periodically an do whatever you want. Typically, the kubernetes plugins of otoroshi are jobs that periodically sync stuff between otoroshi and kubernetes using the kube-api</p>
+<pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
+
+#[plugin_fn]
+pub fn job_run(Json(_context): Json&lt;types::WasmJobContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmJobResult&gt;&gt; {
+    ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobContext {
+    pub attrs: Value,
+    pub global_config: Value,
+    pub snowflake: Option&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobResult {
+
+}
+</code></pre>
+<h3><a href="#common-types" name="common-types" class="anchor"><span class="anchor-link"></span></a>Common types</h3>
+<pre class="prettyprint"><code class="language-rs">use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Backend {
+    pub id: String,
+    pub hostname: String,
+    pub port: u32,
+    pub tls: bool,
+    pub weight: u32,
+    pub protocol: String,
+    pub ip_address: Option&lt;String&gt;,
+    pub predicate: Value,
+    pub tls_config: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Apikey {
+    #[serde(alias = &quot;clientId&quot;)]
+    pub client_id: String,
+    #[serde(alias = &quot;clientName&quot;)]
+    pub client_name: String,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub tags: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct User {
+    pub name: String,
+    pub email: String,
+    pub profile: Value,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub tags: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RawRequest {
+    pub id: u32,
+    pub method: String,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+    pub tls: bool,
+    pub uri: String,
+    pub path: String,
+    pub version: String,
+    pub has_body: bool,
+    pub remote: String,
+    pub client_cert_chain: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Frontend {
+    pub domains: Vec&lt;String&gt;,
+    pub strict_path: Option&lt;String&gt;,
+    pub exact: bool,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub query: HashMap&lt;String, String&gt;,
+    pub methods: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HealthCheck {
+    pub enabled: bool,
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RouteBackend {
+    pub targets: Vec&lt;Backend&gt;,
+    pub root: String,
+    pub rewrite: bool,
+    pub load_balancing: Value,
+    pub client: Value,
+    pub health_check: Option&lt;HealthCheck&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Route {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub tags: Vec&lt;String&gt;,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub enabled: bool,
+    pub debug_flow: bool,
+    pub export_reporting: bool,
+    pub capture: bool,
+    pub groups: Vec&lt;String&gt;,
+    pub frontend: Frontend,
+    pub backend: RouteBackend,
+    pub backend_ref: Option&lt;String&gt;,
+    pub plugins: Value,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OtoroshiResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct OtoroshiRequest {
+    pub url: String,
+    pub method: String,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub version: String,
+    pub client_cert_chain: Value,
+    pub backend: Option&lt;Backend&gt;,
+    pub cookies: Value,
+}
+</code></pre>
+<h2><a href="#otoroshi-interop-with-host-functions" name="otoroshi-interop-with-host-functions" class="anchor"><span class="anchor-link"></span></a>Otoroshi interop. with host functions</h2>
+<p>otoroshi provides some host function in order make wasm interact with otoroshi internals. You can</p>
+<ul>
+  <li>access wasi resources</li>
+  <li>access http resources</li>
+  <li>access otoroshi internal state</li>
+  <li>access otoroshi internal configuration</li>
+  <li>access otoroshi static configuration</li>
+  <li>access plugin scoped in-memory key/value storage</li>
+  <li>access global in-memory key/value storage</li>
+  <li>access plugin scoped persistent key/value storage</li>
+  <li>access global persistent key/value storage</li>
+</ul>
+<h3><a href="#authorizations" name="authorizations" class="anchor"><span class="anchor-link"></span></a>authorizations</h3>
+<p>all the previously listed host functions are enabled with specific authorizations to avoid security issues with third party plugins. You can enable/disable the host function from the wasm plugin entity</p><div class="centered-img">
+<img src="../imgs/wasm-authz.png" title="screenshot of wasm authz" /></div>
+<h3><a href="#host-functions-abi" name="host-functions-abi" class="anchor"><span class="anchor-link"></span></a>host functions abi</h3>
+<p>you&rsquo;ll find here the raw signatures for the otoroshi host functions. we are currently in the process of writing higher level functions to hide the complexity.</p>
+<p>every time you the the following signature: <code>(context: u64, size: u64) -&gt; u64</code> it means that otoroshi is expecting for a pointer to the call context (which is a json string) and it&rsquo;s size. The return is a pointer to the response (which is a json string).</p>
+<p>the signature <code>(unused: u64) -&gt; u64</code> means that there is no need for a params but as we technically need one (and hope to don&rsquo;t need one in the future), you have to pass something like <code>0</code> as parameter.</p>
+<pre class="prettyprint"><code class="language-rust">extern &quot;C&quot; {
+  // log messages in otoroshi (log levels are 0 to 6 for trace, debug, info, warn, error, critical, max)
+  fn proxy_log(logLevel: i32, message: u64, size: u64) -&gt; i32;
+  // trigger an otoroshi wasm event that can be exported through data exporters
+  fn proxy_log_event(context: u64, size: u64) -&gt; u64;
+  // an http client
+  fn proxy_http_call(context: u64, size: u64) -&gt; u64;
+  // access the current otoroshi state containing a snapshot of all otoroshi entities
+  fn proxy_state(context: u64) -&gt; u64;
+  fn proxy_state_value(context: u64, size: u64) -&gt; u64;
+  // access the current otoroshi cluster configuration
+  fn proxy_cluster_state(context: u64) -&gt; u64;
+  fn proxy_cluster_state_value(context: u64, size: u64) -&gt; u64;
+  // access the current otoroshi static configuration
+  fn proxy_global_config(unused: u64) -&gt; u64;
+  // access the current otoroshi dynamic configuration
+  fn proxy_config(unused: u64) -&gt; u64;
+  // access a persistent key/value store shared by every wasm plugins
+  fn proxy_datastore_keys(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_get(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_exists(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_pttl(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_setnx(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_del(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_incrby(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_pexpire(context: u64, size: u64) -&gt; u64;
+  fn proxy_datastore_all_matching(context: u64, size: u64) -&gt; u64;
+  // access a persistent key/value store for the current plugin instance only
+  fn proxy_plugin_datastore_keys(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_get(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_exists(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_pttl(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_setnx(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_del(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_incrby(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_pexpire(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_datastore_all_matching(context: u64, size: u64) -&gt; u64;
+  // access an in memory key/value store for the current plugin instance only
+  fn proxy_plugin_map_set(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_map_get(context: u64, size: u64) -&gt; u64;
+  fn proxy_plugin_map(unused: u64) -&gt; u64;
+  // access an in memory key/value store shared by every wasm plugins
+  fn proxy_global_map_set(context: u64, size: u64) -&gt; u64;
+  fn proxy_global_map_get(context: u64, size: u64) -&gt; u64;
+  fn proxy_global_map(unused: u64) -&gt; u64;
+}
+</code></pre>
+<p>right know, when using the wasm manager, a default idiomatic implementation is provided for <code>TinyGo</code> and <code>Rust</code></p>
+<dl>
+  <dt>host.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-rs">/// logs
+pub fn log(level: i32, msg: String)
+pub fn log_event(level: i32, function: String,  message: String)
+/// static config access api
+pub fn static_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn static_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+/// global config access api
+pub fn global_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn global_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+/// cluster config access api
+pub fn cluster_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn cluster_config_value(path: &amp;str) -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt; 
+pub fn cluster_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt; 
+//// state access api
+pub fn state() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn state_value(entity: &amp;str, id: &amp;str) -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn state_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+//// plugin memory api
+pub fn plugin_mem() -&gt; Option&lt;HashMap&lt;String, Vec&lt;u8&gt;&gt;&gt;
+pub fn plugin_mem_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_mem_del(key: &amp;str)
+pub fn plugin_mem_set(key: &amp;str, value: Vec&lt;u8&gt;)
+pub fn plugin_mem_set_string(key: &amp;str, value: String)
+pub fn plugin_mem_get_string(key: &amp;str) -&gt; Option&lt;String&gt; 
+pub fn plugin_mem_set_json(key: &amp;str, value: serde_json::Value)
+pub fn plugin_mem_get_json(key: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+pub fn plugin_mem_set_bool(key: &amp;str, value: bool)
+pub fn plugin_mem_get_bool(key: &amp;str) -&gt; Option&lt;bool&gt;
+//// shared memory api
+pub fn shared_mem() -&gt; Option&lt;HashMap&lt;String, Vec&lt;u8&gt;&gt;&gt;
+pub fn shared_mem_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn shared_mem_del(key: &amp;str)
+pub fn shared_mem_set(key: &amp;str, value: Vec&lt;u8&gt;)
+pub fn shared_mem_set_string(key: &amp;str, value: String)
+pub fn shared_mem_get_string(key: &amp;str) -&gt; Option&lt;String&gt;
+pub fn shared_mem_set_json(key: &amp;str, value: serde_json::Value)
+pub fn shared_mem_get_json(key: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+pub fn shared_mem_set_bool(key: &amp;str, value: bool)
+pub fn shared_mem_get_bool(key: &amp;str) -&gt; Option&lt;bool&gt;
+/// datastore access api
+pub fn datastore_set(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn datastore_setnx(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn datastore_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn datastore_exists(key: &amp;str) -&gt; bool
+pub fn datastore_pttl(key: &amp;str) -&gt; u64
+pub fn datastore_del(keys: Vec&lt;&amp;str&gt;)
+pub fn datastore_incrby(key: &amp;str, incr: u64) -&gt; u64
+pub fn datastore_pexpire(key: &amp;str, ttl: u64)
+pub fn datastore_keys(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn datastore_all_matching(pattern: &amp;str) -&gt; Vec&lt;Vec&lt;u8&gt;&gt;
+pub fn datastore_all_matching_string(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn datastore_all_matching_json(pattern: &amp;str) -&gt; Vec&lt;serde_json::Value&gt; 
+/// plugin scoped datastore access api
+pub fn plugin_datastore_set(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn plugin_datastore_setnx(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn plugin_datastore_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_datastore_exists(key: &amp;str) -&gt; bool
+pub fn plugin_datastore_pttl(key: &amp;str) -&gt; u64
+pub fn plugin_datastore_del(keys: Vec&lt;&amp;str&gt;)
+pub fn plugin_datastore_incrby(key: &amp;str, incr: u64) -&gt; u64
+pub fn plugin_datastore_pexpire(key: &amp;str, ttl: u64)
+pub fn plugin_datastore_keys(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn plugin_datastore_all_matching(pattern: &amp;str) -&gt; Vec&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_datastore_all_matching_string(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn plugin_datastore_all_matching_json(pattern: &amp;str) -&gt; Vec&lt;serde_json::Value&gt;
+/// http client api
+pub fn http_call(req: OtoroshiHttpRequest) -&gt; Option&lt;OtoroshiHttpResponse&gt;</code></pre></dd>
+  <dt>host.go
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-go">// PLUGIN MAP 
+func ProxyPluginMapSet(key string, value string)
+func ProxyPluginMapGet(key string) []byte
+func ProxyPluginMap() map[string][]byte
+// GLOBAL PLUGIN MAP
+func ProxyGlobalMapSet(key string, value string)
+func ProxyGlobalMapGet(key string) []byte
+func ProxyGlobalMap() map[string][]byte
+// PLUGIN DATASTORE
+func ProxyPluginDatastoreKeys(key string) []byte
+func ProxyPluginDataStoreGet(key string) []byte
+func ProxyPluginDataStoreExists(key string) bool
+func ProxyPluginDataStorePttl(key string) uint64
+func ProxyPluginDataStoreSetnx(value []byte)
+func ProxyPluginDataStoreDel(keys ...string)
+func ProxyPluginDataStoreIncrby(key string, incr int)
+func ProxyPluginDataStorePexpire(key string, pttl int64)
+func ProxyPluginDataStoreAllMatching(key string) []byte
+// PROXY DATASTORE 
+func ProxyDatastoreKeys(key string) []byte
+func ProxyDataStoreGet(key string) []byte
+func ProxyDataStoreExists(key string) bool
+func ProxyDataStorePttl(key string) uint64
+func ProxyDataStoreSetnx(value []byte)
+func ProxyDataStoreDel(keys ...string)
+func ProxyDataStoreIncrby(key string, incr int)
+func ProxyDataStorePexpire(key string, pttl int64)
+func ProxyDataStoreAllMatching(key string) []byte
+// cluster config
+func ClusterState() []byte
+func ClusterStateField(field string) []byte
+// proxy state
+func ProxyState() []byte
+func ProxyStateEntities(entity string) []byte
+func ProxyStateEntity(entity string, id string) []byte
+// logs
+func Log(logLevel LogLevel, message string) Status
+func LogBool(logLevel LogLevel, message bool) Status
+func LogLong(logLevel LogLevel, message uint64) Status
+func LogBytes(logLevel LogLevel, message []byte) Status
+func LogEvent(function string, message string, level LogLevel) Status</code></pre></dd>
+</dl>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/chaos-engineering.html">Chaos engineering with the Snow Monkey</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/wasm-usage.html#otoroshi-and-wasm" class="header">Otoroshi and WASM</a>
+  <ul>
+    <li><a href="../topics/wasm-usage.html#available-tutorials" class="header">Available tutorials</a></li>
+    <li><a href="../topics/wasm-usage.html#wasm-plugins-entities" class="header">Wasm plugins entities</a></li>
+    <li><a href="../topics/wasm-usage.html#otoroshi-plugins-api" class="header">Otoroshi plugins api</a></li>
+    <li><a href="../topics/wasm-usage.html#otoroshi-interop-with-host-functions" class="header">Otoroshi interop. with host functions</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2023</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+

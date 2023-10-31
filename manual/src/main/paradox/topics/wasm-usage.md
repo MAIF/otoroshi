@@ -87,13 +87,13 @@ the following examples are written in rust. the rust macros provided by extism m
 do not forget to add the extism pdk library to your project to make it compile
 
 Cargo.toml
-:   @@snip [Cargo.toml](../../../../../tools/otoroshi-wasm-manager/server/templates/rust/Cargo.toml) 
+:   @@snip [Cargo.toml](../snippets/wasm-manager/Cargo.toml) 
 
 go.mod
-:   @@snip [go.mod](../../../../../tools/otoroshi-wasm-manager/server/templates/go/go.mod) 
+:   @@snip [go.mod](../snippets/wasm-manager/go.mod) 
 
 package.json
-:   @@snip [package.json](../../../../../tools/otoroshi-wasm-manager/server/templates/js/package.json) 
+:   @@snip [package.json](../snippets/wasm-manager/package.json) 
 
 ### WasmRouteMatcher
 
