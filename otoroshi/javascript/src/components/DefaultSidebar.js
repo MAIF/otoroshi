@@ -6,6 +6,8 @@ import { SidebarContext } from "../apps/BackOfficeApp";
 import { firstLetterUppercase } from "../util";
 import { graph } from "../pages/FeaturesPage";
 
+const addShortcutButton = true;
+
 export function DefaultSidebar(props) {
   const pathname = window.location.pathname;
   const rootClassName = (part) => {
@@ -228,7 +230,7 @@ function CustomIcon({ icon }) {
   return zeIcon;
 }
 
-function Block({ title, features, first, last, hightlighted, setHighlighted, onClose, shortcuts, writeStorage }) {
+function Block({ title, description, features, first, last, hightlighted, setHighlighted, onClose, shortcuts, writeStorage }) {
   const [open, setOpen] = useState(false)
 
   return <div key={title} style={{
@@ -261,23 +263,47 @@ function Block({ title, features, first, last, hightlighted, setHighlighted, onC
             title, link, icon,
           }) => {
 
+            const alreadyInShortcuts = !!shortcuts.find(s => s === title.toLowerCase());
+
             return <Link
               to={link}
               key={title}
               className="sidebar-feature p-3 py-1 mx-1"
               style={{
                 height: 'initial',
-                borderRadius: 6
+                borderRadius: 6,
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
-              onClick={() => {
-                writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+              onClick={(e) => {
+                if (!addShortcutButton) {
+                  writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                }
               }}>
-              <CustomIcon icon={icon} />
-              <span style={{
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis'
-              }}>{title}</span>
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                <CustomIcon icon={icon} />
+                <div title={`${title} - ${description}`} style={{
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  marginLeft: 15,
+                  maxWidth: 130,
+                }}>{title}</div>
+              </div>
+              {addShortcutButton && <i 
+                className="fas fa-plus" 
+                title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'} 
+                disabled={alreadyInShortcuts} 
+                style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }} 
+                onClick={(e) => {
+                  if (!alreadyInShortcuts && addShortcutButton) {
+                    writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }} />}
             </Link>
           })}
       </div>
