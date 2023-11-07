@@ -1243,7 +1243,7 @@ export class DangerZonePage extends Component {
 
   componentDidMount() {
     this.props.setSidebarContent(null);
-    this.props.setTitle(`Danger Zone`);
+    this.props.setTitle(`Danger zone`);
     BackOfficeServices.getGlobalConfig().then((value) =>
       this.setState({ value, originalValue: value })
     );

@@ -192,7 +192,7 @@ export class U2FRegisterPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Local admins`);
+    this.props.setTitle(`All administrators`);
   }
 
   onChange = (e) => {

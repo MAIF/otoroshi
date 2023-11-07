@@ -104,7 +104,7 @@ export class SnowMonkeyPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Nihonzaru, the Snow Monkey`);
+    this.props.setTitle(`Nihonzaru, the snow monkey`);
     this.updateStateConfig(true);
     this.mountShortcuts();
   }

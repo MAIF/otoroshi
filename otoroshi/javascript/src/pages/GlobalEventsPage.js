@@ -230,7 +230,7 @@ export class GlobalEventsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global events`);
+    this.props.setTitle(`Events log`);
     //this.table.update();
   }
 

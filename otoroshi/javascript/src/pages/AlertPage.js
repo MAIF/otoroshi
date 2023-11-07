@@ -46,7 +46,7 @@ export class AlertPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Alert Log`);
+    this.props.setTitle(`Alerts log`);
   }
 
   fetchEvents = () => {

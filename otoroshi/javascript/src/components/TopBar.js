@@ -645,7 +645,7 @@ export class TopBar extends Component {
           action: () => this.routeTo('/routes'),
           env: <span className="fas fa-road" />,
           label: 'Routes',
-          value: 'Routes',
+          value: 'All Routes',
         });
         options.push({
           action: () => this.routeTo('/route-compositions'),

@@ -18,7 +18,7 @@ export const graph = (env) => {
           icon: () => 'fa-hammer',
         },
         {
-          title: 'Snow Monkey',
+          title: 'Snow monkey',
           absoluteImg: '/assets/images/nihonzaru.svg',
           description: 'Create chaos in your routes and test your resilience',
           display: () => env.userAdmin,
@@ -26,7 +26,7 @@ export const graph = (env) => {
           icon: () => snowmonkeyIcon,
         },
         {
-          title: 'Clever apps',
+          title: 'Clever cloud apps',
           img: 'clever',
           description: 'Create routes from Clever Cloud apps',
           display: () => env.userAdmin,
@@ -261,7 +261,7 @@ export const graph = (env) => {
       description: 'Everything security related',
       features: [
         {
-          title: 'Authentication modules',
+          title: 'Auth. modules',
           description:
             'Manage the access to Otoroshi UI and protect your routes with authentication modules.',
           img: 'private-apps',

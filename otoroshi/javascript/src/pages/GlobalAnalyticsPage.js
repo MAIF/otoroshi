@@ -18,7 +18,7 @@ export class GlobalAnalyticsPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle(`Global analytics`);
+    this.props.setTitle(`Analytics`);
     this.update();
   }
 

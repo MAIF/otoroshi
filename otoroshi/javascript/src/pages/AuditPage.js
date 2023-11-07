@@ -37,7 +37,7 @@ export class AuditPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Audit Log`);
+    this.props.setTitle(`Audit log`);
   }
 
   fetchEvents = () => {

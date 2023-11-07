@@ -14,7 +14,7 @@ export function EurekaServersPage(props) {
   ];
 
   useEffect(() => {
-    setTitle(`Eureka Servers`);
+    setTitle(`Eureka servers`);
   });
 
   const gotoEurekaServer = (eurekaServer) => {
