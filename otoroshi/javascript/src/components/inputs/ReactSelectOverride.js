@@ -17,8 +17,6 @@ export class ReactSelectOverride extends React.Component {
     }
   }
 
-  isAnObject = (v) => typeof v === 'object' && v !== null;
-
   readProps = () => {
     const isOptionObject = this.isAnObject(this.props.options[0]);
     const opt = this.props.options.find(
@@ -49,21 +47,7 @@ export class ReactSelectOverride extends React.Component {
   isAnObject = (v) => typeof v === 'object' && v !== null;
 
   readProps = () => {
-    const isOptionObject = this.isAnObject(this.props.options[0]);
-    const opt = this.props.options.find(
-      (o) => o === this.props.value || (isOptionObject ? o.value === this.props.value : false)
-    );
-
-    if (opt) {
-      this.setState({
-        value: {
-          label: opt.name || opt.label,
-          value: opt.value,
-        },
-      });
-    } else if (this.props.value) {
-      this.setState({ value: this.props.value });
-    }
+    this.setState(this.getValue())
   };
 
   onChange = (newItem) => {
@@ -76,13 +60,30 @@ export class ReactSelectOverride extends React.Component {
       }
     );
   };
+
+  getValue = () => {
+    const isOptionObject = this.isAnObject(this.props.options[0]);
+    const opt = this.props.options.find(
+      (o) => o === this.props.value || (isOptionObject ? o.value === this.props.value : false)
+    );
+
+    console.log(opt, this.props)
+
+    if (!opt)
+      return undefined
+
+    return {
+      label: opt.name || opt.label,
+      value: opt.value,
+    }
+  }
 
   render() {
     const Component = this.props.creatable ? Creatable : Select;
     return (
       <Component
         {...this.props}
-        value={this.state.value}
+        value={this.getValue()}
         onChange={this.onChange}
         components={{
           IndicatorSeparator: () => null,
