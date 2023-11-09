@@ -108,7 +108,11 @@ export function DefaultSidebar(props) {
   };
 
   const sidebarContext = useContext(SidebarContext);
+
   const { openedSidebar } = sidebarContext;
+
+  const onRouteTab = window.location.pathname.startsWith('/bo/dashboard/routes/') ||
+    window.location.pathname.startsWith('/bo/dashboard/route-compositions/');
 
   const links = graph(props.env);
 
@@ -151,8 +155,8 @@ export function DefaultSidebar(props) {
             }
           }, 50); // delay to avoid simple click
         }}>
-        {openedSidebar && <p className="ps-2">Shortcuts</p>}
-        {shortcuts
+        {openedSidebar && !onRouteTab && <p className="ps-2">Shortcuts</p>}
+        {!onRouteTab && shortcuts
           .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
           .filter((s) => s)
           .map((shortcut, initialIndex) => {
@@ -162,8 +166,8 @@ export function DefaultSidebar(props) {
                 dragging={
                   draggingIndex === initialIndex
                     ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                      clientY: client.clientY - start.clientY,
+                    }
                     : undefined
                 }
                 startDragging={(clientY) => {
@@ -179,7 +183,7 @@ export function DefaultSidebar(props) {
             );
           })}
       </ul>
-      {openedSidebar && (
+      {openedSidebar && !onRouteTab && (
         <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
           <p className="ps-2">Categories</p>
           <div className="d-flex flex-column">

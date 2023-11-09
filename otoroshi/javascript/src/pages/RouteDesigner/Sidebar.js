@@ -7,6 +7,27 @@ import { SidebarContext } from '../../apps/BackOfficeApp';
 const LINKS = (entity, route) =>
   [
     {
+      to: `/${entity}/${route.id}?tab=informations`,
+      icon: 'fa-file-alt',
+      title: 'Informations',
+      tab: 'informations',
+      tooltip: { ...createTooltip(`Show informations tab`) },
+    },
+    {
+      to: `/${entity}/${route.id}?tab=flow`,
+      icon: 'fa-pencil-ruler',
+      title: 'Designer',
+      tab: 'flow',
+      tooltip: { ...createTooltip(`Show designer tab`) },
+    },
+    {
+      to: `/${entity}/${route.id}?tab=flow&showTryIt=true`,
+      icon: 'fa-vials',
+      title: 'Tester',
+      tab: 'showTryIt',
+      tooltip: { ...createTooltip(`Show tester tab`) },
+    },
+    {
       to: `/${entity}/${route.id}/health`,
       icon: 'fa-heart',
       title: 'Health',
@@ -44,13 +65,23 @@ const LINKS = (entity, route) =>
   ].filter((link) => !link.enabled || link.enabled.includes(entity));
 
 export default ({ route }) => {
+
   const entity = useEntityFromURI();
   const location = useLocation();
   const { openedSidebar } = useContext(SidebarContext);
 
   const currentTab = location.pathname.split('/').slice(-1)[0];
   const isActive = (tab) => {
-    return currentTab === tab ? 'active' : '';
+    const params = new URLSearchParams(window.location.search)
+    const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
+    const queryTab = params.get('tab');
+    console.log(currentTab, tab, onTryIt, queryTab)
+
+    if (onTryIt) {
+      return onTryIt === tab ? 'active' : ''
+    } else {
+      return currentTab === tab || queryTab === tab ? 'active' : '';
+    }
   };
 
   if (location.pathname.endsWith('/new')) return null;
@@ -62,25 +93,14 @@ export default ({ route }) => {
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}>
       <ul className="nav flex-column nav-sidebar">
-        <li className="nav-item mb-1">
-          <Link to={`/${entity.link}/${route.id}?tab=flow`} className="m-0 p-2 nav-link">
-            <div style={{ width: '20px' }} className="d-flex justify-content-center">
-              <i className="fas fa-road"></i>
-            </div>
-            <div className="title" style={{ marginLeft: '4px', marginTop: '4px' }}>
-              {' '}
-              {openedSidebar ? route.name : ''}
-            </div>
-          </Link>
-        </li>
+        {openedSidebar && <p className="ps-2">Route</p>}
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
           <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
               to={to}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                openedSidebar ? 'ms-3' : ''
-              } m-0 ${isActive(tab)}`}>
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                } m-0 ${isActive(tab)}`}>
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
               </div>
@@ -88,6 +108,26 @@ export default ({ route }) => {
             </Link>
           </li>
         ))}
+
+        {openedSidebar && <p className="ps-2 mt-3">Extensions</p>}
+        {Otoroshi.extensions()
+          .flatMap((ext) => ext.routeDesignerTabs || [])
+          //               visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),
+          .map((item) => {
+            const to = `/${entity.link}/${route.id}?tab=${item.id}`;
+            const tab = "" // todo
+            return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
+              <Link
+                to={to}
+                className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}>
+                <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                  <i className={`fas ${item.icon}`} />
+                </div>
+                <div className="title"> {openedSidebar ? item.label : ''}</div>
+              </Link>
+            </li>
+          })}
       </ul>
     </div>
   );

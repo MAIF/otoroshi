@@ -63,7 +63,7 @@ export class ServiceHealthPage extends Component {
             });
           });
         } else {
-          this.title = 'No HealthCheck available yet';
+          this.title = this.props.title || 'No HealthCheck available yet';
           this.props.setTitle(this.title);
           this.setState({ loading: false });
         }
@@ -157,7 +157,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-              length
+            length
           );
         }, 0);
 

@@ -655,7 +655,7 @@ export class ServiceApiKeysPage extends Component {
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
-        ? this.props.setTitle(`Routes Apikeys`)
+        ? this.props.setTitle(this.props.title || `Routes Apikeys`)
         : this.props.setTitle(`Service Apikeys`);
       this.setState({ service }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));

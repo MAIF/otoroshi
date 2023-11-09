@@ -40,7 +40,7 @@ export class ServiceAnalyticsPage extends Component {
 
   componentDidMount() {
     this.onRoutes
-      ? this.props.setTitle(`Route analytics`)
+      ? this.props.setTitle(this.props.title || `Route analytics`)
       : this.props.setTitle(`Service analytics`);
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)

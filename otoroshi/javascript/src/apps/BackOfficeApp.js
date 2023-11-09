@@ -432,7 +432,7 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path={['/routes', '/route-compositions']}
+                          path={['/routes/:routeId', '/routes', '/route-compositions/:routeId', '/route-compositions']}
                           component={(props) => (
                             <RouteDesignerPage
                               globalEnv={this.state.env}

@@ -67,8 +67,6 @@ export class ReactSelectOverride extends React.Component {
       (o) => o === this.props.value || (isOptionObject ? o.value === this.props.value : false)
     );
 
-    console.log(opt, this.props)
-
     if (!opt)
       return undefined
 
