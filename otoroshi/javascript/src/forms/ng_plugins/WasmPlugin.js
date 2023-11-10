@@ -23,10 +23,9 @@ const schema = {
         label: 'Kind',
         type: 'select',
         props: {
-          formatValue: value => {
-            if (value === "wasmmanager")
-              return "wasmo"
-            return value
+          formatValue: (value) => {
+            if (value === 'wasmmanager') return 'wasmo';
+            return value;
           },
           label: 'Kind',
           options: ['Base64', 'Http', 'Wasmo', 'Local', 'File'].map((v) => ({

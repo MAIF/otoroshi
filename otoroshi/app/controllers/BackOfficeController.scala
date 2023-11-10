@@ -1981,14 +1981,14 @@ class BackOfficeController(
       .flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
           case Some(settings @ WasmManagerSettings(url, _, _, pluginsFilter, _)) =>
-           val claim      = ApikeyHelper.generate(settings)
+            val claim = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
                   "Otoroshi-User" -> claim,
-                  "kind"                   -> pluginsFilter.getOrElse("*")
+                  "kind"          -> pluginsFilter.getOrElse("*")
                 )
                 .get()
                 .map(res => {
@@ -2006,7 +2006,7 @@ class BackOfficeController(
               case Failure(err) => Ok(Json.arr()).vfuture
               case Success(v)   => v
             }
-          case _                                                                     =>
+          case _                                                                 =>
             BadRequest(
               Json.obj(
                 "error" -> "Missing config in global configuration"
@@ -2020,7 +2020,7 @@ class BackOfficeController(
     val jsonBody = ctx.request.body
 
     val wasmoSettings = WasmManagerSettings.format.reads(jsonBody).get
-    val apikey = ApikeyHelper.generate(wasmoSettings)
+    val apikey        = ApikeyHelper.generate(wasmoSettings)
 
     Try {
       env.Ws
@@ -2028,7 +2028,7 @@ class BackOfficeController(
         .withFollowRedirects(false)
         .withHttpHeaders(
           "Otoroshi-User" -> apikey,
-          "kind" -> wasmoSettings.pluginsFilter.getOrElse("*")
+          "kind"          -> wasmoSettings.pluginsFilter.getOrElse("*")
         )
         .get()
         .map(res => {
@@ -2044,7 +2044,7 @@ class BackOfficeController(
         }
     } match {
       case Failure(err) => Ok(Json.arr()).vfuture
-      case Success(v) => v
+      case Success(v)   => v
     }
   }
 

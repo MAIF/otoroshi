@@ -35,7 +35,7 @@ class Toast extends Component {
             type="button"
             className="btn btn-sm btn-danger"
             onClick={(e) => this.props.close()}>
-            <i className='fas fa-times' style={{ color: '#fff' }} />
+            <i className="fas fa-times" style={{ color: '#fff' }} />
           </button>
         </div>
         <div

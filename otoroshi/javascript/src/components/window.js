@@ -202,7 +202,13 @@ export function registerAlert() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newAlert = (message, title, linkOpt, modalStyleOverride = {}, contentStyleOverride = {}) => {
+  window.newAlert = (
+    message,
+    title,
+    linkOpt,
+    modalStyleOverride = {},
+    contentStyleOverride = {}
+  ) => {
     return new Promise((success) => {
       ReactDOM.render(
         <Alert

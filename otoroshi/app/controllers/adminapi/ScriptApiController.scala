@@ -53,15 +53,15 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def findAllScriptsList() =
     ApiAction.async { ctx =>
-      val transformersNames = env.scriptManager.transformersNames
-      val validatorsNames   = env.scriptManager.validatorsNames
-      val preRouteNames     = env.scriptManager.preRouteNames
-      val reqSinkNames      = env.scriptManager.reqSinkNames
-      val listenerNames     = env.scriptManager.listenerNames
-      val jobNames          = env.scriptManager.jobNames
-      val exporterNames     = env.scriptManager.exporterNames
-      val reqHandlerNames   = env.scriptManager.reqHandlerNames
-      val tunnelHandlerNames   = env.scriptManager.tunnelHandlerNames
+      val transformersNames  = env.scriptManager.transformersNames
+      val validatorsNames    = env.scriptManager.validatorsNames
+      val preRouteNames      = env.scriptManager.preRouteNames
+      val reqSinkNames       = env.scriptManager.reqSinkNames
+      val listenerNames      = env.scriptManager.listenerNames
+      val jobNames           = env.scriptManager.jobNames
+      val exporterNames      = env.scriptManager.exporterNames
+      val reqHandlerNames    = env.scriptManager.reqHandlerNames
+      val tunnelHandlerNames = env.scriptManager.tunnelHandlerNames
 
       val typ                        = ctx.request.getQueryString("type")
       val excludedTypes: Seq[String] = ctx.request
@@ -110,10 +110,10 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         case Some("request-handler") => reqHandlerNames
         case _                       => Seq.empty
       }
-      val tunnelHandlers = typ match {
+      val tunnelHandlers  = typ match {
         case None                   => tunnelHandlerNames
         case Some("tunnel-handler") => tunnelHandlerNames
-        case _ => Seq.empty
+        case _                      => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {

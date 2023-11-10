@@ -47,7 +47,7 @@ export class ReactSelectOverride extends React.Component {
   isAnObject = (v) => typeof v === 'object' && v !== null;
 
   readProps = () => {
-    this.setState(this.getValue())
+    this.setState(this.getValue());
   };
 
   onChange = (newItem) => {
@@ -67,14 +67,13 @@ export class ReactSelectOverride extends React.Component {
       (o) => o === this.props.value || (isOptionObject ? o.value === this.props.value : false)
     );
 
-    if (!opt)
-      return undefined
+    if (!opt) return undefined;
 
     return {
       label: opt.name || opt.label,
       value: opt.value,
-    }
-  }
+    };
+  };
 
   render() {
     const Component = this.props.creatable ? Creatable : Select;

@@ -66,7 +66,7 @@ object PluginType {
   object DataExporterType    extends PluginType {
     def name: String = "exporter"
   }
-  object TunnelHandlerType extends PluginType {
+  object TunnelHandlerType   extends PluginType {
     def name: String = "tunnel-handler"
   }
   object RequestHandlerType  extends PluginType {
@@ -769,7 +769,7 @@ class ScriptManager(env: Env) {
     ngNames,
     adminExtensionNames,
     authModuleNames,
-    tunnelHandlerNames,
+    tunnelHandlerNames
   ) =
     Try {
       import io.github.classgraph.ClassInfo
@@ -993,7 +993,7 @@ class ScriptManager(env: Env) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
-            Seq.empty[String],
+            Seq.empty[String]
           )
       } finally {
         if (scanResult != null) ClassgraphUtils.clear(scanResult)
