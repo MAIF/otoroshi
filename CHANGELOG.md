@@ -16,6 +16,12 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.10.1
 - selects are empty  (#1759)
 - fix integration of wasmo (#1760)
 
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
 
 ## [16.10.0] - 2023-10-31
 
@@ -48,6 +54,8 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.10.0
 - missing algorithm on encrypted private key (#1747)
 - netty http client sends empty cookie header in some cases (#1751)
 - query param transformer is broken in some cases (#1752)"
+
+### Contributors
 
 * @mathieuancelin 
 * @Zwiterrion 
