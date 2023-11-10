@@ -451,8 +451,8 @@ class OtoroshiResources(env: Env) {
     ),
     Resource(
       "SimpleAdminUser",
-      "simple-admin-users",
-      "simple-admin-user",
+      "admins", //"simple-admin-users",
+      "admins", //"simple-admin-user",
       "security.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[SimpleOtoroshiAdmin](

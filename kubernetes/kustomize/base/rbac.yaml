@@ -91,7 +91,7 @@ rules:
       - jwt-verifiers
       - auth-modules
       - admin-sessions
-      - simple-admin-users
+      - admins
       - auth-module-users
       - service-groups
       - organizations

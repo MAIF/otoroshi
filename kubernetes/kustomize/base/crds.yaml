@@ -321,13 +321,13 @@ spec:
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
 metadata:
-  name: "simple-admin-users.proxy.otoroshi.io"
+  name: "admins.proxy.otoroshi.io"
 spec:
   group: "proxy.otoroshi.io"
   names:
     kind: "SimpleAdminUser"
-    plural: "simple-admin-users"
-    singular: "simple-admin-user"
+    plural: "admins"
+    singular: "admins"
   scope: "Namespaced"
   versions:
   - name: "v1alpha1"
