@@ -16,6 +16,7 @@ import { Button } from '../components/Button';
 import { Description } from './RouteDesigner/Designer';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
 import { LEGACY_PLUGINS_WRAPPER } from './RouteDesigner/DesignerConfig';
+import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function tryOrTrue(f) {
   try {
@@ -306,6 +307,62 @@ class Mailer extends Component {
       </div>
     );
   }
+}
+
+function WasmoTester(props) {
+
+  return <div className="row mb-3">
+    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Testing button</label>
+    <div className="col-sm-10">
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <Button style={{ width: 'fit-content' }} type='success' onClick={() => {
+          fetch('/bo/api/plugins/wasm', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ...props.rawValue.wasmManagerSettings
+            })
+          })
+            .catch((_) => { })
+            .then((r) => {
+              console.log(r.status)
+              if (r.status !== 200) {
+                return Promise.reject([])
+              } else
+                return r.json()
+            })
+            .then(value => {
+              window.newAlert(
+                <div>
+                  <JsonObjectAsCodeInput
+                    hideLabel
+                    height={window.innerHeight - 320}
+                    label=""
+                    help="..."
+                    onChange={() => { }}
+                    value={value}
+                  />
+                  <p className='text-center' style={{ fontWeight: 'bold' }}>Success! You are now ready to start using Wasmo with Otoroshi! </p>
+                </div>,
+                'Wasmo connection',
+                null,
+                null,
+                {
+                  width: '80vw',
+                  marginLeft: '-20vw'
+                }
+              )
+            })
+        }}>
+          Save and check the connection
+        </Button>
+      </div>
+    </div>
+  </div>
 }
 
 // TODO : multi webhooks
@@ -1058,6 +1115,15 @@ export class DangerZonePage extends Component {
         label: 'User(s)',
       },
     },
+    'wasmManagerSettings.tokenSecret': {
+      type: 'string',
+      props: {
+        label: 'Token secret',
+      },
+    },
+    'testing': {
+      type: WasmoTester
+    },
     'quotasSettings.enabled': {
       type: 'bool',
       props: {
@@ -1214,11 +1280,13 @@ export class DangerZonePage extends Component {
     'autoCert.notAllowed',
     '>>>Default templates',
     'templates',
-    '>>>WASM Manager',
+    '>>>Wasmo',
     'wasmManagerSettings.url',
     'wasmManagerSettings.clientId',
     'wasmManagerSettings.clientSecret',
     'wasmManagerSettings.pluginsFilter',
+    'wasmManagerSettings.tokenSecret',
+    'testing',
     '>>>Global metadata',
     'tags',
     'metadata',
@@ -1272,8 +1340,10 @@ export class DangerZonePage extends Component {
   };
 
   saveGlobalConfig = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.updateGlobalConfig(this.state.value).then(() => {
+    if (e && e.preventDefault)
+      e.preventDefault();
+
+    return BackOfficeServices.updateGlobalConfig(this.state.value).then(() => {
       this.setState({ originalValue: this.state.value, changed: false });
     });
   };
@@ -1778,11 +1848,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
-      plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-    }`;
+      }`;
   };
 
   return (

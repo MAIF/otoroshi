@@ -5,7 +5,7 @@ lazy val scala213 = "2.13.11"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 ThisBuild / scalaVersion     := scala212
-ThisBuild / version          := "16.11.0-dev"
+ThisBuild / version          := "16.11.1-dev"
 ThisBuild / organization     := "io.otoroshi.common"
 ThisBuild / organizationName := "wasm"
 
@@ -68,6 +68,7 @@ lazy val root = (project in file("."))
       "com.typesafe.akka"     %% "akka-stream"    % akkaVersion % "provided",
       "com.typesafe.akka"     %% "akka-http"      % akkaHttpVersion % "provided",
       "com.typesafe.play"     %% "play-json-joda" % playJsonVersion % "provided",
+      "com.auth0"             % "java-jwt"        % "4.2.0" excludeAll (excludesJackson: _*),
       "commons-codec"         % "commons-codec"   % "1.16.0" % "provided",
       "net.java.dev.jna"      % "jna"             % "5.13.0" % "provided",
       "com.google.code.gson"  % "gson"            % "2.10" % "provided",

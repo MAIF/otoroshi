@@ -61,8 +61,13 @@ export class WasmSourcePath extends Component {
         Accept: 'application/json',
       },
     })
-      .catch((e) => ({ json: () => [] }))
-      .then((r) => r.json())
+      .catch(_ => ({ json: () => [] }))
+      .then(r => {
+        if (r.status !== 200) {
+          return Promise.reject([])
+        } else
+          return r.json()
+      })
       .then((plugins) => {
         const values = plugins
           .map((plugin) => plugin.versions || [])
@@ -216,24 +221,24 @@ export class WasmPluginsPage extends Component {
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_calls',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_memory_usage',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.killOptions.max_avg_call_duration',
+      'config.killOptions.max_avg_call_duration',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.killOptions.max_unused_duration',
+      'config.killOptions.max_unused_duration',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.proxyHttpCallTimeout',
+      'config.authorizations.proxyHttpCallTimeout',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.proxyStateAccess',
+      'config.authorizations.proxyStateAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.configurationAccess',
+      'config.authorizations.configurationAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.globalDataStoreAccess',
+      'config.authorizations.globalDataStoreAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.pluginDataStoreAccess',
+      'config.authorizations.pluginDataStoreAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalMapAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginMapAccess',
     ].filter((v) => !!v);
@@ -281,7 +286,7 @@ export class WasmPluginsPage extends Component {
       type: 'select',
       props: {
         label: 'Kind',
-        possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map((v) => ({
+        possibleValues: ['Base64', 'Http', 'Wasmo', 'File'].map((v) => ({
           label: v,
           value: v,
         })),

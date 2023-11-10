@@ -15,7 +15,7 @@ class Alert extends Component {
     return (
       <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document" style={this.props.modalStyleOverride || {}}>
-          <div className="modal-content">
+          <div className="modal-content" style={this.props.contentStyleOverride || {}}>
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
               <button
@@ -202,13 +202,14 @@ export function registerAlert() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newAlert = (message, title, linkOpt, modalStyleOverride = {}) => {
+  window.newAlert = (message, title, linkOpt, modalStyleOverride = {}, contentStyleOverride = {}) => {
     return new Promise((success) => {
       ReactDOM.render(
         <Alert
           message={message}
           title={title}
           linkOpt={linkOpt}
+          contentStyleOverride={contentStyleOverride}
           modalStyleOverride={modalStyleOverride}
           close={() => {
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));

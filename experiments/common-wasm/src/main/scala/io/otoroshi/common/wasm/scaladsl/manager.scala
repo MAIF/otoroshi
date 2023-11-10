@@ -9,7 +9,8 @@ case class WasmManagerSettings(
   url: String = "http://localhost:5001",
   clientId: String = "admin-api-apikey-id",
   clientSecret: String = "admin-api-apikey-secret",
-  pluginsFilter: Option[String] = Some("*")
+  pluginsFilter: Option[String] = Some("*"),
+  tokenSecret: Option[String] = Some("secret")
 ) {
   def json: JsValue = WasmManagerSettings.format.writes(this)
 }
@@ -21,7 +22,8 @@ object WasmManagerSettings {
         "url"           -> o.url,
         "clientId"      -> o.clientId,
         "clientSecret"  -> o.clientSecret,
-        "pluginsFilter" -> o.pluginsFilter.map(JsString).getOrElse(JsNull).as[JsValue]
+        "pluginsFilter" -> o.pluginsFilter.map(JsString).getOrElse(JsNull).as[JsValue],
+        "tokenSecret"   -> o.tokenSecret.map(JsString).getOrElse(JsNull).as[JsValue]
       )
 
     override def reads(json: JsValue): JsResult[WasmManagerSettings] =
@@ -30,7 +32,8 @@ object WasmManagerSettings {
           url = (json \ "url").asOpt[String].getOrElse("http://localhost:5001"),
           clientId = (json \ "clientId").asOpt[String].getOrElse("admin-api-apikey-id"),
           clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("admin-api-apikey-secret"),
-          pluginsFilter = (json \ "pluginsFilter").asOpt[String].getOrElse("*").some
+          pluginsFilter = (json \ "pluginsFilter").asOpt[String].getOrElse("*").some,
+          tokenSecret = (json \ "tokenSecret").asOpt[String].getOrElse("secret").some,
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

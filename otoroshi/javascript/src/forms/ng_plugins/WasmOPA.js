@@ -24,7 +24,7 @@ export default {
           type: 'select',
           props: {
             label: 'Kind',
-            options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map((v) => ({
+            options: ['Base64', 'Http', 'Wasmo', 'Local', 'File'].map((v) => ({
               label: v,
               value: v.toLowerCase(),
             })),

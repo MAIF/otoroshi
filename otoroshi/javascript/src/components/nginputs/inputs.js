@@ -1159,6 +1159,7 @@ export class NgSelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
+    const formatValue = props.formatValue;
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
 
@@ -1169,7 +1170,7 @@ export class NgSelectRenderer extends Component {
           <ReactSelectOverride
             name={`selector-${this.props.name}`}
             creatable={creatable}
-            value={this.props.value}
+            value={formatValue ? formatValue(this.props.value) : this.props.value}
             isMulti={props.isMulti}
             isLoading={this.state.loading}
             disabled={props.disabled}

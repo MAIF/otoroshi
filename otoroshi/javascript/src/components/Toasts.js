@@ -19,8 +19,6 @@ class Toast extends Component {
           marginBottom: 10,
           width: '100%',
           backgroundColor,
-          height: 140,
-          border: '1px solid #444',
           borderRadius: '5px',
         }}>
         <div
@@ -28,26 +26,24 @@ class Toast extends Component {
             fontWeight: 'bold',
             color,
             width: '100%',
-            height: 40,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderBottom: '1px solid #444',
           }}>
           {this.props.toast.title}{' '}
           <button
             type="button"
             className="btn btn-sm btn-danger"
             onClick={(e) => this.props.close()}>
-            X
+            <i className='fas fa-times' style={{ color: '#fff' }} />
           </button>
         </div>
         <div
           style={{
             width: '100%',
-            height: 80,
             display: 'flex',
             color: 'var(--color_level3)',
+            fontSize: '1rem',
             flexDirection: 'column',
             marginTop: '10px',
           }}>

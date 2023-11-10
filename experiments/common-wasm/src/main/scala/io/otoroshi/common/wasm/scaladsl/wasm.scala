@@ -210,15 +210,16 @@ object WasmSourceKind {
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
       ic.wasmManagerSettings.flatMap {
-        case Some(WasmManagerSettings(url, clientId, clientSecret, kind)) => {
+        case Some(settings @ WasmManagerSettings(url, clientId, clientSecret, kind, tokenSecret)) => {
+          val apikey = ApikeyHelper
+            .generate(settings)
           ic.url(s"$url/wasm/$path")
             .withFollowRedirects(false)
             .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
             .withHttpHeaders(
-              "Accept"                 -> "application/json",
-              "Otoroshi-Client-Id"     -> clientId,
-              "Otoroshi-Client-Secret" -> clientSecret,
-              "kind"                   -> kind.getOrElse("*")
+              "Accept"     -> "application/json",
+              "Otoroshi-User"       -> apikey,
+              "kind"                -> kind.getOrElse("*")
             )
             .get()
             .flatMap { resp =>
@@ -272,6 +273,7 @@ object WasmSourceKind {
     case "base64"      => Base64
     case "http"        => Http
     case "wasmmanager" => WasmManager
+    case "wasmo"       => WasmManager
     case "local"       => Local
     case "file"        => File
     case _             => Unknown

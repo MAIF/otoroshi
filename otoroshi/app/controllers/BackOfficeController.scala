@@ -34,6 +34,7 @@ import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
@@ -1979,14 +1980,14 @@ class BackOfficeController(
       .singleton()
       .flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
-          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+          case Some(settings @ WasmManagerSettings(url, _, _, pluginsFilter, _)) =>
+           val claim      = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
-                  "Otoroshi-Client-Id"     -> clientId,
-                  "Otoroshi-Client-Secret" -> clientSecret,
+                  "Otoroshi-User" -> claim,
                   "kind"                   -> pluginsFilter.getOrElse("*")
                 )
                 .get()
@@ -1994,7 +1995,7 @@ class BackOfficeController(
                   if (res.status == 200) {
                     Ok(res.json)
                   } else {
-                    Ok(Json.arr())
+                    BadRequest("Unable to join the wasmo server")
                   }
                 })
                 .recover { case e: Throwable =>
@@ -2013,6 +2014,38 @@ class BackOfficeController(
             ).future
         }
       }
+  }
+
+  def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    val jsonBody = ctx.request.body
+
+    val wasmoSettings = WasmManagerSettings.format.reads(jsonBody).get
+    val apikey = ApikeyHelper.generate(wasmoSettings)
+
+    Try {
+      env.Ws
+        .url(s"${wasmoSettings.url}/plugins")
+        .withFollowRedirects(false)
+        .withHttpHeaders(
+          "Otoroshi-User" -> apikey,
+          "kind" -> wasmoSettings.pluginsFilter.getOrElse("*")
+        )
+        .get()
+        .map(res => {
+          if (res.status == 200) {
+            Ok(res.json)
+          } else {
+            BadRequest("Unable to join the wasmo server")
+          }
+        })
+        .recover { case e: Throwable =>
+          logger.error(e.getMessage)
+          Ok(Json.arr())
+        }
+    } match {
+      case Failure(err) => Ok(Json.arr()).vfuture
+      case Success(v) => v
+    }
   }
 
   def anonymousReporting() = BackOfficeActionAuth.async(parse.json) { ctx =>
