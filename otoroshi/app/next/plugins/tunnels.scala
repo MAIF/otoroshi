@@ -6,16 +6,10 @@ import akka.stream.scaladsl.{Flow, Tcp}
 import akka.util.ByteString
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep,
-  NgTunnelHandler,
-  NgTunnelHandlerContext
-}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep, NgTunnelHandler, NgTunnelHandlerContext}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp.{Datagram, UdpClient}
+import play.api.Logger
 import play.api.http.websocket.{BinaryMessage, Message}
 import play.api.libs.json.Json
 
@@ -24,6 +18,8 @@ import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 
 class TcpTunnel extends NgTunnelHandler {
+
+  private val logger = Logger("otoroshi-plugins-tcp-tunnel")
 
   override def steps: Seq[NgStep]                = Seq(NgStep.HandlesTunnel)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel, NgPluginCategory.Classic)
@@ -71,10 +67,19 @@ class TcpTunnel extends NgTunnelHandler {
         )
       case None     => new InetSocketAddress(theHost, thePort)
     }
+    if (logger.isDebugEnabled) logger.debug("")
+    if (logger.isDebugEnabled) logger.debug("")
+    if (logger.isDebugEnabled) logger.debug("new session")
+    if (logger.isDebugEnabled) logger.debug("------------------------------------------------------------")
+    if (logger.isDebugEnabled) logger.debug("")
+    if (logger.isDebugEnabled) logger.debug("")
     val flow: Flow[Message, Message, _] =
       Flow[Message]
         .collect {
           case BinaryMessage(data) =>
+            if (logger.isDebugEnabled) logger.debug("------------------------")
+            if (logger.isDebugEnabled) logger.debug(s"sending data to backend: ${data.utf8String}")
+            if (logger.isDebugEnabled) logger.debug("------------------------")
             data
           case _                   =>
             ByteString.empty
@@ -86,7 +91,12 @@ class TcpTunnel extends NgTunnelHandler {
               connectTimeout = ctx.route.backend.client.connectionTimeout.millis,
               idleTimeout = ctx.route.backend.client.idleTimeout.millis
             )
-            .map(bs => BinaryMessage(bs))
+            .map { bs =>
+              if (logger.isDebugEnabled) logger.debug("=================")
+              if (logger.isDebugEnabled) logger.debug(s"getting data from backend: ${bs.utf8String}")
+              if (logger.isDebugEnabled) logger.debug("=================")
+              BinaryMessage(bs)
+            }
         )
     flow
   }

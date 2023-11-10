@@ -66,6 +66,9 @@ object PluginType {
   object DataExporterType    extends PluginType {
     def name: String = "exporter"
   }
+  object TunnelHandlerType extends PluginType {
+    def name: String = "tunnel-handler"
+  }
   object RequestHandlerType  extends PluginType {
     def name: String = "request-handler"
   }
@@ -765,7 +768,8 @@ class ScriptManager(env: Env) {
     exporterNames,
     ngNames,
     adminExtensionNames,
-    authModuleNames
+    authModuleNames,
+    tunnelHandlerNames,
   ) =
     Try {
       import io.github.classgraph.ClassInfo
@@ -920,6 +924,11 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
+        val tunnelHandlers: Seq[String] = (scanResult.getSubclasses(classOf[NgTunnelHandler].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[NgTunnelHandler].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
@@ -966,7 +975,8 @@ class ScriptManager(env: Env) {
           customExporters,
           ngPlugins,
           adminExts,
-          authModuleConfigs
+          authModuleConfigs,
+          tunnelHandlers
         )
       } catch {
         case e: Throwable =>
@@ -982,12 +992,14 @@ class ScriptManager(env: Env) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
-            Seq.empty[String]
+            Seq.empty[String],
+            Seq.empty[String],
           )
       } finally {
         if (scanResult != null) ClassgraphUtils.clear(scanResult)
       }
     } getOrElse (
+      Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],
@@ -1018,6 +1030,7 @@ class ScriptManager(env: Env) {
     listenerNames,
     jobNames,
     exporterNames,
+    tunnelHandlerNames,
     ngNames
   ).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
   private val printPlugins =

@@ -743,7 +743,7 @@ class Designer extends React.Component {
         {
           backends,
           loading: false,
-          categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
+          categories: categories.filter((category) => !['Job'].includes(category)),
           route: { ...routeWithNodeId },
           originalRoute: { ...routeWithNodeId },
           plugins: formattedPlugins.map((p) => ({
@@ -896,7 +896,7 @@ class Designer extends React.Component {
     // plugin.plugin_steps &&
     return (
       !plugin.plugin_steps.includes('Sink') &&
-      !plugin.plugin_steps.includes('HandlesTunnel') &&
+      // !plugin.plugin_steps.includes('HandlesTunnel') &&
       !['job', 'sink'].includes(plugin.pluginType) &&
       !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
       !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
