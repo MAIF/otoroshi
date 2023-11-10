@@ -981,6 +981,36 @@ spec:
     schema:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;coraza-configs.proxy.otoroshi.io&quot;
+  creationTimestamp: null
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;CorazaConfig&quot;
+    plural: &quot;coraza-configs&quot;
+    singular: &quot;coraza-config&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: &quot;object&quot;</code></pre></dd>
   <dt>redis.yaml
   </dt>
