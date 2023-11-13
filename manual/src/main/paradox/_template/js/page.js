@@ -81,7 +81,7 @@ $(function () {
       });
       $('.pagefind-ui__result-image').each(function() {
         var src = $(this).attr('src');
-        if (href.startsWith('../imgs/')) {
+        if (src.startsWith('../imgs/')) {
           $(this).attr('src', src.substring(1));
         }
       });
