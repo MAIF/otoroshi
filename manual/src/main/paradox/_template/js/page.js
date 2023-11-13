@@ -15,6 +15,13 @@ $(function () {
   });
 
   function setupSearchModal() {
+    var pathname = window.location.pathname;
+    var baseUrl = '/';
+    if (pathname.startsWith('/otoroshi/manual/')) {
+      baseUrl = '/otoroshi/manual/';
+    } else if (pathname.startsWith('/otoroshi/devmanual/')) {
+      baseUrl = '/otoroshi/devmanual/';
+    }
     $('.title-wrapper').append([
       '<div id="search-block-placeholder" style="width: 100%; display: flex; justify-content: flex-end;padding-right: 0px; padding-top: 14px;">',
       '<button type="button" id="search-zone">Search</button>',
@@ -37,7 +44,8 @@ $(function () {
         translations: {
           placeholder: "Search otoroshi documentation",
         },
-        showSubResults: true 
+        showSubResults: true,
+        // baseUrl: baseUrl,
       });
       setTimeout(function() {
         $('.pagefind-ui__search-input').focus();
@@ -48,24 +56,17 @@ $(function () {
         $('#search-block-backdrop').remove();
       }
     });
-    var pathname = window.location.pathname;
     if (pathname.startsWith('/otoroshi/manual/search.html') || pathname.startsWith('/search.html') || pathname.startsWith('/otoroshi/devmanual/search.html')) {
       $('h1').remove();
       $('.page-content > .large-3').remove();
       $('.page-content > .large-9').removeClass('large-9').addClass('large-12');
-      var baseUrl = '/';
-      if (pathname.startsWith('/otoroshi/manual/')) {
-        baseUrl = '/otoroshi/manual/';
-      } else if (pathname.startsWith('/otoroshi/devmanual/')) {
-        window.location = '/otoroshi/devmanual/';
-      }
       new PagefindUI({ 
         element: "#search-block-page", 
         translations: {
           placeholder: "Search otoroshi documentation",
         },
         showSubResults: true,
-        pathname: baseUrl,
+       // baseUrl: baseUrl,
       });
       setTimeout(function() {
         $('.pagefind-ui__search-input').focus();
@@ -98,7 +99,7 @@ $(function () {
       if (pathname.startsWith('/otoroshi/manual/')) {
         baseUrl = '/otoroshi/manual/';
       } else if (pathname.startsWith('/otoroshi/devmanual/')) {
-        window.location = '/otoroshi/devmanual/';
+        baseUrl = '/otoroshi/devmanual/';
       }
       new PagefindUI({ 
         element: "#search-block-page", 
