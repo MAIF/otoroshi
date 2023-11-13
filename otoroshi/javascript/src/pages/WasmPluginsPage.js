@@ -102,7 +102,7 @@ export class WasmSourcePath extends Component {
     const kind = source.kind.toLowerCase();
     if (kind === 'unknown') {
       return null;
-    } else if (kind === 'wasmmanager') {
+    } else if (kind === 'wasmmanager' || kind === 'wasmo') {
       return (
         <SelectInput
           label="Wasm plugin"
