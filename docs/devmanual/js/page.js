@@ -16,11 +16,11 @@ $(function () {
 
   function setupSearchModal() {
     var pathname = window.location.pathname;
-    var baseUrl = '/';
-    if (pathname.startsWith('/otoroshi/manual/')) {
+    var baseUrl = '';
+    if (pathname.startsWith('/otoroshi/manual')) {
       baseUrl = '/otoroshi/manual/';
     } else if (pathname.startsWith('/otoroshi/devmanual/')) {
-      baseUrl = '/otoroshi/devmanual/';
+      baseUrl = '/otoroshi/devmanual';
     }
     $('.title-wrapper').append([
       '<div id="search-block-placeholder" style="width: 100%; display: flex; justify-content: flex-end;padding-right: 0px; padding-top: 14px;">',
@@ -45,7 +45,6 @@ $(function () {
           placeholder: "Search otoroshi documentation",
         },
         showSubResults: true,
-        // baseUrl: baseUrl,
       });
       setTimeout(function() {
         $('.pagefind-ui__search-input').focus();
@@ -66,12 +65,21 @@ $(function () {
           placeholder: "Search otoroshi documentation",
         },
         showSubResults: true,
-       // baseUrl: baseUrl,
       });
       setTimeout(function() {
         $('.pagefind-ui__search-input').focus();
       }, 300);
     }
+
+    setInterval(function() {
+      $('.pagefind-ui__result-link').each(function() {
+        var href = $(this).attr('href');
+        var prefix = baseUrl;
+        if (!href.startsWith(prefix)) {
+          $(this).attr('href', prefix + href);
+        }
+      })
+    }, 300);
   }
 
   function setupSearchPage() {
