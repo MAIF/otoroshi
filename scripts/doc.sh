@@ -42,7 +42,7 @@ buildDev () {
   rm -rf $LOCATION/docs/devmanual
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/devmanual
-  cd $LOCATION/docs/manual;
+  cd $LOCATION/docs/devmanual;
   npx -y pagefind --site . --output-subdir ./search;
   cd $LOCATION;
   rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
