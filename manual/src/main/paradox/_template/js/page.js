@@ -78,7 +78,13 @@ $(function () {
         if (!href.startsWith(prefix)) {
           $(this).attr('href', prefix + href);
         }
-      })
+      });
+      $('.pagefind-ui__result-image').each(function() {
+        var src = $(this).attr('src');
+        if (href.startsWith('../imgs/')) {
+          $(this).attr('src', src.substring(1));
+        }
+      });
     }, 300);
   }
 
