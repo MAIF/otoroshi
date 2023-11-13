@@ -1201,3 +1201,9 @@ p {
 .margin-top-20 {
   margin-top: 20px;
 }
+
+#search-block form div {
+  overflow: auto;
+  max-height: calc(500px - 71px);
+  margin-bottom: 24px;
+}
