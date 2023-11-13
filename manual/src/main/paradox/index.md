@@ -85,6 +85,7 @@ Otoroshi is Open Source and available under the @link:[Apache 2 License](https:/
 * [Admin REST API](./api.md)
 * [Deploy to production](./deploy/index.md)
 * [Developing Otoroshi](./dev.md)
+* [Search doc](./search.md)
 
 @@@
 
