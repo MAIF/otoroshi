@@ -392,6 +392,7 @@ function SidebarLink({
             top: 0,
             left: 6,
             bottom: 0,
+            cursor: 'move',
           }}
         />
       )}
