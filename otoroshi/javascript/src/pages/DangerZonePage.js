@@ -1538,7 +1538,7 @@ export class DangerZonePage extends Component {
             type="button"
             onClick={this.saveGlobalConfig}
             {...propsDisabled}>
-            <i className="fas fa-hdd" />
+            Save
           </button>
         </div>
         <Form

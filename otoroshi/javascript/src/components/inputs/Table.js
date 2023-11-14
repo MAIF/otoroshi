@@ -677,9 +677,9 @@ export class Table extends Component {
                         buttons: (
                           <button
                             type="button"
-                            className="btn btn-sm btn-primary me-1"
+                            className="btn btn-sm btn-success me-1"
                             onClick={this.createItem}>
-                            <i className="fas fa-hdd" /> Create {this.props.itemName}
+                            Create {this.props.itemName}
                           </button>
                         ),
                         closeEditForm: this.closeAddForm,
@@ -728,13 +728,13 @@ export class Table extends Component {
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-success"
                       onClick={this.createItemAndStay}>
-                      <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+                      Create and stay on this {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
-                    <i className="fas fa-hdd" /> Create {this.props.itemName}
+                  <button type="button" className="btn btn-success" onClick={this.createItem}>
+                    Create {this.props.itemName}
                   </button>
                 </div>
               </>
@@ -795,24 +795,6 @@ export class Table extends Component {
               ))}
             <hr />
             <div className="displayGroupBtn float-end">
-              {this.props.export && (
-                <>
-                  <button
-                    onClick={this.exportJson}
-                    type="button"
-                    className="btn btn-primary"
-                    title="Export as json">
-                    <i className="glyphicon glyphicon-export" /> JSON
-                  </button>
-                  <button
-                    onClick={this.exportYaml}
-                    type="button"
-                    className="btn btn-primary"
-                    title="Export as yaml">
-                    <i className="glyphicon glyphicon-export" /> YAML
-                  </button>
-                </>
-              )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
@@ -831,6 +813,24 @@ export class Table extends Component {
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
+              {this.props.export && (
+                <>
+                  <button
+                    onClick={this.exportJson}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as json">
+                    <i className="fas fa-file-export me-2" />Export JSON
+                  </button>
+                  <button
+                    onClick={this.exportYaml}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as yaml">
+                    <i className="fas fa-file-export me-2" />Export YAML
+                  </button>
+                </>
+              )}
               {!this.props.displayTrash && !this.props.newForm && (
                 <button
                   type="button"
@@ -847,12 +847,12 @@ export class Table extends Component {
               )}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
-                  <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
+                  Update and stay on this {this.props.itemName}
                 </button>
               )}
               {!this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                  <i className="fas fa-hdd" /> Update {this.props.itemName}
+                  Update {this.props.itemName}
                 </button>
               )}
 

@@ -1282,7 +1282,7 @@ export class ServicePage extends Component {
                 <i className="far fa-copy" aria-hidden="true" />
               </button>
               <button
-                className="btn btn-save"
+                className="btn btn-success"
                 type="button"
                 data-toggle="tooltip"
                 data-placement="top"
@@ -1294,7 +1294,7 @@ export class ServicePage extends Component {
                 )}
                 {...propsDisabled}
                 onClick={this.saveChanges}>
-                <i className="far fa-save" />
+                Save
               </button>
             </div>
           </div>
@@ -3658,7 +3658,7 @@ export class TemplateInput extends Component {
               style={{ marginLeft: 5 }}
               title="Save template"
               onClick={this.saveTemplate}>
-              <i className="far fa-save" />
+              Save
             </button>
             <button
               type="button"

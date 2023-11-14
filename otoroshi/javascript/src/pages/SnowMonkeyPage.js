@@ -186,7 +186,7 @@ export class SnowMonkeyPage extends Component {
                 className={`btn btn-success`}
                 {...moreProps}
                 onClick={this.saveChanges}>
-                <i className={`fas fa-hdd`} /> Save
+                Save
               </button>
             </div>
           </div>

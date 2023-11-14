@@ -350,13 +350,13 @@ export class U2FRegisterPage extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
-                Register Admin
+                Add admin
               </button>
               <button
                 type="button"
                 className="btn btn-success ms-md-2 mt-2 mt-md-0"
                 onClick={this.registerWebAuthn}>
-                Register Admin with WebAuthn
+                Add admin with WebAuthn
               </button>
             </div>
           </div>
@@ -389,8 +389,8 @@ export class U2FRegisterPage extends Component {
           injectTopBar={() => (
             <>
               <div className="btn-group input-group-btn">
-                <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
-                  <i className="fas fa-plus-circle" /> Register admin.
+                <button type="button" className="btn btn-sm btn-primary" onClick={this.createAdmin}>
+                  <i className="fas fa-plus-circle" /> Add admin
                 </button>
               </div>
             </>
