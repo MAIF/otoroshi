@@ -353,6 +353,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.loggers.otoroshi-wasm-vm-pool=DEBUG",
   "-Dotoroshi.loggers.otoroshi-wasm-integration=DEBUG",
   "-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE",
+  "-Dotoroshi.loggers.otoroshi-wasm-integration=DEBUG",
   "-Dotoroshi.options.enable-json-media-type-with-open-charset=true",
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",

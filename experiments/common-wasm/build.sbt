@@ -58,9 +58,9 @@ lazy val root = (project in file("."))
   .settings(
     name := "common-wasm",
     crossScalaVersions := supportedScalaVersions,
-    githubOwner := "MAIF",
-    githubRepository := "otoroshi",
-    githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN"),
+    //githubOwner := "MAIF",
+    //githubRepository := "otoroshi",
+    //githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN"),
     libraryDependencies ++= Seq(
       munit % Test,
       "com.typesafe.play"     %% "play-ws"        % playWsVersion % "provided",

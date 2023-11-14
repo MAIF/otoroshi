@@ -489,6 +489,7 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
       .get(key)
       .map {
         case CacheableWasmScript.CachedWasmScript(wasm, _) => wasm.sha512
+        case CacheableWasmScript.FetchingCachedWasmScript(_, wasm) => wasm.sha512
         case _                                             => "fetching"
       }
       .getOrElse("null")
@@ -505,6 +506,10 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
     }
     cache.get(key) match {
       case Some(CacheableWasmScript.CachedWasmScript(_, _)) => {
+        val currentHash = computeHash(config, key, cache)
+        oldHash != currentHash
+      }
+      case Some(CacheableWasmScript.FetchingCachedWasmScript(_, _)) => {
         val currentHash = computeHash(config, key, cache)
         oldHash != currentHash
       }

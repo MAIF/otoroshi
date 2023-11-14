@@ -160,6 +160,7 @@ object WasmSourceKind {
         ic: WasmIntegrationContext,
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
+      if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSourceKind Base64] fetching wasm from base64")
       ByteString(path.replace("base64://", "")).decodeBase64.right.future
     }
   }
@@ -176,6 +177,7 @@ object WasmSourceKind {
       val proxy          = opts.select("proxy").asOpt[JsObject].flatMap(v => WSProxyServerJson.proxyFromJson(v))
       val tlsConfig: Option[TlsConfig]      =
         opts.select("tls").asOpt(TlsConfig.format).orElse(opts.select("tls").asOpt(TlsConfig.format))
+      if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSourceKind Http] fetching wasm from source at ${method} ${path}")
       ic.url(path, tlsConfig)
         .withMethod(method)
         .withFollowRedirects(followRedirect)
@@ -191,6 +193,7 @@ object WasmSourceKind {
             Right(body)
           } else {
             val body: String = resp.body
+            if (ic.logger.isErrorEnabled) ic.logger.error(s"[WasmSourceKind Http] error fetching wasm from source at ${method} ${path}: ${resp.status} - ${resp.headers} - ${resp.body}")
             Left(
               Json.obj(
                 "error"   -> "bad response",
@@ -200,6 +203,12 @@ object WasmSourceKind {
               )
             )
           }
+        }
+        .recover {
+          case e => Left(Json.obj(
+            "error" -> s"error while fetching plugin from http at '${method} ${path}': ${e.getMessage}",
+            "message" -> e.getMessage
+          ))
         }
     }
   }
@@ -213,9 +222,13 @@ object WasmSourceKind {
         case Some(settings @ WasmManagerSettings(url, clientId, clientSecret, kind, tokenSecret)) => {
           val apikey = ApikeyHelper
             .generate(settings)
-          ic.url(s"$url/wasm/$path")
-            .withFollowRedirects(false)
-            .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
+          val wasmoUrl = s"$url/wasm/$path"
+          val followRedirect = opts.select("follow_redirect").asOpt[Boolean].getOrElse(true)
+          val timeout = opts.select("timeout").asOpt[Long].map(_.millis).getOrElse(5.seconds)
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSourceKind Wasmo] fetching wasm from source at GET ${wasmoUrl}")
+          ic.url(wasmoUrl)
+            .withFollowRedirects(followRedirect)
+            .withRequestTimeout(timeout)
             .withHttpHeaders(
               "Accept"     -> "application/json",
               "Otoroshi-User"       -> apikey,
@@ -226,14 +239,21 @@ object WasmSourceKind {
               if (resp.status == 200) {
                 Right(resp.bodyAsBytes).vfuture
               } else {
+                if (ic.logger.isErrorEnabled) ic.logger.error(s"[WasmSourceKind Wasmo] error fetching wasm from source at GET ${wasmoUrl}: ${resp.status} - ${resp.headers} - ${resp.body}")
                 val body = resp.body
                 Left(Json.obj(
-                  "error" -> "bad wasm manager response",
+                  "error" -> "bad wasmo response",
                   "status" -> resp.status,
                   "headers" -> resp.headers.mapValues(_.last),
                   "body" -> body
                 )).vfuture
               }
+            }
+            .recover {
+              case e => Left(Json.obj(
+                "error" -> s"error while fetching plugin from wasmo at '${path}': ${e.getMessage}",
+                "message" -> e.getMessage
+              ))
             }
         }
         case _                                                            =>
@@ -247,6 +267,7 @@ object WasmSourceKind {
         ic: WasmIntegrationContext,
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
+      if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSourceKind Local] fetching wasm from local config: ${path}")
       ic.wasmConfig(path) flatMap {
         case None         => Left(Json.obj("error" -> "resource not found")).vfuture
         case Some(config) => config.source.getWasm()
@@ -265,6 +286,7 @@ object WasmSourceKind {
         ic: WasmIntegrationContext,
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
+      if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSourceKind File] fetching wasm from file: ${path}")
       Right(ByteString(Files.readAllBytes(Paths.get(path.replace("file://", ""))))).vfuture
     }
   }
@@ -288,33 +310,73 @@ case class WasmSource(kind: WasmSourceKind, path: String, opts: JsValue = Json.o
     val cache = ic.wasmScriptCache
     cache.get(cacheKey) match {
       case Some(CacheableWasmScript.CachedWasmScript(_, _)) => true
+      case Some(CacheableWasmScript.FetchingCachedWasmScript(_, _)) => true
       case _                                                => false
     }
   }
   def getWasm()(implicit ic: WasmIntegrationContext, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = try {
     val cache = ic.wasmScriptCache
-    def fetchAndAddToCache(): Future[Either[JsValue, ByteString]] = {
-      val promise = Promise[Either[JsValue, ByteString]]()
-      cache.put(cacheKey, CacheableWasmScript.FetchingWasmScript(promise.future))
-      kind.getWasm(path, opts).map {
-        case Left(err) =>
-          promise.trySuccess(err.left)
-          err.left
-        case Right(bs) => {
-          cache.put(cacheKey, CacheableWasmScript.CachedWasmScript(bs, System.currentTimeMillis()))
-          promise.trySuccess(bs.right)
-          bs.right
+    cache.synchronized {
+      def fetchAndAddToCache(maybeAlready: Option[ByteString]): Future[Either[JsValue, ByteString]] = {
+        if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] actual wasm fetch at ${path}")
+        val promise = Promise[Either[JsValue, ByteString]]()
+        maybeAlready match {
+          case None => cache.put(cacheKey, CacheableWasmScript.FetchingWasmScript(promise.future))
+          case Some(s) => cache.put(cacheKey, CacheableWasmScript.FetchingCachedWasmScript(promise.future, s))
         }
+        kind.getWasm(path, opts).map {
+            case Left(err) =>
+              if (ic.logger.isErrorEnabled) ic.logger.error(s"[WasmSource] error while wasm fetch at ${path}: ${err}")
+              maybeAlready match {
+                case None => cache.remove(cacheKey)
+                case Some(s) =>
+                  // put if back and wait for better times ???
+                  if (ic.logger.isWarnEnabled) ic.logger.warn(s"[WasmSource] using old version of ${path} because of fetch error: ${err}")
+                  cache.put(cacheKey, CacheableWasmScript.CachedWasmScript(s, System.currentTimeMillis()))
+              }
+              promise.trySuccess(err.left)
+              err.left
+            case Right(bs) => {
+              if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] success while wasm fetch at ${path}")
+              cache.put(cacheKey, CacheableWasmScript.CachedWasmScript(bs, System.currentTimeMillis()))
+              promise.trySuccess(bs.right)
+              bs.right
+            }
+          }
+          .recover {
+            case e =>
+              val err = Json.obj("error" -> s"error while getting wasm from source: ${e.getMessage}")
+              maybeAlready match {
+                case None => cache.remove(cacheKey)
+                case Some(s) =>
+                  // put if back and wait ???
+                  if (ic.logger.isWarnEnabled) ic.logger.warn(s"[WasmSource] using old version of ${path} because of recover error: ${err}")
+                  cache.put(cacheKey, CacheableWasmScript.CachedWasmScript(s, System.currentTimeMillis()))
+              }
+              promise.trySuccess(err.left)
+              err.left
+          }
       }
-    }
-    cache.get(cacheKey) match {
-      case None                                                  => fetchAndAddToCache()
-      case Some(CacheableWasmScript.FetchingWasmScript(fu))      => fu
-      case Some(CacheableWasmScript.CachedWasmScript(script, createAt))
+
+      cache.get(cacheKey) match {
+        case None =>
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] getWasm nothing in cache for ${path}")
+          fetchAndAddToCache(None)
+        case Some(CacheableWasmScript.FetchingWasmScript(fu)) =>
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] getWasm fetching for ${path}")
+          fu
+        case Some(CacheableWasmScript.FetchingCachedWasmScript(_, script)) =>
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] getWasm fetching already cached for ${path}")
+          script.right.future
+        case Some(CacheableWasmScript.CachedWasmScript(script, createAt))
           if createAt + ic.wasmCacheTtl < System.currentTimeMillis =>
-        fetchAndAddToCache()
-        script.right.vfuture
-      case Some(CacheableWasmScript.CachedWasmScript(script, _)) => script.right.vfuture
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] getWasm expired cache for ${path} - ${createAt} - ${ic.wasmCacheTtl} - ${createAt + ic.wasmCacheTtl} - ${System.currentTimeMillis}")
+          fetchAndAddToCache(script.some)
+          script.right.vfuture
+        case Some(CacheableWasmScript.CachedWasmScript(script, _)) =>
+          if (ic.logger.isDebugEnabled) ic.logger.debug(s"[WasmSource] getWasm cached for ${path}")
+          script.right.vfuture
+      }
     }
   } catch {
     case e: Throwable =>
@@ -454,8 +516,8 @@ sealed trait CacheableWasmScript
 object CacheableWasmScript {
   case class CachedWasmScript(script: ByteString, createAt: Long)       extends CacheableWasmScript
   case class FetchingWasmScript(f: Future[Either[JsValue, ByteString]]) extends CacheableWasmScript
+  case class FetchingCachedWasmScript(f: Future[Either[JsValue, ByteString]], script: ByteString) extends CacheableWasmScript
 }
-
 
 case class WasmVmInitOptions(
                               importDefaultHostFunctions: Boolean = true,
