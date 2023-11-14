@@ -76,12 +76,14 @@ $(function () {
         var href = $(this).attr('href');
         var prefix = baseUrl;
         if (!href.startsWith(prefix)) {
-          $(this).attr('href', prefix + href);
+          var nhref = (prefix + href).replace('//', '/');
+          $(this).attr('href', nhref);
         }
       });
+      var parts = window.location.pathname.replace('//', '/').split('/');
       $('.pagefind-ui__result-image').each(function() {
         var src = $(this).attr('src');
-        if (src.startsWith('../imgs/')) {
+        if (parts.length === 4 && src.startsWith('../imgs/')) {
           $(this).attr('src', src.substring(1));
         }
       });
