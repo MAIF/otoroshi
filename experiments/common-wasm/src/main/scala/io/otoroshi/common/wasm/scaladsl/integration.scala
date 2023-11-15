@@ -28,6 +28,7 @@ trait WasmIntegrationContext {
 
   def wasmCacheTtl: Long
   def wasmQueueBufferSize: Int
+  def selfRefreshingPools: Boolean
 
   def url(path: String, tlsConfigOpt: Option[TlsConfig] = None): WSRequest
 
@@ -53,6 +54,7 @@ class BasicWasmIntegrationContextWithNoHttpClient[A <: WasmConfiguration](name: 
   val logger: Logger = Logger(name)
   val wasmCacheTtl: Long = 2000
   val wasmQueueBufferSize: Int = 100
+  val selfRefreshingPools: Boolean = false
   val wasmManagerSettings: Future[Option[WasmManagerSettings]] = Future.successful(None)
   val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
   val wasmExecutor: ExecutionContext = ExecutionContext.fromExecutorService(
@@ -80,43 +82,43 @@ class WasmIntegration(ic: WasmIntegrationContext) {
 
   /// vm apis
 
-  private[common] def wasmVmById(id: String): Future[Option[(WasmVm, WasmConfiguration)]] = {
-    ic.wasmConfig(id).flatMap(_.map(cfg => wasmVmFor(cfg)).getOrElse(Future.successful(None)))
+  private[common] def wasmVmById(id: String, maxCallsBetweenUpdates: Int = 100000): Future[Option[(WasmVm, WasmConfiguration)]] = {
+    ic.wasmConfig(id).flatMap(_.map(cfg => wasmVmFor(cfg, maxCallsBetweenUpdates)).getOrElse(Future.successful(None)))
   }
 
-  def wasmVmFor(config: WasmConfiguration): Future[Option[(WasmVm, WasmConfiguration)]] = {
+  def wasmVmFor(config: WasmConfiguration, maxCallsBetweenUpdates: Int = 100000): Future[Option[(WasmVm, WasmConfiguration)]] = {
     if (config.source.kind == WasmSourceKind.Local) {
       ic.wasmConfig(config.source.path) flatMap {
         case None => None.vfuture
         case Some(localConfig) => {
-          localConfig.pool().getPooledVm().map(vm => Some((vm, localConfig)))
+          localConfig.pool(maxCallsBetweenUpdates).getPooledVm().map(vm => Some((vm, localConfig)))
         }
       }
     } else {
-      config.pool().getPooledVm().map(vm => Some((vm, config)))
+      config.pool(maxCallsBetweenUpdates).getPooledVm().map(vm => Some((vm, config)))
     }
   }
 
-  def withPooledVmSync[A](config: WasmConfiguration, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => A): Future[A] = {
+  def withPooledVmSync[A](config: WasmConfiguration, maxCallsBetweenUpdates: Int = 100000, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => A): Future[A] = {
     if (config.source.kind == WasmSourceKind.Local) {
       ic.wasmConfig(config.source.path) flatMap {
         case None => Future.failed(new RuntimeException(s"no wasm config. found with path '${config.source.path}'"))
-        case Some(localConfig) => localConfig.pool().withPooledVm(options)(f)
+        case Some(localConfig) => localConfig.pool(maxCallsBetweenUpdates).withPooledVm(options)(f)
       }
     } else {
-      config.pool().withPooledVm(options)(f)
+      config.pool(maxCallsBetweenUpdates).withPooledVm(options)(f)
     }
   }
 
   // borrow a vm for async operations
-  def withPooledVm[A](config: WasmConfiguration, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => Future[A]): Future[A] = {
+  def withPooledVm[A](config: WasmConfiguration, maxCallsBetweenUpdates: Int = 100000, options: WasmVmInitOptions = WasmVmInitOptions.empty())(f: WasmVm => Future[A]): Future[A] = {
     if (config.source.kind == WasmSourceKind.Local) {
       ic.wasmConfig(config.source.path) flatMap {
         case None => Future.failed(new RuntimeException(s"no wasm config. found with path '${config.source.path}'"))
-        case Some(localConfig) => localConfig.pool().withPooledVmF(options)(f)
+        case Some(localConfig) => localConfig.pool(maxCallsBetweenUpdates).withPooledVmF(options)(f)
       }
     } else {
-      config.pool().withPooledVmF(options)(f)
+      config.pool(maxCallsBetweenUpdates).withPooledVmF(options)(f)
     }
   }
 
@@ -128,7 +130,7 @@ class WasmIntegration(ic: WasmIntegrationContext) {
     schedRef.set(scheduler.scheduleWithFixedDelay(() => {
       runVmLoaderJob()
       runVmCleanerJob(cleanerJobConfig)
-    }, 1000, 30000, TimeUnit.MILLISECONDS))
+    }, 1000, context.wasmCacheTtl, TimeUnit.MILLISECONDS))
   }
 
   def stopF(): Future[Unit] = Future(stop())

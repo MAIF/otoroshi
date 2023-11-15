@@ -7,6 +7,7 @@ import io.otoroshi.common.wasm.scaladsl.CacheableWasmScript.CachedWasmScript
 import io.otoroshi.common.wasm.scaladsl._
 import io.otoroshi.common.wasm.scaladsl.opa._
 import implicits._
+import io.otoroshi.common.wasm.impl.WasmVmPoolImpl.logger
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import org.extism.sdk.wasmotoroshi._
@@ -254,10 +255,10 @@ object WasmVmPoolImpl {
     instances.toMap
   }
 
-  def forConfig(config: => WasmConfiguration)(implicit ic: WasmIntegrationContext): WasmVmPoolImpl = instances.synchronized {
-    val key = s"${config.source.cacheKey}?cfg=${config.json.stringify.sha512}"
+  def forConfig(config: => WasmConfiguration, maxCallsBetweenUpdates: Int = 100000)(implicit ic: WasmIntegrationContext): WasmVmPoolImpl = instances.synchronized {
+    val key = s"${config.source.cacheKey}?mcbu=${maxCallsBetweenUpdates}&cfg=${config.json.stringify.sha512}"
     instances.getOrUpdate(key) {
-      new WasmVmPoolImpl(key, config.some, ic)
+      new WasmVmPoolImpl(key, config.some, maxCallsBetweenUpdates, ic)
     }
   }
 
@@ -266,19 +267,21 @@ object WasmVmPoolImpl {
   }
 }
 
-class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration], val ic: WasmIntegrationContext) extends WasmVmPool {
+class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration], maxCallsBetweenUpdates: Int = 100000, val ic: WasmIntegrationContext) extends WasmVmPool {
 
   WasmVmPoolImpl.logger.debug("new WasmVmPool")
 
-  private val engine             = new WasmOtoroshiEngine()
-  private val counter            = new AtomicInteger(-1)
-  private val templateRef        = new AtomicReference[WasmOtoroshiTemplate](null)
-  private[wasm] val availableVms = new ConcurrentLinkedQueue[WasmVmImpl]()
-  private[wasm] val inUseVms     = new ConcurrentLinkedQueue[WasmVmImpl]()
-  private val creatingRef        = new AtomicBoolean(false)
-  private val lastPluginVersion  = new AtomicReference[String](null)
-  private val requestsSource     = Source.queue[WasmVmPoolAction](ic.wasmQueueBufferSize, OverflowStrategy.dropTail)
-  private val prioritySource     = Source.queue[WasmVmPoolAction](ic.wasmQueueBufferSize, OverflowStrategy.dropTail)
+  private val engine               = new WasmOtoroshiEngine()
+  private val counter              = new AtomicInteger(-1)
+  private val templateRef          = new AtomicReference[WasmOtoroshiTemplate](null)
+  private[wasm] val availableVms   = new ConcurrentLinkedQueue[WasmVmImpl]()
+  private[wasm] val inUseVms       = new ConcurrentLinkedQueue[WasmVmImpl]()
+  private val lastCacheUpdateTime  = new AtomicLong(System.currentTimeMillis())
+  private val lastCacheUpdateCalls = new AtomicLong(System.currentTimeMillis())
+  private val creatingRef          = new AtomicBoolean(false)
+  private val lastPluginVersion    = new AtomicReference[String](null)
+  private val requestsSource       = Source.queue[WasmVmPoolAction](ic.wasmQueueBufferSize, OverflowStrategy.dropTail)
+  private val prioritySource       = Source.queue[WasmVmPoolAction](ic.wasmQueueBufferSize, OverflowStrategy.dropTail)
   private val (priorityQueue, requestsQueue) = {
     prioritySource
       .mergePrioritizedMat(requestsSource, 99, 1, false)(Keep.both)
@@ -290,6 +293,7 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
 
   // unqueue actions from the action queue
   private def handleAction(action: WasmVmPoolAction): Unit = try {
+    val time = System.currentTimeMillis()
     wasmConfig() match {
       case None       =>
         // if we cannot find the current wasm config, something is wrong, we destroy the pool
@@ -305,6 +309,13 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
               priorityQueue.offer(action)
             }(ic.executionContext)
         } else {
+          // try to self refresh cache if more call than or time elapsed
+          if (ic.selfRefreshingPools && (((time - lastCacheUpdateTime.get()) > ic.wasmCacheTtl) || (lastCacheUpdateCalls.get() > maxCallsBetweenUpdates))) {
+            lastCacheUpdateTime.set(time)
+            lastCacheUpdateCalls.set(0L)
+            wcfg.source.getWasm()(ic, ic.executionContext)
+          }
+          // TODO: try to refresh cache if more than n calls or env.wasmCacheTtl elasped since last time
           val changed   = hasChanged(wcfg)
           val available = hasAvailableVm(wcfg)
           val creating  = isVmCreating()
@@ -361,7 +372,11 @@ class WasmVmPoolImpl(stableId: => String, optConfig: => Option[WasmConfiguration
         lastPluginVersion.set(computeHash(config, config.source.cacheKey, ic.wasmScriptCache))
         val cache    = ic.wasmScriptCache
         val key      = config.source.cacheKey
-        val wasm     = cache(key).asInstanceOf[CachedWasmScript].script
+        val wasm     = cache(key) match {
+          case CacheableWasmScript.CachedWasmScript(script, _) => script
+          case CacheableWasmScript.FetchingCachedWasmScript(_, script) => script
+          case _ => throw new RuntimeException("unable to get wasm source from cache. this should not happen !")
+        }
         val hash     = wasm.sha256
         val resolver = new WasmSourceResolver()
         val source   = resolver.resolve("wasm", wasm.toByteBuffer.array())

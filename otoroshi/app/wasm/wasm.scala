@@ -210,6 +210,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   val executionContext: ExecutionContext                    = env.otoroshiExecutionContext
   val wasmCacheTtl: Long                                    = env.wasmCacheTtl
   val wasmQueueBufferSize: Int                              = env.wasmQueueBufferSize
+  val selfRefreshingPools: Boolean                          = false
   val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
   val wasmExecutor: ExecutionContext                        = ExecutionContext.fromExecutorService(
     Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))

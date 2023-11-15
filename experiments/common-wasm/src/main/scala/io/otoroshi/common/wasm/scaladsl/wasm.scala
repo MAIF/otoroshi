@@ -90,12 +90,12 @@ trait WasmVm {
 }
 
 object WasmVmPool {
-  def forConfiguration(config: WasmConfiguration)(implicit ic: WasmIntegrationContext): WasmVmPool = io.otoroshi.common.wasm.impl.WasmVmPoolImpl.forConfig(config)
-  def forConfigurationWithId(stableId: => String, config: => WasmConfiguration)(implicit ic: WasmIntegrationContext): WasmVmPool = {
-    new io.otoroshi.common.wasm.impl.WasmVmPoolImpl(stableId, config.some, ic)
+  def forConfiguration(config: WasmConfiguration, maxCallsBetweenUpdates: Int = 100000)(implicit ic: WasmIntegrationContext): WasmVmPool = io.otoroshi.common.wasm.impl.WasmVmPoolImpl.forConfig(config, maxCallsBetweenUpdates)
+  def forConfigurationWithId(stableId: => String, config: => WasmConfiguration, maxCallsBetweenUpdates: Int = 100000)(implicit ic: WasmIntegrationContext): WasmVmPool = {
+    new io.otoroshi.common.wasm.impl.WasmVmPoolImpl(stableId, config.some, maxCallsBetweenUpdates, ic)
   }
-  def apply(stableId: => String, optConfig: => Option[WasmConfiguration], ic: WasmIntegrationContext): WasmVmPool = {
-    new io.otoroshi.common.wasm.impl.WasmVmPoolImpl(stableId, optConfig, ic)
+  def apply(stableId: => String, optConfig: => Option[WasmConfiguration], maxCallsBetweenUpdates: Int = 100000, ic: WasmIntegrationContext): WasmVmPool = {
+    new io.otoroshi.common.wasm.impl.WasmVmPoolImpl(stableId, optConfig, maxCallsBetweenUpdates, ic)
   }
 }
 
@@ -436,7 +436,7 @@ trait WasmConfiguration {
   def instances: Int
   def killOptions: WasmVmKillOptions
   def json: JsValue
-  def pool()(implicit ic: WasmIntegrationContext): WasmVmPool = io.otoroshi.common.wasm.impl.WasmVmPoolImpl.forConfig(this)
+  def pool(maxCallsBetweenUpdates: Int = 100000)(implicit ic: WasmIntegrationContext): WasmVmPool = io.otoroshi.common.wasm.impl.WasmVmPoolImpl.forConfig(this, maxCallsBetweenUpdates)
 }
 
 object BasicWasmConfiguration {
