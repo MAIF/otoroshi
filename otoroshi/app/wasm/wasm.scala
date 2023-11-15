@@ -233,6 +233,27 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
   override def wasmConfigs(): Future[Seq[WasmConfiguration]] = env.proxyState.allWasmPlugins().map(_.config).vfuture
 
+  override def inlineWasmSources(): Future[Seq[WasmSource]] = {
+    val routes = (env.proxyState.allRoutes() ++ env.proxyState.allRawRoutes())
+    val sources: Seq[WasmSource] = routes.flatMap(route => route.plugins.slots
+        .collect {
+          case slot if slot.plugin.toLowerCase().contains("wasm") => slot.config.raw.select("source").asOpt[JsObject]
+        }
+        .collect {
+          case Some(sourceRaw) => WasmSource.format.reads(sourceRaw)
+        }
+        .collect {
+          case JsSuccess(source, _) => source
+        })
+      .filter { source =>
+        source.kind match {
+          case WasmSourceKind.Local => false
+          case _ => true
+        }
+      }
+    sources.vfuture
+  }
+
   override def hostFunctions(
       config: WasmConfiguration,
       pluginId: String

@@ -5,7 +5,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
 import play.api.libs.json._
 
@@ -118,7 +118,7 @@ class WasmPluginsCacheManager extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation      =
     JobInstantiation.OneInstancePerOtoroshiInstance
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = 20.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = env.wasmCacheTtl.millis.some //20.seconds.some
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = None
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 

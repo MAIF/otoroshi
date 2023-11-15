@@ -35,6 +35,7 @@ trait WasmIntegrationContext {
   def wasmConfigSync(path: String): Option[WasmConfiguration] = None
   def wasmConfig(path: String): Future[Option[WasmConfiguration]] = wasmConfigSync(path).vfuture
   def wasmConfigs(): Future[Seq[WasmConfiguration]]
+  def inlineWasmSources(): Future[Seq[WasmSource]] = Seq.empty.vfuture
   def hostFunctions(config: WasmConfiguration, pluginId: String): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]]
 
   def wasmScriptCache: TrieMap[String, CacheableWasmScript]
@@ -137,18 +138,24 @@ class WasmIntegration(ic: WasmIntegrationContext) {
   }
 
   def runVmLoaderJob(): Future[Unit] = {
-    ic.wasmConfigs().map(_.foreach { plugin =>
-      val now = System.currentTimeMillis()
-      ic.wasmScriptCache.get(plugin.source.cacheKey) match {
-        case None => plugin.source.getWasm()
-        case Some(CacheableWasmScript.CachedWasmScript(_, createAt)) if (createAt + ic.wasmCacheTtl) < now =>
-          plugin.source.getWasm()
-        case Some(CacheableWasmScript.CachedWasmScript(_, createAt))
-          if (createAt + ic.wasmCacheTtl) > now && (createAt + ic.wasmCacheTtl + 1000) < now =>
-          plugin.source.getWasm()
-        case _ => ()
+    for {
+      inlineSources <- ic.inlineWasmSources()
+      pluginSources <- ic.wasmConfigs().map(_.map(_.source))
+    } yield {
+      val sources = (pluginSources ++ inlineSources).distinct
+      sources.foreach { source =>
+        val now = System.currentTimeMillis()
+        ic.wasmScriptCache.get(source.cacheKey) match {
+          case None => source.getWasm()
+          case Some(CacheableWasmScript.CachedWasmScript(_, createAt)) if (createAt + ic.wasmCacheTtl) < now =>
+            source.getWasm()
+          case Some(CacheableWasmScript.CachedWasmScript(_, createAt))
+            if (createAt + ic.wasmCacheTtl) > now && (createAt + ic.wasmCacheTtl + 1000) < now =>
+            source.getWasm()
+          case _ => ()
+        }
       }
-    })
+    }
   }
 
   def runVmCleanerJob(config: JsObject): Future[Unit] = {
