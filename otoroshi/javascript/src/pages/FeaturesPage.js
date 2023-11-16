@@ -51,7 +51,7 @@ export const graph = (env) => {
           title: 'Services',
           description: 'All your service descriptors',
           img: 'services',
-          display: () => env.initWithNewEngine,
+          display: () => true,
           icon: () => 'fa-cubes',
           link: '/services',
         },
