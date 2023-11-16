@@ -19,6 +19,8 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.10.3
 ### Contributors
 
 * @mathieuancelin 
+* @baudelotphilippe 
+
 
 ## [16.10.2] - 2023-11-14
 
