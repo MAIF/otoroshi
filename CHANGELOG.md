@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [16.10.3] - 2023-11-16
+
+https://github.com/MAIF/otoroshi/milestone/81?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.2...v16.10.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.10.3
+
+
+### Fixed
+
+- common-wasm: caching process does not work (#1764)
+
+### Contributors
+
+* @mathieuancelin 
+
 ## [16.10.2] - 2023-11-14
 
 https://github.com/MAIF/otoroshi/milestone/80?closed=1
