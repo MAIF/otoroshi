@@ -312,7 +312,13 @@ function Block({
                       writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
                     }
                   }}>
-                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center',color: alreadyInShortcuts ? '#888' : null  }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      color: alreadyInShortcuts ? '#888' : null,
+                    }}>
                     <CustomIcon icon={icon} title={`${title} - ${description}`} />
                     <div
                       title={`${title} - ${description}`}
