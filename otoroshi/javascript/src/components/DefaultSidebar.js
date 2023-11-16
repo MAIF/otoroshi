@@ -292,7 +292,7 @@ function Block({
       </div>
 
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2">
+        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2 animOpacity">
           {features
             .filter((d) => d.display === undefined || d.display())
             .map(({ title, link, icon }) => {
@@ -371,7 +371,7 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center ${openedSidebar ? 'nav-item--open' : ''}`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''}`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -406,12 +406,12 @@ function SidebarLink({
         onClick={clearSidebar}
         style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
         <CustomIcon icon={icon} title={`${title} - ${description}`} />{' '}
-        <span style={{ marginTop: '4px' }} title={`${title} - ${description}`}>
+        <span style={{ marginTop: '4px', textOverflow:'ellipsis', overflow:'hidden' }} title={`${title} - ${description}`}>
           {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
         </span>
       </Link>
       <i
-        className="fas fa-eye-slash nav-item-eye ms-auto"
+        className="fas fa-eye-slash nav-item-eye me-auto"
         onClick={removeShortcut}
         title="Remove shortcut"
       />
