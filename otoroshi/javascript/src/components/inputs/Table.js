@@ -149,10 +149,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+        ...paginationState,
+        pageSize: this.state.rowsPerPage,
+        page: page + 1,
+      })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -214,14 +214,22 @@ export class Table extends Component {
   };
 
   closeEditForm = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.unmountShortcuts();
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(this.props.defaultTitle, this.updateItemAndStay, null);
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
-    this.setState({ currentItem: null, showEditForm: false });
-    this.update();
-    urlTo(`/bo/dashboard/${this.props.selfUrl}`);
+    this.unmountShortcuts();
+
+    if(this.props.navigateTo) {
+      this.props.parentProps.history.replace(`/${this.props.selfUrl}`)
+    } else {
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(this.props.defaultTitle);
+      }
+  
+      this.setState({ currentItem: null, showEditForm: false });
+      this.update();
+      urlTo(`/bo/dashboard/${this.props.selfUrl}`);
+    }
   };
 
   showEditForm = (e, item) => {
