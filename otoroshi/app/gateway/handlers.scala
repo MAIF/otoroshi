@@ -447,46 +447,52 @@ class GatewayRequestHandler(
         val relativeUri = request.relativeUri
         val monitoring  = monitoringPaths.exists(p => relativeUri.startsWith(p))
         if (env.revolver) {
-          if (relativeUri.startsWith("/__otoroshi_assets/")) {
-            return Some(serveDevAssets()) // I know ...
-          } else if (host == env.backOfficeHost && relativeUri.startsWith("/assets/")) {
-            return Some(serveDevAssets()) // I know ...
-          } else if (host == env.privateAppsHost && relativeUri.startsWith("/assets/")) {
-            return Some(serveDevAssets()) // I know ...
+          env.adminExtensions.getAssetsCallHandler(request, actionBuilder) match {
+            case Some(route) => route.adminRoute.handle(route, request)
+            case None => {
+              if (relativeUri.startsWith("/__otoroshi_assets/")) {
+                return Some(serveDevAssets()) // I know ...
+              } else if (host == env.backOfficeHost && relativeUri.startsWith("/assets/")) {
+                return Some(serveDevAssets()) // I know ...
+              } else if (host == env.privateAppsHost && relativeUri.startsWith("/assets/")) {
+                return Some(serveDevAssets()) // I know ...
+              }
+            }
           }
         }
         host match {
-          case _ if relativeUri.contains("__otoroshi_assets")                 =>
+          case _ if relativeUri.contains("__otoroshi_assets")                 => env.adminExtensions.handleAssetsCall(request, actionBuilder) {
             super.routeRequest(request) // TODO additional assets routes
+          }
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
 
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/health")  => Some(healthController.health())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/health")  => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(healthController.health()) }
           case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/metrics") =>
-            Some(healthController.processMetrics())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/live")    => Some(healthController.live())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/ready")   => Some(healthController.ready())
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(healthController.processMetrics()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/live")    => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(healthController.live()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/ready")   => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(healthController.ready()) }
           case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/startup") =>
-            Some(healthController.startup())
+              env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(healthController.startup()) }
 
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/jwks.json")     => Some(jwks())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/ocsp")          => Some(ocsp())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/jwks.json")     => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(jwks()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/ocsp")          => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(ocsp()) }
           case _ if relativeUri.startsWith("/.well-known/otoroshi/security/certificates/") =>
-            Some(aia(relativeUri.replace("/.well-known/otoroshi/security/certificates/", ""))())
+              env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(aia(relativeUri.replace("/.well-known/otoroshi/security/certificates/", ""))()) }
 
-          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json")              => Some(jwks())
-          case env.backOfficeHost if relativeUri.startsWith("/.well-known/jwks.json")                   => Some(jwks())
-          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp")          => Some(ocsp())
-          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp")               => Some(ocsp())
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json")              => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(jwks()) }
+          case env.backOfficeHost if relativeUri.startsWith("/.well-known/jwks.json")                   => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(jwks()) }
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp")          => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(ocsp()) }
+          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp")               => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(ocsp()) }
           case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/")      =>
-            Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+                  env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", ""))) }
           case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
-            Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+                    env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", ""))) }
 
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
-          case _ if relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(setPrivateAppsCookies()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/logout") => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(removePrivateAppsCookies()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(myProfile()) }
+          case _ if relativeUri.startsWith("/.well-known/acme-challenge/") => env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(letsEncrypt()) }
 
           case _ if ipRegex.matches(request.theHost) && monitoring => super.routeRequest(request)
           case str if matchRedirection(str)                        => Some(redirectToMainDomain())
@@ -514,20 +520,19 @@ class GatewayRequestHandler(
             super.routeRequest(request)
 
           case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")     =>
-            Some(jwks())
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(jwks()) }
           case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")          =>
-            Some(jwks())
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(jwks()) }
           case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp") =>
-            Some(ocsp())
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(ocsp()) }
           case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp")      =>
-            Some(ocsp())
-          case h
-              if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
-            Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(ocsp()) }
+          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", ""))) }
           case h
               if env.adminApiExposedDomains
                 .contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
-            Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", ""))) }
           case h if env.backofficeDomains.contains(h) && !isSecured && toHttps                                     => Some(redirectToHttps())
           case h if env.privateAppsDomains.contains(h) && !isSecured && toHttps                                    => Some(redirectToHttps())
           case h if env.privateAppsDomains.contains(h) && monitoring                                               => Some(forbidden())
@@ -546,7 +551,7 @@ class GatewayRequestHandler(
               super.routeRequest(request)
             )
           case _                                                                                                   => {
-            if (relativeUri.startsWith("/.well-known/otoroshi/extensions/")) {
+            if (relativeUri.startsWith("/.well-known/otoroshi/")) {
               env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(
                 reverseProxyCall(request, config)
               )
