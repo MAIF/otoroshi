@@ -15,18 +15,18 @@ WebAssembly (WASM) is a simple machine model and executable format with an exten
 To simplify the process of WASM creation and usage, Otoroshi provides:
 
 - otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route
-- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasm-manager-installation.md))
+- otoroshi `wasmo`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasmo-installation.md))
 
 @@@ div { .centered-img }
-<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" />
+<img src="../imgs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" />
 @@@
 
 ## Available tutorials
 
 here is the list of available tutorials about wasm in Otoroshi
 
-1. @ref:[install a wasm manager](../how-to-s/wasm-manager-installation.md)
-2. @ref:[use a wasm plugin](../how-to-s/wasm-usage.md)
+1. @ref:[Install a Wasmo](../how-to-s/wasmo-installation.md)
+2. @ref:[Use a WASM plugin](../how-to-s/wasm-usage.md)
 
 ## Wasm plugins entities
 
@@ -39,7 +39,7 @@ In a wasm plugin entity, you can define the source of your wasm plugin. You can 
 - `base64`: a base64 encoded wasm script
 - `file`: the path to a wasm script file
 - `http`: the url to a wasm script file
-- `wasm-manager`: the name of a wasm script compiled by a wasm manager instance
+- `wasmo`: the name of a wasm script compiled by a Wasmo instance
 
 then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps
 
@@ -87,13 +87,13 @@ the following examples are written in rust. the rust macros provided by extism m
 do not forget to add the extism pdk library to your project to make it compile
 
 Cargo.toml
-:   @@snip [Cargo.toml](../snippets/wasm-manager/Cargo.toml) 
+:   @@snip [Cargo.toml](../snippets/wasmo/Cargo.toml) 
 
 go.mod
-:   @@snip [go.mod](../snippets/wasm-manager/go.mod) 
+:   @@snip [go.mod](../snippets/wasmo/go.mod) 
 
 package.json
-:   @@snip [package.json](../snippets/wasm-manager/package.json) 
+:   @@snip [package.json](../snippets/wasmo/package.json) 
 
 ### WasmRouteMatcher
 
@@ -599,10 +599,10 @@ extern "C" {
 }
 ```
 
-right know, when using the wasm manager, a default idiomatic implementation is provided for `TinyGo` and `Rust`
+right know, when using the Wasmo, a default idiomatic implementation is provided for `TinyGo` and `Rust`
 
 host.rs
-:   @@snip [host.rs](../snippets/wasm-manager/host.rs) 
+:   @@snip [host.rs](../snippets/wasmo/host.rs) 
 
 host.go
-:   @@snip [host.go](../snippets/wasm-manager/host.go) 
+:   @@snip [host.go](../snippets/wasmo/host.go) 

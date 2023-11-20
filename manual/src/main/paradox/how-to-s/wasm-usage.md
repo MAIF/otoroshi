@@ -5,10 +5,10 @@ WebAssembly (WASM) is a simple machine model and executable format with an exten
 To simplify the process of WASM creation and usage, Otoroshi provides:
 
 - otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route
-- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasm-manager-installation.md))
+- otoroshi `wasmo`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasmo-installation.md))
 
 @@@ div { .centered-img }
-<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" />
+<img src="../imgs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" />
 @@@
 
 ## Tutorial
@@ -32,19 +32,19 @@ For this tutorial, we will start with an existing wasm file. The main function o
 The main function of this validator, written in rust, should look like:
 
 validator.rs
-:   @@snip [validator.rs](../snippets/wasm-manager/validator.rs) 
+:   @@snip [validator.rs](../snippets/wasmo/validator.rs) 
 
 validator.js
-:   @@snip [validator.js](../snippets/wasm-manager/validator.js) 
+:   @@snip [validator.js](../snippets/wasmo/validator.js) 
 
 validator.ts
-:   @@snip [validator.ts](../snippets/wasm-manager/validator.ts) 
+:   @@snip [validator.ts](../snippets/wasmo/validator.ts) 
 
 validator.js
-:   @@snip [validator.js](../snippets/wasm-manager/validator.js) 
+:   @@snip [validator.js](../snippets/wasmo/validator.js) 
 
 validator.go
-:   @@snip [validator.js](../snippets/wasm-manager/validator.go) 
+:   @@snip [validator.js](../snippets/wasmo/validator.go) 
 
 The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as `WasmAccessValidatorContext` object. 
 Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header. 
@@ -137,19 +137,19 @@ The next step in this tutorial is to use a WASM file as backend  of the route. W
 The content of this plugin, called `wasm-target.wasm`, looks like:
 
 target.rs
-:   @@snip [target.rs](../snippets/wasm-manager/target.rs) 
+:   @@snip [target.rs](../snippets/wasmo/target.rs) 
 
 target.js
-:   @@snip [target.js](../snippets/wasm-manager/target.js) 
+:   @@snip [target.js](../snippets/wasmo/target.js) 
 
 target.ts
-:   @@snip [target.ts](../snippets/wasm-manager/target.ts) 
+:   @@snip [target.ts](../snippets/wasmo/target.ts) 
 
 target.js
-:   @@snip [target.js](../snippets/wasm-manager/target.js) 
+:   @@snip [target.js](../snippets/wasmo/target.js) 
 
 target.go
-:   @@snip [target.js](../snippets/wasm-manager/target.go) 
+:   @@snip [target.js](../snippets/wasmo/target.go) 
 
 Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
 

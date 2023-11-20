@@ -1,112 +1,33 @@
-# Deploy your own WASM Manager
+# Deploy your own Wasmo
 
-@@@ div { .centered-img }
-<img src="../imgs/otoroshi-wasm-manager-1.png" />
-@@@
-
-## Manager's configuration
-
-In the @ref:[WASM tutorial](./wasm-usage.md) we used existing WASM files. These files has been generated with the WASM Manager solution provided by the Otoroshi team. 
-
-The wasm manager is a code editor in the browser that will help you to write and compile your plugin to WASM using Rust or Assembly Script. 
-You can install your own man ager instance using a docker image.
-
-```sh
-docker run -p 5001:5001 maif/otoroshi-wasm-manager
-```
-
-This should download and run the latest version of the manager. Once launched, you can navigate  [http://localhost:5001](http://localhost:5001) (or any other binding port). 
-
-This should show an authentication error. The manager can run with or without authentication, and you can confige it using the `AUTH_MODE` environment variable (`AUTH` or `NO_AUTH` values).
-
-The manager is configurable by environment variables. The manager uses an object storage (S3 compatible) as storage solution. 
-You can configure your S3 with the four variables `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` and `S3_BUCKET`.
-
-Feel free to change the following variables:
-
-
-| NAME                      | DEFAULT VALUE      | DESCRIPTION                                                                |
-| ------------------------- | ------------------ | -------------------------------------------------------------------------- |
-| MANAGER_PORT              | 5001               | The manager will be exposed on this port                                   |
-| MANAGER_ALLOWED_DOMAINS   | otoroshi.oto.tools | Array of origins, separated by comma, which is allowed to call the manager |
-| MANAGER_MAX_PARALLEL_JOBS | 2                  | Number of parallel jobs to compile plugins                                 |
-
-The following variables are useful to bind the manager with Otoroshi and to run it behind (we will use them in the next section of this tutorial).
-
-| NAME                   | DEFAULT VALUE           | DESCRIPTION                                            |
-| ---------------------- | ----------------------- | ------------------------------------------------------ |
-| OTOROSHI_USER_HEADER   | Otoroshi-User           | Header used to extract the user from Otoroshi request  |
-| OTOROSHI_TOKEN_SECRET  | veryverysecret          | the secret used to sign the user token                 |
+Installing Wasmo can be done by following the [Getting Started](https://ubiquitous-adventure-yrognwg.pages.github.io/builder/getting-started) in Wasmo documentation.
 
 ## Tutorial
 
-- [Deploy your own WASM Manager](#deploy-your-own-wasm-manager)
-  - [Manager's configuration](#managers-configuration)
+- [Deploy your own Wasmo](#deploy-your-own-wasmo)
   - [Tutorial](#tutorial)
     - [Before your start](#before-your-start)
-    - [Deploy the manager using Docker](#deploy-the-manager-using-docker)
-    - [Create a route to expose and protect the manager with authentication](#create-a-route-to-expose-and-protect-the-manager-with-authentication)
-    - [Create a first validator plugin using the manager](#create-a-first-validator-plugin-using-the-manager)
-    - [Configure the danger zone of Otoroshi to bind Otoroshi and the manager](#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager)
+    - [Create a route to expose and protect Wasmo with authentication](#create-a-route-to-expose-and-protect-wasmo-with-authentication)
+    - [Create a first validator plugin using Wasmo](#create-a-first-validator-plugin-using-wasmo)
+    - [Pairing Otoroshi and Wasmo](#pairing-otoroshi-with-wasmo)
     - [Create a route using the generated wasm file](#create-a-route-using-the-generated-wasm-file)
     - [Test your route](#test-your-route)
 
-After completing these steps you will have a running Otoroshi instance and our owm WASM manager linked together.
+After completing these steps you will have a running Otoroshi instance and our owm Wasmo linked together.
 
 ### Before your start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
-### Deploy the manager using Docker
-
-Let's start by deploying an instance of S3. If you already have an instance you can skip the next section.
-
-```sh
-docker network create manager-network
-docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret --net manager-network scality/s3server 
-```
-
-Once launched, we can run a manager instance.
-
-```sh
-docker run -d --net manager-network \
-  --name wasm-manager \
-  -p 5001:5001 \
-  -e "MANAGER_PORT=5001" \
-  -e "AUTH_MODE=AUTH" \
-  -e "MANAGER_MAX_PARALLEL_JOBS=2" \
-  -e "MANAGER_ALLOWED_DOMAINS=otoroshi.oto.tools,wasm-manager.oto.tools,localhost:5001" \
-  -e "OTOROSHI_USER_HEADER=Otoroshi-User" \
-  -e "OTOROSHI_TOKEN_SECRET=veryverysecret" \
-  -e "S3_ACCESS_KEY_ID=access_key" \
-  -e "S3_SECRET_ACCESS_KEY=secret" \
-  -e "S3_FORCE_PATH_STYLE=true" \
-  -e "S3_ENDPOINT=http://host.docker.internal:8000" \
-  -e "S3_BUCKET=wasm-manager" \
-  -e "DOCKER_USAGE=true" \
-  maif/otoroshi-wasm-manager
-```
-
-Once launched, go to [http://localhost:5001](http://localhost:5001). If everything is working as intended, 
-you should see, at the bottom right of your screen the following error
-
-```
-You're not authorized to access to manager
-```
-
-This error indicates that the manager could not authorize the request. 
-Actually, the manager expects to be only reachable through Otoroshi (this is the definition of the `AUTH_MODE=AUTH`). 
-So we need to create a route in Otoroshi to properly expose our manager to the rest of the world.
-
-### Create a route to expose and protect the manager with authentication
+### Create a route to expose and protect Wasmo with authentication
 
 We are going to use the admin API of Otoroshi to create the route. The configuration of the route is:
 
-* `wasm-manager` as name
-* `wasm-manager.oto.tools` as exposed domain
+* `wasmo` as name
+* `wasmo.oto.tools` as exposed domain
 * `localhost:5001` as target without TLS option enabled
 
-We need to add two more plugins to require the authentication from users and to pass the logged in user to the manager. 
+We need to add two more plugins to require the authentication from users and to pass the logged in user to Wasmo. 
 These plugins are named `Authentication` and `Otoroshi Info. token`. 
 The Authentication plugin will use an in-memory authentication with one default user (wasm@otoroshi.io/password). 
 The second plugin will be configured with the value of the `OTOROSHI_USER_HEADER` environment variable. 
@@ -121,7 +42,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
 -H 'Content-Type: application/json; charset=utf-8' \
 -d @- <<'EOF'
 {
-  "id": "wasm_manager_in_memory",
+  "id": "wasmo_in_memory",
   "type": "basic",
   "name": "In memory authentication",
   "desc": "Group of static users",
@@ -140,7 +61,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
 EOF
 ```
 
-Once created, you can create our route to expose the manager.
+Once created, you can create our route to expose Wasmo.
 
 ```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
@@ -148,10 +69,10 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -u "admin-api-apikey-id:admin-api-apikey-secret" \
 -d @- <<'EOF'
 {
-  "id": "wasm-manager",
-  "name": "wasm-manager",
+  "id": "wasmo",
+  "name": "wasmo",
   "frontend": {
-    "domains": ["wasm-manager.oto.tools"]
+    "domains": ["wasmo.oto.tools"]
   },
   "backend": {
     "targets": [
@@ -176,7 +97,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
       "config": {
         "pass_with_apikey": false,
         "auth_module": null,
-        "module": "wasm_manager_in_memory"
+        "module": "wasmo_in_memory"
       }
     },
     {
@@ -207,13 +128,13 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 EOF
 ```
 
-Try to access to the manager with the new domain: http://wasm-manager.oto.tools:8080. 
+Try to access to Wasmo with the new domain: http://wasmo.oto.tools:8080. 
 This should redirect you to the login page of Otoroshi. Enter the credentials of the user: wasm@otoroshi.io/password
-Congratulations, you now have a secure manager.
+Congratulations, you now have secured Wasmo.
 
-### Create a first validator plugin using the manager
+### Create a first validator plugin using Wasmo
 
-In the previous part, we secured the manager. Now, is the time to create your first simple plugin, written in Rust. 
+In the previous part, we secured the access to Wasmo. Now, is the time to create your first simple plugin, written in Rust. 
 This plugin will apply a check on the request and ensure that the headers contains the key-value foo:bar.
 
 1. On the right top of the screen, click on the plus icon to create a new plugin
@@ -344,16 +265,17 @@ Let's edit the fake input context by adding the exepected foo Header.
 
 Resubmit the command. It should pass.
 
-### Configure the danger zone of Otoroshi to bind Otoroshi and the manager
+### Pairing Otoroshi and Wasmo
 
-Now that we have our compiled plugin, we have to connect Otoroshi with the manager. Let's navigate to the danger zone, and add the following values in the WASM manager section:
+Now that we have our compiled plugin, we have to connect Otoroshi with Wasmo. Let's navigate to the danger zone, and add the following values in the Wasmo section:
 
 * `URL`: admin-api-apikey-id
 * `Apikey id`: admin-api-apikey-secret
 * `Apikey secret`: http://localhost:5001
 * `User(s)`: *
+* `Token secret`:
 
-The User(s) property is used by the manager to filter the list of returned plugins (example: wasm@otoroshi.io will only return the list of plugins created by this user). 
+The User(s) property is used by Wasmo to filter the list of returned plugins (example: wasm@otoroshi.io will only return the list of plugins created by this user). 
 
 Don't forget to save the configuration.
 
@@ -414,4 +336,4 @@ and
 curl "http://wasm-route.oto.tools:8080" -H "foo:bar"
 ```
 
-Congratulations, you have successfully written your first validator using your own manager.
+Congratulations, you have successfully written your first validator using your own Wasmo.
