@@ -707,7 +707,7 @@ export class TopBar extends Component {
           label: 'Documentation',
           value: 'Documentation',
           env: <i className="fas fa-book" />,
-          action: () => (window.location.href = '/docs/index.html'),
+          action: () => (window.location.href = 'https://maif.github.io/otoroshi/manual/index.html'),
         });
         options.push({
           action: () => this.routeTo('/stats'),

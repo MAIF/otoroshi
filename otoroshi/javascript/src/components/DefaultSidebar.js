@@ -314,6 +314,64 @@ function Block({
             .filter((d) => d.display === undefined || d.display())
             .map(({ title, link, icon }) => {
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
+              if (link.indexOf('http') === 0) {
+                return (
+                  <a
+                    href={link}
+                    target="_blank"
+                    key={title}
+                    className="sidebar-feature p-3 py-1 mx-1"
+                    style={{
+                      height: 'initial',
+                      borderRadius: 6,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                    onClick={(e) => {
+                      if (!addShortcutButton) {
+                        writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                      }
+                    }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        color: alreadyInShortcuts ? '#888' : null,
+                      }}>
+                      <CustomIcon icon={icon} title={`${title} - ${description}`} />
+                      <div
+                        title={`${title} - ${description}`}
+                        style={{
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                          marginLeft: 15,
+                          maxWidth: 130,
+                        }}>
+                        {title}
+                      </div>
+                    </div>
+                    {addShortcutButton && (
+                      <i
+                        className="fas fa-plus"
+                        title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
+                        disabled={alreadyInShortcuts}
+                        style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                        onClick={(e) => {
+                          if (!alreadyInShortcuts && addShortcutButton) {
+                            writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                        }}
+                      />
+                    )}
+                  </a>
+                );
+              }
 
               return (
                 <Link
@@ -392,6 +450,8 @@ function SidebarLink({
 }) {
   const path = props.path || props.link;
 
+  console.log('SidebarLink', path)
+
   return (
     <li
       className={`nav-item mt-0 d-flex align-items-center ${openedSidebar ? 'nav-item--open' : ''}`}
@@ -423,7 +483,7 @@ function SidebarLink({
           }}
         />
       )}
-      <Link
+      {path.indexOf('http') < 0 && <Link
         to={`/${path}`.replace('//', '/')}
         className={`nav-link ${rootClassName(path)}`}
         {...createTooltip(text)}
@@ -433,7 +493,19 @@ function SidebarLink({
         <span style={{ marginTop: '4px' }} title={`${title} - ${description}`}>
           {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
         </span>
-      </Link>
+      </Link>}
+      {path.indexOf('http') === 0 && <a
+        href={path}
+        target="_blank"
+        className={`nav-link`}
+        {...createTooltip(text)}
+        onClick={clearSidebar}
+        style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
+        <CustomIcon icon={icon} title={`${title} - ${description}`} />{' '}
+        <span style={{ marginTop: '4px' }} title={`${title} - ${description}`}>
+          {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+        </span>
+      </a>}
       <i
         className="fas fa-eye-slash nav-item-eye ms-auto"
         onClick={removeShortcut}
