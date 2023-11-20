@@ -35,9 +35,9 @@ export function DefaultSidebar(props) {
   const [client, setClient] = useState({ clientY: 0 });
   const [draggingIndex, setDraggingIndex] = useState(-1);
 
-  // useEffect(() => {
-  //   reloadStorage()
-  // }, [])
+  useEffect(() => {
+    reloadStorage();
+  }, [props.env])
 
   const reloadStorage = () => {
     fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
@@ -47,16 +47,16 @@ export function DefaultSidebar(props) {
         Accept: 'application/json',
       },
     })
-      .then((r) => {
-        if (r.status === 200) {
-          return r.json();
-        } else {
-          return [];
-        }
-      })
-      .then((newShortCuts) => {
-        setShortcuts(newShortCuts);
-      });
+    .then((r) => {
+      if (r.status === 200) {
+        return r.json();
+      } else {
+        return [];
+      }
+    })
+    .then((newShortCuts) => {
+      setShortcuts(newShortCuts);
+    });
   };
 
   const writeStorage = (newShortCuts) => {
@@ -69,15 +69,27 @@ export function DefaultSidebar(props) {
       },
       body: JSON.stringify(newShortCuts),
     })
-      .then((r) => r.json())
-      .then((newShortCuts) => {
-        setShortcuts(newShortCuts);
-      });
+    .then((r) => r.json())
+    .then((newShortCuts) => {
+      setShortcuts(newShortCuts);
+    });
   };
 
   const removeShortcut = (shortcut) => {
-    const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut));
-    writeStorage(newShortcuts);
+    if (shortcut.custom) {
+      const newShortcuts = shortcuts.filter((f) => {
+        if (_.isObject(f)) {
+          return f.link !== shortcut.link;
+        } else {
+          return true;
+        }
+      });
+      writeStorage(newShortcuts);
+    } else {
+      console.log("bilm ")
+      const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut.title));
+      writeStorage(newShortcuts);
+    }
   };
 
   const sortCategory = (a, b) => {
@@ -153,7 +165,16 @@ export function DefaultSidebar(props) {
         }}>
         {openedSidebar && <p className="ps-2">Shortcuts</p>}
         {shortcuts
-          .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
+          .map((shortcut) => {
+            if (_.isObject(shortcut)) {
+              shortcut.link = shortcut.link || shortcut.path;
+              shortcut.icon = shortcut.icon || (() => 'fa-star');
+              shortcut.custom = true;
+              return shortcut;
+            } else {
+              return features.find((feat) => feat.title.includes(shortcut))
+            }
+          })
           .filter((s) => s)
           .map((shortcut, initialIndex) => {
             return (
@@ -170,7 +191,7 @@ export function DefaultSidebar(props) {
                   setStart({ clientY });
                   setDraggingIndex(initialIndex);
                 }}
-                removeShortcut={() => removeShortcut(shortcut.title)}
+                removeShortcut={() => removeShortcut(shortcut)}
                 rootClassName={rootClassName}
                 openedSidebar={openedSidebar}
                 clearSidebar={clearSidebar}

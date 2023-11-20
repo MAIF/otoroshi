@@ -130,7 +130,7 @@ class AnonymousReportingEnable extends Component {
 const sidebarOpenOnLoad =
   (window.localStorage.getItem('otoroshi-sidebar-open') || 'true') === 'true';
 
-export const SidebarContext = React.createContext(sidebarOpenOnLoad);
+export const SidebarContext = React.createContext({ sidebarOpen: sidebarOpenOnLoad, shortcuts: [] });
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -236,6 +236,10 @@ class BackOfficeAppContainer extends Component {
     this.setState({ shortMenu: newShortMenu });
   };
 
+  reloadEnv = () => {
+    BackOfficeServices.env().then(env => this.setState({ env }));
+  }
+
   render() {
     const classes = ['page-container'];
     if (
@@ -246,10 +250,17 @@ class BackOfficeAppContainer extends Component {
       classes.push(this.props.children.type.backOfficeClassName);
     }
 
+    let shortcuts = [];
+    if (this.state.env && this.state.env.user_preferences && this.state.env.user_preferences.preferences) {
+      shortcuts = this.state.env.user_preferences.preferences.backoffice_sidebar_shortcuts || [];
+    }
+
     return (
       <Loader loading={this.state.loading}>
         <SidebarContext.Provider
           value={{
+            shortcuts,
+            reloadEnv: this.reloadEnv,
             openedSidebar: this.state.openedSidebar,
             toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
           }}>
@@ -258,8 +269,10 @@ class BackOfficeAppContainer extends Component {
             <>
               <UpdateOtoroshiVersion env={this.state.env} />
               <TopBar
+                reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
                 setTitle={(t) => DynamicTitle.setContent(t)}
+                getTitle={() => DynamicTitle.getContent()}
                 {...this.props}
                 changePassword={this.state.env.changePassword}
                 env={this.state.env}
