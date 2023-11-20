@@ -6,7 +6,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import otoroshi.auth.AuthConfigsDataStore
-import otoroshi.cluster.ClusterStateDataStore
+import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
@@ -32,6 +32,10 @@ sealed trait DataStoreHealth
 case object Healthy     extends DataStoreHealth
 case object Unhealthy   extends DataStoreHealth
 case object Unreachable extends DataStoreHealth
+
+trait DataStoresBuilder {
+  def build(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle,clusterMode: ClusterMode, env: Env): DataStores
+}
 
 trait DataStores {
   def redis: RedisLike

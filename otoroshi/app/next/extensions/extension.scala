@@ -7,11 +7,11 @@ import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAppsUser}
 import otoroshi.next.utils.Vault
-import otoroshi.storage.BasicStore
+import otoroshi.storage.DataStoresBuilder
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
-import play.api.libs.json.{Format, JsObject, JsResult, JsSuccess, JsValue, Reads}
+import play.api.libs.json.{JsObject, JsResult, JsValue, Reads}
 import play.api.mvc._
 import play.twirl.api.Html
 
@@ -160,6 +160,7 @@ trait AdminExtension {
 
   // TODO: add util function to access and update global_config extensions with id cleanup as key
 
+  def datastoreBuilders(): Map[String, DataStoresBuilder]                         = Map.empty
   def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]]                = Seq.empty
   def frontendExtensions(): Seq[AdminExtensionFrontendExtension]                  = Seq.empty
   def globalConfigExtensions(): Seq[AdminExtensionGlobalConfigExtension]          = Seq.empty
@@ -300,6 +301,16 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     } else {
       None
     }
+  }
+
+  def datastoreFrom(extId: AdminExtensionId, name: String): Option[DataStoresBuilder] = {
+    extensions.find(_.id == extId).flatMap(_.datastoreBuilders().get(name))
+  }
+
+  def datastore(name: String): Option[DataStoresBuilder] = {
+    extensions.collect {
+      case e if e.datastoreBuilders().nonEmpty => e.datastoreBuilders()
+    }.foldLeft(Map.empty[String, DataStoresBuilder])((a, b) => a ++ b).get(name)
   }
 
   def getAssetsCallHandler(
