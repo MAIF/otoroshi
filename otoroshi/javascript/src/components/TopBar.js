@@ -1902,7 +1902,7 @@ export class TopBar extends Component {
                     onClick={this.addShortcut}
                     style={{ marginLeft: 10 }}
                   >
-                    <i className="fas fa-star"></i>
+                    <i className="fas fa-thumbtack"></i>
                   </Button>
                 </form>
               </div>

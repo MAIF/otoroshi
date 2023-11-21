@@ -266,7 +266,7 @@ function CustomIcon({ icon, title }) {
     zeIcon = snowmonkeyIcon;
   }
   if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
-    return <i className="fas fa-star" title={title} />;
+    return <i className="fas fa-thumbtack" title={title} />;
   } else {
     return zeIcon;
   }
@@ -364,7 +364,7 @@ function Block({
                     </div>
                     {addShortcutButton && (
                       <i
-                        className="fas fa-plus"
+                        className="fas fa-thumbtack"
                         title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
                         disabled={alreadyInShortcuts}
                         style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
@@ -423,7 +423,7 @@ function Block({
                   </div>
                   {addShortcutButton && (
                     <i
-                      className="fas fa-plus"
+                      className="fas fa-thumbtack"
                       title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
                       disabled={alreadyInShortcuts}
                       style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
