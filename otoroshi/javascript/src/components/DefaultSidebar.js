@@ -322,6 +322,7 @@ function Block({
             .map(({ title, link, icon }) => {
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
               if (link.indexOf('http') === 0) {
+                const iconTitle = description ? `${title} - ${description}` : title;
                 return (
                   <a
                     href={link}
@@ -348,9 +349,9 @@ function Block({
                         alignItems: 'center',
                         color: alreadyInShortcuts ? '#888' : null,
                       }}>
-                      <CustomIcon icon={icon} title={`${title} - ${description}`} />
+                      <CustomIcon icon={icon} title={iconTitle} />
                       <div
-                        title={`${title} - ${description}`}
+                        title={iconTitle}
                         style={{
                           overflow: 'hidden',
                           whiteSpace: 'nowrap',
@@ -380,6 +381,8 @@ function Block({
                 );
               }
 
+              const iconTitle = description ? `${title} - ${description}` : title;
+
               return (
                 <Link
                   to={link}
@@ -405,9 +408,9 @@ function Block({
                       alignItems: 'center',
                       color: alreadyInShortcuts ? '#888' : null,
                     }}>
-                    <CustomIcon icon={icon} title={`${title} - ${description}`} />
+                    <CustomIcon icon={icon} title={iconTitle} />
                     <div
-                      title={`${title} - ${description}`}
+                      title={iconTitle}
                       style={{
                         overflow: 'hidden',
                         whiteSpace: 'nowrap',
@@ -456,6 +459,7 @@ function SidebarLink({
   ...props
 }) {
   const path = props.path || props.link;
+  const iconTitle = description ? `${title} - ${description}` : title;
 
   return (
     <li
@@ -494,8 +498,8 @@ function SidebarLink({
         {...createTooltip(text)}
         onClick={clearSidebar}
         style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
-        <CustomIcon icon={icon} title={`${title} - ${description}`} />{' '}
-        <span style={{ marginTop: '4px' }} title={`${title} - ${description}`}>
+        <CustomIcon icon={icon} title={iconTitle} />{' '}
+        <span style={{ marginTop: '4px' }} title={iconTitle}>
           {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
         </span>
       </Link>}
@@ -506,8 +510,8 @@ function SidebarLink({
         {...createTooltip(text)}
         onClick={clearSidebar}
         style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
-        <CustomIcon icon={icon} title={`${title} - ${description}`} />{' '}
-        <span style={{ marginTop: '4px' }} title={`${title} - ${description}`}>
+        <CustomIcon icon={icon} title={iconTitle} />{' '}
+        <span style={{ marginTop: '4px' }} title={iconTitle}>
           {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
         </span>
       </a>}
