@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 export function FeedbackButton({
-  type = 'primary',
+  type = 'save',
   text,
   icon,
   onPress = () => Promise.resolve(),
