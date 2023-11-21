@@ -1528,10 +1528,10 @@ export class DangerZonePage extends Component {
                 <i className="fas fa-file-export" /> Full export (ndjson)
               </button>
               <button type="button" className="btn btn-info" onClick={this.exportJson}>
-                <i className="glyphicon glyphicon-export" /> JSON
+                <i className="fas fa-file-export" /> JSON
               </button>
               <button type="button" className="btn btn-info" onClick={this.exportYaml}>
-                <i className="glyphicon glyphicon-export" /> YAML
+                <i className="fas fa-file-export" /> YAML
               </button>
               <button
                 type="button"
