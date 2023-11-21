@@ -5,6 +5,7 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
+import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 
 const addShortcutButton = true;
 
@@ -254,14 +255,16 @@ function CustomIcon({ icon, title }) {
       ? iconValue
       : `fa ${iconValue}`
     : null;
-  const zeIcon = iconValue ? (
+  let zeIcon = iconValue ? (
     _.isString(iconValue) ? (
       <i className={className} title={title} />
     ) : (
       iconValue
     )
   ) : null;
-
+  if (iconValue === 'fa-snow-monkey') {
+    zeIcon = snowmonkeyIcon;
+  }
   if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
     return <i className="fas fa-star" title={title} />;
   } else {

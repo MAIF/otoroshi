@@ -1612,7 +1612,7 @@ export class TopBar extends Component {
       if (pathname.startsWith('/bo/dashboard' + f.link)) {
         icon = f.icon();
         if (_.isObject(icon)) {
-          icon = 'fa-star';
+          icon = 'fa-snow-monkey';
         }
         if (pathname.includes(`/edit/`)) {
           title = 'Edit ' + f.title.toLowerCase(); 
