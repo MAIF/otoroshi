@@ -262,7 +262,11 @@ function CustomIcon({ icon, title }) {
     )
   ) : null;
 
-  return zeIcon;
+  if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
+    return <i className="fas fa-star" title={title} />;
+  } else {
+    return zeIcon;
+  }
 }
 
 function Block({
@@ -449,8 +453,6 @@ function SidebarLink({
   ...props
 }) {
   const path = props.path || props.link;
-
-  console.log('SidebarLink', path)
 
   return (
     <li

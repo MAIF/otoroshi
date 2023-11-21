@@ -1611,6 +1611,9 @@ export class TopBar extends Component {
     feats.find(f => {
       if (pathname.startsWith('/bo/dashboard' + f.link)) {
         icon = f.icon();
+        if (_.isObject(icon)) {
+          icon = 'fa-star';
+        }
         if (pathname.includes(`/edit/`)) {
           title = 'Edit ' + f.title.toLowerCase(); 
         } else if (pathname.endsWith('/add')) {
@@ -1895,7 +1898,7 @@ export class TopBar extends Component {
                   <Button 
                     type="primaryColor"
                     disabled={shortcutDisabled}
-                    title="Add current page to shortcuts"
+                    title="Add current page to sidebar shortcuts"
                     onClick={this.addShortcut}
                     style={{ marginLeft: 10 }}
                   >
