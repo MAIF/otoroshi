@@ -301,7 +301,7 @@ class BackOfficeAppContainer extends Component {
                       toggleSidebar={(value) => this.setState({ openedSidebar: value })}
                     />
                   )}
-                  <ul className="nav flex-column nav-sidebar mt-3">
+                  {/* <ul className="nav flex-column nav-sidebar mt-3">
                     <li
                       className={`nav-item mt-0 ${
                         this.state.openedSidebar ? 'nav-item--open' : ''
@@ -326,7 +326,7 @@ class BackOfficeAppContainer extends Component {
                         </span>
                       </Link>
                     </li>
-                  </ul>
+                  </ul> */}
                   <DynamicSidebar />
                   <DefaultSidebar
                     lines={this.state.lines}
