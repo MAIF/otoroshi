@@ -24,6 +24,7 @@ import _ from 'lodash';
 import { Button } from '../../components/Button';
 
 
+
 function DuplicateButton({ value, history }) {
   return (
     <Button
@@ -51,7 +52,7 @@ function DuplicateButton({ value, history }) {
           }
         });
       }}>
-      <i className='fas fa-copy' />
+      <i className='fas fa-copy' /> Duplicate route
     </Button>
   );
 }
@@ -106,9 +107,10 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
-      <Button
-        className="btn-sm"
-        onClick={() => {
+      <select class="form-select selectSkin btn-primary" aria-label="Choose export">
+        <option selected>Export</option>
+        <option onClick={() => {
+          const entityKind="JwtVerifier"
           const what = window.location.pathname.split('/')[3];
           const itemName = entityKind
             ? entityKind.toLowerCase()
@@ -132,12 +134,9 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
           document.body.appendChild(a);
           a.click();
           setTimeout(() => document.body.removeChild(a), 300);
-        }}>
-        JSON
-      </Button>
-      <Button
-        className="btn-sm"
-        onClick={() => {
+        }}>JSON</option>
+        <option onClick={() => {
+          const entityKind="JwtVerifier"
           const what = window.location.pathname.split('/')[3];
           const itemName = entityKind
             ? entityKind.toLowerCase()
@@ -178,9 +177,8 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
               a.click();
               setTimeout(() => document.body.removeChild(a), 300);
             });
-        }}>
-        YAML
-      </Button>
+        }}>YAML</option>
+      </select>      
       {menu}
     </div>
   );
