@@ -93,7 +93,7 @@ export default ({ route }) => {
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}>
       <ul className="nav flex-column nav-sidebar">
-        {openedSidebar && <p className="ps-2">Route</p>}
+        {openedSidebar && <p className="sidebar-title">Route</p>}
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
           <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
@@ -109,7 +109,7 @@ export default ({ route }) => {
           </li>
         ))}
 
-        {openedSidebar && <p className="ps-2 mt-3">Extensions</p>}
+        {openedSidebar && <p className="sidebar-title mt-3">Extensions</p>}
         {Otoroshi.extensions()
           .flatMap((ext) => ext.routeDesignerTabs || [])
           //               visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),

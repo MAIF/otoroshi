@@ -155,7 +155,7 @@ export function DefaultSidebar(props) {
             }
           }, 50); // delay to avoid simple click
         }}>
-        {openedSidebar && !onRouteTab && <p className="ps-2">Shortcuts</p>}
+        {openedSidebar && !onRouteTab && <p className="sidebar-title">Shortcuts</p>}
         {!onRouteTab && shortcuts
           .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
           .filter((s) => s)
@@ -185,7 +185,7 @@ export function DefaultSidebar(props) {
       </ul>
       {openedSidebar && !onRouteTab && (
         <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
-          <p className="ps-2">Categories</p>
+          <p className="sidebar-title">Categories</p>
           <div className="d-flex flex-column">
             {links.sort(sortCategory).map((item, i) => {
               return (
