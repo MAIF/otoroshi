@@ -8,7 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
-import io.otoroshi.common.wasm.scaladsl.WasmIntegration
+import io.otoroshi.wasm4s.scaladsl.WasmIntegration
 import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt

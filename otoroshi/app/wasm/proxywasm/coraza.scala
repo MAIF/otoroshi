@@ -3,7 +3,7 @@ package otoroshi.wasm.proxywasm
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
-import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}

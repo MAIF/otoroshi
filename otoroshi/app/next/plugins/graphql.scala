@@ -715,7 +715,7 @@ class GraphQLBackend extends NgBackendCall {
       ec: ExecutionContext
   ): Action[Unit, Any] = {
 
-    import io.otoroshi.common.wasm.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
+    import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 
     val wasmSourceKind   = c.arg(wasmSourceKindArg)
     val wasmSourcePath   = c.arg(wasmSourcePathArg)

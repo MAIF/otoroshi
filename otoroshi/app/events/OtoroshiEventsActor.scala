@@ -32,7 +32,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
-import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.wasm4s.scaladsl._
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
