@@ -50,6 +50,7 @@ import MultiAuthModule from './MultiAuthModule';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
+import NgClientCredentialTokenEndpoint from './NgClientCredentialTokenEndpoint';
 import NgDefaultRequestBody from './NgDefaultRequestBody';
 import NgErrorRewriter from './NgErrorRewriter';
 import NgFrontend from './NgFrontend';
@@ -184,6 +185,7 @@ const pluginsArray = [
   MultiAuthModule,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
+  NgClientCredentialTokenEndpoint,
   NgDefaultRequestBody,
   NgErrorRewriter,
   NgHttpClientCache,

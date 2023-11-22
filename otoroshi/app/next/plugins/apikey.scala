@@ -15,7 +15,7 @@ import play.api.libs.json._
 import play.api.mvc.Result
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgLegacyApikeyCallConfig(
