@@ -113,7 +113,7 @@ export class PrivateAppsSessionsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Private apps users sessions`);
+    this.props.setTitle(`Auth. module sessions`);
   }
 
   discardSession = (e, id, table) => {
@@ -180,7 +180,7 @@ export class PrivateAppsSessionsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="sessions"
-          defaultTitle="Private apps users sessions"
+          defaultTitle="Auth. module sessions"
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}

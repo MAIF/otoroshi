@@ -90,7 +90,7 @@ export class SessionsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Admin users sessions`);
+    this.props.setTitle(`Admin sessions`);
   }
 
   discardSession = (e, id, table) => {
@@ -154,7 +154,7 @@ export class SessionsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="sessions"
-          defaultTitle="Admin users sessions"
+          defaultTitle="Admin sessions"
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}

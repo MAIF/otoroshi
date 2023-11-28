@@ -308,7 +308,7 @@ export const graph = (env) => {
       description: 'Everything network related',
       features: [
         {
-          title: 'Tunnels',
+          title: 'Connected tunnels',
           description: 'List all the connected tunnel to the otoroshi cluster',
           img: 'tunnels',
           link: '/tunnels',
@@ -316,7 +316,7 @@ export const graph = (env) => {
           display: () => env.userAdmin,
         },
         {
-          title: 'Cluster view',
+          title: 'Cluster members',
           description: 'List all the nodes of your otoroshi cluster',
           img: 'cluster',
           link: '/cluster',
