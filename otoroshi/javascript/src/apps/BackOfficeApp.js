@@ -267,7 +267,7 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
+          <div style={{ height: 'calc(100vh - 52px)'/*, overflow: 'hidden'*/ }}>
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
@@ -348,7 +348,7 @@ class BackOfficeAppContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="flex-fill px-3">
+              <div className="flex-fill px-3" style={{overflowX:'auto'}}>
                 <div className={classes.join(' ')} id="content-scroll-container">
                   <DynamicTitle>
                     {!this.state.catchedError && (

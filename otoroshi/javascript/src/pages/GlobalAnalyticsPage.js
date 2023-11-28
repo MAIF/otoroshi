@@ -107,7 +107,7 @@ export class GlobalAnalyticsPage extends Component {
         : 0;
 
     return (
-      <div className="chartsAnalytics">
+      <div className="chartsAnalytics container">
         <div className="row" style={{ marginBottom: 30, marginLeft: 2 }}>
           <div className="">
             <OtoDatePicker

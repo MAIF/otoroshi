@@ -1454,7 +1454,7 @@ export class DangerZonePage extends Component {
       delete propsDisabled.disabled;
     }
     return (
-      <div>
+      <div class="container">
         <div className="displayGroupBtn">
           <button
             title="Save changes"
