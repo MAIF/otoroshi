@@ -99,6 +99,9 @@ li:not(.nav-item--open) .nav-link {
 
 .nav-item--open .nav-link .title {
   margin-left: 4px;
+  margin-top: 4px;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .nav-item--open i {
