@@ -336,9 +336,6 @@ const Container = ({ children, onClick }) => {
   return (
     <div
       className="h-100 col-12 route-designer div-overflowy"
-      style={{
-        background: 'var(--bg-color_level2)'
-      }}
       onMouseDown={(e) => {
         setPropagate(
           ![
