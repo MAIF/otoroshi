@@ -1979,15 +1979,15 @@ class BackOfficeController(
     env.datastores.globalConfigDataStore
       .singleton()
       .flatMap { globalConfig =>
-        globalConfig.wasmManagerSettings match {
-          case Some(settings @ WasmManagerSettings(url, _, _, pluginsFilter, _)) =>
+        globalConfig.wasmoSettings match {
+          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter)) =>
             val claim = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
-                  "Otoroshi-User" -> claim,
+                  "Authorization" -> claim,
                   "kind"          -> pluginsFilter.getOrElse("*")
                 )
                 .get()
@@ -2019,7 +2019,7 @@ class BackOfficeController(
   def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
-    val wasmoSettings = WasmManagerSettings.format.reads(jsonBody).get
+    val wasmoSettings = WasmoSettings.format.reads(jsonBody).get
     val apikey        = ApikeyHelper.generate(wasmoSettings)
 
     Try {
@@ -2027,7 +2027,7 @@ class BackOfficeController(
         .url(s"${wasmoSettings.url}/plugins")
         .withFollowRedirects(false)
         .withHttpHeaders(
-          "Otoroshi-User" -> apikey,
+          "Authorization" -> apikey,
           "kind"          -> wasmoSettings.pluginsFilter.getOrElse("*")
         )
         .get()
@@ -2035,15 +2035,15 @@ class BackOfficeController(
           if (res.status == 200) {
             Ok(res.json)
           } else {
-            BadRequest("Unable to join the wasmo server")
+            BadRequest(Json.obj( "error" -> "Unable to join the wasmo server"))
           }
         })
         .recover { case e: Throwable =>
           logger.error(e.getMessage)
-          Ok(Json.arr())
+          BadRequest(Json.obj( "error" -> "Unable to join the wasmo server"))
         }
     } match {
-      case Failure(err) => Ok(Json.arr()).vfuture
+      case Failure(err) => BadRequest(Json.obj( "error" -> "Unable to join the wasmo server")).vfuture
       case Success(v)   => v
     }
   }

@@ -1,7 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
-import io.otoroshi.wasm4s.scaladsl.WasmManagerSettings
+import io.otoroshi.wasm4s.scaladsl.WasmoSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
@@ -653,7 +653,7 @@ case class GlobalConfig(
     quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
     templates: DefaultTemplates = DefaultTemplates(),
-    wasmManagerSettings: Option[WasmManagerSettings] = None,
+    wasmoSettings: Option[WasmoSettings] = None,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     env: JsObject = Json.obj(),
@@ -792,7 +792,7 @@ object GlobalConfig {
         "tlsSettings"             -> o.tlsSettings.json,
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
-        "wasmManagerSettings"     -> o.wasmManagerSettings.map(_.json).getOrElse(JsNull).as[JsValue],
+        "wasmoSettings"           -> o.wasmoSettings.map(_.json).getOrElse(JsNull).as[JsValue],
         "metadata"                -> o.metadata,
         "env"                     -> o.env,
         "extensions"              -> o.extensions,
@@ -933,10 +933,17 @@ object GlobalConfig {
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
             .orElse(json.select("templates").asOpt(DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
-          wasmManagerSettings = WasmManagerSettings.format
-            .reads((json \ "wasmManagerSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(WasmManagerSettings())
-            .some,
+          wasmoSettings = WasmoSettings.format
+            .reads((json \ "wasmoSettings")
+              .asOpt[JsValue]
+              .getOrElse(JsNull))
+              .getOrElse(
+                WasmoSettings.format
+                  .reads((json \ "wasmManagerSettings")
+                    .asOpt[JsValue]
+                    .getOrElse(JsNull))
+              .getOrElse(WasmoSettings()))
+              .some,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
