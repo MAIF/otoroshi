@@ -1122,6 +1122,12 @@ export class DangerZonePage extends Component {
         label: 'User(s)',
       },
     },
+    'wasmoSettings.legacyAuth': {
+      type: 'bool',
+      props: {
+        label: 'Use legacy auth.',
+      },
+    },
     testing: {
       type: WasmoTester,
     },
@@ -1286,6 +1292,7 @@ export class DangerZonePage extends Component {
     'wasmoSettings.clientId',
     'wasmoSettings.clientSecret',
     'wasmoSettings.pluginsFilter',
+    'wasmoSettings.legacyAuth',
     'testing',
     '>>>Global metadata',
     'tags',

@@ -1980,14 +1980,14 @@ class BackOfficeController(
       .singleton()
       .flatMap { globalConfig =>
         globalConfig.wasmoSettings match {
-          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter)) =>
-            val claim = ApikeyHelper.generate(settings)
+          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter, _)) =>
+            val (header, token) = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
-                  "Authorization" -> claim,
+                  header -> token,
                   "kind"          -> pluginsFilter.getOrElse("*")
                 )
                 .get()
@@ -2020,14 +2020,14 @@ class BackOfficeController(
     val jsonBody = ctx.request.body
 
     val wasmoSettings = WasmoSettings.format.reads(jsonBody).get
-    val apikey        = ApikeyHelper.generate(wasmoSettings)
+    val (header, token)        = ApikeyHelper.generate(wasmoSettings)
 
     Try {
       env.Ws
         .url(s"${wasmoSettings.url}/plugins")
         .withFollowRedirects(false)
         .withHttpHeaders(
-          "Authorization" -> apikey,
+          header -> token,
           "kind"          -> wasmoSettings.pluginsFilter.getOrElse("*")
         )
         .get()

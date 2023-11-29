@@ -141,7 +141,7 @@ object WasmConfig {
         WasmSource.format.reads(sourceOpt.get).get
       } else {
         compilerSource match {
-          case Some(source) => WasmSource(WasmSourceKind.WasmManager, source)
+          case Some(source) => WasmSource(WasmSourceKind.Wasmo, source)
           case None         =>
             rawSource match {
               case Some(source) if source.startsWith("http://")   => WasmSource(WasmSourceKind.Http, source)
