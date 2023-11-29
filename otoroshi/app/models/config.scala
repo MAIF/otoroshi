@@ -900,16 +900,21 @@ object GlobalConfig {
             .orElse(json.select("templates").asOpt(DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
           wasmoSettings = WasmoSettings.format
-            .reads((json \ "wasmoSettings")
-              .asOpt[JsValue]
-              .getOrElse(JsNull))
-              .getOrElse(
-                WasmoSettings.format
-                  .reads((json \ "wasmManagerSettings")
+            .reads(
+              (json \ "wasmoSettings")
+                .asOpt[JsValue]
+                .getOrElse(JsNull)
+            )
+            .getOrElse(
+              WasmoSettings.format
+                .reads(
+                  (json \ "wasmManagerSettings")
                     .asOpt[JsValue]
-                    .getOrElse(JsNull))
-              .getOrElse(WasmoSettings()))
-              .some,
+                    .getOrElse(JsNull)
+                )
+                .getOrElse(WasmoSettings())
+            )
+            .some,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),

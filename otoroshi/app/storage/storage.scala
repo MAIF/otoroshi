@@ -34,7 +34,13 @@ case object Unhealthy   extends DataStoreHealth
 case object Unreachable extends DataStoreHealth
 
 trait DataStoresBuilder {
-  def build(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle,clusterMode: ClusterMode, env: Env): DataStores
+  def build(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle,
+      clusterMode: ClusterMode,
+      env: Env
+  ): DataStores
 }
 
 trait DataStores {

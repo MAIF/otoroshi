@@ -90,75 +90,105 @@ class FooAdminExtensionState(env: Env) {
 
 class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike {
 
-  val redis = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
+  val redis       = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
   implicit val ec = actorSystem.dispatcher
 
-  override def setCounter(key: String, value: Long): Future[Unit] = redis.set(key, value.toString).map(_ => ())
-  override def rawGet(key: String): Future[Option[Any]] = redis.rawGet(key)
+  override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
+  override def rawGet(key: String): Future[Option[Any]]                         = redis.rawGet(key)
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
-  override def stop(): Unit = redis.stop()
-  override def flushall(): Future[Boolean] = redis.flushall()
+  override def stop(): Unit                                                     = redis.stop()
+  override def flushall(): Future[Boolean]                                      = redis.flushall()
 
-  override def get(key: String): Future[Option[ByteString]] = redis.get(key)
-  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = redis.mget(keys: _*)
-  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = redis.set(key, value, exSeconds, pxMilliseconds)
-  override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = redis.setBS(key, value, exSeconds, pxMilliseconds)
-  override def del(keys: String*): Future[Long] = redis.del(keys: _*)
-  override def incr(key: String): Future[Long] = redis.incr(key)
-  override def incrby(key: String, increment: Long): Future[Long] = redis.incrby(key, increment)
-  override def exists(key: String): Future[Boolean] = redis.exists(key)
-  override def keys(pattern: String): Future[Seq[String]] = redis.keys(pattern)
+  override def get(key: String): Future[Option[ByteString]]                                                            = redis.get(key)
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]]                                                    = redis.mget(keys: _*)
+  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
+    redis.set(key, value, exSeconds, pxMilliseconds)
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean]                                                                                                   = redis.setBS(key, value, exSeconds, pxMilliseconds)
+  override def del(keys: String*): Future[Long]                                                                        = redis.del(keys: _*)
+  override def incr(key: String): Future[Long]                                                                         = redis.incr(key)
+  override def incrby(key: String, increment: Long): Future[Long]                                                      = redis.incrby(key, increment)
+  override def exists(key: String): Future[Boolean]                                                                    = redis.exists(key)
+  override def keys(pattern: String): Future[Seq[String]]                                                              = redis.keys(pattern)
 
-  override def hdel(key: String, fields: String*): Future[Long] = redis.hdel(key, fields: _*)
-  override def hgetall(key: String): Future[Map[String, ByteString]] = redis.hgetall(key)
-  override def hset(key: String, field: String, value: String): Future[Boolean] = redis.hset(key, field, value)
+  override def hdel(key: String, fields: String*): Future[Long]                       = redis.hdel(key, fields: _*)
+  override def hgetall(key: String): Future[Map[String, ByteString]]                  = redis.hgetall(key)
+  override def hset(key: String, field: String, value: String): Future[Boolean]       = redis.hset(key, field, value)
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = redis.hsetBS(key, field, value)
 
-  override def llen(key: String): Future[Long] = redis.llen(key)
-  override def lpush(key: String, values: String*): Future[Long] = redis.lpush(key, values:_*)
-  override def lpushLong(key: String, values: Long*): Future[Long] = redis.lpushLong(key, values:_*)
-  override def lpushBS(key: String, values: ByteString*): Future[Long] = redis.lpushBS(key, values:_*)
+  override def llen(key: String): Future[Long]                                       = redis.llen(key)
+  override def lpush(key: String, values: String*): Future[Long]                     = redis.lpush(key, values: _*)
+  override def lpushLong(key: String, values: Long*): Future[Long]                   = redis.lpushLong(key, values: _*)
+  override def lpushBS(key: String, values: ByteString*): Future[Long]               = redis.lpushBS(key, values: _*)
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = redis.lrange(key, start, stop)
-  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = redis.ltrim(key, start, stop)
+  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean]          = redis.ltrim(key, start, stop)
 
-  override def pttl(key: String): Future[Long] = redis.pttl(key)
-  override def ttl(key: String): Future[Long] = redis.ttl(key)
-  override def expire(key: String, seconds: Int): Future[Boolean] = redis.expire(key, seconds)
+  override def pttl(key: String): Future[Long]                           = redis.pttl(key)
+  override def ttl(key: String): Future[Long]                            = redis.ttl(key)
+  override def expire(key: String, seconds: Int): Future[Boolean]        = redis.expire(key, seconds)
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = redis.pexpire(key, milliseconds)
 
-  override def sadd(key: String, members: String*): Future[Long] = redis.sadd(key, members: _*)
-  override def saddBS(key: String, members: ByteString*): Future[Long] = redis.saddBS(key, members: _*)
-  override def sismember(key: String, member: String): Future[Boolean] = redis.sismember(key, member)
+  override def sadd(key: String, members: String*): Future[Long]             = redis.sadd(key, members: _*)
+  override def saddBS(key: String, members: ByteString*): Future[Long]       = redis.saddBS(key, members: _*)
+  override def sismember(key: String, member: String): Future[Boolean]       = redis.sismember(key, member)
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = redis.sismemberBS(key, member)
-  override def smembers(key: String): Future[Seq[ByteString]] = redis.smembers(key)
-  override def srem(key: String, members: String*): Future[Long] = redis.srem(key, members: _*)
-  override def sremBS(key: String, members: ByteString*): Future[Long] = redis.sremBS(key, members: _*)
-  override def scard(key: String): Future[Long] = redis.scard(key)
+  override def smembers(key: String): Future[Seq[ByteString]]                = redis.smembers(key)
+  override def srem(key: String, members: String*): Future[Long]             = redis.srem(key, members: _*)
+  override def sremBS(key: String, members: ByteString*): Future[Long]       = redis.sremBS(key, members: _*)
+  override def scard(key: String): Future[Long]                              = redis.scard(key)
 
   override def typ(key: String): Future[String] = {
     rawGet(key) map {
-      case Some(_: String) => "string"
-      case Some(_: ByteString) => "string"
-      case Some(_: Long) => "string"
+      case Some(_: String)                                                     => "string"
+      case Some(_: ByteString)                                                 => "string"
+      case Some(_: Long)                                                       => "string"
       case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString]) => "hash"
-      case Some(_: TrieMap[String, ByteString]) => "hash"
-      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString]) => "list"
-      case Some(_: scala.collection.mutable.MutableList[ByteString]) => "list"
-      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString]) => "set"
-      case Some(_: scala.collection.mutable.HashSet[ByteString]) => "set"
-      case _ => "none"
+      case Some(_: TrieMap[String, ByteString])                                => "hash"
+      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString])      => "list"
+      case Some(_: scala.collection.mutable.MutableList[ByteString])           => "list"
+      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString])       => "set"
+      case Some(_: scala.collection.mutable.HashSet[ByteString])               => "set"
+      case _                                                                   => "none"
     }
   }
 }
 
-class FooRedisLikeBuilder extends GenericRedisLikeBuilder {
-  override def build(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, clusterMode: ClusterMode, redisStatsItems: Int, actorSystem: ActorSystem, mat: Materializer, logger: Logger, env: Env): GenericRedisLike = {
+class FooRedisLikeBuilder  extends GenericRedisLikeBuilder {
+  override def build(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle,
+      clusterMode: ClusterMode,
+      redisStatsItems: Int,
+      actorSystem: ActorSystem,
+      mat: Materializer,
+      logger: Logger,
+      env: Env
+  ): GenericRedisLike = {
     new FooRedisLike(env, actorSystem)
   }
 }
-class FooDataStoresBuilder extends DataStoresBuilder {
-  override def build(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, clusterMode: ClusterMode, env: Env): DataStores = {
-    new GenericDataStores(configuration, environment, lifecycle, clusterMode, redisStatsItems = 100, builder = new FooRedisLikeBuilder(), env)
+class FooDataStoresBuilder extends DataStoresBuilder       {
+  override def build(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle,
+      clusterMode: ClusterMode,
+      env: Env
+  ): DataStores = {
+    new GenericDataStores(
+      configuration,
+      environment,
+      lifecycle,
+      clusterMode,
+      redisStatsItems = 100,
+      builder = new FooRedisLikeBuilder(),
+      env
+    )
   }
 }
 

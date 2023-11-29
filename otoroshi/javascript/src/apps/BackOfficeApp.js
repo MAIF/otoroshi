@@ -130,7 +130,10 @@ class AnonymousReportingEnable extends Component {
 const sidebarOpenOnLoad =
   (window.localStorage.getItem('otoroshi-sidebar-open') || 'true') === 'true';
 
-export const SidebarContext = React.createContext({ sidebarOpen: sidebarOpenOnLoad, shortcuts: [] });
+export const SidebarContext = React.createContext({
+  sidebarOpen: sidebarOpenOnLoad,
+  shortcuts: [],
+});
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -237,8 +240,8 @@ class BackOfficeAppContainer extends Component {
   };
 
   reloadEnv = () => {
-    BackOfficeServices.env().then(env => this.setState({ env }));
-  }
+    BackOfficeServices.env().then((env) => this.setState({ env }));
+  };
 
   render() {
     const classes = ['page-container'];
@@ -251,7 +254,11 @@ class BackOfficeAppContainer extends Component {
     }
 
     let shortcuts = [];
-    if (this.state.env && this.state.env.user_preferences && this.state.env.user_preferences.preferences) {
+    if (
+      this.state.env &&
+      this.state.env.user_preferences &&
+      this.state.env.user_preferences.preferences
+    ) {
       shortcuts = this.state.env.user_preferences.preferences.backoffice_sidebar_shortcuts || [];
     }
 

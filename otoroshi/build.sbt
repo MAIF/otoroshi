@@ -177,7 +177,6 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "2.0.0" classifier "bundle",
-
   // using a custom one right now as current build is broken
 //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
@@ -359,7 +358,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
-  "-Dotoroshi.storage=file",
+  "-Dotoroshi.storage=file"
   // "-Dotoroshi.storage=postgresql",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",

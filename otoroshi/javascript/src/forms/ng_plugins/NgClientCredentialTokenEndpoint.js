@@ -8,10 +8,7 @@ export default {
     expiration: {
       type: 'number',
       label: 'Token lifetime (ms)',
-    }
+    },
   },
-  config_flow: [
-    'default_key_pair',
-    'expiration',
-  ],
+  config_flow: ['default_key_pair', 'expiration'],
 };
