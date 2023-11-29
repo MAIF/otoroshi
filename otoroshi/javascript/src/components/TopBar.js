@@ -1218,11 +1218,9 @@ export class TopBar extends Component {
         </li>
         <li className="dropdown-divider" />
         <li>
-          {this.props && !this.props.env.initWithNewEngine && (
-            <Link to="/services" className="dropdown-item">
-              <span className="fas fa-cubes" /> Service descriptors
-            </Link>
-          )}
+          <Link to="/services" className="dropdown-item">
+            <span className="fas fa-cubes" /> Service descriptors
+          </Link>
           <Link to="/routes" className="dropdown-item">
             <span className="fas fa-road" /> Routes
           </Link>
@@ -1855,11 +1853,9 @@ export class TopBar extends Component {
                         zIndex: 4000,
                         gap: 5,
                       }}>
-                      {this.props && !this.props.env.initWithNewEngine && (
-                        <li className="d-flex">
-                          <Link to="/services">Service</Link>
-                        </li>
-                      )}
+                      <li className="d-flex">
+                        <Link to="/services">Service</Link>
+                      </li>
                       <li className="d-flex">
                         <Link to="/routes/new?tab=informations">Route</Link>
                       </li>
