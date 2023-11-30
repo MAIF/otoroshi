@@ -59,6 +59,12 @@ export class AtomicDesignPage extends Component {
         <Button type="save" className="btn-sm" text="save sm" style={{ margin: 10 }} />
         <Button type="save" text="save" style={{ margin: 10 }} />
         <Button type="save" text="save & disabled" disabled={true} style={{ margin: 10 }} />
+
+        <br />
+        <Button type="quiet" className="btn-sm" text="quiet sm" style={{ margin: 10 }} />
+        <Button type="quiet" text="quiet" style={{ margin: 10 }} />
+        <Button type="quiet" text="quiet & disabled" disabled={true} style={{ margin: 10 }} />
+
         <br />
         <Button
           type="primaryColor"
