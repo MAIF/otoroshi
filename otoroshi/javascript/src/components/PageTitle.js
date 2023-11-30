@@ -14,7 +14,7 @@ export default function PageTitle({
     >
       <div className="d-flex">
         <h3 className="m-0 align-self-center">{title}</h3>
-        <Button
+        {/* <Button
           type="quiet"
           // disabled={shortcutDisabled}
           title="Add current page to sidebar shortcuts"
@@ -22,7 +22,7 @@ export default function PageTitle({
           className="ms-3 btn-sm align-self-center"
         >
           <i className="fas fa-thumbtack"></i>
-        </Button>
+        </Button> */}
       </div>
       <div className="d-flex align-item-center justify-content-between">
         {children}
