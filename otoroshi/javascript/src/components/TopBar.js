@@ -1608,7 +1608,7 @@ export class TopBar extends Component {
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
-                <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
+                <div className="col-12 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-md-center align-items-center navbar-header">
                   <button
                     className="btn btn-menu ms-3 navbar-toggler"
                     type="button"

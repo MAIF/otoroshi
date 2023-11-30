@@ -13,6 +13,10 @@
     a {
       color: var(--color-white);
     }
+
+    @media screen and (min-width: 768px) {
+      width: 250px;
+    }
   }
 
   form#navbar .Select-control {
@@ -58,7 +62,7 @@
   > li > a {
     color: var(--color_level1);
     .otoroshi_logo .st0 {
-      fill:var(--color_level3);
+      fill: var(--color_level3);
     }
     &:focus,
     &:hover {
@@ -67,7 +71,7 @@
       color: var(--color_level3);
       .otoroshi_logo {
         .st0 {
-          fill:var(--color_level3);
+          fill: var(--color_level3);
         }
       }
       .monkeyMenu {
@@ -97,7 +101,6 @@
     border-color: var(--bg-color_level2);
   }
 }
-
 
 @media screen and (min-width: 768px) {
   .position-md-absolute {
