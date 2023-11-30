@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [16.11.0] - 2023-11-29
+
+https://github.com/MAIF/otoroshi/milestone/75?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.3...v16.11.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.0
+
+
+### Added 
+
+- support pluggable datastores (#1722)
+- support pluggable data exporters (#1723)
+- add the ability to override existing admin api paths in extensions (#1738)
+- any otoroshi link could be a shortcut (#1761)
+
+### Changed 
+
+- moving common-wasm project in its own repo (#1732)
+- rewrite wasm manager documentation (#1754)
+- bump wasm4s to 2.0.0 (#1779)
+
+### Fixed 
+
+- Title not refresh (#1756)
+- Cancel not working (#1757)
+- Pb with link to User manual (abs/rel) (#1758)
+- The `Routes only` flag on danger zone has reverse operation (#1777)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
+
 ## [16.10.3] - 2023-11-16
 
 https://github.com/MAIF/otoroshi/milestone/81?closed=1

@@ -789,14 +789,6 @@ export class ServicePage extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    // const json = YAML.stringify({
-    //   apiVersion: 'proxy.otoroshi.io/v1',
-    //   kind: 'ServiceDescriptor',
-    //   metadata: {
-    //     name,
-    //   },
-    //   spec: { ...this.state.service, name: undefined },
-    // });
     fetch('/bo/api/json_to_yaml', {
       method: 'POST',
       headers: {

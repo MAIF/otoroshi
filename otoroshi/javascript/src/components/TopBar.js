@@ -707,7 +707,8 @@ export class TopBar extends Component {
           label: 'Documentation',
           value: 'Documentation',
           env: <i className="fas fa-book" />,
-          action: () => (window.location.href = 'https://maif.github.io/otoroshi/manual/index.html'),
+          action: () =>
+            (window.location.href = 'https://maif.github.io/otoroshi/manual/index.html'),
         });
         options.push({
           action: () => this.routeTo('/stats'),
@@ -1218,11 +1219,9 @@ export class TopBar extends Component {
         </li>
         <li className="dropdown-divider" />
         <li>
-          {this.props && !this.props.env.initWithNewEngine && (
-            <Link to="/services" className="dropdown-item">
-              <span className="fas fa-cubes" /> Service descriptors
-            </Link>
-          )}
+          <Link to="/services" className="dropdown-item">
+            <span className="fas fa-cubes" /> Service descriptors
+          </Link>
           <Link to="/routes" className="dropdown-item">
             <span className="fas fa-road" /> Routes
           </Link>
@@ -1606,16 +1605,19 @@ export class TopBar extends Component {
       title = 'Home';
     }
     let icon = 'fa-star';
-    const link = (window.location.pathname + window.location.search + window.location.hash).replace('/bo/dashboard', '');
+    const link = (window.location.pathname + window.location.search + window.location.hash).replace(
+      '/bo/dashboard',
+      ''
+    );
     const feats = graph(this.props.env).flatMap((l) => l.features);
-    feats.find(f => {
+    feats.find((f) => {
       if (pathname.startsWith('/bo/dashboard' + f.link)) {
         icon = f.icon();
         if (_.isObject(icon)) {
           icon = 'fa-snow-monkey';
         }
         if (pathname.includes(`/edit/`)) {
-          title = 'Edit ' + f.title.toLowerCase(); 
+          title = 'Edit ' + f.title.toLowerCase();
         } else if (pathname.endsWith('/add')) {
           title = 'Create an ' + f.title.toLowerCase();
         } else {
@@ -1631,10 +1633,9 @@ export class TopBar extends Component {
           headers: {
             Accept: 'application/json',
           },
-        })
-        .then((r) => {
+        }).then((r) => {
           if (r.status === 200) {
-            return r.json().then(shortcurts => {
+            return r.json().then((shortcurts) => {
               const found = shortcurts.find((s) => {
                 if (_.isObject(s)) {
                   return s.link === link;
@@ -1654,8 +1655,7 @@ export class TopBar extends Component {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(newShortCuts),
-              })
-              .then((r) => {
+              }).then((r) => {
                 this.props.reloadEnv();
               });
             });
@@ -1663,320 +1663,320 @@ export class TopBar extends Component {
         });
       }
     });
-  }
+  };
 
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
       <SidebarContext.Consumer>
         {({ openedSidebar, shortcuts }) => {
-          let shortcutDisabled = !!shortcuts.filter(s => _.isObject(s)).find(s => ('/bo/dashboard' + s.link) === window.location.pathname);
+          let shortcutDisabled = !!shortcuts
+            .filter((s) => _.isObject(s))
+            .find((s) => '/bo/dashboard' + s.link === window.location.pathname);
           if (!shortcutDisabled) {
             const feats = graph(this.props.env).flatMap((l) => l.features);
-            const found = feats.find(f => ('/bo/dashboard' + f.link) === window.location.pathname);
+            const found = feats.find((f) => '/bo/dashboard' + f.link === window.location.pathname);
             if (found) {
-              shortcutDisabled = !!shortcuts.find(s => s === found.title.toLowerCase());
+              shortcutDisabled = !!shortcuts.find((s) => s === found.title.toLowerCase());
             }
           }
           return (
-          <nav
-            className="navbar navbar-expand-md fixed-top"
-            // style={{ zIndex: 100 }}
-          >
-            <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
-              <div className="d-flex flex-column flex-md-row top-md-0 w-100">
-                <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
-                  <button
-                    className="btn btn-menu ms-3 navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#sidebar"
-                    aria-controls="sidebar"
-                    aria-expanded="false">
-                    <span className="navbar-toggler-icon">Menu</span>
-                  </button>
-                  <Link
-                    className="navbar-brand"
-                    to="/"
-                    style={{
-                      display: 'flex',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                    }}
-                    onClick={() => {
-                      this.props.setTitle(null);
-                    }}>
-                    {this.brandName()}
-                  </Link>
-                </div>
-                <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
-                  {selected && (
-                    <div className="mb-3" style={{ marginRight: 10 }}>
-                      <span
-                        title="Current line"
-                        className="badge bg-success"
-                        style={{ fontSize: 20, cursor: 'pointer' }}>
-                        {selected}
-                      </span>
-                    </div>
-                  )}
-                  <div className="mx-3">
-                    <Async
-                      ref={(r) => (this.selector = r)}
-                      name="service-search"
-                      value="one"
-                      placeholder="Search service, line, etc ..."
-                      loadOptions={this.searchServicesOptions}
-                      openMenuOnFocus={true}
-                      onFocus={() => {
-                        this.selector.onInputChange(' ');
+            <nav
+              className="navbar navbar-expand-md fixed-top"
+              // style={{ zIndex: 100 }}
+            >
+              <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
+                <div className="d-flex flex-column flex-md-row top-md-0 w-100">
+                  <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
+                    <button
+                      className="btn btn-menu ms-3 navbar-toggler"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#sidebar"
+                      aria-controls="sidebar"
+                      aria-expanded="false">
+                      <span className="navbar-toggler-icon">Menu</span>
+                    </button>
+                    <Link
+                      className="navbar-brand"
+                      to="/"
+                      style={{
+                        display: 'flex',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
                       }}
-                      onChange={(i) => i.action()}
-                      filterOptions={(opts, value, excluded, conf) => {
-                        const [env, searched] = extractEnv(value);
-                        const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
-                        const matched = fuzzy.filter(searched, filteredOpts, {
-                          extract: (i) => i.label,
-                          pre: '<',
-                          post: '>',
-                        });
-                        return matched.map((i) => i.original);
-                      }}
-                      styles={{
-                        control: (baseStyles, state) => ({
-                          ...baseStyles,
-                          border: '1px solid var(--bg-color_level3)',
-                          width: 400,
-                          color: 'var(--text)',
-                          backgroundColor: 'var(--bg-color_level2)',
-                          boxShadow: 'none',
-                        }),
-                        menu: (baseStyles) => ({
-                          ...baseStyles,
-                          margin: 0,
-                          borderTopLeftRadius: 0,
-                          borderTopRightRadius: 0,
-                          backgroundColor: 'var(--bg-color_level2)',
-                          color: 'var(--text)',
-                        }),
-                        input: (provided) => ({
-                          ...provided,
-                          color: 'var(--text)',
-                        }),
-                      }}
-                      components={{
-                        NoOptionsMessage: () => null,
-                        Option: (props) => {
-                          const p = props.data;
-                          const env =
-                            p.env && isString(p.env)
-                              ? p.env.length > 4
-                                ? p.env.substring(0, 4) + '.'
-                                : p.env
-                              : null;
-                          return (
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '.5rem',
-                                background: props.isFocused
-                                  ? 'var(--bg-color_level2)'
-                                  : 'var(--bg-color_level3)',
-                              }}
-                              ref={props.innerRef}
-                              {...props.innerProps}>
+                      onClick={() => {
+                        this.props.setTitle(null);
+                      }}>
+                      {this.brandName()}
+                    </Link>
+                  </div>
+                  <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
+                    {selected && (
+                      <div className="mb-3" style={{ marginRight: 10 }}>
+                        <span
+                          title="Current line"
+                          className="badge bg-success"
+                          style={{ fontSize: 20, cursor: 'pointer' }}>
+                          {selected}
+                        </span>
+                      </div>
+                    )}
+                    <div className="mx-3">
+                      <Async
+                        ref={(r) => (this.selector = r)}
+                        name="service-search"
+                        value="one"
+                        placeholder="Search service, line, etc ..."
+                        loadOptions={this.searchServicesOptions}
+                        openMenuOnFocus={true}
+                        onFocus={() => {
+                          this.selector.onInputChange(' ');
+                        }}
+                        onChange={(i) => i.action()}
+                        filterOptions={(opts, value, excluded, conf) => {
+                          const [env, searched] = extractEnv(value);
+                          const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
+                          const matched = fuzzy.filter(searched, filteredOpts, {
+                            extract: (i) => i.label,
+                            pre: '<',
+                            post: '>',
+                          });
+                          return matched.map((i) => i.original);
+                        }}
+                        styles={{
+                          control: (baseStyles, state) => ({
+                            ...baseStyles,
+                            border: '1px solid var(--bg-color_level3)',
+                            width: 400,
+                            color: 'var(--text)',
+                            backgroundColor: 'var(--bg-color_level2)',
+                            boxShadow: 'none',
+                          }),
+                          menu: (baseStyles) => ({
+                            ...baseStyles,
+                            margin: 0,
+                            borderTopLeftRadius: 0,
+                            borderTopRightRadius: 0,
+                            backgroundColor: 'var(--bg-color_level2)',
+                            color: 'var(--text)',
+                          }),
+                          input: (provided) => ({
+                            ...provided,
+                            color: 'var(--text)',
+                          }),
+                        }}
+                        components={{
+                          NoOptionsMessage: () => null,
+                          Option: (props) => {
+                            const p = props.data;
+                            const env =
+                              p.env && isString(p.env)
+                                ? p.env.length > 4
+                                  ? p.env.substring(0, 4) + '.'
+                                  : p.env
+                                : null;
+                            return (
                               <div
                                 style={{
-                                  width: 60,
                                   display: 'flex',
-                                  justifyContent: 'center',
                                   alignItems: 'center',
-                                }}>
-                                {p.env && isString(p.env) && (
-                                  <span className={`badge ${this.color(p.env)}`}>{env}</span>
-                                )}
-                                {p.env && !isString(p.env) && p.env}
+                                  padding: '.5rem',
+                                  background: props.isFocused
+                                    ? 'var(--bg-color_level2)'
+                                    : 'var(--bg-color_level3)',
+                                }}
+                                ref={props.innerRef}
+                                {...props.innerProps}>
+                                <div
+                                  style={{
+                                    width: 60,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                  }}>
+                                  {p.env && isString(p.env) && (
+                                    <span className={`badge ${this.color(p.env)}`}>{env}</span>
+                                  )}
+                                  {p.env && !isString(p.env) && p.env}
+                                </div>
+                                <span>{p.label}</span>
                               </div>
-                              <span>{p.label}</span>
-                            </div>
-                          );
-                        },
-                        IndicatorSeparator: () => null,
-                        DropdownIndicator: () => {
-                          return (
-                            <span
-                              style={{ display: 'flex', height: 20, paddingRight: 5 }}
-                              title="You can jump directly into the search bar from anywhere just by typing '/'">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                                <defs>
-                                  <rect id="a" width="19" height="20" rx="3" />
-                                </defs>
-                                <g fill="none" fillRule="evenodd">
-                                  <rect
-                                    stroke="#5F6165"
-                                    x=".5"
-                                    y=".5"
-                                    width="18"
-                                    height="19"
-                                    rx="3"
-                                  />
-                                  <path
-                                    fill="#979A9C"
-                                    d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
-                                  />
-                                </g>
-                              </svg>
-                            </span>
-                          );
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="dropdown">
-                    <Button
-                      type="primaryColor"
-                      className="d-flex align-items-center justify-content-between dropdown"
-                      id="add-components"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="true"
-                      aria-expanded="false">
-                      <span>Add new ...</span>
-                      <i className="fas fa-chevron-down" />
-                    </Button>
-                    <ul
-                      className="dropdown-menu add-menu"
-                      aria-labelledby="add-components"
-                      style={{
-                        background: 'var(--bg-color_level1)',
-                        border: '1px solid var(--bg-color_level1)',
-                        borderTop: 0,
-                        padding: '12px',
-                        zIndex: 4000,
-                        gap: 5,
-                      }}>
-                      {this.props && !this.props.env.initWithNewEngine && (
+                            );
+                          },
+                          IndicatorSeparator: () => null,
+                          DropdownIndicator: () => {
+                            return (
+                              <span
+                                style={{ display: 'flex', height: 20, paddingRight: 5 }}
+                                title="You can jump directly into the search bar from anywhere just by typing '/'">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                                  <defs>
+                                    <rect id="a" width="19" height="20" rx="3" />
+                                  </defs>
+                                  <g fill="none" fillRule="evenodd">
+                                    <rect
+                                      stroke="#5F6165"
+                                      x=".5"
+                                      y=".5"
+                                      width="18"
+                                      height="19"
+                                      rx="3"
+                                    />
+                                    <path
+                                      fill="#979A9C"
+                                      d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
+                                    />
+                                  </g>
+                                </svg>
+                              </span>
+                            );
+                          },
+                        }}
+                      />
+                    </div>
+                    <div className="dropdown">
+                      <Button
+                        type="primaryColor"
+                        className="d-flex align-items-center justify-content-between dropdown"
+                        id="add-components"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="true"
+                        aria-expanded="false">
+                        <span>Add new ...</span>
+                        <i className="fas fa-chevron-down" />
+                      </Button>
+                      <ul
+                        className="dropdown-menu add-menu"
+                        aria-labelledby="add-components"
+                        style={{
+                          background: 'var(--bg-color_level1)',
+                          border: '1px solid var(--bg-color_level1)',
+                          borderTop: 0,
+                          padding: '12px',
+                          zIndex: 4000,
+                          gap: 5,
+                        }}>
                         <li className="d-flex">
                           <Link to="/services">Service</Link>
                         </li>
-                      )}
-                      <li className="d-flex">
-                        <Link to="/routes/new?tab=informations">Route</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/backends/add">Backend</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/apikeys/add">Apikey</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/certificates/add">Certificate</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/auth-configs/add">Auth. module</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/jwt-verifiers/add">Jwt verifier</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/tcp/services/add">TCP service</Link>
-                      </li>
-                      {this.props.env && this.props.env.clevercloud && (
                         <li className="d-flex">
-                          <Link to="/clever">Service from a CleverApp</Link>
+                          <Link to="/routes/new?tab=informations">Route</Link>
                         </li>
-                      )}
-                      {Otoroshi.extensions()
-                        .flatMap((ext) => ext.creationItems || [])
-                        .map((item) => (
-                          <li className="d-flex" key={item.title}>
-                            <Link to={`/${item.path}`}>{item.title}</Link>
+                        <li className="d-flex">
+                          <Link to="/backends/add">Backend</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/apikeys/add">Apikey</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/certificates/add">Certificate</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/auth-configs/add">Auth. module</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/jwt-verifiers/add">Jwt verifier</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/tcp/services/add">TCP service</Link>
+                        </li>
+                        {this.props.env && this.props.env.clevercloud && (
+                          <li className="d-flex">
+                            <Link to="/clever">Service from a CleverApp</Link>
                           </li>
-                        ))}
-                    </ul>
-                  </div>
-                  <Button 
-                    type="primaryColor"
-                    disabled={shortcutDisabled}
-                    title="Add current page to sidebar shortcuts"
-                    onClick={this.addShortcut}
-                    style={{ marginLeft: 10 }}
-                  >
-                    <i className="fas fa-thumbtack"></i>
-                  </Button>
-                </form>
-              </div>
+                        )}
+                        {Otoroshi.extensions()
+                          .flatMap((ext) => ext.creationItems || [])
+                          .map((item) => (
+                            <li className="d-flex" key={item.title}>
+                              <Link to={`/${item.path}`}>{item.title}</Link>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                    <Button
+                      type="primaryColor"
+                      disabled={shortcutDisabled}
+                      title="Add current page to sidebar shortcuts"
+                      onClick={this.addShortcut}
+                      style={{ marginLeft: 10 }}>
+                      <i className="fas fa-thumbtack"></i>
+                    </Button>
+                  </form>
+                </div>
 
-              <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
-                <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
-                  {window.__apiReadOnly && (
-                    <div className="">
-                      <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
-                        <span className="fas fa-lock fa-lg" />
+                <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
+                  <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
+                    {window.__apiReadOnly && (
+                      <div className="">
+                        <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
+                          <span className="fas fa-lock fa-lg" />
+                        </a>
+                      </div>
+                    )}
+                    {this.props.changePassword && (
+                      <div
+                        onClick={(e) => (window.location = '/bo/dashboard/admins')}
+                        className="mx-2">
+                        <a
+                          href="/bo/dashboard/admins"
+                          data-toggle="dropdown"
+                          role="button"
+                          aria-haspopup="true"
+                          aria-expanded="false">
+                          <span
+                            className="badge"
+                            data-toggle="tooltip"
+                            data-placement="bottom"
+                            title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
+                            style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
+                            <i className="fas fa-exclamation-triangle" />
+                          </span>
+                        </a>
+                      </div>
+                    )}
+                    <div className="mx-2">
+                      <a className="prevent-click" href="#">
+                        <i
+                          id="otoroshi-dark-light-icon"
+                          className=" far fa-moon fa-lg"
+                          title="Dark/Light Mode"
+                        />
                       </a>
                     </div>
-                  )}
-                  {this.props.changePassword && (
-                    <div
-                      onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                      className="mx-2">
-                      <a
-                        href="/bo/dashboard/admins"
-                        data-toggle="dropdown"
-                        role="button"
-                        aria-haspopup="true"
-                        aria-expanded="false">
-                        <span
-                          className="badge"
-                          data-toggle="tooltip"
-                          data-placement="bottom"
-                          title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
-                          style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
-                          <i className="fas fa-exclamation-triangle" />
-                        </span>
-                      </a>
-                    </div>
-                  )}
-                  <div className="mx-2">
-                    <a className="prevent-click" href="#">
+                    <div className="dropdown mx-2">
                       <i
-                        id="otoroshi-dark-light-icon"
-                        className=" far fa-moon fa-lg"
-                        title="Dark/Light Mode"
+                        className="fas fa-cog"
+                        id="cog"
+                        title="Settings menu"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          this.setState({
+                            dropdownStatus:
+                              this.state.dropdownStatus === 'closed' ? 'open' : 'closed',
+                          });
+                        }}
                       />
-                    </a>
-                  </div>
-                  <div className="dropdown mx-2">
-                    <i
-                      className="fas fa-cog"
-                      id="cog"
-                      title="Settings menu"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        this.setState({
-                          dropdownStatus:
-                            this.state.dropdownStatus === 'closed' ? 'open' : 'closed',
-                        });
-                      }}
-                    />
-                    <ul
-                      id="dropdown"
-                      className={`custom-dropdown ${
-                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                      } py-2 pb-4`}
-                      aria-labelledby="dropdownMenuParams"
-                      onClick={(e) => {
-                        this.setState({ dropdownStatus: 'closed' });
-                      }}>
-                      {this.props.shortMenu && this.renderShortMenu()}
-                      {!this.props.shortMenu && this.renderLongMenu()}
-                    </ul>
+                      <ul
+                        id="dropdown"
+                        className={`custom-dropdown ${
+                          this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                        } py-2 pb-4`}
+                        aria-labelledby="dropdownMenuParams"
+                        onClick={(e) => {
+                          this.setState({ dropdownStatus: 'closed' });
+                        }}>
+                        {this.props.shortMenu && this.renderShortMenu()}
+                        {!this.props.shortMenu && this.renderLongMenu()}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </nav>
-        )}}
+            </nav>
+          );
+        }}
       </SidebarContext.Consumer>
     );
   }

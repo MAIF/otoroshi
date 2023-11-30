@@ -1979,16 +1979,16 @@ class BackOfficeController(
     env.datastores.globalConfigDataStore
       .singleton()
       .flatMap { globalConfig =>
-        globalConfig.wasmManagerSettings match {
-          case Some(settings @ WasmManagerSettings(url, _, _, pluginsFilter, _)) =>
-            val claim = ApikeyHelper.generate(settings)
+        globalConfig.wasmoSettings match {
+          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter, _)) =>
+            val (header, token) = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
-                  "Otoroshi-User" -> claim,
-                  "kind"          -> pluginsFilter.getOrElse("*")
+                  header -> token,
+                  "kind" -> pluginsFilter.getOrElse("*")
                 )
                 .get()
                 .map(res => {
@@ -2006,7 +2006,7 @@ class BackOfficeController(
               case Failure(err) => Ok(Json.arr()).vfuture
               case Success(v)   => v
             }
-          case _                                                                 =>
+          case _                                                           =>
             BadRequest(
               Json.obj(
                 "error" -> "Missing config in global configuration"
@@ -2019,31 +2019,31 @@ class BackOfficeController(
   def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
-    val wasmoSettings = WasmManagerSettings.format.reads(jsonBody).get
-    val apikey        = ApikeyHelper.generate(wasmoSettings)
+    val wasmoSettings   = WasmoSettings.format.reads(jsonBody).get
+    val (header, token) = ApikeyHelper.generate(wasmoSettings)
 
     Try {
       env.Ws
         .url(s"${wasmoSettings.url}/plugins")
         .withFollowRedirects(false)
         .withHttpHeaders(
-          "Otoroshi-User" -> apikey,
-          "kind"          -> wasmoSettings.pluginsFilter.getOrElse("*")
+          header -> token,
+          "kind" -> wasmoSettings.pluginsFilter.getOrElse("*")
         )
         .get()
         .map(res => {
           if (res.status == 200) {
             Ok(res.json)
           } else {
-            BadRequest("Unable to join the wasmo server")
+            BadRequest(Json.obj("error" -> "Unable to join the wasmo server"))
           }
         })
         .recover { case e: Throwable =>
           logger.error(e.getMessage)
-          Ok(Json.arr())
+          BadRequest(Json.obj("error" -> "Unable to join the wasmo server"))
         }
     } match {
-      case Failure(err) => Ok(Json.arr()).vfuture
+      case Failure(err) => BadRequest(Json.obj("error" -> "Unable to join the wasmo server")).vfuture
       case Success(v)   => v
     }
   }

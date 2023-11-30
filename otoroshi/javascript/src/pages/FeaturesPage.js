@@ -463,7 +463,6 @@ export class FeaturesPage extends Component {
       providerDashboardTitle: this.props.env.providerDashboardTitle,
       clusterRole: this.props.env.clusterRole,
       scriptingEnabled: this.props.env.scriptingEnabled,
-      initWithNewEngine: this.props.env.initWithNewEngine,
     };
     return (
       <>

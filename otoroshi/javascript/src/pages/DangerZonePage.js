@@ -329,7 +329,7 @@ function WasmoTester(props) {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  ...props.rawValue.wasmManagerSettings,
+                  ...props.rawValue.wasmoSettings,
                 }),
               })
                 .catch((_) => {})
@@ -1098,34 +1098,34 @@ export class DangerZonePage extends Component {
           'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
-    'wasmManagerSettings.url': {
+    'wasmoSettings.url': {
       type: 'string',
       props: {
         label: 'URL',
       },
     },
-    'wasmManagerSettings.clientId': {
+    'wasmoSettings.clientId': {
       type: 'string',
       props: {
         label: 'Apikey id',
       },
     },
-    'wasmManagerSettings.clientSecret': {
+    'wasmoSettings.clientSecret': {
       type: 'string',
       props: {
         label: 'Apikey secret',
       },
     },
-    'wasmManagerSettings.pluginsFilter': {
+    'wasmoSettings.pluginsFilter': {
       type: 'string',
       props: {
         label: 'User(s)',
       },
     },
-    'wasmManagerSettings.tokenSecret': {
-      type: 'string',
+    'wasmoSettings.legacyAuth': {
+      type: 'bool',
       props: {
-        label: 'Token secret',
+        label: 'Use legacy auth.',
       },
     },
     testing: {
@@ -1288,11 +1288,11 @@ export class DangerZonePage extends Component {
     '>>>Default templates',
     'templates',
     '>>>Wasmo',
-    'wasmManagerSettings.url',
-    'wasmManagerSettings.clientId',
-    'wasmManagerSettings.clientSecret',
-    'wasmManagerSettings.pluginsFilter',
-    'wasmManagerSettings.tokenSecret',
+    'wasmoSettings.url',
+    'wasmoSettings.clientId',
+    'wasmoSettings.clientSecret',
+    'wasmoSettings.pluginsFilter',
+    'wasmoSettings.legacyAuth',
     'testing',
     '>>>Global metadata',
     'tags',

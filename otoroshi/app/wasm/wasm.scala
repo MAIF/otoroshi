@@ -141,7 +141,7 @@ object WasmConfig {
         WasmSource.format.reads(sourceOpt.get).get
       } else {
         compilerSource match {
-          case Some(source) => WasmSource(WasmSourceKind.WasmManager, source)
+          case Some(source) => WasmSource(WasmSourceKind.Wasmo, source)
           case None         =>
             rawSource match {
               case Some(source) if source.startsWith("http://")   => WasmSource(WasmSourceKind.Http, source)
@@ -226,8 +226,8 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
     }
   }
 
-  override def wasmManagerSettings: Future[Option[WasmManagerSettings]] =
-    env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
+  override def wasmoSettings: Future[Option[WasmoSettings]] =
+    env.datastores.globalConfigDataStore.latest().wasmoSettings.vfuture
 
   override def wasmConfig(path: String): Future[Option[WasmConfiguration]] =
     env.proxyState.wasmPlugin(path).map(_.config).vfuture

@@ -38,7 +38,7 @@ export function DefaultSidebar(props) {
 
   useEffect(() => {
     reloadStorage();
-  }, [props.env])
+  }, [props.env]);
 
   const reloadStorage = () => {
     fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
@@ -48,16 +48,16 @@ export function DefaultSidebar(props) {
         Accept: 'application/json',
       },
     })
-    .then((r) => {
-      if (r.status === 200) {
-        return r.json();
-      } else {
-        return [];
-      }
-    })
-    .then((newShortCuts) => {
-      setShortcuts(newShortCuts);
-    });
+      .then((r) => {
+        if (r.status === 200) {
+          return r.json();
+        } else {
+          return [];
+        }
+      })
+      .then((newShortCuts) => {
+        setShortcuts(newShortCuts);
+      });
   };
 
   const writeStorage = (newShortCuts) => {
@@ -70,10 +70,10 @@ export function DefaultSidebar(props) {
       },
       body: JSON.stringify(newShortCuts),
     })
-    .then((r) => r.json())
-    .then((newShortCuts) => {
-      setShortcuts(newShortCuts);
-    });
+      .then((r) => r.json())
+      .then((newShortCuts) => {
+        setShortcuts(newShortCuts);
+      });
   };
 
   const removeShortcut = (shortcut) => {
@@ -87,7 +87,7 @@ export function DefaultSidebar(props) {
       });
       writeStorage(newShortcuts);
     } else {
-      console.log("bilm ")
+      console.log('bilm ');
       const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut.title));
       writeStorage(newShortcuts);
     }
@@ -173,7 +173,7 @@ export function DefaultSidebar(props) {
               shortcut.custom = true;
               return shortcut;
             } else {
-              return features.find((feat) => feat.title.includes(shortcut))
+              return features.find((feat) => feat.title.includes(shortcut));
             }
           })
           .filter((s) => s)
@@ -365,7 +365,9 @@ function Block({
                     {addShortcutButton && (
                       <i
                         className="fas fa-thumbtack"
-                        title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
+                        title={
+                          alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'
+                        }
                         disabled={alreadyInShortcuts}
                         style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
                         onClick={(e) => {
@@ -492,29 +494,33 @@ function SidebarLink({
           }}
         />
       )}
-      {path.indexOf('http') < 0 && <Link
-        to={`/${path}`.replace('//', '/')}
-        className={`nav-link ${rootClassName(path)}`}
-        {...createTooltip(text)}
-        onClick={clearSidebar}
-        style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
-        <CustomIcon icon={icon} title={iconTitle} />{' '}
-        <span style={{ marginTop: '4px' }} title={iconTitle}>
-          {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
-        </span>
-      </Link>}
-      {path.indexOf('http') === 0 && <a
-        href={path}
-        target="_blank"
-        className={`nav-link`}
-        {...createTooltip(text)}
-        onClick={clearSidebar}
-        style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
-        <CustomIcon icon={icon} title={iconTitle} />{' '}
-        <span style={{ marginTop: '4px' }} title={iconTitle}>
-          {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
-        </span>
-      </a>}
+      {path.indexOf('http') < 0 && (
+        <Link
+          to={`/${path}`.replace('//', '/')}
+          className={`nav-link ${rootClassName(path)}`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span style={{ marginTop: '4px' }} title={iconTitle}>
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+          </span>
+        </Link>
+      )}
+      {path.indexOf('http') === 0 && (
+        <a
+          href={path}
+          target="_blank"
+          className={`nav-link`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span style={{ marginTop: '4px' }} title={iconTitle}>
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+          </span>
+        </a>
+      )}
       <i
         className="fas fa-eye-slash nav-item-eye ms-auto"
         onClick={removeShortcut}

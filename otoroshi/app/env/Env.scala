@@ -877,21 +877,21 @@ class Env(
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
-      case v if v.startsWith("cp:") =>
+      case v if v.startsWith("cp:")                                        =>
         scriptManager.getAnyScript[DataStoresBuilder](v)(otoroshiExecutionContext) match {
-          case Left(err) => {
+          case Left(err)  => {
             logger.error(s"specified datastore with name '${v}' does not exists or failed to instanciate: ${err}")
             System.exit(-1)
             ???
           }
           case Right(dsb) => dsb.build(configuration, environment, lifecycle, clusterConfig.mode, this)
         }
-      case v if v.startsWith("ext:") =>
+      case v if v.startsWith("ext:")                                       =>
         val parts = v.split(":").toSeq
         if (parts.size == 2) {
           val name = parts.apply(1)
           adminExtensions.datastore(name) match {
-            case None => {
+            case None      => {
               logger.error(s"specified datastore with name '${v}' does not exists")
               System.exit(-1)
               ???
@@ -900,9 +900,9 @@ class Env(
           }
         } else {
           val extensionId = parts.apply(1)
-          val name = parts.apply(2)
+          val name        = parts.apply(2)
           adminExtensions.datastoreFrom(AdminExtensionId(extensionId), name) match {
-            case None => {
+            case None      => {
               logger.error(s"specified datastore with name '${v}' does not exists")
               System.exit(-1)
               ???
@@ -1199,7 +1199,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.11.0-dev"
+  lazy val otoroshiVersion    = "16.12.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

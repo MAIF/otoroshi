@@ -179,7 +179,7 @@ trait AdminExtension {
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute]                        = Seq.empty
   def wellKnownOverridesRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
   def vaults(): Seq[AdminExtensionVault]                                          = Seq.empty
-  def configuration: Configuration = env.configuration
+  def configuration: Configuration                                                = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
     .getOrElse(Configuration.empty)
 }
@@ -231,42 +231,59 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     extensions.flatMap(_.globalConfigExtensions())
 
   // ----------------------------------------------------------------------------------------------------------------
-  private val assets: Seq[AdminExtensionAssetRoute] = extensions.flatMap(_.assets())
-  private val assetsRouter                          = new AdminExtensionRouter[AdminExtensionAssetRoute](assets)
-  private val assetsOverrides: Seq[AdminExtensionAssetRoute] = extensions.flatMap(_.assetsOverrides())
-  private val assetsOverridesRouter                          = new AdminExtensionRouter[AdminExtensionAssetRoute](assetsOverrides)
+  private val assets: Seq[AdminExtensionAssetRoute]                                     = extensions.flatMap(_.assets())
+  private val assetsRouter                                                              = new AdminExtensionRouter[AdminExtensionAssetRoute](assets)
+  private val assetsOverrides: Seq[AdminExtensionAssetRoute]                            = extensions.flatMap(_.assetsOverrides())
+  private val assetsOverridesRouter                                                     = new AdminExtensionRouter[AdminExtensionAssetRoute](assetsOverrides)
   // ----------------------------------------------------------------------------------------------------------------
-  private val backofficeAuthRoutes: Seq[AdminExtensionBackofficeAuthRoute]     = extensions.flatMap(_.backofficeAuthRoutes())
-  private val backofficeAuthRouter                                             = new AdminExtensionRouter[AdminExtensionBackofficeAuthRoute](backofficeAuthRoutes)
-  private val backofficeAuthOverridesRoutes: Seq[AdminExtensionBackofficeAuthRoute]     = extensions.flatMap(_.backofficeAuthOverridesRoutes())
-  private val backofficeAuthOverridesRouter                                             = new AdminExtensionRouter[AdminExtensionBackofficeAuthRoute](backofficeAuthOverridesRoutes)
+  private val backofficeAuthRoutes: Seq[AdminExtensionBackofficeAuthRoute]              =
+    extensions.flatMap(_.backofficeAuthRoutes())
+  private val backofficeAuthRouter                                                      = new AdminExtensionRouter[AdminExtensionBackofficeAuthRoute](backofficeAuthRoutes)
+  private val backofficeAuthOverridesRoutes: Seq[AdminExtensionBackofficeAuthRoute]     =
+    extensions.flatMap(_.backofficeAuthOverridesRoutes())
+  private val backofficeAuthOverridesRouter                                             =
+    new AdminExtensionRouter[AdminExtensionBackofficeAuthRoute](backofficeAuthOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val backofficePublicRoutes: Seq[AdminExtensionBackofficePublicRoute] = extensions.flatMap(_.backofficePublicRoutes())
-  private val backofficePublicRouter                                           = new AdminExtensionRouter[AdminExtensionBackofficePublicRoute](backofficePublicRoutes)
-  private val backofficePublicOverridesRoutes: Seq[AdminExtensionBackofficePublicRoute] = extensions.flatMap(_.backofficePublicOverridesRoutes())
-  private val backofficePublicOverridesRouter                                           = new AdminExtensionRouter[AdminExtensionBackofficePublicRoute](backofficePublicOverridesRoutes)
+  private val backofficePublicRoutes: Seq[AdminExtensionBackofficePublicRoute]          =
+    extensions.flatMap(_.backofficePublicRoutes())
+  private val backofficePublicRouter                                                    =
+    new AdminExtensionRouter[AdminExtensionBackofficePublicRoute](backofficePublicRoutes)
+  private val backofficePublicOverridesRoutes: Seq[AdminExtensionBackofficePublicRoute] =
+    extensions.flatMap(_.backofficePublicOverridesRoutes())
+  private val backofficePublicOverridesRouter                                           =
+    new AdminExtensionRouter[AdminExtensionBackofficePublicRoute](backofficePublicOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val adminApiOverridesRoutes: Seq[AdminExtensionAdminApiRoute] = extensions.flatMap(_.adminApiOverridesRoutes())
-  private val adminApiOverridesRouter                                   = new AdminExtensionRouter[AdminExtensionAdminApiRoute](adminApiOverridesRoutes)
-  private val adminApiRoutes: Seq[AdminExtensionAdminApiRoute] = extensions.flatMap(_.adminApiRoutes())
-  private val adminApiRouter                                   = new AdminExtensionRouter[AdminExtensionAdminApiRoute](adminApiRoutes)
+  private val adminApiOverridesRoutes: Seq[AdminExtensionAdminApiRoute]                 =
+    extensions.flatMap(_.adminApiOverridesRoutes())
+  private val adminApiOverridesRouter                                                   = new AdminExtensionRouter[AdminExtensionAdminApiRoute](adminApiOverridesRoutes)
+  private val adminApiRoutes: Seq[AdminExtensionAdminApiRoute]                          = extensions.flatMap(_.adminApiRoutes())
+  private val adminApiRouter                                                            = new AdminExtensionRouter[AdminExtensionAdminApiRoute](adminApiRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val privateAppAuthRoutes: Seq[AdminExtensionPrivateAppAuthRoute]     = extensions.flatMap(_.privateAppAuthRoutes())
-  private val privateAppAuthRouter                                             = new AdminExtensionRouter[AdminExtensionPrivateAppAuthRoute](privateAppAuthRoutes)
-  private val privateAppAuthOverridesRoutes: Seq[AdminExtensionPrivateAppAuthRoute]     = extensions.flatMap(_.privateAppAuthOverridesRoutes())
-  private val privateAppAuthOverridesRouter                                             = new AdminExtensionRouter[AdminExtensionPrivateAppAuthRoute](privateAppAuthOverridesRoutes)
+  private val privateAppAuthRoutes: Seq[AdminExtensionPrivateAppAuthRoute]              =
+    extensions.flatMap(_.privateAppAuthRoutes())
+  private val privateAppAuthRouter                                                      = new AdminExtensionRouter[AdminExtensionPrivateAppAuthRoute](privateAppAuthRoutes)
+  private val privateAppAuthOverridesRoutes: Seq[AdminExtensionPrivateAppAuthRoute]     =
+    extensions.flatMap(_.privateAppAuthOverridesRoutes())
+  private val privateAppAuthOverridesRouter                                             =
+    new AdminExtensionRouter[AdminExtensionPrivateAppAuthRoute](privateAppAuthOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val privateAppPublicRoutes: Seq[AdminExtensionPrivateAppPublicRoute] = extensions.flatMap(_.privateAppPublicRoutes())
-  private val privateAppPublicRouter                                           = new AdminExtensionRouter[AdminExtensionPrivateAppPublicRoute](privateAppPublicRoutes)
-  private val privateAppPublicOverridesRoutes: Seq[AdminExtensionPrivateAppPublicRoute] = extensions.flatMap(_.privateAppPublicOverridesRoutes())
-  private val privateAppPublicOverridesRouter                                           = new AdminExtensionRouter[AdminExtensionPrivateAppPublicRoute](privateAppPublicOverridesRoutes)
+  private val privateAppPublicRoutes: Seq[AdminExtensionPrivateAppPublicRoute]          =
+    extensions.flatMap(_.privateAppPublicRoutes())
+  private val privateAppPublicRouter                                                    =
+    new AdminExtensionRouter[AdminExtensionPrivateAppPublicRoute](privateAppPublicRoutes)
+  private val privateAppPublicOverridesRoutes: Seq[AdminExtensionPrivateAppPublicRoute] =
+    extensions.flatMap(_.privateAppPublicOverridesRoutes())
+  private val privateAppPublicOverridesRouter                                           =
+    new AdminExtensionRouter[AdminExtensionPrivateAppPublicRoute](privateAppPublicOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val wellKnownRoutes: Seq[AdminExtensionWellKnownRoute] = extensions.flatMap(_.wellKnownRoutes())
-  private val wellKnownRouter                                    = new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownRoutes)
-  private val wellKnownOverridesRoutes: Seq[AdminExtensionWellKnownRoute] = extensions.flatMap(_.wellKnownOverridesRoutes())
-  private val wellKnownOverridesRouter                                    = new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownOverridesRoutes)
+  private val wellKnownRoutes: Seq[AdminExtensionWellKnownRoute]                        = extensions.flatMap(_.wellKnownRoutes())
+  private val wellKnownRouter                                                           = new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownRoutes)
+  private val wellKnownOverridesRoutes: Seq[AdminExtensionWellKnownRoute]               =
+    extensions.flatMap(_.wellKnownOverridesRoutes())
+  private val wellKnownOverridesRouter                                                  =
+    new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
-  private val vaults: Seq[AdminExtensionVault] = extensions.flatMap(_.vaults())
+  private val vaults: Seq[AdminExtensionVault]                                          = extensions.flatMap(_.vaults())
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -308,14 +325,17 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   }
 
   def datastore(name: String): Option[DataStoresBuilder] = {
-    extensions.collect {
-      case e if e.datastoreBuilders().nonEmpty => e.datastoreBuilders()
-    }.foldLeft(Map.empty[String, DataStoresBuilder])((a, b) => a ++ b).get(name)
+    extensions
+      .collect {
+        case e if e.datastoreBuilders().nonEmpty => e.datastoreBuilders()
+      }
+      .foldLeft(Map.empty[String, DataStoresBuilder])((a, b) => a ++ b)
+      .get(name)
   }
 
   def getAssetsCallHandler(
-    request: RequestHeader,
-    actionBuilder: ActionBuilder[Request, AnyContent],
+      request: RequestHeader,
+      actionBuilder: ActionBuilder[Request, AnyContent]
   ): Option[AdminExtensionRouterContext[AdminExtensionAssetRoute]] = {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request)
@@ -325,18 +345,18 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   }
 
   def handleAssetsCall(
-    request: RequestHeader,
-    actionBuilder: ActionBuilder[Request, AnyContent],
+      request: RequestHeader,
+      actionBuilder: ActionBuilder[Request, AnyContent]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-        case None => f
+        case None        => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-        case None => f
+        case None        => f
       }
     } else f
   }
@@ -348,13 +368,15 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && wellKnownOverridesRoutes.nonEmpty) {
       wellKnownOverridesRouter.find(request) match {
-        case None => f
-        case Some(route) if route.adminRoute.wantsBody =>
+        case None                                       => f
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
       }
-    } else if (hasExtensions && request.path.startsWith("/.well-known/otoroshi/extensions/") && wellKnownRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && request.path.startsWith("/.well-known/otoroshi/extensions/") && wellKnownRoutes.nonEmpty
+    ) {
       wellKnownRouter.find(request) match {
         case None                                       => f
         case Some(route) if route.adminRoute.wantsBody  =>
@@ -373,13 +395,13 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && adminApiOverridesRoutes.nonEmpty) {
       adminApiOverridesRouter.find(request) match {
-        case Some(route) if route.adminRoute.wantsBody =>
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(ApiAction.async(sourceBodyParser) { ctx =>
             route.adminRoute.handle(route, ctx.request, ctx.apiKey, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(ApiAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.apiKey, None) })
-        case None => f
+        case None                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/api/extensions/") && adminApiRoutes.nonEmpty) {
       adminApiRouter.find(request) match {
@@ -403,25 +425,25 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-        case None => f
+        case None        => f
       }
     } else if (hasExtensions && backofficePublicOverridesRoutes.nonEmpty) {
       backofficePublicOverridesRouter.find(request) match {
-        case Some(route) if route.adminRoute.wantsBody =>
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None => f
+        case None                                       => f
       }
     } else if (hasExtensions && backofficeAuthOverridesRoutes.nonEmpty) {
       backofficeAuthOverridesRouter.find(request) match {
-        case Some(route) if route.adminRoute.wantsBody =>
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(BackOfficeAction.async(sourceBodyParser) { ctx =>
             route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-        case None => f
+        case None                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request) match {
@@ -458,25 +480,25 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request) match {
         case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-        case None => f
+        case None        => f
       }
     } else if (hasExtensions && privateAppPublicOverridesRoutes.nonEmpty) {
       privateAppPublicOverridesRouter.find(request) match {
-        case Some(route) if route.adminRoute.wantsBody =>
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None => f
+        case None                                       => f
       }
     } else if (hasExtensions && privateAppAuthOverridesRoutes.nonEmpty) {
       privateAppAuthOverridesRouter.find(request) match {
-        case Some(route) if route.adminRoute.wantsBody =>
+        case Some(route) if route.adminRoute.wantsBody  =>
           Some(PrivateAppsAction.async(sourceBodyParser) { ctx =>
             route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-        case None => f
+        case None                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request) match {

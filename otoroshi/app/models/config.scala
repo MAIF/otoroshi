@@ -1,7 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
-import io.otoroshi.wasm4s.scaladsl.WasmManagerSettings
+import io.otoroshi.wasm4s.scaladsl.WasmoSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
@@ -503,40 +503,6 @@ object TlsSettings {
   }
 }
 
-/*
-case class WasmManagerSettings(
-    url: String = "http://localhost:5001",
-    clientId: String = "admin-api-apikey-id",
-    clientSecret: String = "admin-api-apikey-secret",
-    pluginsFilter: Option[String] = Some("*")
-)                          {
-  def json: JsValue = WasmManagerSettings.format.writes(this)
-}
-object WasmManagerSettings {
-  val format = new Format[WasmManagerSettings] {
-    override def writes(o: WasmManagerSettings): JsValue =
-      Json.obj(
-        "url"           -> o.url,
-        "clientId"      -> o.clientId,
-        "clientSecret"  -> o.clientSecret,
-        "pluginsFilter" -> o.pluginsFilter.map(JsString).getOrElse(JsNull).as[JsValue]
-      )
-
-    override def reads(json: JsValue): JsResult[WasmManagerSettings] =
-      Try {
-        WasmManagerSettings(
-          url = (json \ "url").asOpt[String].getOrElse("http://localhost:5001"),
-          clientId = (json \ "clientId").asOpt[String].getOrElse("admin-api-apikey-id"),
-          clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("admin-api-apikey-secret"),
-          pluginsFilter = (json \ "pluginsFilter").asOpt[String].getOrElse("*").some
-        )
-      } match {
-        case Failure(e)  => JsError(e.getMessage)
-        case Success(ac) => JsSuccess(ac)
-      }
-  }
-}*/
-
 case class DefaultTemplates(
     route: Option[JsObject] = Json.obj().some,        // Option[NgRoute],
     service: Option[JsObject] = Json.obj().some,      // Option[NgService],
@@ -653,7 +619,7 @@ case class GlobalConfig(
     quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
     templates: DefaultTemplates = DefaultTemplates(),
-    wasmManagerSettings: Option[WasmManagerSettings] = None,
+    wasmoSettings: Option[WasmoSettings] = None,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     env: JsObject = Json.obj(),
@@ -792,7 +758,7 @@ object GlobalConfig {
         "tlsSettings"             -> o.tlsSettings.json,
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
-        "wasmManagerSettings"     -> o.wasmManagerSettings.map(_.json).getOrElse(JsNull).as[JsValue],
+        "wasmoSettings"           -> o.wasmoSettings.map(_.json).getOrElse(JsNull).as[JsValue],
         "metadata"                -> o.metadata,
         "env"                     -> o.env,
         "extensions"              -> o.extensions,
@@ -933,9 +899,21 @@ object GlobalConfig {
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
             .orElse(json.select("templates").asOpt(DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
-          wasmManagerSettings = WasmManagerSettings.format
-            .reads((json \ "wasmManagerSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(WasmManagerSettings())
+          wasmoSettings = WasmoSettings.format
+            .reads(
+              (json \ "wasmoSettings")
+                .asOpt[JsValue]
+                .getOrElse(JsNull)
+            )
+            .getOrElse(
+              WasmoSettings.format
+                .reads(
+                  (json \ "wasmManagerSettings")
+                    .asOpt[JsValue]
+                    .getOrElse(JsNull)
+                )
+                .getOrElse(WasmoSettings())
+            )
             .some,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
