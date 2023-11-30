@@ -107,8 +107,8 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
-      <select class="form-select selectSkin btn-primary" aria-label="Choose export">
-        <option selected>Export</option>
+      <select className="form-select selectSkin btn-primary" aria-label="Choose export">
+        <option>Export</option>
         <option onClick={() => {
           const entityKind = "JwtVerifier"
           const what = window.location.pathname.split('/')[3];
