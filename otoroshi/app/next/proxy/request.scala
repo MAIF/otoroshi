@@ -7,16 +7,16 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.models.{AlgoSettings, ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
+import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.Json
 import play.api.libs.typedmap.TypedMap
-import play.api.mvc.{Cookies, Headers, Request, RequestHeader}
+import play.api.mvc.{Cookies, Headers, Request}
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 
-import java.net.{InetAddress, URI}
+import java.net.{InetAddress, URI, URLEncoder}
 import java.security.cert.X509Certificate
 import java.util.Base64
 import scala.concurrent.duration.DurationInt
@@ -107,7 +107,7 @@ class BackOfficeRequest(
     val path = request.path.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
     request.queryString match {
       case map if map.nonEmpty =>
-        val queryString = map.flatMap(t => t._2.map(v => s"${t._1}=${v}")).mkString("&")
+        val queryString = map.flatMap(t => t._2.map(v => s"${t._1}=${URLEncoder.encode(v,  "UTF-8")}")).mkString("&")
         s"${path}?${queryString}"
       case map                 => path
     }

@@ -28,9 +28,10 @@ export const Informations = forwardRef(
     useEffect(() => {
       setSaveButton(
         <FeedbackButton
+          type="success"
           className="ms-2 mb-1"
           onPress={saveRoute}
-          text={isCreation ? `Create ${entityName}` : `Save ${entityName}`}
+          text={isCreation ? `Create ${entityName}` : `Save`}
           icon={() => <i className="fas fa-paper-plane" />}
         />
       );

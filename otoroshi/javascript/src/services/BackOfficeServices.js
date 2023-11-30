@@ -194,8 +194,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -2116,13 +2116,13 @@ export const findAllWithPagination = (
     if (fields && fields.length > 0) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
-      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
+      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value.toLowerCase()}`).join(',')}`;
 
     if (sorted && sorted.length > 0)
       url = `${url}&sorted=${sorted.map((field) => `${field.id}:${field.desc}`).join(',')}`;
   }
 
-  return fetch(`${prefix}${url}`, {
+  return fetch(encodeURI(`${prefix}${url}`), {
     credentials: 'include',
     headers: {
       Accept: 'application/json',

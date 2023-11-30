@@ -110,7 +110,7 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
       <select class="form-select selectSkin btn-primary" aria-label="Choose export">
         <option selected>Export</option>
         <option onClick={() => {
-          const entityKind="JwtVerifier"
+          const entityKind = "JwtVerifier"
           const what = window.location.pathname.split('/')[3];
           const itemName = entityKind
             ? entityKind.toLowerCase()
@@ -136,7 +136,7 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
           setTimeout(() => document.body.removeChild(a), 300);
         }}>JSON</option>
         <option onClick={() => {
-          const entityKind="JwtVerifier"
+          const entityKind = "JwtVerifier"
           const what = window.location.pathname.split('/')[3];
           const itemName = entityKind
             ? entityKind.toLowerCase()
@@ -178,7 +178,7 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
               setTimeout(() => document.body.removeChild(a), 300);
             });
         }}>YAML</option>
-      </select>      
+      </select>
       {menu}
     </div>
   );
@@ -273,6 +273,7 @@ class Manager extends React.Component {
     saveTypeButton: undefined,
     forceHideTester: false,
     loading: false,
+    template: undefined
   };
 
   viewRef = React.createRef(null);
@@ -286,18 +287,16 @@ class Manager extends React.Component {
   }
 
   loadRoute = () => {
-    const { routeId } = this.props.match.params || { routeId: undefined };
-
-    if (routeId === 'new') {
-      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
-        this.setState({ value, loading: false });
-      });
-    }
+    nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
+      this.setState({ value, loading: false, template: value });
+    });
   };
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.match.params.routeId !== prevProps.match.params.routeId)
-      this.loadRoute();
+    if (this.props.routeId !== prevProps.routeId || this.props.routeId === 'new') {
+      if (!this.state.template)
+        this.loadRoute();
+    }
 
     if (
       ['saveTypeButton', 'menuRefreshed', 'forceHideTester'].some(
@@ -373,7 +372,7 @@ class Manager extends React.Component {
   };
 
   render() {
-    const { entity, history, location, ...props } = this.props;
+    const { entity, history, location } = this.props;
 
     let query = new URLSearchParams(location.search).get('tab');
 
@@ -381,8 +380,7 @@ class Manager extends React.Component {
       query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
     }
 
-    const p = this.props.match.params;
-    const isCreation = p.routeId === 'new';
+    const isCreation = this.props.routeId === 'new';
 
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
     const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
@@ -473,7 +471,7 @@ class Manager extends React.Component {
         <div className="designer ps-3">
           <Informations
             {...this.props}
-            routeId={p.routeId}
+            routeId={this.props.routeId}
             ref={this.viewRef}
             isCreation={isCreation}
             value={value}
@@ -557,12 +555,9 @@ class RouteDesigner extends React.Component {
   loadRoute = () => {
     const { routeId } = this.props.match.params || { routeId: undefined };
 
-    console.log(routeId)
-
     if (routeId === 'new' || (this.props.location.state && this.props.location.state.routeFromService)) {
       this.setState({ loading: false });
     } else if (routeId) {
-      console.log('call api routes')
       nextClient.fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId).then((res) => {
         if (!res.error) {
           this.setState({ value: res, loading: false });
@@ -576,7 +571,7 @@ class RouteDesigner extends React.Component {
 
     const entity = entityFromURI(location);
 
-    console.log(this.props, this.state, location.state)
+    // console.log(this.props, this.state, location.state)
 
     if (Object.keys(match.params).length === 0)
       return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
@@ -593,7 +588,6 @@ class RouteDesigner extends React.Component {
           {
             path: `${match.url}/`,
             component: (p) => {
-              console.log('match here', p)
               return <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} {...this.state} routeId={match?.params?.routeId} />
             },
           },
