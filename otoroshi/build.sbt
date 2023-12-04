@@ -327,6 +327,7 @@ reStart / javaOptions ++= Seq(
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",
   "-Dlog4j2.formatMsgNoLookups=true",
+  //"-Dapp.rootScheme=https",
   "-Dotoroshi.revolver=true",
   "-Dotoroshi.env=dev",
   "-Dotoroshi.http.port=9999",

@@ -27,6 +27,10 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
+object AuthController {
+ val logger = Logger("otoroshi-auth-controller")
+}
+
 class AuthController(
     BackOfficeActionAuth: BackOfficeActionAuth,
     PrivateAppsAction: PrivateAppsAction,
@@ -37,7 +41,7 @@ class AuthController(
 
   implicit lazy val ec = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-auth-controller")
+  lazy val logger = AuthController.logger
 
   def decryptState(req: RequestHeader): JsValue = {
     val secretToBytes = env.otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes
@@ -67,12 +71,15 @@ class AuthController(
     }
 
     val expected = env.sign(s"${auth.id}:::$descId")
+    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+      otoroshi.controllers.AuthController.logger.debug(s"verifyHash - found hash: ${hash}, expected: ${expected}")
+    }
     if (
       (hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig] || auth
         .isInstanceOf[Oauth1ModuleConfig]
-    )
+    ) {
       f(auth)
-    else
+    } else {
       Errors.craftResponseResult(
         "Auth. config. bad signature",
         Results.BadRequest,
@@ -81,6 +88,7 @@ class AuthController(
         Some("errors.auth.bad.signature"),
         attrs = TypedMap.empty
       )
+    }
   }
 
   def withMultiAuthConfig(route: NgRoute, req: RequestHeader, refFromRelayState: Option[String] = None)(
@@ -285,6 +293,9 @@ class AuthController(
                                   s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
                                     .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                 val hash        = env.sign(redirection)
+                                if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                  otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
                                     .removingFromSession(
@@ -313,12 +324,18 @@ class AuthController(
                                       s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
+                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                    }
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
                                       s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
+                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                    }
                                     s"$redirection&hash=$hash"
                                 }
                                 FastFuture.successful(
@@ -377,6 +394,9 @@ class AuthController(
                                   s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
                                     .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                 val hash        = env.sign(redirection)
+                                if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                  otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
                                     .removingFromSession(
@@ -404,12 +424,18 @@ class AuthController(
                                       s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
+                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                    }
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
                                       s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
+                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                    }
                                     s"$redirection&hash=$hash"
                                 }
                                 FastFuture.successful(
@@ -529,6 +555,9 @@ class AuthController(
                       s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                     val hash        = env.sign(redirection)
+                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                    }
                     Redirect(
                       s"$redirection&hash=$hash"
                     ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
@@ -545,12 +574,18 @@ class AuthController(
                           s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                        }
                         s"$redirection&hash=$hash"
                       case port =>
                         val redirection =
                           s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                        }
                         s"$redirection&hash=$hash"
                     }
                     if (webauthn) {
