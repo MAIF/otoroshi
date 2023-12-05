@@ -229,6 +229,7 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
 async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
+  await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'setup-docker', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./tools/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./tools/sidecar`));
 }
@@ -402,7 +403,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   // await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   // await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
   if (!dryRun) {
-    await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
+    // await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
