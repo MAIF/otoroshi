@@ -16,6 +16,7 @@ on:
 
 jobs:
   release-otoroshi:
+    name: release-otoroshi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
