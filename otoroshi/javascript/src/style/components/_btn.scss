@@ -164,6 +164,21 @@
   }
 }
 
+.btn-quiet,
+.btn-quiet:focus {
+  color: var(--color_level2);
+  border: 1px solid;
+  border-color: var(--bg-color_level2);
+  background-color: var(--bg-color_level2);
+
+  &:hover {
+    color: var(--color-white);
+    border: 1px solid;
+    border-color: var(--bg-color_level2);
+    background-color: var(--bg-color_level2);
+  }
+}
+
 .btn-dark{
   color: var(--color-white);
   border: 1px solid;
