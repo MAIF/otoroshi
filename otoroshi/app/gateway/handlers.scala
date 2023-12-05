@@ -659,20 +659,6 @@ class GatewayRequestHandler(
   }
 
   private val devCache                               = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
-  private lazy val devMimetypes: Map[String, String] = env.configuration
-    .betterGetOptional[String]("play.http.fileMimeTypes")
-    .map { types =>
-      types
-        .split("\\n")
-        .toSeq
-        .map(_.trim)
-        .filter(_.nonEmpty)
-        .map(_.split("=").toSeq)
-        .filter(_.size == 2)
-        .map(v => (v.head, v.tail.head))
-        .toMap
-    }
-    .getOrElse(Map.empty[String, String])
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri
@@ -689,7 +675,7 @@ class GatewayRequestHandler(
           Results.Redirect(s"${req.theProtocol}://$host/assets${path}").future
         } else {
           val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
-          val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
+          val mimeType: String = env.devMimetypes.getOrElse(ext, "text/plain")
           val fileSource = {
             val file = new File("./public" + path)
             if (file.exists()) {

@@ -129,6 +129,7 @@ import WasmJob from './WasmJob';
 import WasmPreRoute from './WasmPreRoute';
 import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
+import ZipFileBackend from './ZipFileBackend';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -263,6 +264,7 @@ const pluginsArray = [
   WasmJob,
   WasmPreRoute,
   WasmRouter,
+  ZipFileBackend,
 ];
 
 export function addPluginForm(plugin) {

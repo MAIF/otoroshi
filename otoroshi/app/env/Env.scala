@@ -199,6 +199,21 @@ class Env(
 
   lazy val customLogo: Option[String] = configuration.getOptionalWithFileSupport[String]("app.instance.logo")
 
+  lazy val devMimetypes: Map[String, String] = configuration
+    .betterGetOptional[String]("play.http.fileMimeTypes")
+    .map { types =>
+      types
+        .split("\\n")
+        .toSeq
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map(_.split("=").toSeq)
+        .filter(_.size == 2)
+        .map(v => (v.head, v.tail.head))
+        .toMap
+    }
+    .getOrElse(Map.empty[String, String])
+
   def otoroshiLogo: String = {
     val now = DateTime.now()
     customLogo match {
