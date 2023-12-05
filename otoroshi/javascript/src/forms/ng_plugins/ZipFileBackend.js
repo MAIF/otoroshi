@@ -16,8 +16,12 @@ export default {
       dir: {
         label: 'Zip File directory',
         type: 'string',
+      },
+      headers: {
+        label: 'Headers',
+        type: 'object'
       }
     },
-    config_flow: ['url', 'prefix', 'dir', 'ttl'],
+    config_flow: ['url', 'headers', 'prefix', 'dir', 'ttl'],
   };
   

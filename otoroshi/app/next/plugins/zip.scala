@@ -20,14 +20,15 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util._
 
-case class ZipFileBackendConfig(url: String, dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {
+case class ZipFileBackendConfig(url: String, headers: Map[String, String], dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {
   def json: JsValue = ZipFileBackendConfig.format.writes(this)
 }
 object ZipFileBackendConfig {
-  val default = ZipFileBackendConfig("https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip", "./zips", None, 1.hour.toMillis)
+  val default = ZipFileBackendConfig("https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip", Map.empty, "./zips", None, 1.hour.toMillis)
   val format = new Format[ZipFileBackendConfig] {
     override def writes(o: ZipFileBackendConfig): JsValue = Json.obj(
       "url" -> o.url,
+      "headers" -> o.headers,
       "dir" -> o.dir,
       "prefix" -> o.prefix,
       "ttl" -> o.ttl,
@@ -36,6 +37,7 @@ object ZipFileBackendConfig {
       Try {
         ZipFileBackendConfig(
           url = json.select("url").asString,
+          headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
           dir = json.select("dir").asOpt[String].getOrElse(ZipFileBackendConfig.default.dir),
           prefix = json.select("prefix").asOpt[String].filter(_.nonEmpty),
           ttl = json.select("ttl").asOpt[Long].getOrElse(ZipFileBackendConfig.default.ttl),
