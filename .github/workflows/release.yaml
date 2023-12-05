@@ -87,6 +87,6 @@ jobs:
             ./release-${{ inputs.version_to }}/otoroshi.jar
             ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip
             ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip
-            ./release-${{ inputs.version_to }}/otoroshi.zip.sha256
+            ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
             ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
             ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256
