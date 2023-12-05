@@ -614,7 +614,7 @@ function ProxyServer(options, optionalConfigFile) {
 
 function displayHeader() {
   console.log('')
-  console.log('Otoroshi TCP tunnel CLI, version 16.11.1'.yellow)
+  console.log('Otoroshi TCP tunnel CLI, version 16.12.0-dev'.yellow)
   console.log('')
 }
 
