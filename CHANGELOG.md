@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.11.1] - 2023-12-05
+
+https://github.com/MAIF/otoroshi/milestone/82?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.11.0...v16.11.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.1
+
+
+### Fixed 
+
+- Got an error NoClassDefFoundError io.otoroshi.wasm4s.impl.WasmVmPoolImpl when calling route with wasm plugin (#1781)
+- wasm not working with windows (#1782)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
 
 ## [16.11.0] - 2023-11-29
 
