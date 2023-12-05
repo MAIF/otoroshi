@@ -16,7 +16,8 @@ function Provider({ name, link, type }) {
         textDecoration: 'none',
         cursor: 'pointer',
       }}
-      href={link}>
+      href={link}
+    >
       <div
         style={{
           background: COLORS[type] || '#f9b000',
@@ -27,7 +28,8 @@ function Provider({ name, link, type }) {
           color: '#fff',
           textTransform: 'uppercase',
           borderRadius: 4,
-        }}>
+        }}
+      >
         {/* <div style={{
         minWidth: 46,
         minHeight: 46,
@@ -47,14 +49,16 @@ function Provider({ name, link, type }) {
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis',
             // fontSize: '.85rem'
-          }}>
+          }}
+        >
           CONTINUE WITH
         </p>
         <p
           className="m-0"
           style={{
             fontWeight: 'bold',
-          }}>
+          }}
+        >
           {name}
         </p>
       </div>

@@ -395,7 +395,8 @@ const Feature = ({ title, description, img, link, icon }) => {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-      }}>
+      }}
+    >
       <div
         style={{
           flex: 1,
@@ -405,10 +406,12 @@ const Feature = ({ title, description, img, link, icon }) => {
           backgroundRepeat: 'no-repeat',
           minHeight: 150,
           margin: 12,
-        }}></div>
+        }}
+      ></div>
       <div
         className="d-flex flex-column"
-        style={{ flex: 1, backgroundColor: 'var(--bg-color_level3)', padding: '12px' }}>
+        style={{ flex: 1, backgroundColor: 'var(--bg-color_level3)', padding: '12px' }}
+      >
         <div
           style={{
             fontWeight: 'bold',
@@ -418,12 +421,14 @@ const Feature = ({ title, description, img, link, icon }) => {
             fontSize: 20,
             color: 'var(--color_level3)',
             textTransform: 'capitalize',
-          }}>
+          }}
+        >
           {zeIcon} {title}
         </div>
         <div
           className="me-1"
-          style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}>
+          style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}
+        >
           <p>{description}</p>
         </div>
       </div>
@@ -472,11 +477,13 @@ export class FeaturesPage extends Component {
             display: 'flex',
             flexDirection: 'row',
             justifyContent: 'flex-end',
-          }}>
+          }}
+        >
           <button
             type="button"
             className={`btn btn-sm ${this.props.shortMenu ? 'btn-success' : 'btn-danger'}`}
-            onClick={this.props.toggleShortMenu}>
+            onClick={this.props.toggleShortMenu}
+          >
             <i className="fa fa-cog" style={{ fontSize: 'small' }} />{' '}
             {this.props.shortMenu
               ? 'Display all features in the settings menu'

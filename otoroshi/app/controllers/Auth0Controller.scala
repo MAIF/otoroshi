@@ -28,7 +28,7 @@ import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
 object AuthController {
- val logger = Logger("otoroshi-auth-controller")
+  val logger = Logger("otoroshi-auth-controller")
 }
 
 class AuthController(
@@ -294,7 +294,9 @@ class AuthController(
                                     .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                 val hash        = env.sign(redirection)
                                 if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                  otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                  otoroshi.controllers.AuthController.logger.debug(
+                                    s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                  )
                                 }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
@@ -325,7 +327,9 @@ class AuthController(
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                      otoroshi.controllers.AuthController.logger.debug(
+                                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                      )
                                     }
                                     s"$redirection&hash=$hash"
                                   case port =>
@@ -334,7 +338,9 @@ class AuthController(
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                      otoroshi.controllers.AuthController.logger.debug(
+                                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                      )
                                     }
                                     s"$redirection&hash=$hash"
                                 }
@@ -395,7 +401,9 @@ class AuthController(
                                     .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                 val hash        = env.sign(redirection)
                                 if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                  otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                  otoroshi.controllers.AuthController.logger.debug(
+                                    s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                  )
                                 }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
@@ -425,7 +433,9 @@ class AuthController(
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                      otoroshi.controllers.AuthController.logger.debug(
+                                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                      )
                                     }
                                     s"$redirection&hash=$hash"
                                   case port =>
@@ -434,7 +444,9 @@ class AuthController(
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                                      otoroshi.controllers.AuthController.logger.debug(
+                                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                                      )
                                     }
                                     s"$redirection&hash=$hash"
                                 }
@@ -556,7 +568,8 @@ class AuthController(
                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                     val hash        = env.sign(redirection)
                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                      otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                      otoroshi.controllers.AuthController.logger
+                        .debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
                     }
                     Redirect(
                       s"$redirection&hash=$hash"
@@ -575,7 +588,8 @@ class AuthController(
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                          otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                          otoroshi.controllers.AuthController.logger
+                            .debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
                         }
                         s"$redirection&hash=$hash"
                       case port =>
@@ -584,7 +598,8 @@ class AuthController(
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                          otoroshi.controllers.AuthController.logger.debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
+                          otoroshi.controllers.AuthController.logger
+                            .debug(s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'")
                         }
                         s"$redirection&hash=$hash"
                     }

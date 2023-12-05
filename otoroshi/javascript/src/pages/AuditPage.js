@@ -29,7 +29,8 @@ export class AuditPage extends Component {
               <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
               'Content'
             )
-          }>
+          }
+        >
           content
         </button>
       ),

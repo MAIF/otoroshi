@@ -23,7 +23,8 @@ class Alert extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.close}
-                aria-label="Close"></button>
+                aria-label="Close"
+              ></button>
             </div>
             <div className="modal-body">
               {isString(res) && <p>{res}</p>}
@@ -36,7 +37,8 @@ class Alert extends Component {
                   data-dismiss="modal"
                   href={this.props.linkOpt.to}
                   className="btn btn-default"
-                  onClick={this.props.close}>
+                  onClick={this.props.close}
+                >
                   {this.props.linkOpt.title}
                 </a>
               )}
@@ -44,7 +46,8 @@ class Alert extends Component {
                 ref={(r) => (this.okRef = r)}
                 type="button"
                 className="btn btn-primary"
-                onClick={this.props.close}>
+                onClick={this.props.close}
+              >
                 Close
               </button>
             </div>
@@ -72,7 +75,8 @@ class Confirm extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close"></button>
+                aria-label="Close"
+              ></button>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -82,14 +86,16 @@ class Confirm extends Component {
                 ref={(r) => (this.cancelRef = r)}
                 type="button"
                 className="btn btn-danger"
-                onClick={this.props.cancel}>
+                onClick={this.props.cancel}
+              >
                 {this.props.noText || 'Cancel'}
               </button>
               <button
                 ref={(r) => (this.okRef = r)}
                 type="button"
                 className="btn btn-success"
-                onClick={this.props.ok}>
+                onClick={this.props.ok}
+              >
                 {this.props.yesText || 'Ok'}
               </button>
             </div>
@@ -122,7 +128,8 @@ class Prompt extends Component {
                 className="btn-close"
                 data-bs-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close"></button>
+                aria-label="Close"
+              ></button>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -153,7 +160,8 @@ class Prompt extends Component {
                 type="button"
                 className="btn btn-success"
                 ref={(r) => (this.okRef = r)}
-                onClick={(e) => this.props.ok(this.state.text)}>
+                onClick={(e) => this.props.ok(this.state.text)}
+              >
                 Ok
               </button>
             </div>
@@ -171,12 +179,14 @@ class Popup extends Component {
         className="modal"
         tabIndex="-1"
         role="dialog"
-        style={{ display: 'block', ...this.props.style }}>
+        style={{ display: 'block', ...this.props.style }}
+      >
         <div
           className={
             'modal-dialog' + (this.props.additionalClass ? ' ' + this.props.additionalClass : '')
           }
-          role="document">
+          role="document"
+        >
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title}</h4>
@@ -185,7 +195,8 @@ class Popup extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close"></button>
+                aria-label="Close"
+              ></button>
             </div>
             {this.props.body(this.props.ok, this.props.cancel)}
           </div>

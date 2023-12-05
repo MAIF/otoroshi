@@ -163,7 +163,8 @@ export const MarkdownInput = (props) => {
                 }))
               );
             }
-          }}>
+          }}
+        >
           <i className={`fas fa-${command.icon}`} />
         </button>
       );
@@ -178,7 +179,8 @@ export const MarkdownInput = (props) => {
         <div
           style={{
             marginBottom: 10,
-          }}>
+          }}
+        >
           <div>
             <div>
               <button
@@ -188,7 +190,8 @@ export const MarkdownInput = (props) => {
                   color: !preview ? '#7f96af' : 'white',
                   backgroundColor: preview ? '#7f96af' : 'white',
                 }}
-                onClick={() => setPreview(false)}>
+                onClick={() => setPreview(false)}
+              >
                 Write
               </button>
               <button
@@ -198,7 +201,8 @@ export const MarkdownInput = (props) => {
                   color: preview ? '#7f96af' : 'white',
                   backgroundColor: preview ? 'white' : '#7f96af',
                 }}
-                onClick={() => setPreview(true)}>
+                onClick={() => setPreview(true)}
+              >
                 Preview
               </button>
             </div>

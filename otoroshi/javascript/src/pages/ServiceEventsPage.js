@@ -82,7 +82,8 @@ export class ServiceEventsPage extends Component {
               <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
               'Content'
             )
-          }>
+          }
+        >
           content
         </button>
       ),
@@ -122,7 +123,8 @@ export class ServiceEventsPage extends Component {
                 window.newAlert('No body has been found for this request !', 'No body found');
               }
             });
-          }}>
+          }}
+        >
           bodies
         </button>
       ),

@@ -86,7 +86,8 @@ export class ArraySelectInput extends Component {
           disabled={this.props.disabled}
           type="button"
           className="btn btn-primary"
-          onClick={this.addFirst}>
+          onClick={this.addFirst}
+        >
           <i className="fas fa-plus-circle" />{' '}
         </button>
       </div>
@@ -99,7 +100,8 @@ export class ArraySelectInput extends Component {
         disabled={this.props.disabled}
         type="button"
         className="btn btn-danger"
-        onClick={(e) => this.remove(e, value[0])}>
+        onClick={(e) => this.remove(e, value[0])}
+      >
         <i className="fas fa-trash" />
       </button>
       {idx === values.length - 1 && (
@@ -107,7 +109,8 @@ export class ArraySelectInput extends Component {
           disabled={this.props.disabled}
           type="button"
           className="btn btn-primary"
-          onClick={this.addNext}>
+          onClick={this.addNext}
+        >
           <i className="fas fa-plus-circle" />{' '}
         </button>
       )}

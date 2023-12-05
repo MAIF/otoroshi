@@ -362,7 +362,8 @@ export default function ({ route, hide }) {
           style={{
             display: 'flex',
             flexDirection: 'column',
-          }}>
+          }}
+        >
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
               <NgSelectRenderer
@@ -394,7 +395,8 @@ export default function ({ route, hide }) {
               flexDirection: 'column',
               overflowY: 'hidden',
               paddingBottom: headersStatus === 'down' ? '120px' : 0,
-            }}>
+            }}
+          >
             <div className="d-flex-between mt-3">
               <div className="d-flex">
                 {[
@@ -416,7 +418,8 @@ export default function ({ route, hide }) {
                       border: 0,
                       borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
                       background: 'none',
-                    }}>
+                    }}
+                  >
                     {value}
                   </button>
                 ))}
@@ -665,7 +668,8 @@ export default function ({ route, hide }) {
                         borderBottom:
                           selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
                         background: 'none',
-                      }}>
+                      }}
+                    >
                       {value}
                     </button>
                   ))}
@@ -815,8 +819,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-        ? report.duration_ns
-        : 100;
+          ? report.duration_ns
+          : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -851,7 +855,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         <div
           onClick={() => setSelectedStep(-1)}
           className="d-flex-between py-2"
-          style={{ width: '100%' }}>
+          style={{ width: '100%' }}
+        >
           <input
             type="text"
             className="form-control"
@@ -865,7 +870,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             </button>
             <button
               className={`${getUnitButtonClass(unit === 'ms')} mx-1`}
-              onClick={() => setUnit('ms')}>
+              onClick={() => setUnit('ms')}
+            >
               ms
             </button>
             <button className={getUnitButtonClass(unit === '%')} onClick={() => setUnit('%')}>
@@ -878,7 +884,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             className="btn btn-sm btn-success"
             onClick={() =>
               setFlow(flow === 'internal' ? 'user' : flow === 'user' ? 'all' : 'internal')
-            }>
+            }
+          >
             {getNextFlowName()} flow
           </button>
           <button className="btn btn-sm btn-success" onClick={() => setSort(getNextSortName())}>
@@ -892,7 +899,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           }}
           className={`d-flex-between mt-1 px-3 py-2 report-step ${
             selectedStep === -1 && selectedPlugin === -1 ? 'btn-success' : ''
-          }`}>
+          }`}
+        >
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -916,7 +924,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   }}
                   className={`d-flex-between mt-1 px-3 py-2 report-step btn-dark ${
                     step.task === selectedStep && selectedPlugin === -1 ? 'btn-success' : ''
-                  }`}>
+                  }`}
+                >
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
@@ -939,8 +948,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                        ? step.duration_ns
-                        : percentage}{' '}
+                          ? step.duration_ns
+                          : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -969,14 +978,15 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                             step.task === selectedStep && plugin.name === selectedPlugin
                               ? 'btn-success'
                               : ''
-                          }`}>
+                          }`}
+                        >
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                              ? plugin.duration_ns
-                              : pluginPercentage}{' '}
+                                ? plugin.duration_ns
+                                : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -1028,7 +1038,8 @@ const Headers = ({ headers, onKeyChange, onValueChange }) => (
     style={{
       height: onKeyChange ? '100%' : 'initial',
       overflowY: 'scroll',
-    }}>
+    }}
+  >
     <div className="d-flex-between">
       <span className="flex py-1" style={{ fontWeight: 'bold' }}>
         KEY

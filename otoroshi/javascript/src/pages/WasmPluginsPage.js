@@ -28,7 +28,8 @@ class WasmDataRights extends Component {
               display: 'flex',
               justifyContent: 'flex-start',
               alignItems: 'center',
-            }}>
+            }}
+          >
             <Input
               width={this.props.boxWidth}
               label="Read"
@@ -488,8 +489,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max calls',
-        help:
-          'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
         suffix: 'calls',
       },
     },
@@ -497,8 +497,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max memory usage',
-        help:
-          'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
         suffix: '%',
       },
     },
@@ -506,8 +505,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help:
-          'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
         suffix: 'ms.',
       },
     },
@@ -515,8 +513,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help:
-          'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
+        help: 'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
         suffix: 'ms.',
       },
     },

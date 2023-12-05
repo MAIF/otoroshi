@@ -58,7 +58,8 @@ export class CleverPage extends Component {
           <button
             onClick={(e) => this.createService(e, item)}
             type="button"
-            className="btn btn-sm btn-success">
+            className="btn btn-sm btn-success"
+          >
             <i className="fas fa-plus-circle" /> Create service
           </button>
         ),

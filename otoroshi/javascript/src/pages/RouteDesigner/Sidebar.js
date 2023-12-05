@@ -60,7 +60,8 @@ export default ({ route }) => {
       className="d-flex"
       style={{
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
-      }}>
+      }}
+    >
       <ul className="nav flex-column nav-sidebar">
         <li className="nav-item mb-1">
           <Link to={`/${entity.link}/${route.id}?tab=flow`} className="m-0 p-2 nav-link">
@@ -80,7 +81,8 @@ export default ({ route }) => {
               {...(tooltip || {})}
               className={`d-flex align-items-center nav-link ${isActive(tab)} ${
                 openedSidebar ? 'ms-3' : ''
-              } m-0 ${isActive(tab)}`}>
+              } m-0 ${isActive(tab)}`}
+            >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
               </div>

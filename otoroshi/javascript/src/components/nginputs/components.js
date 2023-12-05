@@ -206,7 +206,8 @@ export class NgFormRenderer extends Component {
               marginLeft: 5,
               marginTop: 7,
               marginBottom: 10,
-            }}>
+            }}
+          >
             {title}
           </div>
         );
@@ -241,14 +242,16 @@ export class NgFormRenderer extends Component {
             }}
             onClick={() => {
               if (clickable) this.setBreadcrumb();
-            }}>
+            }}
+          >
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-              }}>
+              }}
+            >
               {showTitle && titleComponent}
               <div>
                 {EnabledTagComponent}
@@ -257,7 +260,8 @@ export class NgFormRenderer extends Component {
                   <button
                     type="button"
                     className="btn btn-primary float-end btn-sm"
-                    onClick={this.setBreadcrumb}>
+                    onClick={this.setBreadcrumb}
+                  >
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
                 )}
@@ -265,7 +269,8 @@ export class NgFormRenderer extends Component {
                   <button
                     type="button"
                     className="btn btn-primary float-end btn-sm"
-                    onClick={this.setBreadcrumb}>
+                    onClick={this.setBreadcrumb}
+                  >
                     <i className="fas fa-chevron-right"></i>
                   </button>
                 )}
@@ -292,14 +297,16 @@ export class NgFormRenderer extends Component {
               flexDirection: 'column',
               width: 'calc(100% - 2px)',
               marginLeft: '1px',
-            }}>
+            }}
+          >
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-              }}>
+              }}
+            >
               {showTitle && titleComponent}
             </div>
             {this.props.children}

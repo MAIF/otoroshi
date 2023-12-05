@@ -97,7 +97,8 @@ const Dot = ({
     onClick={(e) => {
       e.stopPropagation();
       if (onClick) onClick(e);
-    }}>
+    }}
+  >
     <div className="d-flex status-dots">
       {enabled !== undefined && <Status value={enabled} />}
       {legacy !== undefined && <Legacy value={legacy} />}
@@ -118,7 +119,8 @@ const RemoveButton = ({ onRemove }) => {
   return (
     <div
       onClick={onRemove}
-      className="delete-node-button d-flex align-items-center justify-content-center">
+      className="delete-node-button d-flex align-items-center justify-content-center"
+    >
       <i className="fas fa-times" />
     </div>
   );
@@ -162,7 +164,8 @@ const NodeElement = ({
         highlighted={highlighted}
         arrows={arrows}
         legacy={legacy}
-        enabled={enabled}>
+        enabled={enabled}
+      >
         <span className="dot-text">{name || id}</span>
         {highlighted && id !== 'Frontend' && id !== 'Backend' && (
           <RemoveButton onRemove={onRemove} />
@@ -214,7 +217,8 @@ const FormContainer = ({
     <div
       className="col-sm-8 relative-container flex-column flow-container p-3"
       style={{ paddingRight: 0 }}
-      id="form-container">
+      id="form-container"
+    >
       <UnselectedNode
         hideText={selectedNode}
         route={route}
@@ -324,7 +328,8 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
           selectedNode && selectedNode.id === 'Frontend'
             ? 'var(--color-white)'
             : 'var(--color_level2)',
-      }}>
+      }}
+    >
       <i className="fas fa-user frontend-button-icon" />
     </div>
   </div>
@@ -352,7 +357,8 @@ const Container = ({ children, onClick }) => {
         if (propagate) onClick(e);
 
         setPropagate(false);
-      }}>
+      }}
+    >
       {children}
     </div>
   );
@@ -363,7 +369,8 @@ const BackendNode = ({ selectedNode, backend, ...props }) => (
     className="main-view backend-button"
     style={{
       opacity: !selectedNode ? 1 : selectedNode.nodeId === 'Backend' ? 1 : 0.25,
-    }}>
+    }}
+  >
     <i className="fas fa-bullseye backend-icon" />
     <NodeElement
       element={backend}
@@ -381,7 +388,8 @@ const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props 
     className="main-view backend-call-button"
     style={{
       opacity: !selectedNode ? 1 : selectedNode.id === backendCall.id ? 1 : 0.25,
-    }}>
+    }}
+  >
     <NodeElement
       element={backendCall}
       selectedNode={selectedNode}
@@ -438,13 +446,15 @@ const PluginsContainer = ({
               String(!showLegacy)
             );
             setShowLegacy(!showLegacy);
-          }}>
+          }}
+        >
           {showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}
         </button>
         <button
           type="button"
           className="btn btn-sm btn-warning text-light plugins-action"
-          onClick={onExpandAll}>
+          onClick={onExpandAll}
+        >
           {expandAll ? 'Collapse all' : 'Expand all'}
         </button>
       </div>
@@ -592,7 +602,8 @@ class Designer extends React.Component {
     <button
       type="button"
       className="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-column square-button"
-      onClick={this.clearPlugins}>
+      onClick={this.clearPlugins}
+    >
       <div>
         <i className="fas fa-ban" />
       </div>
@@ -1328,7 +1339,8 @@ class Designer extends React.Component {
               this.setState({
                 hiddenSteps: hidden_steps,
               });
-            }}>
+            }}
+          >
             <i
               className={`me-1 fas fa-chevron-${hiddenSteps[steps[i]] ? 'down' : 'right'}`}
               style={{
@@ -1399,7 +1411,8 @@ class Designer extends React.Component {
             this.setState({
               hiddenSteps: hidden_steps,
             });
-          }}>
+          }}
+        >
           <i
             className={`me-1 fas fa-chevron-${hiddenSteps.TransformResponse ? 'up' : 'right'}`}
             style={{
@@ -1494,7 +1507,8 @@ class Designer extends React.Component {
             this.setState({
               selectedNode: undefined,
             });
-          }}>
+          }}
+        >
           {FullForm && (
             <Suspense fallback={null}>
               <FullForm
@@ -1611,14 +1625,16 @@ class Designer extends React.Component {
                           flexDirection: 'column',
                           alignItems: 'center',
                           width: '100%',
-                        }}>
+                        }}
+                      >
                         <span
                           className="badge bg-warning text-dark"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
                             cursor: 'pointer',
-                          }}>
+                          }}
+                        >
                           CallBackend
                         </span>
                         <Hr highlighted={!selectedNode} />
@@ -1700,7 +1716,8 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     onClick={(e) => {
       e.stopPropagation();
       showPreview(element);
-    }}>
+    }}
+  >
     <div className="d-flex-between element-text">
       <div>
         {element.legacy ? (
@@ -1747,7 +1764,8 @@ const Group = ({ group, elements, addNode, ...props }) => {
         onClick={(e) => {
           e.stopPropagation();
           setOpen(!open);
-        }}>
+        }}
+      >
         <i
           className={`fas fa-chevron-${open ? 'down' : 'right'} ms-3`}
           size={16}
@@ -1786,7 +1804,8 @@ const SearchBar = ({ handleSearch }) => (
           width: '100%',
           display: 'flex',
           alignItems: 'center',
-        }}>
+        }}
+      >
         <input
           type="text"
           className="form-control"
@@ -1825,7 +1844,8 @@ const UnselectedNode = ({
             <span
               key={`frontendmethod-${i}`}
               className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}>
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
               {m}
             </span>
           ))
@@ -1857,7 +1877,8 @@ const UnselectedNode = ({
               paddingTop: 10,
               paddingBottom: 10,
               borderRadius: 3,
-            }}>
+            }}
+          >
             {frontend.domains.map((domain) => {
               const exact = frontend.exact;
               const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
@@ -1871,7 +1892,8 @@ const UnselectedNode = ({
                       display: 'flex',
                       flexDirection: 'row',
                     }}
-                    key={`allmethods-${i}`}>
+                    key={`allmethods-${i}`}
+                  >
                     <div style={{ width: 80 }}>{method}</div>
                     <span style={{ fontFamily: 'monospace' }}>
                       {start}
@@ -1895,7 +1917,8 @@ const UnselectedNode = ({
                   backgroundColor: '#555',
                   fontFamily: 'monospace',
                   borderRadius: 3,
-                }}>
+                }}
+              >
                 <code>
                   {Object.keys(frontend.query)
                     .map((key) => `${key}: ${frontend.query[key]}`)
@@ -1915,7 +1938,8 @@ const UnselectedNode = ({
                   backgroundColor: '#555',
                   fontFamily: 'monospace',
                   borderRadius: 3,
-                }}>
+                }}
+              >
                 <code>
                   {Object.keys(frontend.headers)
                     .map((key) => `${key}: ${frontend.headers[key]}`)
@@ -1939,7 +1963,8 @@ const UnselectedNode = ({
               paddingTop: 10,
               paddingBottom: 10,
               borderRadius: 3,
-            }}>
+            }}
+          >
             {backend.targets
               .filter((f) => f)
               .map((target, i) => {
@@ -1969,7 +1994,8 @@ const UnselectedNode = ({
                       display: 'flex',
                       flexDirection: 'row',
                     }}
-                    key={`backend-targets${i}`}>
+                    key={`backend-targets${i}`}
+                  >
                     <span style={{ fontFamily: 'monospace' }}>
                       {mtls}
                       {start}
@@ -2018,7 +2044,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
         className="btn btn-sm"
         type="button"
         style={{ minWidth: '36px' }}
-        onClick={onCloseForm}>
+        onClick={onCloseForm}
+      >
         <i className="fas fa-times" />
       </button>
     </div>
@@ -2078,7 +2105,8 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
           <div
             className="mt-3 ps-3"
             style={{ borderLeft: '2px solid #D5443F' }}
-            key={`errror${idx}`}>
+            key={`errror${idx}`}
+          >
             {error}
           </div>
         ))}
@@ -2290,7 +2318,8 @@ class EditView extends React.Component {
         id="form"
         onClick={(e) => e.stopPropagation()}
         className="plugins-stack editor-view"
-        style={{ top: offset }}>
+        style={{ top: offset }}
+      >
         <EditViewHeader
           icon={icon}
           name={name}
@@ -2512,7 +2541,8 @@ export const Description = ({ text, steps, legacy }) => {
             <span
               className="badge bg-warning text-dark"
               style={{ marginLeft: 5 }}
-              key={`steps-${i}`}>
+              key={`steps-${i}`}
+            >
               {step}
             </span>
           ))}
@@ -2533,7 +2563,8 @@ export const Description = ({ text, steps, legacy }) => {
           onClick={() => {
             setShowMore(!showMore);
           }}
-          style={{ marginLeft: 'auto', display: 'block' }}>
+          style={{ marginLeft: 'auto', display: 'block' }}
+        >
           {showMore ? 'Show less' : 'Show more description'}
         </button>
       )}

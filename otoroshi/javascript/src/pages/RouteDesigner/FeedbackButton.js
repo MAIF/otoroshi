@@ -87,14 +87,16 @@ export function FeedbackButton({
               throw err;
             });
         }
-      }}>
+      }}
+    >
       {icon && (
         <div
           className="me-1"
           style={{
             width: '16px',
             display: 'inline-block',
-          }}>
+          }}
+        >
           {waiting && !uploading && <Icon />}
 
           {loading && (

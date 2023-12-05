@@ -20,7 +20,8 @@ class Toast extends Component {
           width: '100%',
           backgroundColor,
           borderRadius: '5px',
-        }}>
+        }}
+      >
         <div
           style={{
             fontWeight: 'bold',
@@ -29,12 +30,14 @@ class Toast extends Component {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-          }}>
+          }}
+        >
           {this.props.toast.title}{' '}
           <button
             type="button"
             className="btn btn-sm btn-danger"
-            onClick={(e) => this.props.close()}>
+            onClick={(e) => this.props.close()}
+          >
             <i className="fas fa-times" style={{ color: '#fff' }} />
           </button>
         </div>
@@ -46,7 +49,8 @@ class Toast extends Component {
             fontSize: '1rem',
             flexDirection: 'column',
             marginTop: '10px',
-          }}>
+          }}
+        >
           {this.props.toast.body}
           <small>{moment().format('YYYY-MM-DD HH:mm:ss')}</small>{' '}
         </div>
@@ -99,7 +103,8 @@ export class Toasts extends Component {
           right: 10,
           top: 10,
           width: '30vw',
-        }}>
+        }}
+      >
         {this.state.toasts.map((toast) => (
           <Toast toast={toast} close={(e) => this.close(toast)} />
         ))}

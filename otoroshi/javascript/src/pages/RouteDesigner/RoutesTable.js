@@ -20,7 +20,8 @@ export function RoutesTable(props) {
             <span
               className="badge bg-secondary"
               style={{ cursor: 'pointer' }}
-              title={item.frontend.domains.map((v) => ` - ${v}`).join('\n')}>
+              title={item.frontend.domains.map((v) => ` - ${v}`).join('\n')}
+            >
               {item.frontend.domains.length - 1} more
             </span>
           )}
@@ -42,7 +43,8 @@ export function RoutesTable(props) {
               style={{ cursor: 'pointer' }}
               title={item.backend.targets
                 .map((v) => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`)
-                .join('\n')}>
+                .join('\n')}
+            >
               {item.backend.targets.length - 1} more
             </span>
           )}
@@ -74,7 +76,8 @@ export function RoutesTable(props) {
           return (
             <span
               title="This route is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="badge bg-danger">
+              className="badge bg-danger"
+            >
               {item.name}
             </span>
           );

@@ -4,8 +4,7 @@ export default {
     secret: {
       type: 'string',
       label: 'Secret',
-      help:
-        'Secret to sign and verify signed content of headers. By default, the secret of the api key is used.',
+      help: 'Secret to sign and verify signed content of headers. By default, the secret of the api key is used.',
     },
     algo: {
       type: 'select',

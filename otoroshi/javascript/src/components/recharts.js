@@ -90,7 +90,8 @@ export class Histogram extends Component {
             justifyContent: 'center',
             alignItems: 'center',
             width: '100%',
-          }}>
+          }}
+        >
           <h4 style={{ marginTop: 10 }}>{this.props.title}</h4>
           <ResponsiveContainer height={this.props.height || 200}>
             <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -148,7 +149,8 @@ export class RoundChart extends Component {
         fill="white"
         textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
-        style={{ padding: 5 }}>
+        style={{ padding: 5 }}
+      >
         {props.name.replace(/"/g, '')}: {(props.percent * 100).toFixed(0)}% ({props.value})
       </text>
     );
@@ -173,7 +175,8 @@ export class RoundChart extends Component {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-        }}>
+        }}
+      >
         <h4 style={{ marginTop: 10 }}>{this.props.title}</h4>
         <ResponsiveContainer height={this.props.size ? this.props.size + 100 : 200}>
           <PieChart>
@@ -183,7 +186,8 @@ export class RoundChart extends Component {
               outerRadius={this.props.size ? this.props.size / 2 : 100}
               dataKey="value"
               minAngle={5}
-              label={this.renderCustomizedLabel}>
+              label={this.renderCustomizedLabel}
+            >
               {data.map((entry, index) => (
                 <Cell key={entry.name} fill={this.colors[index % this.colors.length]} />
               ))}

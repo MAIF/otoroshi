@@ -27,7 +27,8 @@ function Methods({ frontend }) {
         <span
           key={`frontendmethod-${i}`}
           className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
           {m}
         </span>
       ))
@@ -127,7 +128,8 @@ class RouteForms extends React.Component {
           borderBottomLeftRadius: '4px',
           borderBottomRightRadius: '4px',
         }}
-        onClick={(e) => e.stopPropagation()}>
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="d-flex justify-content-end">
           <button
             type="button"
@@ -138,7 +140,8 @@ class RouteForms extends React.Component {
               this.props.history.replace(
                 `${this.props.url.split('?')[0]}?tab=route_plugins&view_plugins=${this.props.index}`
               );
-            }}>
+            }}
+          >
             <i className="fas fa-edit" />
           </button>
           <button
@@ -149,7 +152,8 @@ class RouteForms extends React.Component {
               window.newConfirm('Delete this route ?').then((ok) => {
                 if (ok) this.props.removeRoute(e);
               });
-            }}>
+            }}
+          >
             <i className="fas fa-trash" />
           </button>
           <button
@@ -161,7 +165,8 @@ class RouteForms extends React.Component {
               this.setState({
                 usingJsonView: !usingJsonView,
               });
-            }}>
+            }}
+          >
             {usingJsonView ? 'Form view' : 'Advanced json'}
           </button>
         </div>
@@ -235,13 +240,15 @@ const Route = (props) => {
     <div
       className="route-item my-2"
       style={{ minHeight: open ? '200px' : 'initial' }}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       <div
         className={`d-flex-between ${open ? 'route-forms-header' : ''}`}
         style={{
           padding: '6px',
           paddingBottom: open ? '8px' : '6px',
-        }}>
+        }}
+      >
         <div className="d-flex-between">
           <Methods frontend={frontend} />
           <div className="flex-column">
@@ -255,7 +262,8 @@ const Route = (props) => {
           <button
             className="btn btn-sm"
             style={{ background: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
-            onClick={onClick}>
+            onClick={onClick}
+          >
             <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} />
           </button>
         </div>
@@ -291,7 +299,8 @@ function OpenapiImport(props) {
           onClick={(e) => {
             e.stopPropagation();
             props.cancel(e);
-          }}>
+          }}
+        >
           Close
         </button>
         <button
@@ -300,7 +309,8 @@ function OpenapiImport(props) {
           onClick={(e) => {
             e.stopPropagation();
             props.ok(state);
-          }}>
+          }}
+        >
           Ok
         </button>
       </div>
@@ -399,7 +409,8 @@ export default class RouteCompositions extends React.Component {
             onClick={() => {
               const newItem = cloneDeep(templates?.routes[0]);
               this.props.setRoutes([newItem, ...service.routes]);
-            }}>
+            }}
+          >
             <i className="fas fa-road me-1" />
             Create a new route
           </button>
@@ -429,7 +440,8 @@ export default class RouteCompositions extends React.Component {
               className="text-center"
               style={{
                 fontSize: '1.25em',
-              }}>
+              }}
+            >
               Your route compositions is empty. Start by adding a new route or importing all routes
               from your open api.
             </h4>

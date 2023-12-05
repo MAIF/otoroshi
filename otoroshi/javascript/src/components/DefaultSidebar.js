@@ -163,7 +163,8 @@ export function DefaultSidebar(props) {
               writeStorage(shortcuts.filter((f) => f));
             }
           }, 50); // delay to avoid simple click
-        }}>
+        }}
+      >
         {openedSidebar && <p className="ps-2">Shortcuts</p>}
         {shortcuts
           .map((shortcut) => {
@@ -226,12 +227,14 @@ export function DefaultSidebar(props) {
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
             style={{
               opacity: !hightlighted ? 1 : 0.5,
-            }}>
+            }}
+          >
             <Link
               to="/features"
               className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
               {...createTooltip('All features')}
-              onClick={clearSidebar}>
+              onClick={clearSidebar}
+            >
               <img
                 className="icon-menu icon-svg"
                 src="/assets/images/svgs/menu-icon.svg"
@@ -307,10 +310,12 @@ function Block({
           setHighlighted();
         }
         setOpen(!open);
-      }}>
+      }}
+    >
       <div
         className="d-flex justify-content-between align-items-center px-3"
-        style={{ color: 'var(--text)' }}>
+        style={{ color: 'var(--text)' }}
+      >
         {title}
         <i className="fas fa-chevron-down" />
       </div>
@@ -341,14 +346,16 @@ function Block({
                       if (!addShortcutButton) {
                         writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
                       }
-                    }}>
+                    }}
+                  >
                     <div
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
                         alignItems: 'center',
                         color: alreadyInShortcuts ? '#888' : null,
-                      }}>
+                      }}
+                    >
                       <CustomIcon icon={icon} title={iconTitle} />
                       <div
                         title={iconTitle}
@@ -358,7 +365,8 @@ function Block({
                           textOverflow: 'ellipsis',
                           marginLeft: 15,
                           maxWidth: 130,
-                        }}>
+                        }}
+                      >
                         {title}
                       </div>
                     </div>
@@ -402,14 +410,16 @@ function Block({
                     if (!addShortcutButton) {
                       writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
                     }
-                  }}>
+                  }}
+                >
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'row',
                       alignItems: 'center',
                       color: alreadyInShortcuts ? '#888' : null,
-                    }}>
+                    }}
+                  >
                     <CustomIcon icon={icon} title={iconTitle} />
                     <div
                       title={iconTitle}
@@ -419,7 +429,8 @@ function Block({
                         textOverflow: 'ellipsis',
                         marginLeft: 15,
                         maxWidth: 130,
-                      }}>
+                      }}
+                    >
                       {title}
                     </div>
                   </div>
@@ -477,7 +488,8 @@ function SidebarLink({
           : 'none',
         zIndex: dragging ? 100 : 1,
         background: dragging ? 'var(--bg-color_level1)' : 'inherit',
-      }}>
+      }}
+    >
       {openedSidebar && (
         <i
           className="fas fa-grip-vertical nav-item-eye d-flex align-items-center m-0"
@@ -500,7 +512,8 @@ function SidebarLink({
           className={`nav-link ${rootClassName(path)}`}
           {...createTooltip(text)}
           onClick={clearSidebar}
-          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
           <span style={{ marginTop: '4px' }} title={iconTitle}>
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
@@ -514,7 +527,8 @@ function SidebarLink({
           className={`nav-link`}
           {...createTooltip(text)}
           onClick={clearSidebar}
-          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
           <span style={{ marginTop: '4px' }} title={iconTitle}>
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}

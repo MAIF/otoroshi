@@ -194,8 +194,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 

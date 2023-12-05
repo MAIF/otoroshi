@@ -770,7 +770,9 @@ class GatewayRequestHandler(
 
       if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
         val redirection = hashOpt.map(h => req.theUrl.replace(s"&hash=$h", "")).getOrElse("--")
-        otoroshi.controllers.AuthController.logger.debug(s"[session ${sessionIdOpt.getOrElse("--")}] redirected to '${redirection}' with hash '${hashOpt.getOrElse("--")}', expecting: ${env.sign(redirection)}")
+        otoroshi.controllers.AuthController.logger
+          .debug(s"[session ${sessionIdOpt.getOrElse("--")}] redirected to '${redirection}' with hash '${hashOpt
+            .getOrElse("--")}', expecting: ${env.sign(redirection)}")
       }
       (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
         case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>

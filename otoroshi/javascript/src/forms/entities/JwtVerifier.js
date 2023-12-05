@@ -115,8 +115,7 @@ const VERIFIER_STRATEGIES = [
   {
     strategy: 'Sign',
     title: ['Verify and re-sign'],
-    desc:
-      'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
+    desc: 'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
     tags: ['verify', 'sign'],
   },
   {
@@ -137,7 +136,8 @@ const StrategyForm = {
           <LabelAndInput label="Type">
             <span
               className="d-flex align-items-center"
-              style={{ height: '100%', color: 'var(--color-red)' }}>
+              style={{ height: '100%', color: 'var(--color-red)' }}
+            >
               {props.value}
             </span>
           </LabelAndInput>
@@ -164,7 +164,8 @@ const StrategyForm = {
                 gap: '10px',
                 flexWrap: 'wrap',
                 justifyContent: 'flex-start',
-              }}>
+              }}
+            >
               {VERIFIER_STRATEGIES.map(({ strategy, desc, title, tags }) => {
                 return (
                   <Button
@@ -179,7 +180,8 @@ const StrategyForm = {
                       props.onChange(strategy);
                       setOpen(false);
                     }}
-                    key={strategy}>
+                    key={strategy}
+                  >
                     <div style={{ flex: 0.2 }}>
                       {title.map((t, i) => (
                         <h3
@@ -188,7 +190,8 @@ const StrategyForm = {
                             margin: 0,
                             marginTop: i > 0 ? '1px' : 0,
                           }}
-                          key={t}>
+                          key={t}
+                        >
                           {t}
                         </h3>
                       ))}
@@ -203,7 +206,8 @@ const StrategyForm = {
                           padding: '4px',
                           background: '#515151',
                           width: '100%',
-                        }}>
+                        }}
+                      >
                         {['Generate', 'Verify', 'Sign', 'Transform']
                           .filter((tag) => tags.includes(tag.toLocaleLowerCase()))
                           .map((tag) => (
@@ -213,7 +217,8 @@ const StrategyForm = {
                               style={{
                                 minWidth: '80px',
                                 padding: '2px 8px 2px 3px',
-                              }}>
+                              }}
+                            >
                               <i
                                 className={`fas fa-${
                                   tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
@@ -440,8 +445,7 @@ export default {
               props: {
                 placeholderKey: 'Field name',
                 placeholderValue: 'Field value',
-                help:
-                  'When the JWT token is checked, each field specified here will be verified with the provided value',
+                help: 'When the JWT token is checked, each field specified here will be verified with the provided value',
               },
             },
             arrayFields: {
@@ -450,8 +454,7 @@ export default {
               props: {
                 placeholderKey: 'Field name',
                 placeholderValue: 'One or more comma separated values in the array',
-                help:
-                  'When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array',
+                help: 'When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array',
               },
             },
           },
@@ -536,8 +539,7 @@ export default {
                   props: {
                     placeholderKey: 'Field name',
                     placeholderValue: 'Field value',
-                    help:
-                      'When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name',
+                    help: 'When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name',
                   },
                 },
                 values: {
@@ -546,8 +548,7 @@ export default {
                   props: {
                     placeholderKey: 'Field name',
                     placeholderValue: 'Field value',
-                    help:
-                      'When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value',
+                    help: 'When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value',
                   },
                 },
                 remove: {

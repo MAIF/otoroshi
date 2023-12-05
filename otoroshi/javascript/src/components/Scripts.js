@@ -132,7 +132,8 @@ class PluginsDescription extends Component {
                           position: 'absolute',
                           right: 20,
                           top: 20,
-                        }}>
+                        }}
+                      >
                         <i className="fas fa-share" /> documentation
                       </a>
                     )}
@@ -144,7 +145,8 @@ class PluginsDescription extends Component {
                         position: 'absolute',
                         right: 20,
                         top: 20,
-                      }}>
+                      }}
+                    >
                       <i className="fas fa-eye" /> show config. panel
                     </button>
                   </div>
@@ -157,7 +159,8 @@ class PluginsDescription extends Component {
                         flexDirection: 'row',
                         justifyContent: 'flex-end',
                         height: 40,
-                      }}>
+                      }}
+                    >
                       <button
                         type="button"
                         className="btn btn-sm btn-primary"
@@ -166,7 +169,8 @@ class PluginsDescription extends Component {
                           position: 'absolute',
                           right: 20,
                           top: 20,
-                        }}>
+                        }}
+                      >
                         <i className="fas fa-eye" /> show config. panel
                       </button>
                     </div>
@@ -178,7 +182,8 @@ class PluginsDescription extends Component {
                       className="plugin-doc"
                       style={{
                         flexDirection: 'column',
-                      }}>
+                      }}
+                    >
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <div className="btn-group">
                           {!!script.defaultConfig && (
@@ -190,7 +195,8 @@ class PluginsDescription extends Component {
                                 position: 'absolute',
                                 right: 20,
                                 top: 20,
-                              }}>
+                              }}
+                            >
                               Inject default config.
                             </button>
                           )}
@@ -204,7 +210,8 @@ class PluginsDescription extends Component {
                               position: 'absolute',
                               right: 20,
                               top: 20,
-                            }}>
+                            }}
+                          >
                             documentation
                           </a>
                         )}
@@ -216,7 +223,8 @@ class PluginsDescription extends Component {
                             position: 'absolute',
                             right: 20,
                             top: 20,
-                          }}>
+                          }}
+                        >
                           <i className="fas fa-eye-slash" /> hide config. panel
                         </button>
                       </div>
@@ -226,7 +234,8 @@ class PluginsDescription extends Component {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                        }}>
+                        }}
+                      >
                         <div style={{ fontSize: 24, color: 'var(--color-primary)' }}>
                           {script.name}
                         </div>
@@ -282,8 +291,8 @@ export class Scripts extends Component {
           }&excluded_types=${this.props.excludedTypes.join(',')}`
         : `/bo/api/proxy/api/scripts/_list?type=${this.props.type}`
       : this.props.excludedTypes
-      ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
-      : '/bo/api/proxy/api/scripts/_list';
+        ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
+        : '/bo/api/proxy/api/scripts/_list';
     const displayKind = !this.props.type;
     return (
       <div data-scripts={this.props.label}>

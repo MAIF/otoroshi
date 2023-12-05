@@ -91,7 +91,8 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
         style={{
           backgroundColor: 'var(--bg-color_level2)',
           color: 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
       </button>
@@ -120,7 +121,8 @@ function InformationsTab({ isActive, entity, value, history }) {
           borderBottomRightRadius: 0,
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
       </button>
@@ -147,7 +149,8 @@ function RoutesTab({ isActive, entity, value, history }) {
         style={{
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
       </button>
@@ -176,7 +179,8 @@ function DesignerTab({ isActive, entity, value, history }) {
           borderBottomRightRadius: 0,
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
       </button>
@@ -205,7 +209,8 @@ function ExtensionTab({ isActive, entity, value, history, item }) {
           borderBottomRightRadius: 0,
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className={`${item.icon} me-2`} style={{ fontSize: '1.33333em' }} />
         {item.label}
       </button>
@@ -235,7 +240,8 @@ function TesterButton({
           height: '100%',
           opacity: hidden ? 0 : 1,
           pointerEvents: hidden ? 'none' : 'auto',
-        }}>
+        }}
+      >
         <button
           type="button"
           className="btn btn-sm d-flex align-items-center dark-background h-100"
@@ -248,7 +254,8 @@ function TesterButton({
             borderRadius: '.2rem !important',
             backgroundColor: 'var(--bg-color_level2)',
             color: 'var(--color_level2)',
-          }}>
+          }}
+        >
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
         </button>
@@ -370,7 +377,8 @@ function ManagerTitle({
           routes: 'Routes',
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
-      }>
+      }
+    >
       {!isCreation &&
         tabs
           .filter((tab) => !tab.visible || tab.visible())
@@ -646,7 +654,8 @@ const RoutesView = ({ history, globalEnv }) => {
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',
                   marginLeft: 5,
-                }}>
+                }}
+              >
                 <i className="fas fa-hat-wizard" /> Create with wizard
               </button>
               <button
@@ -656,7 +665,8 @@ const RoutesView = ({ history, globalEnv }) => {
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',
                   marginLeft: 5,
-                }}>
+                }}
+              >
                 <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
               </button>
             </>

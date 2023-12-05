@@ -156,7 +156,8 @@ export default function EditGroup({}) {
           top: 0,
           marginTop: 'calc(-2.5rem - 20px)',
           right: 0,
-        }}>
+        }}
+      >
         <FeedbackButton
           style={{
             padding: '0 .5rem 0 0.25rem',

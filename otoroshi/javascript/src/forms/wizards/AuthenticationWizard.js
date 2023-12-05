@@ -46,7 +46,8 @@ function Breadcrumb({ value, onClick }) {
               textOverflow: 'ellipsis',
               overflow: 'hidden',
             }}
-            onClick={() => onClick(i)}>
+            onClick={() => onClick(i)}
+          >
             {part}
             {i + 1 < value.length && <i className="fas fa-chevron-right mx-1" />}
           </span>
@@ -104,18 +105,21 @@ function Selector({ setMode, disableSelectMode }) {
               type="dark"
               className="py-3 my-2"
               style={{ border: '1px solid #f9b000' }}
-              onClick={() => setMode(mode)}>
+              onClick={() => setMode(mode)}
+            >
               <h3
                 className="wizard-h3--small"
                 style={{
                   textAlign: 'left',
                   fontWeight: 'bold',
-                }}>
+                }}
+              >
                 {title}
               </h3>
               <label
                 className="d-flex align-items-center justify-content-between"
-                style={{ flex: 1 }}>
+                style={{ flex: 1 }}
+              >
                 {text}
                 <i className="fas fa-chevron-right ms-3" />
               </label>
@@ -540,7 +544,8 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
         className="d-flex mx-auto"
         style={{
           flexDirection: 'column',
-        }}>
+        }}
+      >
         {breadcrumb.map((part, i) => {
           return (
             <FakeLoader
@@ -565,7 +570,8 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
           type="save"
           className="mx-auto mt-3"
           disabled={error}
-          onClick={() => history.push(`/auth-configs/edit/${authentication.id}`)}>
+          onClick={() => history.push(`/auth-configs/edit/${authentication.id}`)}
+        >
           <i className={`fas fa-${error ? 'times' : 'check'} me-1`} />
           {error
             ? 'Something wrong happened : try to check your configuration'
@@ -604,32 +610,27 @@ function TypeStep({ value, onChange }) {
     {
       type: 'oauth2',
       title: 'OAuth2 / OIDC provider',
-      desc:
-        'OAuth 2.0 is the industry-standard protocol for authorization. OAuth 2.0 focuses on client developer simplicity while providing specific authorization flows for web applications, desktop applications, mobile phones, and living room devices.',
+      desc: 'OAuth 2.0 is the industry-standard protocol for authorization. OAuth 2.0 focuses on client developer simplicity while providing specific authorization flows for web applications, desktop applications, mobile phones, and living room devices.',
     },
     {
       type: 'oauth1',
       title: 'OAuth1 provider',
-      desc:
-        'OAuth is an authorization method used to provide access to resources over the HTTP protocol.',
+      desc: 'OAuth is an authorization method used to provide access to resources over the HTTP protocol.',
     },
     {
       type: 'basic',
       title: 'In memory provider',
-      desc:
-        'This database provider allows Otoroshi to be used with an in-memory database. While some users use the in-memory database for testing, this is generally discouraged',
+      desc: 'This database provider allows Otoroshi to be used with an in-memory database. While some users use the in-memory database for testing, this is generally discouraged',
     },
     {
       type: 'ldap',
       title: 'Ldap auth. provider',
-      desc:
-        'The Lightweight Directory Access Protocol is an open, vendor-neutral, industry standard application protocol for accessing and maintaining distributed directory information services over an Internet Protocol (IP) network.',
+      desc: 'The Lightweight Directory Access Protocol is an open, vendor-neutral, industry standard application protocol for accessing and maintaining distributed directory information services over an Internet Protocol (IP) network.',
     },
     {
       type: 'saml',
       title: 'SAML v2 provider',
-      desc:
-        'Security Assertion Markup Language 2.0 is a version of the SAML standard for exchanging authentication and authorization identities between security domains.',
+      desc: 'Security Assertion Markup Language 2.0 is a version of the SAML standard for exchanging authentication and authorization identities between security domains.',
     },
   ];
 
@@ -643,7 +644,8 @@ function TypeStep({ value, onChange }) {
               gap: '10px',
               flexWrap: 'wrap',
               justifyContent: 'flex-start',
-            }}>
+            }}
+          >
             {PROVIDERS.map(({ type, desc, title }) => (
               <SelectableButton
                 value={type}
@@ -678,7 +680,8 @@ function OAuth2PreConfiguration({ value, onChange }) {
               gap: '10px',
               flexWrap: 'wrap',
               justifyContent: 'flex-start',
-            }}>
+            }}
+          >
             {[
               {
                 type: 'fast-config',
@@ -1075,7 +1078,8 @@ function GetPassword({ password }) {
           background: '#494949',
           borderRadius: '4px',
           position: 'relative',
-        }}>
+        }}
+      >
         <p className="m-0">{password}</p>
 
         <Button
@@ -1102,7 +1106,8 @@ function GetPassword({ password }) {
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-          }}>
+          }}
+        >
           {!copied && <i className="fas fa-copy" />}
           {copied && <i className="fas fa-check" />}
         </Button>
@@ -1154,11 +1159,10 @@ class User extends React.Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
-          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
-            (c) => {
+          publicKeyCredentialCreationOptions.excludeCredentials =
+            publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
-            }
-          );
+            });
           return navigator.credentials
             .create(
               {
@@ -1261,12 +1265,14 @@ class User extends React.Component {
           />
           <div
             className="d-flex align-items-center justify-content-center"
-            style={{ minWidth: '84px' }}>
+            style={{ minWidth: '84px' }}
+          >
             <i className={`fas fa-${password ? 'check' : 'times'}`} />
           </div>
           <div
             style={{ minWidth: '84px' }}
-            className="d-flex align-items-center justify-content-center">
+            className="d-flex align-items-center justify-content-center"
+          >
             <Dropdown>
               <SquareButton
                 className="btn-sm"
@@ -1328,7 +1334,8 @@ function SelectableButton({ value, expected, title, desc, onChange }) {
         maxWidth: '235px',
       }}
       onClick={() => onChange(value)}
-      key={value}>
+      key={value}
+    >
       <div style={{ flex: 0.2 }}>
         <h3 className="wizard-h3--small " style={{ margin: 0 }}>
           {title}

@@ -270,7 +270,8 @@ class BackOfficeAppContainer extends Component {
             reloadEnv: this.reloadEnv,
             openedSidebar: this.state.openedSidebar,
             toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
-          }}>
+          }}
+        >
           <ReloadNewVersion />
           {this.state.env && (
             <>
@@ -291,7 +292,8 @@ class BackOfficeAppContainer extends Component {
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
-                id="sidebar">
+                id="sidebar"
+              >
                 <i
                   className={`fas fa-chevron-${
                     this.state.openedSidebar ? 'left' : 'right'
@@ -313,7 +315,8 @@ class BackOfficeAppContainer extends Component {
                     {
                       // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                     }
-                  }>
+                  }
+                >
                   {this.state.env && (
                     <GlobalTenantSelector
                       env={this.state.env}
@@ -325,7 +328,8 @@ class BackOfficeAppContainer extends Component {
                     <li
                       className={`nav-item mt-0 ${
                         this.state.openedSidebar ? 'nav-item--open' : ''
-                      }`}>
+                      }`}
+                    >
                       <Link
                         to="/"
                         className={`nav-link ${
@@ -335,7 +339,8 @@ class BackOfficeAppContainer extends Component {
                         onClick={() => {
                           DynamicTitle.setContent(null);
                           DynamicSidebar.setContent(null);
-                        }}>
+                        }}
+                      >
                         <i
                           className={`fab fa-fort-awesome ${
                             this.state.openedSidebar ? 'me-3' : ''
@@ -872,7 +877,8 @@ class BackOfficeAppContainer extends Component {
                           alignItems: 'center',
                           width: '100%',
                           height: '70vh',
-                        }}>
+                        }}
+                      >
                         <img
                           src={this.state.env ? this.state.env.otoroshiLogo : ''}
                           className="logoOtoroshi"
@@ -882,7 +888,8 @@ class BackOfficeAppContainer extends Component {
                             fontSize: 20,
                             marginBottom: 20,
                             marginTop: 20,
-                          }}>
+                          }}
+                        >
                           Ooops, an error occured
                         </div>
                         <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
@@ -897,13 +904,15 @@ class BackOfficeAppContainer extends Component {
                                 },
                                 window.history.back
                               );
-                            }}>
+                            }}
+                          >
                             <i className="fas fa-arrow-left" /> back
                           </button>
                           <button
                             type="button"
                             className="btn btn-danger ms-2"
-                            onClick={(e) => window.location.reload()}>
+                            onClick={(e) => window.location.reload()}
+                          >
                             <i className="fas fa-redo" /> reload
                           </button>
                         </div>
@@ -989,7 +998,8 @@ class GlobalTenantSelector extends Component {
             data-placement="top"
             title="Change the tenant"
             href="/bo/dashboard/"
-            onClick={(e) => this.handleClick(e)}>
+            onClick={(e) => this.handleClick(e)}
+          >
             <i className="fas fa-building"></i>
             {this.props.openedSidebar && (
               <div className="global-tenant-selector">

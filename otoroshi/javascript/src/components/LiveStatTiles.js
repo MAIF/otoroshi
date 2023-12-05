@@ -49,7 +49,8 @@ class Metric extends Component {
         className="metric"
         style={{
           width: props.width || 300,
-        }}>
+        }}
+      >
         <div className="metric-text">
           <span className="metric-text-value">{props.value}</span>
           <span className="metric-text-title">{props.legend}</span>
@@ -152,13 +153,15 @@ export class LiveStatTiles extends Component {
             alignItems: 'center',
             width: '100%',
             height: 300,
-          }}>
+          }}
+        >
           <svg
             width="142px"
             height="142px"
             viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid"
-            className="uil-ring-alt">
+            className="uil-ring-alt"
+          >
             <rect x="0" y="0" width="100" height="100" fill="none" className="bk" />
             <circle cx="50" cy="50" r="40" stroke="#222222" fill="none" strokeLinecap="round" />
             <circle cx="50" cy="50" r="40" stroke="#f9b000" fill="none" strokeLinecap="round">
@@ -185,7 +188,8 @@ export class LiveStatTiles extends Component {
         style={{
           maxWidth: '1050px',
           margin: '0 auto',
-        }}>
+        }}
+      >
         <h4 className="live-title">LIVE METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />

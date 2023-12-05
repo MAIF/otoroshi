@@ -9,8 +9,8 @@ export function JsonExportButton({ value, entityKind }) {
         const itemName = entityKind
           ? entityKind.toLowerCase()
           : what === 'routes'
-          ? 'route'
-          : 'route-composition';
+            ? 'route'
+            : 'route-composition';
         const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
         const name = value.id
           .replace(/ /g, '-')

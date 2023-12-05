@@ -62,7 +62,8 @@ export class NotFoundPage extends Component {
               flex: 1,
               alignSelf: 'flex-end',
               color: 'var(--bs-white)',
-            }}>
+            }}
+          >
             404
           </p>
           <img src={this.props.env ? this.props.env.otoroshiLogo : ''} className="logoOtoroshi" />

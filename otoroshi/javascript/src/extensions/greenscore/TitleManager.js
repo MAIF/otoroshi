@@ -23,7 +23,8 @@ export function Tab({ isActive, title, icon, to, fillBackground }) {
           borderBottomRightRadius: '0px',
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         {icon && <i className={`fas fa-${icon} me-2`} style={{ fontSize: '1.33333em' }} />}
         {title}
       </button>
@@ -173,7 +174,8 @@ export function ManagerTitle({}) {
                     pathname: '/extensions/green-score/groups/new',
                   });
                 }
-              }}>
+              }}
+            >
               <i className="fas fa-plus-circle me-2" />
               Add new group
             </button>

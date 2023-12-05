@@ -98,7 +98,8 @@ export class GroupRoutes extends React.Component {
         />
         <div
           className="col-sm-10 offset-2 pb-3"
-          style={{ background: 'var(--bg-color_level2)', borderRadius: 6 }}>
+          style={{ background: 'var(--bg-color_level2)', borderRadius: 6 }}
+        >
           <RoutesTable
             routes={routes}
             editRoute={this.editRoute}
@@ -120,7 +121,8 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
           display: 'grid',
           gridTemplateColumns: '1fr 64px',
           padding: '0rem 1rem',
-        }}>
+        }}
+      >
         <label style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}>
           Route name
         </label>
@@ -142,7 +144,8 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
               display: 'grid',
               gridTemplateColumns: '1fr 64px',
               padding: '0rem 1rem',
-            }}>
+            }}
+          >
             <div style={{ flex: 1 }}>
               <label>{allRoutes.find((r) => r.id === routeId)?.name}</label>
             </div>
@@ -150,7 +153,8 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
               <button
                 onClick={() => editRoute(routeId)}
                 type="button"
-                className="btn btn-sm me-1 btn-success">
+                className="btn btn-sm me-1 btn-success"
+              >
                 <i className="fa fa-pencil-alt" />
               </button>
               <button
@@ -164,7 +168,8 @@ const RoutesTable = ({ routes, editRoute, deleteRoute, allRoutes }) => {
                     .then((ok) => {
                       if (ok) deleteRoute(routeId);
                     });
-                }}>
+                }}
+              >
                 <i className="fas fa-trash" style={{ color: 'var(--text)' }} />
               </button>
             </div>
@@ -269,7 +274,8 @@ const RoutesSelector = ({ allRoutes, addRoute }) => {
           onClick={() => {
             addRoute(route);
             setRoute(route);
-          }}>
+          }}
+        >
           Add route
         </button>
       </div>
@@ -380,7 +386,8 @@ export function ThresholdsTable({ value, onChange }) {
       <p style={{ padding: '1rem 1rem 3rem' }}>
         <i
           className="fas fa-bullhorn me-3"
-          style={{ color: 'var(--text)', fontSize: '1.25rem' }}></i>
+          style={{ color: 'var(--text)', fontSize: '1.25rem' }}
+        ></i>
         These thresholds are used to evaluate the route, on production, consumption and time spent
         processing data.
       </p>
@@ -390,23 +397,27 @@ export function ThresholdsTable({ value, onChange }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           padding: '0rem 1rem .5rem 1.5rem',
-        }}>
+        }}
+      >
         <label style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}>
           Name
         </label>
         <span
           style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}
-          className="text-center">
+          className="text-center"
+        >
           Excellent
         </span>
         <span
           style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}
-          className="text-center">
+          className="text-center"
+        >
           Sufficient
         </span>
         <span
           style={{ textTransform: 'uppercase', fontWeight: 600, color: 'var(--text)' }}
-          className="text-center">
+          className="text-center"
+        >
           Poor
         </span>
       </div>
@@ -427,7 +438,8 @@ export function ThresholdsTable({ value, onChange }) {
           <div
             key={`${key}${i}`}
             style={{ color: 'var(--text)', fontSize: '1rem', fontWeight: 'bold' }}
-            className="mt-3">
+            className="mt-3"
+          >
             {title}
           </div>
         ) : (
@@ -440,7 +452,8 @@ export function ThresholdsTable({ value, onChange }) {
               padding: '0 1rem 0 1.5rem',
               marginTop: '.25rem',
               gap: '.25rem',
-            }}>
+            }}
+          >
             <BoundsInput
               title={title}
               unit={unit}
@@ -515,7 +528,8 @@ function RulesTables({ rest, states, onRulesChange }) {
                   onClick={(e) => {
                     e.stopPropagation();
                     onRulesChange(!enabled, id);
-                  }}>
+                  }}
+                >
                   <div>
                     <p className="mb-0" style={{ fontWeight: 'bold' }}>
                       {description}

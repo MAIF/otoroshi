@@ -183,7 +183,8 @@ export function ResourceLoaderPage({ setTitle }) {
                       padding: '0 12 0 12',
                       backgroundColor: resource.error ? 'var(--color-red)' : '#eee',
                       color: '#000',
-                    }}>
+                    }}
+                  >
                     {resource.error || resource.kind}
                   </span>
                 </td>
@@ -205,7 +206,8 @@ export function ResourceLoaderPage({ setTitle }) {
                 <td>
                   <span
                     className="badge"
-                    style={{ backgroundColor: resource.status ? 'var(--color-primary)' : '' }}>
+                    style={{ backgroundColor: resource.status ? 'var(--color-primary)' : '' }}
+                  >
                     {resource.status}
                   </span>
                 </td>
@@ -240,7 +242,8 @@ export function ResourceLoaderPage({ setTitle }) {
                       })
                   );
                 });
-              }}>
+              }}
+            >
               Import selected resources
             </button>
           )}
@@ -276,7 +279,8 @@ export function ResourceLoaderPage({ setTitle }) {
           type="button"
           disabled={rawResources.length <= 0}
           className="btn btn-success"
-          onClick={loadResources}>
+          onClick={loadResources}
+        >
           Load resources
         </button>
       </div>
@@ -287,7 +291,8 @@ export function ResourceLoaderPage({ setTitle }) {
             style={{ paddingRight: 0 }}
             onDrop={onDrop}
             onDragOver={onDragOver}
-            onDragLeave={onDragLeave}>
+            onDragLeave={onDragLeave}
+          >
             <AceEditor
               ref={aceRef}
               name="resources-loader"
@@ -316,7 +321,8 @@ export function ResourceLoaderPage({ setTitle }) {
                 backgroundColor: 'var(--color-primary)',
                 color: '#fff',
                 fontStyle: 'italic',
-              }}>
+              }}
+            >
               Example
             </div>
             <AceEditor

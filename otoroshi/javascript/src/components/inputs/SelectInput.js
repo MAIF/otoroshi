@@ -86,7 +86,8 @@ export class SelectInput extends Component {
         <div className="row mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 col-form-label">
+            className="col-xs-12 col-sm-2 col-form-label"
+          >
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div className="col-sm-10">
@@ -102,7 +103,8 @@ export class SelectInput extends Component {
         <div className="row mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 col-form-label">
+            className="col-xs-12 col-sm-2 col-form-label"
+          >
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div className="col-sm-10">
@@ -137,7 +139,8 @@ export class SelectInput extends Component {
         {!this.props.flex && (
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 col-form-label">
+            className="col-xs-12 col-sm-2 col-form-label"
+          >
             {this.props.label} <Help text={this.props.help} />
           </label>
         )}

@@ -471,12 +471,13 @@ const KafkaExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? 'var(--color-green)'
                     : status === 'Not tested'
-                    ? '#f39c12'
-                    : 'var(--color-red)',
+                      ? '#f39c12'
+                      : 'var(--color-red)',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',
-              }}>
+              }}
+            >
               {status !== 'Successful' ? (
                 <i className="fas fa-times-circle" />
               ) : (
@@ -620,7 +621,8 @@ export class NewExporterForm extends Component {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={this.testMatchAndProject}>
+                  onClick={this.testMatchAndProject}
+                >
                   <i className="fas fa-vial" /> Test filtering and projection expressions
                 </button>
               </div>
@@ -657,7 +659,8 @@ export class NewExporterForm extends Component {
             <Collapse
               collapsed={this.data().allCollapsed}
               initCollapsed={false}
-              label="Exporter config">
+              label="Exporter config"
+            >
               <Form
                 value={() => {
                   if (this.data().type === 'mailer') {
@@ -773,7 +776,8 @@ const ChooserButton = ({ isActive, value, onChange, label, description, style = 
         maxHeight: '80px !important',
         minHeight: '80px',
         ...style,
-      }}>
+      }}
+    >
       <span>{label}</span>
       {description && <span style={{ fontSize: '.75em' }}>{description}</span>}
     </button>
@@ -1161,8 +1165,7 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka keypass',
           placeholder: 'secret',
           type: 'password',
-          help:
-            'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
+          help: 'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
         },
       },
       keystore: {
@@ -1171,8 +1174,7 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'Kafka keystore path',
           placeholder: '/home/bas/client.keystore.jks',
-          help:
-            'The keystore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+          help: 'The keystore path on the server if you use a keystore/truststore to connect to Kafka cluster',
         },
       },
       truststore: {
@@ -1181,8 +1183,7 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
-          help:
-            'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+          help: 'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
         },
       },
       'saslConfig.username': {
@@ -1521,8 +1522,7 @@ const possibleExporterConfigFormValues = {
         type: 'array',
         props: {
           label: 'HTTP methods',
-          help:
-            'filter only the http methods you want to capture. If none specified, all will be captured !',
+          help: 'filter only the http methods you want to capture. If none specified, all will be captured !',
         },
       },
       preferBackendRequest: {
@@ -1594,8 +1594,7 @@ const possibleExporterConfigFormValues = {
         type: 'array',
         props: {
           label: 'HTTP methods',
-          help:
-            'filter only the http methods you want to capture. If none specified, all will be captured !',
+          help: 'filter only the http methods you want to capture. If none specified, all will be captured !',
         },
       },
     },
@@ -1894,7 +1893,8 @@ class TestMatchAndProjectModal extends Component {
             width: '100%',
             height: '100%',
             marginTop: 30,
-          }}>
+          }}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%' }}>
             <JsonObjectAsCodeInput
               label="Filtering"
@@ -1930,7 +1930,8 @@ class TestMatchAndProjectModal extends Component {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-          }}>
+          }}
+        >
           <div className="btn-group">
             <button type="button" className="btn btn-success" onClick={this.test}>
               <i className="fas fa-play" /> run

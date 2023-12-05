@@ -30,12 +30,14 @@ function VersionButton() {
       <a
         href={`https://github.com/MAIF/otoroshi/releases/tag/v${window.__currentVersion}`}
         target="_blank"
-        className="dropdown-item d-flex align-items-center justify-content-start">
+        className="dropdown-item d-flex align-items-center justify-content-start"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 448.1 438.6"
           className="otoroshi_logo"
-          width="14px">
+          width="14px"
+        >
           <g id="Calque_1-2">
             <path
               className="st0"
@@ -864,7 +866,8 @@ export class TopBar extends Component {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="monkeyMenu"
-                viewBox="0 0 244.1 244.1">
+                viewBox="0 0 244.1 244.1"
+              >
                 <title>nihonzaru</title>
                 <g id="_x34_9a67235-e3a1-4929-8868-b30847745300">
                   <g id="b11c2c3a-c434-45dc-a441-e60dd5d9d3f6">
@@ -1179,7 +1182,8 @@ export class TopBar extends Component {
           <a
             href="https://maif.github.io/otoroshi/manual/index.html"
             target="_blank"
-            className="dropdown-item">
+            className="dropdown-item"
+          >
             <span className="fas fa-book" /> User manual
           </a>
         </li>
@@ -1347,7 +1351,8 @@ export class TopBar extends Component {
                   xmlns="http://www.w3.org/2000/svg"
                   className="monkeyMenu"
                   viewBox="0 0 244.1 244.1"
-                  style={{ width: 16, marginLeft: 0 }}>
+                  style={{ width: 16, marginLeft: 0 }}
+                >
                   <title>nihonzaru</title>
                   <g id="_x34_9a67235-e3a1-4929-8868-b30847745300">
                     <g id="b11c2c3a-c434-45dc-a441-e60dd5d9d3f6">
@@ -1556,7 +1561,8 @@ export class TopBar extends Component {
           <a
             href="https://maif.github.io/otoroshi/manual/index.html"
             target="_blank"
-            className="dropdown-item">
+            className="dropdown-item"
+          >
             <span className="fas fa-book" /> User manual
           </a>
         </li>
@@ -1694,7 +1700,8 @@ export class TopBar extends Component {
                       data-bs-toggle="collapse"
                       data-bs-target="#sidebar"
                       aria-controls="sidebar"
-                      aria-expanded="false">
+                      aria-expanded="false"
+                    >
                       <span className="navbar-toggler-icon">Menu</span>
                     </button>
                     <Link
@@ -1707,7 +1714,8 @@ export class TopBar extends Component {
                       }}
                       onClick={() => {
                         this.props.setTitle(null);
-                      }}>
+                      }}
+                    >
                       {this.brandName()}
                     </Link>
                   </div>
@@ -1717,7 +1725,8 @@ export class TopBar extends Component {
                         <span
                           title="Current line"
                           className="badge bg-success"
-                          style={{ fontSize: 20, cursor: 'pointer' }}>
+                          style={{ fontSize: 20, cursor: 'pointer' }}
+                        >
                           {selected}
                         </span>
                       </div>
@@ -1787,14 +1796,16 @@ export class TopBar extends Component {
                                     : 'var(--bg-color_level3)',
                                 }}
                                 ref={props.innerRef}
-                                {...props.innerProps}>
+                                {...props.innerProps}
+                              >
                                 <div
                                   style={{
                                     width: 60,
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                  }}>
+                                  }}
+                                >
                                   {p.env && isString(p.env) && (
                                     <span className={`badge ${this.color(p.env)}`}>{env}</span>
                                   )}
@@ -1809,7 +1820,8 @@ export class TopBar extends Component {
                             return (
                               <span
                                 style={{ display: 'flex', height: 20, paddingRight: 5 }}
-                                title="You can jump directly into the search bar from anywhere just by typing '/'">
+                                title="You can jump directly into the search bar from anywhere just by typing '/'"
+                              >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
                                   <defs>
                                     <rect id="a" width="19" height="20" rx="3" />
@@ -1842,7 +1854,8 @@ export class TopBar extends Component {
                         id="add-components"
                         data-bs-toggle="dropdown"
                         data-bs-auto-close="true"
-                        aria-expanded="false">
+                        aria-expanded="false"
+                      >
                         <span>Add new ...</span>
                         <i className="fas fa-chevron-down" />
                       </Button>
@@ -1856,7 +1869,8 @@ export class TopBar extends Component {
                           padding: '12px',
                           zIndex: 4000,
                           gap: 5,
-                        }}>
+                        }}
+                      >
                         <li className="d-flex">
                           <Link to="/services">Service</Link>
                         </li>
@@ -1900,7 +1914,8 @@ export class TopBar extends Component {
                       disabled={shortcutDisabled}
                       title="Add current page to sidebar shortcuts"
                       onClick={this.addShortcut}
-                      style={{ marginLeft: 10 }}>
+                      style={{ marginLeft: 10 }}
+                    >
                       <i className="fas fa-thumbtack"></i>
                     </Button>
                   </form>
@@ -1918,19 +1933,22 @@ export class TopBar extends Component {
                     {this.props.changePassword && (
                       <div
                         onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                        className="mx-2">
+                        className="mx-2"
+                      >
                         <a
                           href="/bo/dashboard/admins"
                           data-toggle="dropdown"
                           role="button"
                           aria-haspopup="true"
-                          aria-expanded="false">
+                          aria-expanded="false"
+                        >
                           <span
                             className="badge"
                             data-toggle="tooltip"
                             data-placement="bottom"
                             title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
-                            style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
+                            style={{ backgroundColor: '#c9302c', marginBottom: 5 }}
+                          >
                             <i className="fas fa-exclamation-triangle" />
                           </span>
                         </a>
@@ -1966,7 +1984,8 @@ export class TopBar extends Component {
                         aria-labelledby="dropdownMenuParams"
                         onClick={(e) => {
                           this.setState({ dropdownStatus: 'closed' });
-                        }}>
+                        }}
+                      >
                         {this.props.shortMenu && this.renderShortMenu()}
                         {!this.props.shortMenu && this.renderLongMenu()}
                       </ul>
@@ -2049,7 +2068,8 @@ export class FlagsForm extends Component {
             type="button"
             className="btn btn-success"
             ref={(r) => (this.okRef = r)}
-            onClick={(e) => this.props.ok(this.state)}>
+            onClick={(e) => this.props.ok(this.state)}
+          >
             Close
           </button>
         </div>

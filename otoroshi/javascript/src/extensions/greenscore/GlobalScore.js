@@ -22,7 +22,8 @@ function Tag({ value }) {
         color: '#f9b000',
         marginBottom: '10px',
         display: 'block',
-      }}>
+      }}
+    >
       {value}
     </div>
   );
@@ -39,7 +40,8 @@ export function GlobalScore(allProps) {
             fontSize: '5rem',
             '--dynamic-raw-score-to': Math.round(score),
           }}
-          className="dynamic-raw-score"></span>
+          className="dynamic-raw-score"
+        ></span>
         <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>
           {`${maxScore ? `/${maxScore.toFixed(0)} ` : ''}`}
           <span style={{ fontWeight: 'normal' }}>{unit || '%'}</span>
@@ -56,7 +58,8 @@ export function GlobalScore(allProps) {
             fontSize: `${5 - String(score).length * 0.1}rem`,
             '--net-score-to': Math.round(score),
           }}
-          className="net-score"></span>
+          className="net-score"
+        ></span>
         <div
           style={{
             fontSize: '1rem',
@@ -67,7 +70,8 @@ export function GlobalScore(allProps) {
             right: 0,
             overflow: 'hidden',
             whiteSpace: 'nowrap',
-          }}>{`/ ${maxScore}`}</div>
+          }}
+        >{`/ ${maxScore}`}</div>
       </div>
     );
   }
@@ -103,7 +107,8 @@ export function GlobalScore(allProps) {
           display: 'flex',
           flexDirection: 'column',
           // boxShadow: props.dynamic && props.raw ? `inset ${color} 0 -4px 0px 0px` : 0
-        }}>
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -111,14 +116,15 @@ export function GlobalScore(allProps) {
             alignItems: props.under ? 'center' : 'baseline',
             justifyContent: 'center',
             flex: 1,
-          }}>
+          }}
+        >
           {props.dynamic
             ? props.raw
               ? showDynamicRawScore()
               : showGlobalScore()
             : props.raw
-            ? showNetScore()
-            : showGlobalScore()}
+              ? showNetScore()
+              : showGlobalScore()}
         </div>
 
         <h3
@@ -126,7 +132,8 @@ export function GlobalScore(allProps) {
             color: 'var(--text)',
             fontWeight: 100,
           }}
-          className="m-0 mt-1">
+          className="m-0 mt-1"
+        >
           {props.title ? props.title : props.raw ? 'Raw value' : 'Static score'}
         </h3>
 
@@ -137,7 +144,8 @@ export function GlobalScore(allProps) {
             right: 6,
             bottom: 6,
           }}
-          className="d-flex flex-column justify-content-between">
+          className="d-flex flex-column justify-content-between"
+        >
           {props.dynamic && (
             <div className="card-picto">
               <i className="fas fa-bolt" style={{ fontSize: 'initial' }} />

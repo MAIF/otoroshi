@@ -7,7 +7,8 @@ export default function Section({ title, subTitle, children, full = true }) {
         margin: full ? '5rem 0' : '1rem 0',
         width: '100%',
       }}
-      className="d-flex flex-column justify-content-center">
+      className="d-flex flex-column justify-content-center"
+    >
       <h1
         className="text-center"
         style={{
@@ -16,7 +17,8 @@ export default function Section({ title, subTitle, children, full = true }) {
           fontSize: '2.25rem',
           lineHeight: '2.5rem',
           letterSpacing: '-0.025em',
-        }}>
+        }}
+      >
         {title}
       </h1>
       <h2
@@ -25,7 +27,8 @@ export default function Section({ title, subTitle, children, full = true }) {
           color: 'var(--color_level2)',
           fontSize: '1.125rem',
           lineHeight: '2rem',
-        }}>
+        }}
+      >
         {subTitle}
       </h2>
 

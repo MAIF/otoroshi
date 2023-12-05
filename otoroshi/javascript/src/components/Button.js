@@ -17,7 +17,8 @@ export function Button({
       style={style}
       onClick={onClick}
       disabled={disabled}
-      {...props}>
+      {...props}
+    >
       {text || children}
     </button>
   );

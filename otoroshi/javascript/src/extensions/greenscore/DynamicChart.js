@@ -23,7 +23,8 @@ function Tag({ value }) {
         color: '#f9b000',
         marginBottom: '10px',
         display: 'block',
-      }}>
+      }}
+    >
       {value}
     </div>
   );
@@ -40,7 +41,8 @@ export function DynamicChart(props) {
           borderRadius: '.2rem',
           padding: '0 .5rem',
           position: 'relative',
-        }}>
+        }}
+      >
         <div style={{ maxHeight: 420, flex: 1 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -54,7 +56,8 @@ export function DynamicChart(props) {
               data={props.values.map(([key, value]) => ({
                 name: firstLetterUppercase(key.replace(/_/g, ' ')),
                 value: value * 100,
-              }))}>
+              }))}
+            >
               <CartesianGrid strokeDasharray="2 2" />
               <XAxis dataKey="name" stroke="var(--text)" />
               <YAxis stroke="var(--text)" domain={[0, 1]} />

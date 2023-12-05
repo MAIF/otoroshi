@@ -103,7 +103,8 @@ export class AuthModuleConfigsPage extends Component {
                     type="button"
                     title="Duplicate auth. module"
                     style={{ marginRight: 20 }}
-                    onClick={(e) => this.duplicate(s, ss, e)}>
+                    onClick={(e) => this.duplicate(s, ss, e)}
+                  >
                     <i className="far fa-copy" aria-hidden="true" />
                   </button>
                 </div>
@@ -123,7 +124,8 @@ export class AuthModuleConfigsPage extends Component {
                 _backgroundColor: 'var(--color-primary)',
                 _borderColor: 'var(--color-primary)',
                 marginLeft: 5,
-              }}>
+              }}
+            >
               <i className="fas fa-hat-wizard" /> Create with wizard
             </Button>
           )}

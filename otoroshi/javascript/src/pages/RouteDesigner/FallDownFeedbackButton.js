@@ -81,7 +81,8 @@ export function FeedbackButton({
             style={{
               width: '16px',
               display: 'inline-block',
-            }}>
+            }}
+          >
             {waiting && !uploading && <Icon />}
 
             {loading && (
@@ -146,13 +147,15 @@ export function FeedbackButton({
           //       throw err;
           //     });
           // }
-        }}>
+        }}
+      >
         <div
           className="me-1"
           style={{
             width: '16px',
             display: 'inline-block',
-          }}>
+          }}
+        >
           {waiting && !uploading && <Icon />}
 
           {loading && (

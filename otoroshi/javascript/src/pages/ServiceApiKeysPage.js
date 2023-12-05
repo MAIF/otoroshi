@@ -83,7 +83,8 @@ const ResetSecret = ({ changeValue }) => (
       <button
         type="button"
         className="btn btn-danger btn-sm"
-        onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}>
+        onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}
+      >
         <i className="fas fa-sync" /> Reset secret
       </button>
     </div>
@@ -132,7 +133,8 @@ class CopyCredentials extends Component {
             onClick={(e) => {
               this.clipboard.select();
               document.execCommand('Copy');
-            }}>
+            }}
+          >
             <i className="fas fa-copy" /> Copy credentials to clipboard
           </button>
         </div>
@@ -151,7 +153,8 @@ class CopyFromLineItem extends Component {
         onClick={(e) => {
           this.clipboard.select();
           document.execCommand('Copy');
-        }}>
+        }}
+      >
         <i className="fas fa-copy" />
         <input
           type="text"
@@ -402,8 +405,7 @@ const ApiKeysConstants = {
       props: {
         label: 'Read only',
         placeholder: 'The ApiKey is read only',
-        help:
-          'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
+        help: 'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
       },
     },
     allowClientIdOnly: {
@@ -411,8 +413,7 @@ const ApiKeysConstants = {
       props: {
         label: 'Allow pass by clientid only',
         placeholder: 'Allow pass by clientid only',
-        help:
-          'Here you allow client to only pass client id in a specific header in order to grant access to the underlying api',
+        help: 'Here you allow client to only pass client id in a specific header in order to grant access to the underlying api',
       },
     },
     constrainedServicesOnly: {
@@ -513,7 +514,8 @@ const ApiKeysConstants = {
           return (
             <span
               title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="badge bg-danger">
+              className="badge bg-danger"
+            >
               {item.clientName}
             </span>
           );
@@ -575,7 +577,8 @@ const ApiKeysConstants = {
                 that.state.service ? that.state.service.id : '-'
               }/apikeys/edit/${item.clientId}/stats`;
             }
-          }}>
+          }}
+        >
           <i className="fas fa-chart-bar" />
         </button>
       ),

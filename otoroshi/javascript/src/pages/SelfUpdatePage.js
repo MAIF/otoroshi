@@ -260,11 +260,10 @@ export class SelfUpdatePage extends Component {
             publicKeyCredentialCreationOptions.user.id = base64url.decode(
               publicKeyCredentialCreationOptions.user.id
             );
-            publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
-              (c) => {
+            publicKeyCredentialCreationOptions.excludeCredentials =
+              publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
                 return { ...c, id: base64url.decode(c.id) };
-              }
-            );
+              });
             return navigator.credentials
               .create(
                 {
@@ -425,7 +424,8 @@ export class SelfUpdatePage extends Component {
                   type="button"
                   className="btn"
                   style={{ marginLeft: 0 }}
-                  onClick={this.registerWebAuthn}>
+                  onClick={this.registerWebAuthn}
+                >
                   {this.state.hasWebauthnDeviceReg
                     ? 'Register another webauthn device'
                     : 'Register a new webauthn device'}

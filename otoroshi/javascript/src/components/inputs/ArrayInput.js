@@ -105,7 +105,8 @@ export class ArrayInput extends Component {
                   disabled={this.props.disabled}
                   type="button"
                   className="btn btn-primary"
-                  onClick={this.addFirst}>
+                  onClick={this.addFirst}
+                >
                   <i className="fas fa-plus-circle" />{' '}
                 </button>
               )}
@@ -125,13 +126,15 @@ export class ArrayInput extends Component {
                       display: 'flex',
                       justifyContent: 'flex-end',
                       paddingRight: 0,
-                    }}>
+                    }}
+                  >
                     <span className="input-group-btn">
                       <button
                         disabled={this.props.disabled}
                         type="button"
                         className="btn btn-danger"
-                        onClick={(e) => this.remove(e, idx)}>
+                        onClick={(e) => this.remove(e, idx)}
+                      >
                         <i className="fas fa-trash" />
                       </button>
                       {idx === values.length - 1 && (
@@ -139,7 +142,8 @@ export class ArrayInput extends Component {
                           disabled={this.props.disabled}
                           type="button"
                           className="btn btn-primary"
-                          onClick={this.addNext}>
+                          onClick={this.addNext}
+                        >
                           <i className="fas fa-plus-circle" />{' '}
                         </button>
                       )}
@@ -160,7 +164,8 @@ export class ArrayInput extends Component {
             {!this.props.hideLabel && (
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 col-form-label">
+                className="col-xs-12 col-sm-2 col-form-label"
+              >
                 {this.props.label} <Help text={this.props.help} />
               </label>
             )}
@@ -169,7 +174,8 @@ export class ArrayInput extends Component {
                 disabled={this.props.disabled}
                 type="button"
                 className="btn btn-primary"
-                onClick={this.addFirst}>
+                onClick={this.addFirst}
+              >
                 <i className="fas fa-plus-circle" />{' '}
               </button>
             </div>
@@ -240,7 +246,8 @@ export class ArrayInput extends Component {
                     disabled={this.props.disabled}
                     type="button"
                     className="btn btn-danger"
-                    onClick={(e) => this.remove(e, idx)}>
+                    onClick={(e) => this.remove(e, idx)}
+                  >
                     <i className="fas fa-trash" />
                   </button>
                   {this.props.additionalButton && (
@@ -251,7 +258,8 @@ export class ArrayInput extends Component {
                       disabled={this.props.disabled}
                       type="button"
                       className="btn btn-primary"
-                      onClick={this.addNext}>
+                      onClick={this.addNext}
+                    >
                       <i className="fas fa-plus-circle" />{' '}
                     </button>
                   )}

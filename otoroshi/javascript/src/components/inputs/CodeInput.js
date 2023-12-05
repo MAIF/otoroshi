@@ -197,7 +197,8 @@ export default class CodeInput extends Component {
                     backgroundColor: 'var(--color-primary)',
                     color: '#fff',
                     fontStyle: 'italic',
-                  }}>
+                  }}
+                >
                   Example
                 </div>
                 <AceEditor

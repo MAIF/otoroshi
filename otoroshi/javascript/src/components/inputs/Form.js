@@ -129,7 +129,8 @@ export class Form extends Component {
             key={collapsedLabel}
             label={collapsedLabel}
             collapsed={collapsedState}
-            lineEnd={true}>
+            lineEnd={true}
+          >
             {collapsed}
           </Collapse>
         );

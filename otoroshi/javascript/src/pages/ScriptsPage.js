@@ -276,7 +276,8 @@ class CompilationTools extends Component {
           <button
             type="button"
             className={`btn btn-${this.state.error ? 'danger' : 'success'}`}
-            onClick={this.compile}>
+            onClick={this.compile}
+          >
             <i className="fas fa-cogs" /> {this.state.compiling ? 'Compiling ...' : 'Compile'}
           </button>
           {!!this.state.error && (
@@ -303,7 +304,8 @@ export class Warning extends Component {
                 display: 'flex',
                 justifyContent: 'center',
                 marginBottom: 20,
-              }}>
+              }}
+            >
               <i className="fa fa-skull-crossbones" style={{ color: '#c9302c', fontSize: 35 }} />
             </div>
             <p style={{ textAlign: 'justify' }}>

@@ -35,7 +35,8 @@ const RouteChooser = ({ state, onChange }) => (
         display: 'flex',
         flexDirection: 'column',
         gap: '10px',
-      }}>
+      }}
+    >
       {[
         { kind: 'empty', title: 'BLANK ROUTE', text: 'From scratch, no plugin added' },
         {
@@ -70,14 +71,16 @@ const RouteChooser = ({ state, onChange }) => (
             state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
           } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
-          key={kind}>
+          key={kind}
+        >
           <h3 className="wizard-h3--small">{title}</h3>
           <span
             style={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
-            }}>
+            }}
+          >
             {text}
           </span>
         </button>
@@ -276,11 +279,13 @@ const ProcessStep = ({ state, history }) => {
           <h3 style={{ textAlign: 'center' }} className="mt-3">
             Summary
           </h3>
-        }>
+        }
+      >
         {pluginsLength === 0 && (
           <button
             className="btn btn-primaryColor mx-auto"
-            style={{ borderRadius: '50%', width: '42px', height: '42px' }}>
+            style={{ borderRadius: '50%', width: '42px', height: '42px' }}
+          >
             <i className="fas fa-check" />
           </button>
         )}
@@ -291,7 +296,8 @@ const ProcessStep = ({ state, history }) => {
             justifyContent: 'center',
             alignItems: 'center',
             flexDirection: 'column',
-          }}>
+          }}
+        >
           <h3>Your route is now available!</h3>
 
           <button
@@ -305,12 +311,13 @@ const ProcessStep = ({ state, history }) => {
                       : 'cp:otoroshi.next.plugins.GraphQLBackend',
                 });
               else history.push(`/routes/${createdRoute.id}?tab=flow`);
-            }}>
+            }}
+          >
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Start editing plugins'}
+                ? 'Start creating schema'
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>
@@ -334,7 +341,8 @@ const LoaderItem = ({ text, timeout }) => {
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '6px',
-      }}>
+      }}
+    >
       <Loader loading={loading} minLoaderTime={timeout}>
         <button
           className="btn btn-primaryColor mx-auto"
@@ -345,7 +353,8 @@ const LoaderItem = ({ text, timeout }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-          }}>
+          }}
+        >
           <i className="fas fa-check" />
         </button>
       </Loader>
@@ -354,7 +363,8 @@ const LoaderItem = ({ text, timeout }) => {
           flex: 1,
           marginLeft: '12px',
           fontWeight: loading ? 'normal' : 'bold',
-        }}>
+        }}
+      >
         {text}
       </div>
     </div>
@@ -454,7 +464,8 @@ export class RouteWizard extends React.Component {
               {step <= steps && (
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  className="mt-auto">
+                  className="mt-auto"
+                >
                   {step !== 1 && (
                     <Button type="primaryColor" text="Previous" onClick={this.prevStep} />
                   )}
@@ -466,7 +477,8 @@ export class RouteWizard extends React.Component {
                       padding: '12px 48px',
                     }}
                     disabled={error}
-                    onClick={this.nextStep}>
+                    onClick={this.nextStep}
+                  >
                     {step === steps ? 'Create' : 'Continue'}
                   </button>
 
@@ -489,7 +501,8 @@ export class RouteWizard extends React.Component {
                           },
                           this.nextStep
                         );
-                      }}>
+                      }}
+                    >
                       Create and publish
                     </button>
                   )}

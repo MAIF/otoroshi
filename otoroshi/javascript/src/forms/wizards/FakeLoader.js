@@ -19,7 +19,8 @@ export function FakeLoader({ text, timeout, started }) {
         backgroundColor: 'var(--bg-color_level2)',
         borderRadius: '5px',
       }}
-      className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
+      className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3"
+    >
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
           <i className="fas fa-check fa-lg" style={{ color: 'var(--color-primary)' }} />
@@ -30,7 +31,8 @@ export function FakeLoader({ text, timeout, started }) {
         style={{
           color: loading ? '#eee' : '#fff',
           fontWeight: loading ? 'normal' : 'bold',
-        }}>
+        }}
+      >
         <div>{text}</div>
       </div>
     </div>

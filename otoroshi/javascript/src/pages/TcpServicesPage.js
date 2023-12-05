@@ -57,7 +57,8 @@ class Target extends Component {
             width: '100%',
             justifyContent: 'flex-end',
             alignItems: 'center',
-          }}>
+          }}
+        >
           <button type="button" className="btn btn-danger" onClick={this.props.delete}>
             <i className="fas fa-trash" />
           </button>
@@ -147,7 +148,8 @@ class Targets extends Component {
             width: '100%',
             justifyContent: 'center',
             alignItems: 'center',
-          }}>
+          }}
+        >
           <button type="button" className="btn btn-primary" onClick={this.addTarget}>
             <i className="fas fa-plus-circle" />
           </button>
