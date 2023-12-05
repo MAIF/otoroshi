@@ -66,9 +66,10 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           DISPLAY: :1
         run: |
+          LOC=$(pwd)
           cd ./scripts/release
           npm install
-          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --dry=true --location=$(pwd)
+          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --dry=true --location=${LOC}
       - name: Generate SHA-256
         run: |
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.zip.sha256
