@@ -70,6 +70,8 @@ jobs:
           node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
           git commit -am '[release ${{ inputs.version_to }}] Update changelog'
           node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC}
+          git commit -am 'Update helm chart'
+          git push origin master
       - name: Generate SHA-256
         run: |
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.jar | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
