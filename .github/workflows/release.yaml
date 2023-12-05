@@ -12,10 +12,10 @@ on:
       version_last:
         description: "Version number (ie: 16.10.3)"
       description:
-        description: "release description"
+        description: "Release description"
 
 jobs:
-  build-and-upload:
+  release-otoroshi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16.x'
-      - uses: coursier/cache-action@v5
       - name: setup release dir
         run: |
           mkdir -p ./release-${{ inputs.version_to }}
@@ -51,9 +50,10 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Setup xvfb for screen 0
-        run: Xvfb :1 -screen 0 1600x1200x24 &         
+        run: |
+          Xvfb :1 -screen 0 1600x1200x24 &         
       - name: run-release-process
-        id: build-libs
+        id: run-release-process
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
