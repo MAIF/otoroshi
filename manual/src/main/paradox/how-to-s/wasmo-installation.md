@@ -1,6 +1,6 @@
 # Deploy your own Wasmo
 
-Installing Wasmo can be done by following the [Getting Started](https://ubiquitous-adventure-yrognwg.pages.github.io/builder/getting-started) in Wasmo documentation.
+Installing Wasmo can be done by following the [Getting Started](https://maif.github.io/wasmo/builder/getting-started) in Wasmo documentation.
 
 ## Tutorial
 
