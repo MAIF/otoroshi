@@ -33,6 +33,14 @@
   border-radius: 5px;
 }
 
+.add-menu-sidebar{
+  // position: fixed !important;
+  width: 100%;
+  a{
+    display: block !important;
+  }
+}
+
 .add-menu>li>a {
   border-radius: 5px;
   padding: 5px;

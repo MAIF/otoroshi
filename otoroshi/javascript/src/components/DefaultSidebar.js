@@ -155,6 +155,66 @@ export function DefaultSidebar(props) {
             }
           }, 50); // delay to avoid simple click
         }}>
+        {openedSidebar && !onRouteTab &&  <div className="mb-3 me-2 dropdown">
+            <button
+              className="w-100 me-2 dropdown btn btn-sm btn-primary"
+              id="add-components-sb"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="true"
+              aria-expanded="false">
+              <span>Add new entity</span>
+            </button>
+            <ul className="dropdown-menu add-menu add-menu-sidebar"
+              aria-labelledby="add-components-sb"
+              style={{
+                background: 'var(--bg-color_level1)',
+                border: '1px solid var(--bg-color_level1)',
+                borderTop: 0,
+                padding: '12px',
+                zIndex: 4000,
+                gap: 5,
+              }}>
+                {/* {this.props && !this.props.env.initWithNewEngine && (
+                  <li className="d-flex">
+                    <Link to="/services">Service</Link>
+                  </li>
+                )} */}
+                <li className="d-flex">
+                  <Link to="/routes/new?tab=informations">Route</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/backends/add">Backend</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/apikeys/add">Apikey</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/certificates/add">Certificate</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/auth-configs/add">Auth. module</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/jwt-verifiers/add">Jwt verifier</Link>
+                </li>
+                <li className="d-flex">
+                  <Link to="/tcp/services/add">TCP service</Link>
+                </li>
+                {/* {this.props.env && this.props.env.clevercloud && (
+                  <li className="d-flex">
+                    <Link to="/clever">Service from a CleverApp</Link>
+                  </li>
+                )} */}
+                {Otoroshi.extensions()
+                  .flatMap((ext) => ext.creationItems || [])
+                  .map((item) => (
+                    <li className="d-flex" key={item.title}>
+                      <Link to={`/${item.path}`}>{item.title}</Link>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+}
         {openedSidebar && !onRouteTab && <p className="sidebar-title">Shortcuts</p>}
         {!onRouteTab && shortcuts
           .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
