@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.11.2] - 2023-12-05
+
+
+https://github.com/MAIF/otoroshi/milestone/83?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.11.1...v16.11.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.2
+
+
+### Added 
+
+- close milestone at the end of the release (#1783)
+- generate milestone in release process (#1784)       
+      
+
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.11.1] - 2023-12-05
 
 https://github.com/MAIF/otoroshi/milestone/82?closed=1
