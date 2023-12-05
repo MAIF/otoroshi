@@ -66,10 +66,11 @@ jobs:
           LOC=$(pwd)
           cd ./scripts/release
           npm install
-          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --dry=true --location=${LOC}
+          npm install -g prettier
+          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC}
       - name: Generate SHA-256
         run: |
-          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.zip.sha256
+          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.jar | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256
       - name: Release binary to GitHub
@@ -78,7 +79,7 @@ jobs:
           tag_name: ${{ inputs.version_to }}
           body: ${{ inputs.description }}
           files: |
-            ./release-${{ inputs.version_to }}/otoroshi.zip
+            ./release-${{ inputs.version_to }}/otoroshi.jar
             ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip
             ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip
             ./release-${{ inputs.version_to }}/otoroshi.zip.sha256
