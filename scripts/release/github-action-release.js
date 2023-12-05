@@ -429,7 +429,8 @@ function printEnv() {
     releaseTo,
     releaseNext,
     releaseLast,
-    location
+    location,
+    milestone,
   })
   runScript('java -version', argv.location || __dirname, {})
   runScript('node -v', argv.location || __dirname, {})
