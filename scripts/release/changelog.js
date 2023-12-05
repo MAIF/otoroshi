@@ -144,6 +144,4 @@ const last_version = argv.last;
 const milestone = argv.milestone;
 const dir = argv.dir;
 
-// generateChangelog(version, last_version, milestone, dir);
-
-generateChangelog('16.11.0', '16.10.3', '75', '/Users/mathieuancelin/projects/otoroshi')
+generateChangelog(version, last_version, milestone, dir);
