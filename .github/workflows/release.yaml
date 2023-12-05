@@ -28,6 +28,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16.x'
+      - uses: mskelton/setup-yarn@v1
+        with:
+          node-version: '16.x'
       - name: setup release dir
         run: |
           mkdir -p ./release-${{ inputs.version_to }}
