@@ -81,7 +81,7 @@ jobs:
       - name: Release binary to GitHub
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ inputs.version_to }}
+          tag_name: v${{ inputs.version_to }}
           body_path: ./release-${{ inputs.version_to }}/github-release.md
           files: |
             ./release-${{ inputs.version_to }}/otoroshi.jar

@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
@@ -81,13 +82,14 @@ class ZipFileBackend extends NgBackendCall {
           val file = new File(filename)
           if (!file.exists()) {
             fileCache.put(filename, (System.currentTimeMillis(), Promise[String]()))
-            env.Ws.url(url).get().map { resp =>
+            env.Ws.url(url).withFollowRedirects(true).withRequestTimeout(30.seconds).get().map { resp =>
               if (resp.status == 200) {
                 Files.write(file.toPath, resp.bodyAsBytes.toArray[Byte])
                 fileCache.get(filename).foreach(_._2.trySuccess(filename))
                 Right(new ZipFile(filename))
               } else {
                 fileCache.remove(filename)
+                println(s"not found: ${url}")
                 Left(s"url not found: ${resp.status} - ${resp.headers} - ${resp.body}")
               }
             }
@@ -114,6 +116,10 @@ class ZipFileBackend extends NgBackendCall {
     if (config.prefix.isDefined) {
       path = config.prefix.get + path
     }
+    if (path.startsWith("/")) {
+      path = path.substring(1)
+    }
+    println(s"path: ${path}")
     Option(zip.getEntry(path)).flatMap { entry =>
       if (entry.isDirectory) {
         None
@@ -132,7 +138,17 @@ class ZipFileBackend extends NgBackendCall {
 
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(ZipFileBackendConfig.format).getOrElse(ZipFileBackendConfig.default)
-    getZipFile(config).map {
+    getZipFile(config.copy(url = GlobalExpressionLanguage.apply(
+      value = config.url,
+      req = ctx.rawRequest.some,
+      service = None,
+      route = ctx.route.some,
+      apiKey = ctx.apikey,
+      user = ctx.user,
+      context = Map.empty,
+      attrs = ctx.attrs,
+      env = env,
+    ))).map {
       case Left(msg) => Left(NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> msg))))
       case Right(zipfile) => {
         val path = ctx.request.path
