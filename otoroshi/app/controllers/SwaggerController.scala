@@ -46,7 +46,8 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Action { req =>
       Ok(
         otoroshi.views.html.oto.documentationframe(
-          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
+          //s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
+          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json"
         )
       )
     }
