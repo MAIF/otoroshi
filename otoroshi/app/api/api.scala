@@ -2108,13 +2108,382 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     )
   }
 
+  private def buildBulk(resource: Resource): JsObject = {
+    Json.obj(
+      "post" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Create multiple ${resource.kind} at the same time",
+        "operationId" -> s"${resource.group}.${resource.kind}.bulk_create",
+        "parameters" -> Json.arr(),
+        "security" -> Json.arr(Json.obj(
+          "otoroshi_auth" -> Json.arr()
+        )),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "200" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/x-ndjson" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/BulkResponseBody"
+                )
+              )
+            )
+          )
+        ),
+        "requestBody" -> Json.obj(
+          "description" -> "the request body in nd-json format (1 stringified entity per line)",
+          "required" -> false,
+          "content" -> Json.obj(
+            "application/x-ndjson" -> Json.obj(
+              "schema" -> Json.obj(
+                "type" -> "array",
+                "items" -> Json.obj(
+                  "$ref" -> s"#/components/schemas/${resource.group}.${resource.kind}"
+                )
+              )
+            )
+          )
+        )
+      ),
+      "put" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Update multiple ${resource.kind} at the same time",
+        "operationId" -> s"${resource.group}.${resource.kind}.bulk_update",
+        "parameters" -> Json.arr(),
+        "security" -> Json.arr(Json.obj(
+          "otoroshi_auth" -> Json.arr()
+        )),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "200" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/x-ndjson" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/BulkResponseBody"
+                )
+              )
+            )
+          )
+        ),
+        "requestBody" -> Json.obj(
+          "description" -> "the request body in nd-json format (1 stringified entity per line)",
+          "required" -> false,
+          "content" -> Json.obj(
+            "application/x-ndjson" -> Json.obj(
+              "schema" -> Json.obj(
+                "type" -> "array",
+                "items" -> Json.obj(
+                  "$ref" -> s"#/components/schemas/${resource.group}.${resource.kind}"
+                )
+              )
+            )
+          )
+        )
+      ),
+      "patch" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Update (using json-patch) multiple ${resource.kind} at the same time",
+        "operationId" -> s"${resource.group}.${resource.kind}.bulk_patch",
+        "parameters" -> Json.arr(),
+        "security" -> Json.arr(Json.obj(
+          "otoroshi_auth" -> Json.arr()
+        )),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "200" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/x-ndjson" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/BulkResponseBody"
+                )
+              )
+            )
+          )
+        ),
+        "requestBody" -> Json.obj(
+          "description" -> "the request body in nd-json format (1 stringified entity per line)",
+          "required" -> false,
+          "content" -> Json.obj(
+            "application/x-ndjson" -> Json.obj(
+              "schema" -> Json.obj(
+                "$ref" -> "#/components/schemas/BulkPatchBody"
+              )
+            )
+          )
+        )
+      ),
+      "delete" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Delete multiple ${resource.kind} at the same time",
+        "operationId" -> s"${resource.group}.${resource.kind}.bulk_delete",
+        "parameters" -> Json.arr(),
+        "security" -> Json.arr(Json.obj(
+          "otoroshi_auth" -> Json.arr()
+        )),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "200" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/x-ndjson" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/BulkResponseBody"
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  }
+
+  private def buildResource(resource: Resource): JsObject = {
+    Json.obj(
+      "get" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Find all possible ${resource.kind} entities",
+        "operationId" -> s"${resource.group}.${resource.kind}.findAll",
+        "parameters" -> Json.arr( ),
+        "security" -> Json.arr( Json.obj(
+          "otoroshi_auth" -> Json.arr( )
+        ) ),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "200" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "type" -> "array",
+                  "items" -> Json.obj(
+                    "$ref" -> s"#/components/schemas/${resource.group}.${resource.kind}"
+                  )
+                )
+              )
+            )
+          )
+        )
+      ),
+      "post" -> Json.obj(
+        "tags" -> Json.arr(resource.singularName, resource.group),
+        "summary" -> s"Creates a ${resource.kind}",
+        "operationId" -> s"${resource.group}.${resource.kind}.create",
+        "parameters" -> Json.arr( ),
+        "security" -> Json.arr( Json.obj(
+          "otoroshi_auth" -> Json.arr( )
+        ) ),
+        "responses" -> Json.obj(
+          "401" -> Json.obj(
+            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "400" -> Json.obj(
+            "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "404" -> Json.obj(
+            "description" -> "Resource not found or does not exist",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> "#/components/schemas/ErrorResponse"
+                )
+              )
+            )
+          ),
+          "201" -> Json.obj(
+            "description" -> "Successful operation",
+            "content" -> Json.obj(
+              "application/json" -> Json.obj(
+                "schema" -> Json.obj(
+                  "$ref" -> s"#/components/schemas/${resource.group}.${resource.kind}"
+                )
+              )
+            )
+          )
+        ),
+        "requestBody" -> Json.obj(
+          "description" -> "the request body in nd-json format (1 stringified entity per line)",
+          "required" -> true,
+          "content" -> Json.obj(
+            "application/json" -> Json.obj(
+              "schema" -> Json.obj(
+                "$ref" -> s"#/components/schemas/${resource.group}.${resource.kind}"
+              )
+            )
+          )
+        )
+      )
+    )
+  }
+
   private def buildPaths(resource: Resource): Map[String, JsValue] = {
     Map(
-      // s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}/_bulk" -> buildBulk(resource),
+      s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}/_bulk" -> buildBulk(resource),
       s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}/_count" -> buildCount(resource),
       s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}/_template" -> buildTemplate(resource),
       s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}/{id}" -> buildById(resource),
-      // s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}" -> buildResource(resource),
+      s"/apis/${resource.group}/${resource.version.name}/${resource.pluralName}" -> buildResource(resource),
     )
   }
 
@@ -2128,13 +2497,13 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             definitions.value.foreach {
               case (dkey, dvalue) => {
                 if (!finalSchemas.contains(dkey)) {
-                  finalSchemas = finalSchemas.put(dkey, dvalue.stringify.replace("#/definitions/", "#/components/schemas/").parseJson)
+                  finalSchemas = finalSchemas.put(dkey, (dvalue.asObject - "additionalProperties" - "id" - "patternProperties").stringify.replace("#/definitions/", "#/components/schemas/").parseJson)
                 }
               }
             }
           }
         }
-        val finalSchema: JsValue = (schema.asObject - "definitions").stringify.replace("#/definitions/", "#/components/schemas/").parseJson
+        val finalSchema: JsValue = (schema.asObject - "definitions" - "additionalProperties" - "id" - "patternProperties").stringify.replace("#/definitions/", "#/components/schemas/").parseJson
         finalSchemas = finalSchemas.put(key, finalSchema)
       }
     }
@@ -2153,12 +2522,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     // TODO: missing cluster api
     // TODO: missing tunnels api
     // TODO: missing analytics api
-    val resources = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
-    val _schemas: Map[String, JsValue] = resources.map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz))).toMap
-    val schemas: Map[String, JsValue] = cleanupSchemas(_schemas)
-    val paths: Map[String, JsValue] = resources.flatMap(buildPaths).toMap
-
     val body = cache.getOrElseUpdate("singleton", {
+      val resources = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
+      val _schemas: Map[String, JsValue] = resources.map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz))).toMap
+      val schemas: Map[String, JsValue] = cleanupSchemas(_schemas)
+      val paths: Map[String, JsValue] = resources.flatMap(buildPaths).toMap
       Json.obj(
         "openapi" -> "3.0.3", //"3.1.0"
         "info" -> Json.obj(
