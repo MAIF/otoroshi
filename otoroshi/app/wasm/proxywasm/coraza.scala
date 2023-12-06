@@ -711,6 +711,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[CorazaWafConfig](
             CorazaWafConfig.format,
+            classOf[CorazaWafConfig],
             id => datastores.corazaConfigsDatastore.key(id),
             c => datastores.corazaConfigsDatastore.extractId(c),
             tmpl = () => CorazaWafConfig.template().json,

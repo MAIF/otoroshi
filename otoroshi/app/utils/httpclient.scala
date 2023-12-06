@@ -23,6 +23,7 @@ import otoroshi.models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
 import otoroshi.gateway.{RequestTimeoutException, Timeout}
 import otoroshi.netty.{NettyClientConfig, NettyHttpClient}
+import otoroshi.next.models.NgOverflowStrategy
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -820,7 +821,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           client.cachedHostConnectionPool[Promise[HttpResponse]](host = host, port = port, settings = settings)
         }
         Source
-          .queue[(HttpRequest, Promise[HttpResponse])](queueSettings.queueSize, queueSettings.strategy)
+          .queue[(HttpRequest, Promise[HttpResponse])](queueSettings.queueSize, queueSettings.strategy.toAkka)
           .via(pool)
           .to(Sink.foreach {
             case (Success(resp), p) => p.success(resp)
@@ -923,7 +924,7 @@ case class ClientQueueError(message: String) extends RuntimeException(message) w
 case class CacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: OverflowStrategy = OverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
 ) {
   def json: JsValue = {
     Json.obj(

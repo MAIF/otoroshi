@@ -177,6 +177,9 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "2.4.0" classifier "bundle",
+  "com.github.Opetushallitus"        % "scala-schema" % "2.23.0_2.12",
+  "com.github.andyglow" %% "scala-jsonschema" % "0.7.11",
+  "com.github.andyglow" %% "scala-jsonschema-play-json" % "0.7.11",
   // using a custom one right now as current build is broken
 //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
@@ -210,6 +213,8 @@ scalacOptions ++= Seq(
   "-language:existentials",
   "-language:postfixOps"
 )
+
+resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 

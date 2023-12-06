@@ -34,11 +34,18 @@ sealed trait IndexSettingsInterval {
   def json: JsValue = JsString(name)
 }
 
+case class IndexSettingsIntervalDay(name: String = "Day") extends IndexSettingsInterval
+case class IndexSettingsIntervalWeek(name: String = "Week") extends IndexSettingsInterval
+case class IndexSettingsIntervalMonth(name: String = "Month") extends IndexSettingsInterval
+case class IndexSettingsIntervalYear(name: String = "Year") extends IndexSettingsInterval
+
 object IndexSettingsInterval {
-  case object Day   extends IndexSettingsInterval { def name: String = "Day"   }
-  case object Week  extends IndexSettingsInterval { def name: String = "Week"  }
-  case object Month extends IndexSettingsInterval { def name: String = "Month" }
-  case object Year  extends IndexSettingsInterval { def name: String = "Year"  }
+
+  val Day = IndexSettingsIntervalDay()
+  val Week = IndexSettingsIntervalWeek()
+  val Month = IndexSettingsIntervalMonth()
+  val Year = IndexSettingsIntervalYear()
+
   def parse(str: String): Option[IndexSettingsInterval] = {
     str.trim.toLowerCase() match {
       case "week"  => IndexSettingsInterval.Week.some

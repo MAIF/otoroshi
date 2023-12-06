@@ -279,6 +279,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[Foo](
             Foo.format,
+            classOf[Foo],
             id => datastores.fooDatastore.key(id),
             c => datastores.fooDatastore.extractId(c),
             stateAll = () => states.allFoos(),

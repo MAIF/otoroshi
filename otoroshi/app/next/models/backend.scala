@@ -1,10 +1,8 @@
 package otoroshi.next.models
 
 import akka.stream.OverflowStrategy
-import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models._
-import otoroshi.next.models.NgTarget.readFrom
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
@@ -13,8 +11,8 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgCustomTimeouts(
@@ -73,11 +71,40 @@ object NgCustomTimeouts {
     globalTimeout = config.globalTimeout
   )
 }
+sealed trait NgOverflowStrategy {
+  def toAkka: OverflowStrategy
+}
+case object DropHeadNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.dropHead
+}
+case object DropTailNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.dropTail
+}
+case object DropBufferNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.dropBuffer
+}
+case object DropNewNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.dropNew
+}
+case object BackpressureNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.backpressure
+}
+case object FailNgOverflowStrategy extends NgOverflowStrategy {
+  def toAkka: OverflowStrategy = OverflowStrategy.fail
+}
+object NgOverflowStrategy {
+  val dropHead: NgOverflowStrategy = DropHeadNgOverflowStrategy
+  val dropTail: NgOverflowStrategy = DropTailNgOverflowStrategy
+  val dropBuffer: NgOverflowStrategy = DropBufferNgOverflowStrategy
+  val dropNew: NgOverflowStrategy = DropNewNgOverflowStrategy
+  val backpressure: NgOverflowStrategy = BackpressureNgOverflowStrategy
+  val fail: NgOverflowStrategy = FailNgOverflowStrategy
+}
 
 case class NgCacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: OverflowStrategy = OverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
 ) {
   lazy val legacy: CacheConnectionSettings = CacheConnectionSettings(
     enabled = enabled,
@@ -156,7 +183,7 @@ object NgClientConfig {
           cacheConnectionSettings = NgCacheConnectionSettings(
             enabled = (json \ "cache_connection_settings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cache_connection_settings" \ "queue_size").asOpt[Int].getOrElse(2048),
-            strategy = OverflowStrategy.dropNew
+            strategy = NgOverflowStrategy.dropNew
           ),
           customTimeouts = (json \ "custom_timeouts")
             .asOpt[JsArray]
