@@ -2559,6 +2559,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         "paths" -> JsObject(paths),
         "components" -> Json.obj(
           "schemas" -> (JsObject(schemas) ++ Json.obj(
+            "BulkResponseBody" -> Json.obj(
+              "type" -> "object",
+              "description" -> "BulkResponseBody object"
+            ),
+            "BulkPatchBody" -> Json.obj(
+              "type" -> "object",
+              "description" -> "BulkPatchBody object"
+            ),
             "ErrorResponse" -> Json.obj(
               "type" -> "object",
               "description" -> "error response"
