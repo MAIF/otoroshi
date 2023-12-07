@@ -119,7 +119,6 @@ export function DefaultSidebar(props) {
   const features = links.flatMap((l) =>
     l.features.map((f) => ({ ...f, title: f.title.toLowerCase() }))
   );
-
   return (
     <>
       <ul
@@ -155,8 +154,8 @@ export function DefaultSidebar(props) {
             }
           }, 50); // delay to avoid simple click
         }}>
-        
-        {openedSidebar && !onRouteTab && <p className="sidebar-title">Shortcuts</p>}
+
+        {openedSidebar && !onRouteTab && shortcuts.length>0 &&<p className="sidebar-title">Shortcuts</p>}
         {!onRouteTab && shortcuts
           .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
           .filter((s) => s)
