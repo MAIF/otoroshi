@@ -282,7 +282,7 @@ export class ServicesPage extends Component {
           injectTopBar={() => (
             <>
               <div className="btn-group input-group-btn">
-                <button type="button" onClick={this.addService} className="btn btn-primary">
+                <button type="button" onClick={this.addService} className="btn btn-primary btn-sm">
                   <i className="fas fa-plus-circle" /> Create new service
                 </button>
               </div>

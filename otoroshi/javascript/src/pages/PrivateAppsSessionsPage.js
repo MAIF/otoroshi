@@ -207,7 +207,7 @@ export class PrivateAppsSessionsPage extends Component {
               <button
                 key="discard-all"
                 type="button"
-                className="btn btn-danger"
+                className="btn btn-danger btn-sm"
                 style={{ marginLeft: 5 }}
                 onClick={this.discardSessions}>
                 <i className="fas fa-fire" /> Discard all sessions
@@ -216,7 +216,7 @@ export class PrivateAppsSessionsPage extends Component {
             <button
               key="discard-old"
               type="button"
-              className="btn btn-danger"
+              className="btn btn-danger btn-sm"
               style={{ marginLeft: 5 }}
               onClick={this.discardOldSessions}>
               <i className="fas fa-fire" /> Discard old sessions
