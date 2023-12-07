@@ -1,0 +1,14 @@
+{
+  "BulkResponseBody" : {
+    "type" : "object",
+    "description" : "BulkResponseBody object"
+  },
+  "BulkPatchBody" : {
+    "type" : "object",
+    "description" : "BulkPatchBody object"
+  },
+  "ErrorResponse" : {
+    "type" : "object",
+    "description" : "error response"
+  }
+}
