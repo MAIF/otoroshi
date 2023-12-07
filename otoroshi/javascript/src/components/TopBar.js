@@ -1552,6 +1552,11 @@ export class TopBar extends Component {
           <VersionButton />
         </li>
         <li>
+          <a className="prevent-click dropdown-item" id="otoroshi-dark-light-icon" href="#">
+            <i className="far fa-moon fa-lg"/> Dark/Light Mode
+          </a>
+        </li>
+        <li>
           <a
             href="https://maif.github.io/otoroshi/manual/index.html"
             target="_blank"
@@ -1632,6 +1637,11 @@ export class TopBar extends Component {
                     {this.brandName()}
                   </Link>
                 </div>
+              </div>
+
+              <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
+                <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
+
                 <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
                   {selected && (
                     <div className="mb-3" style={{ marginRight: 10 }}>
@@ -1671,7 +1681,7 @@ export class TopBar extends Component {
                           border: '1px solid var(--bg-color_level3)',
                           width: 400,
                           color: 'var(--text)',
-                          backgroundColor: 'var(--bg-color_level2)',
+                          backgroundColor: 'var(--bg-color_level3)',
                           boxShadow: 'none',
                         }),
                         menu: (baseStyles) => ({
@@ -1756,11 +1766,70 @@ export class TopBar extends Component {
                       }}
                     />
                   </div>
+                  <div className="dropdown">
+                    <Button
+                      type="quiet"
+                      className="d-flex align-items-center justify-content-between dropdown dropdown-toggle"
+                      id="add-components"
+                      data-bs-toggle="dropdown"
+                      data-bs-auto-close="true"
+                      aria-expanded="false"
+                      style={{background: 'var(--bg-color_level3)'}}
+                    >
+                      +
+                    </Button>
+                    <ul
+                      className="dropdown-menu add-menu"
+                      aria-labelledby="add-components"
+                      style={{
+                        background: 'var(--bg-color_level1)',
+                        border: '1px solid var(--bg-color_level1)',
+                        borderTop: 0,
+                        padding: '12px',
+                        zIndex: 4000,
+                        gap: 5,
+                      }}>
+                      {this.props && !this.props.env.initWithNewEngine && (
+                        <li className="d-flex">
+                          <Link to="/services">Service</Link>
+                        </li>
+                      )}
+                      <li className="d-flex">
+                        <Link to="/routes/new?tab=informations">Route</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/backends/add">Backend</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/apikeys/add">Apikey</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/certificates/add">Certificate</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/auth-configs/add">Auth. module</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/jwt-verifiers/add">Jwt verifier</Link>
+                      </li>
+                      <li className="d-flex">
+                        <Link to="/tcp/services/add">TCP service</Link>
+                      </li>
+                      {this.props.env && this.props.env.clevercloud && (
+                        <li className="d-flex">
+                          <Link to="/clever">Service from a CleverApp</Link>
+                        </li>
+                      )}
+                      {Otoroshi.extensions()
+                        .flatMap((ext) => ext.creationItems || [])
+                        .map((item) => (
+                          <li className="d-flex" key={item.title}>
+                            <Link to={`/${item.path}`}>{item.title}</Link>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
                 </form>
-              </div>
-
-              <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
-                <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
                   {window.__apiReadOnly && (
                     <div className="">
                       <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
@@ -1789,15 +1858,7 @@ export class TopBar extends Component {
                       </a>
                     </div>
                   )}
-                  <div className="mx-2">
-                    <a className="prevent-click" href="#">
-                      <i
-                        id="otoroshi-dark-light-icon"
-                        className=" far fa-moon fa-lg"
-                        title="Dark/Light Mode"
-                      />
-                    </a>
-                  </div>
+
                   <div className="dropdown mx-2">
                     <i
                       className="fas fa-cog"
