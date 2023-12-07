@@ -1966,7 +1966,7 @@
 "content" : {
 "application/json" : {
 "schema" : {
-"$ref" : "#/components/schemas/otoroshi.ssl.Cert"
+"$ref" : "#/components/schemas/pki.otoroshi.io.Certificate"
 }
 }
 }
