@@ -173,15 +173,12 @@ async function buildUi(version, where, releaseDir) {
 
 async function buildOpenApi(version, where, releaseDir) {
   // build openapi
-  // await runScript(`
-  //   cd ${where}/otoroshi
-  //   sbt ";clean;compile;testOnly OpenapiGeneratorTests"
-  // `, where);
+  await runScript(`
+    cd ${where}/otoroshi
+    sbt "testOnly tools.GenericOpenApiSpec"
+  `, where);
   await runSystemCommand('cp', [`${where}/otoroshi/conf/schemas/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
-  await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
-  await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
+  await runSystemCommand('git', ['add', `--all`], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update openapi file before release`], location);
 }
 
