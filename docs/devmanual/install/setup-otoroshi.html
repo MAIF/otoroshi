@@ -1760,6 +1760,12 @@ otoroshi {
   secret = &quot;verysecretvaluethatyoumustoverwrite&quot; # the secret used to sign sessions
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  elSettings {
+    allowEnvAccess = true
+    allowEnvAccess = ${?OTOROSHI_EL_SETTINGS_ALLOW_ENV_ACCESS}
+    allowConfigAccess = true
+    allowConfigAccess = ${?OTOROSHI_EL_SETTINGS_ALLOW_CONFIG_ACCESS}
+  }
   open-telemetry {
   	server-logs {
       enabled = false
@@ -1988,6 +1994,8 @@ otoroshi {
     packagesStr = ${?OTOROSHI_PLUGINS_SCAN_PACKAGES}
     print = false
     print = ${?OTOROSHI_PLUGINS_PRINT}
+    blacklisted = []
+    blacklistedStr = ${?OTOROSHI_PLUGINS_BACKLISTED}
   }
   scripts {
     enabled = true # enable scripts
@@ -3137,6 +3145,10 @@ otoroshi {
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  elSettings {
+    allowEnvAccess = ${?OTOROSHI_EL_SETTINGS_ALLOW_ENV_ACCESS}
+    allowConfigAccess = ${?OTOROSHI_EL_SETTINGS_ALLOW_CONFIG_ACCESS}
+  }
   open-telemetry {
   	server-logs {
       enabled = ${?OTOROSHI_OPEN_TELEMETRY_SERVER_LOGS_ENABLED}
@@ -3293,6 +3305,7 @@ otoroshi {
   plugins {
     packagesStr = ${?OTOROSHI_PLUGINS_SCAN_PACKAGES}
     print = ${?OTOROSHI_PLUGINS_PRINT}
+    blacklistedStr = ${?OTOROSHI_PLUGINS_BACKLISTED}
   }
   scripts {
     enabled = ${?OTOROSHI_SCRIPTS_ENABLED} # enable scripts
