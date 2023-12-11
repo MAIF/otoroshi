@@ -275,7 +275,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
             stateUpdate = values => states.updateGreenScores(values),
-            tmpl = () =>
+            tmpl = (v, p) =>
               GreenScoreEntity(
                 id = IdGenerator.namedId("green-score", env),
                 name = "green score group",

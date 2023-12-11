@@ -24,6 +24,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -94,7 +95,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def format: Format[T]
   def key(id: String): String
   def extractId(value: T): String
-  def template(version: String): JsValue = Json.obj()
+  def template(version: String, params: Map[String, String]): JsValue = Json.obj()
 
   def canRead: Boolean
   def canCreate: Boolean
@@ -288,7 +289,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
     clazz: Class[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: () => JsValue = () => Json.obj(),
+    tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -297,7 +298,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl()
+  override def template(version: String, template: Map[String, String]): JsValue = tmpl(version, template)
   override def all(): Seq[T]                      = throw new UnsupportedOperationException()
   override def one(id: String): Option[T]         = throw new UnsupportedOperationException()
   override def update(values: Seq[T]): Unit       = throw new UnsupportedOperationException()
@@ -308,7 +309,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     clazz: Class[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: () => JsValue = () => Json.obj(),
+    tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -320,7 +321,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl()
+  override def template(version: String, template: Map[String, String]): JsValue = tmpl(version, template)
   override def all(): Seq[T]                      = stateAll()
   override def one(id: String): Option[T]         = stateOne(id)
   override def update(values: Seq[T]): Unit       = stateUpdate(values)
@@ -339,7 +340,8 @@ class OtoroshiResources(env: Env) {
         NgRoute.fmt,
         classOf[NgRoute],
         env.datastores.routeDataStore.key,
-        env.datastores.routeDataStore.extractId
+        env.datastores.routeDataStore.extractId,
+        (v, p) => env.datastores.routeDataStore.template(env).json,
       )
     ),
     Resource(
@@ -352,7 +354,8 @@ class OtoroshiResources(env: Env) {
         StoredNgBackend.format,
         classOf[StoredNgBackend],
         env.datastores.backendsDataStore.key,
-        env.datastores.backendsDataStore.extractId
+        env.datastores.backendsDataStore.extractId,
+        (v, p) => env.datastores.backendsDataStore.template(env).json,
       )
     ),
     Resource(
@@ -365,7 +368,8 @@ class OtoroshiResources(env: Env) {
         NgRouteComposition.fmt,
         classOf[NgRouteComposition],
         env.datastores.routeCompositionDataStore.key,
-        env.datastores.routeCompositionDataStore.extractId
+        env.datastores.routeCompositionDataStore.extractId,
+        (v, p) =>env.datastores.routeCompositionDataStore.template(env).json,
       )
     ),
     Resource(
@@ -378,7 +382,8 @@ class OtoroshiResources(env: Env) {
         ServiceDescriptor._fmt,
         classOf[ServiceDescriptor],
         env.datastores.serviceDescriptorDataStore.key,
-        env.datastores.serviceDescriptorDataStore.extractId
+        env.datastores.serviceDescriptorDataStore.extractId,
+        (v, p) => env.datastores.serviceDescriptorDataStore.template(env).json,
       )
     ),
     Resource(
@@ -391,7 +396,8 @@ class OtoroshiResources(env: Env) {
         TcpService.fmt,
         classOf[TcpService],
         env.datastores.tcpServiceDataStore.key,
-        env.datastores.tcpServiceDataStore.extractId
+        env.datastores.tcpServiceDataStore.extractId,
+        (v, p) => env.datastores.tcpServiceDataStore.template(env).json,
       )
     ),
     Resource(
@@ -404,7 +410,7 @@ class OtoroshiResources(env: Env) {
         ErrorTemplate.fmt,
         classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
-        env.datastores.errorTemplateDataStore.extractId
+        env.datastores.errorTemplateDataStore.extractId,
       )
     ),
     //////
@@ -418,7 +424,8 @@ class OtoroshiResources(env: Env) {
         ApiKey._fmt,
         classOf[ApiKey],
         env.datastores.apiKeyDataStore.key,
-        env.datastores.apiKeyDataStore.extractId
+        env.datastores.apiKeyDataStore.extractId,
+        (v, p) => env.datastores.apiKeyDataStore.template(env).json,
       )
     ),
     //////
@@ -432,7 +439,8 @@ class OtoroshiResources(env: Env) {
         Cert._fmt,
         classOf[Cert],
         env.datastores.certificatesDataStore.key,
-        env.datastores.certificatesDataStore.extractId
+        env.datastores.certificatesDataStore.extractId,
+        (v, p) => env.datastores.certificatesDataStore.template(env.otoroshiExecutionContext, env).awaitf(10.seconds)(env.otoroshiExecutionContext).json,
       )
     ),
     //////
@@ -446,7 +454,8 @@ class OtoroshiResources(env: Env) {
         GlobalJwtVerifier._fmt,
         classOf[GlobalJwtVerifier],
         env.datastores.globalJwtVerifierDataStore.key,
-        env.datastores.globalJwtVerifierDataStore.extractId
+        env.datastores.globalJwtVerifierDataStore.extractId,
+        (v, p) => env.datastores.globalJwtVerifierDataStore.template(env).json,
       )
     ),
     Resource(
@@ -459,7 +468,8 @@ class OtoroshiResources(env: Env) {
         AuthModuleConfig._fmt(env),
         classOf[AuthModuleConfig],
         env.datastores.authConfigsDataStore.key,
-        env.datastores.authConfigsDataStore.extractId
+        env.datastores.authConfigsDataStore.extractId,
+        (v, p) => env.datastores.authConfigsDataStore.template(p.get("type"), env)(env.otoroshiExecutionContext).json,
       )
     ),
     Resource(
@@ -554,7 +564,8 @@ class OtoroshiResources(env: Env) {
         ServiceGroup._fmt,
         classOf[ServiceGroup],
         env.datastores.serviceGroupDataStore.key,
-        env.datastores.serviceGroupDataStore.extractId
+        env.datastores.serviceGroupDataStore.extractId,
+        (v, p) => env.datastores.serviceGroupDataStore.template(env).json,
       )
     ),
     Resource(
@@ -567,7 +578,8 @@ class OtoroshiResources(env: Env) {
         Tenant.format,
         classOf[Tenant],
         env.datastores.tenantDataStore.key,
-        env.datastores.tenantDataStore.extractId
+        env.datastores.tenantDataStore.extractId,
+        (v, p) => env.datastores.tenantDataStore.template(env).json,
       )
     ),
     Resource(
@@ -580,7 +592,8 @@ class OtoroshiResources(env: Env) {
         Tenant.format,
         classOf[Tenant],
         env.datastores.tenantDataStore.key,
-        env.datastores.tenantDataStore.extractId
+        env.datastores.tenantDataStore.extractId,
+        (v, p) => env.datastores.tenantDataStore.template(env).json,
       )
     ),
     Resource(
@@ -593,7 +606,8 @@ class OtoroshiResources(env: Env) {
         Team.format,
         classOf[Team],
         env.datastores.teamDataStore.key,
-        env.datastores.teamDataStore.extractId
+        env.datastores.teamDataStore.extractId,
+        (v, p) => env.datastores.teamDataStore.template(TenantId.default).json,
       )
     ),
     //////
@@ -607,7 +621,8 @@ class OtoroshiResources(env: Env) {
         DataExporterConfig.format,
         classOf[DataExporterConfig],
         env.datastores.dataExporterConfigDataStore.key,
-        env.datastores.dataExporterConfigDataStore.extractId
+        env.datastores.dataExporterConfigDataStore.extractId,
+        (v, p) => env.datastores.dataExporterConfigDataStore.template(p.get("type")).json,
       )
     ),
     //////
@@ -621,7 +636,8 @@ class OtoroshiResources(env: Env) {
         Script._fmt,
         classOf[Script],
         env.datastores.scriptDataStore.key,
-        env.datastores.scriptDataStore.extractId
+        env.datastores.scriptDataStore.extractId,
+        (v, p) => env.datastores.scriptDataStore.template(env).json,
       )
     ),
     Resource(
@@ -635,7 +651,7 @@ class OtoroshiResources(env: Env) {
         classOf[WasmPlugin],
         env.datastores.wasmPluginsDataStore.key,
         env.datastores.wasmPluginsDataStore.extractId,
-        () => env.datastores.wasmPluginsDataStore.template(env).json
+        (v, p) => env.datastores.wasmPluginsDataStore.template(env).json
       )
     ),
     //////
@@ -650,6 +666,7 @@ class OtoroshiResources(env: Env) {
         classOf[TweakedGlobalConfig],
         id => env.datastores.globalConfigDataStore.key(id),
         c => env.datastores.globalConfigDataStore.extractId(c.config),
+        (v, p) => env.datastores.globalConfigDataStore.template.json,
         canCreate = false,
         canDelete = false,
         canBulk = false
@@ -1478,7 +1495,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // GET /apis/:group/:version/:entity/:id/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      Ok(resource.access.template(version)).vfuture
+      val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last))
+      if (templ == Json.obj()) {
+        NotFound(Json.obj("error" -> "template not found !")).vfuture
+      } else {
+        Ok(templ).vfuture
+      }
     }
   }
 

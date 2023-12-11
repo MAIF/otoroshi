@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.TraversableOnce
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.{NoStackTrace, NonFatal}
 import scala.util.{Failure, Success, Try}
@@ -386,6 +386,8 @@ object implicits {
     def asOptLong: Option[Long]       = obj.asOpt[Long]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
+    def awaitf(atMost: Duration)(implicit ec: ExecutionContext): A                          = Await.result(obj, atMost)
+    def awaitfsafe(atMost: Duration)(implicit ec: ExecutionContext): Try[A]                          = Try(Await.result(obj, atMost))
     def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]]         = obj.map(v => Left(v))
     def fright[B](implicit ec: ExecutionContext): Future[Either[B, A]]        = obj.map(v => Right(v))
