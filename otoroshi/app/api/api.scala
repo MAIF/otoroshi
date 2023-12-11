@@ -1725,7 +1725,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   def openapi() = Action { req =>
-    val body = otoroshi.api.OpenApi.generate(env)
+    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"))
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 }

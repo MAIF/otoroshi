@@ -309,7 +309,12 @@ case class NgContextualPlugins(
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
-  lazy val (allPlugins, filteredPlugins) = enabledPlugins
+  lazy val whitelistedPlugins = enabledPlugins
+    .applyOnIf(env.blacklistedPlugins.nonEmpty) { eps =>
+      eps.filterNot(p => env.blacklistedPlugins.contains(p.plugin))
+    }
+
+  lazy val (allPlugins, filteredPlugins) = whitelistedPlugins
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .partition(_.matches(request))
 

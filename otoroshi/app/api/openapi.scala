@@ -23,7 +23,7 @@ object OpenApi {
         )),
         "responses" -> Json.obj(
           "401" -> Json.obj(
-            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
             "content" -> Json.obj(
               "application/json" -> Json.obj(
                 "schema" -> Json.obj(
@@ -96,7 +96,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -163,7 +163,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -233,7 +233,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -307,7 +307,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -364,7 +364,7 @@ object OpenApi {
         )),
         "responses" -> Json.obj(
           "401" -> Json.obj(
-            "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
             "content" -> Json.obj(
               "application/json" -> Json.obj(
                 "schema" -> Json.obj(
@@ -426,7 +426,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -495,7 +495,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -560,7 +560,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -626,7 +626,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -686,7 +686,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -744,7 +744,7 @@ object OpenApi {
             )),
             "responses" -> Json.obj(
               "401" -> Json.obj(
-                "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+                "description" -> "You have to provide an Api Key. Api Key can be passed using basic http authentication",
                 "content" -> Json.obj(
                   "application/json" -> Json.obj(
                     "schema" -> Json.obj(
@@ -842,63 +842,78 @@ object OpenApi {
     finalSchemas
   }
 
-  def generate(env: Env): String = {
-    // TODO: missing /health, /infos, /metrics, /live, /ready, /startup, /version,
+  def generate(env: Env, version: Option[String]): String = {
     // TODO: missing live metrics api
     // TODO: missing analytics api
-    val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
-    val additionalPathsRaw = new String(additionalPathsFile.readAllBytes(), StandardCharsets.UTF_8)
-    val additionalPathsJson = Json.parse(additionalPathsRaw).asObject
+    if (env.isDev) {
+      val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
+      val additionalPathsRaw = new String(additionalPathsFile.readAllBytes(), StandardCharsets.UTF_8)
+      val additionalPathsJson = Json.parse(additionalPathsRaw).asObject
 
-    val additionalComponentsFile = env.environment.resourceAsStream("/schemas/additionalComponents.json").get
-    val additionalComponentsRaw = new String(additionalComponentsFile.readAllBytes(), StandardCharsets.UTF_8)
-    val additionalComponentsJson = Json.parse(additionalComponentsRaw).asObject
+      val additionalComponentsFile = env.environment.resourceAsStream("/schemas/additionalComponents.json").get
+      val additionalComponentsRaw = new String(additionalComponentsFile.readAllBytes(), StandardCharsets.UTF_8)
+      val additionalComponentsJson = Json.parse(additionalComponentsRaw).asObject
 
-    cache.getOrElseUpdate("singleton", {
-      val resources = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
-      val _schemas: Map[String, JsValue] = resources.map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz))).toMap
-      val schemas: Map[String, JsValue] = cleanupSchemas(_schemas)
-      val paths: Map[String, JsValue] = resources.flatMap(buildPaths).toMap
-      Json.obj(
-        "openapi" -> "3.0.3", //"3.1.0"
-        "info" -> Json.obj(
-          "title" -> "Otoroshi Admin API",
-          "description" -> "Admin API of the Otoroshi reverse proxy",
-          "version" -> env.otoroshiVersion,
-          "contact" -> Json.obj(
-            "name" -> "Otoroshi Team",
-            "email" -> "oss@maif.fr"
-          ),
-          "license" -> Json.obj(
-            "name" -> "Apache 2.0",
-            "url" -> "http://www.apache.org/licenses/LICENSE-2.0.html"
-          )
-        ),
-        "externalDocs" -> Json.obj(
-          "url" -> "https://www.otoroshi.io",
-          "description" -> "Otoroshi website"
-        ),
-        "servers" -> Json.arr(
-          Json.obj(
-            "url" -> s"${env.exposedRootScheme}://${env.adminApiExposedHost}:${if (env.exposedRootSchemeIsHttps) env.exposedHttpsPort else env.exposedHttpPort}",
-            "description" -> "your local otoroshi server"
-          )
-        ),
-        "tags" -> JsArray(
-          resources.map(_.singularName).distinct.map(res => Json.obj("name" -> res)) ++
-            resources.map(_.group).distinct.map(res => Json.obj("name" -> res))
-        ),
-        "paths" -> (JsObject(paths) ++ additionalPathsJson),
-        "components" -> Json.obj(
-          "schemas" -> (JsObject(schemas) ++ additionalComponentsJson),
-          "securitySchemes" -> Json.obj(
-            "otoroshi_auth" -> Json.obj(
-              "type" -> "http",
-              "scheme" -> "basic",
+      cache.getOrElseUpdate("singleton", {
+        val resources = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
+        val _schemas: Map[String, JsValue] = resources.map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz))).toMap
+        val schemas: Map[String, JsValue] = cleanupSchemas(_schemas)
+        val paths: Map[String, JsValue] = resources.flatMap(buildPaths).toMap
+        Json.obj(
+          "openapi" -> "3.0.3", //"3.1.0"
+          "info" -> Json.obj(
+            "title" -> "Otoroshi Admin API",
+            "description" -> "Admin API of the Otoroshi reverse proxy",
+            "version" -> version.getOrElse(env.otoroshiVersion).json,
+            "contact" -> Json.obj(
+              "name" -> "Otoroshi Team",
+              "email" -> "oss@maif.fr"
+            ),
+            "license" -> Json.obj(
+              "name" -> "Apache 2.0",
+              "url" -> "http://www.apache.org/licenses/LICENSE-2.0.html"
             )
-          )
-        ),
-      ).prettify
-    })
+          ),
+          "externalDocs" -> Json.obj(
+            "url" -> "https://www.otoroshi.io",
+            "description" -> "Otoroshi website"
+          ),
+          "servers" -> Json.arr(
+            Json.obj(
+              "url" -> s"${env.exposedRootScheme}://${env.adminApiExposedHost}:${if (env.exposedRootSchemeIsHttps) env.exposedHttpsPortInt else env.exposedHttpPortInt}",
+              "description" -> "your local otoroshi server"
+            )
+          ),
+          "tags" -> JsArray(
+            resources.map(res => Json.obj("name" -> res.singularName, "description" -> s"all the operations about the ${res.singularName} entity")).distinct ++
+            resources.map(res => Json.obj("name" -> res.group, "description" -> s"all the operations in the ${res.group} group")).distinct ++
+            Seq(
+              "pki",
+              "cluster",
+              "snowmonkey",
+              "import-export",
+              "events",
+              "tunnels",
+            ).map(res => Json.obj("name" -> res, "description" -> s"all the operations in the ${res} api"))
+          ),
+          "paths" -> (JsObject(paths) ++ additionalPathsJson),
+          "components" -> Json.obj(
+            "schemas" -> (JsObject(schemas) ++ additionalComponentsJson),
+            "securitySchemes" -> Json.obj(
+              "otoroshi_auth" -> Json.obj(
+                "type" -> "http",
+                "scheme" -> "basic",
+              )
+            )
+          ),
+        ).prettify
+      })
+    } else {
+      cache.getOrElseUpdate("singleton", {
+        val openapi = env.environment.resourceAsStream("/schemas/openapi.json").get
+        val openapiRaw = new String(openapi.readAllBytes(), StandardCharsets.UTF_8)
+        Json.parse(openapiRaw).asObject.prettify
+      })
+    }
   }
 }

@@ -1033,10 +1033,15 @@ class ScriptManager(env: Env) {
     tunnelHandlerNames,
     ngNames
   ).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
+
+  private val blackListedPlugins = allPlugins.filterNot(v => env.blacklistedPlugins.contains(v))
+
   private val printPlugins =
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
   logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
   if (printPlugins) logger.info("\n\n" + allPlugins.map(s => s" - $s").mkString("\n") + "\n")
+  if (printPlugins && blackListedPlugins.nonEmpty) logger.info("Blacklisted plugins")
+  if (printPlugins && blackListedPlugins.nonEmpty) logger.info("\n\n" + blackListedPlugins.map(s => s" - $s").mkString("\n") + "\n")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) { // valid
@@ -1167,46 +1172,50 @@ class ScriptManager(env: Env) {
   }
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
-    ref match {
-      case r if r.startsWith("cp:")  =>
-        cpTryCache.synchronized {
-          if (!cpTryCache.contains(ref)) {
-            Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
-              .map(clazz => clazz.newInstance()) match {
-              case Success(tr) =>
-                cpTryCache.put(ref, ())
-                val typ = tr.asInstanceOf[NamedPlugin].pluginType
-                cpCache.put(ref, (typ, tr))
-                Try {
-                  tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
-                  tr.asInstanceOf[InternalEventListener].startEvent(r, env)
-                }
-              case Failure(e)  =>
-                e.printStackTrace()
-                logger.error(s"Classpath script `$ref` does not exists ...")
+    if (env.blacklistedPlugins.contains(ref)) {
+      Left(s"blacklisted plugin '${ref}'")
+    } else {
+      ref match {
+        case r if r.startsWith("cp:")  =>
+          cpTryCache.synchronized {
+            if (!cpTryCache.contains(ref)) {
+              Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
+                .map(clazz => clazz.newInstance()) match {
+                case Success(tr) =>
+                  cpTryCache.put(ref, ())
+                  val typ = tr.asInstanceOf[NamedPlugin].pluginType
+                  cpCache.put(ref, (typ, tr))
+                  Try {
+                    tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
+                    tr.asInstanceOf[InternalEventListener].startEvent(r, env)
+                  }
+                case Failure(e)  =>
+                  e.printStackTrace()
+                  logger.error(s"Classpath script `$ref` does not exists ...")
+              }
+            }
+            cpCache.get(ref).flatMap(a => Option(a._2)) match {
+              case Some(script) => Right(script.asInstanceOf[A])
+              case None         => Left("not-in-cache")
             }
           }
-          cpCache.get(ref).flatMap(a => Option(a._2)) match {
-            case Some(script) => Right(script.asInstanceOf[A])
-            case None         => Left("not-in-cache")
+        case r if env.scriptingEnabled => {
+          env.datastores.scriptDataStore.findById(ref).map {
+            case Some(script) => compileAndUpdateIfNeeded(script)
+            case None         =>
+              logger.error(s"Script with id `$ref` does not exists ...")
+            // do nothing as the script does not exists
+          }
+          cache.get(ref).flatMap(a => Option(Right(a._3.asInstanceOf[A]))).getOrElse {
+            if (compiling.contains(ref)) {
+              Left("compiling")
+            } else {
+              Left("not-in-cache")
+            }
           }
         }
-      case r if env.scriptingEnabled => {
-        env.datastores.scriptDataStore.findById(ref).map {
-          case Some(script) => compileAndUpdateIfNeeded(script)
-          case None         =>
-            logger.error(s"Script with id `$ref` does not exists ...")
-          // do nothing as the script does not exists
-        }
-        cache.get(ref).flatMap(a => Option(Right(a._3.asInstanceOf[A]))).getOrElse {
-          if (compiling.contains(ref)) {
-            Left("compiling")
-          } else {
-            Left("not-in-cache")
-          }
-        }
+        case _                         => Left("scripting-not-enabled")
       }
-      case _                         => Left("scripting-not-enabled")
     }
   }
 
