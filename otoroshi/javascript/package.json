@@ -89,7 +89,6 @@
     "file-loader": "6.1.0",
     "flag-icon-css": "3.5.0",
     "html-loader": "^3.1.2",
-    "html-webpack-plugin": "4.4.1",
     "less": "3.12.2",
     "less-loader": "7.0.1",
     "mini-css-extract-plugin": "2.6.0",
