@@ -330,7 +330,7 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
   </div>
 );
 
-const Container = ({ children, onClick }) => {
+const Container = ({ children, onClick, showTryIt }) => {
   const [propagate, setPropagate] = useState();
 
   return (
@@ -1478,6 +1478,7 @@ class Designer extends React.Component {
     return (
       <Loader loading={loading}>
         <Container
+          showTryIt={showTryIt}
           onClick={() => {
             this.setState({
               selectedNode: undefined,

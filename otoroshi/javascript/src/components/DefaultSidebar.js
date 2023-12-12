@@ -5,6 +5,7 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
+import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
 
 const addShortcutButton = true;
 
@@ -261,6 +262,7 @@ function Block({
   writeStorage,
 }) {
   const [open, setOpen] = useState(false);
+  const history = useHistory();
 
   return (
     <div
@@ -300,7 +302,6 @@ function Block({
 
               return (
                 <Link
-                  to={link}
                   key={title}
                   className="sidebar-feature p-3 py-1 mx-1"
                   style={{
@@ -314,6 +315,12 @@ function Block({
                   onClick={(e) => {
                     if (!addShortcutButton) {
                       writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                    }
+
+                    if (link.startsWith('http')) {
+                      window.open(link, '_blank').focus();
+                    } else {
+                      history.push(link)
                     }
                   }}>
                   <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
