@@ -75,7 +75,7 @@ export default ({ route }) => {
     const params = new URLSearchParams(window.location.search)
     const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
     const queryTab = params.get('tab');
-    console.log(currentTab, tab, onTryIt, queryTab)
+    // console.log(currentTab, tab, onTryIt, queryTab)
 
     if (onTryIt) {
       return onTryIt === tab ? 'active' : ''
@@ -94,17 +94,17 @@ export default ({ route }) => {
       }}>
       <ul className="nav flex-column nav-sidebar">
         <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key='Routes'>
-            <Link
-              to={`/routes`}
-              {...(`routes - All your routes`)}
-              className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''
-                } m-0`}>
-              <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                <i className={`fas fa-road`} />
-              </div>
-              <div className="title"> {openedSidebar ? 'Routes' : ''}</div>
-            </Link>
-          </li>
+          <Link
+            to={`/routes`}
+            {...createTooltip(`routes - All your routes`)}
+            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''
+              } m-0`}>
+            <div style={{ width: '20px' }} className="d-flex justify-content-center">
+              <i className={`fas fa-road`} />
+            </div>
+            <div className="title"> {openedSidebar ? 'Routes' : ''}</div>
+          </Link>
+        </li>
         {openedSidebar && <p className="sidebar-title">Route</p>}
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
           <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
@@ -112,7 +112,8 @@ export default ({ route }) => {
               to={to}
               {...(tooltip || {})}
               className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                } m-0 ${isActive(tab)}`}>
+                } m-0 ${isActive(tab)}`}
+            >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
               </div>

@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { useParams, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   nextClient,
   getCategories,
@@ -32,15 +32,13 @@ import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
 import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
-import _, { conforms } from 'lodash';
+import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
-import GraphQLForm from './GraphQLForm';
-import { Button } from '../../components/Button';
 import { PillButton } from '../../components/PillButton';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
@@ -631,7 +629,6 @@ class Designer extends React.Component {
   };
 
   loadData = () => {
-    console.log(this.props)
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
       this.props.value

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Events } from './events';
+import Thumbtack from './Thumbtack';
 
 export class DynamicTitle extends Component {
   static events = new Events();
@@ -38,6 +39,7 @@ export class DynamicTitle extends Component {
       <div style={{ position: 'relative' }}>
         <div className="page-header">
           <h3 className="page-header_title">{this.state.content}</h3>
+          <Thumbtack />
         </div>
         {this.props.children}
       </div>

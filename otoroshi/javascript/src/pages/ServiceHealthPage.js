@@ -95,7 +95,6 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    console.log(this.state);
     return (
       <Loader loading={this.state.loading}>
         {!this.state.service || !this.state.status.length ? (

@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Button } from "./Button";
+import React from "react";
+import Thumbtack from "./Thumbtack";
 
 export default function PageTitle({
   title,
@@ -7,6 +7,7 @@ export default function PageTitle({
   style = {},
   className = "ms-0 mb-3",
 }) {
+
   return (
     <div
       className={`page-header_title d-flex align-item-center justify-content-between ${className}`}
@@ -14,15 +15,6 @@ export default function PageTitle({
     >
       <div className="d-flex">
         <h3 className="m-0 align-self-center">{title}</h3>
-        <Button
-          type="quiet"
-          // disabled={shortcutDisabled}
-          title="Add current page to sidebar shortcuts"
-          // onClick={addShortcut}
-          className="ms-3 btn-sm align-self-center"
-        >
-          <i className="fas fa-thumbtack"></i>
-        </Button>
       </div>
       <div className="d-flex align-item-center justify-content-between">
         {children}

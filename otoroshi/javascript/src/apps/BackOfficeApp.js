@@ -130,7 +130,10 @@ class AnonymousReportingEnable extends Component {
 const sidebarOpenOnLoad =
   (window.localStorage.getItem('otoroshi-sidebar-open') || 'true') === 'true';
 
-export const SidebarContext = React.createContext(sidebarOpenOnLoad);
+export const SidebarContext = React.createContext({
+  sidebarOpen: sidebarOpenOnLoad,
+  shortcuts: [],
+});
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {

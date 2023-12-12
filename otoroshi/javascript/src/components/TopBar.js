@@ -1031,7 +1031,20 @@ export class TopBar extends Component {
           });
         });
 
-        return options;
+        const trimQuery = query.trim().toLowerCase();
+
+        return options.filter(item => {
+          if (item.label || item.value) {
+            const label = item.label.trim().toLowerCase();
+            const value = item.value.trim().toLowerCase();
+            return label.startsWith(trimQuery) ||
+              value.startsWith(trimQuery) ||
+              label.includes(trimQuery) ||
+              value.includes(trimQuery);
+          } else {
+            return true;
+          }
+        });
       });
   };
 
@@ -1553,7 +1566,7 @@ export class TopBar extends Component {
         </li>
         <li>
           <a className="prevent-click dropdown-item" id="otoroshi-dark-light-icon" href="#">
-            <i className="far fa-moon fa-lg"/> Dark/Light Mode
+            <i className="far fa-moon fa-lg" /> Dark/Light Mode
           </a>
         </li>
         <li>
@@ -1609,7 +1622,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-            // style={{ zIndex: 100 }}
+          // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1642,194 +1655,202 @@ export class TopBar extends Component {
               <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
                 <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
 
-                <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
-                  {selected && (
-                    <div className="mb-3" style={{ marginRight: 10 }}>
-                      <span
-                        title="Current line"
-                        className="badge bg-success"
-                        style={{ fontSize: 20, cursor: 'pointer' }}>
-                        {selected}
-                      </span>
-                    </div>
-                  )}
-                  <div className="mx-3">
-                    <Async
-                      ref={(r) => (this.selector = r)}
-                      name="service-search"
-                      value="one"
-                      placeholder="Search service, line, etc ..."
-                      loadOptions={this.searchServicesOptions}
-                      openMenuOnFocus={true}
-                      onFocus={() => {
-                        this.selector.onInputChange(' ');
-                      }}
-                      onChange={(i) => i.action()}
-                      filterOptions={(opts, value, excluded, conf) => {
-                        const [env, searched] = extractEnv(value);
-                        const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
-                        const matched = fuzzy.filter(searched, filteredOpts, {
-                          extract: (i) => i.label,
-                          pre: '<',
-                          post: '>',
-                        });
-                        return matched.map((i) => i.original);
-                      }}
-                      styles={{
-                        control: (baseStyles, state) => ({
-                          ...baseStyles,
-                          border: '1px solid var(--bg-color_level3)',
-                          width: 400,
-                          color: 'var(--text)',
-                          backgroundColor: 'var(--bg-color_level3)',
-                          boxShadow: 'none',
-                        }),
-                        menu: (baseStyles) => ({
-                          ...baseStyles,
-                          margin: 0,
-                          borderTopLeftRadius: 0,
-                          borderTopRightRadius: 0,
-                          backgroundColor: 'var(--bg-color_level2)',
-                          color: 'var(--text)',
-                        }),
-                        input: (provided) => ({
-                          ...provided,
-                          color: 'var(--text)',
-                        }),
-                      }}
-                      components={{
-                        NoOptionsMessage: () => null,
-                        Option: (props) => {
-                          const p = props.data;
-                          const env =
-                            p.env && isString(p.env)
-                              ? p.env.length > 4
-                                ? p.env.substring(0, 4) + '.'
-                                : p.env
-                              : null;
-                          return (
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '.5rem',
-                                background: props.isFocused
-                                  ? 'var(--bg-color_level2)'
-                                  : 'var(--bg-color_level3)',
-                              }}
-                              ref={props.innerRef}
-                              {...props.innerProps}>
+                  <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
+                    {selected && (
+                      <div className="mb-3" style={{ marginRight: 10 }}>
+                        <span
+                          title="Current line"
+                          className="badge bg-success"
+                          style={{ fontSize: 20, cursor: 'pointer' }}>
+                          {selected}
+                        </span>
+                      </div>
+                    )}
+                    <div className="mx-2">
+                      <Async
+                        ref={(r) => (this.selector = r)}
+                        name="service-search"
+                        value="one"
+                        placeholder="Search service, line, etc ..."
+                        loadOptions={this.searchServicesOptions}
+                        openMenuOnFocus={true}
+                        onFocus={() => {
+                          this.selector.onInputChange(' ');
+                        }}
+                        onChange={(i) => i.action()}
+                        filterOptions={(opts, value, excluded, conf) => {
+                          const [env, searched] = extractEnv(value);
+                          const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
+                          const matched = fuzzy.filter(searched, filteredOpts, {
+                            extract: (i) => i.label,
+                            pre: '<',
+                            post: '>',
+                          });
+                          return matched.map((i) => i.original);
+                        }}
+                        styles={{
+                          control: (baseStyles, state) => ({
+                            ...baseStyles,
+                            border: '1px solid var(--bg-color_level3)',
+                            width: 400,
+                            color: 'var(--text)',
+                            backgroundColor: 'var(--bg-color_level3)',
+                            boxShadow: 'none',
+                          }),
+                          menu: (baseStyles) => ({
+                            ...baseStyles,
+                            margin: 0,
+                            borderTopLeftRadius: 0,
+                            borderTopRightRadius: 0,
+                            backgroundColor: 'var(--bg-color_level2)',
+                            color: 'var(--text)',
+                          }),
+                          input: (provided) => ({
+                            ...provided,
+                            color: 'var(--text)',
+                          }),
+                        }}
+                        components={{
+                          NoOptionsMessage: () => null,
+                          Option: (props) => {
+                            const p = props.data;
+                            const env =
+                              p.env && isString(p.env)
+                                ? p.env.length > 4
+                                  ? p.env.substring(0, 4) + '.'
+                                  : p.env
+                                : null;
+                            return (
                               <div
                                 style={{
-                                  width: 60,
                                   display: 'flex',
-                                  justifyContent: 'center',
                                   alignItems: 'center',
-                                }}>
-                                {p.env && isString(p.env) && (
-                                  <span className={`badge ${this.color(p.env)}`}>{env}</span>
-                                )}
-                                {p.env && !isString(p.env) && p.env}
+                                  padding: '.5rem',
+                                  background: props.isFocused
+                                    ? 'var(--bg-color_level2)'
+                                    : 'var(--bg-color_level3)',
+                                }}
+                                ref={props.innerRef}
+                                {...props.innerProps}>
+                                <div
+                                  style={{
+                                    width: 60,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                  }}>
+                                  {p.env && isString(p.env) && (
+                                    <span className={`badge ${this.color(p.env)}`}>{env}</span>
+                                  )}
+                                  {p.env && !isString(p.env) && p.env}
+                                </div>
+                                <span>{p.label}</span>
                               </div>
-                              <span>{p.label}</span>
-                            </div>
-                          );
-                        },
-                        IndicatorSeparator: () => null,
-                        DropdownIndicator: () => {
-                          return (
-                            <span
-                              style={{ display: 'flex', height: 20, paddingRight: 5 }}
-                              title="You can jump directly into the search bar from anywhere just by typing '/'">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                                <defs>
-                                  <rect id="a" width="19" height="20" rx="3" />
-                                </defs>
-                                <g fill="none" fillRule="evenodd">
-                                  <rect
-                                    stroke="#5F6165"
-                                    x=".5"
-                                    y=".5"
-                                    width="18"
-                                    height="19"
-                                    rx="3"
-                                  />
-                                  <path
-                                    fill="#979A9C"
-                                    d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
-                                  />
-                                </g>
-                              </svg>
-                            </span>
-                          );
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="dropdown">
-                    <Button
-                      type="quiet"
-                      className="d-flex align-items-center justify-content-between dropdown dropdown-toggle"
-                      id="add-components"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="true"
-                      aria-expanded="false"
-                      style={{background: 'var(--bg-color_level3)'}}
-                    >
-                      +
-                    </Button>
-                    <ul
-                      className="dropdown-menu add-menu"
-                      aria-labelledby="add-components"
-                      style={{
-                        background: 'var(--bg-color_level1)',
-                        border: '1px solid var(--bg-color_level1)',
-                        borderTop: 0,
-                        padding: '12px',
-                        zIndex: 4000,
-                        gap: 5,
-                      }}>
-                      {this.props && !this.props.env.initWithNewEngine && (
-                        <li className="d-flex">
-                          <Link to="/services">Service</Link>
-                        </li>
-                      )}
-                      <li className="d-flex">
-                        <Link to="/routes/new?tab=informations">Route</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/backends/add">Backend</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/apikeys/add">Apikey</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/certificates/add">Certificate</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/auth-configs/add">Auth. module</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/jwt-verifiers/add">Jwt verifier</Link>
-                      </li>
-                      <li className="d-flex">
-                        <Link to="/tcp/services/add">TCP service</Link>
-                      </li>
-                      {this.props.env && this.props.env.clevercloud && (
-                        <li className="d-flex">
-                          <Link to="/clever">Service from a CleverApp</Link>
-                        </li>
-                      )}
-                      {Otoroshi.extensions()
-                        .flatMap((ext) => ext.creationItems || [])
-                        .map((item) => (
-                          <li className="d-flex" key={item.title}>
-                            <Link to={`/${item.path}`}>{item.title}</Link>
+                            );
+                          },
+                          IndicatorSeparator: () => null,
+                          DropdownIndicator: () => {
+                            return (
+                              <span
+                                style={{ display: 'flex', height: 20, paddingRight: 5 }}
+                                title="You can jump directly into the search bar from anywhere just by typing '/'">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                                  <defs>
+                                    <rect id="a" width="19" height="20" rx="3" />
+                                  </defs>
+                                  <g fill="none" fillRule="evenodd">
+                                    <rect
+                                      stroke="#5F6165"
+                                      x=".5"
+                                      y=".5"
+                                      width="18"
+                                      height="19"
+                                      rx="3"
+                                    />
+                                    <path
+                                      fill="#979A9C"
+                                      d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
+                                    />
+                                  </g>
+                                </svg>
+                              </span>
+                            );
+                          },
+                        }}
+                      />
+                    </div>
+                    <div className="dropdown">
+                      <Button
+                        type="quiet"
+                        className="d-flex align-items-center justify-content-between dropdown dropdown-toggle"
+                        id="add-components"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="true"
+                        aria-expanded="false"
+                        style={{ background: 'var(--bg-color_level3)', height: '100%' }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                          className='pe-1'
+                          strokeWidth={1.5} stroke="currentColor" style={{
+                            height: 20
+                          }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+
+                      </Button>
+                      <ul
+                        className="dropdown-menu add-menu dropdown-menu-end"
+                        aria-labelledby="add-components"
+                        style={{
+                          background: 'var(--bg-color_level1)',
+                          border: '1px solid var(--bg-color_level1)',
+                          borderTop: 0,
+                          padding: '12px',
+                          zIndex: 4000,
+                          boxShadow: '0 1px 3px rgba(25,25,25, .2)',
+                          gap: 5,
+                        }}>
+                        {this.props && !this.props.env.initWithNewEngine && (
+                          <li className="d-flex">
+                            <Link to="/services">Service</Link>
                           </li>
-                        ))}
-                    </ul>
-                  </div>
-                </form>
+                        )}
+                        <li className="d-flex">
+                          <Link to="/routes/new?tab=informations">Route</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/backends/add">Backend</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/apikeys/add">Apikey</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/certificates/add">Certificate</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/auth-configs/add">Auth. module</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/jwt-verifiers/add">Jwt verifier</Link>
+                        </li>
+                        <li className="d-flex">
+                          <Link to="/tcp/services/add">TCP service</Link>
+                        </li>
+                        {this.props.env && this.props.env.clevercloud && (
+                          <li className="d-flex">
+                            <Link to="/clever">Service from a CleverApp</Link>
+                          </li>
+                        )}
+                        {Otoroshi.extensions()
+                          .flatMap((ext) => ext.creationItems || [])
+                          .map((item) => (
+                            <li className="d-flex" key={item.title}>
+                              <Link to={`/${item.path}`}>{item.title}</Link>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  </form>
                   {window.__apiReadOnly && (
                     <div className="">
                       <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
@@ -1874,9 +1895,8 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${
-                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                      } py-2 pb-4`}
+                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                        } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });

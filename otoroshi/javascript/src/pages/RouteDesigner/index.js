@@ -103,7 +103,7 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 
-function MoreActionsButton({ value, menu, history, globalEnv }) {
+function MoreActionsButton({ value, menu, history }) {
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
@@ -193,15 +193,10 @@ function ManagerTitle({
   pathname,
   value,
   viewPlugins,
-  viewRef,
   location,
   history,
   saveButton,
-  url,
-  setForceTester,
-  forceHideTester,
-  routeId,
-  globalEnv,
+  routeId
 }) {
   const commonsProps = {
     entity,
@@ -223,7 +218,7 @@ function ManagerTitle({
     {
       visible: () => !isOnViewPlugins,
       component: () => (
-        <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
+        <MoreActionsButton value={value} menu={menu} history={history} />
       ),
     },
   ].flatMap((item) => {
@@ -275,8 +270,6 @@ class Manager extends React.Component {
     loading: false,
     template: undefined
   };
-
-  viewRef = React.createRef(null);
 
   componentDidMount() {
     if (this.props.value) {
@@ -332,8 +325,6 @@ class Manager extends React.Component {
 
     this.props.setTitle(() => (
       <ManagerTitle
-        forceHideTester={this.state.forceHideTester}
-        setForceTester={(va) => this.setState({ forceHideTester: va })}
         pathname={location.pathname}
         menu={this.state.menu}
         routeId={p.routeId}
@@ -344,7 +335,6 @@ class Manager extends React.Component {
         entity={entity}
         value={this.state.value}
         viewPlugins={viewPlugins}
-        viewRef={this.viewRef}
         location={location}
         history={history}
         saveButton={this.state.saveButton}
@@ -393,7 +383,6 @@ class Manager extends React.Component {
           <Designer
             {...this.props}
             toggleTesterButton={(va) => this.setState({ forceHideTester: va })}
-            ref={this.viewRef}
             tab={query}
             history={history}
             value={this.state.value}
@@ -409,7 +398,6 @@ class Manager extends React.Component {
         render: () =>
           value && (
             <RouteCompositions
-              ref={this.viewRef}
               service={this.state.value}
               setSaveButton={(n) =>
                 this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })
@@ -472,7 +460,6 @@ class Manager extends React.Component {
           <Informations
             {...this.props}
             routeId={this.props.routeId}
-            ref={this.viewRef}
             isCreation={isCreation}
             value={value}
             setValue={(v) => this.setState({ value: v })}
