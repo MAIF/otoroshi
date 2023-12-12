@@ -19,7 +19,8 @@ export class ServiceSidebar extends Component {
               <Link
                 {...createTooltip(`Back to the service descriptor of ${name}`)}
                 to={`/lines/${env}/services/${serviceId}`}
-                className="d-flex nav-link active">
+                className="d-flex nav-link active"
+              >
                 <div style={{ width: '20px' }} className="d-flex justify-content-center">
                   <i className="fas fa-cube" />
                 </div>
@@ -33,7 +34,8 @@ export class ServiceSidebar extends Component {
                   to={`/lines/${env}/services/${serviceId}/health`}
                   className={`d-flex nav-link ${className('health')} ${
                     openedSidebar ? 'ms-3' : ''
-                  }`}>
+                  }`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-heart" />
                   </div>
@@ -46,9 +48,8 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/stats`}
                   {...createTooltip(`Show live metrics report for ${name}`)}
-                  className={`d-flex nav-link ${className('stats')} ${
-                    openedSidebar ? 'ms-3' : ''
-                  }`}>
+                  className={`d-flex nav-link ${className('stats')} ${openedSidebar ? 'ms-3' : ''}`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-chart-bar" />
                   </div>
@@ -63,7 +64,8 @@ export class ServiceSidebar extends Component {
                   {...createTooltip(`Show analytics report for ${name}`)}
                   className={`d-flex nav-link ${className('analytics')} ${
                     openedSidebar ? 'ms-3' : ''
-                  }`}>
+                  }`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-signal" />
                   </div>
@@ -78,7 +80,8 @@ export class ServiceSidebar extends Component {
                   {...createTooltip(`Show raw events report for ${name}`)}
                   className={`d-flex nav-link ${className('events')} ${
                     openedSidebar ? 'ms-3' : ''
-                  }`}>
+                  }`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-list" />
                   </div>
@@ -93,7 +96,8 @@ export class ServiceSidebar extends Component {
                   {...createTooltip(`Manage all API keys that can access ${name}`)}
                   className={`d-flex nav-link ${className('apikeys')} ${
                     openedSidebar ? 'ms-3' : ''
-                  }`}>
+                  }`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-lock" />
                   </div>
@@ -106,7 +110,8 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/doc`}
                   {...createTooltip(`Show open API documentation for ${name}`)}
-                  className={`d-flex nav-link ${className('doc')} ${openedSidebar ? 'ms-3' : ''}`}>
+                  className={`d-flex nav-link ${className('doc')} ${openedSidebar ? 'ms-3' : ''}`}
+                >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className="fas fa-folder" />
                   </div>

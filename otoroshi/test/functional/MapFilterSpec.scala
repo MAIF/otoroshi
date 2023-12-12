@@ -2,7 +2,7 @@ package functional
 
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
 import otoroshi.events.DataExporter
-import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter}
+import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter, NoneExporter}
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
@@ -727,7 +727,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           Seq(Json.obj("$or" -> Json.arr(Json.obj("@type" -> "AuditEvent"), Json.obj("from" -> "127.0.0.2"))))
         ),
         projection = Json.obj(),
-        config = Exporter.NoneExporter
+        config = NoneExporter
       )
       DataExporter.acceptEvent(
         Json.obj(
@@ -795,7 +795,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           Seq(Json.obj("@type" -> "AuditEvent"), Json.obj("from" -> "127.0.0.2"))
         ),
         projection = Json.obj(),
-        config = Exporter.NoneExporter
+        config = NoneExporter
       )
       DataExporter.acceptEvent(
         Json.obj(

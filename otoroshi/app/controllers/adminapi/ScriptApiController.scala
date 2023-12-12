@@ -53,14 +53,15 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def findAllScriptsList() =
     ApiAction.async { ctx =>
-      val transformersNames = env.scriptManager.transformersNames
-      val validatorsNames   = env.scriptManager.validatorsNames
-      val preRouteNames     = env.scriptManager.preRouteNames
-      val reqSinkNames      = env.scriptManager.reqSinkNames
-      val listenerNames     = env.scriptManager.listenerNames
-      val jobNames          = env.scriptManager.jobNames
-      val exporterNames     = env.scriptManager.exporterNames
-      val reqHandlerNames   = env.scriptManager.reqHandlerNames
+      val transformersNames  = env.scriptManager.transformersNames
+      val validatorsNames    = env.scriptManager.validatorsNames
+      val preRouteNames      = env.scriptManager.preRouteNames
+      val reqSinkNames       = env.scriptManager.reqSinkNames
+      val listenerNames      = env.scriptManager.listenerNames
+      val jobNames           = env.scriptManager.jobNames
+      val exporterNames      = env.scriptManager.exporterNames
+      val reqHandlerNames    = env.scriptManager.reqHandlerNames
+      val tunnelHandlerNames = env.scriptManager.tunnelHandlerNames
 
       val typ                        = ctx.request.getQueryString("type")
       val excludedTypes: Seq[String] = ctx.request
@@ -109,6 +110,11 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         case Some("request-handler") => reqHandlerNames
         case _                       => Seq.empty
       }
+      val tunnelHandlers  = typ match {
+        case None                   => tunnelHandlerNames
+        case Some("tunnel-handler") => tunnelHandlerNames
+        case _                      => Seq.empty
+      }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {
           case Left(_)                                                             => extractInfos(c)
@@ -154,6 +160,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               case Some("job") if script.`type` == PluginType.JobType                      => true
               case Some("exporter") if script.`type` == PluginType.DataExporterType        => true
               case Some("request-handler") if script.`type` == PluginType.DataExporterType => true
+              case Some("tunnel-handler") if script.`type` == PluginType.TunnelHandlerType => true
               case Some("composite") if script.`type` == PluginType.CompositeType          => true
               case Some("*")                                                               => true
               case _                                                                       => false
@@ -201,6 +208,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpListenerNames.map(extractInfos) ++
           cpExporterNames.map(extractInfos) ++
           reqHandlers.map(extractInfos) ++
+          tunnelHandlers.map(extractInfos) ++
           cpJobNames.filter(_ != classOf[WasmJob].getName).map(extractInfosFromJob).filter {
             case JsNull => false
             case _      => true

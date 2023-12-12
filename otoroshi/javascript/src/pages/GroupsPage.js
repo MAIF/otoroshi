@@ -39,7 +39,8 @@ export class GroupsPage extends Component {
           return (
             <span
               title="This group holds the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="badge bg-danger">
+              className="badge bg-danger"
+            >
               {item.name}
             </span>
           );
@@ -56,7 +57,8 @@ export class GroupsPage extends Component {
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}>
+          onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}
+        >
           <i className="fas fa-chart-bar" />
         </button>
       ),

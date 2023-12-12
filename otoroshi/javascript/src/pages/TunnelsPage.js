@@ -287,7 +287,8 @@ export class TunnelPage extends Component {
             <button
               type="button"
               className="btn btn-success btn-sm"
-              onClick={(e) => this.exposeRoute(node)}>
+              onClick={(e) => this.exposeRoute(node)}
+            >
               expose
             </button>
           );
@@ -358,7 +359,8 @@ export class TunnelPage extends Component {
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
             width: '100%',
-          }}>
+          }}
+        >
           <Link className="btn btn-danger btn-sm" to="/tunnels" style={{ marginTop: 30 }}>
             <i className="fas fa-times" /> Cancel
           </Link>

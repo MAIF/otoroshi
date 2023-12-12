@@ -734,6 +734,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         case IndexSettingsInterval.Week  => ISODateTimeFormat.weekyearWeek().print(DateTime.now())
         case IndexSettingsInterval.Month => ISODateTimeFormat.yearMonth().print(DateTime.now())
         case IndexSettingsInterval.Year  => ISODateTimeFormat.year().print(DateTime.now())
+        case _ => ISODateTimeFormat.date().print(DateTime.now())
       }
     } else {
       ""

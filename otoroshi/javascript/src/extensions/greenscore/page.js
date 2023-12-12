@@ -31,7 +31,8 @@ function DatePickerSelector({ icon, onClick }) {
         cursor: 'pointer',
       }}
       onClick={onClick}
-      className="justify-content-center d-flex align-items-center">
+      className="justify-content-center d-flex align-items-center"
+    >
       <i className={icon} />
     </div>
   );
@@ -80,7 +81,8 @@ function FilterSelector({
         background: opened ? 'var(--bg-color_level1_opa80)' : 'transparent',
         display: 'flex',
         flexDirection: 'column',
-      }}>
+      }}
+    >
       <div
         className="date-hover"
         onClick={open}
@@ -99,7 +101,8 @@ function FilterSelector({
           borderBottomLeftRadius: opened ? '0px' : '8px',
           borderBottomRightRadius: opened ? 0 : 8,
           transition: 'border .2s',
-        }}>
+        }}
+      >
         <div className="d-flex align-items-center">
           Filters <i className="fas fa-filter ms-1"></i>
         </div>
@@ -110,7 +113,8 @@ function FilterSelector({
             padding: '.2rem',
             borderRadius: '25%',
             minWidth: 32,
-          }}>
+          }}
+        >
           {enabledFilters}
         </span>
       </div>
@@ -121,7 +125,8 @@ function FilterSelector({
             display: 'flex',
             flex: 1,
             justifyContent: 'start',
-          }}>
+          }}
+        >
           <div
             style={{
               zIndex: 12,
@@ -133,7 +138,8 @@ function FilterSelector({
               maxWidth: 350,
               minWidth: 350,
             }}
-            className="p-3 d-flex flex-column">
+            className="p-3 d-flex flex-column"
+          >
             <h3 style={{ color: 'var(--text)' }}>Groups</h3>
 
             <NgSelectRenderer
@@ -162,7 +168,8 @@ function FilterSelector({
                   color: 'var(--text)',
                   borderRadius: 8,
                   cursor: 'pointer',
-                }}>
+                }}
+              >
                 STATIC
               </div>
               <div
@@ -176,7 +183,8 @@ function FilterSelector({
                   color: 'var(--text)',
                   borderRadius: 8,
                   cursor: 'pointer',
-                }}>
+                }}
+              >
                 DYNAMIC <i className="fas fa-bolt ms-2" />
               </div>
             </div>
@@ -191,7 +199,8 @@ function FilterSelector({
                   borderRadius: 8,
                   border: '2px solid var(--bg-color_level3)',
                   color: 'var(--text)',
-                }}>
+                }}
+              >
                 Cancel
               </button>
               <button
@@ -203,7 +212,8 @@ function FilterSelector({
                   borderRadius: 8,
                   background: 'var(--color-primary)',
                   color: 'var(--color-white)',
-                }}>
+                }}
+              >
                 Apply
               </button>
             </div>
@@ -268,7 +278,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
         right: 0,
         zIndex: 10,
       }}
-      className="d-flex flex-column">
+      className="d-flex flex-column"
+    >
       <div
         className="date-hover"
         onClick={open}
@@ -288,7 +299,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
           borderBottomRightRadius: opened ? 0 : 8,
           transition: 'border .2s',
           marginLeft: opened ? 152 : 0,
-        }}>
+        }}
+      >
         <i className="fas fa-calendar me-2" />
         {moment(date).format('DD MMMM YY').toString()}
       </div>
@@ -301,7 +313,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
             justifyContent: 'start',
             background: 'var(--bg-color_level1_opa80)',
             marginLeft: 152,
-          }}>
+          }}
+        >
           <div
             style={{
               zIndex: 12,
@@ -313,7 +326,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
               maxWidth: 350,
               minWidth: 350,
             }}
-            className="p-3 d-flex flex-column">
+            className="p-3 d-flex flex-column"
+          >
             <div className="d-flex align-items-center justify-content-between" style={{ gap: 6 }}>
               {months.length > 1 && (
                 <DatePickerSelector icon="fas fa-angles-left" onClick={goToStart} />
@@ -328,7 +342,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                   textAlign: 'center',
                   fontSize: '1.25rem',
                   whiteSpace: 'nowrap',
-                }}>
+                }}
+              >
                 {format(months[currentMonthAndYear]?.value)}
               </span>
               {months.length > 1 && (
@@ -359,7 +374,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                         color: 'var(--text)',
                         borderRadius: 4,
                         cursor: 'pointer',
-                      }}>
+                      }}
+                    >
                       {moment(d.value).format('dddd DD')}
                     </div>
                   );
@@ -376,7 +392,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                   borderRadius: 8,
                   border: '2px solid var(--bg-color_level3)',
                   color: 'var(--text)',
-                }}>
+                }}
+              >
                 Cancel
               </button>
               <button
@@ -388,7 +405,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                   borderRadius: 8,
                   background: 'var(--color-primary)',
                   color: 'var(--color-white)',
-                }}>
+                }}
+              >
                 Apply
               </button>
             </div>
@@ -645,15 +663,8 @@ export default class GreenScoreConfigsPage extends React.Component {
   };
 
   render() {
-    const {
-      scores,
-      filterStatusView,
-      groups,
-      loading,
-      mode,
-      filteredGroups,
-      dynamicValues,
-    } = this.state;
+    const { scores, filterStatusView, groups, loading, mode, filteredGroups, dynamicValues } =
+      this.state;
 
     const availableDates = [...new Set(scores.map((section) => section.date))];
     const closestDate = availableDates.reduce(
@@ -688,7 +699,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                   style={{
                     minHeight: 320,
                     paddingTop: 50,
-                  }}>
+                  }}
+                >
                   {scores.length === 0 && (
                     <div className="d-flex flex-column justify-content-center align-items-center m-0 mb-3">
                       <p style={{ fontSize: '2rem', marginBottom: '1rem' }}>
@@ -702,7 +714,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                           backgroundColor: 'var(--color-primary)',
                           boxShadow: `0 0 0 1px var(--color-primary,transparent)`,
                           color: 'var(--text)',
-                        }}>
+                        }}
+                      >
                         Start new group
                       </Link>
                     </div>
@@ -714,7 +727,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                       gap: '.5rem',
                       marginBottom: '.5rem',
                       position: 'relative',
-                    }}>
+                    }}
+                  >
                     {availableDates.length > 1 && (
                       <DatePicker
                         opened={filterStatusView === 'date'}
@@ -749,7 +763,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                       <Section
                         full={false}
                         title="Static score"
-                        subTitle="Follow the progression of your values, grouped in four score : architecture, design, usage and log">
+                        subTitle="Follow the progression of your values, grouped in four score : architecture, design, usage and log"
+                      >
                         <div className="d-flex" style={{ gap: '.5rem' }}>
                           <GlobalScore
                             loading={loading}
@@ -801,7 +816,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                   <ModeWrapper mode={mode} value="dynamic">
                     <Section
                       title="Dynamic or static ... all in one place"
-                      subTitle="Dynamic and static values are computed and normalized between 0 and 1 for easy comparison.">
+                      subTitle="Dynamic and static values are computed and normalized between 0 and 1 for easy comparison."
+                    >
                       <RulesRadarchart
                         loading={loading}
                         values={valuesAtCurrentDate}
@@ -813,7 +829,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                   <ModeWrapper mode={mode} value="dynamic">
                     <Section
                       title="Dynamic KPI"
-                      subTitle="The values come from observing traffic on your groups. These values are calculated automatically and live.">
+                      subTitle="The values come from observing traffic on your groups. These values are calculated automatically and live."
+                    >
                       <div style={{ display: 'flex', gap: '.5rem' }}>
                         <div
                           style={{
@@ -821,7 +838,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                             gap: '.5rem',
                             display: 'flex',
                             flexDirection: 'column',
-                          }}>
+                          }}
+                        >
                           <DynamicChart
                             loading={loading}
                             title="Dynamic values"
@@ -857,7 +875,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                   <ModeWrapper mode={mode} value="dynamic">
                     <Section
                       title="Dynamic score"
-                      subTitle="Your group thresholds are set with three values: excellent, sufficient and poor. Each of the dynamic counters (overhead, backend duration, etc) is placed in one of these values, based ont its last recorded value.">
+                      subTitle="Your group thresholds are set with three values: excellent, sufficient and poor. Each of the dynamic counters (overhead, backend duration, etc) is placed in one of these values, based ont its last recorded value."
+                    >
                       <div style={{ display: 'flex', flex: 1, gap: '.5rem', marginTop: '.5rem' }}>
                         <DynamicScore
                           loading={loading}
@@ -884,7 +903,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                   <Section
                     title=""
                     subTitle="Thresholds are defined on all groups and are combined into two sections. The first represents the quantity of data exchanged and the second the time spent calculating requests and responses."
-                    full={false}>
+                    full={false}
+                  >
                     <Wrapper loading={loading}>
                       <div className="d-flex justify-content-around" style={{ gap: '.5rem' }}>
                         {scores.length > 0 &&
@@ -908,7 +928,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                                 flex: 1,
                                 margin: '0.5rem',
                               }}
-                              key={`container${j}`}>
+                              key={`container${j}`}
+                            >
                               <h3 className="text-center my-3 p-3" style={{ color: 'var(--text)' }}>
                                 {j === 0 ? 'Time spent calculating' : 'Data exchanged'}
                               </h3>
@@ -919,7 +940,8 @@ export default class GreenScoreConfigsPage extends React.Component {
                                   gridTemplateRows: '1fr 1fr',
                                   gap: '.5rem',
                                   flex: 1,
-                                }}>
+                                }}
+                              >
                                 {values.map(({ key, title, unit }) => {
                                   const scalingValue =
                                     Math.abs(

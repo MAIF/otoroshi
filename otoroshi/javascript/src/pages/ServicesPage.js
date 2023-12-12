@@ -31,7 +31,8 @@ export class ServicesPage extends Component {
           return (
             <span
               title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="badge bg-danger">
+              className="badge bg-danger"
+            >
               {item.name}
             </span>
           );
@@ -50,7 +51,8 @@ export class ServicesPage extends Component {
             type="button"
             className="btn btn-danger btn-sm"
             disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-            onClick={(e) => this.deleteService(item, table)}>
+            onClick={(e) => this.deleteService(item, table)}
+          >
             <i className="fas fa-trash" />
           </button>
         );
@@ -149,7 +151,8 @@ export class ServicesPage extends Component {
         type="button"
         className="btn btn-danger btn-sm"
         disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-        onClick={(e) => this.deleteService(item, table)}>
+        onClick={(e) => this.deleteService(item, table)}
+      >
         <i className="fas fa-trash" />
       </button>
     );

@@ -82,7 +82,8 @@ export class MetricsPage extends Component {
           flexDirection: 'column',
           justifyContent: 'flex-start',
           alignItems: 'center',
-        }}>
+        }}
+      >
         <h3>
           {metrics.length} metrics - {w_units.rate_units} - {w_units.duration_units}
         </h3>
@@ -102,7 +103,8 @@ export class MetricsPage extends Component {
             flexWrap: 'wrap',
             justifyContent: 'flex-start',
             alignItems: 'flex-start',
-          }}>
+          }}
+        >
           <table className="table table-striped table-hover table-sm">
             <thead>
               <tr>
@@ -131,72 +133,80 @@ export class MetricsPage extends Component {
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`value: ${clean(metric.value) || ''}`}>
+                          title={`value: ${clean(metric.value) || ''}`}
+                        >
                           {clean(metric.value) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`count: ${clean(metric.count) || ''} calls`}>
+                          title={`count: ${clean(metric.count) || ''} calls`}
+                        >
                           {clean(metric.count) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`min: ${clean(metric.min) || ''} ${metric.duration_units}`}>
+                          title={`min: ${clean(metric.min) || ''} ${metric.duration_units}`}
+                        >
                           {clean(metric.min) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`mean: ${clean(metric.mean) || ''} ${metric.duration_units}`}>
+                          title={`mean: ${clean(metric.mean) || ''} ${metric.duration_units}`}
+                        >
                           {clean(metric.mean) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`max: ${clean(metric.max) || ''} ${metric.duration_units}`}>
+                          title={`max: ${clean(metric.max) || ''} ${metric.duration_units}`}
+                        >
                           {clean(metric.max) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`stddev: ${clean(metric.stddev) || ''}`}>
+                          title={`stddev: ${clean(metric.stddev) || ''}`}
+                        >
                           {clean(metric.stddev) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`mean_rate: ${clean(metric.mean_rate) || ''} ${
-                            metric.rate_units
-                          }`}>
+                          title={`mean_rate: ${clean(metric.mean_rate) || ''} ${metric.rate_units}`}
+                        >
                           {clean(metric.mean_rate) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`m1_rate: ${clean(metric.m1_rate) || ''} ${metric.rate_units}`}>
+                          title={`m1_rate: ${clean(metric.m1_rate) || ''} ${metric.rate_units}`}
+                        >
                           {clean(metric.m1_rate) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`m5_rate: ${clean(metric.m5_rate) || ''} ${metric.rate_units}`}>
+                          title={`m5_rate: ${clean(metric.m5_rate) || ''} ${metric.rate_units}`}
+                        >
                           {clean(metric.m5_rate) || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <span
                           style={{ cursor: 'pointer' }}
-                          title={`m15_rate: ${clean(metric.m15_rate) || ''} ${metric.rate_units}`}>
+                          title={`m15_rate: ${clean(metric.m15_rate) || ''} ${metric.rate_units}`}
+                        >
                           {clean(metric.m15_rate) || ''}
                         </span>
                       </td>

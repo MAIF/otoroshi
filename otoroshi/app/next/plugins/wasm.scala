@@ -4,7 +4,7 @@ import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.wasm4s.scaladsl._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.{NgMatchedRoute, NgRoute}

@@ -681,11 +681,10 @@ export class User extends Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
-          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
-            (c) => {
+          publicKeyCredentialCreationOptions.excludeCredentials =
+            publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
-            }
-          );
+            });
           return navigator.credentials
             .create(
               {
@@ -747,7 +746,8 @@ export class User extends Component {
                   }
                 });
               });
-            }}>
+            }}
+          >
             <i className="fas fa-edit" /> Set password
           </button>
           <button
@@ -759,7 +759,8 @@ export class User extends Component {
               this.props.hashPassword(this.props.user.email, password);
               window.newAlert(`The generated password is: ${password}`, 'Generated password');
             }}
-            style={{ marginRight: 0 }}>
+            style={{ marginRight: 0 }}
+          >
             <i className="fas fa-redo" /> Generate passsword
           </button>
           {this.props.webauthn && (
@@ -789,16 +790,19 @@ export class User extends Component {
                           flexDirection: 'column',
                           justifyContent: 'center',
                           alignItems: 'center',
-                        }}>
+                        }}
+                      >
                         <p>The link to update user profile is usable for the next 10 minutes</p>
                         <a
                           target="_blank"
-                          href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
+                          href={`${r.host}/privateapps/profile?session=${sessionId}`}
+                        >{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
                       </div>,
                       'Profile updates'
                     );
                   });
-              }}>
+              }}
+            >
               <i className="fas fa-link" /> Update profile link
             </button>
           )}
@@ -823,7 +827,8 @@ export class User extends Component {
                     window.newAlert('The email containing update link has been sent', 'Email sent');
                   });
               }}
-              style={{ marginRight: 0 }}>
+              style={{ marginRight: 0 }}
+            >
               <i className="fas fa-envelope" /> Send update profile link to user
             </button>
           )}
@@ -832,7 +837,8 @@ export class User extends Component {
               type="button"
               className="btn btn-sm btn-primary"
               onClick={this.registerWebAuthn}
-              title="Register webauthn device">
+              title="Register webauthn device"
+            >
               <i className="fas fa-lock" /> Register webauthn device
             </button>
           )}
@@ -840,7 +846,8 @@ export class User extends Component {
             type="button"
             className="btn btn-sm btn-danger"
             title="Remove user"
-            onClick={(e) => this.props.removeUser(this.props.user.email)}>
+            onClick={(e) => this.props.removeUser(this.props.user.email)}
+          >
             <i className="fas fa-trash" /> Remove user
           </button>
         </div>
@@ -1057,7 +1064,8 @@ export class BasicModuleConfig extends Component {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
+                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}
+              >
                 Show raw users
               </button>
             </div>
@@ -1070,7 +1078,8 @@ export class BasicModuleConfig extends Component {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
+                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}
+              >
                 Hide raw users
               </button>
             </div>
@@ -1418,7 +1427,8 @@ export class LdapModuleConfig extends Component {
                                 path + '.groupFilters',
                                 settings.groupFilters.filter((_, j) => i !== j)
                               )
-                            }>
+                            }
+                          >
                             <i className="fas fa-trash" />
                           </button>
                           <button
@@ -1429,7 +1439,8 @@ export class LdapModuleConfig extends Component {
                                 ...settings.groupFilters,
                                 { group: '', tenant: '*rw', team: '*' },
                               ])
-                            }>
+                            }
+                          >
                             <i className="fas fa-plus-circle" />{' '}
                           </button>
                         </span>
@@ -1444,7 +1455,8 @@ export class LdapModuleConfig extends Component {
                 className="btn btn-primary"
                 onClick={() =>
                   changeTheValue(path + '.groupFilters', [{ group: '', tenant: '*rw', team: '*' }])
-                }>
+                }
+              >
                 <i className="fas fa-plus-circle" />{' '}
               </button>
             )}
@@ -1917,8 +1929,7 @@ export class SamlModuleConfig extends Component {
       type: 'bool',
       props: {
         label: 'Client side session',
-        help:
-          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
+        help: 'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
       },
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
@@ -1980,12 +1991,8 @@ export class SamlModuleConfig extends Component {
     },
     credentials: {
       type: ({}) => {
-        const {
-          signingKey,
-          encryptionKey,
-          signedDocuments,
-          encryptedAssertions,
-        } = this.props.value.credentials;
+        const { signingKey, encryptionKey, signedDocuments, encryptedAssertions } =
+          this.props.value.credentials;
 
         const configs = [
           {
@@ -2230,7 +2237,8 @@ export class SamlModuleConfig extends Component {
         <div className="row mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 col-form-label"></label>
+            className="col-xs-12 col-sm-2 col-form-label"
+          ></label>
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.fetchFromURL}>
               Get entity descriptor from URL
@@ -2323,8 +2331,7 @@ export class OAuth1ModuleConfig extends Component {
       type: 'bool',
       props: {
         label: 'Client side session',
-        help:
-          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
+        help: 'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
       },
     },
     httpMethod: {

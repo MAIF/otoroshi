@@ -55,7 +55,8 @@ export class ProvidersDashboardPage extends Component {
             width: '100%',
             height: window.innerHeight - 55,
             marginTop: 15,
-          }}></iframe>
+          }}
+        ></iframe>
       </div>
     );
   }

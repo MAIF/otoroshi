@@ -3,7 +3,7 @@ package otoroshi.wasm.proxywasm
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.sksamuel.exts.concurrent.Futures.RichFuture
-import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -711,9 +711,10 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[CorazaWafConfig](
             CorazaWafConfig.format,
+            classOf[CorazaWafConfig],
             id => datastores.corazaConfigsDatastore.key(id),
             c => datastores.corazaConfigsDatastore.extractId(c),
-            tmpl = () => CorazaWafConfig.template().json,
+            tmpl = (v, p) => CorazaWafConfig.template().json,
             stateAll = () => states.allConfigs(),
             stateOne = id => states.config(id),
             stateUpdate = values => states.updateConfigs(values)

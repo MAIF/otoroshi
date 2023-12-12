@@ -154,7 +154,8 @@ export class JwtVerifiersPage extends Component {
                 _backgroundColor: 'var(--color-primary)',
                 _borderColor: 'var(--color-primary)',
                 marginLeft: 5,
-              }}>
+              }}
+            >
               <i className="fas fa-hat-wizard" /> Create with wizard
             </Button>
           )}

@@ -15,14 +15,14 @@ export const toUpperCaseLabels = (obj) => {
       [key]: !value
         ? null
         : isLabelField
-        ? v.charAt(0).toUpperCase() + v.slice(1)
-        : typeof value === 'object' &&
-          value !== null &&
-          key !== 'transformer' &&
-          key !== 'optionsTransformer' &&
-          !Array.isArray(value)
-        ? toUpperCaseLabels(value)
-        : value,
+          ? v.charAt(0).toUpperCase() + v.slice(1)
+          : typeof value === 'object' &&
+              value !== null &&
+              key !== 'transformer' &&
+              key !== 'optionsTransformer' &&
+              !Array.isArray(value)
+            ? toUpperCaseLabels(value)
+            : value,
     };
   }, {});
 };

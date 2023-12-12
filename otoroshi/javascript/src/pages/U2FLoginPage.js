@@ -274,7 +274,8 @@ export class U2FLoginPage extends Component {
                   width: '100%',
                   textAlign: 'center',
                   fontSize: '18px',
-                }}>
+                }}
+              >
                 {!!this.state.error && this.state.error}
               </p>
             </div>
@@ -284,13 +285,15 @@ export class U2FLoginPage extends Component {
               <button
                 type="submit"
                 className="btn btn-primaryColor btn-lg"
-                onClick={this.simpleLogin}>
+                onClick={this.simpleLogin}
+              >
                 Login
               </button>
               <button
                 type="button"
                 className="btn btn-primaryColor btn-lg hide"
-                onClick={this.webAuthnLogin}>
+                onClick={this.webAuthnLogin}
+              >
                 Login with WebAuthn
               </button>
             </div>

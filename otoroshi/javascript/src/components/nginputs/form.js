@@ -238,7 +238,8 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
             <span
               className={`breadcrumbs__item ${i === breadcrumb.length - 1 ? 'is-active' : ''}`}
               onClick={() => setBreadcrumb(i)}
-              key={`${part}`}>
+              key={`${part}`}
+            >
               {firstLetterUppercase(camelCase(part))}
             </span>
           );
@@ -279,17 +280,21 @@ function SubFlow({ fields = [], full_fields = [], render, config }) {
       {!moreFields && processedFields.map(render)}
       {hasMoreFields && moreFields && processedAllFields.map(render)}
 
-      {hasMoreFields && !moreFields && !config.readOnly && match(config.path, config.breadcrumb) && (
-        <button
-          className="btn btn-sm btn-primary mt-2"
-          onClick={() => showMoreFields(!moreFields)}
-          style={{
-            marginLeft: 'auto',
-            display: 'block',
-          }}>
-          Show advanced settings
-        </button>
-      )}
+      {hasMoreFields &&
+        !moreFields &&
+        !config.readOnly &&
+        match(config.path, config.breadcrumb) && (
+          <button
+            className="btn btn-sm btn-primary mt-2"
+            onClick={() => showMoreFields(!moreFields)}
+            style={{
+              marginLeft: 'auto',
+              display: 'block',
+            }}
+          >
+            Show advanced settings
+          </button>
+        )}
     </>
   );
 }
@@ -542,15 +547,14 @@ export class NgForm extends Component {
     const show = isFunction(visible)
       ? visible(config.value)
       : visible !== undefined
-      ? visible
-      : true;
+        ? visible
+        : true;
     if (!show) {
       return null;
     } else {
       const part = groupId || name;
-      const fullPath = (config.root
-        ? [part]
-        : [...config.path, isFunction(part) ? undefined : part]
+      const fullPath = (
+        config.root ? [part] : [...config.path, isFunction(part) ? undefined : part]
       )
         .filter((f) => f)
         .map((n) => (isFunction(n) ? '' : n));
@@ -579,7 +583,8 @@ export class NgForm extends Component {
             summaryFields,
           }}
           value={config.value}
-          key={fullPath}>
+          key={fullPath}
+        >
           <SubFlow
             fields={fields}
             full_fields={full_fields}
@@ -607,8 +612,8 @@ export class NgForm extends Component {
     const show = isFunction(visible)
       ? visible(config.value)
       : visible !== undefined
-      ? visible
-      : true;
+        ? visible
+        : true;
 
     if (!show) return null;
 
@@ -907,7 +912,8 @@ export class NgManagedState extends Component {
         type="button"
         className="btn btn-danger"
         disabled={this.state.isDirty}
-        onClick={this.onReset}>
+        onClick={this.onReset}
+      >
         Reset
       </button>
     );
@@ -926,7 +932,8 @@ export class NgManagedState extends Component {
         type="button"
         className="btn btn-success"
         disabled={this.state.isDirty}
-        onClick={this.onSubmit}>
+        onClick={this.onSubmit}
+      >
         Submit
       </button>
     );

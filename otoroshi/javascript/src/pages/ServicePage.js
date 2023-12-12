@@ -153,7 +153,8 @@ class Target extends Component {
                 <button
                   type="button"
                   className="btn btn-primary btn-sm ml-3"
-                  onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+                  onClick={(e) => this.setState({ showMore: !this.state.showMore })}
+                >
                   <i className="fas fa-eye" />
                 </button>
               );
@@ -583,7 +584,8 @@ class CleverSelector extends Component {
             type="button"
             className="btn btn-danger"
             style={{ marginRight: 10 }}
-            onClick={this.show}>
+            onClick={this.show}
+          >
             <i className="fas fa-times-circle" />
           </button>
           <ReactSelectOverride
@@ -789,14 +791,6 @@ export class ServicePage extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    // const json = YAML.stringify({
-    //   apiVersion: 'proxy.otoroshi.io/v1',
-    //   kind: 'ServiceDescriptor',
-    //   metadata: {
-    //     name,
-    //   },
-    //   spec: { ...this.state.service, name: undefined },
-    // });
     fetch('/bo/api/json_to_yaml', {
       method: 'POST',
       headers: {
@@ -1218,7 +1212,8 @@ export class ServicePage extends Component {
                 type="button"
                 {...createTooltip('.....', 'left', true)}
                 disabled={!this.state.service.enabled}
-                onClick={this.convertToRoute}>
+                onClick={this.convertToRoute}
+              >
                 <i className="fas fa-road" /> convert to route
               </button>
               <button
@@ -1230,7 +1225,8 @@ export class ServicePage extends Component {
                   'left',
                   true
                 )}
-                onClick={this.deleteService}>
+                onClick={this.deleteService}
+              >
                 <i className="fas fa-trash" />
               </button>
               {this.state.allCollapsed && (
@@ -1238,7 +1234,8 @@ export class ServicePage extends Component {
                   className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
-                  {...createTooltip('Unfold all form groups', 'left', true)}>
+                  {...createTooltip('Unfold all form groups', 'left', true)}
+                >
                   <i className="fas fa-eye" />
                 </button>
               )}
@@ -1247,7 +1244,8 @@ export class ServicePage extends Component {
                   className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
-                  {...createTooltip('Fold all form groups', 'left', true)}>
+                  {...createTooltip('Fold all form groups', 'left', true)}
+                >
                   <i className="fas fa-eye-slash" />
                 </button>
               )}
@@ -1256,7 +1254,8 @@ export class ServicePage extends Component {
                 className="btn btn-primary"
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
-                onClick={this.exportService}>
+                onClick={this.exportService}
+              >
                 <i className="fas fa-file-export" /> JSON
               </button>
               <button
@@ -1267,7 +1266,8 @@ export class ServicePage extends Component {
                   'left',
                   true
                 )}
-                onClick={this.exportServiceYaml}>
+                onClick={this.exportServiceYaml}
+              >
                 <i className="fas fa-file-export" /> YAML
               </button>
               <button
@@ -1278,11 +1278,12 @@ export class ServicePage extends Component {
                   'left',
                   true
                 )}
-                onClick={this.duplicateService}>
+                onClick={this.duplicateService}
+              >
                 <i className="far fa-copy" aria-hidden="true" />
               </button>
               <button
-                className="btn btn-save"
+                className="btn btn-success"
                 type="button"
                 data-toggle="tooltip"
                 data-placement="top"
@@ -1293,8 +1294,9 @@ export class ServicePage extends Component {
                   true
                 )}
                 {...propsDisabled}
-                onClick={this.saveChanges}>
-                <i className="far fa-save" />
+                onClick={this.saveChanges}
+              >
+                Save
               </button>
             </div>
           </div>
@@ -1302,7 +1304,8 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="Location"
-            lineEnd={true}>
+            lineEnd={true}
+          >
             <Location
               tenant={this.state.service._loc.tenant || 'default'}
               onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
@@ -1343,7 +1346,8 @@ export class ServicePage extends Component {
                 type="button"
                 className="btn btn-success btn-sm"
                 {...createTooltip('You can create a new group to host this descriptor')}
-                onClick={this.createNewGroup}>
+                onClick={this.createNewGroup}
+              >
                 <i className="fas fa-plus" /> Create a new group
               </button>
               <button
@@ -1353,7 +1357,8 @@ export class ServicePage extends Component {
                 {...createTooltip(
                   'You can create a new group with an auto generated name to host this descriptor'
                 )}
-                onClick={this.createDedicatedGroup}>
+                onClick={this.createDedicatedGroup}
+              >
                 <i className="fas fa-plus" /> Create dedicated group
               </button>
             </div>
@@ -1470,7 +1475,8 @@ export class ServicePage extends Component {
                 />
                 <a
                   href=" https://github.com/MAIF/otoroshi/tree/master/tools/tcp-udp-tunnel-client"
-                  target="_blank">
+                  target="_blank"
+                >
                   Learn more about TCP/UDP tunneling
                 </a>
               </div>
@@ -1479,7 +1485,8 @@ export class ServicePage extends Component {
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
-            label="Service exposition settings">
+            label="Service exposition settings"
+          >
             {this.state.service.handleLegacyDomain && (
               <>
                 {this.state.freeDomain && (
@@ -1547,7 +1554,8 @@ export class ServicePage extends Component {
                       onClick={(e) => {
                         e.preventDefault();
                         this.setState({ freeDomain: !this.state.freeDomain });
-                      }}>
+                      }}
+                    >
                       {this.state.freeDomain
                         ? 'exposed domain assistant'
                         : 'exposed domain free input'}
@@ -1556,7 +1564,8 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createLetsEncrypt}
-                        className="btn btn-sm btn-primary">
+                        className="btn btn-sm btn-primary"
+                      >
                         <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                       </button>
                     )}
@@ -1564,7 +1573,8 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createCert}
-                        className="btn btn-sm btn-primary">
+                        className="btn btn-sm btn-primary"
+                      >
                         <i className="fas fa-plus-circle" /> Create certificate
                       </button>
                     )}
@@ -1689,7 +1699,8 @@ export class ServicePage extends Component {
             initCollapsed={
               !this.state.service.redirection ? this.state.service.redirection.enabled : true
             }
-            label="Redirection">
+            label="Redirection"
+          >
             <BooleanInput
               label="Redirection enabled"
               value={
@@ -1738,7 +1749,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
-            label="Service targets">
+            label="Service targets"
+          >
             <BooleanInput
               label="Redirect to local"
               value={this.state.service.redirectToLocal}
@@ -1868,7 +1880,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
-            label="URL Patterns">
+            label="URL Patterns"
+          >
             <div className="row mb-3">
               <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
@@ -1905,7 +1918,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Restrictions">
+            label="Restrictions"
+          >
             <Restrictions
               value={this.state.service.restrictions}
               onChange={(arr) => this.changeTheValue('restrictions', arr)}
@@ -1917,7 +1931,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Otoroshi exchange protocol">
+            label="Otoroshi exchange protocol"
+          >
             <BooleanInput
               label="Enabled"
               value={this.state.service.enforceSecureCommunication}
@@ -2052,7 +2067,8 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Authentication"
-            dataScreenshot="ldap-tutorial-authentication">
+            dataScreenshot="ldap-tutorial-authentication"
+          >
             <BooleanInput
               label="Enforce user authentication"
               value={this.state.service.privateApp}
@@ -2078,7 +2094,8 @@ export class ServicePage extends Component {
                 {this.state.service.authConfigRef && (
                   <Link
                     to={`/auth-configs/edit/${this.state.service.authConfigRef}`}
-                    className="btn btn-sm btn-success">
+                    className="btn btn-sm btn-success"
+                  >
                     <i className="fas fa-edit" /> Edit the auth. module
                   </Link>
                 )}
@@ -2119,7 +2136,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Api Keys Constraints">
+            label="Api Keys Constraints"
+          >
             <BooleanInput
               label="From basic auth."
               value={this.state.service.apiKeyConstraints.basicAuth.enabled}
@@ -2462,7 +2480,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="CORS support">
+            label="CORS support"
+          >
             <BooleanInput
               label="Enabled"
               value={this.state.service.cors.enabled}
@@ -2518,7 +2537,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="JWT tokens verification">
+            label="JWT tokens verification"
+          >
             {this.state.service.jwtVerifier.type === 'ref' && (
               <div>
                 {/*<SelectInput
@@ -2541,7 +2561,8 @@ export class ServicePage extends Component {
                       disabled={this.props.disabled}
                       type="button"
                       className="btn btn-success"
-                      onClick={() => this.props.history.push(`/jwt-verifiers/edit/${itemValue}`)}>
+                      onClick={() => this.props.history.push(`/jwt-verifiers/edit/${itemValue}`)}
+                    >
                       <i className="fas fa-edit" />
                     </button>
                   )}
@@ -2558,7 +2579,8 @@ export class ServicePage extends Component {
                     {this.state.service.jwtVerifier.ids.length === 0 && (
                       <a
                         href={`/bo/dashboard/jwt-verifiers/add`}
-                        className="btn btn-primary btn-sm">
+                        className="btn btn-primary btn-sm"
+                      >
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
@@ -2579,7 +2601,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Pre routing">
+            label="Pre routing"
+          >
             <Message
               message={
                 <>
@@ -2653,7 +2676,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Access validation">
+            label="Access validation"
+          >
             <Message
               message={
                 <>
@@ -2787,7 +2811,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Gzip support">
+            label="Gzip support"
+          >
             <BooleanInput
               label="Enabled"
               value={this.state.service.gzip.enabled}
@@ -2846,7 +2871,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Client settings">
+            label="Client settings"
+          >
             <BooleanInput
               label="Use circuit breaker"
               help="Use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !"
@@ -2962,7 +2988,8 @@ export class ServicePage extends Component {
                     type="button"
                     className="btn btn-danger btn-sm"
                     onClick={this.resetCircuitBreaker}
-                    {...createTooltip('Reset current setting to use the new one')}>
+                    {...createTooltip('Reset current setting to use the new one')}
+                  >
                     Reset Circuit Breakers
                   </button>
                 </div>
@@ -2975,7 +3002,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="HTTP Headers">
+            label="HTTP Headers"
+          >
             <ObjectInput
               label="Additional Headers In"
               placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
@@ -3025,7 +3053,8 @@ export class ServicePage extends Component {
             <div className="row mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 col-form-label">
+                className="col-xs-12 col-sm-2 col-form-label"
+              >
                 Security headers
               </label>
               <div className="col-sm-10 input-group-btn">
@@ -3033,21 +3062,24 @@ export class ServicePage extends Component {
                   type="button"
                   onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}
                   disabled={this.computeIfButtonDisabled('X-Frame-Options')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   X-Frame-Options
                 </button>
                 <button
                   type="button"
                   onClick={(e) => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
                   disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   X-XSS-Protection
                 </button>
                 <button
                   type="button"
                   onClick={(e) => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
                   disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   X-Content-Type-Options
                 </button>
                 <button
@@ -3056,7 +3088,8 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
                   }
                   disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   X-Permitted-Cross-Domain-Policies
                 </button>
                 <button
@@ -3068,7 +3101,8 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Referrer-Policy')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   Referrer-Policy
                 </button>
                 <button
@@ -3077,7 +3111,8 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
                   }
                   disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   Content-Security-Policy
                 </button>
                 <button
@@ -3089,7 +3124,8 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Strict-Transport-Security')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   Strict-Transport-Security
                 </button>
                 <button
@@ -3101,7 +3137,8 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Public-Key-Pins')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   Public-Key-Pins
                 </button>
               </div>
@@ -3109,7 +3146,8 @@ export class ServicePage extends Component {
             <div className="row mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 col-form-label">
+                className="col-xs-12 col-sm-2 col-form-label"
+              >
                 Utility headers
               </label>
               <div className="col-sm-10">
@@ -3119,7 +3157,8 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')
                   }
                   disabled={this.computeIfButtonDisabled('Permissions-Policy')}
-                  className="btn btn-sm btn-success mb-2">
+                  className="btn btn-sm btn-success mb-2"
+                >
                   opt-out from Google FLoC
                 </button>
               </div>
@@ -3145,7 +3184,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Additional settings">
+            label="Additional settings"
+          >
             <TextInput
               label="OpenAPI"
               placeholder="The URL for the OpenAPI descriptor of this service"
@@ -3191,7 +3231,8 @@ export class ServicePage extends Component {
               <span>
                 Canary mode <i className="fab fa-twitter" />
               </span>
-            }>
+            }
+          >
             <BooleanInput
               label="Enabled"
               value={this.state.service.canary.enabled}
@@ -3245,7 +3286,8 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   className="btn btn-success btn-sm"
-                  onClick={this.canaryToStandard}>
+                  onClick={this.canaryToStandard}
+                >
                   <i className="fab fa-twitter" /> Use canary targets as standard targets
                 </button>
               </div>
@@ -3257,7 +3299,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="HealthCheck settings">
+            label="HealthCheck settings"
+          >
             <BooleanInput
               label="HealthCheck enabled"
               value={this.state.service.healthCheck.enabled}
@@ -3277,7 +3320,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Faults injection">
+            label="Faults injection"
+          >
             <BooleanInput
               label="User facing app."
               value={this.state.service.userFacing}
@@ -3302,7 +3346,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Custom errors template">
+            label="Custom errors template"
+          >
             {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
             {this.state.neverSaved && (
               <div className="row mb-3">
@@ -3324,7 +3369,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Request transformation">
+            label="Request transformation"
+          >
             {/*<Warning />*/}
             <Message
               message={
@@ -3387,7 +3433,8 @@ export class ServicePage extends Component {
             }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Plugins">
+            label="Plugins"
+          >
             <Message message="This is the new place for plugins in otoroshi. Please use it instead of pre-routing, access validation and transformers as they will be deprecated soon !" />
             <BooleanInput
               label="Enabled"
@@ -3492,8 +3539,7 @@ export class TemplateInput extends Component {
         label: 'Custom messages',
         placeholderKey: 'Message ID',
         placeholderValue: 'Custom message',
-        help:
-          'This will be the translation map for all possible messages. Those values will be injected in the templates if you use variable replacements syntax (explained above)',
+        help: 'This will be the translation map for all possible messages. Those values will be injected in the templates if you use variable replacements syntax (explained above)',
       },
     },
   };
@@ -3657,14 +3703,16 @@ export class TemplateInput extends Component {
               className="btn btn-success float-end"
               style={{ marginLeft: 5 }}
               title="Save template"
-              onClick={this.saveTemplate}>
-              <i className="far fa-save" />
+              onClick={this.saveTemplate}
+            >
+              Save
             </button>
             <button
               type="button"
               className="btn btn-danger float-end"
               title="Delete template"
-              onClick={this.deleteTemplate}>
+              onClick={this.deleteTemplate}
+            >
               <i className="fas fa-trash" />
             </button>
           </div>
@@ -3731,7 +3779,8 @@ export class PrivateApiButton extends Component {
           type="button"
           className="btn btn-danger btn-sm"
           style={{ marginLeft: 5 }}
-          onClick={this.makePublic}>
+          onClick={this.makePublic}
+        >
           <i className="fas fa-lock" /> Make service a 'private api'
         </button>
       );
@@ -3768,7 +3817,8 @@ export class Migration extends Component {
         className="btn btn-danger btn-sm btn-sm"
         type="button"
         onClick={this.migrate}
-        style={this.props.style}>
+        style={this.props.style}
+      >
         <i className="fas fa-fire" /> Migrate all to plugins
       </button>
     );

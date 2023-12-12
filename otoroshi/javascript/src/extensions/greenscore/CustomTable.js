@@ -15,7 +15,8 @@ function Heading({ title, onClick, textCenter }) {
         cursor: 'pointer',
       }}
       className={textCenter ? 'text-center' : ''}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       {title}
     </div>
   );
@@ -29,7 +30,8 @@ function Headings({ sort }) {
         padding: '0rem 1rem',
         display: 'grid',
         gridTemplateColumns: '62px 1fr 2fr repeat(4, 1fr) 64px',
-      }}>
+      }}
+    >
       <div />
       <Heading title="Name" onClick={() => sort('name')} />
       <Heading title="Description" onClick={() => sort('description')} />
@@ -58,9 +60,8 @@ export default class CustomTable extends React.Component {
       color: getColor(entity.score),
       net: entity.score,
       data: String.fromCharCode(65 + Math.min(Math.floor((1 - entity.dynamic_values) * 5))),
-      dynamicLetter: Object.keys(GREEN_SCORE_GRADES)[
-        Math.min(Math.floor((1 - entity.dynamic_values) * 5))
-      ],
+      dynamicLetter:
+        Object.keys(GREEN_SCORE_GRADES)[Math.min(Math.floor((1 - entity.dynamic_values) * 5))],
       dynamic: parseFloat(entity.dynamic_values * 100, 2).toFixed(2),
     };
   };
@@ -167,7 +168,8 @@ export default class CustomTable extends React.Component {
                 backgroundColor: 'var(--color-primary)',
                 boxShadow: `0 0 0 1px var(--color-primary,transparent)`,
                 color: 'var(--text)',
-              }}>
+              }}
+            >
               Start new group
             </Link>
           </div>
@@ -182,14 +184,16 @@ export default class CustomTable extends React.Component {
                 borderRadius: '.25rem',
                 cursor: 'pointer',
               }}
-              onClick={() => this.openScore(group)}>
+              onClick={() => this.openScore(group)}
+            >
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '62px 1fr 2fr repeat(4, 1fr) 64px',
                   alignItems: 'center',
                   padding: '.5rem 1rem',
-                }}>
+                }}
+              >
                 {/* <div>#{i}</div> */}
                 <div
                   style={{
@@ -203,7 +207,8 @@ export default class CustomTable extends React.Component {
                     cursor: 'pointer',
                     marginRight: 12,
                   }}
-                  onClick={() => this.openScore(group)}>
+                  onClick={() => this.openScore(group)}
+                >
                   <i className={`fas fa-chevron-${group.opened ? 'up' : 'down'}`} />
                 </div>
                 <span style={{ minWidth: '30%', color: 'var(--text)' }}>{group.name}</span>
@@ -214,7 +219,8 @@ export default class CustomTable extends React.Component {
                     color: 'var(--text)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
-                  }}>
+                  }}
+                >
                   {group.description}
                 </span>
 
@@ -263,8 +269,8 @@ export default class CustomTable extends React.Component {
                     )
                       return null;
 
-                    const sections = this.props.scores[i].sectionsAtCurrentDate[routeIndex]
-                      .sections;
+                    const sections =
+                      this.props.scores[i].sectionsAtCurrentDate[routeIndex].sections;
 
                     const score = sections.reduce((acc, item) => acc + item.score.score, 0);
 
@@ -281,9 +287,10 @@ export default class CustomTable extends React.Component {
                     const data = String.fromCharCode(
                       65 + Math.min(Math.floor((1 - dynamicValues) * 5))
                     );
-                    const dynamicLetter = Object.keys(GREEN_SCORE_GRADES)[
-                      Math.min(Math.floor((1 - dynamicValues) * 5))
-                    ];
+                    const dynamicLetter =
+                      Object.keys(GREEN_SCORE_GRADES)[
+                        Math.min(Math.floor((1 - dynamicValues) * 5))
+                      ];
                     const dynamic = parseFloat(dynamicValues * 100, 2).toFixed(2);
 
                     return (
@@ -295,7 +302,8 @@ export default class CustomTable extends React.Component {
                           gridTemplateColumns: '62px 1fr 2fr repeat(4, 1fr) 64px',
                           alignItems: 'center',
                           padding: '0.5rem 0',
-                        }}>
+                        }}
+                      >
                         <div />
                         <span style={{ minWidth: '30%', color: 'var(--text)' }}>
                           {routeInformations.name}
@@ -307,7 +315,8 @@ export default class CustomTable extends React.Component {
                             color: 'var(--text)',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
-                          }}>
+                          }}
+                        >
                           {routeInformations.description}
                         </span>
 
@@ -324,7 +333,8 @@ export default class CustomTable extends React.Component {
                           </div>
                           <span
                             style={{ borderLeft: '2px solid var(--bg-color_level3)' }}
-                            className="ps-1">
+                            className="ps-1"
+                          >
                             6000
                           </span>
                         </div>
@@ -356,7 +366,8 @@ function ItemActions({ unfold, openAction, editLink, onDelete }) {
       onClick={(e) => {
         e.stopPropagation();
         openAction();
-      }}>
+      }}
+    >
       {unfold ? (
         <div className="d-flex">
           <Link to={editLink} type="button" className="btn btn-sm btn-success me-1">

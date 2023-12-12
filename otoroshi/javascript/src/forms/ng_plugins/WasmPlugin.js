@@ -23,8 +23,12 @@ const schema = {
         label: 'Kind',
         type: 'select',
         props: {
+          formatValue: (value) => {
+            if (value === 'wasmmanager') return 'wasmo';
+            return value;
+          },
           label: 'Kind',
-          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map((v) => ({
+          options: ['Base64', 'Http', 'Wasmo', 'Local', 'File'].map((v) => ({
             label: v,
             value: v.toLowerCase(),
           })),
@@ -227,8 +231,7 @@ const schema = {
         label: 'Max calls',
         suffix: 'calls',
         props: {
-          help:
-            'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
+          help: 'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
         },
       },
       max_memory_usage: {
@@ -236,8 +239,7 @@ const schema = {
         label: 'Max memory usage',
         suffix: '%',
         props: {
-          help:
-            'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
+          help: 'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
         },
       },
       max_avg_call_duration: {
@@ -245,8 +247,7 @@ const schema = {
         label: 'Max unused duration',
         suffix: 'ms.',
         props: {
-          help:
-            'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
+          help: 'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
         },
       },
       max_unused_duration: {
@@ -254,8 +255,7 @@ const schema = {
         label: 'Max unused duration',
         suffix: 'ms.',
         props: {
-          help:
-            'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
+          help: 'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
         },
       },
     },

@@ -1,0 +1,92 @@
+name: release-otoroshi
+
+on: 
+  workflow_dispatch:
+    inputs:
+      version_from:
+        description: "Current dev version (ie: 16.11.0-dev)"
+      version_to:
+        description: "Target version (ie: 16.11.0)"
+      version_next:
+        description: "Next dev version (ie: 16.12.0-dev)"
+      version_last:
+        description: "Last release version (ie: 16.10.3)"
+      milestone:
+        description: "Milestone of the release"
+
+jobs:
+  release-otoroshi:
+    name: release-otoroshi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup jdk11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+      - name: setup release dir
+        run: |
+          mkdir -p ./release-${{ inputs.version_to }}
+      - name: setup git
+        run: | 
+          git config --global user.email "otoroshi-bot-github-actions@users.noreply.github.com"
+          git config --global user.name "otoroshi-bot-github-actions"
+          git config --global --list
+      - name: setup pgp
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+        run: |
+          mkdir -p ~/.sbt/gpg
+          echo "$PGP_SECRET" | base64 --decode > ~/.sbt/gpg/secring.key
+          gpg --batch --pinentry-mode=loopback --yes --passphrase "$PGP_PASSPHRASE" --import ~/.sbt/gpg/secring.key
+          gpg --batch --pinentry-mode=loopback --yes --passphrase "$PGP_PASSPHRASE" --export-secret-key 4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F > ~/.sbt/gpg/secring.gpg
+      - name: login to dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Setup xvfb for screen 0
+        run: |
+          Xvfb :1 -screen 0 1600x1200x24 &         
+      - name: run-release-process
+        id: run-release-process
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          DISPLAY: :1
+        run: |
+          LOC=$(pwd)
+          cd ./scripts/release
+          npm install
+          npm install -g prettier
+          node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
+          git commit -am '[release ${{ inputs.version_to }}] Update changelog'
+          node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC}
+          git commit -am 'Update helm chart'
+          git push origin master
+          curl -L -X PATCH -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" "https://api.github.com/repos/MAIF/otoroshi/milestones/${{ inputs.milestone }}" -d '{"state":"closed"}'
+      - name: Generate SHA-256
+        run: |
+          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.jar | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
+          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
+          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256
+      - name: Release binary to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ inputs.version_to }}
+          body_path: ./release-${{ inputs.version_to }}/github-release.md
+          files: |
+            ./release-${{ inputs.version_to }}/otoroshi.jar
+            ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip
+            ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip
+            ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
+            ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
+            ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256

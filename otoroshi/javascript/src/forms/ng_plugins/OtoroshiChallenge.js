@@ -16,8 +16,7 @@ export default {
     version: {
       type: 'select',
       label: 'Challeng version',
-      help:
-        'The version of the challenge, either a simple value passed in headers or a jwt token signed by both parties',
+      help: 'The version of the challenge, either a simple value passed in headers or a jwt token signed by both parties',
       props: {
         options: [
           { label: 'V1', value: 'V1' },

@@ -160,7 +160,7 @@ export class ClusterPage extends Component {
         extractKey={(item) => item.name}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
-            <button type="button" className="btn btn-danger btn-sm" onClick={this.clear}>
+            <button type="button" className="btn btn-sm btn-danger" onClick={this.clear}>
               <i className="fas fa-trash" /> Clear members
             </button>
           </div>

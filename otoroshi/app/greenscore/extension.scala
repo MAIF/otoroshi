@@ -269,12 +269,13 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[GreenScoreEntity](
             GreenScoreEntity.format,
+            classOf[GreenScoreEntity],
             id => datastores.greenscoresDatastore.key(id),
             c => datastores.greenscoresDatastore.extractId(c),
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
             stateUpdate = values => states.updateGreenScores(values),
-            tmpl = () =>
+            tmpl = (v, p) =>
               GreenScoreEntity(
                 id = IdGenerator.namedId("green-score", env),
                 name = "green score group",

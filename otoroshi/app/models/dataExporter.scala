@@ -22,11 +22,10 @@ trait Exporter {
   def toJson: JsValue
 }
 
+case object NoneExporter extends Exporter {
+  def toJson: JsValue = JsNull
+}
 object Exporter {
-
-  case object NoneExporter extends Exporter {
-    def toJson: JsValue = JsNull
-  }
 
 }
 
@@ -244,75 +243,93 @@ sealed trait DataExporterConfigType {
   def name: String
 }
 
+case object DataExporterConfigTypeKafka extends DataExporterConfigType {
+  def name: String = "kafka"
+}
+
+case object DataExporterConfigTypePulsar extends DataExporterConfigType {
+  def name: String = "pulsar"
+}
+
+case object DataExporterConfigTypeElastic extends DataExporterConfigType {
+  def name: String = "elastic"
+}
+
+case object DataExporterConfigTypeWebhook extends DataExporterConfigType {
+  def name: String = "webhook"
+}
+
+case object DataExporterConfigTypeFile extends DataExporterConfigType {
+  def name: String = "file"
+}
+
+case object DataExporterConfigTypeGoReplayFile extends DataExporterConfigType {
+  def name: String = "goreplayfile"
+}
+
+case object DataExporterConfigTypeS3File extends DataExporterConfigType {
+  def name: String = "s3"
+}
+
+case object DataExporterConfigTypeGoReplayS3 extends DataExporterConfigType {
+  def name: String = "goreplays3"
+}
+
+case object DataExporterConfigTypeMailer extends DataExporterConfigType {
+  def name: String = "mailer"
+}
+
+case object DataExporterConfigTypeCustom extends DataExporterConfigType {
+  def name: String = "custom"
+}
+
+case object DataExporterConfigTypeNone extends DataExporterConfigType {
+  def name: String = "none"
+}
+
+case object DataExporterConfigTypeConsole extends DataExporterConfigType {
+  def name: String = "console"
+}
+
+case object DataExporterConfigTypeMetrics extends DataExporterConfigType {
+  def name: String = "metrics"
+}
+
+case object DataExporterConfigTypeCustomMetrics extends DataExporterConfigType {
+  def name: String = "custommetrics"
+}
+
+case object DataExporterConfigTypeWasm extends DataExporterConfigType {
+  def name: String = "wasm"
+}
+
+case object DataExporterConfigTypeOtlpLogs extends DataExporterConfigType {
+  def name: String = "otlp-logs"
+}
+
+case object DataExporterConfigTypeOtlpMetrics extends DataExporterConfigType {
+  def name: String = "otlp-metrics"
+}
+
 object DataExporterConfigType {
 
-  case object Kafka extends DataExporterConfigType {
-    def name: String = "kafka"
-  }
-
-  case object Pulsar extends DataExporterConfigType {
-    def name: String = "pulsar"
-  }
-
-  case object Elastic extends DataExporterConfigType {
-    def name: String = "elastic"
-  }
-
-  case object Webhook extends DataExporterConfigType {
-    def name: String = "webhook"
-  }
-
-  case object File extends DataExporterConfigType {
-    def name: String = "file"
-  }
-
-  case object GoReplayFile extends DataExporterConfigType {
-    def name: String = "goreplayfile"
-  }
-
-  case object S3File extends DataExporterConfigType {
-    def name: String = "s3"
-  }
-
-  case object GoReplayS3 extends DataExporterConfigType {
-    def name: String = "goreplays3"
-  }
-
-  case object Mailer extends DataExporterConfigType {
-    def name: String = "mailer"
-  }
-
-  case object Custom extends DataExporterConfigType {
-    def name: String = "custom"
-  }
-
-  case object None extends DataExporterConfigType {
-    def name: String = "none"
-  }
-
-  case object Console extends DataExporterConfigType {
-    def name: String = "console"
-  }
-
-  case object Metrics extends DataExporterConfigType {
-    def name: String = "metrics"
-  }
-
-  case object CustomMetrics extends DataExporterConfigType {
-    def name: String = "custommetrics"
-  }
-
-  case object Wasm extends DataExporterConfigType {
-    def name: String = "wasm"
-  }
-
-  case object OtlpLogs extends DataExporterConfigType {
-    def name: String = "otlp-logs"
-  }
-
-  case object OtlpMetrics extends DataExporterConfigType {
-    def name: String = "otlp-metrics"
-  }
+  val Kafka = DataExporterConfigTypeKafka
+  val Pulsar = DataExporterConfigTypePulsar
+  val Elastic = DataExporterConfigTypeElastic
+  val Webhook = DataExporterConfigTypeWebhook
+  val File = DataExporterConfigTypeFile
+  val GoReplayFile = DataExporterConfigTypeGoReplayFile
+  val GoReplayS3 = DataExporterConfigTypeGoReplayS3
+  val S3File = DataExporterConfigTypeS3File
+  val Mailer = DataExporterConfigTypeMailer
+  val Custom = DataExporterConfigTypeCustom
+  val Console = DataExporterConfigTypeConsole
+  val Metrics = DataExporterConfigTypeMetrics
+  val CustomMetrics = DataExporterConfigTypeCustomMetrics
+  val Wasm = DataExporterConfigTypeWasm
+  val OtlpMetrics = DataExporterConfigTypeOtlpMetrics
+  val OtlpLogs = DataExporterConfigTypeOtlpLogs
+  val None = DataExporterConfigTypeNone
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {

@@ -39,13 +39,14 @@ export class SessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-sm"
+          className="btn btn-primary btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
               'Profile'
             )
-          }>
+          }
+        >
           Profile
         </button>
       ),
@@ -58,13 +59,14 @@ export class SessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-sm"
+          className="btn btn-primary btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.rights, null, 2)}</pre>,
               'Rights'
             )
-          }>
+          }
+        >
           Rights
         </button>
       ),
@@ -81,7 +83,8 @@ export class SessionsPage extends Component {
             key={item.randomId}
             type="button"
             className="btn btn-danger btn-sm"
-            onClick={(e) => this.discardSession(e, item.randomId, table)}>
+            onClick={(e) => this.discardSession(e, item.randomId, table)}
+          >
             <i className="fas fa-fire" /> Discard Session
           </button>
         );
@@ -90,7 +93,7 @@ export class SessionsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Admin users sessions`);
+    this.props.setTitle(`Admin sessions`);
   }
 
   discardSession = (e, id, table) => {
@@ -154,7 +157,7 @@ export class SessionsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="sessions"
-          defaultTitle="Admin users sessions"
+          defaultTitle="Admin sessions"
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
@@ -172,18 +175,18 @@ export class SessionsPage extends Component {
               <button
                 key="discard-all"
                 type="button"
-                className="btn btn-danger btn-sm"
-                style={{ marginLeft: 5 }}
-                onClick={this.discardSessions}>
+                className="btn btn-danger btn-sm ms-2"
+                onClick={this.discardSessions}
+              >
                 <i className="fas fa-fire" /> Discard all sessions
               </button>
             ) : null,
             <button
               key="discard-old"
               type="button"
-              className="btn btn-danger btn-sm"
-              style={{ marginLeft: 5 }}
-              onClick={this.discardOldSessions}>
+              className="btn btn-danger btn-sm ms-2"
+              onClick={this.discardOldSessions}
+            >
               <i className="fas fa-fire" /> Discard old sessions
             </button>,
           ]}

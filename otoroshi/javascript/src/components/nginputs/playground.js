@@ -250,7 +250,8 @@ export class NgFormPlaygroundOtoroshi extends Component {
                     borderBottom: '1px rgb(181, 179, 179) solid',
                     paddingBottom: 50,
                     marginBottom: 20,
-                  }}>
+                  }}
+                >
                   <h3>{key}</h3>
                   <hr />
                   <NgFormState key={key}>

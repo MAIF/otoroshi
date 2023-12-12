@@ -8,7 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
-import io.otoroshi.common.wasm.scaladsl.WasmIntegration
+import io.otoroshi.wasm4s.scaladsl.WasmIntegration
 import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -20,7 +20,7 @@ import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
-import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensions}
+import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
@@ -31,7 +31,7 @@ import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptMa
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.storage.DataStores
+import otoroshi.storage.{DataStores, DataStoresBuilder}
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.drivers.lettuce._
@@ -118,6 +118,8 @@ case class SidecarConfig(
     strict: Boolean = true
 )
 
+case class ElSettings(allowEnvAccess: Boolean, allowConfigAccess: Boolean)
+
 class Env(
     val _configuration: Configuration,
     val environment: Environment,
@@ -198,6 +200,26 @@ class Env(
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
 
   lazy val customLogo: Option[String] = configuration.getOptionalWithFileSupport[String]("app.instance.logo")
+
+  lazy val elSettings: ElSettings = ElSettings(
+    allowEnvAccess = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowEnvAccess").getOrElse(true),
+    allowConfigAccess = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true),
+  )
+
+  lazy val devMimetypes: Map[String, String] = configuration
+    .betterGetOptional[String]("play.http.fileMimeTypes")
+    .map { types =>
+      types
+        .split("\\n")
+        .toSeq
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map(_.split("=").toSeq)
+        .filter(_.size == 2)
+        .map(v => (v.head, v.tail.head))
+        .toMap
+    }
+    .getOrElse(Map.empty[String, String])
 
   def otoroshiLogo: String = {
     val now = DateTime.now()
@@ -809,6 +831,12 @@ class Env(
       .map(v => v.split(",").map(_.trim).toSeq)
       .getOrElse(Seq.empty)
 
+  val blacklistedPlugins: Set[String] = (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
+      .map(v => v.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty)).toSet
+
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
   if (!testing) {
@@ -877,6 +905,39 @@ class Env(
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
+      case v if v.startsWith("cp:")                                        =>
+        scriptManager.getAnyScript[DataStoresBuilder](v)(otoroshiExecutionContext) match {
+          case Left(err)  => {
+            logger.error(s"specified datastore with name '${v}' does not exists or failed to instanciate: ${err}")
+            System.exit(-1)
+            ???
+          }
+          case Right(dsb) => dsb.build(configuration, environment, lifecycle, clusterConfig.mode, this)
+        }
+      case v if v.startsWith("ext:")                                       =>
+        val parts = v.split(":").toSeq
+        if (parts.size == 2) {
+          val name = parts.apply(1)
+          adminExtensions.datastore(name) match {
+            case None      => {
+              logger.error(s"specified datastore with name '${v}' does not exists")
+              System.exit(-1)
+              ???
+            }
+            case Some(dsb) => dsb.build(configuration, environment, lifecycle, clusterConfig.mode, this)
+          }
+        } else {
+          val extensionId = parts.apply(1)
+          val name        = parts.apply(2)
+          adminExtensions.datastoreFrom(AdminExtensionId(extensionId), name) match {
+            case None      => {
+              logger.error(s"specified datastore with name '${v}' does not exists")
+              System.exit(-1)
+              ???
+            }
+            case Some(dsb) => dsb.build(configuration, environment, lifecycle, clusterConfig.mode, this)
+          }
+        }
       case "redis-pool" if clusterConfig.mode == ClusterMode.Leader        =>
         new RedisCPDataStores(configuration, environment, lifecycle, this)
       case "redis-mpool" if clusterConfig.mode == ClusterMode.Leader       =>
@@ -1166,7 +1227,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.11.0-dev"
+  lazy val otoroshiVersion    = "16.12.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

@@ -30,7 +30,8 @@ export default class RulesRadarchart extends PureComponent {
         y={newPoint[1]}
         style={{
           fill: 'var(--text)',
-        }}>
+        }}
+      >
         {text}
       </Text>
     ));
@@ -103,7 +104,8 @@ export default class RulesRadarchart extends PureComponent {
             position: 'relative',
             minHeight: 480,
           }}
-          className="p-3 d-flex align-items-center">
+          className="p-3 d-flex align-items-center"
+        >
           <div className="d-flex flex-column align-items-between">
             <h3 style={{ color: 'var(--text)' }}>Overall</h3>
             {[
@@ -152,7 +154,8 @@ export default class RulesRadarchart extends PureComponent {
               innerRadius="10%"
               data={data}
               fill="var(--color_level2)"
-              fontSize={15}>
+              fontSize={15}
+            >
               <PolarGrid />
               <PolarAngleAxis
                 dataKey="subject"

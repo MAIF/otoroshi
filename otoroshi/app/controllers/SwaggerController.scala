@@ -46,7 +46,8 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Action { req =>
       Ok(
         otoroshi.views.html.oto.documentationframe(
-          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
+          //s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
+          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json"
         )
       )
     }
@@ -2886,7 +2887,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Json.obj(
       "openapi"      -> "3.0.0",
       "info"         -> Json.obj(
-        "version"     -> "16.11.0-dev",
+        "version"     -> "16.12.0-dev",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact"     -> Json.obj(

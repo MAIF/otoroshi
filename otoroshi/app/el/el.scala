@@ -215,10 +215,10 @@ object GlobalExpressionLanguage {
                 .flatMap(_.select(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"env.$field@(.*):$dv@(.*)"                        => Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)"                                 => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"env.$field@(.*):$dv@(.*)" if env.elSettings.allowEnvAccess => Option(System.getenv(field)).getOrElse(dv)
+            case r"env.$field@(.*)" if env.elSettings.allowEnvAccess => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field@(.*):$dv@(.*)" =>
+            case r"config.$field@(.*):$dv@(.*)" if env.elSettings.allowConfigAccess =>
               env.configuration
                 .getOptionalWithFileSupport[String](field)
                 .orElse(
@@ -234,7 +234,7 @@ object GlobalExpressionLanguage {
                   env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
                 )
                 .getOrElse(dv)
-            case r"config.$field@(.*)"          =>
+            case r"config.$field@(.*)" if env.elSettings.allowConfigAccess =>
               env.configuration
                 .getOptionalWithFileSupport[String](field)
                 .orElse(

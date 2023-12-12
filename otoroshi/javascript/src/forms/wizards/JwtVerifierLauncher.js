@@ -75,7 +75,8 @@ export class JwtVerifierLauncher extends React.Component {
                             mode: 'update_in_wizard',
                             jwtVerifier: verifier,
                           })
-                        }>
+                        }
+                      >
                         <i className="fas fa-pencil-alt me-1" />
                         Edit
                       </Button>

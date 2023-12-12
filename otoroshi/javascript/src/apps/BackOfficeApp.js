@@ -239,6 +239,10 @@ class BackOfficeAppContainer extends Component {
     this.setState({ shortMenu: newShortMenu });
   };
 
+  reloadEnv = () => {
+    BackOfficeServices.env().then((env) => this.setState({ env }));
+  };
+
   render() {
     const classes = ['page-container'];
     if (
@@ -249,20 +253,34 @@ class BackOfficeAppContainer extends Component {
       classes.push(this.props.children.type.backOfficeClassName);
     }
 
+    let shortcuts = [];
+    if (
+      this.state.env &&
+      this.state.env.user_preferences &&
+      this.state.env.user_preferences.preferences
+    ) {
+      shortcuts = this.state.env.user_preferences.preferences.backoffice_sidebar_shortcuts || [];
+    }
+
     return (
       <Loader loading={this.state.loading}>
         <SidebarContext.Provider
           value={{
+            shortcuts,
+            reloadEnv: this.reloadEnv,
             openedSidebar: this.state.openedSidebar,
             toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
-          }}>
+          }}
+        >
           <ReloadNewVersion />
           {this.state.env && (
             <>
               <UpdateOtoroshiVersion env={this.state.env} />
               <TopBar
+                reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
                 setTitle={(t) => DynamicTitle.setContent(t)}
+                getTitle={() => DynamicTitle.getContent()}
                 {...this.props}
                 changePassword={this.state.env.changePassword}
                 env={this.state.env}
@@ -274,7 +292,8 @@ class BackOfficeAppContainer extends Component {
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
-                id="sidebar">
+                id="sidebar"
+              >
                 <i
                   className={`fas fa-chevron-${
                     this.state.openedSidebar ? 'left' : 'right'
@@ -296,7 +315,8 @@ class BackOfficeAppContainer extends Component {
                     {
                       // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                     }
-                  }>
+                  }
+                >
                   {this.state.env && (
                     <GlobalTenantSelector
                       env={this.state.env}
@@ -308,7 +328,8 @@ class BackOfficeAppContainer extends Component {
                     <li
                       className={`nav-item mt-0 ${
                         this.state.openedSidebar ? 'nav-item--open' : ''
-                      }`}>
+                      }`}
+                    >
                       <Link
                         to="/"
                         className={`nav-link ${
@@ -318,7 +339,8 @@ class BackOfficeAppContainer extends Component {
                         onClick={() => {
                           DynamicTitle.setContent(null);
                           DynamicSidebar.setContent(null);
-                        }}>
+                        }}
+                      >
                         <i
                           className={`fab fa-fort-awesome ${
                             this.state.openedSidebar ? 'me-3' : ''
@@ -855,7 +877,8 @@ class BackOfficeAppContainer extends Component {
                           alignItems: 'center',
                           width: '100%',
                           height: '70vh',
-                        }}>
+                        }}
+                      >
                         <img
                           src={this.state.env ? this.state.env.otoroshiLogo : ''}
                           className="logoOtoroshi"
@@ -865,7 +888,8 @@ class BackOfficeAppContainer extends Component {
                             fontSize: 20,
                             marginBottom: 20,
                             marginTop: 20,
-                          }}>
+                          }}
+                        >
                           Ooops, an error occured
                         </div>
                         <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
@@ -880,13 +904,15 @@ class BackOfficeAppContainer extends Component {
                                 },
                                 window.history.back
                               );
-                            }}>
+                            }}
+                          >
                             <i className="fas fa-arrow-left" /> back
                           </button>
                           <button
                             type="button"
                             className="btn btn-danger ms-2"
-                            onClick={(e) => window.location.reload()}>
+                            onClick={(e) => window.location.reload()}
+                          >
                             <i className="fas fa-redo" /> reload
                           </button>
                         </div>
@@ -972,7 +998,8 @@ class GlobalTenantSelector extends Component {
             data-placement="top"
             title="Change the tenant"
             href="/bo/dashboard/"
-            onClick={(e) => this.handleClick(e)}>
+            onClick={(e) => this.handleClick(e)}
+          >
             <i className="fas fa-building"></i>
             {this.props.openedSidebar && (
               <div className="global-tenant-selector">

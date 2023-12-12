@@ -60,7 +60,6 @@ const files = [
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
-  { file: './experiments/common-wasm/build.sbt' },
   { file: './readme.md' },
 ];
 
@@ -174,15 +173,12 @@ async function buildUi(version, where, releaseDir) {
 
 async function buildOpenApi(version, where, releaseDir) {
   // build openapi
-  // await runScript(`
-  //   cd ${where}/otoroshi
-  //   sbt ";clean;compile;testOnly OpenapiGeneratorTests"
-  // `, where);
+  await runScript(`
+    cd ${where}/otoroshi
+    sbt "testOnly tools.GenericOpenApiSpec"
+  `, where);
   await runSystemCommand('cp', [`${where}/otoroshi/conf/schemas/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
-  await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
-  await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
+  await runSystemCommand('git', ['add', `--all`], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update openapi file before release`], location);
 }
 
@@ -206,14 +202,6 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
 }
 
 async function buildDistribution(version, where, releaseDir, releaseFile) {
-  // build common-wasm
-  await runScript(`
-  export JAVA_HOME=$JDK8_HOME
-  export PATH=\${JAVA_HOME}/bin:\${PATH}
-  cd ${where}/experiments/common-wasm/
-  sh ./update-extism.sh
-  sh ./build.sh
-  `, where);
   // run test and build server
   await runScript(`
   export JAVA_HOME=$JDK8_HOME
@@ -226,8 +214,6 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
-  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.12/common-wasm_2.12-${version}.jar`),  path.resolve(where, releaseDir)], where);
-  await runSystemCommand('cp', ['-v', path.resolve(where, `./experiments/common-wasm/target/scala-2.13/common-wasm_2.13-${version}.jar`),  path.resolve(where, releaseDir)], where);
 }
 
 async function buildVersion(version, where, releaseDir, releaseFile) {

@@ -137,7 +137,8 @@ export class GenericLoginPage extends Component {
         <form
           className="login-card-body form-horizontal"
           method={this.props.method}
-          action={this.props.action}>
+          action={this.props.action}
+        >
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
           <div className="row">
             <label className="col-12">Username</label>
@@ -168,7 +169,8 @@ export class GenericLoginPage extends Component {
               <button
                 type="submit"
                 className="btn btn-primaryColor btn-lg"
-                onClick={this.simpleLogin}>
+                onClick={this.simpleLogin}
+              >
                 Login
               </button>
             </div>
@@ -300,7 +302,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
           style={{ textAlign: 'left' }}
           onSubmit={this.webAuthnLogin}
           _method={this.props.method}
-          _action={this.props.action}>
+          _action={this.props.action}
+        >
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
           <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Username</label>
@@ -333,7 +336,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
                 type="submit"
                 className="btn"
                 style={{ marginLeft: 0 }}
-                onClick={this.webAuthnLogin}>
+                onClick={this.webAuthnLogin}
+              >
                 Login
               </button>
             </div>

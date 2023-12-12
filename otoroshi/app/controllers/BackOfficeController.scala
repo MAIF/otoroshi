@@ -10,7 +10,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
-import io.otoroshi.common.wasm.scaladsl._
+import io.otoroshi.wasm4s.scaladsl._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -34,6 +34,7 @@ import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
@@ -1978,23 +1979,23 @@ class BackOfficeController(
     env.datastores.globalConfigDataStore
       .singleton()
       .flatMap { globalConfig =>
-        globalConfig.wasmManagerSettings match {
-          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+        globalConfig.wasmoSettings match {
+          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter, _)) =>
+            val (header, token) = ApikeyHelper.generate(settings)
             Try {
               env.Ws
                 .url(s"$url/plugins")
                 .withFollowRedirects(false)
                 .withHttpHeaders(
-                  "Otoroshi-Client-Id"     -> clientId,
-                  "Otoroshi-Client-Secret" -> clientSecret,
-                  "kind"                   -> pluginsFilter.getOrElse("*")
+                  header -> token,
+                  "kind" -> pluginsFilter.getOrElse("*")
                 )
                 .get()
                 .map(res => {
                   if (res.status == 200) {
                     Ok(res.json)
                   } else {
-                    Ok(Json.arr())
+                    BadRequest("Unable to join the wasmo server")
                   }
                 })
                 .recover { case e: Throwable =>
@@ -2005,7 +2006,7 @@ class BackOfficeController(
               case Failure(err) => Ok(Json.arr()).vfuture
               case Success(v)   => v
             }
-          case _                                                                     =>
+          case _                                                           =>
             BadRequest(
               Json.obj(
                 "error" -> "Missing config in global configuration"
@@ -2013,6 +2014,38 @@ class BackOfficeController(
             ).future
         }
       }
+  }
+
+  def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    val jsonBody = ctx.request.body
+
+    val wasmoSettings   = WasmoSettings.format.reads(jsonBody).get
+    val (header, token) = ApikeyHelper.generate(wasmoSettings)
+
+    Try {
+      env.Ws
+        .url(s"${wasmoSettings.url}/plugins")
+        .withFollowRedirects(false)
+        .withHttpHeaders(
+          header -> token,
+          "kind" -> wasmoSettings.pluginsFilter.getOrElse("*")
+        )
+        .get()
+        .map(res => {
+          if (res.status == 200) {
+            Ok(res.json)
+          } else {
+            BadRequest(Json.obj("error" -> "Unable to join the wasmo server"))
+          }
+        })
+        .recover { case e: Throwable =>
+          logger.error(e.getMessage)
+          BadRequest(Json.obj("error" -> "Unable to join the wasmo server"))
+        }
+    } match {
+      case Failure(err) => BadRequest(Json.obj("error" -> "Unable to join the wasmo server")).vfuture
+      case Success(v)   => v
+    }
   }
 
   def anonymousReporting() = BackOfficeActionAuth.async(parse.json) { ctx =>

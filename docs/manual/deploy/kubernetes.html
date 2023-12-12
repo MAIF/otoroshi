@@ -14,10 +14,12 @@
 <script type="text/javascript" src="../js/plugins.js"></script>
 <script type="text/javascript" src="../js/ngplugins.js"></script>
 <script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
 <link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
 
 <!--
 <link rel="shortcut icon" href="../images/favicon.ico" />
@@ -35,7 +37,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -94,7 +96,7 @@
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -136,6 +138,7 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -169,7 +172,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -228,7 +231,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -270,6 +273,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -305,7 +309,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay.</p>
 <p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
 <pre class="prettyprint"><code class="language-yaml">bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.10.0
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.11.2
 </code></pre>
 <p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
 <p>You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster</p>
@@ -358,7 +362,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.10.0
+      - image: maif/otoroshi:16.11.2
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: [&#39;-Dconfig.file=/usr/app/otoroshi/conf/oto.conf&#39;]
@@ -478,23 +482,29 @@ rules:
   - apiGroups:
       - proxy.otoroshi.io
     resources:
-      - service-groups
+      - routes
+      - backends
+      - route-compositions
       - service-descriptors
+      - tcp-services
+      - error-templates
       - apikeys
       - certificates
-      - global-configs
       - jwt-verifiers
       - auth-modules
+      - admin-sessions
+      - admins
+      - auth-module-users
+      - service-groups
+      - organizations
+      - tenants
+      - teams
+      - data-exporters
       - scripts
       - wasm-plugins
-      - tcp-services
-      - data-exporters
-      - admins
-      - organizations
-      - teams
-      - routes
-      - services
-      - backends
+      - global-configs
+      - green-scores
+      - coraza-configs
     verbs:
       - get
       - list
@@ -506,398 +516,7 @@ rules:
 apiVersion: &quot;apiextensions.k8s.io/v1&quot;
 kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: &quot;service-groups.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;ServiceGroup&quot;
-    plural: &quot;service-groups&quot;
-    singular: &quot;service-group&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;certificates.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;Certificate&quot;
-    plural: &quot;certificates&quot;
-    singular: &quot;certificate&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;service-descriptors.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;ServiceDescriptor&quot;
-    plural: &quot;service-descriptors&quot;
-    singular: &quot;service-descriptor&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;wasm-plugins.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;WasmPlugin&quot;
-    plural: &quot;wasm-plugins&quot;
-    singular: &quot;wasm-plugin&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;organizations.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;Organization&quot;
-    plural: &quot;organizations&quot;
-    singular: &quot;organization&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;global-configs.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;GlobalConfig&quot;
-    plural: &quot;global-configs&quot;
-    singular: &quot;global-config&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;apikeys.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;ApiKey&quot;
-    plural: &quot;apikeys&quot;
-    singular: &quot;apikey&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;teams.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;Team&quot;
-    plural: &quot;teams&quot;
-    singular: &quot;team&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;tcp-services.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;TcpService&quot;
-    plural: &quot;tcp-services&quot;
-    singular: &quot;tcp-service&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;backends.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;Backend&quot;
-    plural: &quot;backends&quot;
-    singular: &quot;backend&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;auth-modules.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;AuthModule&quot;
-    plural: &quot;auth-modules&quot;
-    singular: &quot;auth-module&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;jwt-verifiers.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;JwtVerifier&quot;
-    plural: &quot;jwt-verifiers&quot;
-    singular: &quot;jwt-verifier&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
-  name: &quot;data-exporters.proxy.otoroshi.io&quot;
-  creationTimestamp: null
-spec:
-  group: &quot;proxy.otoroshi.io&quot;
-  names:
-    kind: &quot;DataExporter&quot;
-    plural: &quot;data-exporters&quot;
-    singular: &quot;data-exporter&quot;
-  scope: &quot;Namespaced&quot;
-  versions:
-  - name: &quot;v1alpha1&quot;
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
-  - name: &quot;v1&quot;
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;
----
-apiVersion: &quot;apiextensions.k8s.io/v1&quot;
-kind: &quot;CustomResourceDefinition&quot;
-metadata:
   name: &quot;routes.proxy.otoroshi.io&quot;
-  creationTimestamp: null
 spec:
   group: &quot;proxy.otoroshi.io&quot;
   names:
@@ -926,14 +545,477 @@ spec:
 apiVersion: &quot;apiextensions.k8s.io/v1&quot;
 kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: &quot;admins.proxy.otoroshi.io&quot;
-  creationTimestamp: null
+  name: &quot;backends.proxy.otoroshi.io&quot;
 spec:
   group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: &quot;Admin&quot;
+    kind: &quot;Backend&quot;
+    plural: &quot;backends&quot;
+    singular: &quot;backend&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;route-compositions.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;RouteComposition&quot;
+    plural: &quot;route-compositions&quot;
+    singular: &quot;route-composition&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;service-descriptors.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;ServiceDescriptor&quot;
+    plural: &quot;service-descriptors&quot;
+    singular: &quot;service-descriptor&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;tcp-services.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;TcpService&quot;
+    plural: &quot;tcp-services&quot;
+    singular: &quot;tcp-service&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;error-templates.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;ErrorTemplate&quot;
+    plural: &quot;error-templates&quot;
+    singular: &quot;error-templates&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;apikeys.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Apikey&quot;
+    plural: &quot;apikeys&quot;
+    singular: &quot;apikey&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;certificates.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Certificate&quot;
+    plural: &quot;certificates&quot;
+    singular: &quot;certificate&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;jwt-verifiers.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;JwtVerifier&quot;
+    plural: &quot;jwt-verifiers&quot;
+    singular: &quot;jwt-verifier&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;auth-modules.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;AuthModule&quot;
+    plural: &quot;auth-modules&quot;
+    singular: &quot;auth-module&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;admin-sessions.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;AdminSession&quot;
+    plural: &quot;admin-sessions&quot;
+    singular: &quot;admin-session&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;admins.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;SimpleAdminUser&quot;
     plural: &quot;admins&quot;
-    singular: &quot;admin&quot;
+    singular: &quot;admins&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;auth-module-users.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;AuthModuleUser&quot;
+    plural: &quot;auth-module-users&quot;
+    singular: &quot;auth-module-user&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;service-groups.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;ServiceGroup&quot;
+    plural: &quot;service-groups&quot;
+    singular: &quot;service-group&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;organizations.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Organization&quot;
+    plural: &quot;organizations&quot;
+    singular: &quot;organization&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;tenants.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Tenant&quot;
+    plural: &quot;tenants&quot;
+    singular: &quot;tenant&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;teams.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Team&quot;
+    plural: &quot;teams&quot;
+    singular: &quot;team&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;data-exporters.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;DateExporter&quot;
+    plural: &quot;data-exporters&quot;
+    singular: &quot;data-exporter&quot;
   scope: &quot;Namespaced&quot;
   versions:
   - name: &quot;v1alpha1&quot;
@@ -957,7 +1039,6 @@ apiVersion: &quot;apiextensions.k8s.io/v1&quot;
 kind: &quot;CustomResourceDefinition&quot;
 metadata:
   name: &quot;scripts.proxy.otoroshi.io&quot;
-  creationTimestamp: null
 spec:
   group: &quot;proxy.otoroshi.io&quot;
   names:
@@ -981,7 +1062,124 @@ spec:
     schema:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
-        type: &quot;object&quot;</code></pre></dd>
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;wasm-plugins.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;WasmPlugin&quot;
+    plural: &quot;wasm-plugins&quot;
+    singular: &quot;wasm-plugin&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;global-configs.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;GlobalConfig&quot;
+    plural: &quot;global-configs&quot;
+    singular: &quot;global-config&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;green-scores.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;GreenScore&quot;
+    plural: &quot;green-scores&quot;
+    singular: &quot;green-score&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;coraza-configs.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;CorazaConfig&quot;
+    plural: &quot;coraza-configs&quot;
+    singular: &quot;coraza-config&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+</code></pre></dd>
   <dt>redis.yaml
   </dt>
   <dd>
@@ -1148,7 +1346,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1389,7 +1587,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1704,7 +1902,7 @@ spec:
       restartPolicy: Always
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1999,7 +2197,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2388,7 +2586,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2565,7 +2763,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.8.0-rc.1-dev
+      - image: maif/otoroshi:16.11.2-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2830,7 +3028,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.10.0-jdk11
+      - image: maif/otoroshi:16.11.2-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -3021,7 +3219,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.8.0-rc.1-dev
+      - image: maif/otoroshi:16.11.2-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -3555,19 +3753,29 @@ spec:
 <h2><a href="#use-otoroshi-crds-for-a-better-full-integration" name="use-otoroshi-crds-for-a-better-full-integration" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi CRDs for a better/full integration</h2>
 <p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manage Otoroshi related entities in kubernetes</p>
 <ul>
-  <li><code>service-groups</code></li>
+  <li><code>routes</code></li>
+  <li><code>backends</code></li>
+  <li><code>route-compositions</code></li>
   <li><code>service-descriptors</code></li>
+  <li><code>tcp-services</code></li>
+  <li><code>error-templates</code></li>
   <li><code>apikeys</code></li>
   <li><code>certificates</code></li>
-  <li><code>global-configs</code></li>
   <li><code>jwt-verifiers</code></li>
   <li><code>auth-modules</code></li>
-  <li><code>scripts</code></li>
-  <li><code>tcp-services</code></li>
-  <li><code>data-exporters</code></li>
+  <li><code>admin-sessions</code></li>
   <li><code>admins</code></li>
-  <li><code>teams</code></li>
+  <li><code>auth-module-users</code></li>
+  <li><code>service-groups</code></li>
   <li><code>organizations</code></li>
+  <li><code>tenants</code></li>
+  <li><code>teams</code></li>
+  <li><code>data-exporters</code></li>
+  <li><code>scripts</code></li>
+  <li><code>wasm-plugins</code></li>
+  <li><code>global-configs</code></li>
+  <li><code>green-scores</code></li>
+  <li><code>coraza-configs</code></li>
 </ul>
 <p>using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like</p>
 <pre class="prettyprint"><code class="language-sh">sudo kubectl get apikeys --all-namespaces

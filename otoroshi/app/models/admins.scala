@@ -15,13 +15,19 @@ trait OtoroshiAdminType  {
   def name: String
   def json: JsValue = name.json
 }
+
+case object OtoroshiAdminTypeSimpleAdmin extends OtoroshiAdminType {
+  def name: String = "SIMPLE"
+}
+
+case object OtoroshiAdminTypeWebAuthnAdmin extends OtoroshiAdminType {
+  def name: String = "WEBAUTHN"
+}
 object OtoroshiAdminType {
-  case object SimpleAdmin   extends OtoroshiAdminType {
-    def name: String = "SIMPLE"
-  }
-  case object WebAuthnAdmin extends OtoroshiAdminType {
-    def name: String = "WEBAUTHN"
-  }
+
+  val SimpleAdmin = OtoroshiAdminTypeSimpleAdmin
+  val WebAuthnAdmin = OtoroshiAdminTypeWebAuthnAdmin
+
   def fromJson(jsValue: JsValue): Option[OtoroshiAdminType] = {
     jsValue.asOpt[String].flatMap {
       case "simple"   => SimpleAdmin.some

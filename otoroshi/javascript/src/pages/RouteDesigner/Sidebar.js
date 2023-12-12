@@ -91,7 +91,8 @@ export default ({ route }) => {
       className="d-flex"
       style={{
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
-      }}>
+      }}
+    >
       <ul className="nav flex-column nav-sidebar">
         <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key='Routes'>
           <Link
@@ -111,8 +112,9 @@ export default ({ route }) => {
             <Link
               to={to}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                } m-0 ${isActive(tab)}`}
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                openedSidebar ? 'ms-3' : ''
+              } m-0 ${isActive(tab)}`}
             >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />

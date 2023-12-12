@@ -67,7 +67,8 @@ export function EurekaServerPage(props) {
         className="d-flex"
         style={{
           justifyContent: 'space-around',
-        }}>
+        }}
+      >
         <div className="d-flex flex-column align-items-center">
           <span>APPLICATIONS</span>
           <span style={{ fontWeight: 'bold', fontSize: 24 }}>{Object.keys(apps).length}</span>
@@ -83,7 +84,8 @@ export function EurekaServerPage(props) {
               fontWeight: 'bold',
               fontSize: 24,
               color: globalStatus === 'all up' ? 'var(--bs-green)' : 'var(--bs-danger)',
-            }}>
+            }}
+          >
             {globalStatus}
           </span>
         </div>
@@ -110,12 +112,14 @@ const App = ({ name, instances }) => {
       className="mt-1 p-3"
       style={{
         backgroundColor: '#494948',
-      }}>
+      }}
+    >
       <span style={{ textTransform: 'uppercase' }}>{name}</span>
       {instances.map((instance) => (
         <div
           className="d-flex justify-content-between align-items-center py-3"
-          key={instance.instanceId}>
+          key={instance.instanceId}
+        >
           <div className="d-flex align-items-center">
             <div className="d-flex flex-column">
               <i
@@ -145,7 +149,8 @@ const App = ({ name, instances }) => {
                   maxWidth: '80%',
                 }
               );
-            }}>
+            }}
+          >
             Informations
           </button>
         </div>

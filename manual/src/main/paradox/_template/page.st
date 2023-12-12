@@ -14,10 +14,12 @@
 <script type="text/javascript" src="$page.base$js/plugins.js"></script>
 <script type="text/javascript" src="$page.base$js/ngplugins.js"></script>
 <script type="text/javascript" src="$page.base$js/expression-language.js"></script>
+<script type="text/javascript" src="$page.base$search/pagefind-ui.js"></script>
 <link rel="stylesheet" type="text/css" href="$page.base$lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="$page.base$lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="$page.base$css/page.css"/>
 <link rel="stylesheet" type="text/css" href="$page.base$css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="$page.base$search/pagefind-ui.css"/>
 
 <!--
 <link rel="shortcut icon" href="$page.base$images/favicon.ico" />

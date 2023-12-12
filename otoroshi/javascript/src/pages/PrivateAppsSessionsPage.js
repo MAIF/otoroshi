@@ -44,7 +44,8 @@ export class PrivateAppsSessionsPage extends Component {
               <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
               'Profile'
             )
-          }>
+          }
+        >
           Profile
         </button>
       ),
@@ -63,7 +64,8 @@ export class PrivateAppsSessionsPage extends Component {
               <pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>,
               'Metadata'
             )
-          }>
+          }
+        >
           Meta.
         </button>
       ),
@@ -82,7 +84,8 @@ export class PrivateAppsSessionsPage extends Component {
               <pre style={{ height: 300 }}>{JSON.stringify(item.token, null, 2)}</pre>,
               'Tokens'
             )
-          }>
+          }
+        >
           Tokens
         </button>
       ),
@@ -104,7 +107,8 @@ export class PrivateAppsSessionsPage extends Component {
             key={item.randomId}
             type="button"
             className="btn btn-danger btn-sm"
-            onClick={(e) => this.discardSession(e, item.randomId, table)}>
+            onClick={(e) => this.discardSession(e, item.randomId, table)}
+          >
             <i className="fas fa-fire" /> Discard Session
           </button>
         );
@@ -113,7 +117,7 @@ export class PrivateAppsSessionsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Private apps users sessions`);
+    this.props.setTitle(`Auth. module sessions`);
   }
 
   discardSession = (e, id, table) => {
@@ -180,7 +184,7 @@ export class PrivateAppsSessionsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="sessions"
-          defaultTitle="Private apps users sessions"
+          defaultTitle="Auth. module sessions"
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
@@ -207,18 +211,18 @@ export class PrivateAppsSessionsPage extends Component {
               <button
                 key="discard-all"
                 type="button"
-                className="btn btn-danger btn-sm"
-                style={{ marginLeft: 5 }}
-                onClick={this.discardSessions}>
+                className="btn btn-danger btn-sm ms-2"
+                onClick={this.discardSessions}
+              >
                 <i className="fas fa-fire" /> Discard all sessions
               </button>
             ) : null,
             <button
               key="discard-old"
               type="button"
-              className="btn btn-danger btn-sm"
-              style={{ marginLeft: 5 }}
-              onClick={this.discardOldSessions}>
+              className="btn btn-danger btn-sm ms-2"
+              onClick={this.discardOldSessions}
+            >
               <i className="fas fa-fire" /> Discard old sessions
             </button>,
           ]}

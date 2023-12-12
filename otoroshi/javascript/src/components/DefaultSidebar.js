@@ -5,7 +5,8 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
-import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
+import { useHistory } from 'react-router-dom/';
+import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 
 const addShortcutButton = true;
 
@@ -36,9 +37,9 @@ export function DefaultSidebar(props) {
   const [client, setClient] = useState({ clientY: 0 });
   const [draggingIndex, setDraggingIndex] = useState(-1);
 
-  // useEffect(() => {
-  //   reloadStorage()
-  // }, [])
+  useEffect(() => {
+    reloadStorage();
+  }, [props.env]);
 
   const reloadStorage = () => {
     fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
@@ -77,8 +78,20 @@ export function DefaultSidebar(props) {
   };
 
   const removeShortcut = (shortcut) => {
-    const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut));
-    writeStorage(newShortcuts);
+    if (shortcut.custom) {
+      const newShortcuts = shortcuts.filter((f) => {
+        if (_.isObject(f)) {
+          return f.link !== shortcut.link;
+        } else {
+          return true;
+        }
+      });
+      writeStorage(newShortcuts);
+    } else {
+      console.log('bilm ');
+      const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut.title));
+      writeStorage(newShortcuts);
+    }
   };
 
   const sortCategory = (a, b) => {
@@ -157,8 +170,19 @@ export function DefaultSidebar(props) {
         }}>
 
         {openedSidebar && !onRouteTab && shortcuts.length>0 &&<p className="sidebar-title">Shortcuts</p>}
-        {!onRouteTab && shortcuts
-          .map((shortcut) => features.find((feat) => feat.title.includes(shortcut)))
+        
+        {openedSidebar && <p className="ps-2">Shortcuts</p>}
+        {shortcuts
+          .map((shortcut) => {
+            if (_.isObject(shortcut)) {
+              shortcut.link = shortcut.link || shortcut.path;
+              shortcut.icon = shortcut.icon || (() => 'fa-star');
+              shortcut.custom = true;
+              return shortcut;
+            } else {
+              return features.find((feat) => feat.title.includes(shortcut));
+            }
+          })
           .filter((s) => s)
           .map((shortcut, initialIndex) => {
             return (
@@ -175,7 +199,7 @@ export function DefaultSidebar(props) {
                   setStart({ clientY });
                   setDraggingIndex(initialIndex);
                 }}
-                removeShortcut={() => removeShortcut(shortcut.title)}
+                removeShortcut={() => removeShortcut(shortcut)}
                 rootClassName={rootClassName}
                 openedSidebar={openedSidebar}
                 clearSidebar={clearSidebar}
@@ -209,12 +233,14 @@ export function DefaultSidebar(props) {
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
             style={{
               opacity: !hightlighted ? 1 : 0.5,
-            }}>
+            }}
+          >
             <Link
               to="/features"
               className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
               {...createTooltip('All features')}
-              onClick={clearSidebar}>
+              onClick={clearSidebar}
+            >
               <img
                 className="icon-menu icon-svg"
                 src="/assets/images/svgs/menu-icon.svg"
@@ -238,15 +264,21 @@ function CustomIcon({ icon, title }) {
       ? iconValue
       : `fa ${iconValue}`
     : null;
-  const zeIcon = iconValue ? (
+  let zeIcon = iconValue ? (
     _.isString(iconValue) ? (
       <i className={className} title={title} />
     ) : (
       iconValue
     )
   ) : null;
-
-  return zeIcon;
+  if (iconValue === 'fa-snow-monkey') {
+    zeIcon = snowmonkeyIcon;
+  }
+  if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
+    return <i className="fas fa-thumbtack" title={title} />;
+  } else {
+    return zeIcon;
+  }
 }
 
 function Block({
@@ -285,10 +317,12 @@ function Block({
           setHighlighted();
         }
         setOpen(!open);
-      }}>
+      }}
+    >
       <div
         className="d-flex justify-content-between align-items-center px-3"
-        style={{ color: 'var(--text)' }}>
+        style={{ color: 'var(--text)' }}
+      >
         {title}
         <i className="fas fa-chevron-down" />
       </div>
@@ -299,6 +333,72 @@ function Block({
             .filter((d) => d.display === undefined || d.display())
             .map(({ title, link, icon }) => {
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
+              if (link.indexOf('http') === 0) {
+                const iconTitle = description ? `${title} - ${description}` : title;
+                return (
+                  <a
+                    href={link}
+                    target="_blank"
+                    key={title}
+                    className="sidebar-feature p-3 py-1 mx-1"
+                    style={{
+                      height: 'initial',
+                      borderRadius: 6,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                    onClick={(e) => {
+                      if (!addShortcutButton) {
+                        writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                      }
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        color: alreadyInShortcuts ? '#888' : null,
+                      }}
+                    >
+                      <CustomIcon icon={icon} title={iconTitle} />
+                      <div
+                        title={iconTitle}
+                        style={{
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                          marginLeft: 15,
+                          maxWidth: 130,
+                        }}
+                      >
+                        {title}
+                      </div>
+                    </div>
+                    {addShortcutButton && (
+                      <i
+                        className="fas fa-thumbtack"
+                        title={
+                          alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'
+                        }
+                        disabled={alreadyInShortcuts}
+                        style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                        onClick={(e) => {
+                          if (!alreadyInShortcuts && addShortcutButton) {
+                            writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                        }}
+                      />
+                    )}
+                  </a>
+                );
+              }
+
+              const iconTitle = description ? `${title} - ${description}` : title;
 
               return (
                 <Link
@@ -316,30 +416,33 @@ function Block({
                     if (!addShortcutButton) {
                       writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
                     }
-
-                    if (link.startsWith('http')) {
-                      window.open(link, '_blank').focus();
-                    } else {
-                      history.push(link)
-                    }
-                  }}>
-                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                    <CustomIcon icon={icon} title={`${title} - ${description}`} />
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      color: alreadyInShortcuts ? '#888' : null,
+                    }}
+                  >
+                    <CustomIcon icon={icon} title={iconTitle} />
                     <div
-                      title={`${title} - ${description}`}
+                      title={iconTitle}
                       style={{
                         overflow: 'hidden',
                         whiteSpace: 'nowrap',
                         textOverflow: 'ellipsis',
                         marginLeft: 15,
                         maxWidth: 130,
-                      }}>
+                      }}
+                    >
                       {title}
                     </div>
                   </div>
                   {addShortcutButton && (
                     <i
-                      className="fas fa-plus"
+                      className="fas fa-thumbtack"
                       title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
                       disabled={alreadyInShortcuts}
                       style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
@@ -375,6 +478,7 @@ function SidebarLink({
   ...props
 }) {
   const path = props.path || props.link;
+  const iconTitle = description ? `${title} - ${description}` : title;
 
   return (
     <li
@@ -390,7 +494,8 @@ function SidebarLink({
           : 'none',
         zIndex: dragging ? 100 : 1,
         background: dragging ? 'var(--bg-color_level1)' : 'inherit',
-      }}>
+      }}
+    >
       {openedSidebar && (
         <i
           className="fas fa-grip-vertical nav-item-eye d-flex align-items-center m-0"
@@ -403,20 +508,39 @@ function SidebarLink({
             top: 0,
             left: 6,
             bottom: 0,
+            cursor: 'move',
           }}
         />
       )}
-      <Link
-        to={`/${path}`.replace('//', '/')}
-        className={`nav-link ${rootClassName(path)}`}
-        {...createTooltip(text)}
-        onClick={clearSidebar}
-        style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}>
-        <CustomIcon icon={icon} title={`${title} - ${description}`} />{' '}
-        <span style={{ marginTop: '4px', textOverflow:'ellipsis', overflow:'hidden' }} title={`${title} - ${description}`}>
-          {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
-        </span>
-      </Link>
+      {path.indexOf('http') < 0 && (
+        <Link
+          to={`/${path}`.replace('//', '/')}
+          className={`nav-link ${rootClassName(path)}`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span style={{ marginTop: '4px' }} title={iconTitle}>
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+          </span>
+        </Link>
+      )}
+      {path.indexOf('http') === 0 && (
+        <a
+          href={path}
+          target="_blank"
+          className={`nav-link`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span style={{ marginTop: '4px' }} title={iconTitle}>
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+          </span>
+        </a>
+      )}
       <i
         className="fas fa-eye-slash nav-item-eye me-auto"
         onClick={removeShortcut}

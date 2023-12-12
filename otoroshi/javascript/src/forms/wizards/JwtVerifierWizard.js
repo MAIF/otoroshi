@@ -38,7 +38,8 @@ function Breadcrumb({ value, onClick }) {
               textOverflow: 'ellipsis',
               overflow: 'hidden',
             }}
-            onClick={() => onClick(i)}>
+            onClick={() => onClick(i)}
+          >
             {part}
             {i + 1 < value.length && <i className="fas fa-chevron-right mx-1" />}
           </span>
@@ -92,18 +93,21 @@ function Selector({ setMode, disableSelectMode }) {
               type="dark"
               className="py-3 my-2"
               style={{ border: '1px solid #f9b000' }}
-              onClick={() => setMode(mode)}>
+              onClick={() => setMode(mode)}
+            >
               <h3
                 className="wizard-h3--small"
                 style={{
                   textAlign: 'left',
                   fontWeight: 'bold',
-                }}>
+                }}
+              >
                 {title}
               </h3>
               <span
                 className="d-flex align-items-center justify-content-between"
-                style={{ flex: 1 }}>
+                style={{ flex: 1 }}
+              >
                 {text}
                 <i className="fas fa-chevron-right ms-3" />
               </span>
@@ -546,7 +550,8 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
         className="d-flex mx-auto"
         style={{
           flexDirection: 'column',
-        }}>
+        }}
+      >
         {breadcrumb.map((part, i) => {
           return (
             <LoaderItem
@@ -571,7 +576,8 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
           type="save"
           className="mx-auto mt-3"
           disabled={error}
-          onClick={() => history.push(`/jwt-verifiers/edit/${verifier.id}`)}>
+          onClick={() => history.push(`/jwt-verifiers/edit/${verifier.id}`)}
+        >
           <i className={`fas fa-${error ? 'times' : 'check'} me-1`} />
           {error
             ? 'Something wrong happened : try to check your configuration'
@@ -616,7 +622,8 @@ function StrategyStep({ value, onChange }) {
               gap: '10px',
               flexWrap: 'wrap',
               justifyContent: 'flex-start',
-            }}>
+            }}
+          >
             {[
               {
                 strategy: 'PassThrough',
@@ -627,15 +634,13 @@ function StrategyStep({ value, onChange }) {
               {
                 strategy: 'Sign',
                 title: ['Verify and re-sign'],
-                desc:
-                  'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
+                desc: 'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
                 tags: ['verify', 'sign'],
               },
               {
                 strategy: 'Transform',
                 title: ['Verify, re-sign and Transform'],
-                desc:
-                  'Transform will do the same as Sign plus will be able to transform the token.',
+                desc: 'Transform will do the same as Sign plus will be able to transform the token.',
                 tags: ['verify', 'sign', 'transform'],
               },
             ].map(({ strategy, desc, title, tags }) => {
@@ -649,7 +654,8 @@ function StrategyStep({ value, onChange }) {
                     maxWidth: '235px',
                   }}
                   onClick={() => props.onChange(strategy)}
-                  key={strategy}>
+                  key={strategy}
+                >
                   <div style={{ flex: 0.2 }}>
                     {title.map((t, i) => (
                       <h3
@@ -658,7 +664,8 @@ function StrategyStep({ value, onChange }) {
                           margin: 0,
                           marginTop: i > 0 ? '1px' : 0,
                         }}
-                        key={t}>
+                        key={t}
+                      >
                         {t}
                       </h3>
                     ))}
@@ -672,7 +679,8 @@ function StrategyStep({ value, onChange }) {
                       style={{
                         padding: '4px',
                         width: '100%',
-                      }}>
+                      }}
+                    >
                       {['Generate', 'Verify', 'Sign', 'Transform']
                         .filter((tag) => tags.includes(tag.toLocaleLowerCase()))
                         .map((tag) => (
@@ -682,7 +690,8 @@ function StrategyStep({ value, onChange }) {
                             style={{
                               minWidth: '80px',
                               padding: '2px 8px 2px 3px',
-                            }}>
+                            }}
+                          >
                             <i
                               className={`fas fa-${
                                 tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
@@ -1007,7 +1016,8 @@ function LoaderItem({ text, timeout, started }) {
         backgroundColor: 'var(--bg-color_level2)',
         borderRadius: '5px',
       }}
-      className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
+      className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3"
+    >
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
           <i className="fas fa-check fa-lg" style={{ color: 'var(--color-primary)' }} />
@@ -1017,7 +1027,8 @@ function LoaderItem({ text, timeout, started }) {
       <div
         style={{
           fontWeight: loading ? 'normal' : 'bold',
-        }}>
+        }}
+      >
         <div>{text}</div>
       </div>
     </div>

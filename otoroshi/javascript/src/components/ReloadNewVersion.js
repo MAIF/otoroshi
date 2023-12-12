@@ -66,7 +66,8 @@ export class ReloadNewVersion extends Component {
                 className="btn btn-danger btn-sm"
                 style={{ marginLeft: 10 }}
                 title="Login now !!!"
-                onClick={(e) => window.location.reload()}>
+                onClick={(e) => window.location.reload()}
+              >
                 <i className="fas fa-sync" />
               </button>
             </div>
@@ -82,7 +83,8 @@ export class ReloadNewVersion extends Component {
             type="button"
             className="btn btn-danger btn-sm"
             style={{ marginLeft: 10 }}
-            onClick={(e) => window.location.reload()}>
+            onClick={(e) => window.location.reload()}
+          >
             <i className="fas fa-sync" />
           </button>
         </div>
@@ -93,7 +95,8 @@ export class ReloadNewVersion extends Component {
           onClick={(e) => {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });
-          }}>
+          }}
+        >
           <i className="fas fa-times" />
         </button>
       </div>

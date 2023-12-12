@@ -374,8 +374,7 @@ export const schemas = {
         props: {
           label: 'Targets',
           placeholder: 'Target URL',
-          help:
-            'The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures',
+          help: 'The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures',
           component: Target,
           defaultValue: {
             id: 'mirror.otoroshi.io',
@@ -791,20 +790,23 @@ class Plugin extends Component {
             flexDirection: 'row',
             justifyContent: 'flex-end',
             alignItems: 'center',
-          }}>
+          }}
+        >
           <div className="col-sm-2"></div>
           <div style={{ width: '100%' }}></div>
           <div className="btn-group" style={{ marginRight: 10, width: 400 }}>
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.props.addBefore()}>
+              onClick={(e) => this.props.addBefore()}
+            >
               <i className="fas fa-plus" /> plugin <i className="fas fa-chevron-up" />
             </button>
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.props.addAfter()}>
+              onClick={(e) => this.props.addAfter()}
+            >
               <i className="fas fa-plus" /> plugin <i className="fas fa-chevron-down" />
             </button>
           </div>
@@ -812,13 +814,15 @@ class Plugin extends Component {
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.setState({ form: true })}>
+              onClick={(e) => this.setState({ form: true })}
+            >
               form
             </button>
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.setState({ form: false })}>
+              onClick={(e) => this.setState({ form: false })}
+            >
               json
             </button>
           </div>
@@ -826,13 +830,15 @@ class Plugin extends Component {
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.props.onUp(plugin)}>
+              onClick={(e) => this.props.onUp(plugin)}
+            >
               <i className="fas fa-chevron-up" />
             </button>
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={(e) => this.props.onDown(plugin)}>
+              onClick={(e) => this.props.onDown(plugin)}
+            >
               <i className="fas fa-chevron-down" />
             </button>
           </div>
@@ -840,7 +846,8 @@ class Plugin extends Component {
             <button
               type="button"
               className="btn btn-sm btn-danger"
-              onClick={(e) => this.props.onDelete(plugin)}>
+              onClick={(e) => this.props.onDelete(plugin)}
+            >
               <i className="fas fa-trash" />
             </button>
           </div>

@@ -1241,6 +1241,7 @@ object NgRoute {
                       case PluginType.PreRoutingType      => makeInst(pluginId[PreRoutingWrapper])
                       case PluginType.RequestSinkType     => makeInst(pluginId[RequestSinkWrapper])
                       case PluginType.CompositeType       => makeInst(pluginId[CompositeWrapper])
+                      case PluginType.TunnelHandlerType   => None
                       case PluginType.EventListenerType   => None
                       case PluginType.JobType             => None
                       case PluginType.DataExporterType    => None

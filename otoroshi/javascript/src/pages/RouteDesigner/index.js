@@ -67,7 +67,8 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
         style={{
           backgroundColor: 'var(--bg-color_level2)',
           color: 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
       </button>
@@ -94,7 +95,8 @@ function RoutesTab({ isActive, entity, value, history }) {
         style={{
           backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
           color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}>
+        }}
+      >
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
       </button>
@@ -245,7 +247,8 @@ function ManagerTitle({
           routes: 'Routes',
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
-      }>
+      }
+    >
       {!isCreation &&
         tabs
           .filter((tab) => !tab.visible || tab.visible())
@@ -496,7 +499,8 @@ const RoutesView = ({ history, globalEnv }) => {
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',
                   marginLeft: 5,
-                }}>
+                }}
+              >
                 <i className="fas fa-hat-wizard" /> Create with wizard
               </button>
               <button
@@ -506,7 +510,8 @@ const RoutesView = ({ history, globalEnv }) => {
                   _backgroundColor: 'var(--color-primary)',
                   _borderColor: 'var(--color-primary)',
                   marginLeft: 5,
-                }}>
+                }}
+              >
                 <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
               </button>
             </>

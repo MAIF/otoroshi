@@ -49,7 +49,8 @@ export class SimpleLoginPage extends Component {
         className="login-card"
         style={{
           borderColor: `${this.state.error ? 'var(--color-red)' : '#fff'}`,
-        }}>
+        }}
+      >
         <img src={this.props.otoroshiLogo} />
         <div className="login-card-title">
           <h1>Welcome</h1>
@@ -78,7 +79,8 @@ export class SimpleLoginPage extends Component {
                 style={{
                   color: 'var(--color-red)',
                   fontWeight: 'bold',
-                }}>
+                }}
+              >
                 {this.state.error['Otoroshi-Error']}
               </p>
             )}

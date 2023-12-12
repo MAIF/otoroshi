@@ -74,7 +74,8 @@ export class SelectorWizardLauncher extends React.Component {
                             mode: 'update_in_wizard',
                             [entityField]: entity,
                           })
-                        }>
+                        }
+                      >
                         <i className="fas fa-pencil-alt me-1" />
                         Edit
                       </Button>

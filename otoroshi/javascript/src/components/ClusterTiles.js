@@ -51,7 +51,8 @@ class Metric extends Component {
           className="metric"
           style={{
             width: props.width || 300,
-          }}>
+          }}
+        >
           <div className="metric-text">
             {!this.props.hideValueText && <span className="metric-text-value">{props.value}</span>}
             <span className="metric-text-title">{props.legend}</span>
@@ -154,7 +155,8 @@ export class ClusterTiles extends Component {
         style={{
           maxWidth: '1050px',
           margin: '0 auto',
-        }}>
+        }}
+      >
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} link="/cluster" value={this.state.workers} legend="" />

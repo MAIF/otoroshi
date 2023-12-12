@@ -178,16 +178,24 @@ object TcpRule {
 sealed trait TlsMode {
   def name: String
 }
+
+case object TlsModeDisabled extends TlsMode {
+  def name: String = "Disabled"
+}
+
+case object TlsModeEnabled extends TlsMode {
+  def name: String = "Enabled"
+}
+
+case object TlsModePassThrough extends TlsMode {
+  def name: String = "PassThrough"
+}
 object TlsMode {
-  case object Disabled    extends TlsMode {
-    def name: String = "Disabled"
-  }
-  case object Enabled     extends TlsMode {
-    def name: String = "Enabled"
-  }
-  case object PassThrough extends TlsMode {
-    def name: String = "PassThrough"
-  }
+
+  val Disabled = TlsModeDisabled
+  val Enabled = TlsModeEnabled
+  val PassThrough = TlsModePassThrough
+
   def apply(v: String): Option[TlsMode] =
     v match {
       case "Disabled"    => Some(Disabled)

@@ -103,6 +103,7 @@ POST    /bo/api/graphql_to_json                               otoroshi.controlle
 POST    /bo/api/json_to_graphql_schema                        otoroshi.controllers.BackOfficeController.jsonToGraphqlSchema()
 POST    /bo/api/json_to_yaml                                  otoroshi.controllers.BackOfficeController.toYaml()
 GET     /bo/api/plugins/wasm                                  otoroshi.controllers.BackOfficeController.wasmFiles()
+POST    /bo/api/plugins/wasm                                  otoroshi.controllers.BackOfficeController.getWasmFilesFromBodyConfiguration()
 GET     /bo/api/test_match_and_project_input                  otoroshi.controllers.BackOfficeController.testFilteringAndProjectionInputDoc()
 POST    /bo/api/test_match_and_project                        otoroshi.controllers.BackOfficeController.testFilteringAndProjection()
 
@@ -617,6 +618,7 @@ GET     /apis/:group/:version/:entity                         otoroshi.api.Gener
 POST    /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.create(group, version, entity)
 DELETE  /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.deleteAll(group, version, entity)
 GET     /apis/entities                                        otoroshi.api.GenericApiController.entities()
+GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapi()
 
 ########################################################################################################################
 

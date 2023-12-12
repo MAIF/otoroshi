@@ -1,13 +1,7 @@
-import React from "react";
-import Thumbtack from "./Thumbtack";
+import React, { useEffect } from 'react';
+import { Button } from './Button';
 
-export default function PageTitle({
-  title,
-  children,
-  style = {},
-  className = "ms-0 mb-3",
-}) {
-
+export default function PageTitle({ title, children, style = {}, className = 'ms-0 mb-3' }) {
   return (
     <div
       className={`page-header_title d-flex align-item-center justify-content-between ${className}`}

@@ -135,7 +135,8 @@ export default class GraphQLForm extends React.Component {
     return (
       <div
         className="graphql-form p-3 pe-2 flex-column"
-        style={{ overflowY: 'scroll', overflowX: 'hidden' }}>
+        style={{ overflowY: 'scroll', overflowX: 'hidden' }}
+      >
         <Header
           hide={(e) => {
             this.savePlugin().then(() => hide(e));
@@ -212,7 +213,8 @@ const CreationButton = ({ confirm, text, placeholder, className }) => {
           onClick={(e) => {
             e.stopPropagation();
             setCreationField(false);
-          }}>
+          }}
+        >
           <i className="fas fa-times" />
         </button>
         <button
@@ -222,7 +224,8 @@ const CreationButton = ({ confirm, text, placeholder, className }) => {
             e.stopPropagation();
             setCreationField(false);
             confirm(fieldname);
-          }}>
+          }}
+        >
           <i className="fas fa-check" />
         </button>
       </div>
@@ -234,7 +237,8 @@ const CreationButton = ({ confirm, text, placeholder, className }) => {
       onClick={(e) => {
         e.stopPropagation();
         setCreationField(true);
-      }}>
+      }}
+    >
       <i className="fas fa-plus-circle me-1" />
       {text}
     </button>
@@ -350,7 +354,8 @@ class SideView extends React.Component {
                 style={{
                   color: 'var(--color-red)',
                   fontWeight: 'bold',
-                }}>
+                }}
+              >
                 {error}
               </span>
             )}
@@ -679,7 +684,8 @@ class FieldForm extends React.Component {
     return (
       <div
         className="p-3"
-        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}
+      >
         <h4>Field: {field.name}</h4>
         <NgForm
           useBreadcrumb={true}
@@ -723,11 +729,13 @@ const Type = ({
           borderRadius: '4px',
           borderBottomLeftRadius: open ? 0 : '4px',
           borderBottomRightRadius: open ? 0 : '4px',
-        }}>
+        }}
+      >
         <div className="d-flex-between" style={{ cursor: 'pointer' }}>
           <i
             className={`fas fa-chevron-${open ? 'down' : 'right'}`}
-            style={{ minWidth: '32px' }}></i>
+            style={{ minWidth: '32px' }}
+          ></i>
           <span>{name}</span>
           <span className="badge bg-warning ms-2">{kind}</span>
         </div>
@@ -740,19 +748,22 @@ const Type = ({
           backgroundColor: 'var(--bg-color_level1)',
           border: open ? '1px solid var(--bg-color_level1)' : 'none',
           paddingTop: open ? '4px' : 0,
-        }}>
+        }}
+      >
         {open &&
           (fields || []).map((field, i) => (
             <div
               className="d-flex-between graphql-form-element py-1 ps-1 pe-2"
               key={`field${i}`}
-              onClick={(e) => selectField(e, i)}>
+              onClick={(e) => selectField(e, i)}
+            >
               <div
                 className="d-flex-between mb-1 ms-2"
                 style={{
                   flex: 0.75,
                   opacity: isSelected(i) !== false ? 1 : 0.5,
-                }}>
+                }}
+              >
                 <span className="me-2 flex">{field.name}</span>
                 <span className="badge bg-light ms-2" style={{ color: '#000' }}>
                   {field.fieldType.type}
@@ -761,7 +772,8 @@ const Type = ({
                   className={`badge ${field.fieldType.isList ? 'bg-dark' : ''} ms-1`}
                   style={{
                     minWidth: '38px',
-                  }}>
+                  }}
+                >
                   {field.fieldType.isList ? 'LIST' : '\u00a0\u00a0'}
                 </span>
               </div>

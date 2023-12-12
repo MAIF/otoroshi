@@ -10,7 +10,8 @@ export function SquareButton({ text, icon, level = 'info', ...props }) {
       style={{
         ...(restProps.style || {}),
       }}
-      {...restProps}>
+      {...restProps}
+    >
       <div>
         <i className={`mb-2 fas ${icon}`} />
       </div>

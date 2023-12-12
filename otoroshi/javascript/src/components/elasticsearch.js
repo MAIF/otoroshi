@@ -81,21 +81,24 @@ export class CheckElasticsearchConnection extends Component {
               className="btn btn-sm btn-success"
               style={{ marginRight: 0 }}
               type="button"
-              onClick={this.checkConnection}>
+              onClick={this.checkConnection}
+            >
               Check connection
             </button>
             <button
               className="btn btn-sm btn-success"
               style={{ marginRight: 0 }}
               type="button"
-              onClick={this.applyTemplate}>
+              onClick={this.applyTemplate}
+            >
               Manually apply index template
             </button>
             <button
               className="btn btn-sm btn-success"
               style={{ marginRight: 0 }}
               type="button"
-              onClick={this.showTemplates}>
+              onClick={this.showTemplates}
+            >
               Show index template
             </button>
           </div>
@@ -171,7 +174,8 @@ class ElasticsearchTemplate extends Component {
             <code
               dangerouslySetInnerHTML={{
                 __html: this.props.template.replace(/\\n/g, '<br/>').replace(/\\"/g, '"'),
-              }}></code>
+              }}
+            ></code>
           </pre>
         </div>
         <div className="modal-footer">

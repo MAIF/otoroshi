@@ -13,7 +13,7 @@ import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.utils.JsonValidator
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
@@ -23,8 +23,10 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSupport {
   override def location: EntityLocation         = EntityLocation.default
@@ -50,13 +52,26 @@ case class ResourceVersion(
     deprecated: Boolean,
     storage: Boolean,
     schema: Option[JsValue] = None
-)                                                   {
+) {
   def json: JsValue = Json.obj(
     "name"       -> name,
     "served"     -> served,
     "deprecated" -> deprecated,
-    "storage"    -> storage
+    "storage"    -> storage,
+    "schema" -> schema,
   )
+
+  def finalSchema(kind: String, clazz: Class[_]): JsValue = {
+    schema.getOrElse {
+      Try(Json.parse(org.json4s.jackson.JsonMethods.pretty(fi.oph.scalaschema.SchemaFactory.default.createSchema(clazz).toJson))) match {
+        case Failure(e) => {
+          println(s"failing on '${kind}' because of: ${e.getMessage}")
+          Json.obj("type" -> "object", "description" -> s"A resource of kind ${kind}")
+        }
+        case Success(s) => s
+      }
+    }
+  }
 }
 case class Resource(
     kind: String,
@@ -64,8 +79,8 @@ case class Resource(
     singularName: String,
     group: String,
     version: ResourceVersion,
-    access: ResourceAccessApi[_]
-)                                                   {
+    access: ResourceAccessApi[_],
+) {
   def json: JsValue = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
@@ -76,10 +91,11 @@ case class Resource(
 }
 trait ResourceAccessApi[T <: EntityLocationSupport] {
 
+  def clazz: Class[T]
   def format: Format[T]
   def key(id: String): String
   def extractId(value: T): String
-  def template(version: String): JsValue = Json.obj()
+  def template(version: String, params: Map[String, String]): JsValue = Json.obj()
 
   def canRead: Boolean
   def canCreate: Boolean
@@ -270,9 +286,10 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
 
 case class GenericResourceAccessApi[T <: EntityLocationSupport](
     format: Format[T],
+    clazz: Class[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: () => JsValue = () => Json.obj(),
+    tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -281,7 +298,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl()
+  override def template(version: String, template: Map[String, String]): JsValue = tmpl(version, template)
   override def all(): Seq[T]                      = throw new UnsupportedOperationException()
   override def one(id: String): Option[T]         = throw new UnsupportedOperationException()
   override def update(values: Seq[T]): Unit       = throw new UnsupportedOperationException()
@@ -289,9 +306,10 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
 
 case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     format: Format[T],
+    clazz: Class[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: () => JsValue = () => Json.obj(),
+    tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -303,7 +321,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl()
+  override def template(version: String, template: Map[String, String]): JsValue = tmpl(version, template)
   override def all(): Seq[T]                      = stateAll()
   override def one(id: String): Option[T]         = stateOne(id)
   override def update(values: Seq[T]): Unit       = stateUpdate(values)
@@ -320,8 +338,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[NgRoute](
         NgRoute.fmt,
+        classOf[NgRoute],
         env.datastores.routeDataStore.key,
-        env.datastores.routeDataStore.extractId
+        env.datastores.routeDataStore.extractId,
+        (v, p) => env.datastores.routeDataStore.template(env).json,
       )
     ),
     Resource(
@@ -332,8 +352,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[StoredNgBackend](
         StoredNgBackend.format,
+        classOf[StoredNgBackend],
         env.datastores.backendsDataStore.key,
-        env.datastores.backendsDataStore.extractId
+        env.datastores.backendsDataStore.extractId,
+        (v, p) => env.datastores.backendsDataStore.template(env).json,
       )
     ),
     Resource(
@@ -344,8 +366,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[NgRouteComposition](
         NgRouteComposition.fmt,
+        classOf[NgRouteComposition],
         env.datastores.routeCompositionDataStore.key,
-        env.datastores.routeCompositionDataStore.extractId
+        env.datastores.routeCompositionDataStore.extractId,
+        (v, p) =>env.datastores.routeCompositionDataStore.template(env).json,
       )
     ),
     Resource(
@@ -356,8 +380,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[ServiceDescriptor](
         ServiceDescriptor._fmt,
+        classOf[ServiceDescriptor],
         env.datastores.serviceDescriptorDataStore.key,
-        env.datastores.serviceDescriptorDataStore.extractId
+        env.datastores.serviceDescriptorDataStore.extractId,
+        (v, p) => env.datastores.serviceDescriptorDataStore.template(env).json,
       )
     ),
     Resource(
@@ -368,8 +394,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[TcpService](
         TcpService.fmt,
+        classOf[TcpService],
         env.datastores.tcpServiceDataStore.key,
-        env.datastores.tcpServiceDataStore.extractId
+        env.datastores.tcpServiceDataStore.extractId,
+        (v, p) => env.datastores.tcpServiceDataStore.template(env).json,
       )
     ),
     Resource(
@@ -380,8 +408,9 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[ErrorTemplate](
         ErrorTemplate.fmt,
+        classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
-        env.datastores.errorTemplateDataStore.extractId
+        env.datastores.errorTemplateDataStore.extractId,
       )
     ),
     //////
@@ -393,8 +422,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[ApiKey](
         ApiKey._fmt,
+        classOf[ApiKey],
         env.datastores.apiKeyDataStore.key,
-        env.datastores.apiKeyDataStore.extractId
+        env.datastores.apiKeyDataStore.extractId,
+        (v, p) => env.datastores.apiKeyDataStore.template(env).json,
       )
     ),
     //////
@@ -406,8 +437,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[Cert](
         Cert._fmt,
+        classOf[Cert],
         env.datastores.certificatesDataStore.key,
-        env.datastores.certificatesDataStore.extractId
+        env.datastores.certificatesDataStore.extractId,
+        (v, p) => env.datastores.certificatesDataStore.template(env.otoroshiExecutionContext, env).awaitf(10.seconds)(env.otoroshiExecutionContext).json,
       )
     ),
     //////
@@ -419,8 +452,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[GlobalJwtVerifier](
         GlobalJwtVerifier._fmt,
+        classOf[GlobalJwtVerifier],
         env.datastores.globalJwtVerifierDataStore.key,
-        env.datastores.globalJwtVerifierDataStore.extractId
+        env.datastores.globalJwtVerifierDataStore.extractId,
+        (v, p) => env.datastores.globalJwtVerifierDataStore.template(env).json,
       )
     ),
     Resource(
@@ -431,8 +466,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[AuthModuleConfig](
         AuthModuleConfig._fmt(env),
+        classOf[AuthModuleConfig],
         env.datastores.authConfigsDataStore.key,
-        env.datastores.authConfigsDataStore.extractId
+        env.datastores.authConfigsDataStore.extractId,
+        (v, p) => env.datastores.authConfigsDataStore.template(p.get("type"), env)(env.otoroshiExecutionContext).json,
       )
     ),
     Resource(
@@ -443,6 +480,7 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[BackOfficeUser](
         BackOfficeUser.fmt,
+        classOf[BackOfficeUser],
         env.datastores.backOfficeUserDataStore.key,
         env.datastores.backOfficeUserDataStore.extractId,
         canCreate = false,
@@ -451,12 +489,13 @@ class OtoroshiResources(env: Env) {
     ),
     Resource(
       "SimpleAdminUser",
-      "simple-admin-users",
-      "simple-admin-user",
+      "admins", //"simple-admin-users",
+      "admins", //"simple-admin-user",
       "security.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[SimpleOtoroshiAdmin](
         SimpleOtoroshiAdmin.fmt,
+        classOf[SimpleOtoroshiAdmin],
         env.datastores.simpleAdminDataStore.key,
         env.datastores.simpleAdminDataStore.extractId,
         canCreate = true,
@@ -472,6 +511,7 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[PrivateAppsUser](
         PrivateAppsUser.fmt,
+        classOf[PrivateAppsUser],
         env.datastores.privateAppsUserDataStore.key,
         env.datastores.privateAppsUserDataStore.extractId,
         canCreate = false,
@@ -484,11 +524,48 @@ class OtoroshiResources(env: Env) {
       "service-groups",
       "service-group",
       "organize.otoroshi.io",
-      ResourceVersion("v1", true, false, true),
+      ResourceVersion("v1", true, false, true, Some(Json.obj(
+        "type" -> "object",
+        "description" -> "The otoroshi model for a group of services",
+        "properties" -> Json.obj(
+          "id" -> Json.obj(
+            "type" -> "string",
+            "description" -> "A unique random string to identify your service"
+          ),
+          "_loc" -> Json.obj(
+            "$ref" -> "#/components/schemas/otoroshi.models.EntityLocation",
+            "description" -> "Entity location"
+          ),
+          "name" -> Json.obj(
+            "type" -> "string",
+            "description" -> "The name of your service. Only for debug and human readability purposes"
+          ),
+          "metadata" -> Json.obj(
+            "type" -> "object",
+            "additionalProperties" -> Json.obj(
+              "type" -> "string"
+            ),
+            "description" -> "Just a bunch of random properties"
+          ),
+          "description" -> Json.obj(
+            "type" -> "string",
+            "description" -> "Entity description"
+          ),
+          "tags" -> Json.obj(
+            "type" -> "array",
+            "items" -> Json.obj(
+              "type" -> "string"
+            ),
+            "description" -> "Entity tags"
+          )
+        )
+      ))),
       GenericResourceAccessApi[ServiceGroup](
         ServiceGroup._fmt,
+        classOf[ServiceGroup],
         env.datastores.serviceGroupDataStore.key,
-        env.datastores.serviceGroupDataStore.extractId
+        env.datastores.serviceGroupDataStore.extractId,
+        (v, p) => env.datastores.serviceGroupDataStore.template(env).json,
       )
     ),
     Resource(
@@ -499,8 +576,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[Tenant](
         Tenant.format,
+        classOf[Tenant],
         env.datastores.tenantDataStore.key,
-        env.datastores.tenantDataStore.extractId
+        env.datastores.tenantDataStore.extractId,
+        (v, p) => env.datastores.tenantDataStore.template(env).json,
       )
     ),
     Resource(
@@ -511,8 +590,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[Tenant](
         Tenant.format,
+        classOf[Tenant],
         env.datastores.tenantDataStore.key,
-        env.datastores.tenantDataStore.extractId
+        env.datastores.tenantDataStore.extractId,
+        (v, p) => env.datastores.tenantDataStore.template(env).json,
       )
     ),
     Resource(
@@ -523,8 +604,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[Team](
         Team.format,
+        classOf[Team],
         env.datastores.teamDataStore.key,
-        env.datastores.teamDataStore.extractId
+        env.datastores.teamDataStore.extractId,
+        (v, p) => env.datastores.teamDataStore.template(TenantId.default).json,
       )
     ),
     //////
@@ -536,8 +619,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[DataExporterConfig](
         DataExporterConfig.format,
+        classOf[DataExporterConfig],
         env.datastores.dataExporterConfigDataStore.key,
-        env.datastores.dataExporterConfigDataStore.extractId
+        env.datastores.dataExporterConfigDataStore.extractId,
+        (v, p) => env.datastores.dataExporterConfigDataStore.template(p.get("type")).json,
       )
     ),
     //////
@@ -549,8 +634,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", served = true, deprecated = true, storage = true),
       GenericResourceAccessApi[Script](
         Script._fmt,
+        classOf[Script],
         env.datastores.scriptDataStore.key,
-        env.datastores.scriptDataStore.extractId
+        env.datastores.scriptDataStore.extractId,
+        (v, p) => env.datastores.scriptDataStore.template(env).json,
       )
     ),
     Resource(
@@ -561,9 +648,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", served = true, deprecated = true, storage = true),
       GenericResourceAccessApi[WasmPlugin](
         WasmPlugin.format,
+        classOf[WasmPlugin],
         env.datastores.wasmPluginsDataStore.key,
         env.datastores.wasmPluginsDataStore.extractId,
-        () => env.datastores.wasmPluginsDataStore.template(env).json
+        (v, p) => env.datastores.wasmPluginsDataStore.template(env).json
       )
     ),
     //////
@@ -575,8 +663,10 @@ class OtoroshiResources(env: Env) {
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[TweakedGlobalConfig](
         TweakedGlobalConfig.fmt,
+        classOf[TweakedGlobalConfig],
         id => env.datastores.globalConfigDataStore.key(id),
         c => env.datastores.globalConfigDataStore.extractId(c.config),
+        (v, p) => env.datastores.globalConfigDataStore.template.json,
         canCreate = false,
         canDelete = false,
         canBulk = false
@@ -1405,7 +1495,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // GET /apis/:group/:version/:entity/:id/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      Ok(resource.access.template(version)).vfuture
+      val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last))
+      if (templ == Json.obj()) {
+        NotFound(Json.obj("error" -> "template not found !")).vfuture
+      } else {
+        Ok(templ).vfuture
+      }
     }
   }
 
@@ -1649,5 +1744,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         }
       }
     }
+  }
+
+  def openapi() = Action { req =>
+    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"))
+    Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 }

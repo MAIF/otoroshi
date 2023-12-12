@@ -15,6 +15,7 @@ import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
+import otoroshi.next.models.NgOverflowStrategy
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -905,7 +906,7 @@ object ClientConfig {
           cacheConnectionSettings = CacheConnectionSettings(
             enabled = (json \ "cacheConnectionSettings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cacheConnectionSettings" \ "queueSize").asOpt[Int].getOrElse(2048),
-            strategy = OverflowStrategy.dropNew
+            strategy = NgOverflowStrategy.dropNew
           ),
           customTimeouts = (json \ "customTimeouts")
             .asOpt[JsArray]
@@ -1271,17 +1272,22 @@ sealed trait SecComVersion {
   def version: Int
   def json: JsValue
 }
+
+object SecComVersionV1 extends SecComVersion {
+  def str: String = "V1"
+  def version: Int = 1
+  def json: JsValue = JsString(str)
+}
+object SecComVersionV2 extends SecComVersion {
+  def str: String = "V2"
+  def version: Int = 2
+  def json: JsValue = JsString(str)
+}
 object SecComVersion       {
-  object V1 extends SecComVersion {
-    def str: String   = "V1"
-    def version: Int  = 1
-    def json: JsValue = JsString(str)
-  }
-  object V2 extends SecComVersion {
-    def str: String   = "V2"
-    def version: Int  = 2
-    def json: JsValue = JsString(str)
-  }
+
+  val V1 = SecComVersionV1
+  val V2 = SecComVersionV2
+
   def apply(version: Int): Option[SecComVersion] =
     version match {
       case 1 => Some(V1)
@@ -1302,13 +1308,19 @@ sealed trait SecComInfoTokenVersion {
   def version: String
   def json: JsValue = JsString(version)
 }
+
+object SecComInfoTokenVersionLegacy extends SecComInfoTokenVersion {
+  def version: String = "Legacy"
+}
+
+object SecComInfoTokenVersionLatest extends SecComInfoTokenVersion {
+  def version: String = "Latest"
+}
 object SecComInfoTokenVersion       {
-  object Legacy extends SecComInfoTokenVersion {
-    def version: String = "Legacy"
-  }
-  object Latest extends SecComInfoTokenVersion {
-    def version: String = "Latest"
-  }
+
+  val Legacy = SecComInfoTokenVersionLegacy
+  val Latest = SecComInfoTokenVersionLatest
+
   def apply(version: String): Option[SecComInfoTokenVersion] =
     version match {
       case "Legacy" => Some(Legacy)

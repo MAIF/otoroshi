@@ -4,6 +4,136 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [16.11.2] - 2023-12-05
+
+
+https://github.com/MAIF/otoroshi/milestone/83?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.11.1...v16.11.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.2
+
+
+### Added 
+
+- close milestone at the end of the release (#1783)
+- generate milestone in release process (#1784)       
+      
+
+
+
+### Contributors
+
+* @mathieuancelin
+
+## [16.11.1] - 2023-12-05
+
+https://github.com/MAIF/otoroshi/milestone/82?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.11.0...v16.11.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.1
+
+
+### Fixed 
+
+- Got an error NoClassDefFoundError io.otoroshi.wasm4s.impl.WasmVmPoolImpl when calling route with wasm plugin (#1781)
+- wasm not working with windows (#1782)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
+
+## [16.11.0] - 2023-11-29
+
+https://github.com/MAIF/otoroshi/milestone/75?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.3...v16.11.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.11.0
+
+
+### Added 
+
+- support pluggable datastores (#1722)
+- support pluggable data exporters (#1723)
+- add the ability to override existing admin api paths in extensions (#1738)
+- any otoroshi link could be a shortcut (#1761)
+
+### Changed 
+
+- moving common-wasm project in its own repo (#1732)
+- rewrite wasm manager documentation (#1754)
+- bump wasm4s to 2.0.0 (#1779)
+
+### Fixed 
+
+- Title not refresh (#1756)
+- Cancel not working (#1757)
+- Pb with link to User manual (abs/rel) (#1758)
+- The `Routes only` flag on danger zone has reverse operation (#1777)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
+
+## [16.10.3] - 2023-11-16
+
+https://github.com/MAIF/otoroshi/milestone/81?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.2...v16.10.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.10.3
+
+
+### Fixed
+
+- common-wasm: caching process does not work (#1764)
+
+### Contributors
+
+* @mathieuancelin 
+* @baudelotphilippe 
+
+
+## [16.10.2] - 2023-11-14
+
+https://github.com/MAIF/otoroshi/milestone/80?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.1...v16.10.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.10.2
+
+
+### Added
+
+- add new documentation search engine (#1762)
+
+### Fixed
+
+- select are sometimes blank even with a value (#1763)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+
+
+## [16.10.1] - 2023-11-10
+
+https://github.com/MAIF/otoroshi/milestone/79?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.10.0...v16.10.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.10.1
+
+### Fixed
+
+- selects are empty  (#1759)
+- fix integration of wasmo (#1760)
+
+### Contributors
+
+* @mathieuancelin 
+* @Zwiterrion 
+* @baudelotphilippe 
+
 
 ## [16.10.0] - 2023-10-31
 
@@ -36,6 +166,8 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.10.0
 - missing algorithm on encrypted private key (#1747)
 - netty http client sends empty cookie header in some cases (#1751)
 - query param transformer is broken in some cases (#1752)"
+
+### Contributors
 
 * @mathieuancelin 
 * @Zwiterrion 

@@ -28,7 +28,8 @@ class WasmDataRights extends Component {
               display: 'flex',
               justifyContent: 'flex-start',
               alignItems: 'center',
-            }}>
+            }}
+          >
             <Input
               width={this.props.boxWidth}
               label="Read"
@@ -61,8 +62,12 @@ export class WasmSourcePath extends Component {
         Accept: 'application/json',
       },
     })
-      .catch((e) => ({ json: () => [] }))
-      .then((r) => r.json())
+      .catch((_) => ({ json: () => [] }))
+      .then((r) => {
+        if (r.status !== 200) {
+          return Promise.reject([]);
+        } else return r.json();
+      })
       .then((plugins) => {
         const values = plugins
           .map((plugin) => plugin.versions || [])
@@ -98,7 +103,7 @@ export class WasmSourcePath extends Component {
     const kind = source.kind.toLowerCase();
     if (kind === 'unknown') {
       return null;
-    } else if (kind === 'wasmmanager') {
+    } else if (kind === 'wasmmanager' || kind === 'wasmo') {
       return (
         <SelectInput
           label="Wasm plugin"
@@ -281,7 +286,7 @@ export class WasmPluginsPage extends Component {
       type: 'select',
       props: {
         label: 'Kind',
-        possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map((v) => ({
+        possibleValues: ['Base64', 'Http', 'Wasmo', 'File'].map((v) => ({
           label: v,
           value: v,
         })),
@@ -484,8 +489,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max calls',
-        help:
-          'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum number of calls before killing a wasm vm (the pool will reinstantiate a new one)',
         suffix: 'calls',
       },
     },
@@ -493,8 +497,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max memory usage',
-        help:
-          'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum memory usage allowed before killing the wasm vm (the pool will reinstantiate a new one)',
         suffix: '%',
       },
     },
@@ -502,8 +505,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help:
-          'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
+        help: 'The maximum time allowed for a vm call before killing the wasm vm (the pool will reinstantiate a new one)',
         suffix: 'ms.',
       },
     },
@@ -511,8 +513,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Max unused duration',
-        help:
-          'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
+        help: 'The maximum time otoroshi waits before killing a wasm vm that is not called anymore (the pool will reinstantiate a new one)',
         suffix: 'ms.',
       },
     },

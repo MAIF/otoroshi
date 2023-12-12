@@ -173,7 +173,8 @@ export class AtomicDesignPage extends Component {
             color: 'var(--color_level1)',
             border: '1px solid',
             padding: 10,
-          }}>
+          }}
+        >
           --bg-color_level1 & --color_level1
           <div
             style={{
@@ -182,7 +183,8 @@ export class AtomicDesignPage extends Component {
               backgroundColor: 'var(--bg-color_level2)',
               color: 'var(--color_level2)',
               padding: 10,
-            }}>
+            }}
+          >
             --bg-color_level2 & --color_level2
             <div
               style={{
@@ -191,7 +193,8 @@ export class AtomicDesignPage extends Component {
                 backgroundColor: 'var(--bg-color_level3)',
                 color: 'var(--color_level3)',
                 padding: 10,
-              }}>
+              }}
+            >
               --bg-color_level3 & --color_level3
             </div>
           </div>

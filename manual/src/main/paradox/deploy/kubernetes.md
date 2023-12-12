@@ -18,7 +18,7 @@ You can also create a `kustomization.yaml` file with a remote base
 
 ```yaml
 bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.11.0-dev
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.12.0-dev
 ```
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
@@ -87,7 +87,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.11.0-dev
+      - image: maif/otoroshi:16.12.0-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']
@@ -586,19 +586,29 @@ curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 
 Otoroshi provides some Custom Resource Definitions for kubernetes in order to manage Otoroshi related entities in kubernetes
 
-- `service-groups`
+- `routes`
+- `backends`
+- `route-compositions`
 - `service-descriptors`
+- `tcp-services`
+- `error-templates`
 - `apikeys`
 - `certificates`
-- `global-configs`
 - `jwt-verifiers`
 - `auth-modules`
-- `scripts`
-- `tcp-services`
-- `data-exporters`
+- `admin-sessions`
 - `admins`
-- `teams`
+- `auth-module-users`
+- `service-groups`
 - `organizations`
+- `tenants`
+- `teams`
+- `data-exporters`
+- `scripts`
+- `wasm-plugins`
+- `global-configs`
+- `green-scores`
+- `coraza-configs`
 
 using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like
 

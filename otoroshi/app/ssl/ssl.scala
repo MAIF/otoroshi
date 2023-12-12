@@ -82,20 +82,23 @@ sealed trait ClientAuth {
   def name: String
   def toAkkaClientAuth: TLSClientAuth
 }
+case object ClientAuthNone extends ClientAuth {
+  def name: String = "None"
+  def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
+}
+case object ClientAuthWant extends ClientAuth {
+  def name: String = "Want"
+  def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
+}
+case object ClientAuthNeed extends ClientAuth {
+  def name: String = "Need"
+  def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
+}
 object ClientAuth       {
 
-  case object None extends ClientAuth {
-    def name: String                    = "None"
-    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
-  }
-  case object Want extends ClientAuth {
-    def name: String                    = "Want"
-    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
-  }
-  case object Need extends ClientAuth {
-    def name: String                    = "Need"
-    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
-  }
+  val None = ClientAuthNone
+  val Want = ClientAuthWant
+  val Need = ClientAuthNeed
 
   def values: Seq[ClientAuth] = Seq(None, Want, Need)
   def apply(name: String): Option[ClientAuth] = {

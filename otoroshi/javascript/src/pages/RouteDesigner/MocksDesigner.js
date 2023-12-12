@@ -109,14 +109,16 @@ function PushView({ endpoints, resources }) {
                   backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
                     .replace(')', '')
                     .replace('rgb(', '')}, .25)`,
-                }}>
+                }}
+              >
                 <div
                   className="d-flex-between p-1"
                   style={{
                     borderBottom: status[idx]
                       ? `1px solid ${HTTP_COLORS[endpoint.method]}`
                       : 'none',
-                  }}>
+                  }}
+                >
                   <div className="d-flex-between">
                     <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
                       <span
@@ -126,7 +128,8 @@ function PushView({ endpoints, resources }) {
                           padding: '2px',
                           borderRadius: '4px',
                           color: '#fff',
-                        }}>
+                        }}
+                      >
                         {endpoint.method}
                       </span>
                     </div>
@@ -144,7 +147,8 @@ function PushView({ endpoints, resources }) {
                       <div className="mx-1 d-flex-between endpoint-helper">
                         <span
                           style={{ color: 'var(--color-red)' }}
-                          {...createTooltip('Missing raw body or model')}>
+                          {...createTooltip('Missing raw body or model')}
+                        >
                           <i className="fas fa-exclamation-triangle" />
                         </span>
                       </div>
@@ -207,7 +211,8 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                   flexDirection: 'column',
                   gap: '12px',
                   justifyContent: 'space-between',
-                }}>
+                }}
+              >
                 <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
                 {!endpoints.find((e) => e.model === resource.name) &&
                   !resources.find((e) =>
@@ -215,7 +220,8 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                   ) && (
                     <span
                       style={{ color: 'var(--color-red)' }}
-                      {...createTooltip('Model not used')}>
+                      {...createTooltip('Model not used')}
+                    >
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   )}
@@ -224,7 +230,8 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                     className="btn btn-sm btn-success me-2"
                     onClick={() => {
                       showResourceForm(idx, true);
-                    }}>
+                    }}
+                  >
                     <i className="fas fa-pencil-alt" />
                   </button>
                   <button
@@ -232,7 +239,8 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                     onClick={(e) => {
                       e.stopPropagation();
                       removeResource(idx);
-                    }}>
+                    }}
+                  >
                     <i className="fas fa-trash" />
                   </button>
                 </div>
@@ -262,7 +270,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
           style={{
             border: `1px solid rgba(25, 25, 25, .25)`,
             backgroundColor: 'var(--bg-color_level2)',
-          }}>
+          }}
+        >
           <div className="d-flex-between flex">
             <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
               <span
@@ -272,7 +281,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   padding: '2px',
                   borderRadius: '4px',
                   // color: '#fff',
-                }}>
+                }}
+              >
                 METHODS
               </span>
             </div>
@@ -297,7 +307,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
                     .replace(')', '')
                     .replace('rgb(', '')}, .25)`,
-                }}>
+                }}
+              >
                 <div className="d-flex-between flex">
                   <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
                     <span
@@ -307,7 +318,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                         padding: '2px',
                         borderRadius: '4px',
                         color: '#fff',
-                      }}>
+                      }}
+                    >
                       {endpoint.method}
                     </span>
                   </div>
@@ -315,7 +327,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     style={{
                       maxWidth: '50%',
                       flex: 2,
-                    }}>
+                    }}
+                  >
                     {endpoint.path}
                   </span>
                   <span
@@ -323,7 +336,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     style={{
                       maxWidth: '50%',
                       flex: 3,
-                    }}>
+                    }}
+                  >
                     {endpoint.description}
                   </span>
 
@@ -331,7 +345,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     <div className="mx-1 d-flex-between endpoint-helper">
                       <span
                         style={{ color: 'var(--color-red)' }}
-                        {...createTooltip('Missing raw body or model')}>
+                        {...createTooltip('Missing raw body or model')}
+                      >
                         <i className="fas fa-exclamation-triangle" />
                       </span>
                     </div>
@@ -344,7 +359,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                       onClick={(e) => {
                         e.stopPropagation();
                         openResource(endpoint.model);
-                      }}>
+                      }}
+                    >
                       {endpoint.model}
                     </span>
                   )}
@@ -360,7 +376,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                           removeEndpoint(idx);
                         }
                       });
-                    }}>
+                    }}
+                  >
                     <i className="fas fa-trash" />
                   </button>
                 </div>
@@ -594,7 +611,8 @@ export default class MocksDesigner extends React.Component {
         className="graphql-form p-3 pe-2 flex-column"
         style={{
           overflowX: 'hidden',
-        }}>
+        }}
+      >
         <Header
           hide={hide}
           setDesigner={(value) => this.setState({ onDesigner: value })}
@@ -643,7 +661,8 @@ function OpenAPIParameters({ resources, ...props }) {
   return (
     <div
       className="designer p-3"
-      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
+      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}
+    >
       <h4>Parameters</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p style={{ minWidth: '120px' }} className="me-3">
@@ -676,7 +695,8 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
   return (
     <div
       className="designer p-3"
-      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
+      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}
+    >
       <h4>Responses</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p className="me-3">Code</p>
@@ -726,7 +746,8 @@ class NewResource extends React.Component {
     return (
       <div
         className="designer p-3"
-        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}
+      >
         <NgForm
           value={this.state}
           schema={this.schema}
@@ -746,7 +767,8 @@ class NewResource extends React.Component {
                 value: this.state,
                 idx: this.props.idx,
               })
-            }>
+            }
+          >
             {this.props.resource ? 'Save' : 'Create'}
           </button>
         </div>
@@ -995,7 +1017,8 @@ class NewEndpoint extends React.Component {
               className="btn btn-sm btn-primary"
               onClick={() => {
                 props.onChange(true);
-              }}>
+              }}
+            >
               <i className="fas fa-plus-circle me-1" />
               Create new model
             </button>
@@ -1046,7 +1069,8 @@ class NewEndpoint extends React.Component {
                   ...props.value,
                   create_model: false,
                 })
-              }>
+              }
+            >
               <i className="fas fa-times me-1" />
               Discard creation
             </button>
@@ -1093,7 +1117,8 @@ class NewEndpoint extends React.Component {
     return (
       <div
         className="designer p-3"
-        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}
+      >
         <NgForm
           value={this.state}
           flow={this.flow}
@@ -1114,7 +1139,8 @@ class NewEndpoint extends React.Component {
                 value: this.state,
                 idx: this.props.idx,
               })
-            }>
+            }
+          >
             {this.props.endpoint ? 'Save' : 'Create'}
           </button>
         </div>

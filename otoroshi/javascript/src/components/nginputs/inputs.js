@@ -66,7 +66,8 @@ export class NgLocationRenderer extends Component {
             label: 'Location',
             collapsable: true,
             collapsed: true,
-          }}>
+          }}
+        >
           {component}
         </FormRenderer>
       );
@@ -104,7 +105,8 @@ export class NgDotsRenderer extends Component {
       <LabelAndInput {...this.props}>
         <div
           className="d-flex flex-wrap align-items-center"
-          style={{ height: '100%', gap: '.25em' }}>
+          style={{ height: '100%', gap: '.25em' }}
+        >
           {readOnly &&
             (isValueArray ? (
               value.map((v) => <ReadOnlyField value={v} key={v} />)
@@ -155,7 +157,8 @@ export class NgDotsRenderer extends Component {
                     } else {
                       this.props.onChange(newOption);
                     }
-                  }}>
+                  }}
+                >
                   {selected && <i className="fas fa-check me-1" />}
                   {optObj ? option.label || option.value : option}
                 </button>
@@ -244,12 +247,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-      ? props.margin
-      : _props.rawSchema?.props?.margin !== undefined
-      ? _props.rawSchema?.props?.margin
-      : _props.readOnly
-      ? 'mb-0'
-      : 'mb-3';
+        ? props.margin
+        : _props.rawSchema?.props?.margin !== undefined
+          ? _props.rawSchema?.props?.margin
+          : _props.readOnly
+            ? 'mb-0'
+            : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -259,7 +262,8 @@ export function LabelAndInput(_props) {
         className={`col-xs-12 col-sm-${labelColumn} col-form-label`}
         style={{
           textAlign: labelColumn === 2 ? 'right' : 'left',
-        }}>
+        }}
+      >
         {label.replace(/_/g, ' ')}{' '}
         {_props.help && (
           <span>
@@ -415,7 +419,8 @@ export class NgNumberRenderer extends Component {
             style={{
               position: unit ? 'relative' : 'initial',
               display: unit ? 'flex' : 'initial',
-            }}>
+            }}
+          >
             {!readOnly && (
               <input
                 type="number"
@@ -436,7 +441,8 @@ export class NgNumberRenderer extends Component {
                   position: 'absolute',
                   right: 36,
                   alignSelf: 'center',
-                }}>
+                }}
+              >
                 {unit}
               </div>
             )}
@@ -477,7 +483,8 @@ export class NgTextRenderer extends Component {
           className="form-control"
           title={props.help}
           onChange={(e) => this.props.onChange(e.target.value)}
-          {...props}>
+          {...props}
+        >
           {this.props.value}
         </textarea>
       </LabelAndInput>
@@ -570,10 +577,10 @@ export class NgBoxBooleanRenderer extends Component {
       this.props.margin !== undefined
         ? this.props.margin
         : props.margin !== undefined
-        ? props.margin
-        : this.props.rawSchema?.margin !== undefined
-        ? this.props.rawSchema?.margin
-        : 3;
+          ? props.margin
+          : this.props.rawSchema?.margin !== undefined
+            ? this.props.rawSchema?.margin
+            : 3;
 
     const className = this.props.className;
 
@@ -599,7 +606,8 @@ export class NgBoxBooleanRenderer extends Component {
             width: this.props.width || '100%',
             height: '100%',
             borderRadius: '4px',
-          }}>
+          }}
+        >
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
             <div
               style={{
@@ -608,7 +616,8 @@ export class NgBoxBooleanRenderer extends Component {
                 marginLeft: '5px',
                 marginTop: '7px',
                 marginBottom: '10px',
-              }}>
+              }}
+            >
               {label}
             </div>
             <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
@@ -693,7 +702,8 @@ export class NgArrayRenderer extends Component {
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
-          }}>
+          }}
+        >
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               const path = [...this.props.path, String(idx)];
@@ -709,7 +719,8 @@ export class NgArrayRenderer extends Component {
                     padding: showItem ? '6px' : 0,
                     marginBottom: showItem ? '6px' : 0,
                   }}
-                  key={path}>
+                  key={path}
+                >
                   {!ItemRenderer &&
                     (readOnly ? (
                       <ReadOnlyField value={value} />
@@ -771,7 +782,8 @@ export class NgArrayRenderer extends Component {
                         const newArray = this.props.value ? [...this.props.value] : [];
                         newArray.splice(idx, 1);
                         this.props.onChange(newArray);
-                      }}>
+                      }}
+                    >
                       <i className="fas fa-trash" />
                     </button>
                   )}
@@ -793,7 +805,8 @@ export class NgArrayRenderer extends Component {
                   const newArray = [...newArr, this.generateDefaultValue(schema)];
                   this.props.onChange(newArray);
                 }
-              }}>
+              }}
+            >
               <i className="fas fa-plus-circle" />
             </button>
           )}
@@ -919,7 +932,8 @@ export class NgArraySelectRenderer extends Component {
               return (
                 <div
                   className="d-flex justify-content-between align-items-center mb-1"
-                  key={`${value}-${idx}`}>
+                  key={`${value}-${idx}`}
+                >
                   <div style={{ width: '100%', flex: 1 }}>
                     <ReactSelectOverride
                       creatable={props.creatable}
@@ -977,7 +991,8 @@ export class NgArraySelectRenderer extends Component {
                       const newArray = this.props.value ? [...this.props.value] : [];
                       newArray.splice(idx, 1);
                       this.props.onChange(newArray);
-                    }}>
+                    }}
+                  >
                     <i className="fas fa-trash" />
                   </button>
                 </div>
@@ -990,7 +1005,8 @@ export class NgArraySelectRenderer extends Component {
             onClick={(e) => {
               const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
-            }}>
+            }}
+          >
             <i className="fas fa-plus-circle" />
           </button>
         </div>
@@ -1045,7 +1061,8 @@ export class NgObjectSelectRenderer extends Component {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       width: '100%',
-                    }}>
+                    }}
+                  >
                     <input
                       type="text"
                       placeholder={props.placeholderKey}
@@ -1084,7 +1101,8 @@ export class NgObjectSelectRenderer extends Component {
                         const newObject = this.props.value ? { ...this.props.value } : {};
                         delete newObject[key];
                         this.props.onChange(newObject);
-                      }}>
+                      }}
+                    >
                       <i className="fas fa-trash" />
                     </button>
                   </div>
@@ -1098,7 +1116,8 @@ export class NgObjectSelectRenderer extends Component {
               const newObject = { ...this.props.value };
               newObject[''] = '';
               this.props.onChange(newObject);
-            }}>
+            }}
+          >
             <i className="fas fa-plus-circle" />
           </button>
         </div>
@@ -1159,6 +1178,7 @@ export class NgSelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
+    const formatValue = props.formatValue;
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
 
@@ -1169,7 +1189,7 @@ export class NgSelectRenderer extends Component {
           <ReactSelectOverride
             name={`selector-${this.props.name}`}
             creatable={creatable}
-            value={this.props.value}
+            value={formatValue ? formatValue(this.props.value) : this.props.value}
             isMulti={props.isMulti}
             isLoading={this.state.loading}
             disabled={props.disabled}

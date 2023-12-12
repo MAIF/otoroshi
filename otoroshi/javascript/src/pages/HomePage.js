@@ -14,7 +14,8 @@ export class HomePage extends Component {
               <a
                 href="https://maif.github.io/otoroshi/manual/next/engine.html"
                 target="_blank"
-                className="btn btn-sm btn-warning ms-auto">
+                className="btn btn-sm btn-warning ms-auto"
+              >
                 Documentation
               </a>
             </div>
@@ -26,7 +27,8 @@ export class HomePage extends Component {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-          }}>
+          }}
+        >
           {this.props.env && <img src={this.props.env.otoroshiLogo} className="logoOtoroshi" />}
         </div>
         <LiveStatTiles url="/bo/api/proxy/api/live/global?every=2000" />

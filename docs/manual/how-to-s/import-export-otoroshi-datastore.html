@@ -14,10 +14,12 @@
 <script type="text/javascript" src="../js/plugins.js"></script>
 <script type="text/javascript" src="../js/ngplugins.js"></script>
 <script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
 <link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
 
 <!--
 <link rel="shortcut icon" href="../images/favicon.ico" />
@@ -35,7 +37,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -94,7 +96,7 @@
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -136,6 +138,7 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -169,7 +172,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -228,7 +231,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -270,6 +273,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -296,7 +300,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#import-and-export-otoroshi-datastore" name="import-and-export-otoroshi-datastore" class="anchor"><span class="anchor-link"></span></a>Import and export Otoroshi datastore</h1>
 <h3><a href="#start-otoroshi-with-an-initial-datastore" name="start-otoroshi-with-an-initial-datastore" class="anchor"><span class="anchor-link"></span></a>Start Otoroshi with an initial datastore</h3>
 <p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.10.0/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.11.2/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code> Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
 <p>To do that, you need to add the <strong>otoroshi.importFrom</strong> setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env). It can be a file path or a URL. The content of the initial datastore can look something like the following.</p>

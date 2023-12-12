@@ -238,7 +238,8 @@ class Commands extends Component {
               className="btn btn-sm btn-success"
               onClick={(e) => {
                 this.createCASigned(e, this.props.rawValue.id);
-              }}>
+              }}
+            >
               <i className="fas fa-plus-circle" /> Create cert.
             </button>
           )}
@@ -251,7 +252,8 @@ class Commands extends Component {
                 BackOfficeServices.renewCert(this.props.rawValue.id).then((cert) => {
                   this.props.rawOnChange(cert);
                 });
-              }}>
+              }}
+            >
               <i className="fas fa-redo" /> Renew
             </button>
           )}
@@ -268,7 +270,8 @@ class Commands extends Component {
                     });
                   }
                 });
-              }}>
+              }}
+            >
               <i className="fas fa-screwdriver" /> Generate self signed cert.
             </button>
           )}
@@ -276,28 +279,32 @@ class Commands extends Component {
             style={{ marginRight: 0 }}
             href={this.state.certUrl}
             download={`${this.props.rawValue.domain}.cer`}
-            className="btn btn-sm btn-success">
+            className="btn btn-sm btn-success"
+          >
             <i className="fas fa-download" /> Certificate Only
           </a>
           <a
             style={{ marginRight: 0 }}
             href={this.state.fullChainUrl}
             download={`${this.props.rawValue.domain}.fullchain.cer`}
-            className="btn btn-sm btn-success">
+            className="btn btn-sm btn-success"
+          >
             <i className="fas fa-download" /> Full Chain
           </a>
           <a
             style={{ marginRight: 0 }}
             href={this.state.privateKeyUrl}
             download={`${this.props.rawValue.domain}.key`}
-            className="btn btn-sm btn-success">
+            className="btn btn-sm btn-success"
+          >
             <i className="fas fa-download" /> Private Key
           </a>
           <a
             style={{ marginRight: 0 }}
             href={this.state.fullPkUrl}
             download={`${this.props.rawValue.domain}.pem`}
-            className="btn btn-sm btn-success">
+            className="btn btn-sm btn-success"
+          >
             <i className="fas fa-download" /> Full Chain + Private Key
           </a>
         </div>
@@ -456,8 +463,7 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: {
         label: 'Public key exposed',
-        help:
-          'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json',
+        help: 'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json',
       },
     },
     'metadata.revocationReason': {
@@ -507,7 +513,8 @@ export class CertificatesPage extends Component {
           /*'yes'*/ <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={(e) => this.createCASigned(e, item.id)}>
+            onClick={(e) => this.createCASigned(e, item.id)}
+          >
             <i className="fas fa-plus-circle" />
           </button>
         ),
@@ -534,14 +541,14 @@ export class CertificatesPage extends Component {
         item.client
           ? 'client'
           : item.ca
-          ? 'ca'
-          : item.letsEncrypt
-          ? 'letsencrypt'
-          : item.keypair
-          ? 'keypair'
-          : item.selfSigned
-          ? 'selfsigned'
-          : 'certificate',
+            ? 'ca'
+            : item.letsEncrypt
+              ? 'letsencrypt'
+              : item.keypair
+                ? 'keypair'
+                : item.selfSigned
+                  ? 'selfsigned'
+                  : 'certificate',
       style: { textAlign: 'center', width: 100 },
       notFilterable: false,
     },
@@ -907,14 +914,16 @@ export class CertificatesPage extends Component {
                 type="button"
                 onClick={this.createLetsEncrypt}
                 style={{ marginLeft: '5px' }}
-                className="btn btn-primary btn-sm">
+                className="btn btn-primary btn-sm"
+              >
                 <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
               <button
                 type="button"
                 onClick={this.createCertificate}
                 style={{ marginRight: 0 }}
-                className="btn btn-primary btn-sm">
+                className="btn btn-primary btn-sm"
+              >
                 <i className="fas fa-plus-circle" /> Create Certificate
               </button>
               <input
@@ -929,7 +938,8 @@ export class CertificatesPage extends Component {
               <label
                 htmlFor="export"
                 style={{ marginRight: 0 }}
-                className="fake-inputfile btn btn-primary btn-sm">
+                className="fake-inputfile btn btn-primary btn-sm"
+              >
                 <i className="fas fa-file" /> Import .p12/.pfx file
               </label>
             </div>
@@ -1009,7 +1019,8 @@ export class NewCertificateForm extends Component {
               type="button"
               className="btn btn-success"
               ref={(r) => (this.okRef = r)}
-              onClick={(e) => this.props.ok(this.state)}>
+              onClick={(e) => this.props.ok(this.state)}
+            >
               Create
             </button>
           </div>
@@ -1171,7 +1182,8 @@ export class NewCertificateForm extends Component {
             type="button"
             className="btn btn-success"
             ref={(r) => (this.okRef = r)}
-            onClick={(e) => this.props.ok(this.state)}>
+            onClick={(e) => this.props.ok(this.state)}
+          >
             Create
           </button>
         </div>
@@ -1215,13 +1227,15 @@ export class LetsEncryptCreation extends Component {
           alignItems: 'center',
           width: '100%',
           height: 300,
-        }}>
+        }}
+      >
         <svg
           width="142px"
           height="142px"
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid"
-          className="uil-ring-alt">
+          className="uil-ring-alt"
+        >
           <rect x="0" y="0" width="100" height="100" fill="none" className="bk" />
           <circle cx="50" cy="50" r="40" stroke="#222222" fill="none" strokeLinecap="round" />
           <circle cx="50" cy="50" r="40" stroke="#f9b000" fill="none" strokeLinecap="round">

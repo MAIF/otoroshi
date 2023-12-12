@@ -14,10 +14,12 @@
 <script type="text/javascript" src="../js/plugins.js"></script>
 <script type="text/javascript" src="../js/ngplugins.js"></script>
 <script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
 <link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
 
 <!--
 <link rel="shortcut icon" href="../images/favicon.ico" />
@@ -35,7 +37,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -94,7 +96,7 @@
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -136,6 +138,7 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -169,7 +172,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.10.0
+16.11.2
 </div>
 </div>
 <div class="nav-toc">
@@ -228,7 +231,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
@@ -270,6 +273,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
 </ul>
 </div>
 
@@ -309,14 +313,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>To simplify the process of WASM creation and usage, Otoroshi provides:</p>
 <ul>
   <li>otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route</li>
-  <li>otoroshi <code>wasm-manager</code>: a code editor in the browser that let you write your plugin in <code>Rust</code>, <code>TinyGo</code>, <code>Javascript</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="../how-to-s/wasm-manager-installation.html">here</a>)</li>
+  <li>otoroshi <code>wasmo</code>: a code editor in the browser that let you write your plugin in <code>Rust</code>, <code>TinyGo</code>, <code>Javascript</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="../how-to-s/wasmo-installation.html">here</a>)</li>
 </ul><div class="centered-img">
-<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" /></div>
+<img src="../imgs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" /></div>
 <h2><a href="#available-tutorials" name="available-tutorials" class="anchor"><span class="anchor-link"></span></a>Available tutorials</h2>
 <p>here is the list of available tutorials about wasm in Otoroshi</p>
 <ol>
-  <li><a href="../how-to-s/wasm-manager-installation.html">install a wasm manager</a></li>
-  <li><a href="../how-to-s/wasm-usage.html">use a wasm plugin</a></li>
+  <li><a href="../how-to-s/wasmo-installation.html">Install a Wasmo</a></li>
+  <li><a href="../how-to-s/wasm-usage.html">Use a WASM plugin</a></li>
 </ol>
 <h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>Wasm plugins entities</h2>
 <p>Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places. </p>
@@ -326,7 +330,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>base64</code>: a base64 encoded wasm script</li>
   <li><code>file</code>: the path to a wasm script file</li>
   <li><code>http</code>: the url to a wasm script file</li>
-  <li><code>wasm-manager</code>: the name of a wasm script compiled by a wasm manager instance</li>
+  <li><code>wasmo</code>: the name of a wasm script compiled by a Wasmo instance</li>
 </ul>
 <p>then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps</p><div class="centered-img">
 <img src="../imgs/wasm-plugin.png" title="screenshot of wasm plugin" /></div>
@@ -854,7 +858,7 @@ pub struct OtoroshiRequest {
   fn proxy_global_map(unused: u64) -&gt; u64;
 }
 </code></pre>
-<p>right know, when using the wasm manager, a default idiomatic implementation is provided for <code>TinyGo</code> and <code>Rust</code></p>
+<p>right know, when using the Wasmo, a default idiomatic implementation is provided for <code>TinyGo</code> and <code>Rust</code></p>
 <dl>
   <dt>host.rs
   </dt>

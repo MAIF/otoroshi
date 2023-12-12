@@ -168,7 +168,8 @@ export class U2FRegisterPage extends Component {
             <button
               type="button"
               className="btn btn-success btn-sm"
-              onClick={(e) => this.updateOtherUser(item)}>
+              onClick={(e) => this.updateOtherUser(item)}
+            >
               <i className="fas fa-edit" /> Edit User
             </button>
             <button
@@ -182,7 +183,8 @@ export class U2FRegisterPage extends Component {
                   table,
                   item.type
                 )
-              }>
+              }
+            >
               <i className="fas fa-fire" /> Discard User
             </button>
           </>
@@ -350,13 +352,14 @@ export class U2FRegisterPage extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
-                Register Admin
+                Add admin
               </button>
               <button
                 type="button"
                 className="btn btn-success ms-md-2 mt-2 mt-md-0"
-                onClick={this.registerWebAuthn}>
-                Register Admin with WebAuthn
+                onClick={this.registerWebAuthn}
+              >
+                Add admin with WebAuthn
               </button>
             </div>
           </div>
@@ -389,8 +392,8 @@ export class U2FRegisterPage extends Component {
           injectTopBar={() => (
             <>
               <div className="btn-group input-group-btn">
-                <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
-                  <i className="fas fa-plus-circle" /> Register admin.
+                <button type="button" className="btn btn-sm btn-primary" onClick={this.createAdmin}>
+                  <i className="fas fa-plus-circle" /> Add admin
                 </button>
               </div>
             </>
@@ -542,11 +545,10 @@ export class RegisterAdminModal extends Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
-          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
-            (c) => {
+          publicKeyCredentialCreationOptions.excludeCredentials =
+            publicKeyCredentialCreationOptions.excludeCredentials.map((c) => {
               return { ...c, id: base64url.decode(c.id) };
-            }
-          );
+            });
           return navigator.credentials
             .create(
               {
@@ -696,14 +698,16 @@ export class RegisterAdminModal extends Component {
             type="button"
             className="btn btn-success"
             style={{ marginLeft: 10 }}
-            onClick={this.registerWebAuthn}>
+            onClick={this.registerWebAuthn}
+          >
             {this.props.mode === 'update' ? 'Update' : 'Register'} Admin with WebAuthn
           </button>
           <button
             type="button"
             className="btn btn-success hide"
             ref={(r) => (this.okRef = r)}
-            onClick={(e) => this.props.ok(this.state)}>
+            onClick={(e) => this.props.ok(this.state)}
+          >
             Create
           </button>
         </div>
@@ -884,7 +888,8 @@ export class AdminEditionModal extends Component {
             type="button"
             className="btn btn-success"
             style={{ marginLeft: 10 }}
-            onClick={this.save}>
+            onClick={this.save}
+          >
             Save
           </button>
         </div>

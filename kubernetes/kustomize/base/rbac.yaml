@@ -80,23 +80,29 @@ rules:
   - apiGroups:
       - proxy.otoroshi.io
     resources:
-      - service-groups
+      - routes
+      - backends
+      - route-compositions
       - service-descriptors
+      - tcp-services
+      - error-templates
       - apikeys
       - certificates
-      - global-configs
       - jwt-verifiers
       - auth-modules
+      - admin-sessions
+      - admins
+      - auth-module-users
+      - service-groups
+      - organizations
+      - tenants
+      - teams
+      - data-exporters
       - scripts
       - wasm-plugins
-      - tcp-services
-      - data-exporters
-      - admins
-      - organizations
-      - teams
-      - routes
-      - services
-      - backends
+      - global-configs
+      - green-scores
+      - coraza-configs
     verbs:
       - get
       - list

@@ -131,7 +131,8 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel('Large Request Fault')}>
+        label={this.displayLabel('Large Request Fault')}
+      >
         <NumberInput
           label="Ratio"
           help="..."
@@ -152,7 +153,8 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel('Large Response Fault')}>
+        label={this.displayLabel('Large Response Fault')}
+      >
         <NumberInput
           label="Ratio"
           help="..."
@@ -175,7 +177,8 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel('Latency injection Fault')}>
+        label={this.displayLabel('Latency injection Fault')}
+      >
         <NumberInput
           label="Ratio"
           help="..."
@@ -203,7 +206,8 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel('Bad response Fault')}>
+        label={this.displayLabel('Bad response Fault')}
+      >
         <NumberInput
           label="Ratio"
           help="..."
@@ -328,7 +332,8 @@ export class ChaosConfigWithSkin extends Component {
         <Panel
           title="Large request fault"
           collapsed={this.props.collapsed}
-          initCollapsed={this.props.initCollapsed}>
+          initCollapsed={this.props.initCollapsed}
+        >
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -349,7 +354,8 @@ export class ChaosConfigWithSkin extends Component {
         <Panel
           title="Large response fault"
           collapsed={this.props.collapsed}
-          initCollapsed={this.props.initCollapsed}>
+          initCollapsed={this.props.initCollapsed}
+        >
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -370,7 +376,8 @@ export class ChaosConfigWithSkin extends Component {
         <Panel
           title="Latency injection fault"
           collapsed={this.props.collapsed}
-          initCollapsed={this.props.initCollapsed}>
+          initCollapsed={this.props.initCollapsed}
+        >
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -395,7 +402,8 @@ export class ChaosConfigWithSkin extends Component {
         <Panel
           title="Bad response fault"
           collapsed={this.props.collapsed}
-          initCollapsed={this.props.initCollapsed}>
+          initCollapsed={this.props.initCollapsed}
+        >
           <VerticalNumberInput
             label="Ratio"
             step="0.1"

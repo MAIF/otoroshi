@@ -3,7 +3,7 @@
 in this section, we will explain some mainstream Otoroshi usage scenario's 
 
 * @ref:[Otoroshi and WASM](./wasm-usage.md)
-* @ref:[WASM Manager](./wasm-manager-installation.md)
+* @ref:[Wasmo](./wasmo-installation.md)
 * @ref:[Tailscale integration](./tailscale-integration.md)
 * @ref:[End-to-end mTLS](./end-to-end-mtls.md)
 * @ref:[Send alerts by emails](./export-alerts-using-mailgun.md)
@@ -32,7 +32,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 
 
 * [WASM usage](./wasm-usage.md)
-* [WASM Manager](./wasm-manager-installation.md)
+* [wasmo](./wasmo-installation.md)
 * [Tailscale integration](./tailscale-integration.md)
 * [End-to-end mTLS](./end-to-end-mtls.md)
 * [Send alerts by emails](./export-alerts-using-mailgun.md)

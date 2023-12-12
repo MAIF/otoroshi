@@ -21,7 +21,8 @@ function LoadingComponent(props) {
           props.loading && props.loadingText && props.loadingText.trim().length > 0
             ? 'flex'
             : 'none',
-      }}>
+      }}
+    >
       {props.loadingText}
     </div>
   );
@@ -146,13 +147,14 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
-    return (this.state.showAddForm || this.state.showEditForm
-      ? this.props.fetchItems()
-      : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+    return (
+      this.state.showAddForm || this.state.showEditForm
+        ? this.props.fetchItems()
+        : this.props.fetchItems({
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -214,14 +216,22 @@ export class Table extends Component {
   };
 
   closeEditForm = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.unmountShortcuts();
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(this.props.defaultTitle, this.updateItemAndStay, null);
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
-    this.setState({ currentItem: null, showEditForm: false });
-    this.update();
-    urlTo(`/bo/dashboard/${this.props.selfUrl}`);
+    this.unmountShortcuts();
+
+    if (this.props.navigateTo) {
+      this.props.parentProps.history.replace(`/${this.props.selfUrl}`);
+    } else {
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(this.props.defaultTitle);
+      }
+
+      this.setState({ currentItem: null, showEditForm: false });
+      this.update();
+      urlTo(`/bo/dashboard/${this.props.selfUrl}`);
+    }
   };
 
   showEditForm = (e, item) => {
@@ -472,7 +482,8 @@ export class Table extends Component {
                     }
                   }
                 }}
-                style={{ cursor: 'pointer', width: '100%' }}>
+                style={{ cursor: 'pointer', width: '100%' }}
+              >
                 {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
               </div>
             );
@@ -500,7 +511,8 @@ export class Table extends Component {
                   this.props.navigateOnEdit
                     ? this.props.navigateOnEdit(item)
                     : this.showEditForm(e, item)
-                }>
+                }
+              >
                 <i className="fas fa-pencil-alt" />
               </button>
               {this.props.showLink && (
@@ -508,7 +520,8 @@ export class Table extends Component {
                   className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
-                  _onClick={(e) => this.gotoItem(e, item)}>
+                  _onClick={(e) => this.gotoItem(e, item)}
+                >
                   <i className="fas fa-link" />
                 </a>
               )}
@@ -517,7 +530,8 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-danger me-2"
                   disabled
-                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
+                >
                   <i className="fas fa-trash" />
                 </button>
               )}
@@ -526,7 +540,8 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-danger me-2"
                   onClick={(e) => this.deleteItem(e, item)}
-                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
+                >
                   <i className="fas fa-trash" />
                 </button>
               )}
@@ -535,7 +550,8 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-danger me-2"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
-                  onClick={(e) => this.deleteItem(e, item)}>
+                  onClick={(e) => this.deleteItem(e, item)}
+                >
                   <i className="fas fa-trash" />
                 </button>
               )}
@@ -554,12 +570,14 @@ export class Table extends Component {
             <div className="row">
               <div
                 className=""
-                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}>
+                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}
+              >
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
                   {...createTooltip('Reload the current table')}
-                  onClick={this.update}>
+                  onClick={this.update}
+                >
                   <span className="fas fa-sync" />
                 </button>
                 {this.props.showActions && !this.props.hideAddItemAction && (
@@ -568,7 +586,8 @@ export class Table extends Component {
                     className="btn btn-primary btn-sm"
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
-                    {...createTooltip(`Create a new ${this.props.itemName}`)}>
+                    {...createTooltip(`Create a new ${this.props.itemName}`)}
+                  >
                     <span className="fas fa-plus-circle" /> Add item
                   </button>
                 )}
@@ -626,7 +645,8 @@ export class Table extends Component {
                     bottom: 0,
                     left: 0,
                     padding: '6px',
-                  }}>
+                  }}
+                >
                   <p className="m-0 me-2">Rows per page</p>
                   <div style={{ minWidth: '80px' }}>
                     <NgSelectRenderer
@@ -652,7 +672,8 @@ export class Table extends Component {
                   : null}
                 <form
                   className="form-horizontal"
-                  style={{ paddingTop: '30px', ...this.props.style }}>
+                  style={{ paddingTop: '30px', ...this.props.style }}
+                >
                   {React.createElement(this.props.formComponent, {
                     showAdvancedForm: true,
                     //this.state.showAdvancedForm, // advanced view in creation mode
@@ -677,9 +698,10 @@ export class Table extends Component {
                         buttons: (
                           <button
                             type="button"
-                            className="btn btn-sm btn-primary me-1"
-                            onClick={this.createItem}>
-                            <i className="fas fa-hdd" /> Create {this.props.itemName}
+                            className="btn btn-sm btn-success me-1"
+                            onClick={this.createItem}
+                          >
+                            Create {this.props.itemName}
                           </button>
                         ),
                         closeEditForm: this.closeAddForm,
@@ -728,13 +750,14 @@ export class Table extends Component {
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
-                      className="btn btn-primary"
-                      onClick={this.createItemAndStay}>
-                      <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+                      className="btn btn-success"
+                      onClick={this.createItemAndStay}
+                    >
+                      Create and stay on this {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
-                    <i className="fas fa-hdd" /> Create {this.props.itemName}
+                  <button type="button" className="btn btn-success" onClick={this.createItem}>
+                    Create {this.props.itemName}
                   </button>
                 </div>
               </>
@@ -795,6 +818,7 @@ export class Table extends Component {
               ))}
             <hr />
             <div className="displayGroupBtn float-end">
+<<<<<<< HEAD
               {this.props.export && (
                 <>
                   <button
@@ -813,12 +837,15 @@ export class Table extends Component {
                   </button>
                 </>
               )}
+=======
+>>>>>>> master
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  disabled>
+                  disabled
+                >
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
@@ -827,16 +854,40 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}
+                >
                   <i className="fas fa-trash" /> Delete
                 </button>
+              )}
+              {this.props.export && (
+                <>
+                  <button
+                    onClick={this.exportJson}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as json"
+                  >
+                    <i className="fas fa-file-export me-2" />
+                    Export JSON
+                  </button>
+                  <button
+                    onClick={this.exportYaml}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as yaml"
+                  >
+                    <i className="fas fa-file-export me-2" />
+                    Export YAML
+                  </button>
+                </>
               )}
               {!this.props.displayTrash && !this.props.newForm && (
                 <button
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}
+                >
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
@@ -847,12 +898,12 @@ export class Table extends Component {
               )}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
-                  <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
+                  Update and stay on this {this.props.itemName}
                 </button>
               )}
               {!this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                  <i className="fas fa-hdd" /> Update {this.props.itemName}
+                  Update {this.props.itemName}
                 </button>
               )}
 

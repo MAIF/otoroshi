@@ -1,8 +1,8 @@
 package otoroshi.wasm
 
 import akka.stream.Materializer
-import io.otoroshi.common.wasm.scaladsl._
-import io.otoroshi.common.wasm.scaladsl.security.TlsConfig
+import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
 import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
@@ -141,7 +141,7 @@ object WasmConfig {
         WasmSource.format.reads(sourceOpt.get).get
       } else {
         compilerSource match {
-          case Some(source) => WasmSource(WasmSourceKind.WasmManager, source)
+          case Some(source) => WasmSource(WasmSourceKind.Wasmo, source)
           case None         =>
             rawSource match {
               case Some(source) if source.startsWith("http://")   => WasmSource(WasmSourceKind.Http, source)
@@ -210,6 +210,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   val executionContext: ExecutionContext                    = env.otoroshiExecutionContext
   val wasmCacheTtl: Long                                    = env.wasmCacheTtl
   val wasmQueueBufferSize: Int                              = env.wasmQueueBufferSize
+  val selfRefreshingPools: Boolean                          = false
   val wasmScriptCache: TrieMap[String, CacheableWasmScript] = new TrieMap[String, CacheableWasmScript]()
   val wasmExecutor: ExecutionContext                        = ExecutionContext.fromExecutorService(
     Executors.newWorkStealingPool(Math.max(32, (Runtime.getRuntime.availableProcessors * 4) + 1))
@@ -225,13 +226,37 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
     }
   }
 
-  override def wasmManagerSettings: Future[Option[WasmManagerSettings]] =
-    env.datastores.globalConfigDataStore.latest().wasmManagerSettings.vfuture
+  override def wasmoSettings: Future[Option[WasmoSettings]] =
+    env.datastores.globalConfigDataStore.latest().wasmoSettings.vfuture
 
   override def wasmConfig(path: String): Future[Option[WasmConfiguration]] =
     env.proxyState.wasmPlugin(path).map(_.config).vfuture
 
   override def wasmConfigs(): Future[Seq[WasmConfiguration]] = env.proxyState.allWasmPlugins().map(_.config).vfuture
+
+  override def inlineWasmSources(): Future[Seq[WasmSource]] = {
+    val routes                   = env.proxyState.allRoutes() ++ env.proxyState.allRawRoutes()
+    val sources: Seq[WasmSource] = routes
+      .flatMap(route =>
+        route.plugins.slots
+          .collect {
+            case slot if slot.plugin.toLowerCase().contains("wasm") => slot.config.raw.select("source").asOpt[JsObject]
+          }
+          .collect { case Some(sourceRaw) =>
+            WasmSource.format.reads(sourceRaw)
+          }
+          .collect { case JsSuccess(source, _) =>
+            source
+          }
+      )
+      .filter { source =>
+        source.kind match {
+          case WasmSourceKind.Local => false
+          case _                    => true
+        }
+      }
+    sources.vfuture
+  }
 
   override def hostFunctions(
       config: WasmConfiguration,

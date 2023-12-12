@@ -13,7 +13,8 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle }) 
         id="menu"
         data-bs-toggle="dropdown"
         data-bs-auto-close="true"
-        aria-expanded="false">
+        aria-expanded="false"
+      >
         <i className="fas fa-ellipsis-h" style={{ fontSize: '1.33333em' }} />
       </button>
       <ul
@@ -28,13 +29,15 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle }) 
           padding: '12px',
           zIndex: 4000,
         }}
-        onClick={(e) => e.stopPropagation()}>
+        onClick={(e) => e.stopPropagation()}
+      >
         <li
           className="d-flex flex-wrap"
           style={{
             gap: '8px',
             minWidth: '170px',
-          }}>
+          }}
+        >
           {children}
         </li>
       </ul>

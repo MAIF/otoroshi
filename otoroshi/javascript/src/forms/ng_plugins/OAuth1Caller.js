@@ -18,8 +18,7 @@ export default {
       type: 'string',
       label: 'OAuth token',
       props: {
-        help:
-          "A value used by the Consumer to gain access to the Protected Resources on behalf of the User, instead of using the User's Service Provider credentials.",
+        help: "A value used by the Consumer to gain access to the Protected Resources on behalf of the User, instead of using the User's Service Provider credentials.",
       },
     },
     tokenSecret: {

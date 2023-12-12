@@ -450,11 +450,13 @@ class OtoroshiInfos extends NgRequestTransformer {
         )
       )
     )
+
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
     val serialized = claim.serialize(config.algo)
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)
+
     ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right
   }
 }

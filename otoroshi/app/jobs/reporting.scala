@@ -163,7 +163,8 @@ object AnonymousReportingJob {
           "elastic_read"     -> globalConfig.elasticReadsConfig.isDefined,
           "lets_encrypt"     -> globalConfig.letsEncryptSettings.enabled,
           "auto_certs"       -> globalConfig.autoCert.enabled,
-          "wasm_manager"     -> globalConfig.wasmManagerSettings.isDefined,
+          "wasmo"            -> globalConfig.wasmoSettings.isDefined,
+          "wasm_manager"     -> globalConfig.wasmoSettings.isDefined,
           "backoffice_login" -> globalConfig.backOfficeAuthRef.isDefined
         ),
         "stats"                -> Json.obj(

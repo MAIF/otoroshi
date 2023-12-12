@@ -95,7 +95,8 @@ export class SnowMonkeyPage extends Component {
             className="btn btn-success btn-sm"
             onClick={(e) =>
               (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
-            }>
+            }
+          >
             <i className="fas fa-link" /> Go to service descriptor
           </button>
         );
@@ -177,7 +178,8 @@ export class SnowMonkeyPage extends Component {
               <button
                 type="button"
                 className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
-                onClick={this.toggle}>
+                onClick={this.toggle}
+              >
                 <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
                 {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
               </button>
@@ -185,8 +187,9 @@ export class SnowMonkeyPage extends Component {
                 type="button"
                 className={`btn btn-success`}
                 {...moreProps}
-                onClick={this.saveChanges}>
-                <i className={`fas fa-hdd`} /> Save
+                onClick={this.saveChanges}
+              >
+                Save
               </button>
             </div>
           </div>
@@ -200,7 +203,8 @@ export class SnowMonkeyPage extends Component {
               xmlns="http://www.w3.org/2000/svg"
               x="0px"
               y="0px"
-              viewBox="0 0 244.1 244.1">
+              viewBox="0 0 244.1 244.1"
+            >
               <g id="_x34_9a67235-e3a1-4929-8868-b30847745300">
                 <g id="b11c2c3a-c434-45dc-a441-e60dd5d9d3f6">
                   <polygon

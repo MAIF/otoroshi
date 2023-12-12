@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "16.10.0",
+    "version" : "16.11.2",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"

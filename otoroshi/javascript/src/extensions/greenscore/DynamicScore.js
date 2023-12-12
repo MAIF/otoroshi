@@ -18,7 +18,8 @@ export default function DynamicScore({ loading, title, values, ...props }) {
   return (
     <div
       onClick={() => setOpen(!open)}
-      style={{ flex: 1, cursor: 'pointer', position: 'relative' }}>
+      style={{ flex: 1, cursor: 'pointer', position: 'relative' }}
+    >
       {open && (
         <div
           className="text-center p-3"
@@ -33,12 +34,14 @@ export default function DynamicScore({ loading, title, values, ...props }) {
             borderRadius: '.2rem',
             fontSize: '10rem',
             height: '100%',
-          }}>
+          }}
+        >
           <h3 style={{ textAlign: 'left', color: 'var(--text)' }}>Thresholds</h3>
           {values.map((value) => (
             <p
               key={value}
-              style={{ fontSize: 'initial', color: 'var(--text)', margin: 0, textAlign: 'left' }}>
+              style={{ fontSize: 'initial', color: 'var(--text)', margin: 0, textAlign: 'left' }}
+            >
               {CONVERTERS[value]}
             </p>
           ))}

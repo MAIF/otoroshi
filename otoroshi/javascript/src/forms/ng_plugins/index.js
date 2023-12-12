@@ -50,6 +50,7 @@ import MultiAuthModule from './MultiAuthModule';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
+import NgClientCredentialTokenEndpoint from './NgClientCredentialTokenEndpoint';
 import NgDefaultRequestBody from './NgDefaultRequestBody';
 import NgErrorRewriter from './NgErrorRewriter';
 import NgFrontend from './NgFrontend';
@@ -128,6 +129,7 @@ import WasmJob from './WasmJob';
 import WasmPreRoute from './WasmPreRoute';
 import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
+import ZipFileBackend from './ZipFileBackend';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -184,6 +186,7 @@ const pluginsArray = [
   MultiAuthModule,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
+  NgClientCredentialTokenEndpoint,
   NgDefaultRequestBody,
   NgErrorRewriter,
   NgHttpClientCache,
@@ -261,6 +264,7 @@ const pluginsArray = [
   WasmJob,
   WasmPreRoute,
   WasmRouter,
+  ZipFileBackend,
 ];
 
 export function addPluginForm(plugin) {

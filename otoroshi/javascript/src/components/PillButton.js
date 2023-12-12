@@ -22,20 +22,23 @@ export function PillButton({
           position: 'relative',
           width: 'fit-content',
           ...style,
-        }}>
+        }}
+      >
         <div className={`pill-cursor ${rightEnabled ? '' : 'pill-mode-right'}`} />
         <button
           className="pill-mode"
           type="button"
           style={rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
-          onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}>
+          onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}
+        >
           {leftText}
         </button>
         <button
           className="pill-mode"
           type="button"
           style={!rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
-          onClick={() => (onRightClick ? onRightClick() : onChange(false))}>
+          onClick={() => (onRightClick ? onRightClick() : onChange(false))}
+        >
           {rightText}
         </button>
       </div>

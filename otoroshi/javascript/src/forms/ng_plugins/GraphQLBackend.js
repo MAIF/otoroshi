@@ -11,7 +11,8 @@ export default {
         <button
           type="button"
           className="btn btn-sm btn-primary mb-3"
-          onClick={() => showAdvancedDesignerView(GraphQLForm)}>
+          onClick={() => showAdvancedDesignerView(GraphQLForm)}
+        >
           Edit with the GraphQL Designer
         </button>
       ),

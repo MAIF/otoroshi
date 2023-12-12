@@ -16,6 +16,7 @@ import { Button } from '../components/Button';
 import { Description } from './RouteDesigner/Designer';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
 import { LEGACY_PLUGINS_WRAPPER } from './RouteDesigner/DesignerConfig';
+import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function tryOrTrue(f) {
   try {
@@ -306,6 +307,70 @@ class Mailer extends Component {
       </div>
     );
   }
+}
+
+function WasmoTester(props) {
+  return (
+    <div className="row mb-3">
+      <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+        Testing button
+      </label>
+      <div className="col-sm-10">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Button
+            style={{ width: 'fit-content' }}
+            type="success"
+            onClick={() => {
+              fetch('/bo/api/plugins/wasm', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  ...props.rawValue.wasmoSettings,
+                }),
+              })
+                .catch((_) => {})
+                .then((r) => {
+                  console.log(r.status);
+                  if (r.status !== 200) {
+                    return Promise.reject([]);
+                  } else return r.json();
+                })
+                .then((value) => {
+                  window.newAlert(
+                    <div>
+                      <JsonObjectAsCodeInput
+                        hideLabel
+                        height={window.innerHeight - 320}
+                        label=""
+                        help="..."
+                        onChange={() => {}}
+                        value={value}
+                      />
+                      <p className="text-center" style={{ fontWeight: 'bold' }}>
+                        Success! You are now ready to start using Wasmo with Otoroshi!{' '}
+                      </p>
+                    </div>,
+                    'Wasmo connection',
+                    null,
+                    null,
+                    {
+                      width: '80vw',
+                      marginLeft: '-20vw',
+                    }
+                  );
+                });
+            }}
+          >
+            Save and check the connection
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // TODO : multi webhooks
@@ -649,8 +714,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'API Read Only',
         placeholder: '--',
-        help:
-          'Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.',
+        help: 'Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.',
       },
     },
     useCircuitBreakers: {
@@ -690,8 +754,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Enable live metrics',
         placeholder: '--',
-        help:
-          'Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore',
+        help: 'Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore',
       },
     },
     autoLinkToDefaultGroup: {
@@ -707,8 +770,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Limit conc. req.',
         placeholder: '--',
-        help:
-          'Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience.',
+        help: 'Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience.',
       },
     },
     middleFingers: {
@@ -724,8 +786,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Send anonymous reports',
         placeholder: '-',
-        help:
-          'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi team. Enabling this is the best way to contribute to Otoroshi improvement !',
+        help: 'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi team. Enabling this is the best way to contribute to Otoroshi improvement !',
       },
     },
     initWithNewEngine: {
@@ -750,8 +811,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Max HTTP/1.0 resp. size',
         placeholder: '--',
-        help:
-          'Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) < process.memory for worst case scenario.',
+        help: 'Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) < process.memory for worst case scenario.',
         suffix: 'bytes',
       },
     },
@@ -983,8 +1043,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Trust JDK CAs (server)',
         placeholder: '--',
-        help:
-          'Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake',
+        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake',
       },
     },
     'tlsSettings.includeJdkCaClient': {
@@ -992,8 +1051,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Trust JDK CAs (client)',
         placeholder: '--',
-        help:
-          'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
+        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
       },
     },
     'tlsSettings.trustedCAsServer': {
@@ -1013,8 +1071,7 @@ export class DangerZonePage extends Component {
             </span>
           ),
         }),
-        help:
-          'Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake',
+        help: 'Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake',
       },
     },
     'tlsSettings.randomIfNotFound': {
@@ -1030,33 +1087,41 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Default domain',
         placeholder: '--',
-        help:
-          'When the SNI domain cannot be found, this one will be used to find the matching certificate',
+        help: 'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
-    'wasmManagerSettings.url': {
+    'wasmoSettings.url': {
       type: 'string',
       props: {
         label: 'URL',
       },
     },
-    'wasmManagerSettings.clientId': {
+    'wasmoSettings.clientId': {
       type: 'string',
       props: {
         label: 'Apikey id',
       },
     },
-    'wasmManagerSettings.clientSecret': {
+    'wasmoSettings.clientSecret': {
       type: 'string',
       props: {
         label: 'Apikey secret',
       },
     },
-    'wasmManagerSettings.pluginsFilter': {
+    'wasmoSettings.pluginsFilter': {
       type: 'string',
       props: {
         label: 'User(s)',
       },
+    },
+    'wasmoSettings.legacyAuth': {
+      type: 'bool',
+      props: {
+        label: 'Use legacy auth.',
+      },
+    },
+    testing: {
+      type: WasmoTester,
     },
     'quotasSettings.enabled': {
       type: 'bool',
@@ -1088,8 +1153,7 @@ export class DangerZonePage extends Component {
       type: 'jsonobjectcode',
       props: {
         label: 'Banned ALPN protocols',
-        help:
-          'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
+        help: 'a key/value object that list alpn banned protocols per domain name, ie: {"mydomain.oto.tools": ["h2","h3"]}',
         mode: 'json',
       },
     },
@@ -1214,11 +1278,13 @@ export class DangerZonePage extends Component {
     'autoCert.notAllowed',
     '>>>Default templates',
     'templates',
-    '>>>WASM Manager',
-    'wasmManagerSettings.url',
-    'wasmManagerSettings.clientId',
-    'wasmManagerSettings.clientSecret',
-    'wasmManagerSettings.pluginsFilter',
+    '>>>Wasmo',
+    'wasmoSettings.url',
+    'wasmoSettings.clientId',
+    'wasmoSettings.clientSecret',
+    'wasmoSettings.pluginsFilter',
+    'wasmoSettings.legacyAuth',
+    'testing',
     '>>>Global metadata',
     'tags',
     'metadata',
@@ -1273,7 +1339,8 @@ export class DangerZonePage extends Component {
 
   saveGlobalConfig = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.updateGlobalConfig(this.state.value).then(() => {
+
+    return BackOfficeServices.updateGlobalConfig(this.state.value).then(() => {
       this.setState({ originalValue: this.state.value, changed: false });
     });
   };
@@ -1461,8 +1528,9 @@ export class DangerZonePage extends Component {
             className="btn btn-success"
             type="button"
             onClick={this.saveGlobalConfig}
-            {...propsDisabled}>
-            <i className="fas fa-hdd" />
+            {...propsDisabled}
+          >
+            Save
           </button>
         </div>
         <Form
@@ -1498,7 +1566,8 @@ export class DangerZonePage extends Component {
                     paddingTop: 6,
                     paddingBottom: 6,
                     cursor: 'pointer',
-                  }}>
+                  }}
+                >
                   <i className="fas fa-file" /> Recover from a full export file
                 </label>
               </div>
@@ -1537,7 +1606,8 @@ export class DangerZonePage extends Component {
                 type="button"
                 className="btn btn-danger"
                 style={{ marginLeft: 5, marginRight: 5 }}
-                onClick={this.panicMode}>
+                onClick={this.panicMode}
+              >
                 <i className="fas fa-fire" /> Enable Panic Mode
               </button>
             </div>
@@ -1563,7 +1633,8 @@ class BackOfficeAuthButtons extends Component {
           {this.props.rawValue.backOfficeAuthRef && (
             <Link
               to={`/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
-              className="btn btn-sm btn-success">
+              className="btn btn-sm btn-success"
+            >
               <i className="fas fa-edit" /> Edit the auth. config.
             </Link>
           )}
@@ -1791,11 +1862,13 @@ const GlobalPluginInformation = ({ plugin, open }) => {
       style={{
         background: '#494849',
         padding: '12px',
-      }}>
+      }}
+    >
       <h3>{plugin.name}</h3>
       <div
         className="d-flex align-items-center justify-content-end mb-3"
-        style={{ paddingRight: '12px' }}>
+        style={{ paddingRight: '12px' }}
+      >
         <div>
           <Button
             className="btn-sm"
@@ -1806,7 +1879,8 @@ const GlobalPluginInformation = ({ plugin, open }) => {
                   '_blank'
                 )
                 .focus();
-            }}>
+            }}
+          >
             <i className="fas fa-share" /> documentation
           </Button>
         </div>
@@ -2153,7 +2227,8 @@ export class Migration extends Component {
         className="btn btn-danger btn-sm btn-sm"
         type="button"
         onClick={this.migrate}
-        style={this.props.style}>
+        style={this.props.style}
+      >
         <i className="fas fa-fire" /> Migrate all to plugins
       </button>
     );

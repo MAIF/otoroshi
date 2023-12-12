@@ -40,7 +40,8 @@ export class Uptime extends Component {
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
-          }}>
+          }}
+        >
           <div className="uptime-avg">{formatPercentage(avg)}</div>
         </div>
         <div className="flex-status">
@@ -72,7 +73,8 @@ export class Uptime extends Component {
                       ))}
                     </div>
                   )
-                }>
+                }
+              >
                 <div key={idx} className={classNames('status', clazz)}></div>
               </Popover>
             );

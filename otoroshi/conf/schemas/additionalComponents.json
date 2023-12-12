@@ -1,0 +1,373 @@
+{
+  "BulkResponseBody" : {
+    "type" : "object",
+    "description" : "BulkResponseBody object"
+  },
+  "BulkPatchBody" : {
+    "type" : "object",
+    "description" : "BulkPatchBody object"
+  },
+  "ErrorResponse" : {
+    "type" : "object",
+    "description" : "error response"
+  },
+  "otoroshi.ssl.pki.models.GenCertResponse" : {
+    "type" : "object",
+    "description" : "Response for a certificate generation operation",
+    "properties" : {
+      "ca" : {
+        "type" : "string",
+        "description" : "Ca cert (PEM encoded)"
+      },
+      "caChain" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string",
+          "description" : "pem encoded X509 certificate"
+        },
+        "description" : "Ca chain (PEM encoded)"
+      },
+      "csrQuery" : {
+        "oneOf" : [ {
+          "type" : "string",
+          "nullable" : true,
+          "description" : "null type"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
+        } ],
+        "description" : "JSON generation query"
+      },
+      "cert" : {
+        "type" : "string",
+        "description" : "Cert (PEM encoded)"
+      },
+      "serial" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "Certificate serial number"
+      },
+      "key" : {
+        "type" : "string",
+        "description" : "Private key (PEM encoded)"
+      },
+      "csr" : {
+        "type" : "string",
+        "description" : "CSR (PEM encoded)"
+      }
+    }
+  },
+  "otoroshi.ssl.pki.models.GenKeyPairResponse" : {
+    "type" : "object",
+    "description" : "Response for a keypair generation operation",
+    "properties" : {
+      "publicKey" : {
+        "type" : "string",
+        "description" : "Public key (PEM encoded)"
+      },
+      "privateKey" : {
+        "type" : "string",
+        "description" : "Private key (PEM encoded)"
+      }
+    }
+  },
+  "PemCsrBody" : {
+    "type" : "string",
+    "description" : "PEM encoded csr"
+  },
+  "otoroshi.ssl.pki.models.GenCsrResponse" : {
+    "type" : "object",
+    "description" : "Response for a csr generation operation",
+    "properties" : {
+      "csr" : {
+        "type" : "string",
+        "description" : "CSR (PEM encoded)"
+      },
+      "publicKey" : {
+        "type" : "string",
+        "description" : "Public key (PEM encoded)"
+      },
+      "privateKey" : {
+        "type" : "string",
+        "description" : "Private key (PEM encoded)"
+      }
+    }
+  },
+  "otoroshi.ssl.pki.models.GenCsrQuery" : {
+    "type" : "object",
+    "description" : "Settings for generating a certificate",
+    "properties" : {
+      "client" : {
+        "type" : "boolean",
+        "description" : "Is cert client ?"
+      },
+      "hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "Certificate SANs"
+      },
+      "key" : {
+        "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenKeyPairQuery",
+        "description" : "Keypair specs"
+      },
+      "includeAIA" : {
+        "type" : "boolean",
+        "description" : "Include AIA extension (if generated from otoroshi CA)"
+      },
+      "signatureAlg" : {
+        "type" : "string",
+        "description" : "Signature algorithm"
+      },
+      "existingSerialNumber" : {
+        "oneOf" : [ {
+          "type" : "string",
+          "nullable" : true,
+          "description" : "null type"
+        }, {
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "description" : ""
+      },
+      "duration" : {
+        "type" : "number",
+        "description" : "Certificate lifespan"
+      },
+      "digestAlg" : {
+        "type" : "string",
+        "description" : "Digest algo"
+      },
+      "ca" : {
+        "type" : "boolean",
+        "description" : "Is cert ca ?"
+      },
+      "name" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "Certificate name"
+      },
+      "subject" : {
+        "oneOf" : [ {
+          "type" : "string",
+          "nullable" : true,
+          "description" : "null type"
+        }, {
+          "type" : "string"
+        } ],
+        "description" : "Certificate subject"
+      }
+    }
+  },
+  "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
+    "type" : "object",
+    "description" : "Settings for generating a keypair",
+    "properties" : {
+      "algo" : {
+        "type" : "string",
+        "description" : "Keypair algorithm"
+      },
+      "size" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "Keypair size"
+      }
+    }
+  },
+  "otoroshi.ssl.pki.models.SignCertResponse" : {
+    "type" : "object",
+    "description" : "Response for a certificate signing operation",
+    "properties" : {
+      "cert" : {
+        "type" : "string",
+        "description" : "Cert (PEM encoded)"
+      },
+      "csr" : {
+        "type" : "string",
+        "description" : "CSR (PEM encoded)"
+      },
+      "ca" : {
+        "oneOf" : [ {
+          "type" : "string",
+          "nullable" : true,
+          "description" : "null type"
+        }, {
+          "type" : "string",
+          "description" : "pem encoded X509 certificate"
+        } ],
+        "description" : "Ca cert (PEM encoded)"
+      }
+    }
+  },
+  "CertValidResponse" : {
+    "type" : "object",
+    "description" : "Is certificate valid",
+    "properties" : {
+      "valid" : {
+        "type" : "boolean"
+      }
+    }
+  },
+  "ByteStreamBody" : {
+    "type" : "string",
+    "description" : ""
+  },
+  "PemCertificateBody" : {
+    "type" : "string",
+    "description" : "PEM encoded certificate"
+  },
+  "LetsEncryptCertBody" : {
+    "type" : "object",
+    "description" : "PEM encoded certificate"
+  },
+  "Done" : {
+    "type" : "object",
+    "description" : "operation is done",
+    "properties" : {
+      "done" : {
+        "type" : "boolean"
+      }
+    }
+  },
+  "otoroshi.models.SnowMonkeyConfig" : {
+    "type" : "object",
+    "description" : "Settings for the snow monkey (chaos engineering)",
+    "properties" : {
+      "dryRun" : {
+        "type" : "boolean",
+        "description" : "Whether or not outages will actualy impact requests"
+      },
+      "outageDurationTo" : {
+        "type" : "number",
+        "description" : "End of outage duration range"
+      },
+      "chaosConfig" : {
+        "$ref" : "#/components/schemas/otoroshi.models.ChaosConfig",
+        "description" : "Chaos settings"
+      },
+      "timesPerDay" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "Number of time per day each service will be outage"
+      },
+      "outageDurationFrom" : {
+        "type" : "number",
+        "description" : "Start of outage duration range"
+      },
+      "startTime" : {
+        "type" : "string",
+        "description" : "Start time of Snow Monkey each day"
+      },
+      "includeUserFacingDescriptors" : {
+        "type" : "boolean",
+        "description" : "Whether or not user facing apps. will be impacted by Snow Monkey"
+      },
+      "targetGroups" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "Groups impacted by Snow Monkey. If empty, all groups will be impacted"
+      },
+      "enabled" : {
+        "type" : "boolean",
+        "description" : "Whether or not this config is enabled"
+      },
+      "stopTime" : {
+        "type" : "string",
+        "description" : "Stop time of Snow Monkey each day"
+      },
+      "outageStrategy" : {
+        "$ref" : "#/components/schemas/otoroshi.models.OutageStrategy",
+        "description" : ""
+      }
+    }
+  },
+  "Any" : {
+    "oneOf" : [ {
+      "type" : "object"
+    }, {
+      "type" : "array"
+    }, {
+      "type" : "string"
+    }, {
+      "type" : "boolean"
+    }, {
+      "type" : "number"
+    }, {
+      "type" : "integer"
+    } ]
+  },
+  "Empty" : {
+    "type" : "object",
+    "description" : "an empty body. Useful for RPC like endpoints"
+  },
+  "PatchBody" : {
+    "type" : "array",
+    "items" : {
+      "$ref" : "#/components/schemas/PatchDocument"
+    }
+  },
+  "PatchDocument" : {
+    "type" : "object",
+    "description" : "A JSONPatch document as defined by RFC 6902",
+    "required" : [ "op", "path" ],
+    "properties" : {
+      "op" : {
+        "type" : "string",
+        "description" : "The operation to be performed",
+        "enum" : [ "add", "remove", "replace", "move", "copy", "test" ]
+      },
+      "path" : {
+        "type" : "string",
+        "description" : "A JSON-Pointer"
+      },
+      "value" : {
+        "type" : "object",
+        "description" : "The value to be used within the operations."
+      },
+      "from" : {
+        "type" : "string",
+        "description" : "A string containing a JSON Pointer value."
+      }
+    }
+  },
+  "OutagesList" : {
+    "type" : "array",
+    "items" : {
+      "$ref" : "#/components/schemas/otoroshi.models.Outage"
+    }
+  },
+  "otoroshi.models.Outage" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "descriptorName" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "descriptorId" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "until" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "duration" : {
+        "type" : "number",
+        "description" : "???"
+      },
+      "startedAt" : {
+        "type" : "number",
+        "description" : "???"
+      }
+    }
+  },
+  "GlobalConfigImportBody" : {
+    "type" : "object",
+    "description" : ""
+  }
+}

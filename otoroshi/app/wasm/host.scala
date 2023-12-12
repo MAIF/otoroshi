@@ -3,8 +3,8 @@ package otoroshi.wasm
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
-import io.otoroshi.common.wasm.scaladsl._
-import io.otoroshi.common.wasm.scaladsl.opa._
+import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.opa._
 import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig

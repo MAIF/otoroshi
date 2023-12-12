@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.stream.Materializer
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -8,6 +9,7 @@ import com.clevercloud.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
@@ -223,10 +225,7 @@ class NgClientCredentials extends NgRequestSink {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
-          case Some(apiKey)
-              if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
-                clientSecret
-              )) && bearerKind == "biscuit" => {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" => {
 
             import com.clevercloud.biscuit.crypto.KeyPair
             import com.clevercloud.biscuit.token.Biscuit
@@ -331,8 +330,7 @@ class NgClientCredentials extends NgRequestSink {
                 .future
             }
           }
-          case Some(apiKey)
-              if apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret) => {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
             val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] =
               DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
@@ -391,7 +389,7 @@ class NgClientCredentials extends NgRequestSink {
                 .future
             }
           }
-          case _ =>
+          case _                                                                 =>
             Results
               .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Bad client credentials"))
               .future
@@ -469,6 +467,263 @@ class NgClientCredentials extends NgRequestSink {
       }
     } else {
       Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"use a secure channel")).future
+    }
+  }
+}
+
+case class NgClientCredentialTokenEndpointBody(
+    grantType: String,
+    clientId: String,
+    clientSecret: String,
+    scope: Option[String],
+    bearerKind: String
+)
+case class NgClientCredentialTokenEndpointConfig(expiration: FiniteDuration, defaultKeyPair: String)
+    extends NgPluginConfig                   {
+  override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
+}
+object NgClientCredentialTokenEndpointConfig {
+  val default = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning)
+  val format  = new Format[NgClientCredentialTokenEndpointConfig] {
+    override def reads(json: JsValue): JsResult[NgClientCredentialTokenEndpointConfig] = Try {
+      NgClientCredentialTokenEndpointConfig(
+        expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),
+        defaultKeyPair =
+          json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
+      )
+    } match {
+      case Success(s) => JsSuccess(s)
+      case Failure(e) => JsError(e.getMessage)
+    }
+
+    override def writes(o: NgClientCredentialTokenEndpointConfig): JsValue = Json.obj(
+      "expiration"       -> o.expiration.toMillis,
+      "default_key_pair" -> o.defaultKeyPair
+    )
+  }
+}
+
+class NgClientCredentialTokenEndpoint extends NgBackendCall {
+
+  override def name: String = "Client credential token endpoint"
+
+  override def description: Option[String] =
+    "This plugin provide the endpoint for the client_credential flow token endpoint".some
+
+  override def useDelegates: Boolean = false
+
+  override def multiInstance: Boolean = true
+
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(NgClientCredentialTokenEndpointConfig.default)
+
+  override def deprecated: Boolean = false
+
+  override def core: Boolean = true
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+
+  override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
+
+  private def handleBody(
+      ctx: NgbBackendCallContext
+  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    implicit val mat = env.otoroshiMaterializer
+    val charset      = ctx.rawRequest.charset.getOrElse("UTF-8")
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      ctx.request.headers.get("Content-Type") match {
+        case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
+          val urlEncodedString         = bodyRaw.utf8String
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val map: Map[String, String] = body ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
+          f(map)
+        }
+        case Some(ctype) if ctype.toLowerCase().contains("application/json")                  => {
+          val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
+          val map: Map[String, String] = json.value.toSeq.collect {
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
+            case (key, JsBoolean(v)) => (key, v.toString)
+          }.toMap ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
+          f(map)
+        }
+        case _                                                                                =>
+          // bad content type
+          Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+      }
+    }
+  }
+
+  private def handleTokenRequest(
+      ccfb: NgClientCredentialTokenEndpointBody,
+      conf: NgClientCredentialTokenEndpointConfig,
+      ctx: NgbBackendCallContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+    ccfb match {
+      case NgClientCredentialTokenEndpointBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
+        val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+        possibleApiKey.flatMap {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
+            val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+            val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
+            val algo: Algorithm               = maybeKeyPair.map { kp =>
+              (kp.getPublic, kp.getPrivate) match {
+                case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
+              }
+            } getOrElse {
+              Algorithm.HMAC512(apiKey.clientSecret)
+            }
+
+            val accessToken = JWT
+              .create()
+              .withJWTId(IdGenerator.uuid)
+              .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
+              .withIssuedAt(DateTime.now().toDate)
+              .withNotBefore(DateTime.now().toDate)
+              .withClaim("cid", apiKey.clientId)
+              .withIssuer(ctx.rawRequest.theProtocol + "://" + ctx.rawRequest.host)
+              .withSubject(apiKey.clientId)
+              .withAudience("otoroshi")
+              .withKeyId(keyPairId)
+              .sign(algo)
+            // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
+
+            val pass = scope.forall { s =>
+              val scopes     = s.split(" ").toSeq
+              val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+              scopeInter && apiKey.metadata
+                .get("scope")
+                .map(_.split(" ").toSeq.intersect(scopes).size)
+                .getOrElse(scopes.size) == scopes.size
+            }
+            if (pass) {
+              val scopeObj =
+                scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
+              Results
+                .Ok(
+                  Json.obj(
+                    "access_token" -> accessToken,
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
+                  ) ++ scopeObj
+                )
+                .future
+            } else {
+              Results
+                .Forbidden(
+                  Json.obj(
+                    "error"             -> "access_denied",
+                    "error_description" -> s"cslient has not been granted scopes: ${scope.get}"
+                  )
+                )
+                .future
+            }
+          }
+          case _                                                                 =>
+            Results
+              .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"bad client credentials"))
+              .future
+        }
+      }
+      case _                                                                                                    =>
+        Results
+          .BadRequest(
+            Json.obj(
+              "error"             -> "unauthorized_client",
+              "error_description" -> s"grant type '${ccfb.grantType}' not supported !"
+            )
+          )
+          .future
+    }
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx
+      .cachedConfig(internalName)(NgClientCredentialTokenEndpointConfig.format)
+      .getOrElse(NgClientCredentialTokenEndpointConfig.default)
+    handleBody(ctx) { body =>
+      println("body", body)
+      (
+        body.get("grant_type"),
+        body.get("client_id"),
+        body.get("client_secret"),
+        body.get("scope"),
+        body.get("bearer_kind")
+      ) match {
+        case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind) =>
+          handleTokenRequest(
+            NgClientCredentialTokenEndpointBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt")),
+            config,
+            ctx
+          )
+        case e                                                              =>
+          ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => (v.head, v.last))
+            .map { case (clientId, clientSecret) =>
+              handleTokenRequest(
+                NgClientCredentialTokenEndpointBody(
+                  body.getOrElse("grant_type", "--"),
+                  clientId,
+                  clientSecret,
+                  None,
+                  body.getOrElse("bearer_kind", "jwt")
+                ),
+                config,
+                ctx
+              )
+            }
+            .getOrElse {
+              // bad credentials
+              Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"unauthorized")).future
+            }
+      }
+    }.map { result =>
+      BackendCallResponse(
+        NgPluginHttpResponse(
+          result.header.status,
+          result.header.headers ++ Map(
+            "Content-Type"   -> result.body.contentType.getOrElse("application/json"),
+            "Content-Length" -> result.body.contentLength.getOrElse("0").toString
+          ),
+          Seq.empty,
+          result.body.dataStream
+        ),
+        None
+      ).right[NgProxyEngineError]
     }
   }
 }

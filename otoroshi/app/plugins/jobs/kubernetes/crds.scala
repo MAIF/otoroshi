@@ -181,22 +181,9 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           client
             .watchOtoResources(
               nses,
-              Seq(
-                "service-groups",
-                "service-descriptors",
-                "apikeys",
-                "certificates",
-                "global-configs",
-                "jwt-verifiers",
-                "auth-modules",
-                "scripts",
-                "wasm-plugins",
-                "tcp-services",
-                "admins",
-                "data-exporters",
-                "teams",
-                "organizations"
-              ) ++ env.adminExtensions.resources().map(_.pluralName),
+              (
+                env.allResources.resources.map(_.pluralName) ++ env.adminExtensions.resources().map(_.pluralName)
+              ).distinct,
               conf.watchTimeoutSeconds,
               !watchCommand.get()
             )
@@ -1301,7 +1288,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]]   =
     client.fetchOtoroshiResources[SimpleOtoroshiAdmin](
-      "admins",
+      "simple-admin-users",
       v => SimpleOtoroshiAdmin.reads(v),
       (a, b) => customizeAdmin(a, b, admins)
     )

@@ -46,7 +46,8 @@ function EntityGraph({ entity, id }) {
         padding: '5px',
         margin: '5px 0px',
         width: '100%',
-      }}>
+      }}
+    >
       <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
         <div
           style={{
@@ -55,7 +56,8 @@ function EntityGraph({ entity, id }) {
             marginLeft: '5px',
             marginTop: '7px',
             marginBottom: '10px',
-          }}>
+          }}
+        >
           Found usages
         </div>
         <div className="me-1">
@@ -71,7 +73,8 @@ function EntityGraph({ entity, id }) {
                   marginTop: '7px',
                   marginBottom: '10px',
                 }}
-                key={name}>
+                key={name}
+              >
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}>
                   <label style={{ textTransform: 'uppercase' }}>{name}</label>
                   <label>Used by plugins</label>
@@ -84,7 +87,8 @@ function EntityGraph({ entity, id }) {
                     <div
                       key={r.id}
                       style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}
-                      className="align-items-center mb-1">
+                      className="align-items-center mb-1"
+                    >
                       <p className="m-0">{r.name}</p>
                       <div className="d-flex align-items-center">
                         {r.plugins
@@ -103,7 +107,8 @@ function EntityGraph({ entity, id }) {
                                       }
                                     : pathname
                                 }
-                                key={`${entity[0]}-${pluginName}`}>
+                                key={`${entity[0]}-${pluginName}`}
+                              >
                                 <span className="badge bg-warning me-2">{pluginName}</span>
                               </Link>
                             );

@@ -2,7 +2,7 @@ package otoroshi.wasm.proxywasm
 
 import akka.util.ByteString
 import com.sun.jna.Pointer
-import io.otoroshi.common.wasm.scaladsl.WasmVmData
+import io.otoroshi.wasm4s.scaladsl.WasmVmData
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginHttpResponse

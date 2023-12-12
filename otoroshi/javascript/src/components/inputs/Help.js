@@ -41,7 +41,8 @@ export class HelpWrapper extends Component {
           title={this.props.text}
           style={{
             height: '100%',
-          }}>
+          }}
+        >
           {this.props.children}
         </div>
       );
