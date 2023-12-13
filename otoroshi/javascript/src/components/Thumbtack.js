@@ -1,16 +1,16 @@
-import { useContext } from "react";
+import React, { useContext } from "react";
 import { Button } from "./Button";
 import { SidebarContext } from "../apps/BackOfficeApp";
+import { graph } from "../pages/FeaturesPage";
+import _ from 'lodash';
 
-export default function Thumbtack() {
+export default function Thumbtack({ env, getTitle, reloadEnv }) {
 
-  const context = useContext(SidebarContext);
-
-  console.log(context)
+  const { shortcuts } = useContext(SidebarContext);
 
   const addShortcut = () => {
     const pathname = window.location.pathname;
-    let title = this.props.getTitle() || document.title;
+    let title = getTitle() || document.title;
     if (pathname === '/bo/dashboard' || pathname === '/bo/dashboard/') {
       title = 'Home';
     }
@@ -19,7 +19,7 @@ export default function Thumbtack() {
       '/bo/dashboard',
       ''
     );
-    const feats = graph(this.props.env).flatMap((l) => l.features);
+    const feats = graph(env).flatMap((l) => l.features);
     feats.find((f) => {
       if (pathname.startsWith('/bo/dashboard' + f.link)) {
         icon = f.icon();
@@ -66,7 +66,7 @@ export default function Thumbtack() {
                 },
                 body: JSON.stringify(newShortCuts),
               }).then((r) => {
-                this.props.reloadEnv();
+                reloadEnv();
               });
             });
           }
@@ -78,9 +78,11 @@ export default function Thumbtack() {
   let shortcutDisabled = !!shortcuts
     .filter((s) => _.isObject(s))
     .find((s) => '/bo/dashboard' + s.link === window.location.pathname);
+
   if (!shortcutDisabled) {
-    const feats = graph(this.props.env).flatMap((l) => l.features);
+    const feats = graph(env).flatMap((l) => l.features);
     const found = feats.find((f) => '/bo/dashboard' + f.link === window.location.pathname);
+
     if (found) {
       shortcutDisabled = !!shortcuts.find((s) => s === found.title.toLowerCase());
     }

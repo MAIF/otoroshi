@@ -295,9 +295,8 @@ class BackOfficeAppContainer extends Component {
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -373,9 +372,9 @@ class BackOfficeAppContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="flex-fill px-3" style={{overflowX:'auto'}}>
+              <div className="flex-fill px-3" style={{ overflowX: 'auto' }}>
                 <div className={classes.join(' ')} id="content-scroll-container">
-                  <DynamicTitle>
+                  <DynamicTitle env={this.state.env} reloadEnv={this.reloadEnv}>
                     {!this.state.catchedError && (
                       <Switch>
                         <Route

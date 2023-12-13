@@ -520,7 +520,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
-                  _onClick={(e) => this.gotoItem(e, item)}
+                  onClick={(e) => this.gotoItem(e, item)}
                 >
                   <i className="fas fa-link" />
                 </a>
@@ -818,7 +818,6 @@ export class Table extends Component {
               ))}
             <hr />
             <div className="displayGroupBtn float-end">
-<<<<<<< HEAD
               {this.props.export && (
                 <>
                   <button
@@ -837,8 +836,6 @@ export class Table extends Component {
                   </button>
                 </>
               )}
-=======
->>>>>>> master
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"

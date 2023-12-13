@@ -7,6 +7,8 @@ import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
 import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
+import isString from 'lodash/isString'
+import isObject from 'lodash/isObject'
 
 const addShortcutButton = true;
 
@@ -80,7 +82,7 @@ export function DefaultSidebar(props) {
   const removeShortcut = (shortcut) => {
     if (shortcut.custom) {
       const newShortcuts = shortcuts.filter((f) => {
-        if (_.isObject(f)) {
+        if (isObject(f)) {
           return f.link !== shortcut.link;
         } else {
           return true;
@@ -88,8 +90,7 @@ export function DefaultSidebar(props) {
       });
       writeStorage(newShortcuts);
     } else {
-      console.log('bilm ');
-      const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut.title));
+      const newShortcuts = shortcuts.filter((f) => isObject(f) || !f.includes(shortcut.title));
       writeStorage(newShortcuts);
     }
   };
@@ -169,12 +170,11 @@ export function DefaultSidebar(props) {
           }, 50); // delay to avoid simple click
         }}>
 
-        {openedSidebar && !onRouteTab && shortcuts.length>0 &&<p className="sidebar-title">Shortcuts</p>}
-        
-        {openedSidebar && <p className="ps-2">Shortcuts</p>}
-        {shortcuts
+        {openedSidebar && !onRouteTab && shortcuts.length > 0 && <p className="sidebar-title">Shortcuts</p>}
+
+        {!onRouteTab && shortcuts
           .map((shortcut) => {
-            if (_.isObject(shortcut)) {
+            if (isObject(shortcut)) {
               shortcut.link = shortcut.link || shortcut.path;
               shortcut.icon = shortcut.icon || (() => 'fa-star');
               shortcut.custom = true;
@@ -259,13 +259,13 @@ export function DefaultSidebar(props) {
 
 function CustomIcon({ icon, title }) {
   const iconValue = icon ? (typeof icon === 'function' ? icon() : icon) : null;
-  const className = _.isString(iconValue)
+  const className = isString(iconValue)
     ? iconValue.indexOf(' ') > -1
       ? iconValue
       : `fa ${iconValue}`
     : null;
   let zeIcon = iconValue ? (
-    _.isString(iconValue) ? (
+    isString(iconValue) ? (
       <i className={className} title={title} />
     ) : (
       iconValue
@@ -274,7 +274,7 @@ function CustomIcon({ icon, title }) {
   if (iconValue === 'fa-snow-monkey') {
     zeIcon = snowmonkeyIcon;
   }
-  if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
+  if (isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
     return <i className="fas fa-thumbtack" title={title} />;
   } else {
     return zeIcon;
@@ -336,7 +336,7 @@ function Block({
               if (link.indexOf('http') === 0) {
                 const iconTitle = description ? `${title} - ${description}` : title;
                 return (
-                  <a
+                  <a  
                     href={link}
                     target="_blank"
                     key={title}
@@ -402,6 +402,7 @@ function Block({
 
               return (
                 <Link
+                  to={link}
                   key={title}
                   className="sidebar-feature p-3 py-1 mx-1"
                   style={{
