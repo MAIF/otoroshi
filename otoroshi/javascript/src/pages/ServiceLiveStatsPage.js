@@ -34,8 +34,8 @@ export class ServiceLiveStatsPage extends Component {
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
     fu.then((service) => {
-      this.onRoute
-        ? this.props.setTitle(`Route Live Stats`)
+      this.onRoutes
+        ? this.props.setTitle(this.props.title || `Route Live Stats`)
         : this.props.setTitle(`Service Live Stats`);
       this.setState({ service }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));

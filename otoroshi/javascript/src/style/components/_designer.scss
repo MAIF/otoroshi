@@ -536,7 +536,7 @@
         top: 1em;
         right: 0;
         left: 0;
-        bottom: 4em;
+        bottom: 0;
         background-color: var(--bg-color_level1);
         z-index: 800;
         border-radius: 4px;
@@ -545,7 +545,8 @@
             background: var(--bg-color_level2);
             padding: 12px;
             border-radius: 8px;
-            margin: 10px;
+            margin: 0;
+            margin-top: 10px;
             flex: 1;
             padding-right: 24px;
         }

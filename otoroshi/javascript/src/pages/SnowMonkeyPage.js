@@ -171,7 +171,7 @@ export class SnowMonkeyPage extends Component {
       moreProps.disabled = true;
     }
     return (
-      <div>
+      <div class="container">
         <div className="row">
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">

@@ -5,7 +5,10 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
+import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
+import isString from 'lodash/isString'
+import isObject from 'lodash/isObject'
 
 const addShortcutButton = true;
 
@@ -79,7 +82,7 @@ export function DefaultSidebar(props) {
   const removeShortcut = (shortcut) => {
     if (shortcut.custom) {
       const newShortcuts = shortcuts.filter((f) => {
-        if (_.isObject(f)) {
+        if (isObject(f)) {
           return f.link !== shortcut.link;
         } else {
           return true;
@@ -87,8 +90,7 @@ export function DefaultSidebar(props) {
       });
       writeStorage(newShortcuts);
     } else {
-      console.log('bilm ');
-      const newShortcuts = shortcuts.filter((f) => !f.includes(shortcut.title));
+      const newShortcuts = shortcuts.filter((f) => isObject(f) || !f.includes(shortcut.title));
       writeStorage(newShortcuts);
     }
   };
@@ -121,14 +123,17 @@ export function DefaultSidebar(props) {
   };
 
   const sidebarContext = useContext(SidebarContext);
+
   const { openedSidebar } = sidebarContext;
+
+  const onRouteTab = window.location.pathname.startsWith('/bo/dashboard/routes/') ||
+    window.location.pathname.startsWith('/bo/dashboard/route-compositions/');
 
   const links = graph(props.env);
 
   const features = links.flatMap((l) =>
     l.features.map((f) => ({ ...f, title: f.title.toLowerCase() }))
   );
-
   return (
     <>
       <ul
@@ -163,12 +168,13 @@ export function DefaultSidebar(props) {
               writeStorage(shortcuts.filter((f) => f));
             }
           }, 50); // delay to avoid simple click
-        }}
-      >
-        {openedSidebar && <p className="ps-2">Shortcuts</p>}
-        {shortcuts
+        }}>
+
+        {openedSidebar && !onRouteTab && shortcuts.length > 0 && <p className="sidebar-title">Shortcuts</p>}
+
+        {!onRouteTab && shortcuts
           .map((shortcut) => {
-            if (_.isObject(shortcut)) {
+            if (isObject(shortcut)) {
               shortcut.link = shortcut.link || shortcut.path;
               shortcut.icon = shortcut.icon || (() => 'fa-star');
               shortcut.custom = true;
@@ -185,8 +191,8 @@ export function DefaultSidebar(props) {
                 dragging={
                   draggingIndex === initialIndex
                     ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                      clientY: client.clientY - start.clientY,
+                    }
                     : undefined
                 }
                 startDragging={(clientY) => {
@@ -202,9 +208,9 @@ export function DefaultSidebar(props) {
             );
           })}
       </ul>
-      {openedSidebar && (
+      {openedSidebar && !onRouteTab && (
         <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
-          <p className="ps-2">Categories</p>
+          <p className="sidebar-title">Categories</p>
           <div className="d-flex flex-column">
             {links.sort(sortCategory).map((item, i) => {
               return (
@@ -253,13 +259,13 @@ export function DefaultSidebar(props) {
 
 function CustomIcon({ icon, title }) {
   const iconValue = icon ? (typeof icon === 'function' ? icon() : icon) : null;
-  const className = _.isString(iconValue)
+  const className = isString(iconValue)
     ? iconValue.indexOf(' ') > -1
       ? iconValue
       : `fa ${iconValue}`
     : null;
   let zeIcon = iconValue ? (
-    _.isString(iconValue) ? (
+    isString(iconValue) ? (
       <i className={className} title={title} />
     ) : (
       iconValue
@@ -268,7 +274,7 @@ function CustomIcon({ icon, title }) {
   if (iconValue === 'fa-snow-monkey') {
     zeIcon = snowmonkeyIcon;
   }
-  if (_.isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
+  if (isObject(zeIcon) && zeIcon.type === 'svg' && !zeIcon['$$typeof']) {
     return <i className="fas fa-thumbtack" title={title} />;
   } else {
     return zeIcon;
@@ -288,6 +294,7 @@ function Block({
   writeStorage,
 }) {
   const [open, setOpen] = useState(false);
+  const history = useHistory();
 
   return (
     <div
@@ -321,7 +328,7 @@ function Block({
       </div>
 
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2">
+        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2 animOpacity">
           {features
             .filter((d) => d.display === undefined || d.display())
             .map(({ title, link, icon }) => {
@@ -329,7 +336,7 @@ function Block({
               if (link.indexOf('http') === 0) {
                 const iconTitle = description ? `${title} - ${description}` : title;
                 return (
-                  <a
+                  <a  
                     href={link}
                     target="_blank"
                     key={title}
@@ -476,7 +483,7 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center ${openedSidebar ? 'nav-item--open' : ''}`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''}`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -536,7 +543,7 @@ function SidebarLink({
         </a>
       )}
       <i
-        className="fas fa-eye-slash nav-item-eye ms-auto"
+        className="fas fa-eye-slash nav-item-eye me-auto"
         onClick={removeShortcut}
         title="Remove shortcut"
       />

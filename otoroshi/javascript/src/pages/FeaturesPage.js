@@ -359,7 +359,7 @@ export const graph = (env) => {
 };
 
 const AutoLink = (props) => {
-  if (props.to.indexOf('http') === 0) {
+  if (props.to.startsWith('http')) {
     return (
       <a {...props} href={props.to} target="_blank">
         {props.children}

@@ -28,9 +28,10 @@ export const Informations = forwardRef(
     useEffect(() => {
       setSaveButton(
         <FeedbackButton
+          type="success"
           className="ms-2 mb-1"
           onPress={saveRoute}
-          text={isCreation ? `Create ${entityName}` : `Save ${entityName}`}
+          text={isCreation ? `Create ${entityName}` : `Save`}
           icon={() => <i className="fas fa-paper-plane" />}
         />
       );
@@ -237,6 +238,37 @@ export const Informations = forwardRef(
           label: 'Location',
         },
       },
+      danger_zone: {
+        renderer: (props) => {
+          const what = window.location.pathname.split('/')[3];
+          const id = window.location.pathname.split('/')[4];
+          const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+          return <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Delete this route</label>
+            <div className="col-sm-10">
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <p>Once you delete a route, there is no going back. Please be certain.</p>
+                <Button
+                  style={{ width: 'fit-content' }}
+                  // disabled={id === props.globalEnv.adminApiId} // TODO
+                  type="danger"
+                  onClick={() => {
+                    window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
+                      if (ok) {
+                        nextClient.deleteById(kind, id).then(() => {
+                          history.push('/' + what);
+                        });
+                      }
+                    });
+                  }}
+                >
+                  Delete this route
+                </Button>
+              </div>
+            </div>
+          </div>
+        },
+      }
     };
 
     const flow = [
@@ -265,6 +297,12 @@ export const Informations = forwardRef(
         name: 'Misc.',
         collapsed: true,
         fields: ['tags', 'metadata', 'core_metadata'],
+      },
+      {
+        type: 'group',
+        name: 'Danger zone',
+        collapsed: true,
+        fields: ['danger_zone'],
       },
     ];
 

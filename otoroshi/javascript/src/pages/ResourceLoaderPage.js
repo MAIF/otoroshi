@@ -253,7 +253,7 @@ export function ResourceLoaderPage({ setTitle }) {
   }
 
   return (
-    <div>
+    <div class="container">
       <div className="mb-3 d-flex justify-content-between">
         <div>
           <PillButton

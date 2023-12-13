@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { useParams, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   nextClient,
   getCategories,
@@ -39,8 +39,6 @@ import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
-import GraphQLForm from './GraphQLForm';
-import { Button } from '../../components/Button';
 import { PillButton } from '../../components/PillButton';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
@@ -264,7 +262,7 @@ const Modal = ({ question, onOk, onCancel }) => (
 
 export default forwardRef(
   ({ value, setSaveButton, setTestingButton, setMenu, history, setValue, ...props }, ref) => {
-    const { routeId } = useParams();
+    const { routeId } = props;
     const location = useLocation();
 
     const viewPlugins = new URLSearchParams(location.search).get('view_plugins');
@@ -279,7 +277,7 @@ export default forwardRef(
     }));
 
     useEffect(() => {
-      if (location?.state?.showTryIt) {
+      if (location?.state?.showTryIt || window.location.search.includes('showTryIt')) {
         childRef.current.toggleTryIt();
         props.toggleTesterButton(true);
       } else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
@@ -335,7 +333,7 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
   </div>
 );
 
-const Container = ({ children, onClick }) => {
+const Container = ({ children, onClick, showTryIt }) => {
   const [propagate, setPropagate] = useState();
 
   return (
@@ -562,14 +560,14 @@ class Designer extends React.Component {
 
   injectSaveButton = () => {
     const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
-    const entityName = isOnRouteCompositions ? 'route composition' : 'route';
+
     this.props.setSaveButton(
       <FeedbackButton
+        type="success"
         className="ms-2 mb-1"
         onPress={this.saveRoute}
-        text={`Save ${entityName}`}
+        text="Save"
         _disabled={isEqual(this.state.route, this.state.originalRoute)}
-        icon={() => <i className="fas fa-paper-plane" />}
       />
     );
   };
@@ -598,23 +596,9 @@ class Designer extends React.Component {
     </>
   );
 
-  injectDefaultMenu = () => (
-    <button
-      type="button"
-      className="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-column square-button"
-      onClick={this.clearPlugins}
-    >
-      <div>
-        <i className="fas fa-ban" />
-      </div>
-      <div>Remove plugins</div>
-    </button>
-  );
-
   injectNavbarMenu = () => {
     if (this.props.viewPlugins && this.props.viewPlugins !== -1)
       this.props.setMenu(this.injectOverrideRoutePluginsForm());
-    else this.props.setMenu(this.injectDefaultMenu());
   };
 
   loadHiddenStepsFromLocalStorage = (route) => {
@@ -627,7 +611,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -643,7 +627,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -660,9 +644,9 @@ class Designer extends React.Component {
       this.props.value
         ? Promise.resolve(this.props.value)
         : nextClient.fetch(
-            this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-            this.props.routeId
-          ),
+          this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+          this.props.routeId
+        ),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -670,10 +654,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                  showAdvancedDesignerView: (pluginName) => {
-                    this.setState({ advancedDesignerView: pluginName });
-                  },
-                })
+                showAdvancedDesignerView: (pluginName) => {
+                  this.setState({ advancedDesignerView: pluginName });
+                },
+              })
               : plugin.config_schema,
           };
         })
@@ -684,11 +668,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -992,14 +976,14 @@ class Designer extends React.Component {
                 exclude: node.exclude || [],
                 config: newNode.legacy
                   ? {
-                      plugin: newNode.id,
-                      // [newNode.configRoot]: {
-                      ...newNode.config,
-                      // },
-                    }
+                    plugin: newNode.id,
+                    // [newNode.configRoot]: {
+                    ...newNode.config,
+                    // },
+                  }
                   : {
-                      ...newNode.config,
-                    },
+                    ...newNode.config,
+                  },
               },
             ],
           },
@@ -1260,8 +1244,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1472,17 +1456,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1503,6 +1487,7 @@ class Designer extends React.Component {
     return (
       <Loader loading={loading}>
         <Container
+          showTryIt={showTryIt}
           onClick={() => {
             this.setState({
               selectedNode: undefined,
@@ -1841,14 +1826,13 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}
-            >
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}>
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
 
     return (
@@ -1861,6 +1845,13 @@ const UnselectedNode = ({
             </div>
           </Dot>
           <span>to configure it</span>
+          <button
+            type="button"
+            className="btn btn-sm btn-danger d-flex align-items-center justify-content-center ms-auto me-2"
+            onClick={clearPlugins}
+          >
+            Remove plugins
+          </button>
         </div>
         <div style={{ marginTop: 20 }}>
           <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
@@ -1977,9 +1968,9 @@ const UnselectedNode = ({
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                    .length > 0 ? (
+                    target.tls_config.enabled &&
+                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                      .length > 0 ? (
                     <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                       mTLS
                     </span>
@@ -2033,9 +2024,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>

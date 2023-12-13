@@ -520,7 +520,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
-                  _onClick={(e) => this.gotoItem(e, item)}
+                  onClick={(e) => this.gotoItem(e, item)}
                 >
                   <i className="fas fa-link" />
                 </a>
@@ -818,6 +818,24 @@ export class Table extends Component {
               ))}
             <hr />
             <div className="displayGroupBtn float-end">
+              {this.props.export && (
+                <>
+                  <button
+                    onClick={this.exportJson}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as json">
+                    <i className="fas fa-file-export" /> JSON
+                  </button>
+                  <button
+                    onClick={this.exportYaml}
+                    type="button"
+                    className="btn btn-primary"
+                    title="Export as yaml">
+                    <i className="fas fa-file-export" /> YAML
+                  </button>
+                </>
+              )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"

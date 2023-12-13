@@ -219,6 +219,7 @@ class BackOfficeAppContainer extends Component {
         globalEnv={this.state.env}
         // Pass env to the child to avoid to fetch it again
         env={this.state.env}
+        reloadEnv={this.reloadEnv}
         setTitle={(t) => DynamicTitle.setContent(t)}
         getTitle={() => DynamicTitle.getContent()}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
@@ -288,16 +289,15 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
+          <div style={{ height: 'calc(100vh - 52px)'/*, overflow: 'hidden'*/ }}>
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -324,7 +324,7 @@ class BackOfficeAppContainer extends Component {
                       toggleSidebar={(value) => this.setState({ openedSidebar: value })}
                     />
                   )}
-                  <ul className="nav flex-column nav-sidebar mt-3">
+                  {/* <ul className="nav flex-column nav-sidebar mt-3">
                     <li
                       className={`nav-item mt-0 ${
                         this.state.openedSidebar ? 'nav-item--open' : ''
@@ -351,7 +351,7 @@ class BackOfficeAppContainer extends Component {
                         </span>
                       </Link>
                     </li>
-                  </ul>
+                  </ul> */}
                   <DynamicSidebar />
                   <DefaultSidebar
                     lines={this.state.lines}
@@ -373,9 +373,9 @@ class BackOfficeAppContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="flex-fill px-3">
+              <div className="flex-fill px-3" style={{ overflowX: 'auto' }}>
                 <div className={classes.join(' ')} id="content-scroll-container">
-                  <DynamicTitle>
+                  <DynamicTitle env={this.state.env} reloadEnv={this.reloadEnv}>
                     {!this.state.catchedError && (
                       <Switch>
                         <Route
@@ -457,10 +457,11 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path={['/routes', '/route-compositions']}
+                          path={['/routes/:routeId', '/routes', '/route-compositions/:routeId', '/route-compositions']}
                           component={(props) => (
                             <RouteDesignerPage
                               globalEnv={this.state.env}
+                              reloadEnv={this.reloadEnv}
                               setTitle={(t) => DynamicTitle.setContent(t)}
                               getTitle={() => DynamicTitle.getContent()}
                               setSidebarContent={(c) => DynamicSidebar.setContent(c)}

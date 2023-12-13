@@ -810,7 +810,7 @@ export class CertificatesPage extends Component {
     //   cert.revoked = true;
     // }
 
-    BackOfficeServices.updateCertificate(cert);
+    return BackOfficeServices.updateCertificate(cert);
   };
 
   findAllCertificates = (paginationState) => {

@@ -17,42 +17,19 @@ import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
 import { HelpWrapper } from '../../components/inputs';
-import { SquareButton } from '../../components/SquareButton';
-import { YAMLExportButton } from '../../components/exporters/YAMLButton';
-import { JsonExportButton } from '../../components/exporters/JSONButton';
-import { Dropdown } from '../../components/Dropdown';
 import { FeedbackButton } from './FeedbackButton';
 import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
+import { Button } from '../../components/Button';
 
-function DeleteRouteButton(props) {
-  const what = window.location.pathname.split('/')[3];
-  const id = window.location.pathname.split('/')[4];
-  const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-  return (
-    <SquareButton
-      disabled={id === props.globalEnv.adminApiId}
-      level="danger"
-      onClick={() => {
-        window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
-          if (ok) {
-            nextClient.deleteById(kind, id).then(() => {
-              // window.location = '/bo/dashboard/' + what;
-              props.history.push('/' + what);
-            });
-          }
-        });
-      }}
-      icon="fa-trash"
-      text="Delete"
-    />
-  );
-}
+
 
 function DuplicateButton({ value, history }) {
   return (
-    <SquareButton
+    <Button
+      type="primary"
+      className="btn-sm ms-1"
       onClick={(e) => {
         const what = window.location.pathname.split('/')[3];
         const id = window.location.pathname.split('/')[4];
@@ -74,10 +51,9 @@ function DuplicateButton({ value, history }) {
               });
           }
         });
-      }}
-      icon="fa-copy"
-      text="Duplicate"
-    />
+      }}>
+      <i className='fas fa-copy' /> Duplicate route
+    </Button>
   );
 }
 
@@ -95,36 +71,6 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
       >
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
-      </button>
-    </div>
-  );
-}
-
-function InformationsTab({ isActive, entity, value, history }) {
-  return (
-    <div className="ms-2">
-      <button
-        type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
-        onClick={() => {
-          const to = `/${entity.link}/${value.id}?tab=informations`;
-          if (!window.location.href.includes(to))
-            history.replace({
-              pathname: to,
-              state: {
-                value,
-              },
-            });
-        }}
-        style={{
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
-          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}
-      >
-        <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
-        Informations
       </button>
     </div>
   );
@@ -158,122 +104,84 @@ function RoutesTab({ isActive, entity, value, history }) {
   );
 }
 
-function DesignerTab({ isActive, entity, value, history }) {
+
+function MoreActionsButton({ value, menu, history }) {
   return (
-    <div className="ms-2">
-      <button
-        type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
-        onClick={() => {
-          const to = `/${entity.link}/${value.id}?tab=flow`;
-          if (!window.location.href.includes(to))
-            history.replace({
-              pathname: to,
-              state: {
-                value,
+    <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
+      <DuplicateButton value={value} history={history} />
+      <select className="form-select selectSkin btn-primary" aria-label="Choose export">
+        <option>Export</option>
+        <option onClick={() => {
+          const entityKind = "JwtVerifier"
+          const what = window.location.pathname.split('/')[3];
+          const itemName = entityKind
+            ? entityKind.toLowerCase()
+            : what === 'routes'
+              ? 'route'
+              : 'route-composition';
+          const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+          const name = value.id
+            .replace(/ /g, '-')
+            .replace(/\(/g, '')
+            .replace(/\)/g, '')
+            .toLowerCase();
+          const json = JSON.stringify({ ...value, kind }, null, 2);
+          const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.id = String(Date.now());
+          a.style.display = 'none';
+          a.download = `${itemName}-${name}-${Date.now()}.json`;
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => document.body.removeChild(a), 300);
+        }}>JSON</option>
+        <option onClick={() => {
+          const entityKind = "JwtVerifier"
+          const what = window.location.pathname.split('/')[3];
+          const itemName = entityKind
+            ? entityKind.toLowerCase()
+            : what === 'routes'
+              ? 'route'
+              : 'route-composition';
+          const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+          const name = value.id
+            .replace(/ /g, '-')
+            .replace(/\(/g, '')
+            .replace(/\)/g, '')
+            .toLowerCase();
+
+          fetch('/bo/api/json_to_yaml', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              apiVersion: 'proxy.otoroshi.io/v1',
+              kind,
+              metadata: {
+                name,
               },
+              spec: value,
+            }),
+          })
+            .then((r) => r.text())
+            .then((yaml) => {
+              const blob = new Blob([yaml], { type: 'application/yaml' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.id = String(Date.now());
+              a.style.display = 'none';
+              a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+              a.href = url;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(() => document.body.removeChild(a), 300);
             });
-        }}
-        style={{
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
-          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}
-      >
-        <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
-        Designer
-      </button>
-    </div>
-  );
-}
-
-function ExtensionTab({ isActive, entity, value, history, item }) {
-  return (
-    <div className="ms-2">
-      <button
-        type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
-        onClick={() => {
-          const to = `/${entity.link}/${value.id}?tab=${item.id}`;
-          if (!window.location.href.includes(to))
-            history.replace({
-              pathname: to,
-              state: {
-                value,
-              },
-            });
-        }}
-        style={{
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
-          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
-        }}
-      >
-        <i className={`${item.icon} me-2`} style={{ fontSize: '1.33333em' }} />
-        {item.label}
-      </button>
-    </div>
-  );
-}
-
-function TesterButton({
-  disabled,
-  setForceTester,
-  viewRef,
-  history,
-  value,
-  isOnViewPlugins,
-  forceHideTester,
-  query,
-}) {
-  const disabledHelp =
-    'Your route is disabled. Navigate to the informations page to turn it on again';
-  const hidden = !(isOnViewPlugins || forceHideTester !== true) || query === 'routes';
-
-  return (
-    <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
-      <div
-        className="ms-2 pb-1"
-        style={{
-          height: '100%',
-          opacity: hidden ? 0 : 1,
-          pointerEvents: hidden ? 'none' : 'auto',
-        }}
-      >
-        <button
-          type="button"
-          className="btn btn-sm d-flex align-items-center dark-background h-100"
-          onClick={() => {
-            setForceTester(true);
-            viewRef?.current?.onTestingButtonClick(history, value);
-          }}
-          style={{
-            marginLeft: 20,
-            borderRadius: '.2rem !important',
-            backgroundColor: 'var(--bg-color_level2)',
-            color: 'var(--color_level2)',
-          }}
-        >
-          <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
-          Tester
-        </button>
-      </div>
-    </HelpWrapper>
-  );
-}
-
-function MoreActionsButton({ value, menu, history, globalEnv }) {
-  return (
-    <div className="mb-1">
-      <Dropdown className="ms-2" style={{ height: '100%' }}>
-        <DuplicateButton value={value} history={history} />
-        <JsonExportButton value={value} />
-        <YAMLExportButton value={value} />
-        <DeleteRouteButton globalEnv={globalEnv} history={history} />
-        {menu}
-      </Dropdown>
+        }}>YAML</option>
+      </select>
+      {menu}
     </div>
   );
 }
@@ -287,15 +195,11 @@ function ManagerTitle({
   pathname,
   value,
   viewPlugins,
-  viewRef,
   location,
   history,
   saveButton,
-  url,
-  setForceTester,
-  forceHideTester,
   routeId,
-  globalEnv,
+  ...props
 }) {
   const commonsProps = {
     entity,
@@ -311,46 +215,13 @@ function ManagerTitle({
       ),
     },
     {
-      visible: () => !isOnViewPlugins,
-      tab: 'informations',
-      component: () => <InformationsTab isActive={query === 'informations'} {...commonsProps} />,
-    },
-    {
       visible: () => ['route-compositions'].includes(entity.link),
       component: () => <RoutesTab isActive={query === 'routes'} {...commonsProps} />,
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => <DesignerTab isActive={query === 'flow'} {...commonsProps} />,
-    },
-    Otoroshi.extensions()
-      .flatMap((ext) => ext.routeDesignerTabs || [])
-      .map((item) => {
-        return {
-          visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),
-          component: () => (
-            <ExtensionTab isActive={query === item.id} {...commonsProps} item={item} />
-          ),
-        };
-      }),
-    {
       component: () => (
-        <TesterButton
-          disabled={!value.enabled}
-          setForceTester={setForceTester}
-          viewRef={viewRef}
-          history={history}
-          value={value}
-          isOnViewPlugins={isOnViewPlugins}
-          forceHideTester={forceHideTester}
-          query={query}
-        />
-      ),
-    },
-    {
-      visible: () => !isOnViewPlugins,
-      component: () => (
-        <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
+        <MoreActionsButton value={value} menu={menu} history={history} />
       ),
     },
   ].flatMap((item) => {
@@ -372,12 +243,13 @@ function ManagerTitle({
       }}
       title={
         {
-          flow: 'Designer',
-          informations: isCreation ? `Create a new Route` : `Update a Route`,
+          flow: value.name,
+          informations: isCreation ? `Create a new Route` : value.name,
           routes: 'Routes',
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
       }
+      {...props}
     >
       {!isCreation &&
         tabs
@@ -394,30 +266,35 @@ function ManagerTitle({
 
 class Manager extends React.Component {
   state = {
-    value: this.props.location?.state?.value,
+    value: this.props.value,
     menu: undefined,
     menuRefreshed: undefined,
     saveButton: undefined,
     saveTypeButton: undefined,
     forceHideTester: false,
-    loading: !this.props.location?.state?.value,
+    loading: false,
+    template: undefined
   };
 
-  viewRef = React.createRef(null);
-
   componentDidMount() {
-    if (!this.props.location?.state?.value) {
-      this.loadRoute('componentDidMount');
-    } else {
+    if (this.props.value) {
       this.updateSidebar();
     }
 
     window.history.replaceState({}, document.title);
   }
 
+  loadRoute = () => {
+    nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
+      this.setState({ value, loading: false, template: value });
+    });
+  };
+
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.match.params.routeId !== prevProps.match.params.routeId)
-      this.loadRoute('componentDidUpdate');
+    if (this.props.routeId !== prevProps.routeId || this.props.routeId === 'new') {
+      if (!this.state.template)
+        this.loadRoute();
+    }
 
     if (
       ['saveTypeButton', 'menuRefreshed', 'forceHideTester'].some(
@@ -453,8 +330,6 @@ class Manager extends React.Component {
 
     this.props.setTitle(() => (
       <ManagerTitle
-        forceHideTester={this.state.forceHideTester}
-        setForceTester={(va) => this.setState({ forceHideTester: va })}
         pathname={location.pathname}
         menu={this.state.menu}
         routeId={p.routeId}
@@ -465,36 +340,16 @@ class Manager extends React.Component {
         entity={entity}
         value={this.state.value}
         viewPlugins={viewPlugins}
-        viewRef={this.viewRef}
         location={location}
         history={history}
         saveButton={this.state.saveButton}
         globalEnv={this.props.globalEnv}
+
+        env={this.props.globalEnv}
+        reloadEnv={this.props.reloadEnv}
+        getTitle={this.props.getTitle}
       />
     ));
-  };
-
-  loadRoute = (from) => {
-    const { routeId } = this.props.match.params || { routeId: undefined };
-
-    if (routeId === 'new') {
-      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
-        this.setState({ value, loading: false }, this.updateSidebar);
-      });
-    } else {
-      if (this.props.location.state && this.props.location.state.routeFromService) {
-        this.setState(
-          { value: this.props.location.state.routeFromService, loading: false },
-          this.updateSidebar
-        );
-      } else {
-        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId).then((res) => {
-          if (!res.error) {
-            this.setState({ value: res, loading: false }, this.updateSidebar);
-          }
-        });
-      }
-    }
   };
 
   updateSidebar = () => {
@@ -516,7 +371,7 @@ class Manager extends React.Component {
   };
 
   render() {
-    const { entity, history, location, ...props } = this.props;
+    const { entity, history, location } = this.props;
 
     let query = new URLSearchParams(location.search).get('tab');
 
@@ -524,8 +379,7 @@ class Manager extends React.Component {
       query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
     }
 
-    const p = this.props.match.params;
-    const isCreation = p.routeId === 'new';
+    const isCreation = this.props.routeId === 'new';
 
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
     const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
@@ -538,7 +392,6 @@ class Manager extends React.Component {
           <Designer
             {...this.props}
             toggleTesterButton={(va) => this.setState({ forceHideTester: va })}
-            ref={this.viewRef}
             tab={query}
             history={history}
             value={this.state.value}
@@ -554,7 +407,6 @@ class Manager extends React.Component {
         render: () =>
           value && (
             <RouteCompositions
-              ref={this.viewRef}
               service={this.state.value}
               setSaveButton={(n) =>
                 this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })
@@ -616,8 +468,7 @@ class Manager extends React.Component {
         <div className="designer ps-3">
           <Informations
             {...this.props}
-            routeId={p.routeId}
-            ref={this.viewRef}
+            routeId={this.props.routeId}
             isCreation={isCreation}
             value={value}
             setValue={(v) => this.setState({ value: v })}
@@ -678,29 +529,65 @@ const RoutesView = ({ history, globalEnv }) => {
 };
 
 class RouteDesigner extends React.Component {
+
+  state = {
+    value: undefined,
+    loading: true
+  }
+
   componentDidMount() {
     this.props.setTitle('Routes');
+
+    if (!this.props.location?.state?.value) {
+      this.loadRoute();
+    } else {
+      this.setState({ loading: false })
+    }
   }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.match.params.routeId !== prevProps.match.params.routeId)
+      this.loadRoute();
+  }
+
+  loadRoute = () => {
+    const { routeId } = this.props.match.params || { routeId: undefined };
+
+    if (routeId === 'new' || (this.props.location.state && this.props.location.state.routeFromService)) {
+      this.setState({ loading: false });
+    } else if (routeId) {
+      nextClient.fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId).then((res) => {
+        if (!res.error) {
+          this.setState({ value: res, loading: false });
+        }
+      });
+    }
+  };
 
   render() {
     const { match, history, location, globalEnv } = this.props;
 
     const entity = entityFromURI(location);
 
+    // console.log(this.props, this.state, location.state)
+
+    if (Object.keys(match.params).length === 0)
+      return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
+
     return (
       <Switch>
         {[
-          { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
-          { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
-          { path: `${match.url}/:routeId/apikeys/:taction/:titem`, component: ServiceApiKeysPage },
-          { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
-          { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
-          { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
+          { path: `${match.url}/health`, component: props => <ServiceHealthPage {...props} title={this.state.value?.name} {...match} /> },
+          { path: `${match.url}/analytics`, component: props => <ServiceAnalyticsPage {...props} title={this.state.value?.name} {...match} /> },
+          { path: `${match.url}/apikeys/:taction/:titem`, component: props => <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} /> },
+          { path: `${match.url}/apikeys`, component: props => <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} /> },
+          { path: `${match.url}/stats`, component: props => <ServiceLiveStatsPage {...props} title={this.state.value?.name} {...match} /> },
+          { path: `${match.url}/events`, component: props => <ServiceEventsPage {...props} title={this.state.value?.name} {...match} /> },
           {
-            path: `${match.url}/:routeId`,
-            component: (p) => (
-              <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />
-            ),
+            path: `${match.url}/`,
+            component: (p) => {
+              return <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} {...this.state} routeId={match?.params?.routeId} />
+            },
           },
         ].map(({ path, component }) => {
           const Component = component;

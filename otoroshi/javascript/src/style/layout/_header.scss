@@ -13,6 +13,10 @@
     a {
       color: var(--color-white);
     }
+
+    @media screen and (min-width: 768px) {
+      width: 250px;
+    }
   }
 
   form#navbar .Select-control {
@@ -44,9 +48,9 @@
 .custom-dropdown {
   position: fixed;
   z-index: 1050;
-  top: 52px;
+  top: 0;
   bottom: 0;
-  height: calc(100vh - 52px);
+  height: 100dvh;
   right: 0;
   transition: max-width 0.5s, right 0.5s;
   max-width: 270px;
@@ -55,10 +59,18 @@
   padding-inline-start: 12px;
   padding-right: 12px;
 
+  > li {
+    margin: 6px 0;
+  }
+
+  li > a > *:first-child {
+    margin-right: 6px;
+  }
+
   > li > a {
     color: var(--color_level1);
     .otoroshi_logo .st0 {
-      fill:var(--color_level3);
+      fill: var(--color_level3);
     }
     &:focus,
     &:hover {
@@ -67,7 +79,7 @@
       color: var(--color_level3);
       .otoroshi_logo {
         .st0 {
-          fill:var(--color_level3);
+          fill: var(--color_level3);
         }
       }
       .monkeyMenu {
@@ -97,7 +109,6 @@
     border-color: var(--bg-color_level2);
   }
 }
-
 
 @media screen and (min-width: 768px) {
   .position-md-absolute {

@@ -282,7 +282,7 @@ export class ServiceEventsPage extends Component {
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
     fu.then((service) => {
-      this.onRoutes ? this.props.setTitle(`Route Events`) : this.props.setTitle(`Service Events`);
+      this.onRoutes ? this.props.setTitle(this.props.title || `Route Events`) : this.props.setTitle(`Service Events`);
       this.setState({ service }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });

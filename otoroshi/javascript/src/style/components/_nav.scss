@@ -33,6 +33,13 @@
   border-radius: 5px;
 }
 
+.add-menu-sidebar{
+  width: 100%;
+  a{
+    display: block !important;
+  }
+}
+
 .add-menu>li>a {
   border-radius: 5px;
   padding: 5px;
@@ -99,6 +106,9 @@ li:not(.nav-item--open) .nav-link {
 
 .nav-item--open .nav-link .title {
   margin-left: 4px;
+  margin-top: 4px;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .nav-item--open i {

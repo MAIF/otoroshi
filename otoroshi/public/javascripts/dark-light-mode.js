@@ -38,15 +38,15 @@ window.OtoroshiDarkLightMode = window.OtoroshiDarkLightMode || (function() {
         var button = document.getElementById(buttonSelector);
         if (button) {
             if (mode === "dark") {
-                button.classList.remove("fa-moon");
-                button.classList.remove("fa-lightbulb");
-                button.classList.add("fa-lightbulb");
+                button.firstChild.classList.remove("fa-moon");
+                button.firstChild.classList.remove("fa-lightbulb");
+                button.firstChild.classList.add("fa-lightbulb");
                 document.documentElement.setAttribute('data-theme', 'dark');
             }
             if (mode === "light") {
-                button.classList.remove("fa-moon");
-                button.classList.remove("fa-lightbulb");
-                button.classList.add("fa-moon");
+                button.firstChild.classList.remove("fa-moon");
+                button.firstChild.classList.remove("fa-lightbulb");
+                button.firstChild.classList.add("fa-moon");
                 document.documentElement.setAttribute('data-theme', 'light');
             }
         } else {

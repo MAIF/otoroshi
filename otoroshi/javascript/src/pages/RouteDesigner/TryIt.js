@@ -87,10 +87,10 @@ export default function ({ route, hide }) {
 
       setTesterView(
         route &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-          playgroundUrl &&
-          lastQuery
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+        playgroundUrl &&
+        lastQuery
       );
     }
   }, [route]);
@@ -134,7 +134,7 @@ export default function ({ route, hide }) {
       if (storedData && r) {
         setRequest(r);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const saveTestingRouteHistory = (request) => {
@@ -288,18 +288,18 @@ export default function ({ route, hide }) {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': {
-              key: 'Otoroshi-Client-Secret',
-              value: clientSecret,
-            },
-          }),
+          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+          'Otoroshi-Client-Secret': {
+            key: 'Otoroshi-Client-Secret',
+            value: clientSecret,
+          },
+        }),
     };
   };
 
@@ -308,7 +308,7 @@ export default function ({ route, hide }) {
   return (
     <div className="graphql-form flex-column" style={{ overflowX: 'hidden' }}>
       <div className="d-flex-between m-2 mb-0">
-        <h3>Testing</h3>
+        <h3>{route.name}</h3>
         {route &&
           route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
             <PillButton
@@ -325,9 +325,6 @@ export default function ({ route, hide }) {
               rightText="GraphQL Tester"
             />
           )}
-        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-          <i className="fas fa-times dark-background" />
-        </button>
       </div>
       {testerView === 'graphql' ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
@@ -734,7 +731,7 @@ export default function ({ route, hide }) {
                     },
                   }}
                   value={responseBody}
-                  onChange={() => {}}
+                  onChange={() => { }}
                 />
               )}
             </div>
@@ -797,9 +794,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -829,8 +826,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -929,9 +926,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -974,8 +970,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                             setSelectedStep(step.task);
                             setSelectedPlugin(plugin.name);
                           }}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
                               ? 'btn-success'
                               : ''
                           }`}
@@ -1011,7 +1006,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             mode: 'json',
           },
         }}
-        onChange={() => {}}
+        onChange={() => { }}
         value={
           JSON.stringify(
             selectedPlugin === -1
@@ -1019,8 +1014,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ? informations
                 : steps.find((t) => t.task === selectedStep)
               : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           ) +
