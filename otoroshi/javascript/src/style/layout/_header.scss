@@ -48,9 +48,9 @@
 .custom-dropdown {
   position: fixed;
   z-index: 1050;
-  top: 52px;
+  top: 0;
   bottom: 0;
-  height: calc(100vh - 52px);
+  height: 100dvh;
   right: 0;
   transition: max-width 0.5s, right 0.5s;
   max-width: 270px;
@@ -58,6 +58,14 @@
   list-style-type: none;
   padding-inline-start: 12px;
   padding-right: 12px;
+
+  > li {
+    margin: 6px 0;
+  }
+
+  li > a > *:first-child {
+    margin-right: 6px;
+  }
 
   > li > a {
     color: var(--color_level1);

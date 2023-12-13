@@ -198,7 +198,8 @@ function ManagerTitle({
   location,
   history,
   saveButton,
-  routeId
+  routeId,
+  ...props
 }) {
   const commonsProps = {
     entity,
@@ -248,6 +249,7 @@ function ManagerTitle({
           route_plugins: 'Route plugins',
         }[query] || maybeExtensionTabLabel
       }
+      {...props}
     >
       {!isCreation &&
         tabs
@@ -342,6 +344,10 @@ class Manager extends React.Component {
         history={history}
         saveButton={this.state.saveButton}
         globalEnv={this.props.globalEnv}
+
+        env={this.props.globalEnv}
+        reloadEnv={this.props.reloadEnv}
+        getTitle={this.props.getTitle}
       />
     ));
   };

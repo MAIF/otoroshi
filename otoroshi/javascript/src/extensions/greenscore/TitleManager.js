@@ -32,7 +32,7 @@ export function Tab({ isActive, title, icon, to, fillBackground }) {
   );
 }
 
-export function ManagerTitle({}) {
+export function ManagerTitle(props) {
   const location = useLocation();
   const history = useHistory();
 
@@ -143,7 +143,7 @@ export function ManagerTitle({}) {
   };
 
   return (
-    <PageTitle className="ms-0 mb-3 pb-0" title={'Green score'}>
+    <PageTitle className="ms-0 mb-3 pb-0" title={'Green score'} {...props}>
       {!editingGroup && !isOnCreation && (
         <>
           {/* <button type="button" onClick={() => {

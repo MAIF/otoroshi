@@ -6,7 +6,12 @@ import _ from 'lodash';
 
 export default function Thumbtack({ env, getTitle, reloadEnv }) {
 
+  if (!env)
+    return null;
+
   const { shortcuts } = useContext(SidebarContext);
+
+  console.log(shortcuts)
 
   const addShortcut = () => {
     const pathname = window.location.pathname;
@@ -75,18 +80,28 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
     });
   }
 
+  const uri = (window.location.pathname + window.location.search + window.location.hash).replace(
+    '/bo/dashboard',
+    ''
+  )
+
   let shortcutDisabled = !!shortcuts
     .filter((s) => _.isObject(s))
-    .find((s) => '/bo/dashboard' + s.link === window.location.pathname);
+    .find((s) => {
+      return '/bo/dashboard' + s.link === uri || s.link === uri.replace('/bo/dashboard', '')
+    });
 
   if (!shortcutDisabled) {
     const feats = graph(env).flatMap((l) => l.features);
-    const found = feats.find((f) => '/bo/dashboard' + f.link === window.location.pathname);
+    const found = feats.find((f) => '/bo/dashboard' + f.link === uri || f.link === uri.replace('/bo/dashboard', ''));
 
     if (found) {
       shortcutDisabled = !!shortcuts.find((s) => s === found.title.toLowerCase());
     }
   }
+
+  if (shortcutDisabled)
+    return null;
 
   return <Button
     type="quiet"

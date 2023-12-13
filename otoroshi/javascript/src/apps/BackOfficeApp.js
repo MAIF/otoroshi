@@ -219,6 +219,7 @@ class BackOfficeAppContainer extends Component {
         globalEnv={this.state.env}
         // Pass env to the child to avoid to fetch it again
         env={this.state.env}
+        reloadEnv={this.reloadEnv}
         setTitle={(t) => DynamicTitle.setContent(t)}
         getTitle={() => DynamicTitle.getContent()}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
@@ -460,6 +461,7 @@ class BackOfficeAppContainer extends Component {
                           component={(props) => (
                             <RouteDesignerPage
                               globalEnv={this.state.env}
+                              reloadEnv={this.reloadEnv}
                               setTitle={(t) => DynamicTitle.setContent(t)}
                               getTitle={() => DynamicTitle.getContent()}
                               setSidebarContent={(c) => DynamicSidebar.setContent(c)}

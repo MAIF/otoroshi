@@ -1564,12 +1564,28 @@ export class TopBar extends Component {
   renderShortMenu = () => {
     return (
       <>
+        <li style={{ display: 'flex', alignItems: 'center' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
+            style={{
+              height: 30,
+            }} className='mx-1'>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <div className='flex flex-column justify-content-start me-3'>
+            <div style={{ textAlign: 'start' }}><span style={{ fontWeight: 'bold' }}>{window.__userid}</span></div>
+            <div style={{ textAlign: 'start' }}><span>{window.__user?.profile?.name}</span></div>
+          </div>
+
+          <Button type="quiet" className='ms-3'>
+            <i className='fas fa-times' />
+          </Button>
+        </li>
         {/*<li>
           <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
         </li>*/}
-        <li>
+        < li >
           <VersionButton />
-        </li>
+        </li >
         <li>
           <a className="prevent-click dropdown-item" id="otoroshi-dark-light-icon" href="#">
             <i className="far fa-moon fa-lg" /> Dark/Light Mode
@@ -1590,32 +1606,36 @@ export class TopBar extends Component {
             <span className="fas fa-grip" /> All features
           </Link>
         </li>
-        {window.__otoroshi__env__latest.userAdmin && this.props.env.providerDashboardUrl && (
-          <>
-            <li className="dropdown-divider" />
-            <li>
-              <Link to="/provider" className="dropdown-item">
-                <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
-                {this.props.env.providerDashboardTitle}
-              </Link>
-            </li>
-          </>
-        )}
-        {window.__otoroshi__env__latest.userAdmin && (
-          <>
-            <li className="dropdown-divider" />
-            <li>
-              <Link to="/dangerzone" className="dropdown-item">
-                <span className="fas fa-exclamation-triangle" /> Danger Zone
-              </Link>
-            </li>
-          </>
-        )}
+        {
+          window.__otoroshi__env__latest.userAdmin && this.props.env.providerDashboardUrl && (
+            <>
+              <li className="dropdown-divider" />
+              <li>
+                <Link to="/provider" className="dropdown-item">
+                  <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
+                  {this.props.env.providerDashboardTitle}
+                </Link>
+              </li>
+            </>
+          )
+        }
+        {
+          window.__otoroshi__env__latest.userAdmin && (
+            <>
+              <li className="dropdown-divider" />
+              <li>
+                <Link to="/dangerzone" className="dropdown-item">
+                  <span className="fas fa-exclamation-triangle" /> Danger Zone
+                </Link>
+              </li>
+            </>
+          )
+        }
         <li className="dropdown-divider" />
         <li>
           <a href="/backoffice/auth0/logout" className="link-logout dropdown-item">
             <span className="fas fa-power-off" />
-            <span className="topbar-userName"> {window.__userid} </span>
+            <span className="topbar-userName"> Sign out </span>
           </a>
         </li>
       </>
@@ -1765,11 +1785,17 @@ export class TopBar extends Component {
                         styles={{
                           control: (baseStyles, state) => ({
                             ...baseStyles,
-                            border: '1px solid var(--bg-color_level3)',
+                            border: '1px solid rgba(var(--raw-text), .25)',
                             width: 400,
                             color: 'var(--text)',
-                            backgroundColor: 'var(--bg-color_level3)',
+                            // backgroundColor: 'var(--bg-color_level3)',
+                            background: 'transparent',
                             boxShadow: 'none',
+                          }),
+                          placeholder: (provided) => ({
+                            ...provided,
+                            color: 'var(--text)',
+                            opacity: .5
                           }),
                           menu: (baseStyles) => ({
                             ...baseStyles,
@@ -1785,6 +1811,23 @@ export class TopBar extends Component {
                           }),
                         }}
                         components={{
+                          ValueContainer: ({ children }) => {
+                            return <div className='flex align-items-center' style={{ display: 'flex' }}>
+                              <div style={{ maxHeight: 22, display: 'flex' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+                                  className="mx-2"
+                                  stroke="currentColor"
+                                  style={{
+                                    opacity: .5,
+                                    height: 18,
+                                  }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                              </div>
+
+                              {children}
+                            </div>
+                          },
                           NoOptionsMessage: () => null,
                           Option: (props) => {
                             const p = props.data;
@@ -1856,16 +1899,20 @@ export class TopBar extends Component {
                     <div className="dropdown">
                       <Button
                         type="quiet"
-                        className="d-flex align-items-center justify-content-between dropdown dropdown-toggle"
+                        className="d-flex align-items-center justify-content-between dropdown dropdown-toggle mx-1"
                         id="add-components"
                         data-bs-toggle="dropdown"
                         data-bs-auto-close="true"
                         aria-expanded="false"
-                        style={{ background: 'var(--bg-color_level3)', height: '100%' }}
+                        style={{
+                          border: '1px solid #f9b000',
+                          background: '#f9b000',
+                          height: '100%'
+                        }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                           className='pe-1'
-                          strokeWidth={1.5} stroke="currentColor" style={{
+                          strokeWidth={1.5} stroke="#fff" style={{
                             height: 20
                           }}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -1935,7 +1982,7 @@ export class TopBar extends Component {
                   {this.props.changePassword && (
                     <div
                       onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                      className="mx-2">
+                      className="mx-1">
                       <a
                         href="/bo/dashboard/admins"
                         data-toggle="dropdown"
@@ -1943,18 +1990,28 @@ export class TopBar extends Component {
                         aria-haspopup="true"
                         aria-expanded="false">
                         <span
-                          className="badge"
+                          className="badge align-items-center"
                           data-toggle="tooltip"
                           data-placement="bottom"
                           title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
-                          style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
-                          <i className="fas fa-exclamation-triangle" />
+                          style={{ backgroundColor: '#c9302c', height: 38, display: 'flex' }}>
+                          {/* <i className="fas fa-exclamation-triangle" /> */}
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+                            stroke="currentColor"
+                            style={{ height: '1.5rem' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+                          </svg>
+
                         </span>
                       </a>
                     </div>
                   )}
 
-                  <div className="dropdown mx-2">
+                  <div className="dropdown mx-2" style={{
+                    height: 38,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
                     <i
                       className="fas fa-cog"
                       id="cog"

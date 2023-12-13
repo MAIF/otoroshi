@@ -42,7 +42,7 @@ export class JwtVerifiersPage extends Component {
       ) : null;
 
       return (
-        <PageTitle title={title}>
+        <PageTitle title={title} {...this.props}>
           {isEditPage && (
             <Dropdown>
               <YAMLExportButton value={verifier} entityKind="JwtVerifier" />
