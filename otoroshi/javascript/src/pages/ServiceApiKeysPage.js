@@ -652,6 +652,11 @@ export class ServiceApiKeysPage extends Component {
     );
   }
 
+  componentWillUnmount() {
+    if (this.props.setSidebarContent)
+      this.props.setSidebarContent(null)
+  }
+
   componentDidMount() {
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)

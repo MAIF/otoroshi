@@ -53,6 +53,11 @@ export class ServiceAnalyticsPage extends Component {
     });
   }
 
+  componentWillUnmount() {
+    if (this.props.setSidebarContent)
+      this.props.setSidebarContent(null)
+  }
+
   update = () => {
     this.setState({ loading: true });
     BackOfficeServices.fetchServiceStats(

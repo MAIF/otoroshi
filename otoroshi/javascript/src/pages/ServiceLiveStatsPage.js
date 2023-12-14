@@ -44,6 +44,11 @@ export class ServiceLiveStatsPage extends Component {
     setTimeout(() => window.location.reload(), 120000);
   }
 
+  componentWillUnmount() {
+    if (this.props.setSidebarContent)
+      this.props.setSidebarContent(null)
+  }
+
   render() {
     if (!this.state.service) return null;
     return (
