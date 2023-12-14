@@ -32,6 +32,7 @@ object BodyHelper {
   def extractBodyFromOpt(doc: JsValue): Option[ByteString] = {
     val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
     val bodyBase64  = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+
     val bodyJson    = doc
       .select("body_json")
       .asOpt[JsValue]
@@ -241,6 +242,7 @@ class WasmBackend extends NgBackendCall {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     //WasmUtils.debugLog.debug("callBackend")
+
     ctx.wasmJson
       .flatMap { input =>
         env.wasmIntegration.wasmVmFor(config).flatMap {

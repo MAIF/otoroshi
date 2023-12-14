@@ -11,8 +11,6 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
 
   const { shortcuts } = useContext(SidebarContext);
 
-  console.log(shortcuts)
-
   const addShortcut = () => {
     const pathname = window.location.pathname;
     let title = getTitle() || document.title;
