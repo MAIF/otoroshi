@@ -217,6 +217,7 @@ $(function () {
     function pasteButton(codeContainer) {
       const paste = document.createElement("button");
       paste.classList.add("paste-button-container");
+      // paste.textContent = 'copy'
 
       const pasteText = document.createElement("span");
       pasteText.textContent = "Copied!";
