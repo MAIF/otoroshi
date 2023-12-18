@@ -8,17 +8,9 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
+import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -30,14 +22,9 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
+import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -316,6 +303,47 @@ case class ApiKey(
       result
     }
   }
+
+  private def getSignedPrefix(implicit env: Env): (String, String) = {
+    val prefix = getPrefix(env)
+    val signature = Hashing.hmacSha256(clientSecret.getBytes("utf-8")).hashBytes(prefix.getBytes("utf-8")).toString
+    (prefix, signature)
+  }
+
+  private def getNextSignedPrefix(implicit env: Env): (String, String) = {
+    val prefix = getPrefix(env)
+    val signature = Hashing.hmacSha256(rotation.nextSecret.getOrElse(clientSecret).getBytes("utf-8")).hashBytes(prefix.getBytes("utf-8")).toString
+    (prefix, signature)
+  }
+
+  private def getPrefix(implicit env: Env): String = {
+    val processedClientId = if (clientId.startsWith("apki_")) {
+      if (clientId.startsWith(s"apki_${env.env}_")) {
+        clientId.replaceFirst(s"apki_${env.env}_", "")
+      } else {
+        clientId.replaceFirst(s"apki_", "")
+      }
+    } else {
+      clientId
+    }
+    s"otoapk_${processedClientId}"
+  }
+
+  def toBearer(implicit env: Env): String = {
+    val (prefix, signature) = getSignedPrefix(env)
+    s"${prefix}_${signature}"
+  }
+
+  def toNextBearer(implicit env: Env): String = {
+    val (prefix, signature) = getNextSignedPrefix(env)
+    s"${prefix}_${signature}"
+  }
+
+  def checkBearer(value: String)(implicit env: Env) = {
+    val bearer = toBearer(env)
+    lazy val bearer2 = toNextBearer(env)
+    value == bearer || value == bearer2
+  }
 }
 
 class ServiceNotFoundException(serviceId: String)
@@ -453,8 +481,8 @@ object ApiKey {
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def initiateNewApiKey(groupId: String, env: Env): ApiKey = {
     val defaultApikey = ApiKey(
-      clientId = IdGenerator.namedToken("apki", 16, env),     // IdGenerator.token(16),
-      clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
+      clientId = IdGenerator.lowerCaseToken(16),
+      clientSecret =IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
@@ -472,8 +500,8 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
 
   def template(env: Env): ApiKey = {
     val defaultApikey = ApiKey(
-      clientId = IdGenerator.namedToken("apki", 16, env),     // IdGenerator.token(16),
-      clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
+      clientId = IdGenerator.lowerCaseToken(16),
+      clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )
@@ -502,6 +530,10 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
   def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]]
   def findAuthorizeKeyFor(clientId: String, serviceId: String)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Option[ApiKey]]
+  def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]]
@@ -650,12 +682,14 @@ case class ApikeyTuple(
     clientId: String,
     clientSecret: Option[String] = None,
     jwtToken: Option[DecodedJWT] = None,
-    location: Option[ApikeyLocation]
+    location: Option[ApikeyLocation],
+    otoBearer: Option[String],
 )                                                                 {
   def json: JsValue = Json.obj(
     "client_id"     -> clientId,
     "client_secret" -> clientSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "jwt_token"     -> jwtToken.map(_.json).getOrElse(JsNull).as[JsValue],
+    "oto_bearer"     -> otoBearer.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "location"      -> location.map(_.json).getOrElse(JsNull).as[JsValue]
   )
 }
@@ -664,9 +698,10 @@ object ApikeyTuple {
   def fromJson(json: JsValue): Either[Throwable, ApikeyTuple] = {
     Try {
       ApikeyTuple(
-        clientId = json.select("clientId").asString,
-        clientSecret = json.select("clientSecret").asOpt[String],
-        jwtToken = json.select("jwtToken").asOpt[String].map(JWT.decode),
+        clientId = json.select("client_id").asString,
+        clientSecret = json.select("client_secret").asOpt[String],
+        jwtToken = json.select("jwt_token").asOpt[String].map(JWT.decode),
+        otoBearer = json.select("oto_bearer").asOpt[String],
         location = json.select("location").asOpt[JsObject].map { loc =>
           ApikeyLocation(
             name = loc.select("name").asString,
@@ -694,6 +729,7 @@ object ApiKeyHelper {
       env: Env
   ): Future[Option[ApiKey]] = {
 
+    val authByOtoBearerToken = OtoroshiBearerToken.extractTokenFromRequest(req, descriptor)
     val authByJwtToken             = req.headers
       .get(
         descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -769,6 +805,14 @@ object ApiKeyHelper {
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
     if (preExtractedApiKey.isDefined) {
       FastFuture.successful(preExtractedApiKey)
+    } else if (authByOtoBearerToken.isDefined && descriptor.apiKeyConstraints.otoBearerAuth.enabled) {
+      val bearer = authByOtoBearerToken.get
+      env.datastores.apiKeyDataStore
+        .findAuthorizeKeyForBearer(bearer, descriptor.id)
+        .flatMap {
+          case None => FastFuture.successful(None)
+          case Some(key) => FastFuture.successful(Some(key))
+        }
     } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       val clientId = authBySimpleApiKeyClientId.get
       env.datastores.apiKeyDataStore
@@ -949,6 +993,7 @@ object ApiKeyHelper {
 
   def detectApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit env: Env): Boolean = {
 
+    val authByOtoBearerToken = OtoroshiBearerToken.extractTokenFromRequest(req, descriptor)
     val authByJwtToken             = req.headers
       .get(
         descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -1030,6 +1075,8 @@ object ApiKeyHelper {
     } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
       true
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
+      true
+    } else if (authByOtoBearerToken.isDefined && descriptor.apiKeyConstraints.otoBearerAuth.enabled) {
       true
     } else {
       false
@@ -1130,6 +1177,7 @@ object ApiKeyHelper {
     //     callDownstream(config, key, None)
     //   }
     // } else {
+    val authByOtoBearerToken = OtoroshiBearerToken.extractTokenFromRequest(req, descriptor)
     val authByJwtToken             = req.headers
       .get(
         descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -1307,6 +1355,38 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                sendQuotasExceededError(key, quotas)
+                errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+            }
+        }
+    } else if (authByOtoBearerToken.isDefined && descriptor.apiKeyConstraints.otoBearerAuth.enabled) {
+      val bearer = authByOtoBearerToken.get
+      env.datastores.apiKeyDataStore
+        .findAuthorizeKeyForBearer(bearer, descriptor.id)
+        .flatMap {
+          case None =>
+            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
+          case Some(key) if !key.matchRouting(descriptor) =>
+            errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
+          case Some(key)
+            if key.restrictions
+              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+              ._1 => {
+            key.restrictions
+              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+              ._2
+              .map(v => Left(v))
+          }
+          case Some(key) =>
+            key.withinQuotasAndRotationQuotas().flatMap {
+              case (true, rotationInfos, quotas) =>
+                rotationInfos.foreach { i =>
+                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                }
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                sendQuotasAlmostExceededError(key, quotas)
+                callDownstream(config, Some(key), None)
+              case (false, _, quotas) =>
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1540,6 +1620,19 @@ object ApiKeyHelper {
       case s @ Some(_) => s
       case None        => {
         var location                                        = ApikeyLocation(ApikeyLocationKind.Header, "--")
+        val authByOtoBearerToken: Option[ApikeyTuple] = OtoroshiBearerToken.extractTokenFromRequest(req, constraints).map { bearer =>
+          val clientId = OtoroshiBearerToken.extractClientId(bearer)
+          ApikeyTuple(
+            clientId = clientId,
+            clientSecret = None,
+            jwtToken = None,
+            location = Some(ApikeyLocation(
+              ApikeyLocationKind.Header,
+              "Authorization" // TODO: do it better ;)
+            )),
+            otoBearer = Some(bearer)
+          )
+        }
         val authByJwtToken: Option[ApikeyTuple]             = req.headers
           .get(
             constraints.jwtAuth.headerName
@@ -1596,7 +1689,7 @@ object ApiKeyHelper {
               .orElse(jwt.claimStr("iss"))
               .map(cid => (cid, jwt))
           }
-          .map(t => ApikeyTuple(t._1, jwtToken = t._2.some, location = location.some))
+          .map(t => ApikeyTuple(t._1, jwtToken = t._2.some, location = location.some, otoBearer = None))
         val authBasic: Option[ApikeyTuple]                  = req.headers
           .get(
             constraints.basicAuth.headerName
@@ -1635,7 +1728,7 @@ object ApiKeyHelper {
           )
           .map(_.split(":"))
           .filter(_.size == 2)
-          .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some))
+          .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some, otoBearer = None))
         val authByCustomHeaders: Option[ApikeyTuple]        = req.headers
           .get(
             constraints.customHeadersAuth.clientIdHeaderName
@@ -1653,7 +1746,7 @@ object ApiKeyHelper {
                 constraints.customHeadersAuth.clientSecretHeaderName
                   .getOrElse(env.Headers.OtoroshiClientSecret)
               )
-              .map(s => ApikeyTuple(id, s.some, location = location.some))
+              .map(s => ApikeyTuple(id, s.some, location = location.some, otoBearer = None))
           )
         val authBySimpleApiKeyClientId: Option[ApikeyTuple] = req.headers
           .get(
@@ -1680,10 +1773,10 @@ object ApiKeyHelper {
                 )
               )
           )
-          .map(v => ApikeyTuple(v, location = location.some))
+          .map(v => ApikeyTuple(v, location = location.some, otoBearer = None))
         val preExtractedApiKey                              = attrs
           .get(otoroshi.plugins.Keys.ApiKeyKey)
-          .map(a => ApikeyTuple(a.clientId, a.clientSecret.some, location = None))
+          .map(a => ApikeyTuple(a.clientId, a.clientSecret.some, location = None, otoBearer = None))
           .orElse(attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey))
         if (preExtractedApiKey.isDefined) {
           preExtractedApiKey
@@ -1695,6 +1788,8 @@ object ApiKeyHelper {
           authByJwtToken
         } else if (authBasic.isDefined && constraints.basicAuth.enabled) {
           authBasic
+        } else if (authByOtoBearerToken.isDefined && constraints.otoBearerAuth.enabled) {
+          authByOtoBearerToken
         } else {
           None
         }
@@ -1716,10 +1811,12 @@ object ApiKeyHelper {
           case None         => None.left
           case Some(apikey) =>
             apikeyTuple match {
-              case ApikeyTuple(_, None, None, _) if apikey.allowClientIdOnly         => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _) if apikey.isValid(secret)   => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _) if apikey.isInvalid(secret) => apikey.some.left
-              case ApikeyTuple(_, None, Some(jwt), _)                                => {
+              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly         => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)   => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret) => apikey.some.left
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) => apikey.right
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.right
+              case ApikeyTuple(_, None, Some(jwt), _, _)                                => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
@@ -1960,5 +2057,60 @@ object ApiKeyHelper {
           }
         }
     }
+  }
+}
+
+object OtoroshiBearerToken {
+  def extractClientId(bearer: String)(implicit env: Env): String = {
+    bearer
+      .replaceFirst(s"otoapk_${env.env}", "")
+      .replaceFirst("otoapk_", "")
+      .split("_").init.mkString("_")
+  }
+  def extractTokenFromRequest(req: RequestHeader, descriptor: ServiceDescriptor)(implicit env: Env): Option[String] = {
+    extractTokenFromRequest(req, descriptor.apiKeyConstraints)
+  }
+  def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints)(implicit env: Env): Option[String] = {
+    req.headers
+      .get(
+        constraints.otoBearerAuth.headerName
+          .getOrElse(env.Headers.OtoroshiBearer)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+      )
+      .map(_.replace("Bearer ", ""))
+      .orElse(
+        req.queryString
+          .get(
+            constraints.otoBearerAuth.queryName
+              .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+          )
+          .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.queryString
+          .get(
+            constraints.otoBearerAuth.queryName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.headers
+          .get(
+            constraints.otoBearerAuth.headerName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+      )
+      .orElse(
+        req.cookies
+          .get(
+            constraints.otoBearerAuth.cookieName
+              .getOrElse("bearer")
+          )
+          .map(_.value)
+      )
+      .filter(v => v.startsWith("otoapk_"))
   }
 }

@@ -164,6 +164,43 @@ export default {
             'key_pair_signed',
           ],
         },
+        oto_bearer: {
+          label: 'Otoroshi Bearer',
+          type: 'form',
+          collapsable: true,
+          collapsed: true,
+          schema: {
+            query_name: {
+              label: 'query_name',
+              type: 'string',
+              help: 'The name of the query param to get the bearer token',
+            },
+            header_name: {
+              label: 'header_name',
+              type: 'string',
+              help: 'The name of the header to get the bearer token',
+            },
+            enabled: {
+              label: 'enabled',
+              type: 'box-bool',
+              props: {
+                description:
+                  "You can pass the api key using a bearer token (ie. from 'Authorization: Bearer xxx' header)",
+              },
+            },
+            cookie_name: {
+              label: 'cookie_name',
+              type: 'string',
+              help: 'The name of the cookie to get the bearer token',
+            },
+          },
+          flow: [
+            'enabled',
+            'query_name',
+            'header_name',
+            'cookie_name',
+          ],
+        },
         basic: {
           label: 'basic',
           type: 'form',
@@ -246,7 +283,7 @@ export default {
           flow: ['enabled', 'client_secret_header_name', 'client_id_header_name'],
         },
       },
-      flow: ['jwt', 'basic', 'client_id', 'custom_headers'],
+      flow: ['jwt', 'basic', 'client_id', 'custom_headers', 'oto_bearer'],
     },
     pass_with_user: {
       label: 'pass_with_user',

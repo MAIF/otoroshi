@@ -191,6 +191,7 @@ POST    /api/apikeys/_bulk                                    otoroshi.controlle
 PUT     /api/apikeys/_bulk                                    otoroshi.controllers.adminapi.ApiKeysController.bulkUpdateAction()
 PATCH   /api/apikeys/_bulk                                    otoroshi.controllers.adminapi.ApiKeysController.bulkPatchAction()
 DELETE  /api/apikeys/_bulk                                    otoroshi.controllers.adminapi.ApiKeysController.bulkDeleteAction()
+GET     /api/apikeys/:id/bearer                               otoroshi.controllers.adminapi.ApiKeysController.getBearerValue(id)
 GET     /api/apikeys/:id/quotas                               otoroshi.controllers.adminapi.ApiKeysController.apiKeyQuotas(id)
 DELETE  /api/apikeys/:id/quotas                               otoroshi.controllers.adminapi.ApiKeysController.resetApiKeyQuotas(id)
 GET     /api/apikeys/:id                                      otoroshi.controllers.adminapi.ApiKeysController.findEntityByIdAction(id)

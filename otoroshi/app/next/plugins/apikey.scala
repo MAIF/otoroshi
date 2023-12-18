@@ -264,7 +264,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
       ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
-        case Some(ApikeyTuple(_, _, _, Some(location))) => {
+        case Some(ApikeyTuple(_, _, _, Some(location), _)) => {
           location.kind match {
             case ApikeyLocationKind.Header =>
               ctx.otoroshiRequest

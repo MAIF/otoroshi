@@ -88,10 +88,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
   def createApiKey(serviceId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.namedToken("apki", 16, env))
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
         case Some(b) => ctx.request.body.as[JsObject]
       }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-        case None    => Json.obj("clientSecret" -> IdGenerator.namedToken("apks", 64, env))
+        case None    => Json.obj("clientSecret" -> IdGenerator.lowerCaseToken(64))
         case Some(b) => Json.obj()
       })
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -498,10 +498,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
   def createApiKeyFromGroup(groupId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.namedToken("apki", 16, env))
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
         case Some(b) => ctx.request.body.as[JsObject]
       }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-        case None    => Json.obj("clientSecret" -> IdGenerator.namedToken("apks", 64, env))
+        case None    => Json.obj("clientSecret" -> IdGenerator.lowerCaseToken(64))
         case Some(b) => Json.obj()
       })
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
@@ -800,6 +800,29 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       }
     }
   }
+
+  def getBearerValue(clientId: String) =
+    ApiAction.async { ctx =>
+      env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+        case None => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+        case Some(apiKey) if !ctx.canUserRead(apiKey) => ctx.fforbidden
+        case Some(apiKey) => {
+          sendAudit(
+            "ACCESS_SERVICE_APIKEY_SINGLE",
+            s"User accessed an apikey quotas from a service descriptor",
+            Json.obj("clientId" -> clientId),
+            ctx
+          )
+          Ok(Json.obj(
+            "bearer" -> apiKey.toBearer,
+          ).applyOnWithOpt(apiKey.rotation.nextSecret) {
+            case (json, next) => json ++ Json.obj("bearer_next" -> apiKey.toNextBearer)
+          }.applyOnWithOpt(ctx.request.getQueryString("newSecret")) {
+            case (json, newSecret) => json ++ Json.obj("bearer_new" -> apiKey.copy(clientSecret = newSecret).toBearer)
+          }).vfuture
+        }
+      }
+    }
 
   def apiKeyQuotas(clientId: String) =
     ApiAction.async { ctx =>

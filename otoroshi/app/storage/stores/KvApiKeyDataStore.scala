@@ -274,4 +274,9 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       case _                                                                                                => None
     }
   }
+
+  override def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKey]] = {
+    val clientId = OtoroshiBearerToken.extractClientId(bearer)
+    findAuthorizeKeyForFromCache(clientId, serviceId).vfuture
+  }
 }

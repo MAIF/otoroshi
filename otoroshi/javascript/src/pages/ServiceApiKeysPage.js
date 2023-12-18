@@ -8,6 +8,88 @@ import { Restrictions } from '../components/Restrictions';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 
+class ApikeyBearer extends Component {
+
+  state = { bearer: null }
+
+  componentDidMount() {
+    console.log(this.props.thatProps)
+    this.update()
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const prevClientId = prevProps.rawValue.clientId;
+    const curClientId = this.props.rawValue.clientId;
+    const prevClientSecret = prevProps.rawValue.clientSecret;
+    const curClientSecret = this.props.rawValue.clientSecret;
+    if ((prevClientId !== curClientId) || (prevClientSecret !== curClientSecret)) {
+      this.update()
+    }
+  }
+
+  copy = () => {
+    if (this.state.bearer) {
+      navigator.clipboard.writeText(this.state.bearer)
+    }
+  }
+
+  update = () => {
+    if (!window.location.pathname.endsWith('/add')) {
+      fetch('/bo/api/proxy/api/apikeys/' + this.props.rawValue.clientId + '/bearer?newSecret=' + this.props.rawValue.clientSecret, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      }).then(r => r.json()).then(r => {
+        this.setState({ bearer: r.bearer_new })
+      })
+    }
+  }
+
+  render() {
+    if (!this.state.bearer) {
+      return null;
+    }
+    return (
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label">
+          Apikey Bearer <i className="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Your apikey as a bearer to pass in the Authorization header" aria-label="Your apikey as a bearer to pass in the Authorization header"></i>
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="text" className="form-control" disabled value={this.state.bearer} />
+            <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={this.copy}><i className="fas fa-copy" /></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+class ApikeySecret extends Component {
+
+  copy = () => {
+    navigator.clipboard.writeText(this.props.value)
+  }
+
+  render() {
+    return (
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label">
+          Apikey Secret <i className="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="The secret is a random key used to validate the API key" aria-label="The secret is a random key used to validate the API key"></i>
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="text" className="form-control" value={this.props.value} onChange={e => this.props.onChange(e.target.value)} />
+            <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={this.copy}><i className="fas fa-copy" /></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 const Both = ({ label, rawValue }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
@@ -330,12 +412,17 @@ const ApiKeysConstants = {
       },
     },
     clientSecret: {
-      type: 'string',
+      //type: 'string',
+      type: ApikeySecret,
       props: {
         label: 'ApiKey Secret',
         placeholder: 'The ApiKey secret',
         help: 'The secret is a random key used to validate the API key',
       },
+    },
+    bearer: {
+      type: ApikeyBearer,
+      props: { lable: 'Bearer', thatProps: that.props },
     },
     both: { type: Both, props: { label: 'Both' } },
     curlCommand: { type: CurlCommand, props: { label: 'Curl Command', env: that.props.env } },
@@ -589,6 +676,7 @@ const ApiKeysConstants = {
     '_loc',
     'clientId',
     'clientSecret',
+    'bearer',
     'clientName',
     'description',
     'validUntil',

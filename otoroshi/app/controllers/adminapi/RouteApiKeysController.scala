@@ -88,10 +88,10 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
   def createApiKey(routeId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.namedToken("apki", 16, env))
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
         case Some(b) => ctx.request.body.as[JsObject]
       }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-        case None    => Json.obj("clientSecret" -> IdGenerator.namedToken("apks", 64, env))
+        case None    => Json.obj("clientSecret" -> IdGenerator.lowerCaseToken(64))
         case Some(b) => Json.obj()
       })
       env.datastores.routeDataStore.findById(routeId).flatMap {

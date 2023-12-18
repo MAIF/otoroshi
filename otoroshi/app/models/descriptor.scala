@@ -1112,6 +1112,41 @@ object CustomHeadersAuthConstraints {
       } get
   }
 }
+
+case class OtoBearerConstraints(
+  enabled: Boolean = true,
+  headerName: Option[String] = None,
+  queryName: Option[String] = None,
+  cookieName: Option[String] = None
+) {
+  def json: JsValue =
+    Json.obj(
+      "enabled" -> enabled,
+      "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
+}
+
+object OtoBearerConstraints {
+  val format = new Format[OtoBearerConstraints] {
+    override def writes(o: OtoBearerConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[OtoBearerConstraints] =
+      Try {
+        JsSuccess(
+          OtoBearerConstraints(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+            queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
+            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+          )
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+  }
+}
+
 case class JwtAuthConstraints(
     enabled: Boolean = true,
     secretSigned: Boolean = true,
@@ -1234,12 +1269,14 @@ case class ApiKeyConstraints(
     customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
     clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
     jwtAuth: JwtAuthConstraints = JwtAuthConstraints(),
+    otoBearerAuth: OtoBearerConstraints = OtoBearerConstraints(),
     routing: ApiKeyRouteMatcher = ApiKeyRouteMatcher()
 )                        {
   def json: JsValue =
     Json.obj(
       "basicAuth"         -> basicAuth.json,
       "customHeadersAuth" -> customHeadersAuth.json,
+      "otoBearerAuth" -> otoBearerAuth.json,
       "clientIdAuth"      -> clientIdAuth.json,
       "jwtAuth"           -> jwtAuth.json,
       "routing"           -> routing.json
@@ -1256,6 +1293,7 @@ object ApiKeyConstraints {
           ApiKeyConstraints(
             basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
             customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
+            otoBearerAuth = (json \ "otoBearerAuth").as(OtoBearerConstraints.format),
             clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
             jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
             routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
