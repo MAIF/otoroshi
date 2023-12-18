@@ -196,7 +196,7 @@ export class ArrayInput extends Component {
                 {!this.state.values.length && !this.props.component && (
                   <>
                     {this.props.prefix && (
-                      <span className="input-group-text">{this.props.prefix}</span>
+                      <span className="input-group-text" onClick={this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>
                     )}
                     <input
                       disabled={this.props.disabled}
@@ -208,7 +208,7 @@ export class ArrayInput extends Component {
                       onChange={(e) => this.changeValue(e, idx)}
                     />
                     {this.props.suffix && (
-                      <span className="input-group-text">{this.props.suffix}</span>
+                      <span className="input-group-text" onClick={this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined} style={this.props.suffixStyle || {}}>{this.props.suffix}</span>
                     )}
                   </>
                 )}

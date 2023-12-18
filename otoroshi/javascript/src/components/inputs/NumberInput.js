@@ -29,7 +29,7 @@ export class NumberInput extends Component {
         <div className="col-sm-10">
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
-              {this.props.prefix && <span className="input-group-text">{this.props.prefix}</span>}
+              {this.props.prefix && <span className="input-group-text" onClick={this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>}
               <input
                 type="number"
                 step={this.props.step}
@@ -42,7 +42,7 @@ export class NumberInput extends Component {
                 value={this.props.value}
                 onChange={this.onChange}
               />
-              {this.props.suffix && <span className="input-group-text">{this.props.suffix}</span>}
+              {this.props.prefix && <span className="input-group-text" onClick={this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>}
             </div>
           )}
           {!(this.props.prefix || this.props.suffix) && (

@@ -67,29 +67,6 @@ class ApikeyBearer extends Component {
   }
 }
 
-class ApikeySecret extends Component {
-
-  copy = () => {
-    navigator.clipboard.writeText(this.props.value)
-  }
-
-  render() {
-    return (
-      <div className="row mb-3">
-        <label className="col-sm-2 col-form-label">
-          Apikey Secret <i className="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="The secret is a random key used to validate the API key" aria-label="The secret is a random key used to validate the API key"></i>
-        </label>
-        <div className="col-sm-10">
-          <div className="input-group">
-            <input type="text" className="form-control" value={this.props.value} onChange={e => this.props.onChange(e.target.value)} />
-            <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={this.copy}><i className="fas fa-copy" /></span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-}
-
 const Both = ({ label, rawValue }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
@@ -412,12 +389,14 @@ const ApiKeysConstants = {
       },
     },
     clientSecret: {
-      //type: 'string',
-      type: ApikeySecret,
+      type: 'string',
       props: {
         label: 'ApiKey Secret',
         placeholder: 'The ApiKey secret',
         help: 'The secret is a random key used to validate the API key',
+        suffix: <i className="fas fa-copy" />,
+        suffixStyle: { cursor: 'pointer' },
+        suffixCb: (s) => navigator.clipboard.writeText(s)
       },
     },
     bearer: {
