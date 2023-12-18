@@ -688,11 +688,25 @@ small {
 
 /* site navigation */
 
+.site-nav::-webkit-scrollbar {
+  display: none;
+}
+
 .site-nav {
   padding: 1rem;
   /* border: solid 1px #cccccc; */
   background-color: #eee;
   border-right: 2px solid #4078c0;
+
+  overflow-y: scroll;
+  height: 100dvh;
+  height: 100%;
+  
+  position: fixed;
+  padding-top: 1rem;
+  
+  max-width: 225px;
+  min-width: 200px;
 }
 
 .show-for-medium {
@@ -985,7 +999,10 @@ small {
 .title-logo {
   content: url("../imgs/small-otoroshi-logo.png");
   margin-right: 10px;
-  margin-top: 10px;
+  height: 4rem;
+  width: 4rem;
+  margin: auto;
+  margin-bottom: 1rem;
 }
 
 p {
@@ -1222,4 +1239,27 @@ p {
   overflow: auto;
   max-height: calc(500px - 71px);
   margin-bottom: 24px;     
+}
+
+#search-zone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #eee;
+  padding: .75rem 1rem;
+  border-radius: .5rem;
+  border: 1px solid #eee;
+}
+
+#search-zone svg:last-child {
+  margin-left: 10rem;
+}
+
+#search-block-placeholder {
+  align-items: center;
+  margin-right: 1rem;
+}
+
+#search-block-placeholder:hover #search-zone {
+  border: 1px solid #bbb;
 }

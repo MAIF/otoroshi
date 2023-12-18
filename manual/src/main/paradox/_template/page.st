@@ -38,8 +38,19 @@ $navigation()$
 
 <div class="off-canvas-content" data-off-canvas-content>
 
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
+<nav class="site-nav">
+<div class="title-logo"></div>
+$navigation()$
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column" style="padding-left: 2rem">
+
 <header class="site-header expanded row">
-<div class="small-12 column">
+<div class="small-12 column" style="padding: 0">
 <a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu">$menu()$</a>
 $title()$
 <!--
@@ -48,15 +59,6 @@ $title()$
 </div>
 </header>
 
-<div class="expanded row">
-
-<div class="medium-3 large-2 show-for-medium column">
-<nav class="site-nav">
-$navigation()$
-</nav>
-</div>
-
-<div class="small-12 medium-9 large-10 column">
 <section class="site-content">
 
 <div class="page-header row">
