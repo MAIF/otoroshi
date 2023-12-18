@@ -6,6 +6,16 @@ Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)
 
 @@@div { .plugin .platform }
 
+## Cloud APIM
+
+Cloud APIM provides Otoroshi instances as a service. You can easily creates a beefy speced Otoroshi cluster in a few clics.
+
+<img src="https://www.cloud-apim.com/assets/logo/512x512.png" />
+[Documentation](https://www.cloud-apim.com/)
+@@@
+
+@@@div { .plugin .platform }
+
 ## Clever Cloud
 
 Otoroshi provides an integration to create easily services based on application deployed on your Clever Cloud account.
