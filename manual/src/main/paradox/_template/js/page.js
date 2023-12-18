@@ -240,7 +240,6 @@ $(function () {
     function pasteButton(codeContainer) {
       const paste = document.createElement("button");
       paste.classList.add("paste-button-container");
-      // paste.textContent = 'copy'
 
       const pasteText = document.createElement("span");
       pasteText.textContent = "Copied!";
@@ -251,7 +250,13 @@ $(function () {
 
       paste.addEventListener('click', function (event) {
         codeContainer.focus();
-        navigator.clipboard.writeText(codeContainer.textContent)
+
+        let content = codeContainer.textContent;
+        if (content.startsWith('copy')) {
+          content = content.slice(4);
+        }
+
+        navigator.clipboard.writeText(content);
 
         codeContainer.appendChild(pasteText);
         setTimeout(() => codeContainer.removeChild(pasteText), 2000)

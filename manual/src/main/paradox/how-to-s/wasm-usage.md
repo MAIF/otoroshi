@@ -18,6 +18,7 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 3. [Test your validator](#test-your-validator)
 4. [Update the route by replacing the backend with a WASM file](#update-the-route-by-replacing-the-backend-with-a-wasm-file)
 5. [WASM backend test](#wasm-backend-test)
+6. [Expose a single file as WASM backend](#expose-a-single-file-as-wasm-backend)
 
 After completing these steps you will have a route that uses WASM plugins written in Rust.
 
@@ -255,4 +256,80 @@ This should output:
 In this response, we can find our headers send in the curl command and those added by the wasm plugin.
 
 
+## Expose a single file as WASM backend
 
+A WASM backend plugin can directly expose a file written in Wasmo. This is the simplest possibility to write HTML, Javascript, JSON or expose a simple PNG image.
+
+Let's expose a HTML page. In your Wasmo instance, execute the following instructions:
+
+1. Click the new plugin button
+2. Add a name and `validate`
+3. Click the new plugin
+4. Create a new file named `index.html`
+5. Copy and paste the following content
+
+```html
+ <!DOCTYPE html>
+<html>
+<head>
+<title>Wasmo plugin</title>
+</head>
+
+<body>
+<h1>Hello from Wasmo</h1>
+</body>
+
+</html>
+```
+
+This snippet is a short HTML template with a title to indicate that it comes from Wasmo. 
+
+Now we can write our javascript function to parse and return the content of our HTML to Otoroshi. 
+
+1. Navigate to the `index.js` file
+2. Replace the content with the following content
+
+```js
+import IndexPage from './index.html'
+
+export function execute() {
+  
+  let response = {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8'
+    },
+    body: IndexPage,
+    status: 200
+  };
+  
+  Host.outputString(JSON.stringify(response));
+
+  return 0;
+}
+```
+
+The code is pretty self-explanatory. We start by importing our HTML page and we build the response with the correct content type, the body and a 200 http status.
+
+Just before testing, we need to change the esbuild configuration to specify how to bundle the HTML file.
+
+The contents of your `esbuild.js`  file should look this:
+
+```js
+const esbuild = require('esbuild');
+
+esbuild
+  .build({
+    entryPoints: ['index.js'],
+    outdir: 'dist',
+    bundle: true,
+    loader: {
+      '.html': 'text'
+    },
+    sourcemap: true,
+    minify: false, // might want to use true for production build
+    format: 'cjs', // needs to be CJS for now
+    target: ['es2020'] // don't go over es2020 because quickjs doesn't support it
+  })
+```
+
+Check your browser at `http://demo-otoroshi.oto.tools:8080` and you should see your page content updated to the new text.
