@@ -21,10 +21,8 @@ import { CleverPage } from '../pages/CleverPage';
 import { EurekaServersPage } from '../pages/EurekaServersPage';
 import { EurekaServerPage } from '../pages/EurekaServerPage';
 import { AuditPage } from '../pages/AuditPage';
-import { Top10servicesPage } from '../pages/Top10servicesPage';
 import { LoggersPage } from '../pages/LoggersPage';
 import { AlertPage } from '../pages/AlertPage';
-import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalEventsPage } from '../pages/GlobalEventsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
@@ -760,14 +758,6 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/loggers"
                           component={(props) => this.decorate(LoggersPage, props)}
-                        />
-                        <Route
-                          path="/top10"
-                          component={(props) => this.decorate(Top10servicesPage, props)}
-                        />
-                        <Route
-                          path="/map"
-                          component={(props) => this.decorate(ServicesMapPage, props)}
                         />
                         <Route
                           path="/stats"

@@ -307,3 +307,22 @@ class NgServiceQuotas extends NgAccessValidator {
     }
   }
 }
+
+/*
+case class NgServiceQuotasConfig() extends NgPluginConfig {
+
+}
+
+object NgServiceQuotasConfig {
+
+}
+
+class NgCustomThrottling() extends NgAccessValidator {
+
+}
+
+class NgCustomQuotas() extends NgAccessValidator {
+
+}
+
+ */

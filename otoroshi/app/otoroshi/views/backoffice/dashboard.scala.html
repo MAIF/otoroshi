@@ -5,7 +5,6 @@
 @(user: BackOfficeUser, config: GlobalConfig, _env: otoroshi.env.Env, version: String, possibleTenants: Seq[String], uiMode: String)
 
 @moreScripts = {
-    <script src="@routes.Assets.versioned("javascripts/d3.v3.min.js")"></script>
     <script type="text/javascript">
         window.__title = '@_env.title';
         window.__isDev = @_env.liveJs;
