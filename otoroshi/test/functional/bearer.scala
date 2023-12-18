@@ -7,16 +7,13 @@ import play.api.libs.json.JsObject
 
 class ApikeyBearerSpec extends OtoroshiSpec {
 
-  s"#1795" should {
+  s"Apikeys" should {
     "warm up" in {
       startOtoroshi()
     }
-    "work" in {
+    "be able to be used as opaque tokens" in {
       val apikey = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).get
       val bearer = apikey.toBearer(otoroshiComponents.env)
-      for (i <- 0 to 100) {
-        println(apikey.toBearer(otoroshiComponents.env))
-      }
       val (body, status) = wsClient
         .url(s"http://127.0.0.1:${port}/apis/apim.otoroshi.io/v1/apikeys")
         .withHttpHeaders(
