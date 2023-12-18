@@ -28,6 +28,7 @@ import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
 import otoroshi.next.models._
+import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl._
@@ -1841,6 +1842,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  def incrementCustomThrottling(expr: String, group: String, increment: Long): Unit = {
+    if (env.clusterConfig.mode == ClusterMode.Worker) {
+      val key = s"custom-throttling:$group:$expr"
+      putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.CustomThrottlingIncr(expr, group, 0L.atomic))
+      getQuotaIncr[ClusterLeaderUpdateMessage.CustomThrottlingIncr](key).foreach(_.increment(increment))
+    }
+  }
+
+  def incrementCustomQuota(expr: String, group: String, increment: Long): Unit = {
+    if (env.clusterConfig.mode == ClusterMode.Worker) {
+      val key = s"$group:$expr"
+      putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.CustomQuotasIncr(expr, group, 0L.atomic))
+      getQuotaIncr[ClusterLeaderUpdateMessage.CustomQuotasIncr](key).foreach(_.increment(increment))
+    }
+  }
+
   def incrementService(
       id: String,
       calls: Long,
@@ -3140,6 +3157,16 @@ object ClusterLeaderUpdateMessage       {
           headersIn = item.select("hi").asOpt[Long].getOrElse(0L).atomic,
           headersOut = item.select("ho").asOpt[Long].getOrElse(0L).atomic
         ).some
+      case Some("custquots")   => CustomQuotasIncr(
+        expr = item.select("e").asString,
+        group = item.select("g").asString,
+        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
+      ).some
+      case Some("custthrot")   => CustomThrottlingIncr(
+        expr = item.select("e").asString,
+        group = item.select("g").asString,
+        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
+      ).some
       case _                 => None
     }
   }
@@ -3236,6 +3263,46 @@ object ClusterLeaderUpdateMessage       {
           concurrentHandledRequests = concurrentHandledRequests
         )
       }
+    }
+  }
+
+  case class CustomThrottlingIncr(expr: String, group: String, calls: AtomicLong) extends ClusterLeaderUpdateMessage {
+
+    override def json: JsValue = Json.obj(
+      "typ" -> "custthrot",
+      "e" -> expr,
+      "g" -> group,
+      "c" -> calls.get(),
+    )
+
+    def increment(inc: Long): Long = calls.addAndGet(inc)
+
+    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      NgCustomThrottling.updateQuotas(expr, group, calls.get())
+    }
+
+    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+        env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
+    }
+  }
+
+  case class CustomQuotasIncr(expr: String, group: String, calls: AtomicLong) extends ClusterLeaderUpdateMessage {
+
+    override def json: JsValue = Json.obj(
+      "typ" -> "custquots",
+      "e" -> expr,
+      "g" -> group,
+      "c" -> calls.get(),
+    )
+
+    def increment(inc: Long): Long = calls.addAndGet(inc)
+
+    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      NgCustomQuotas.updateQuotas(expr, group, calls.get())
+    }
+
+    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+      env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
     }
   }
 

@@ -151,6 +151,9 @@ object GlobalExpressionLanguage {
             case "req.domain" if req.isDefined                                              => req.get.theDomain(env)
             case "req.method" if req.isDefined                                              => req.get.method
             case "req.protocol" if req.isDefined                                            => req.get.theProtocol(env)
+            case "req.ip" if req.isDefined                                                  => req.get.theIpAddress(env)
+            case "req.secured" if req.isDefined                                             => req.get.theSecured(env).toString
+            case "req.version" if req.isDefined                                             => req.get.version
             case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
               req.get.headers.get(field).getOrElse(defaultValue)
             case r"req.headers.$field@(.*)" if req.isDefined                                =>
@@ -159,6 +162,10 @@ object GlobalExpressionLanguage {
               req.get.getQueryString(field).getOrElse(defaultValue)
             case r"req.query.$field@(.*)" if req.isDefined                                  =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
+            case r"req.cookies.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
+              req.get.cookies.get(field).map(_.value).getOrElse(defaultValue)
+            case r"req.cookies.$field@(.*)" if req.isDefined =>
+              req.get.cookies.get(field).map(_.value).getOrElse(s"no-query-$field")
             case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined =>
               matchedRoute.get.pathParams.get(field).getOrElse(defaultValue)
             case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>

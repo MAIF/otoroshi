@@ -62,6 +62,8 @@ import NgHasClientCertMatchingApikeyValidator from './NgHasClientCertMatchingApi
 import NgHasClientCertMatchingValidator from './NgHasClientCertMatchingValidator';
 import NgClientCertChainHeader from './NgClientCertChainHeader';
 import NgCertificateAsApikey from './NgCertificateAsApikey';
+import NgCustomQuotas from './NgCustomQuotas';
+import NgCustomThrottling from './NgCustomThrottling';
 import NgBiscuitExtractor from './NgBiscuitExtractor';
 import NgBiscuitValidator from './NgBiscuitValidator';
 import NgHasClientCertMatchingHttpValidator from './NgHasClientCertMatchingHttpValidator';
@@ -197,6 +199,8 @@ const pluginsArray = [
   NgHasClientCertMatchingValidator,
   NgClientCertChainHeader,
   NgCertificateAsApikey,
+  NgCustomQuotas,
+  NgCustomThrottling,
   NgBiscuitExtractor,
   NgBiscuitValidator,
   NgHasClientCertMatchingHttpValidator,
