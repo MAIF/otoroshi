@@ -147,26 +147,11 @@
 
 <div class="off-canvas-content" data-off-canvas-content>
 
-<header class="site-header expanded row">
-<div class="small-12 column">
-<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
-H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
-C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
-</a>
-<div class="title-wrapper">
-<div class="title-logo"></div>
-<div class="title"><a href="../index.html">Otoroshi</a></div>
-</div>
-<!--
-<a href="https://www.example.com" class="logo show-for-medium">logo</a>
--->
-</div>
-</header>
-
 <div class="expanded row">
 
-<div class="medium-3 large-2 show-for-medium column">
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
 <nav class="site-nav">
+<div class="title-logo"></div>
 <div class="nav-home">
 <a href="../index.html" >
 <span class="home-icon">⌂</span>Otoroshi
@@ -280,7 +265,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </nav>
 </div>
 
-<div class="small-12 medium-9 large-10 column">
+<div class="small-12 medium-9 large-10 column" style="padding-left: 5rem">
+
+<header class="site-header expanded row">
+<div class="small-12 column" style="padding: 0">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title"><a href="../index.html">Otoroshi</a> <div>DOCS</div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
 <section class="site-content">
 
 <div class="page-header row">
@@ -349,7 +350,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="large-3 show-for-large column" data-sticky-container>
 <nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
 <div class="page-nav">
-<div class="nav-title">On this page:</div>
+<div class="nav-title">
+<h3>On this page</h3>
+</div>
 <div class="nav-toc">
 <ul>
   <li><a href="../entities/certificates.html#certificates" class="header">Certificates</a>

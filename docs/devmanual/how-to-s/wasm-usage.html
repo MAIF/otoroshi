@@ -147,26 +147,11 @@
 
 <div class="off-canvas-content" data-off-canvas-content>
 
-<header class="site-header expanded row">
-<div class="small-12 column">
-<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
-H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
-C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
-</a>
-<div class="title-wrapper">
-<div class="title-logo"></div>
-<div class="title"><a href="../index.html">Otoroshi</a></div>
-</div>
-<!--
-<a href="https://www.example.com" class="logo show-for-medium">logo</a>
--->
-</div>
-</header>
-
 <div class="expanded row">
 
-<div class="medium-3 large-2 show-for-medium column">
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
 <nav class="site-nav">
+<div class="title-logo"></div>
 <div class="nav-home">
 <a href="../index.html" >
 <span class="home-icon">⌂</span>Otoroshi
@@ -280,7 +265,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </nav>
 </div>
 
-<div class="small-12 medium-9 large-10 column">
+<div class="small-12 medium-9 large-10 column" style="padding-left: 5rem">
+
+<header class="site-header expanded row">
+<div class="small-12 column" style="padding: 0">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title"><a href="../index.html">Otoroshi</a> <div>DOCS</div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
 <section class="site-content">
 
 <div class="page-header row">
@@ -312,6 +313,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#test-your-validator">Test your validator</a></li>
   <li><a href="#update-the-route-by-replacing-the-backend-with-a-wasm-file">Update the route by replacing the backend with a WASM file</a></li>
   <li><a href="#wasm-backend-test">WASM backend test</a></li>
+  <li><a href="#expose-a-single-file-as-wasm-backend">Expose a single file as WASM backend</a></li>
 </ol>
 <p>After completing these steps you will have a route that uses WASM plugins written in Rust.</p>
 <h2><a href="#before-your-start" name="before-your-start" class="anchor"><span class="anchor-link"></span></a>Before your start</h2><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
@@ -799,6 +801,71 @@ EOF
 {&quot;foo&quot;: &quot;bar&quot;}
 </code></pre>
 <p>In this response, we can find our headers send in the curl command and those added by the wasm plugin.</p>
+<h2><a href="#expose-a-single-file-as-wasm-backend" name="expose-a-single-file-as-wasm-backend" class="anchor"><span class="anchor-link"></span></a>Expose a single file as WASM backend</h2>
+<p>A WASM backend plugin can directly expose a file written in Wasmo. This is the simplest possibility to write HTML, Javascript, JSON or expose a simple PNG image.</p>
+<p>Let&rsquo;s expose a HTML page. In your Wasmo instance, execute the following instructions:</p>
+<ol>
+  <li>Click the new plugin button</li>
+  <li>Add a name and <code>validate</code></li>
+  <li>Click the new plugin</li>
+  <li>Create a new file named <code>index.html</code></li>
+  <li>Copy and paste the following content</li>
+</ol>
+<pre class="prettyprint"><code class="language-html"> &lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Wasmo plugin&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+&lt;h1&gt;Hello from Wasmo&lt;/h1&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;
+</code></pre>
+<p>This snippet is a short HTML template with a title to indicate that it comes from Wasmo. </p>
+<p>Now we can write our javascript function to parse and return the content of our HTML to Otoroshi. </p>
+<ol>
+  <li>Navigate to the <code>index.js</code> file</li>
+  <li>Replace the content with the following content</li>
+</ol>
+<pre class="prettyprint"><code class="language-js">import IndexPage from &#39;./index.html&#39;
+
+export function execute() {
+  
+  let response = {
+    headers: {
+      &#39;Content-Type&#39;: &#39;text/html; charset=utf-8&#39;
+    },
+    body: IndexPage,
+    status: 200
+  };
+  
+  Host.outputString(JSON.stringify(response));
+
+  return 0;
+}
+</code></pre>
+<p>The code is pretty self-explanatory. We start by importing our HTML page and we build the response with the correct content type, the body and a 200 http status.</p>
+<p>Just before testing, we need to change the esbuild configuration to specify how to bundle the HTML file.</p>
+<p>The contents of your <code>esbuild.js</code> file should look this:</p>
+<pre class="prettyprint"><code class="language-js">const esbuild = require(&#39;esbuild&#39;);
+
+esbuild
+  .build({
+    entryPoints: [&#39;index.js&#39;],
+    outdir: &#39;dist&#39;,
+    bundle: true,
+    loader: {
+      &#39;.html&#39;: &#39;text&#39;
+    },
+    sourcemap: true,
+    minify: false, // might want to use true for production build
+    format: &#39;cjs&#39;, // needs to be CJS for now
+    target: [&#39;es2020&#39;] // don&#39;t go over es2020 because quickjs doesn&#39;t support it
+  })
+</code></pre>
+<p>Check your browser at <code>http://demo-otoroshi.oto.tools:8080</code> and you should see your page content updated to the new text.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/wasmo-installation.html">Deploy your own Wasmo</a></p>
 </div>
@@ -806,7 +873,9 @@ EOF
 <div class="large-3 show-for-large column" data-sticky-container>
 <nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
 <div class="page-nav">
-<div class="nav-title">On this page:</div>
+<div class="nav-title">
+<h3>On this page</h3>
+</div>
 <div class="nav-toc">
 <ul>
   <li><a href="../how-to-s/wasm-usage.html#using-wasm-plugins" class="header">Using wasm plugins</a>
@@ -817,6 +886,7 @@ EOF
     <li><a href="../how-to-s/wasm-usage.html#test-your-validator" class="header">Test your validator</a></li>
     <li><a href="../how-to-s/wasm-usage.html#update-the-route-by-replacing-the-backend-with-a-wasm-file" class="header">Update the route by replacing the backend with a WASM file</a></li>
     <li><a href="../how-to-s/wasm-usage.html#wasm-backend-test" class="header">WASM backend test</a></li>
+    <li><a href="../how-to-s/wasm-usage.html#expose-a-single-file-as-wasm-backend" class="header">Expose a single file as WASM backend</a></li>
   </ul></li>
 </ul>
 </div>
