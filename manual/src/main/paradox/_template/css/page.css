@@ -470,12 +470,18 @@ small {
 }
 
 .site-header .title {
-  display: inline-block;
+  display: inline-flex;
   float: left;
   height: 70px;
   line-height: 70px;
   font-weight: 400;
   font-size: 1.4em;
+  gap: .5rem;
+}
+
+.site-header .title div:last-child {
+  font-weight: bold;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
 }
 
 .site-header .title a:link,
@@ -588,7 +594,7 @@ small {
 
 .nav-home a {
   display: block;
-  color: #4078c0;
+  color: #000;
   font-weight: bold;
   font-size: 1rem;
   padding-left: 1rem;
@@ -638,7 +644,7 @@ small {
 
 .nav-toc ul>li a {
   display: block;
-  color: #4078c0;
+  color: #000;
   font-weight: bold;
   font-size: 0.9rem;
   padding-left: 1rem;
@@ -696,7 +702,7 @@ small {
   padding: 1rem;
   /* border: solid 1px #cccccc; */
   background-color: #eee;
-  border-right: 2px solid #4078c0;
+  /* border-right: 2px solid #4078c0; */
 
   overflow-y: scroll;
   height: 100dvh;
@@ -705,8 +711,8 @@ small {
   position: fixed;
   padding-top: 1rem;
   
-  max-width: 225px;
-  min-width: 200px;
+  max-width: 270px;
+  min-width: 270px;
 }
 
 .show-for-medium {
@@ -751,10 +757,12 @@ small {
 
 .page-nav .nav-title {
   display: block;
-  color: #9eb1b7;
+  color: #000;
   font-weight: bold;
-  font-size: 0.8rem;
-  padding-left: 1rem;
+}
+
+.page-nav .nav-title h3 {
+  margin-bottom: 0 !important;
 }
 
 .page-nav .nav-toc {
@@ -797,7 +805,7 @@ small {
 /* table of contents -- ordered */
 
 .toc a {
-  color: #4078c0;
+  color: #000;
   font-weight: normal;
 }
 

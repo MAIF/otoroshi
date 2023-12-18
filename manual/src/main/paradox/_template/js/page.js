@@ -216,6 +216,20 @@ $(function () {
           r.style.display = "block"
         }
     }
+
+    [...document.querySelectorAll('.nav-toc > ul > li >.page')].forEach(r => {
+      if ([...r.parentElement.querySelectorAll('ul')].length > 0) {
+        r.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center">${r.textContent} ${r.classList.contains('active') ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+      </svg>` :
+          `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#000" style="width: 14px; height: 14px">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+    </svg>`}
+    </div>`
+      } else {
+
+      }
+    })
   }
 
   improveSidebar();
