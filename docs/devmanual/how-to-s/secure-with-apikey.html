@@ -400,7 +400,7 @@ EOF
 <p>Click on <strong>Create and stay on this ApiKey</strong> button at the bottom of the page.</p>
 <p>Now you created the key, it&rsquo;s time to call our previous generated service with it.</p>
 <p>Otoroshi supports 4 methods to achieve that: </p>
-<p>First one by passing Otoroshi api key in two headers : <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> (these headers names can be override on each service). The second by passing Otoroshi api key in the authentication Header (basically the <code>Authorization</code> header) as a basic encoded value. The third option is to use the bearer generated for your apikey (you can get it by calling <code>curl http://otoroshi-api.oto.tools:8080/api/apikeys/my-first-api-key-id/bearer</code>). A fourth option is to use jwt token but we will not review it here.</p>
+<p>First one by passing Otoroshi api key in two headers : <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> (these headers names can be override on each service). The second by passing Otoroshi api key in the authentication Header (basically the <code>Authorization</code> header) as a basic encoded value. The third option is to use the bearer generated for your apikey (you can get it by calling <code>curl http://otoroshi-api.oto.tools:8080/api/apikeys/my-first-api-key-id/bearer</code>). A fourth option is to use jwt token but we will not review it here but you can find a <a href="secure-with-oauth2-client-credentials.html">tutorial here</a>.</p>
 <p>Let&rsquo;s go ahead and call our service with the first method :</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET \
   -H &#39;Otoroshi-Client-Id: my-first-api-key-id&#39; \
