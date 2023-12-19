@@ -66,4 +66,5 @@ jobs:
           export WHERE=$(pwd)
           git add --all
           git commit -am 'publish documentation'
+          git pull --rebase origin master
           git push origin master
