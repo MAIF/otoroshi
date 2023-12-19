@@ -49,8 +49,6 @@ jobs:
         run: |
           export WHERE=$(pwd)
           sh ./scripts/doc.sh all
-          git commit -am 'publish documentation'
-          git push origin master
       - name: change-version-back
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,3 +58,11 @@ jobs:
         run: |
           export WHERE=$(pwd)
           node ./scripts/release/change-doc-version-github-action.js
+      - name: push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPLAY: :1
+        run: |
+          export WHERE=$(pwd)
+          git commit -am 'publish documentation'
+          git push origin master
