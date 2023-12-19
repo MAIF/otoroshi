@@ -116,11 +116,12 @@ Click on **Create and stay on this ApiKey** button at the bottom of the page.
 
 Now you created the key, it's time to call our previous generated service with it.
 
-Otoroshi supports two methods to achieve that. 
-Once by passing Otoroshi api key in two headers : `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` (these headers names can be override on each service).
-And the second by passing Otoroshi api key in the authentication Header (basically the `Authorization` header) as a basic encoded value.
+Otoroshi supports 4 methods to achieve that: 
 
-Let's ahead and call our service :
+First one by passing Otoroshi api key in two headers : `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` (these headers names can be override on each service).
+The second by passing Otoroshi api key in the authentication Header (basically the `Authorization` header) as a basic encoded value. The third option is to use the bearer generated for your apikey (you can get it by calling `curl http://otoroshi-api.oto.tools:8080/api/apikeys/my-first-api-key-id/bearer`). A fourth option is to use jwt token but we will not review it here.
+
+Let's go ahead and call our service with the first method :
 
 ```sh
 curl -X GET \
@@ -129,11 +130,27 @@ curl -X GET \
   'http://myservice.oto.tools:8080/api/test' --include
 ```
 
-And with the second method :
+then with the second method using basic authentication:
 
 ```sh
 curl -X GET \
   -H 'Authorization: Basic bXktZmlyc3QtYXBpLWtleS1pZDpteS1maXJzdC1hcGkta2V5LXNlY3JldA==' \
+  'http://myservice.oto.tools:8080/api/test' --include
+```
+
+or
+
+```sh
+curl -X GET \
+  -u my-first-api-key-id:my-first-api-key-secret \
+  'http://myservice.oto.tools:8080/api/test' --include
+```
+
+then with the third method using otoroshi bearer:
+
+```sh
+curl -X GET \
+  -H 'Authorization: Bearer otoapk_my-first-api-key-id_99cb8e081d692044593ad0e658a67a5114f7afbdcbeb26f8087cce0df3b610b2' \
   'http://myservice.oto.tools:8080/api/test' --include
 ```
 

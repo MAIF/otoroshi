@@ -23,6 +23,7 @@ import scala.util._
 case class ZipFileBackendConfig(url: String, headers: Map[String, String], dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {
   def json: JsValue = ZipFileBackendConfig.format.writes(this)
 }
+
 object ZipFileBackendConfig {
   val default = ZipFileBackendConfig("https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip", Map.empty, "./zips", None, 1.hour.toMillis)
   val format = new Format[ZipFileBackendConfig] {
