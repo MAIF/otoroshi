@@ -20,7 +20,7 @@ You can test to get the same values than the right part by creating these follow
 
 ```sh
 # Let's start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.12.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.11.2/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 

@@ -5,7 +5,7 @@
 
 Download the latest jar of Otoroshi
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.12.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.11.2/otoroshi.jar'
 ```
 
 Once downloading, run Otoroshi.
