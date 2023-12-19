@@ -43,7 +43,7 @@ const files = [
   { file: './demos/service-mesh/docker-compose-manual.yml' },
   { file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
-  { file: './manual/build.sbt' },
+  // { file: './manual/build.sbt' },
   { file: './manual/src/main/paradox/code/openapi.json' },
   { file: './manual/src/main/paradox/getting-started.md' },
   { file: './manual/src/main/paradox/how-to-s/import-export-otoroshi-datastore.md' },
