@@ -64,5 +64,6 @@ jobs:
           DISPLAY: :1
         run: |
           export WHERE=$(pwd)
+          git add --all
           git commit -am 'publish documentation'
           git push origin master
