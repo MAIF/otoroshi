@@ -590,6 +590,7 @@ small {
 .nav-home {
   background: #f7f7f7;
   line-height: 2rem;
+  margin-bottom: 20px;
 }
 
 .nav-home a {
@@ -627,6 +628,7 @@ small {
 .nav-home .version-number {
   padding-left: 1.4rem;
   font-size: 0.9rem;
+  display: none;
 }
 
 .nav-toc {}
@@ -1005,7 +1007,7 @@ small {
 }
 
 .title-logo {
-  content: url("../imgs/small-otoroshi-logo.png");
+  content: url("../imgs/bw-otoroshi-logo.png");
   margin-right: 10px;
   height: 4rem;
   width: 4rem;
