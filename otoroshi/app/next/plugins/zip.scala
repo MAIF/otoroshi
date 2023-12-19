@@ -18,6 +18,7 @@ import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
 import scala.util._
 
 case class ZipFileBackendConfig(url: String, headers: Map[String, String], dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {
@@ -125,7 +126,12 @@ class ZipFileBackend extends NgBackendCall {
       if (entry.isDirectory) {
         None
       } else {
-        val filename = Uri.apply(path).path.tail.reverse.head.toString
+        val uriPath = Uri.apply(path).path
+        val filename = if (uriPath.length < 2) {
+          uriPath.toString()
+        } else {
+          uriPath.tail.reverse.head.toString
+        }
         if (filename.contains(".")) {
           val ext = filename.split("\\.").toSeq.last
           val mimeType: String = env.devMimetypes.getOrElse(ext, "text/plain")
