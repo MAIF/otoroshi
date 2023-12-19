@@ -301,6 +301,44 @@ This plugin can be used to call api that are authenticated using basic auth.
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BrotliResponseCompressor }
+
+## Brotli compression
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.BrotliResponseCompressor`
+
+### Description
+
+This plugin can compress responses using brotli
+
+
+
+### Default configuration
+
+```json
+{
+  "excluded_patterns" : [ ],
+  "allowed_list" : [ "text/*", "application/javascript", "application/json" ],
+  "blocked_list" : [ ],
+  "buffer_size" : 8192,
+  "chunked_threshold" : 102400,
+  "compression_level" : 5
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BuildMode }
 
 ## Build mode
@@ -728,6 +766,31 @@ This plugin verifies the current request uses HTTPS
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ForwardedHeader }
+
+## Forwarded header
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ForwardedHeader`
+
+### Description
+
+This plugin adds all the Forwarded header to the request for the backend target
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GlobalMaintenanceMode }
 
 ## Global Maintenance mode
@@ -1079,6 +1142,39 @@ This plugin injects additional alt-svc header to switch to the http3 server
 ```json
 {
   "ma" : 3600
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ImageReplacer }
+
+## Image replacer
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ImageReplacer`
+
+### Description
+
+Replace all response with content-type image/* as they are proxied
+
+
+
+### Default configuration
+
+```json
+{
+  "url" : "https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png"
 }
 ```
 
@@ -1551,6 +1647,40 @@ This plugin returns mock responses
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MultiAuthModule }
+
+## Multi Authentication
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MultiAuthModule`
+
+### Description
+
+This plugin applies an authentication module from a list of selected modules
+
+
+
+### Default configuration
+
+```json
+{
+  "pass_with_apikey" : false,
+  "auth_modules" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgAuthModuleExpectedUser }
 
 ## User logged in expected
@@ -1782,6 +1912,40 @@ This plugin pass client certificate informations to the target in headers
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgClientCredentialTokenEndpoint }
+
+## Client credential token endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgClientCredentialTokenEndpoint`
+
+### Description
+
+This plugin provide the endpoint for the client_credential flow token endpoint
+
+
+
+### Default configuration
+
+```json
+{
+  "expiration" : 3600000,
+  "default_key_pair" : "otoroshi-jwt-signing"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgClientCredentials }
 
 ## Client Credential Service
@@ -1809,6 +1973,81 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
   "domain" : "*",
   "secure" : true,
   "biscuit" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgCustomQuotas }
+
+## Custom quotas
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgCustomQuotas`
+
+### Description
+
+This plugin will enforce quotas on the current route based on whatever you want
+
+
+
+### Default configuration
+
+```json
+{
+  "per_route" : true,
+  "global" : false,
+  "group" : null,
+  "expression" : "${req.ip}",
+  "daily_quota" : 10000000,
+  "monthly_quota" : 10000000
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgCustomThrottling }
+
+## Custom throttling
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgCustomThrottling`
+
+### Description
+
+This plugin will enforce throttling on the current route based on whatever you want
+
+
+
+### Default configuration
+
+```json
+{
+  "per_route" : true,
+  "global" : false,
+  "group" : null,
+  "expression" : "${req.ip}",
+  "throttling_quota" : 100
 }
 ```
 
@@ -3957,14 +4196,13 @@ Delegate route access to a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -3986,6 +4224,14 @@ Delegate route access to a wasm plugin
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4024,14 +4270,13 @@ This plugin can be used to use a wasm plugin as backend
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4053,6 +4298,14 @@ This plugin can be used to use a wasm plugin as backend
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4091,14 +4344,13 @@ Repo policies as WASM modules
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : true,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4120,6 +4372,14 @@ Repo policies as WASM modules
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4158,14 +4418,13 @@ This plugin can be used to use a wasm plugin as in pre-route phase
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4187,6 +4446,14 @@ This plugin can be used to use a wasm plugin as in pre-route phase
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4225,14 +4492,13 @@ Transform the content of the request with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4254,6 +4520,14 @@ Transform the content of the request with a wasm plugin
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4292,14 +4566,13 @@ Transform the content of a response with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4321,6 +4594,14 @@ Transform the content of a response with a wasm plugin
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4359,14 +4640,13 @@ This plugin can be used to use a wasm plugin as route matcher
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4388,6 +4668,14 @@ This plugin can be used to use a wasm plugin as route matcher
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4426,14 +4714,13 @@ Can decide for routing with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4455,6 +4742,14 @@ Can decide for routing with a wasm plugin
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4493,14 +4788,13 @@ Handle unmatched requests with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 4,
+  "memoryPages" : 20,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
-  "lifetime" : "Forever",
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4522,6 +4816,14 @@ Handle unmatched requests with a wasm plugin
     },
     "proxyStateAccess" : false,
     "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
   }
 }
 ```
@@ -4547,7 +4849,7 @@ Handle unmatched requests with a wasm plugin
 
 ### Description
 
-This plugin adds all the X-Forwarder-* headers to the request for the backend target
+This plugin adds all the X-Forwarded-* headers to the request for the backend target
 
 
 
@@ -4624,6 +4926,43 @@ This plugin transform response body from xml to json and may apply a jq transfor
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ZipFileBackend }
+
+## Zip file backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ZipFileBackend`
+
+### Description
+
+Serves content from a zip file
+
+
+
+### Default configuration
+
+```json
+{
+  "url" : "https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip",
+  "headers" : { },
+  "dir" : "./zips",
+  "prefix" : null,
+  "ttl" : 3600000
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.tunnel.TunnelPlugin }
 
 ## Remote tunnel calls
@@ -4647,6 +4986,41 @@ This plugin can contact remote service using tunnels
 ```json
 {
   "tunnel_id" : "default"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.wasm.proxywasm.NgCorazaWAF }
+
+## Coraza WAF
+
+### Defined on steps
+
+  - `ValidateAccess`
+  - `TransformRequest`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.wasm.proxywasm.NgCorazaWAF`
+
+### Description
+
+Coraza WAF plugin
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "none"
 }
 ```
 
