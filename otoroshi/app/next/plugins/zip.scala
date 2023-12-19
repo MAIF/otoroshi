@@ -18,7 +18,6 @@ import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
 import scala.util._
 
 case class ZipFileBackendConfig(url: String, headers: Map[String, String], dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {

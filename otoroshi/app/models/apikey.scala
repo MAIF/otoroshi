@@ -304,44 +304,35 @@ case class ApiKey(
     }
   }
 
-  private def getSignedPrefix(implicit env: Env): (String, String) = {
-    val prefix = getPrefix(env)
+  private def getSignedPrefix(): (String, String) = {
+    val prefix = getPrefix()
     val signature = Hashing.hmacSha256(clientSecret.getBytes("utf-8")).hashBytes(prefix.getBytes("utf-8")).toString
     (prefix, signature)
   }
 
-  private def getNextSignedPrefix(implicit env: Env): (String, String) = {
-    val prefix = getPrefix(env)
+  private def getNextSignedPrefix(): (String, String) = {
+    val prefix = getPrefix()
     val signature = Hashing.hmacSha256(rotation.nextSecret.getOrElse(clientSecret).getBytes("utf-8")).hashBytes(prefix.getBytes("utf-8")).toString
     (prefix, signature)
   }
 
-  private def getPrefix(implicit env: Env): String = {
-    val processedClientId = if (clientId.startsWith("apki_")) {
-      if (clientId.startsWith(s"apki_${env.env}_")) {
-        clientId.replaceFirst(s"apki_${env.env}_", "")
-      } else {
-        clientId.replaceFirst(s"apki_", "")
-      }
-    } else {
-      clientId
-    }
-    s"otoapk_${processedClientId}"
+  private def getPrefix(): String = {
+    s"otoapk_${clientId}"
   }
 
-  def toBearer(implicit env: Env): String = {
-    val (prefix, signature) = getSignedPrefix(env)
+  def toBearer(): String = {
+    val (prefix, signature) = getSignedPrefix()
     s"${prefix}_${signature}"
   }
 
-  def toNextBearer(implicit env: Env): String = {
-    val (prefix, signature) = getNextSignedPrefix(env)
+  def toNextBearer(): String = {
+    val (prefix, signature) = getNextSignedPrefix()
     s"${prefix}_${signature}"
   }
 
-  def checkBearer(value: String)(implicit env: Env) = {
-    val bearer = toBearer(env)
-    lazy val bearer2 = toNextBearer(env)
+  def checkBearer(value: String): Boolean = {
+    val bearer = toBearer()
+    lazy val bearer2 = toNextBearer()
     value == bearer || value == bearer2
   }
 }
@@ -1815,7 +1806,7 @@ object ApiKeyHelper {
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)   => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret) => apikey.some.left
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) => apikey.right
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.right
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.some.left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)

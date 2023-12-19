@@ -188,7 +188,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           //   else entity.location.tenant.value == namespace
           // }
           .map { entity =>
-            entity.json
+            //entity.json
+            format.writes(entity)
           }
       }
   }
@@ -268,14 +269,15 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           format.reads(json) match {
             case JsSuccess(entity, _) =>
               //if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace =>
-              entity.json.some
+              //entity.json.some
+              format.writes(entity).some
             case _                    => None
           }
       }
   }
 
-  def allJson(): Seq[JsValue]                = all().map(_.json)
-  def oneJson(id: String): Option[JsValue]   = one(id).map(_.json)
+  def allJson(): Seq[JsValue]                = all().map(v => format.writes(v)) //.map(_.json)
+  def oneJson(id: String): Option[JsValue]   = one(id).map(v => format.writes(v)) //.map(_.json)
   def updateJson(values: Seq[JsValue]): Unit = update(
     values.map(v => format.reads(v)).collect { case JsSuccess(v, _) => v }
   )
@@ -421,7 +423,18 @@ class OtoroshiResources(env: Env) {
       "apim.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[ApiKey](
-        ApiKey._fmt,
+        new Format[ApiKey] {
+          override def reads(json: JsValue): JsResult[ApiKey] = {
+            ApiKey._fmt.reads(json)
+          }
+          override def writes(o: ApiKey): JsValue = {
+            var base = Json.obj("bearer" -> o.toBearer())
+            if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
+              base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
+            }
+            ApiKey._fmt.writes(o).asObject.deepMerge(base)
+          }
+        },
         classOf[ApiKey],
         env.datastores.apiKeyDataStore.key,
         env.datastores.apiKeyDataStore.extractId,
