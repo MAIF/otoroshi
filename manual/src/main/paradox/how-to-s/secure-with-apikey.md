@@ -119,7 +119,7 @@ Now you created the key, it's time to call our previous generated service with i
 Otoroshi supports 4 methods to achieve that: 
 
 First one by passing Otoroshi api key in two headers : `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` (these headers names can be override on each service).
-The second by passing Otoroshi api key in the authentication Header (basically the `Authorization` header) as a basic encoded value. The third option is to use the bearer generated for your apikey (you can get it by calling `curl http://otoroshi-api.oto.tools:8080/api/apikeys/my-first-api-key-id/bearer`). A fourth option is to use jwt token but we will not review it here.
+The second by passing Otoroshi api key in the authentication Header (basically the `Authorization` header) as a basic encoded value. The third option is to use the bearer generated for your apikey (you can get it by calling `curl http://otoroshi-api.oto.tools:8080/api/apikeys/my-first-api-key-id/bearer`). A fourth option is to use jwt token but we will not review it here but you can find a @ref[tutorial here](./secure-with-oauth2-client-credentials.md).
 
 Let's go ahead and call our service with the first method :
 
