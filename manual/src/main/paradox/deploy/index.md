@@ -8,7 +8,7 @@ Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)
 
 ## Cloud APIM
 
-Cloud APIM provides Otoroshi instances as a service. You can easily creates a beefy production ready Otoroshi cluster with support in just a few clics.
+Cloud APIM provides Otoroshi instances as a service. You can easily create production ready Otoroshi clusters in just a few clics.
 
 <img src="https://www.cloud-apim.com/assets/logo/512x512.png" />
 [Documentation](https://www.cloud-apim.com/)
