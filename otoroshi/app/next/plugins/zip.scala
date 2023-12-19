@@ -121,7 +121,6 @@ class ZipFileBackend extends NgBackendCall {
     if (path.startsWith("/")) {
       path = path.substring(1)
     }
-    println(s"path: ${path}")
     Option(zip.getEntry(path)).flatMap { entry =>
       if (entry.isDirectory) {
         None

@@ -10,10 +10,9 @@ import DesignerSidebar from './RouteDesigner/Sidebar';
 
 class ApikeyBearer extends Component {
 
-  state = { bearer: null }
+  state = { bearer: null, cname: 'fas fa-copy' }
 
   componentDidMount() {
-    console.log(this.props.thatProps)
     this.update()
   }
 
@@ -29,7 +28,19 @@ class ApikeyBearer extends Component {
 
   copy = () => {
     if (this.state.bearer) {
-      navigator.clipboard.writeText(this.state.bearer)
+      console.log('copy')
+      try {
+        navigator.clipboard.writeText(this.state.bearer);
+      } catch (e) {
+        console.log(e)
+      }
+      this.setState({ cname: 'fas fa-check' }, () => {
+        console.log('changed')
+        setTimeout(() => {
+          console.log('back')
+          this.setState({ cname: 'fas fa-copy' });
+        }, 2000)
+      })
     }
   }
 
@@ -47,10 +58,18 @@ class ApikeyBearer extends Component {
     }
   }
 
+  toggle = () => {
+    this.setState({ show: !this.state.show })
+  }
+
   render() {
     if (!this.state.bearer) {
       return null;
     }
+    let fake = String(this.state.bearer);
+    let fourth = parseInt((fake.length / 4), 10);
+    fake = fake.substring(0, fourth)
+    fake = fake + [...Array(fourth * 3)].map(() => '*').join('');
     return (
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label">
@@ -58,8 +77,61 @@ class ApikeyBearer extends Component {
         </label>
         <div className="col-sm-10">
           <div className="input-group">
-            <input type="text" className="form-control" disabled value={this.state.bearer} />
-            <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={this.copy}><i className="fas fa-copy" /></span>
+            {!this.state.show && <input type="text" className="form-control" disabled value={fake} />}
+            {this.state.show  && <input type="text" className="form-control" disabled value={this.state.bearer} />}
+            {this.state.show  && <span className="input-group-text" style={{ cursor: 'pointer' }} title="hide secret" onClick={this.toggle}><i className="fas fa-eye-slash" /></span>}
+            {!this.state.show && <span className="input-group-text" style={{ cursor: 'pointer' }} title="show secret" onClick={this.toggle}><i className="fas fa-eye" /></span>}
+            <span className="input-group-text" style={{ cursor: 'pointer' }} title="copy secret" onClick={this.copy}><i className={this.state.cname} /></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+class ApikeySecret extends Component {
+
+  state = { show: false, cname: 'fas fa-copy' }
+
+  copy = () => {
+    try {
+      navigator.clipboard.writeText(this.props.value);
+    } catch (e) {
+      console.log(e)
+    }
+    this.setState({ cname: 'fas fa-check' }, () => {
+      setTimeout(() => {
+        this.setState({ cname: 'fas fa-copy' });
+      }, 2000)
+    })
+  }
+
+  toggle = () => {
+    this.setState({ show: !this.state.show })
+  }
+
+  render() {
+    let fake = String(this.props.value);
+    let fourth = parseInt((fake.length / 4), 10);
+    fake = fake.substring(0, fourth)
+    fake = fake + [...Array(fourth * 3)].map(() => '*').join('');
+    return (
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label">
+          Apikey Secret <i className="far fa-question-circle" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top" 
+                           title="" 
+                           data-bs-original-title="The secret is a random key used to validate the API key" 
+                           aria-label="The secret is a random key used to validate the API key"></i>
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            {!this.state.show && <input type="text" className="form-control" disabled value={fake} />}
+            {this.state.show  && <input type="text" className="form-control" value={this.props.value} onChange={e => this.props.onChange(e.target.value)}/>}
+            {this.state.show  && <span className="input-group-text" style={{ cursor: 'pointer' }} title="hide secret" onClick={this.toggle}><i className="fas fa-eye-slash" /></span>}
+            {!this.state.show && <span className="input-group-text" style={{ cursor: 'pointer' }} title="show secret" onClick={this.toggle}><i className="fas fa-eye" /></span>}
+            <span className="input-group-text" style={{ cursor: 'pointer' }} title="copy secret" onClick={this.copy}><i className={this.state.cname} /></span>
           </div>
         </div>
       </div>
@@ -389,7 +461,8 @@ const ApiKeysConstants = {
       },
     },
     clientSecret: {
-      type: 'string',
+      // type: 'string',
+      type: ApikeySecret,
       props: {
         label: 'ApiKey Secret',
         placeholder: 'The ApiKey secret',
