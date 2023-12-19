@@ -3,8 +3,10 @@ name: publish-otoroshi-documentation
 on: 
   workflow_dispatch:
     inputs:
-      version:
-        description: "Current version"
+      version_from:
+        description: "Current version (ie. 16.12.0-dev)"
+      version_to:
+        description: "Published version (ie. 16.11.2)"
       
 jobs:
   release-otoroshi:
@@ -32,11 +34,12 @@ jobs:
         id: run-doc-process
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_FROM: ${{ inputs.version_from }}
+          VERSION_TO: ${{ inputs.version_to }}
           DISPLAY: :1
         run: |
-          LOC=$(pwd)
-          # TODO: change version in files
-          # TODO: node ./scripts/release/change-doc-version-github-action.js
+          export WHERE=$(pwd)
+          node ./scripts/release/change-doc-version-github-action.js
           sh ./scripts/doc.sh all
           # TODO: git commit -am 'publish documentation'
           # TODO: git push origin master
