@@ -29,7 +29,16 @@ jobs:
           git config --global --list      
       - name: Setup xvfb for screen 0
         run: |
-          Xvfb :1 -screen 0 1600x1200x24 &         
+          Xvfb :1 -screen 0 1600x1200x24 &   
+      - name: change-version-for-publication
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_FROM: ${{ inputs.version_from }}
+          VERSION_TO: ${{ inputs.version_to }}
+          DISPLAY: :1
+        run: |
+          export WHERE=$(pwd)
+          node ./scripts/release/change-doc-version-github-action.js
       - name: run-doc-process
         id: run-doc-process
         env:
@@ -39,7 +48,15 @@ jobs:
           DISPLAY: :1
         run: |
           export WHERE=$(pwd)
-          node ./scripts/release/change-doc-version-github-action.js
           sh ./scripts/doc.sh all
           git commit -am 'publish documentation'
           git push origin master
+      - name: change-version-back
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_FROM: ${{ inputs.version_to }}
+          VERSION_TO: ${{ inputs.version_from }}
+          DISPLAY: :1
+        run: |
+          export WHERE=$(pwd)
+          node ./scripts/release/change-doc-version-github-action.js
