@@ -41,5 +41,5 @@ jobs:
           export WHERE=$(pwd)
           node ./scripts/release/change-doc-version-github-action.js
           sh ./scripts/doc.sh all
-          # TODO: git commit -am 'publish documentation'
-          # TODO: git push origin master
+          git commit -am 'publish documentation'
+          git push origin master
