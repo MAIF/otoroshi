@@ -272,13 +272,11 @@ Let's expose a HTML page. In your Wasmo instance, execute the following instruct
  <!DOCTYPE html>
 <html>
 <head>
-<title>Wasmo plugin</title>
+  <title>Wasmo plugin</title>
 </head>
-
 <body>
-<h1>Hello from Wasmo</h1>
+  <h1>Hello from Wasmo</h1>
 </body>
-
 </html>
 ```
 
@@ -333,3 +331,5 @@ esbuild
 ```
 
 Check your browser at `http://demo-otoroshi.oto.tools:8080` and you should see your page content updated to the new text.
+
+If you need to expose more than a HTML page, we highly recommend to use the @ref:[Zip Backend plugin](../how-to-s/zip-backend-plugin.md)

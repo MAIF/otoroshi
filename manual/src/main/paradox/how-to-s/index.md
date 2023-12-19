@@ -27,6 +27,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Create your custom Authentication module](./create-custom-auth-module.md)
 * @ref:[Working with Eureka](./working-with-eureka.md)
 * @ref:[Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
+* @ref:[Quickly expose a website and static files](./zip-backend-plugin.md)
 
 @@@ index
 
@@ -56,4 +57,5 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Create your custom Authentication module](./create-custom-auth-module.md)
 * [Working with Eureka](./working-with-eureka.md)
 * [Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
+* [Zip Backend plugin](./zip-backend-plugin.md) 
 @@@
