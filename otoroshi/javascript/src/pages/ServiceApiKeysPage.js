@@ -79,9 +79,9 @@ class ApikeyBearer extends Component {
           <div className="input-group">
             {!this.state.show && <input type="text" className="form-control" disabled value={fake} />}
             {this.state.show  && <input type="text" className="form-control" disabled value={this.state.bearer} />}
-            {this.state.show  && <span className="input-group-text" style={{ cursor: 'pointer' }} title="hide secret" onClick={this.toggle}><i className="fas fa-eye-slash" /></span>}
-            {!this.state.show && <span className="input-group-text" style={{ cursor: 'pointer' }} title="show secret" onClick={this.toggle}><i className="fas fa-eye" /></span>}
-            <span className="input-group-text" style={{ cursor: 'pointer' }} title="copy secret" onClick={this.copy}><i className={this.state.cname} /></span>
+            {this.state.show  && <span className="input-group-text" style={{ cursor: 'pointer' }} title="hide bearer" onClick={this.toggle}><i className="fas fa-eye-slash" /></span>}
+            {!this.state.show && <span className="input-group-text" style={{ cursor: 'pointer' }} title="show bearer" onClick={this.toggle}><i className="fas fa-eye" /></span>}
+            <span className="input-group-text" style={{ cursor: 'pointer' }} title="copy bearer" onClick={this.copy}><i className={this.state.cname} /></span>
           </div>
         </div>
       </div>
