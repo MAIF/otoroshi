@@ -1,5 +1,10 @@
 # GraphQL Composer Plugin
 
+<div style="display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.GraphQLBackend">GraphQL Composer</a>
+</div>
+
 @@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
 > GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools.
