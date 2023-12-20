@@ -24,7 +24,7 @@ The contents of your `index.html` file should be likes this:
 <html>
 <head>
   <title>Wasmo plugin</title>
-  <link rel="stylesheet" type="text/css" href="index.css"/>
+  <link rel="stylesheet" type="text/css" href="/index.css"/>
 </head>
 <body>
   <h1>Hello from Wasmo</h1>
@@ -35,13 +35,63 @@ The contents of your `index.html` file should be likes this:
 The contents of your `index.css` file should be likes this:
 
 ```css
-.body {
+body {
   background: #f9b000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100dvh;
+}
+
+h1 {
+  font-size: 3rem;
+  color: #fff;
 }
 ```
 
 Once created, you can create the archive of both.
 
-```bash
+```sh
 zip bundle.zip index.html index.css
+```
+
+Let's create the route using the admin API.
+
+``` sh
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
+-H "Content-type: application/json" \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "name": "demootoroshi",
+  "frontend": {
+    "domains": ["demo-otoroshi.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "debug": false,
+      "plugin": "cp:otoroshi.next.plugins.ZipFileBackend",
+      "include": [],
+      "exclude": [],
+      "config": {
+        "url": "file:///<path-to-the-zip-file>",
+        "headers": {},
+        "dir": "./zips",
+        "prefix": null,
+        "ttl": 3600000
+      }
+    }
+  ]
+}
+EOF
 ```
