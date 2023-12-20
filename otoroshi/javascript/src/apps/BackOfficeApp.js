@@ -201,6 +201,8 @@ class BackOfficeAppContainer extends Component {
       this.triggerAnonymousReportingPopup(env);
     });
     this.readShortMenu();
+  
+    DynamicTitle.setContent(undefined)
   }
 
   componentDidCatch(e) {

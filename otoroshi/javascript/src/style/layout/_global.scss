@@ -52,3 +52,11 @@ h4 {
   cursor: pointer;
   z-index: 100;
 }
+
+.view-stats {
+  z-index: 106;
+}
+
+.view-stats:hover button {
+  background-color: var(--bg-color_level3);
+}

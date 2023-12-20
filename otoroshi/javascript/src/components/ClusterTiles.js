@@ -51,8 +51,18 @@ class Metric extends Component {
           className="metric"
           style={{
             width: props.width || 300,
+            position: 'relative'
           }}
         >
+          <div style={{ position: 'absolute', bottom: -28, right: 0 }} className='view-stats'>
+            <button type="button" className='btn btn-sm btn-quiet' style={{
+              border: '1px solid rgb(170, 170, 170)',
+              fontSize: '.65rem',
+              color: 'var(--text)',
+              fontFamily: 'Raleway, Helvetica, sans-serif',
+              fontWeight: 'bold'
+            }}>Show more <i className='fas fa-chevron-right ms-1' /></button>
+          </div>
           <div className="metric-text">
             {!this.props.hideValueText && <span className="metric-text-value">{props.value}</span>}
             <span className="metric-text-title">{props.legend}</span>
@@ -154,7 +164,7 @@ export class ClusterTiles extends Component {
       <div
         style={{
           maxWidth: '1050px',
-          margin: '0 auto',
+          margin: '0 auto'
         }}
       >
         <h4 className="live-title">CLUSTER METRICS</h4>
