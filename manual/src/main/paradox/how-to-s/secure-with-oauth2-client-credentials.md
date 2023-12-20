@@ -1,5 +1,11 @@
 # Secure an app with OAuth2 client_credential flow
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.NgClientCredentials">Client Credential Service</a>
+</div>
+
 Otoroshi makes it easy for your app to implement the [OAuth2 Client Credentials Flow](https://auth0.com/docs/authorization/flows/client-credentials-flow). 
 
 With machine-to-machine (M2M) applications, the system authenticates and authorizes the app rather than a user. With the client credential flow, applications will pass along their Client ID and Client Secret to authenticate themselves and get a token.

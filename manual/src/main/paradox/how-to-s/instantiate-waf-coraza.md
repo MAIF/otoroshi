@@ -1,5 +1,12 @@
 # Instantiate a WAF with Coraza
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.wasm.proxywasm.NgCorazaWAF">Coraza WAF</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.
+html#otoroshi.next.plugins.OverrideHost">Override Host Header</a>
+</div>
+
 Sometimes you may want to secure an app with a [Web Appplication Firewall (WAF)](https://en.wikipedia.org/wiki/Web_application_firewall) and apply the security rules from the [OWASP Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/). To allow that, we integrated [the Coraza WAF](https://coraza.io/) in Otoroshi through a plugin that uses the WASM version of Coraza.
 
 ### Before you start

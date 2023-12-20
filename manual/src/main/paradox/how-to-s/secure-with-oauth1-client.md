@@ -1,5 +1,10 @@
 # Secure an app with OAuth1 client flow
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
+</div>
+
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }

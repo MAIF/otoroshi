@@ -1289,7 +1289,11 @@ p {
   font-size: .875rem !important;
   line-height: 1.25rem !important;
   --tw-text-opacity: 1;
-  color: rgb(126 34 206/var(--tw-text-opacity));
+  color: rgb(126 34 206/var(--tw-text-opacity)) !important;
   width: fit-content;
-  cursor: pointer
+  cursor: pointer;
+}
+
+.badge:hover {
+  text-decoration: none;
 }

@@ -1,5 +1,10 @@
 # Secure the communication between a backend app and Otoroshi
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.OtoroshiChallenge">Otoroshi challenge token</a>
+</div>
+
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 Let's create a new route with the Otorochi challenge plugin enabled.

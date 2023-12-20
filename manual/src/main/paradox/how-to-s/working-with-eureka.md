@@ -1,5 +1,13 @@
 # Working with Eureka
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.EurekaServerSink">Eureka instance</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.
+html#otoroshi.next.plugins.EurekaTarget">Internal Eureka server</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.ExternalEurekaTarget">External Eureka server</a>
+</div>
+
 Eureka is a library of Spring Cloud Netflix, which provides two parts to register and discover services.
 Generally, the services are applications written with Spring but Eureka also provides a way to communicate in REST. The main goals of Eureka are to allow clients to find and communicate with each other without hard-coding the hostname and port.
 All services are registered in an Eureka Server.

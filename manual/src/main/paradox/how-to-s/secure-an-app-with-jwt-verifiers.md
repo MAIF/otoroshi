@@ -1,5 +1,10 @@
 # Secure an api with jwt verifiers
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.JwtVerificationOnly">Jwt verification only</a>
+</div>
+
 A Jwt verifier is the guard that verifies the signature of tokens in requests. 
 
 A verifier can obvisouly verify or generate.

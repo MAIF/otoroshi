@@ -1,5 +1,10 @@
 # Secure an api with api keys
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+</div>
+
 ### Before you start
 
 @@include[fetch-and-start.md](../includes/fetch-and-start.md) { #init }
