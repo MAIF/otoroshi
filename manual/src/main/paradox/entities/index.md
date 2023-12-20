@@ -5,14 +5,14 @@ In this section, we will pass through all the main Otoroshi entities. Otoroshi e
 
 Any entity has the following properties
 
-* `location` or `_loc`: the location of the entity (organization and team)
-* `id`: the id of the entity (except for apikeys)
-* `name`: the name of the entity
-* `description`: the description of the entity (optional)
-* `tags`: free tags that you can put on any entity to help you manage it, automate it, etc.
-* `metadata`: free key/value tuples that you can put on any entity to help you manage it, automate it, etc.
+* **location** or **\_loc**: the location of the entity (organization and team)
+* **id**: the id of the entity (except for apikeys)
+* **name**: the name of the entity
+* **description**: the description of the entity (optional)
+* **tags**: free tags that you can put on any entity to help you manage it, automate it, etc.
+* **metadata**: free key/value tuples that you can put on any entity to help you manage it, automate it, etc.
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-routes.png">
 <div>
 <span>Routes</span>
@@ -21,7 +21,7 @@ Any entity has the following properties
 @ref:[View](./routes.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-certificates.png">
 <div>
 <span>Backends</span>
@@ -30,7 +30,7 @@ Any entity has the following properties
 @ref:[View](./backends.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-keys.png">
 <div>
 <span>Apikeys</span>
@@ -40,7 +40,7 @@ Any entity has the following properties
 @@@
 
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Organizations</span>
@@ -49,7 +49,7 @@ Any entity has the following properties
 @ref:[View](./organizations.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Teams</span>
@@ -58,7 +58,7 @@ Any entity has the following properties
 @ref:[View](./teams.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Service groups</span>
@@ -67,7 +67,7 @@ Any entity has the following properties
 @ref:[View](./service-groups.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-keys.png">
 <div>
 <span>JWT verifiers</span>
@@ -76,7 +76,7 @@ Any entity has the following properties
 @ref:[View](./jwt-verifiers.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-danger-zone.png">
 <div>
 <span>Global Config</span>
@@ -85,7 +85,7 @@ Any entity has the following properties
 @ref:[View](./global-config.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-services.png">
 <div>
 <span>TCP services</span>
@@ -94,7 +94,7 @@ Any entity has the following properties
 @ref:[View](./tcp-services.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-security.png">
 <div>
 <span>Auth. modules</span>
@@ -103,7 +103,7 @@ Any entity has the following properties
 @ref:[View](./auth-modules.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-certificates.png">
 <div>
 <span>Certificates</span>
@@ -112,7 +112,7 @@ Any entity has the following properties
 @ref:[View](./certificates.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-plugins.png">
 <div>
 <span>Data exporters</span>
@@ -121,7 +121,7 @@ Any entity has the following properties
 @ref:[View](./data-exporters.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Scripts</span>
@@ -130,7 +130,7 @@ Any entity has the following properties
 @ref:[View](./scripts.md)
 @@@
 
-@@@div { .plugin .entities }
+@@@div { .entities }
 <img src="../imgs/entities-services.png">
 <div>
 <span>Service descriptors</span>
