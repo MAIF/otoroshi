@@ -106,80 +106,87 @@ function RoutesTab({ isActive, entity, value, history }) {
 
 
 function MoreActionsButton({ value, menu, history }) {
-  return (
-    <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
-      <DuplicateButton value={value} history={history} />
-      <select className="form-select selectSkin btn-primary" aria-label="Choose export">
-        <option>Export</option>
-        <option onClick={() => {
-          const entityKind = "JwtVerifier"
-          const what = window.location.pathname.split('/')[3];
-          const itemName = entityKind
-            ? entityKind.toLowerCase()
-            : what === 'routes'
-              ? 'route'
-              : 'route-composition';
-          const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-          const name = value.id
-            .replace(/ /g, '-')
-            .replace(/\(/g, '')
-            .replace(/\)/g, '')
-            .toLowerCase();
-          const json = JSON.stringify({ ...value, kind }, null, 2);
-          const blob = new Blob([json], { type: 'application/json' });
+
+  const handleSelect = e => {
+    const kind = e.target.value;
+
+    if (kind === "json") {
+      const entityKind = "JwtVerifier"
+      const what = window.location.pathname.split('/')[3];
+      const itemName = entityKind
+        ? entityKind.toLowerCase()
+        : what === 'routes'
+          ? 'route'
+          : 'route-composition';
+      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+      const name = value.id
+        .replace(/ /g, '-')
+        .replace(/\(/g, '')
+        .replace(/\)/g, '')
+        .toLowerCase();
+      const json = JSON.stringify({ ...value, kind }, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.id = String(Date.now());
+      a.style.display = 'none';
+      a.download = `${itemName}-${name}-${Date.now()}.json`;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 300);
+    } else {
+      const entityKind = "JwtVerifier"
+      const what = window.location.pathname.split('/')[3];
+      const itemName = entityKind
+        ? entityKind.toLowerCase()
+        : what === 'routes'
+          ? 'route'
+          : 'route-composition';
+      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+      const name = value.id
+        .replace(/ /g, '-')
+        .replace(/\(/g, '')
+        .replace(/\)/g, '')
+        .toLowerCase();
+
+      fetch('/bo/api/json_to_yaml', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apiVersion: 'proxy.otoroshi.io/v1',
+          kind,
+          metadata: {
+            name,
+          },
+          spec: value,
+        }),
+      })
+        .then((r) => r.text())
+        .then((yaml) => {
+          const blob = new Blob([yaml], { type: 'application/yaml' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.id = String(Date.now());
           a.style.display = 'none';
-          a.download = `${itemName}-${name}-${Date.now()}.json`;
+          a.download = `${itemName}-${name}-${Date.now()}.yaml`;
           a.href = url;
           document.body.appendChild(a);
           a.click();
           setTimeout(() => document.body.removeChild(a), 300);
-        }}>JSON</option>
-        <option onClick={() => {
-          const entityKind = "JwtVerifier"
-          const what = window.location.pathname.split('/')[3];
-          const itemName = entityKind
-            ? entityKind.toLowerCase()
-            : what === 'routes'
-              ? 'route'
-              : 'route-composition';
-          const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-          const name = value.id
-            .replace(/ /g, '-')
-            .replace(/\(/g, '')
-            .replace(/\)/g, '')
-            .toLowerCase();
+        });
+    }
+  }
 
-          fetch('/bo/api/json_to_yaml', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              apiVersion: 'proxy.otoroshi.io/v1',
-              kind,
-              metadata: {
-                name,
-              },
-              spec: value,
-            }),
-          })
-            .then((r) => r.text())
-            .then((yaml) => {
-              const blob = new Blob([yaml], { type: 'application/yaml' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.id = String(Date.now());
-              a.style.display = 'none';
-              a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-              a.href = url;
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(() => document.body.removeChild(a), 300);
-            });
-        }}>YAML</option>
+  return (
+    <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
+      <DuplicateButton value={value} history={history} />
+      <select className="form-select selectSkin btn-primary" aria-label="Choose export" onChange={handleSelect}>
+        <option value="export">Export</option>
+        <option value="json">JSON</option>
+        <option value="yaml">YAML</option>
       </select>
       {menu}
     </div>
