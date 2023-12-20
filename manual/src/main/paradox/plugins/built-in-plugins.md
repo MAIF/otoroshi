@@ -1,7 +1,8 @@
 # Built-in plugins
 
-Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
+Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration.
 
+<div id="plugins-container"></div>
 
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalHeadersIn }
 
@@ -5029,7 +5030,4 @@ Coraza WAF plugin
 
 
 @@@
-
-
-
 

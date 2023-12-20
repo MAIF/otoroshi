@@ -224,8 +224,8 @@ class NgPluginDocumentationGenerator(docPath: String) {
              |
              |Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
              |
+             |<div id="plugins-container"></div>
              |${contents.mkString("\n")}
-             |
              |
              |""".stripMargin).asJava,
       Charsets.UTF_8

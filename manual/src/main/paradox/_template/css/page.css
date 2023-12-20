@@ -465,7 +465,7 @@ small {
 /* site header */
 
 .site-header {
-  background: #fcfcfc;
+  /* background: #fcfcfc; */
   border-bottom: solid 1px #cccccc;
 }
 
@@ -1282,12 +1282,12 @@ p {
   border-radius: 9999px;
   --tw-bg-opacity: 1;
   background-color: rgb(243 232 255/var(--tw-bg-opacity));
-  padding-left: .625rem;
-  padding-right: .625rem;
-  padding-top: .125rem;
-  padding-bottom: .125rem;
-  font-size: .875rem;
-  line-height: 1.25rem;
+  padding-left: .625rem !important;
+  padding-right: .625rem !important;
+  padding-top: .125rem !important;
+  padding-bottom: .125rem !important;
+  font-size: .875rem !important;
+  line-height: 1.25rem !important;
   --tw-text-opacity: 1;
   color: rgb(126 34 206/var(--tw-text-opacity));
   width: fit-content;
