@@ -120,6 +120,7 @@ latest
     <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -240,6 +241,7 @@ latest
     <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -814,13 +816,11 @@ EOF
 <pre class="prettyprint"><code class="language-html"> &lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;head&gt;
-&lt;title&gt;Wasmo plugin&lt;/title&gt;
+  &lt;title&gt;Wasmo plugin&lt;/title&gt;
 &lt;/head&gt;
-
 &lt;body&gt;
-&lt;h1&gt;Hello from Wasmo&lt;/h1&gt;
+  &lt;h1&gt;Hello from Wasmo&lt;/h1&gt;
 &lt;/body&gt;
-
 &lt;/html&gt;
 </code></pre>
 <p>This snippet is a short HTML template with a title to indicate that it comes from Wasmo. </p>
@@ -866,6 +866,7 @@ esbuild
   })
 </code></pre>
 <p>Check your browser at <code>http://demo-otoroshi.oto.tools:8080</code> and you should see your page content updated to the new text.</p>
+<p>If you need to expose more than a HTML page, we highly recommend to use the <a href="zip-backend-plugin.html">Zip Backend plugin</a></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/wasmo-installation.html">Deploy your own Wasmo</a></p>
 </div>
