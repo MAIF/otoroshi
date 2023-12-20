@@ -51,10 +51,10 @@ class Metric extends Component {
           className="metric"
           style={{
             width: props.width || 300,
-            position: 'relative'
+            // position: 'relative'
           }}
         >
-          <div style={{ position: 'absolute', bottom: -28, right: 0 }} className='view-stats'>
+          {/* <div style={{ position: 'absolute', bottom: -28, right: 0 }} className='view-stats'>
             <button type="button" className='btn btn-sm btn-quiet' style={{
               border: '1px solid rgb(170, 170, 170)',
               fontSize: '.65rem',
@@ -62,7 +62,7 @@ class Metric extends Component {
               fontFamily: 'Raleway, Helvetica, sans-serif',
               fontWeight: 'bold'
             }}>Show more <i className='fas fa-chevron-right ms-1' /></button>
-          </div>
+          </div> */}
           <div className="metric-text">
             {!this.props.hideValueText && <span className="metric-text-value">{props.value}</span>}
             <span className="metric-text-title">{props.legend}</span>
