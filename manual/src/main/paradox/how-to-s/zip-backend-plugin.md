@@ -5,15 +5,16 @@
 ## Tutorial
 
 1. [Before your start](#before-your-start)
-2. [Create the route](#create-the-route)
+2. [Create an archive with HTML and CSS files](#create-an-archive-with-html-and-css-files)
+2. [Use the Zip Backend Plugin](#use-the-zip-backend-plugin)
 
-After completing these steps, your files will be statically exposed.
+After completing these steps, you will be able to statically expose any kind of files from an archive.
 
 ## Before your start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
-## Create the route
+## Create an archive with HTML and CSS files
 
 Let's start by creating an archive composed of html and css files.
 
@@ -55,7 +56,11 @@ Once created, you can create the archive of both.
 zip bundle.zip index.html index.css
 ```
 
-Let's create the route using the admin API.
+## Use the Zip Backend Plugin  
+
+Let's create the route using the Otoroshi admin API. The route content is pretty simple, a few fields about the name and the frontend, and the Zip Backend plugin in the plugins list.
+
+Don't forget to change the default `path-to-the-zip-file` with your path.
 
 ``` sh
 curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
@@ -84,7 +89,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
       "include": [],
       "exclude": [],
       "config": {
-        "url": "file:///<path-to-the-zip-file>",
+        "url": "file://<path-to-the-zip-file>/bundle.zip",
         "headers": {},
         "dir": "./zips",
         "prefix": null,
@@ -95,3 +100,40 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
 }
 EOF
 ```
+
+Calling the route in a new browser tab at `http://demo-otoroshi.oto.tools:8080/`. You should see something like the following image:
+
+@@@ div { .centered-img }
+<img src="../imgs/zip-backend-final-result.png" />
+@@@
+
+As we can see, the content of the archive is available, our HTML page is served and the CSS, linked into the HTML page, has loaded.
+
+You can check this behaviour by calling the following path: 
+
+```bash
+curl http://demo-otoroshi.oto.tools:8080/index.css -v
+```
+
+The result should be like:
+
+```bash
+< HTTP/1.1 200 OK
+< Transfer-Encoding: chunked
+< Content-Type: text/css
+<
+body {
+  background: #f9b000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100dvh;
+}
+
+h1 {
+  font-size: 3rem;
+  color: #fff;
+}
+```
+
+Congratulations - You have just exposed your first archive. Do not hesitate to expose any type of content.
