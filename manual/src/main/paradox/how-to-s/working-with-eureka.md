@@ -2,10 +2,10 @@
 
 <div style="display: flex; align-items: center; gap: .5rem;">
 <span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.EurekaServerSink">Eureka instance</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.EurekaServerSink">Eureka instance</a>
 <a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.
 html#otoroshi.next.plugins.EurekaTarget">Internal Eureka server</a>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.ExternalEurekaTarget">External Eureka server</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ExternalEurekaTarget">External Eureka server</a>
 </div>
 
 Eureka is a library of Spring Cloud Netflix, which provides two parts to register and discover services.

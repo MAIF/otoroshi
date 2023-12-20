@@ -17,6 +17,11 @@ Yes, that command is all it took to start it up.
 
 ## Protect your service with Otoroshi ApiKey
 
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+</div>
+
 Create a new route, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
@@ -129,6 +134,11 @@ Keep calling the api and confirm that Otoroshi is sending you an apikey exceedin
 Well done, you have secured your first api with the apikeys system with limited call quotas.
 
 ## Secure your web app in 2 calls with an authentication
+
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
+</div>
 
 Create an in-memory authentication module, with one registered user, to protect your service.
 

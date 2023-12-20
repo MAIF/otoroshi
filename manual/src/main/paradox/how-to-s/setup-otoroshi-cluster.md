@@ -2,7 +2,7 @@
 
 <div style="display: flex; align-items: center; gap: .5rem;">
 <span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
 </div>
 
 In this tutorial, you create an cluster of Otoroshi.

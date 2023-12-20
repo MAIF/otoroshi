@@ -1,5 +1,13 @@
 # Expression language
 
+<div style="display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OverrideHost">Override Host Header</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers in</a>
+</div>
+
 - [Documentation and examples](#documentation-and-examples)
 - [Test the expression language](#test-the-expression-language)
 
