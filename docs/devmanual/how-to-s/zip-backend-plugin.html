@@ -307,9 +307,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
 <ol>
   <li><a href="#before-your-start">Before your start</a></li>
-  <li><a href="#create-the-route">Create the route</a></li>
+  <li><a href="#create-an-archive-with-html-and-css-files">Create an archive with HTML and CSS files</a></li>
+  <li><a href="#use-the-zip-backend-plugin">Use the Zip Backend Plugin</a></li>
 </ol>
-<p>After completing these steps, your files will be statically exposed.</p>
+<p>After completing these steps, you will be able to statically expose any kind of files from an archive.</p>
 <h2><a href="#before-your-start" name="before-your-start" class="anchor"><span class="anchor-link"></span></a>Before your start</h2><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">
 <span class="instructions-title">Set up an Otoroshi</span>
@@ -345,7 +346,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 EOF
 </code></pre>
 <button id="instructions-toggle-confirm">Confirm the installation</button></div>
-<h2><a href="#create-the-route" name="create-the-route" class="anchor"><span class="anchor-link"></span></a>Create the route</h2>
+<h2><a href="#create-an-archive-with-html-and-css-files" name="create-an-archive-with-html-and-css-files" class="anchor"><span class="anchor-link"></span></a>Create an archive with HTML and CSS files</h2>
 <p>Let&rsquo;s start by creating an archive composed of html and css files.</p>
 <p>The contents of your <code>index.html</code> file should be likes this:</p>
 <pre class="prettyprint"><code class="language-html">&lt;!DOCTYPE html&gt;
@@ -376,7 +377,9 @@ h1 {
 <p>Once created, you can create the archive of both.</p>
 <pre class="prettyprint"><code class="language-sh">zip bundle.zip index.html index.css
 </code></pre>
-<p>Let&rsquo;s create the route using the admin API.</p>
+<h2><a href="#use-the-zip-backend-plugin" name="use-the-zip-backend-plugin" class="anchor"><span class="anchor-link"></span></a>Use the Zip Backend Plugin</h2>
+<p>Let&rsquo;s create the route using the Otoroshi admin API. The route content is pretty simple, a few fields about the name and the frontend, and the Zip Backend plugin in the plugins list.</p>
+<p>Don&rsquo;t forget to change the default <code>path-to-the-zip-file</code> with your path.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -403,7 +406,7 @@ h1 {
       &quot;include&quot;: [],
       &quot;exclude&quot;: [],
       &quot;config&quot;: {
-        &quot;url&quot;: &quot;file:///&lt;path-to-the-zip-file&gt;&quot;,
+        &quot;url&quot;: &quot;file://&lt;path-to-the-zip-file&gt;/bundle.zip&quot;,
         &quot;headers&quot;: {},
         &quot;dir&quot;: &quot;./zips&quot;,
         &quot;prefix&quot;: null,
@@ -414,6 +417,31 @@ h1 {
 }
 EOF
 </code></pre>
+<p>Calling the route in a new browser tab at <code>http://demo-otoroshi.oto.tools:8080/</code>. You should see something like the following image:</p><div class="centered-img">
+<img src="../imgs/zip-backend-final-result.png" /></div>
+<p>As we can see, the content of the archive is available, our HTML page is served and the CSS, linked into the HTML page, has loaded.</p>
+<p>You can check this behaviour by calling the following path: </p>
+<pre class="prettyprint"><code class="language-bash">curl http://demo-otoroshi.oto.tools:8080/index.css -v
+</code></pre>
+<p>The result should be like:</p>
+<pre class="prettyprint"><code class="language-bash">&lt; HTTP/1.1 200 OK
+&lt; Transfer-Encoding: chunked
+&lt; Content-Type: text/css
+&lt;
+body {
+  background: #f9b000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100dvh;
+}
+
+h1 {
+  font-size: 3rem;
+  color: #fff;
+}
+</code></pre>
+<p>Congratulations - You have just exposed your first archive. Do not hesitate to expose any type of content.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/index.html">Otoroshi plugins</a></p>
 </div>
@@ -430,7 +458,8 @@ EOF
   <ul>
     <li><a href="../how-to-s/zip-backend-plugin.html#tutorial" class="header">Tutorial</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html#before-your-start" class="header">Before your start</a></li>
-    <li><a href="../how-to-s/zip-backend-plugin.html#create-the-route" class="header">Create the route</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html#create-an-archive-with-html-and-css-files" class="header">Create an archive with HTML and CSS files</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html#use-the-zip-backend-plugin" class="header">Use the Zip Backend Plugin</a></li>
   </ul></li>
 </ul>
 </div>
