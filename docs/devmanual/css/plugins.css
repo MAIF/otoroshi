@@ -68,7 +68,7 @@
 }
 
 .ng-plugin .badge {
-  color: #fff;
+  color: #fff !important;
   background-color: #f9b000;
   border-radius: .5rem;
 }

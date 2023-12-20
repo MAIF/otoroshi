@@ -312,6 +312,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>Yes, that command is all it took to start it up.</p>
 <h2><a href="#protect-your-service-with-otoroshi-apikey" name="protect-your-service-with-otoroshi-apikey" class="anchor"><span class="anchor-link"></span></a>Protect your service with Otoroshi ApiKey</h2>
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+</div>
 <p>Create a new route, exposed on <code>http://myapi.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H &quot;Content-type: application/json&quot; \
@@ -398,6 +402,10 @@ Otoroshi-Monthly-Calls-Remaining: 6
 </code></pre>
 <p>Well done, you have secured your first api with the apikeys system with limited call quotas.</p>
 <h2><a href="#secure-your-web-app-in-2-calls-with-an-authentication" name="secure-your-web-app-in-2-calls-with-an-authentication" class="anchor"><span class="anchor-link"></span></a>Secure your web app in 2 calls with an authentication</h2>
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
+</div>
 <p>Create an in-memory authentication module, with one registered user, to protect your service.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/auths&#39; \
 -H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
