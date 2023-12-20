@@ -301,6 +301,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#instantiate-a-waf-with-coraza" name="instantiate-a-waf-with-coraza" class="anchor"><span class="anchor-link"></span></a>Instantiate a WAF with Coraza</h1>
+<div style="display: flex; align-items: center; gap: .5rem;">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.html#otoroshi.wasm.proxywasm.NgCorazaWAF">Coraza WAF</a>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/built-in-plugins.
+html#otoroshi.next.plugins.OverrideHost">Override Host Header</a>
+</div>
 <p>Sometimes you may want to secure an app with a <a href="https://en.wikipedia.org/wiki/Web_application_firewall">Web Appplication Firewall (WAF)</a> and apply the security rules from the <a href="https://owasp.org/www-project-modsecurity-core-rule-set/">OWASP Core Rule Set</a>. To allow that, we integrated <a href="https://coraza.io/">the Coraza WAF</a> in Otoroshi through a plugin that uses the WASM version of Coraza.</p>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">
