@@ -65,7 +65,7 @@ Every release, along with the migration instructions, is documented on the @link
 
 ## Patrons
 
-The work on Otoroshi was funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a> with the help of the community.
+The work on Otoroshi is funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a> and <a href="https://www.cloud-apim.com/" target="_blank">Cloud APIM</a> with the help of the community.
 
 ## Licence
 
