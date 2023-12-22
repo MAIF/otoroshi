@@ -177,11 +177,12 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "2.4.0" classifier "bundle",
-  "com.github.Opetushallitus"        % "scala-schema" % "2.23.0_2.12",
-  "com.github.andyglow" %% "scala-jsonschema" % "0.7.11",
-  "com.github.andyglow" %% "scala-jsonschema-play-json" % "0.7.11",
+  "com.github.Opetushallitus"        % "scala-schema"                              % "2.23.0_2.12" excludeAll (
+    ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
+    ExclusionRule("ch.qos.logback", "logback-classic"),
+  ),
   // using a custom one right now as current build is broken
-//   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
+  //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   } else {
@@ -239,7 +240,10 @@ mainClass in assembly := Some("play.core.server.ProdServerStart")
 test in assembly := {}
 assemblyJarName in assembly := "otoroshi.jar"
 fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
-assemblyMergeStrategy in assembly := {
+assembly / assemblyMergeStrategy  := { e => e match {
+  case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
+  case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
+  case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
   case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
   case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
@@ -293,9 +297,9 @@ assemblyMergeStrategy in assembly := {
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x                                                              =>
-    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
     oldStrategy(x)
-}
+}}
 
 lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {
