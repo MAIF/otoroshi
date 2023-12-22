@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.12.0] - 2023-12-22
+
+
+https://github.com/MAIF/otoroshi/milestone/76?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.11.2...v16.12.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.12.0
+
+
+### Added 
+
+- Move build and release process on github actions (#788)
+- add a plugin to serve a zip file content as a backend (#1785)
+- add security checks to use env and config from the expression language (#1792)
+- plugin that let you choose how to configure throttling based on el expressions (#1793)
+- plugin that let you choose how to configure quotas based on el expressions (#1794)
+- introduce a new kind of safe single value apikey (#1795)
+- plugins blocklist to avoid security issues in some use cases (#1798)       
+      
+### Changed 
+
+- redesign the route pages organisation (#1790)
+- redesign the topbar (#1791)       
+      
+### Fixed 
+
+- leaving some route pages didn't clean the route sidebar (#1788)
+- upgrade old static jquery dist (#1789)
+- error in zip backend plugin (#1799)
+- JSON and YAML export buttons not working on route designer (#1800)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @baudelotphilippe
+
 ## [16.11.2] - 2023-12-05
 
 
