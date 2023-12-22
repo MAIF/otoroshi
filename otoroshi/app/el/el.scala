@@ -162,9 +162,9 @@ object GlobalExpressionLanguage {
               req.get.getQueryString(field).getOrElse(defaultValue)
             case r"req.query.$field@(.*)" if req.isDefined                                  =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
-            case r"req.cookies.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
+            case r"req.cookies.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
               req.get.cookies.get(field).map(_.value).getOrElse(defaultValue)
-            case r"req.cookies.$field@(.*)" if req.isDefined =>
+            case r"req.cookies.$field@(.*)" if req.isDefined                                =>
               req.get.cookies.get(field).map(_.value).getOrElse(s"no-query-$field")
             case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined =>
               matchedRoute.get.pathParams.get(field).getOrElse(defaultValue)
@@ -198,32 +198,34 @@ object GlobalExpressionLanguage {
             case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
             case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
 
-            case r"apikeyjwt.$field@(.*)" if field.contains(".")    => {
+            case r"apikeyjwt.$field@(.*)" if field.contains(".")              => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
                 .flatMap(_.at(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)" if field.contains("/")    => {
+            case r"apikeyjwt.$field@(.*)" if field.contains("/")              => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
                 .flatMap(_.atPointer(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)" if field.startsWith("$.") => {
+            case r"apikeyjwt.$field@(.*)" if field.startsWith("$.")           => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
                 .flatMap(_.atPath(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)"                           => {
+            case r"apikeyjwt.$field@(.*)"                                     => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
                 .flatMap(_.select(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"env.$field@(.*):$dv@(.*)" if env.elSettings.allowEnvAccess => Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)" if env.elSettings.allowEnvAccess => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"env.$field@(.*):$dv@(.*)" if env.elSettings.allowEnvAccess =>
+              Option(System.getenv(field)).getOrElse(dv)
+            case r"env.$field@(.*)" if env.elSettings.allowEnvAccess          =>
+              Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
             case r"config.$field@(.*):$dv@(.*)" if env.elSettings.allowConfigAccess =>
               env.configuration
@@ -241,7 +243,7 @@ object GlobalExpressionLanguage {
                   env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
                 )
                 .getOrElse(dv)
-            case r"config.$field@(.*)" if env.elSettings.allowConfigAccess =>
+            case r"config.$field@(.*)" if env.elSettings.allowConfigAccess          =>
               env.configuration
                 .getOptionalWithFileSupport[String](field)
                 .orElse(

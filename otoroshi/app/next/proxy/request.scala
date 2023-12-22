@@ -107,7 +107,7 @@ class BackOfficeRequest(
     val path = request.path.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
     request.queryString match {
       case map if map.nonEmpty =>
-        val queryString = map.flatMap(t => t._2.map(v => s"${t._1}=${URLEncoder.encode(v,  "UTF-8")}")).mkString("&")
+        val queryString = map.flatMap(t => t._2.map(v => s"${t._1}=${URLEncoder.encode(v, "UTF-8")}")).mkString("&")
         s"${path}?${queryString}"
       case map                 => path
     }

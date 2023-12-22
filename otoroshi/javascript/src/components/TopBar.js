@@ -1039,14 +1039,16 @@ export class TopBar extends Component {
 
         const trimQuery = query.trim().toLowerCase();
 
-        return options.filter(item => {
+        return options.filter((item) => {
           if (item.label || item.value) {
             const label = item.label.trim().toLowerCase();
             const value = item.value.trim().toLowerCase();
-            return label.startsWith(trimQuery) ||
+            return (
+              label.startsWith(trimQuery) ||
               value.startsWith(trimQuery) ||
               label.includes(trimQuery) ||
-              value.includes(trimQuery);
+              value.includes(trimQuery)
+            );
           } else {
             return true;
           }
@@ -1565,27 +1567,42 @@ export class TopBar extends Component {
     return (
       <>
         <li style={{ display: 'flex', alignItems: 'center' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
             style={{
               height: 30,
-            }} className='mx-1'>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+            }}
+            className="mx-1"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+            />
           </svg>
-          <div className='flex flex-column justify-content-start me-3'>
-            <div style={{ textAlign: 'start' }}><span style={{ fontWeight: 'bold' }}>{window.__userid}</span></div>
-            <div style={{ textAlign: 'start' }}><span>{window.__user?.profile?.name}</span></div>
+          <div className="flex flex-column justify-content-start me-3">
+            <div style={{ textAlign: 'start' }}>
+              <span style={{ fontWeight: 'bold' }}>{window.__userid}</span>
+            </div>
+            <div style={{ textAlign: 'start' }}>
+              <span>{window.__user?.profile?.name}</span>
+            </div>
           </div>
 
-          <Button type="quiet" className='ms-3'>
-            <i className='fas fa-times' />
+          <Button type="quiet" className="ms-3">
+            <i className="fas fa-times" />
           </Button>
         </li>
         {/*<li>
           <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
         </li>*/}
-        < li >
+        <li>
           <VersionButton />
-        </li >
+        </li>
         <li>
           <a className="prevent-click dropdown-item" id="otoroshi-dark-light-icon" href="#">
             <i className="far fa-moon fa-lg" /> Dark/Light Mode
@@ -1606,31 +1623,27 @@ export class TopBar extends Component {
             <span className="fas fa-grip" /> All features
           </Link>
         </li>
-        {
-          window.__otoroshi__env__latest.userAdmin && this.props.env.providerDashboardUrl && (
-            <>
-              <li className="dropdown-divider" />
-              <li>
-                <Link to="/provider" className="dropdown-item">
-                  <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
-                  {this.props.env.providerDashboardTitle}
-                </Link>
-              </li>
-            </>
-          )
-        }
-        {
-          window.__otoroshi__env__latest.userAdmin && (
-            <>
-              <li className="dropdown-divider" />
-              <li>
-                <Link to="/dangerzone" className="dropdown-item">
-                  <span className="fas fa-exclamation-triangle" /> Danger Zone
-                </Link>
-              </li>
-            </>
-          )
-        }
+        {window.__otoroshi__env__latest.userAdmin && this.props.env.providerDashboardUrl && (
+          <>
+            <li className="dropdown-divider" />
+            <li>
+              <Link to="/provider" className="dropdown-item">
+                <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
+                {this.props.env.providerDashboardTitle}
+              </Link>
+            </li>
+          </>
+        )}
+        {window.__otoroshi__env__latest.userAdmin && (
+          <>
+            <li className="dropdown-divider" />
+            <li>
+              <Link to="/dangerzone" className="dropdown-item">
+                <span className="fas fa-exclamation-triangle" /> Danger Zone
+              </Link>
+            </li>
+          </>
+        )}
         <li className="dropdown-divider" />
         <li>
           <a href="/backoffice/auth0/logout" className="link-logout dropdown-item">
@@ -1716,7 +1729,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-          // style={{ zIndex: 100 }}
+            // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1727,7 +1740,8 @@ export class TopBar extends Component {
                     data-bs-toggle="collapse"
                     data-bs-target="#sidebar"
                     aria-controls="sidebar"
-                    aria-expanded="false">
+                    aria-expanded="false"
+                  >
                     <span className="navbar-toggler-icon">Menu</span>
                   </button>
                   <Link
@@ -1740,7 +1754,8 @@ export class TopBar extends Component {
                     }}
                     onClick={() => {
                       this.props.setTitle(null);
-                    }}>
+                    }}
+                  >
                     {this.brandName()}
                   </Link>
                 </div>
@@ -1748,14 +1763,14 @@ export class TopBar extends Component {
 
               <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
                 <div className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
-
                   <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
                     {selected && (
                       <div className="mb-3" style={{ marginRight: 10 }}>
                         <span
                           title="Current line"
                           className="badge bg-success"
-                          style={{ fontSize: 20, cursor: 'pointer' }}>
+                          style={{ fontSize: 20, cursor: 'pointer' }}
+                        >
                           {selected}
                         </span>
                       </div>
@@ -1795,7 +1810,7 @@ export class TopBar extends Component {
                           placeholder: (provided) => ({
                             ...provided,
                             color: 'var(--text)',
-                            opacity: .5
+                            opacity: 0.5,
                           }),
                           menu: (baseStyles) => ({
                             ...baseStyles,
@@ -1812,21 +1827,32 @@ export class TopBar extends Component {
                         }}
                         components={{
                           ValueContainer: ({ children }) => {
-                            return <div className='flex align-items-center' style={{ display: 'flex' }}>
-                              <div style={{ maxHeight: 22, display: 'flex' }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-                                  className="mx-2"
-                                  stroke="currentColor"
-                                  style={{
-                                    opacity: .5,
-                                    height: 18,
-                                  }}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                                </svg>
-                              </div>
+                            return (
+                              <div className="flex align-items-center" style={{ display: 'flex' }}>
+                                <div style={{ maxHeight: 22, display: 'flex' }}>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    className="mx-2"
+                                    stroke="currentColor"
+                                    style={{
+                                      opacity: 0.5,
+                                      height: 18,
+                                    }}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                                    />
+                                  </svg>
+                                </div>
 
-                              {children}
-                            </div>
+                                {children}
+                              </div>
+                            );
                           },
                           NoOptionsMessage: () => null,
                           Option: (props) => {
@@ -1848,14 +1874,16 @@ export class TopBar extends Component {
                                     : 'var(--bg-color_level3)',
                                 }}
                                 ref={props.innerRef}
-                                {...props.innerProps}>
+                                {...props.innerProps}
+                              >
                                 <div
                                   style={{
                                     width: 60,
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                  }}>
+                                  }}
+                                >
                                   {p.env && isString(p.env) && (
                                     <span className={`badge ${this.color(p.env)}`}>{env}</span>
                                   )}
@@ -1870,7 +1898,8 @@ export class TopBar extends Component {
                             return (
                               <span
                                 style={{ display: 'flex', height: 20, paddingRight: 5 }}
-                                title="You can jump directly into the search bar from anywhere just by typing '/'">
+                                title="You can jump directly into the search bar from anywhere just by typing '/'"
+                              >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
                                   <defs>
                                     <rect id="a" width="19" height="20" rx="3" />
@@ -1907,17 +1936,26 @@ export class TopBar extends Component {
                         style={{
                           border: '1px solid #aaa',
                           // background: '#f9b000',
-                          height: '100%'
+                          height: '100%',
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                          className='pe-1'
-                          strokeWidth={1.5} stroke="currentColor" style={{
-                            height: 20
-                          }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          className="pe-1"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          style={{
+                            height: 20,
+                          }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 4.5v15m7.5-7.5h-15"
+                          />
                         </svg>
-
                       </Button>
                       <ul
                         className="dropdown-menu add-menu dropdown-menu-end"
@@ -1930,7 +1968,8 @@ export class TopBar extends Component {
                           zIndex: 4000,
                           boxShadow: '0 1px 3px rgba(25,25,25, .2)',
                           gap: 5,
-                        }}>
+                        }}
+                      >
                         {this.props && !this.props.env.initWithNewEngine && (
                           <li className="d-flex">
                             <Link to="/services">Service</Link>
@@ -1982,36 +2021,50 @@ export class TopBar extends Component {
                   {this.props.changePassword && (
                     <div
                       onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                      className="mx-1">
+                      className="mx-1"
+                    >
                       <a
                         href="/bo/dashboard/admins"
                         data-toggle="dropdown"
                         role="button"
                         aria-haspopup="true"
-                        aria-expanded="false">
+                        aria-expanded="false"
+                      >
                         <span
                           className="badge align-items-center"
                           data-toggle="tooltip"
                           data-placement="bottom"
                           title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
-                          style={{ backgroundColor: '#c9302c', height: 38, display: 'flex' }}>
+                          style={{ backgroundColor: '#c9302c', height: 38, display: 'flex' }}
+                        >
                           {/* <i className="fas fa-exclamation-triangle" /> */}
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
                             stroke="currentColor"
-                            style={{ height: '1.5rem' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+                            style={{ height: '1.5rem' }}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z"
+                            />
                           </svg>
-
                         </span>
                       </a>
                     </div>
                   )}
 
-                  <div className="dropdown mx-2" style={{
-                    height: 38,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
+                  <div
+                    className="dropdown mx-2"
+                    style={{
+                      height: 38,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
                     <i
                       className="fas fa-cog"
                       id="cog"
@@ -2026,12 +2079,14 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                        } py-2 pb-4`}
+                      className={`custom-dropdown ${
+                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                      } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });
-                      }}>
+                      }}
+                    >
                       {this.props.shortMenu && this.renderShortMenu()}
                       {!this.props.shortMenu && this.renderLongMenu()}
                     </ul>
@@ -2040,8 +2095,7 @@ export class TopBar extends Component {
               </div>
             </div>
           </nav>
-        )
-        }
+        )}
       </SidebarContext.Consumer>
     );
   }

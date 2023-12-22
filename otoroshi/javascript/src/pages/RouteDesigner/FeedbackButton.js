@@ -87,46 +87,50 @@ export function FeedbackButton({
               throw err;
             });
         }
-      }}>
-
-      {icon || !(waiting && !uploading) && <div
-        className="me-1"
-        style={{
-          width: '16px',
-          display: 'inline-block',
-        }}>
-        {waiting && !uploading && <Icon />}
-
-        {loading && (
-          <i
-            className="fas fa-spinner fa-spin fa-sm"
+      }}
+    >
+      {icon ||
+        (!(waiting && !uploading) && (
+          <div
+            className="me-1"
             style={{
-              opacity: loading ? 1 : 0,
-              transition: 'opacity 2s',
+              width: '16px',
+              display: 'inline-block',
             }}
-          />
-        )}
+          >
+            {waiting && !uploading && <Icon />}
 
-        {successed && (
-          <i
-            className="fas fa-check"
-            style={{
-              opacity: successed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
+            {loading && (
+              <i
+                className="fas fa-spinner fa-spin fa-sm"
+                style={{
+                  opacity: loading ? 1 : 0,
+                  transition: 'opacity 2s',
+                }}
+              />
+            )}
 
-        {failed && (
-          <i
-            className="fas fa-times"
-            style={{
-              opacity: failed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
-      </div>}
+            {successed && (
+              <i
+                className="fas fa-check"
+                style={{
+                  opacity: successed ? 1 : 0,
+                  transition: 'opacity 2s',
+                }}
+              />
+            )}
+
+            {failed && (
+              <i
+                className="fas fa-times"
+                style={{
+                  opacity: failed ? 1 : 0,
+                  transition: 'opacity 2s',
+                }}
+              />
+            )}
+          </div>
+        ))}
       {text}
     </button>
   );

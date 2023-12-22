@@ -33,7 +33,7 @@ object BodyHelper {
     val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
     val bodyBase64  = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
 
-    val bodyJson    = doc
+    val bodyJson = doc
       .select("body_json")
       .asOpt[JsValue]
       .filter {
@@ -41,7 +41,7 @@ object BodyHelper {
         case _      => true
       }
       .map(str => ByteString(str.stringify))
-    val bodyStr     = doc
+    val bodyStr  = doc
       .select("body_str")
       .asOpt[String]
       .orElse(doc.select("body").asOpt[String])

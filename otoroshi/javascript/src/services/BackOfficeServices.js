@@ -2116,7 +2116,9 @@ export const findAllWithPagination = (
     if (fields && fields.length > 0) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
-      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value.toLowerCase()}`).join(',')}`;
+      url = `${url}&filtered=${filtered
+        .map((field) => `${field.id}:${field.value.toLowerCase()}`)
+        .join(',')}`;
 
     if (sorted && sorted.length > 0)
       url = `${url}&sorted=${sorted.map((field) => `${field.id}:${field.desc}`).join(',')}`;

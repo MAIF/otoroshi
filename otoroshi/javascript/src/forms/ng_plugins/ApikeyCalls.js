@@ -194,12 +194,7 @@ export default {
               help: 'The name of the cookie to get the bearer token',
             },
           },
-          flow: [
-            'enabled',
-            'query_name',
-            'header_name',
-            'cookie_name',
-          ],
+          flow: ['enabled', 'query_name', 'header_name', 'cookie_name'],
         },
         basic: {
           label: 'basic',

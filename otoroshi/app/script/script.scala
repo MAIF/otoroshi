@@ -1021,7 +1021,7 @@ class ScriptManager(env: Env) {
     }
   })
 
-  private val allPlugins   = Seq(
+  private val allPlugins = Seq(
     transformersNames,
     validatorsNames,
     preRouteNames,
@@ -1041,7 +1041,8 @@ class ScriptManager(env: Env) {
   logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
   if (printPlugins) logger.info("\n\n" + allPlugins.map(s => s" - $s").mkString("\n") + "\n")
   if (printPlugins && blackListedPlugins.nonEmpty) logger.info("Blacklisted plugins")
-  if (printPlugins && blackListedPlugins.nonEmpty) logger.info("\n\n" + blackListedPlugins.map(s => s" - $s").mkString("\n") + "\n")
+  if (printPlugins && blackListedPlugins.nonEmpty)
+    logger.info("\n\n" + blackListedPlugins.map(s => s" - $s").mkString("\n") + "\n")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) { // valid

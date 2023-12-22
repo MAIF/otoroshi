@@ -23,8 +23,6 @@ import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
 
-
-
 function DuplicateButton({ value, history }) {
   return (
     <Button
@@ -51,8 +49,9 @@ function DuplicateButton({ value, history }) {
               });
           }
         });
-      }}>
-      <i className='fas fa-copy' /> Duplicate route
+      }}
+    >
+      <i className="fas fa-copy" /> Duplicate route
     </Button>
   );
 }
@@ -104,14 +103,12 @@ function RoutesTab({ isActive, entity, value, history }) {
   );
 }
 
-
 function MoreActionsButton({ value, menu, history }) {
-
-  const handleSelect = e => {
+  const handleSelect = (e) => {
     const kind = e.target.value;
 
-    if (kind === "json") {
-      const entityKind = "JwtVerifier"
+    if (kind === 'json') {
+      const entityKind = 'JwtVerifier';
       const what = window.location.pathname.split('/')[3];
       const itemName = entityKind
         ? entityKind.toLowerCase()
@@ -119,11 +116,7 @@ function MoreActionsButton({ value, menu, history }) {
           ? 'route'
           : 'route-composition';
       const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
+      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
       const json = JSON.stringify({ ...value, kind }, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -136,7 +129,7 @@ function MoreActionsButton({ value, menu, history }) {
       a.click();
       setTimeout(() => document.body.removeChild(a), 300);
     } else {
-      const entityKind = "JwtVerifier"
+      const entityKind = 'JwtVerifier';
       const what = window.location.pathname.split('/')[3];
       const itemName = entityKind
         ? entityKind.toLowerCase()
@@ -144,11 +137,7 @@ function MoreActionsButton({ value, menu, history }) {
           ? 'route'
           : 'route-composition';
       const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
+      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
 
       fetch('/bo/api/json_to_yaml', {
         method: 'POST',
@@ -178,12 +167,16 @@ function MoreActionsButton({ value, menu, history }) {
           setTimeout(() => document.body.removeChild(a), 300);
         });
     }
-  }
+  };
 
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
-      <select className="form-select selectSkin btn-primary" aria-label="Choose export" onChange={handleSelect}>
+      <select
+        className="form-select selectSkin btn-primary"
+        aria-label="Choose export"
+        onChange={handleSelect}
+      >
         <option value="export">Export</option>
         <option value="json">JSON</option>
         <option value="yaml">YAML</option>
@@ -227,9 +220,7 @@ function ManagerTitle({
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => (
-        <MoreActionsButton value={value} menu={menu} history={history} />
-      ),
+      component: () => <MoreActionsButton value={value} menu={menu} history={history} />,
     },
   ].flatMap((item) => {
     if (Array.isArray(item)) {
@@ -280,7 +271,7 @@ class Manager extends React.Component {
     saveTypeButton: undefined,
     forceHideTester: false,
     loading: false,
-    template: undefined
+    template: undefined,
   };
 
   componentDidMount() {
@@ -299,8 +290,7 @@ class Manager extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.props.routeId !== prevProps.routeId || this.props.routeId === 'new') {
-      if (!this.state.template)
-        this.loadRoute();
+      if (!this.state.template) this.loadRoute();
     }
 
     if (
@@ -351,7 +341,6 @@ class Manager extends React.Component {
         history={history}
         saveButton={this.state.saveButton}
         globalEnv={this.props.globalEnv}
-
         env={this.props.globalEnv}
         reloadEnv={this.props.reloadEnv}
         getTitle={this.props.getTitle}
@@ -536,11 +525,10 @@ const RoutesView = ({ history, globalEnv }) => {
 };
 
 class RouteDesigner extends React.Component {
-
   state = {
     value: undefined,
-    loading: true
-  }
+    loading: true,
+  };
 
   componentDidMount() {
     this.props.setTitle('Routes');
@@ -548,26 +536,30 @@ class RouteDesigner extends React.Component {
     if (!this.props.location?.state?.value) {
       this.loadRoute();
     } else {
-      this.setState({ loading: false })
+      this.setState({ loading: false });
     }
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.match.params.routeId !== prevProps.match.params.routeId)
-      this.loadRoute();
+    if (this.props.match.params.routeId !== prevProps.match.params.routeId) this.loadRoute();
   }
 
   loadRoute = () => {
     const { routeId } = this.props.match.params || { routeId: undefined };
 
-    if (routeId === 'new' || (this.props.location.state && this.props.location.state.routeFromService)) {
+    if (
+      routeId === 'new' ||
+      (this.props.location.state && this.props.location.state.routeFromService)
+    ) {
       this.setState({ loading: false });
     } else if (routeId) {
-      nextClient.fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId).then((res) => {
-        if (!res.error) {
-          this.setState({ value: res, loading: false });
-        }
-      });
+      nextClient
+        .fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId)
+        .then((res) => {
+          if (!res.error) {
+            this.setState({ value: res, loading: false });
+          }
+        });
     }
   };
 
@@ -579,21 +571,60 @@ class RouteDesigner extends React.Component {
     // console.log(this.props, this.state, location.state)
 
     if (Object.keys(match.params).length === 0)
-      return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
+      return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />;
 
     return (
       <Switch>
         {[
-          { path: `${match.url}/health`, component: props => <ServiceHealthPage {...props} title={this.state.value?.name} {...match} /> },
-          { path: `${match.url}/analytics`, component: props => <ServiceAnalyticsPage {...props} title={this.state.value?.name} {...match} /> },
-          { path: `${match.url}/apikeys/:taction/:titem`, component: props => <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} /> },
-          { path: `${match.url}/apikeys`, component: props => <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} /> },
-          { path: `${match.url}/stats`, component: props => <ServiceLiveStatsPage {...props} title={this.state.value?.name} {...match} /> },
-          { path: `${match.url}/events`, component: props => <ServiceEventsPage {...props} title={this.state.value?.name} {...match} /> },
+          {
+            path: `${match.url}/health`,
+            component: (props) => (
+              <ServiceHealthPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
+          {
+            path: `${match.url}/analytics`,
+            component: (props) => (
+              <ServiceAnalyticsPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
+          {
+            path: `${match.url}/apikeys/:taction/:titem`,
+            component: (props) => (
+              <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
+          {
+            path: `${match.url}/apikeys`,
+            component: (props) => (
+              <ServiceApiKeysPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
+          {
+            path: `${match.url}/stats`,
+            component: (props) => (
+              <ServiceLiveStatsPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
+          {
+            path: `${match.url}/events`,
+            component: (props) => (
+              <ServiceEventsPage {...props} title={this.state.value?.name} {...match} />
+            ),
+          },
           {
             path: `${match.url}/`,
             component: (p) => {
-              return <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} {...this.state} routeId={match?.params?.routeId} />
+              return (
+                <Manager
+                  {...this.props}
+                  {...p}
+                  entity={entity}
+                  globalEnv={globalEnv}
+                  {...this.state}
+                  routeId={match?.params?.routeId}
+                />
+              );
             },
           },
         ].map(({ path, component }) => {

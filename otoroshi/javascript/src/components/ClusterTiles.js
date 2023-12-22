@@ -164,7 +164,7 @@ export class ClusterTiles extends Component {
       <div
         style={{
           maxWidth: '1050px',
-          margin: '0 auto'
+          margin: '0 auto',
         }}
       >
         <h4 className="live-title">CLUSTER METRICS</h4>

@@ -480,42 +480,42 @@ sealed trait NameIDFormat {
 
 case object NameIDFormatPersistent extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
-  val name = "persistent"
+  val name  = "persistent"
 }
 
 case object NameIDFormatTransient extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
-  val name = "transient"
+  val name  = "transient"
 }
 
 case object NameIDFormatKerberos extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos"
-  val name = "kerberos"
+  val name  = "kerberos"
 }
 
 case object NameIDFormatEntity extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
-  val name = "entity"
+  val name  = "entity"
 }
 
 case object NameIDFormatEmailAddress extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-  val name = "emailAddress"
+  val name  = "emailAddress"
 }
 
 case object NameIDFormatUnspecified extends NameIDFormat {
   val value = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
-  val name = "unspecified"
+  val name  = "unspecified"
 }
 
 object NameIDFormat {
 
-  val Persistent = NameIDFormatPersistent
-  val Transient = NameIDFormatTransient
-  val Kerberos = NameIDFormatKerberos
-  val Entity = NameIDFormatEntity
+  val Persistent   = NameIDFormatPersistent
+  val Transient    = NameIDFormatTransient
+  val Kerberos     = NameIDFormatKerberos
+  val Entity       = NameIDFormatEntity
   val EmailAddress = NameIDFormatEmailAddress
-  val Unspecified = NameIDFormatUnspecified
+  val Unspecified  = NameIDFormatUnspecified
 
   def apply(name: String): Option[NameIDFormat] = {
     name.toLowerCase.trim match {
@@ -568,16 +568,16 @@ sealed trait SAMLProtocolBinding {
 
 case object SAMLProtocolBindingPost extends SAMLProtocolBinding {
   val value = SAMLConstants.SAML2_POST_BINDING_URI
-  val name = "post"
+  val name  = "post"
 }
 
 case object SAMLProtocolBindingRedirect extends SAMLProtocolBinding {
   val value = SAMLConstants.SAML2_REDIRECT_BINDING_URI
-  val name = "redirect"
+  val name  = "redirect"
 }
 object SAMLProtocolBinding {
 
-  val Post = SAMLProtocolBindingPost
+  val Post     = SAMLProtocolBindingPost
   val Redirect = SAMLProtocolBindingRedirect
 
   def apply(name: String): SAMLProtocolBinding = {
@@ -635,30 +635,30 @@ sealed trait SAMLSignatureAlgorithm {
 
 case object SAMLSignatureAlgorithmRSA_SHA512 extends SAMLSignatureAlgorithm {
   val value = SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512
-  val name = "rsa_sha512"
+  val name  = "rsa_sha512"
 }
 
 case object SAMLSignatureAlgorithmRSA_SHA256 extends SAMLSignatureAlgorithm {
   val value = SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256
-  val name = "rsa_sha256"
+  val name  = "rsa_sha256"
 }
 
 case object SAMLSignatureAlgorithmRSA_SHA1 extends SAMLSignatureAlgorithm {
   val value = SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1
-  val name = "rsa_sha1"
+  val name  = "rsa_sha1"
 }
 
 case object SAMLSignatureAlgorithmDSA_SHA1 extends SAMLSignatureAlgorithm {
   val value = SignatureConstants.ALGO_ID_SIGNATURE_DSA_SHA1
-  val name = "dsa_sha1"
+  val name  = "dsa_sha1"
 }
 
 object SAMLSignatureAlgorithm {
 
   val RSA_SHA512 = SAMLSignatureAlgorithmRSA_SHA512
   val RSA_SHA256 = SAMLSignatureAlgorithmRSA_SHA256
-  val RSA_SHA1 = SAMLSignatureAlgorithmRSA_SHA1
-  val DSA_SHA1 = SAMLSignatureAlgorithmDSA_SHA1
+  val RSA_SHA1   = SAMLSignatureAlgorithmRSA_SHA1
+  val DSA_SHA1   = SAMLSignatureAlgorithmDSA_SHA1
 
   def apply(name: String): Option[SAMLSignatureAlgorithm] = {
     name.toLowerCase.trim match {
@@ -677,17 +677,17 @@ sealed trait SAMLCanocalizationMethod {
 
 case object SAMLCanocalizationMethodExclusive extends SAMLCanocalizationMethod {
   val value = SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS
-  val name = "exclusive"
+  val name  = "exclusive"
 }
 
 case object SAMLCanocalizationMethodExclusiveWithComments extends SAMLCanocalizationMethod {
   val value = SignatureConstants.ALGO_ID_C14N_WITH_COMMENTS
-  val name = "with_comments"
+  val name  = "with_comments"
 }
 
 object SAMLCanocalizationMethod {
 
-  val Exclusive = SAMLCanocalizationMethodExclusive
+  val Exclusive             = SAMLCanocalizationMethodExclusive
   val ExclusiveWithComments = SAMLCanocalizationMethodExclusiveWithComments
 
   def apply(name: String): Option[SAMLCanocalizationMethod] = {

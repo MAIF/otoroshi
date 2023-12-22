@@ -202,8 +202,10 @@ class Env(
   lazy val customLogo: Option[String] = configuration.getOptionalWithFileSupport[String]("app.instance.logo")
 
   lazy val elSettings: ElSettings = ElSettings(
-    allowEnvAccess = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowEnvAccess").getOrElse(true),
-    allowConfigAccess = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true),
+    allowEnvAccess =
+      configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowEnvAccess").getOrElse(true),
+    allowConfigAccess =
+      configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true)
   )
 
   lazy val devMimetypes: Map[String, String] = configuration
@@ -831,11 +833,12 @@ class Env(
       .map(v => v.split(",").map(_.trim).toSeq)
       .getOrElse(Seq.empty)
 
-  val blacklistedPlugins: Set[String] = (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
-    configuration
-      .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
-      .map(v => v.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)).toSet
+  val blacklistedPlugins: Set[String] =
+    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
+      configuration
+        .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
+        .map(v => v.split(",").map(_.trim).toSeq)
+        .getOrElse(Seq.empty)).toSet
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")

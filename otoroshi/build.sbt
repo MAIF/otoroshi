@@ -240,66 +240,68 @@ mainClass in assembly := Some("play.core.server.ProdServerStart")
 test in assembly := {}
 assemblyJarName in assembly := "otoroshi.jar"
 fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
-assembly / assemblyMergeStrategy  := { e => e match {
-  case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
-  case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
-  case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
-  case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
-  case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
-  case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
-  case PathList(
-        "org",
-        "apache",
-        "maven",
-        "surefire",
-        "shade",
-        "org",
-        "apache",
-        "maven",
-        "shared",
-        "utils",
-        "StringUtils.class"
-      ) =>
-    MergeStrategy.first
-  case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
-  case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
-  case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
-  case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("plugin.proto")               =>
-    MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
-  case PathList(ps @ _*) if ps.contains("descriptor.proto")           =>
-    MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
-  case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("GuardedBy.class")            => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("nowarn$.class")              => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("nowarn.class")               => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("reflection-config.json")     => MergeStrategy.first // ???
-  case PathList(ps @ _*) if ps.contains("metadata.json")              => MergeStrategy.first // ??? hope webauthn comes first
-  case PathList(ps @ _*) if ps.contains("version.conf")               => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("any.proto")                  => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("api.proto")                  => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("duration.proto")             => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("empty.proto")                => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("struct.proto")               => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("type.proto")                 => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("timestamp.proto")            => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("wrappers.proto")             => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
-  case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
-  case path if path.contains("akka/stream")                           => MergeStrategy.first
-  case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
-  case PathList("javax", xs @ _*)                                     => MergeStrategy.first
-  case x                                                              =>
-    val oldStrategy = (assembly / assemblyMergeStrategy).value
-    oldStrategy(x)
-}}
+assembly / assemblyMergeStrategy := { e =>
+  e match {
+    case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
+    case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
+    case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
+    case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
+    case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
+    case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
+    case PathList(
+          "org",
+          "apache",
+          "maven",
+          "surefire",
+          "shade",
+          "org",
+          "apache",
+          "maven",
+          "shared",
+          "utils",
+          "StringUtils.class"
+        ) =>
+      MergeStrategy.first
+    case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
+    case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
+    case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
+    case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
+    case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("plugin.proto")               =>
+      MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+    case PathList(ps @ _*) if ps.contains("descriptor.proto")           =>
+      MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+    case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("GuardedBy.class")            => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("nowarn$.class")              => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("nowarn.class")               => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("reflection-config.json")     => MergeStrategy.first // ???
+    case PathList(ps @ _*) if ps.contains("metadata.json")              => MergeStrategy.first // ??? hope webauthn comes first
+    case PathList(ps @ _*) if ps.contains("version.conf")               => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("any.proto")                  => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("api.proto")                  => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("duration.proto")             => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("empty.proto")                => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("struct.proto")               => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("type.proto")                 => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("timestamp.proto")            => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("wrappers.proto")             => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
+    case path if path.contains("akka/stream")                           => MergeStrategy.first
+    case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
+    case PathList("javax", xs @ _*)                                     => MergeStrategy.first
+    case x                                                              =>
+      val oldStrategy = (assembly / assemblyMergeStrategy).value
+      oldStrategy(x)
+  }
+}
 
 lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {

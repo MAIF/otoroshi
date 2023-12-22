@@ -26,12 +26,5 @@ export default {
       type: 'string',
     },
   },
-  config_flow: [
-    "per_route",
-    "global",
-    "group",
-    "expression",
-    "daily_quota",
-    "monthly_quota",
-  ],
+  config_flow: ['per_route', 'global', 'group', 'expression', 'daily_quota', 'monthly_quota'],
 };

@@ -824,14 +824,16 @@ export class Table extends Component {
                     onClick={this.exportJson}
                     type="button"
                     className="btn btn-primary"
-                    title="Export as json">
+                    title="Export as json"
+                  >
                     <i className="fas fa-file-export" /> JSON
                   </button>
                   <button
                     onClick={this.exportYaml}
                     type="button"
                     className="btn btn-primary"
-                    title="Export as yaml">
+                    title="Export as yaml"
+                  >
                     <i className="fas fa-file-export" /> YAML
                   </button>
                 </>

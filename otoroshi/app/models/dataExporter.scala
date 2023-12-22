@@ -25,9 +25,7 @@ trait Exporter {
 case object NoneExporter extends Exporter {
   def toJson: JsValue = JsNull
 }
-object Exporter {
-
-}
+object Exporter {}
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
@@ -313,23 +311,23 @@ case object DataExporterConfigTypeOtlpMetrics extends DataExporterConfigType {
 
 object DataExporterConfigType {
 
-  val Kafka = DataExporterConfigTypeKafka
-  val Pulsar = DataExporterConfigTypePulsar
-  val Elastic = DataExporterConfigTypeElastic
-  val Webhook = DataExporterConfigTypeWebhook
-  val File = DataExporterConfigTypeFile
-  val GoReplayFile = DataExporterConfigTypeGoReplayFile
-  val GoReplayS3 = DataExporterConfigTypeGoReplayS3
-  val S3File = DataExporterConfigTypeS3File
-  val Mailer = DataExporterConfigTypeMailer
-  val Custom = DataExporterConfigTypeCustom
-  val Console = DataExporterConfigTypeConsole
-  val Metrics = DataExporterConfigTypeMetrics
+  val Kafka         = DataExporterConfigTypeKafka
+  val Pulsar        = DataExporterConfigTypePulsar
+  val Elastic       = DataExporterConfigTypeElastic
+  val Webhook       = DataExporterConfigTypeWebhook
+  val File          = DataExporterConfigTypeFile
+  val GoReplayFile  = DataExporterConfigTypeGoReplayFile
+  val GoReplayS3    = DataExporterConfigTypeGoReplayS3
+  val S3File        = DataExporterConfigTypeS3File
+  val Mailer        = DataExporterConfigTypeMailer
+  val Custom        = DataExporterConfigTypeCustom
+  val Console       = DataExporterConfigTypeConsole
+  val Metrics       = DataExporterConfigTypeMetrics
   val CustomMetrics = DataExporterConfigTypeCustomMetrics
-  val Wasm = DataExporterConfigTypeWasm
-  val OtlpMetrics = DataExporterConfigTypeOtlpMetrics
-  val OtlpLogs = DataExporterConfigTypeOtlpLogs
-  val None = DataExporterConfigTypeNone
+  val Wasm          = DataExporterConfigTypeWasm
+  val OtlpMetrics   = DataExporterConfigTypeOtlpMetrics
+  val OtlpLogs      = DataExporterConfigTypeOtlpLogs
+  val None          = DataExporterConfigTypeNone
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {

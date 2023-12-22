@@ -310,12 +310,12 @@ class NgServiceQuotas extends NgAccessValidator {
 }
 
 case class NgCustomQuotasConfig(
-  dailyQuota: Long = RemainingQuotas.MaxValue,
-  monthlyQuota: Long = RemainingQuotas.MaxValue,
-  perRoute: Boolean = true,
-  global: Boolean = false,
-  group: Option[String] = None,
-  expression: String = "${req.ip}",
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue,
+    perRoute: Boolean = true,
+    global: Boolean = false,
+    group: Option[String] = None,
+    expression: String = "${req.ip}"
 ) extends NgPluginConfig {
   override def json: JsValue = NgCustomQuotasConfig.format.writes(this)
   def computeExpression(ctx: NgAccessContext, env: Env): String = {
@@ -328,24 +328,25 @@ case class NgCustomQuotasConfig(
       user = ctx.user,
       context = Map.empty,
       attrs = ctx.attrs,
-      env = env,
+      env = env
     )
   }
   def computeGroup(ctx: NgAccessContext, env: Env): String = {
     group match {
-      case Some(g) => GlobalExpressionLanguage.apply(
-        value = g,
-        req = ctx.request.some,
-        service = None,
-        route = ctx.route.some,
-        apiKey = ctx.apikey,
-        user = ctx.user,
-        context = Map.empty,
-        attrs = ctx.attrs,
-        env = env,
-      )
+      case Some(g)          =>
+        GlobalExpressionLanguage.apply(
+          value = g,
+          req = ctx.request.some,
+          service = None,
+          route = ctx.route.some,
+          apiKey = ctx.apikey,
+          user = ctx.user,
+          context = Map.empty,
+          attrs = ctx.attrs,
+          env = env
+        )
       case None if perRoute => ctx.route.id
-      case _ => "global"
+      case _                => "global"
     }
   }
 }
@@ -353,11 +354,11 @@ case class NgCustomQuotasConfig(
 object NgCustomQuotasConfig {
   val format = new Format[NgCustomQuotasConfig] {
     override def writes(o: NgCustomQuotasConfig): JsValue             = Json.obj(
-      "per_route" -> o.perRoute,
-      "global" -> o.global,
-      "group" -> o.group.map(JsString.apply).getOrElse(JsNull).asValue,
-      "expression" -> o.expression,
-      "daily_quota" -> o.dailyQuota,
+      "per_route"     -> o.perRoute,
+      "global"        -> o.global,
+      "group"         -> o.group.map(JsString.apply).getOrElse(JsNull).asValue,
+      "expression"    -> o.expression,
+      "daily_quota"   -> o.dailyQuota,
       "monthly_quota" -> o.monthlyQuota
     )
     override def reads(json: JsValue): JsResult[NgCustomQuotasConfig] = Try {
@@ -385,22 +386,23 @@ object NgCustomQuotas {
     s"${env.storageRoot}:plugins:custom-quotas:${group}:monthly:$name"
 
   def updateQuotas(expr: String, group: String, increment: Long = 1L)(implicit
-                                                                                                    ec: ExecutionContext,
-                                                                                                    env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
-    val dayEnd = DateTime.now().secondOfDay().withMaximumValue()
-    val toDayEnd = dayEnd.getMillis - DateTime.now().getMillis
-    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     for {
-      dailyCalls <- env.datastores.rawDataStore.incrby(dailyQuotaKey(expr, group), increment)
-      dailyTtl <- env.datastores.rawDataStore.pttl(dailyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(dailyQuotaKey(expr, group), toDayEnd.toInt)
-      }
+      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(expr, group), increment)
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(expr, group), toDayEnd.toInt)
+                      }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(expr, group), increment)
-      monthlyTtl <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(monthlyQuotaKey(expr, group), toMonthEnd.toInt)
-      }
+      monthlyTtl   <-
+        env.datastores.rawDataStore.pttl(monthlyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
+          env.datastores.rawDataStore.pexpire(monthlyQuotaKey(expr, group), toMonthEnd.toInt)
+        }
     } yield ()
   }
 }
@@ -408,7 +410,8 @@ object NgCustomQuotas {
 class NgCustomQuotas extends NgAccessValidator {
 
   override def name: String                                = "Custom quotas"
-  override def description: Option[String]                 = "This plugin will enforce quotas on the current route based on whatever you want".some
+  override def description: Option[String]                 =
+    "This plugin will enforce quotas on the current route based on whatever you want".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCustomQuotasConfig().some
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -417,18 +420,18 @@ class NgCustomQuotas extends NgAccessValidator {
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig, increment: Long = 1L)(implicit
-                                                                                               ec: ExecutionContext,
-                                                                                               env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
     val group = qconf.computeGroup(ctx, env)
-    val expr = qconf.computeExpression(ctx, env)
+    val expr  = qconf.computeExpression(ctx, env)
     env.clusterAgent.incrementCustomQuota(expr, group, increment)
     NgCustomQuotas.updateQuotas(expr, group, increment)
   }
 
   private def withingQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     for {
       day <- withinDailyQuota(ctx, qconf)
@@ -437,8 +440,8 @@ class NgCustomQuotas extends NgAccessValidator {
   }
 
   private def withinDailyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-                                                                             ec: ExecutionContext,
-                                                                             env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomQuotas.dailyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
@@ -446,8 +449,8 @@ class NgCustomQuotas extends NgAccessValidator {
   }
 
   private def withinMonthlyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-                                                                               ec: ExecutionContext,
-                                                                               env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomQuotas.monthlyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
@@ -480,11 +483,11 @@ class NgCustomQuotas extends NgAccessValidator {
 }
 
 case class NgCustomThrottlingConfig(
-  throttlingQuota: Long = 100L,
-  perRoute: Boolean = true,
-  global: Boolean = false,
-  group: Option[String] = None,
-  expression: String = "${req.ip}",
+    throttlingQuota: Long = 100L,
+    perRoute: Boolean = true,
+    global: Boolean = false,
+    group: Option[String] = None,
+    expression: String = "${req.ip}"
 ) extends NgPluginConfig {
   override def json: JsValue = NgCustomThrottlingConfig.format.writes(this)
   def computeExpression(ctx: NgAccessContext, env: Env): String = {
@@ -497,24 +500,25 @@ case class NgCustomThrottlingConfig(
       user = ctx.user,
       context = Map.empty,
       attrs = ctx.attrs,
-      env = env,
+      env = env
     )
   }
   def computeGroup(ctx: NgAccessContext, env: Env): String = {
     group match {
-      case Some(g) => GlobalExpressionLanguage.apply(
-        value = g,
-        req = ctx.request.some,
-        service = None,
-        route = ctx.route.some,
-        apiKey = ctx.apikey,
-        user = ctx.user,
-        context = Map.empty,
-        attrs = ctx.attrs,
-        env = env,
-      )
+      case Some(g)          =>
+        GlobalExpressionLanguage.apply(
+          value = g,
+          req = ctx.request.some,
+          service = None,
+          route = ctx.route.some,
+          apiKey = ctx.apikey,
+          user = ctx.user,
+          context = Map.empty,
+          attrs = ctx.attrs,
+          env = env
+        )
       case None if perRoute => ctx.route.id
-      case _ => "global"
+      case _                => "global"
     }
   }
 }
@@ -522,11 +526,11 @@ case class NgCustomThrottlingConfig(
 object NgCustomThrottlingConfig {
   val format = new Format[NgCustomThrottlingConfig] {
     override def writes(o: NgCustomThrottlingConfig): JsValue             = Json.obj(
-      "per_route" -> o.perRoute,
-      "global" -> o.global,
-      "group" -> o.group.map(JsString.apply).getOrElse(JsNull).asValue,
-      "expression" -> o.expression,
-      "throttling_quota" -> o.throttlingQuota,
+      "per_route"        -> o.perRoute,
+      "global"           -> o.global,
+      "group"            -> o.group.map(JsString.apply).getOrElse(JsNull).asValue,
+      "expression"       -> o.expression,
+      "throttling_quota" -> o.throttlingQuota
     )
     override def reads(json: JsValue): JsResult[NgCustomThrottlingConfig] = Try {
       NgCustomThrottlingConfig(
@@ -534,7 +538,7 @@ object NgCustomThrottlingConfig {
         global = json.select("global").asOpt[Boolean].getOrElse(false),
         group = json.select("group").asOpt[String],
         expression = json.select("expression").asOpt[String].getOrElse("${req.ip}"),
-        throttlingQuota = json.select("throttling_quota").asOpt[Long].getOrElse(100L),
+        throttlingQuota = json.select("throttling_quota").asOpt[Long].getOrElse(100L)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -549,14 +553,14 @@ object NgCustomThrottling {
     s"${env.storageRoot}:plugins:custom-throttling:${group}:second:$name"
 
   def updateQuotas(expr: String, group: String, increment: Long = 1L)(implicit
-                                                                                                        ec: ExecutionContext,
-                                                                                                        env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
     for {
       secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(expr, group), increment)
-      secTtl <- env.datastores.rawDataStore.pttl(throttlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), env.throttlingWindow * 1000)
-      }
+      secTtl   <- env.datastores.rawDataStore.pttl(throttlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
+                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), env.throttlingWindow * 1000)
+                  }
     } yield ()
   }
 }
@@ -564,7 +568,8 @@ object NgCustomThrottling {
 class NgCustomThrottling extends NgAccessValidator {
 
   override def name: String                                = "Custom throttling"
-  override def description: Option[String]                 = "This plugin will enforce throttling on the current route based on whatever you want".some
+  override def description: Option[String]                 =
+    "This plugin will enforce throttling on the current route based on whatever you want".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCustomThrottlingConfig().some
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -573,19 +578,19 @@ class NgCustomThrottling extends NgAccessValidator {
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomThrottlingConfig, increment: Long = 1L)(implicit
-                                                                                                    ec: ExecutionContext,
-                                                                                                    env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
     val group = qconf.computeGroup(ctx, env)
-    val expr = qconf.computeExpression(ctx, env)
+    val expr  = qconf.computeExpression(ctx, env)
     env.clusterAgent.incrementCustomThrottling(expr, group, increment)
     NgCustomThrottling.updateQuotas(expr, group, increment)
   }
 
   private def withingQuotas(
-                                     ctx: NgAccessContext,
-                                     qconf: NgCustomThrottlingConfig
-                                   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+      ctx: NgAccessContext,
+      qconf: NgCustomThrottlingConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomThrottling.throttlingKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))

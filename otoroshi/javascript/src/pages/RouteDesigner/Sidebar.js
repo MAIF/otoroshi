@@ -65,20 +65,19 @@ const LINKS = (entity, route) =>
   ].filter((link) => !link.enabled || link.enabled.includes(entity));
 
 export default ({ route }) => {
-
   const entity = useEntityFromURI();
   const location = useLocation();
   const { openedSidebar } = useContext(SidebarContext);
 
   const currentTab = location.pathname.split('/').slice(-1)[0];
   const isActive = (tab) => {
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(window.location.search);
     const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
     const queryTab = params.get('tab');
     // console.log(currentTab, tab, onTryIt, queryTab)
 
     if (onTryIt) {
-      return onTryIt === tab ? 'active' : ''
+      return onTryIt === tab ? 'active' : '';
     } else {
       return currentTab === tab || queryTab === tab ? 'active' : '';
     }
@@ -94,12 +93,12 @@ export default ({ route }) => {
       }}
     >
       <ul className="nav flex-column nav-sidebar">
-        <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key='Routes'>
+        <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="Routes">
           <Link
             to={`/routes`}
             {...createTooltip(`routes - All your routes`)}
-            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''
-              } m-0`}>
+            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}
+          >
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className={`fas fa-road`} />
             </div>
@@ -130,18 +129,22 @@ export default ({ route }) => {
           //               visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),
           .map((item) => {
             const to = `/${entity.link}/${route.id}?tab=${item.id}`;
-            const tab = "" // todo
-            return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
-              <Link
-                to={to}
-                className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}>
-                <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                  <i className={`fas ${item.icon}`} />
-                </div>
-                <div className="title"> {openedSidebar ? item.label : ''}</div>
-              </Link>
-            </li>
+            const tab = ''; // todo
+            return (
+              <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
+                <Link
+                  to={to}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                    openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
+                >
+                  <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                    <i className={`fas ${item.icon}`} />
+                  </div>
+                  <div className="title"> {openedSidebar ? item.label : ''}</div>
+                </Link>
+              </li>
+            );
           })}
       </ul>
     </div>

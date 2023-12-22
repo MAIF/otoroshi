@@ -5,7 +5,7 @@ import { DynamicTitle } from '../components/DynamicTitle';
 
 export class HomePage extends Component {
   componentDidMount() {
-    DynamicTitle.setContent(undefined)
+    DynamicTitle.setContent(undefined);
   }
 
   render() {

@@ -1114,23 +1114,23 @@ object CustomHeadersAuthConstraints {
 }
 
 case class OtoBearerConstraints(
-  enabled: Boolean = true,
-  headerName: Option[String] = None,
-  queryName: Option[String] = None,
-  cookieName: Option[String] = None
+    enabled: Boolean = true,
+    headerName: Option[String] = None,
+    queryName: Option[String] = None,
+    cookieName: Option[String] = None
 ) {
   def json: JsValue =
     Json.obj(
-      "enabled" -> enabled,
+      "enabled"    -> enabled,
       "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
 
 object OtoBearerConstraints {
   val format = new Format[OtoBearerConstraints] {
-    override def writes(o: OtoBearerConstraints): JsValue = o.json
+    override def writes(o: OtoBearerConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[OtoBearerConstraints] =
       Try {
         JsSuccess(
@@ -1156,7 +1156,7 @@ case class JwtAuthConstraints(
     headerName: Option[String] = None,
     queryName: Option[String] = None,
     cookieName: Option[String] = None
-)                                   {
+)                         {
   def json: JsValue =
     Json.obj(
       "enabled"                  -> enabled,
@@ -1169,7 +1169,7 @@ case class JwtAuthConstraints(
       "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
-object JwtAuthConstraints           {
+object JwtAuthConstraints {
   val format = new Format[JwtAuthConstraints] {
     override def writes(o: JwtAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[JwtAuthConstraints] =
@@ -1276,7 +1276,7 @@ case class ApiKeyConstraints(
     Json.obj(
       "basicAuth"         -> basicAuth.json,
       "customHeadersAuth" -> customHeadersAuth.json,
-      "otoBearerAuth" -> otoBearerAuth.json,
+      "otoBearerAuth"     -> otoBearerAuth.json,
       "clientIdAuth"      -> clientIdAuth.json,
       "jwtAuth"           -> jwtAuth.json,
       "routing"           -> routing.json
@@ -1312,21 +1312,21 @@ sealed trait SecComVersion {
 }
 
 object SecComVersionV1 extends SecComVersion {
-  def str: String = "V1"
-  def version: Int = 1
+  def str: String   = "V1"
+  def version: Int  = 1
   def json: JsValue = JsString(str)
 }
 object SecComVersionV2 extends SecComVersion {
-  def str: String = "V2"
-  def version: Int = 2
+  def str: String   = "V2"
+  def version: Int  = 2
   def json: JsValue = JsString(str)
 }
-object SecComVersion       {
+object SecComVersion {
 
   val V1 = SecComVersionV1
   val V2 = SecComVersionV2
 
-  def apply(version: Int): Option[SecComVersion] =
+  def apply(version: Int): Option[SecComVersion]    =
     version match {
       case 1 => Some(V1)
       case 2 => Some(V2)
@@ -1354,7 +1354,7 @@ object SecComInfoTokenVersionLegacy extends SecComInfoTokenVersion {
 object SecComInfoTokenVersionLatest extends SecComInfoTokenVersion {
   def version: String = "Latest"
 }
-object SecComInfoTokenVersion       {
+object SecComInfoTokenVersion {
 
   val Legacy = SecComInfoTokenVersionLegacy
   val Latest = SecComInfoTokenVersionLatest

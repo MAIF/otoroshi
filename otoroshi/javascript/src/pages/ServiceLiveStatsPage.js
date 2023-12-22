@@ -45,8 +45,7 @@ export class ServiceLiveStatsPage extends Component {
   }
 
   componentWillUnmount() {
-    if (this.props.setSidebarContent)
-      this.props.setSidebarContent(null)
+    if (this.props.setSidebarContent) this.props.setSidebarContent(null);
   }
 
   render() {

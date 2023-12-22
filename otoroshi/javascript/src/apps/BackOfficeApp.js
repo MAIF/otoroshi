@@ -287,15 +287,16 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)'/*, overflow: 'hidden'*/ }}>
+          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}>
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
-                    } sidebar-toggle`}
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -455,7 +456,12 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path={['/routes/:routeId', '/routes', '/route-compositions/:routeId', '/route-compositions']}
+                          path={[
+                            '/routes/:routeId',
+                            '/routes',
+                            '/route-compositions/:routeId',
+                            '/route-compositions',
+                          ]}
                           component={(props) => (
                             <RouteDesignerPage
                               globalEnv={this.state.env}

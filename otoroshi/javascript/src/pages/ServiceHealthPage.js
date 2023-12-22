@@ -31,8 +31,7 @@ export class ServiceHealthPage extends Component {
   };
 
   componentWillUnmount() {
-    if (this.props.setSidebarContent)
-      this.props.setSidebarContent(null)
+    if (this.props.setSidebarContent) this.props.setSidebarContent(null);
   }
 
   componentDidMount() {
@@ -161,7 +160,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-            length
+              length
           );
         }, 0);
 

@@ -83,18 +83,18 @@ sealed trait ClientAuth {
   def toAkkaClientAuth: TLSClientAuth
 }
 case object ClientAuthNone extends ClientAuth {
-  def name: String = "None"
+  def name: String                    = "None"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
 }
 case object ClientAuthWant extends ClientAuth {
-  def name: String = "Want"
+  def name: String                    = "Want"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
 }
 case object ClientAuthNeed extends ClientAuth {
-  def name: String = "Need"
+  def name: String                    = "Need"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
 }
-object ClientAuth       {
+object ClientAuth {
 
   val None = ClientAuthNone
   val Want = ClientAuthWant

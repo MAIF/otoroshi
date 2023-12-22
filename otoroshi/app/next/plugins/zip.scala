@@ -21,19 +21,31 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
 import scala.util._
 
-case class ZipFileBackendConfig(url: String, headers: Map[String, String], dir: String, prefix: Option[String], ttl: Long) extends NgPluginConfig {
+case class ZipFileBackendConfig(
+    url: String,
+    headers: Map[String, String],
+    dir: String,
+    prefix: Option[String],
+    ttl: Long
+) extends NgPluginConfig {
   def json: JsValue = ZipFileBackendConfig.format.writes(this)
 }
 
 object ZipFileBackendConfig {
-  val default = ZipFileBackendConfig("https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip", Map.empty, "./zips", None, 1.hour.toMillis)
-  val format = new Format[ZipFileBackendConfig] {
+  val default = ZipFileBackendConfig(
+    "https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip",
+    Map.empty,
+    "./zips",
+    None,
+    1.hour.toMillis
+  )
+  val format  = new Format[ZipFileBackendConfig] {
     override def writes(o: ZipFileBackendConfig): JsValue = Json.obj(
-      "url" -> o.url,
+      "url"     -> o.url,
       "headers" -> o.headers,
-      "dir" -> o.dir,
-      "prefix" -> o.prefix,
-      "ttl" -> o.ttl,
+      "dir"     -> o.dir,
+      "prefix"  -> o.prefix,
+      "ttl"     -> o.ttl
     )
     override def reads(json: JsValue): JsResult[ZipFileBackendConfig] = {
       Try {
@@ -42,7 +54,7 @@ object ZipFileBackendConfig {
           headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
           dir = json.select("dir").asOpt[String].getOrElse(ZipFileBackendConfig.default.dir),
           prefix = json.select("prefix").asOpt[String].filter(_.nonEmpty),
-          ttl = json.select("ttl").asOpt[Long].getOrElse(ZipFileBackendConfig.default.ttl),
+          ttl = json.select("ttl").asOpt[Long].getOrElse(ZipFileBackendConfig.default.ttl)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -54,35 +66,37 @@ object ZipFileBackendConfig {
 
 class ZipFileBackend extends NgBackendCall {
 
-  override def useDelegates: Boolean = true
-  override def multiInstance: Boolean = true
+  override def useDelegates: Boolean                       = true
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = Some(ZipFileBackendConfig.default)
-  override def core: Boolean = false
-  override def name: String = "Zip file backend"
-  override def description: Option[String] = "Serves content from a zip file".some
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
+  override def core: Boolean                               = false
+  override def name: String                                = "Zip file backend"
+  override def description: Option[String]                 = "Serves content from a zip file".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
 
   private val fileCache = new TrieMap[String, (Long, Promise[String])]()
 
-  private def getZipFile(config: ZipFileBackendConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
+  private def getZipFile(
+      config: ZipFileBackendConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
     val url = config.url
     if (url.startsWith("file://")) {
       Right(new ZipFile(url.replace("file://", ""))).vfuture
     } else {
-      val dir = new File(config.dir)
+      val dir      = new File(config.dir)
       if (!dir.exists()) {
         dir.mkdirs()
       }
       val filename = s"${config.dir}/${url.sha256}.zip"
       fileCache.get(filename) match {
-        case Some((at, fu)) if (at + config.ttl < System.currentTimeMillis()) => {
+        case Some((at, fu)) if at + config.ttl < System.currentTimeMillis() => {
           new File(filename).delete()
           getZipFile(config)
         }
-        case Some((_, fu)) => fu.future.map(s => Right(new ZipFile(s)))
-        case None => {
+        case Some((_, fu))                                                  => fu.future.map(s => Right(new ZipFile(s)))
+        case None                                                           => {
           val file = new File(filename)
           if (!file.exists()) {
             fileCache.put(filename, (System.currentTimeMillis(), Promise[String]()))
@@ -106,14 +120,18 @@ class ZipFileBackend extends NgBackendCall {
     }
   }
 
-  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(implicit env: Env): Option[(String, Source[ByteString, _])] = {
-    var path = if (_path == "/") "index.html" else {
-      if (_path.startsWith("/")) {
-        _path.substring(1)
-      } else {
-        _path
+  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(implicit
+      env: Env
+  ): Option[(String, Source[ByteString, _])] = {
+    var path =
+      if (_path == "/") "index.html"
+      else {
+        if (_path.startsWith("/")) {
+          _path.substring(1)
+        } else {
+          _path
+        }
       }
-    }
     if (path.endsWith("/")) {
       path = path + "index.html"
     }
@@ -127,14 +145,14 @@ class ZipFileBackend extends NgBackendCall {
       if (entry.isDirectory) {
         None
       } else {
-        val uriPath = Uri.apply(path).path
+        val uriPath  = Uri.apply(path).path
         val filename = if (uriPath.length < 2) {
           uriPath.toString()
         } else {
           uriPath.tail.reverse.head.toString
         }
         if (filename.contains(".")) {
-          val ext = filename.split("\\.").toSeq.last
+          val ext              = filename.split("\\.").toSeq.last
           val mimeType: String = env.devMimetypes.getOrElse(ext, "text/plain")
           Some((mimeType, StreamConverters.fromInputStream(() => zip.getInputStream(entry))))
         } else {
@@ -144,39 +162,61 @@ class ZipFileBackend extends NgBackendCall {
     }
   }
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(ZipFileBackendConfig.format).getOrElse(ZipFileBackendConfig.default)
-    getZipFile(config.copy(url = GlobalExpressionLanguage.apply(
-      value = config.url,
-      req = ctx.rawRequest.some,
-      service = None,
-      route = ctx.route.some,
-      apiKey = ctx.apikey,
-      user = ctx.user,
-      context = Map.empty,
-      attrs = ctx.attrs,
-      env = env,
-    ))).map {
-      case Left(msg) => Left(NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> msg))))
+    getZipFile(
+      config.copy(url =
+        GlobalExpressionLanguage.apply(
+          value = config.url,
+          req = ctx.rawRequest.some,
+          service = None,
+          route = ctx.route.some,
+          apiKey = ctx.apikey,
+          user = ctx.user,
+          context = Map.empty,
+          attrs = ctx.attrs,
+          env = env
+        )
+      )
+    ).map {
+      case Left(msg)      =>
+        Left(NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> msg))))
       case Right(zipfile) => {
         val path = ctx.request.path
         atPath(path, zipfile, config) match {
           case Some((contentType, body)) => {
-            Right(BackendCallResponse(NgPluginHttpResponse(
-              200,
-              Map("Content-Type" -> contentType, "Transfer-Encoding" -> "chunked"),
-              Seq.empty,
-              body
-            ), None))
+            Right(
+              BackendCallResponse(
+                NgPluginHttpResponse(
+                  200,
+                  Map("Content-Type" -> contentType, "Transfer-Encoding" -> "chunked"),
+                  Seq.empty,
+                  body
+                ),
+                None
+              )
+            )
           }
-          case None => {
+          case None                      => {
             val body = "<h1>File not found !</h1>".byteString
-            Right(BackendCallResponse(NgPluginHttpResponse(
-              404,
-              Map("Content-Type" -> "text/html", "Content-Length" -> body.size.toString),
-              Seq.empty,
-              body.chunks(32 * 8)
-            ), None))
+            Right(
+              BackendCallResponse(
+                NgPluginHttpResponse(
+                  404,
+                  Map("Content-Type" -> "text/html", "Content-Length" -> body.size.toString),
+                  Seq.empty,
+                  body.chunks(32 * 8)
+                ),
+                None
+              )
+            )
           }
         }
       }

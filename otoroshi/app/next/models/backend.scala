@@ -34,7 +34,7 @@ case class NgCustomTimeouts(
   )
 }
 
-object NgCustomTimeouts {
+object NgCustomTimeouts         {
   val format                                               = new Format[NgCustomTimeouts] {
     override def reads(json: JsValue): JsResult[NgCustomTimeouts] = {
       Try {
@@ -74,31 +74,31 @@ object NgCustomTimeouts {
 sealed trait NgOverflowStrategy {
   def toAkka: OverflowStrategy
 }
-case object DropHeadNgOverflowStrategy extends NgOverflowStrategy {
+case object DropHeadNgOverflowStrategy     extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropHead
 }
-case object DropTailNgOverflowStrategy extends NgOverflowStrategy {
+case object DropTailNgOverflowStrategy     extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropTail
 }
-case object DropBufferNgOverflowStrategy extends NgOverflowStrategy {
+case object DropBufferNgOverflowStrategy   extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropBuffer
 }
-case object DropNewNgOverflowStrategy extends NgOverflowStrategy {
+case object DropNewNgOverflowStrategy      extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropNew
 }
 case object BackpressureNgOverflowStrategy extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.backpressure
 }
-case object FailNgOverflowStrategy extends NgOverflowStrategy {
+case object FailNgOverflowStrategy         extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.fail
 }
 object NgOverflowStrategy {
-  val dropHead: NgOverflowStrategy = DropHeadNgOverflowStrategy
-  val dropTail: NgOverflowStrategy = DropTailNgOverflowStrategy
-  val dropBuffer: NgOverflowStrategy = DropBufferNgOverflowStrategy
-  val dropNew: NgOverflowStrategy = DropNewNgOverflowStrategy
+  val dropHead: NgOverflowStrategy     = DropHeadNgOverflowStrategy
+  val dropTail: NgOverflowStrategy     = DropTailNgOverflowStrategy
+  val dropBuffer: NgOverflowStrategy   = DropBufferNgOverflowStrategy
+  val dropNew: NgOverflowStrategy      = DropNewNgOverflowStrategy
   val backpressure: NgOverflowStrategy = BackpressureNgOverflowStrategy
-  val fail: NgOverflowStrategy = FailNgOverflowStrategy
+  val fail: NgOverflowStrategy         = FailNgOverflowStrategy
 }
 
 case class NgCacheConnectionSettings(

@@ -17,11 +17,11 @@ object IdGenerator {
 
   private[this] val LOWER_CASE_CHARACTERS =
     "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray.map(_.toString)
-  private[this] val CHARACTERS          =
+  private[this] val CHARACTERS            =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray.map(_.toString)
-  private[this] val EXTENDED_CHARACTERS =
+  private[this] val EXTENDED_CHARACTERS   =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*$%)([]!=+-_:/;.><&".toCharArray.map(_.toString)
-  private[this] val INIT_STRING         = for (i <- 0 to 15) yield Integer.toHexString(i)
+  private[this] val INIT_STRING           = for (i <- 0 to 15) yield Integer.toHexString(i)
 
   private[this] val minus         = 1288834974657L
   private[this] val counter       = new AtomicLong(-1L)
@@ -71,8 +71,8 @@ object IdGenerator {
 
   def token(size: Int): String                                = token(CHARACTERS, size)
   def token: String                                           = token(64)
-  def lowerCaseToken(size: Int): String = token(LOWER_CASE_CHARACTERS, size)
-  def lowerCaseToken: String = token(64)
+  def lowerCaseToken(size: Int): String                       = token(LOWER_CASE_CHARACTERS, size)
+  def lowerCaseToken: String                                  = token(64)
   def extendedToken(size: Int): String                        = token(EXTENDED_CHARACTERS, size)
   def extendedToken: String                                   = token(EXTENDED_CHARACTERS, 64)
   def namedToken(prefix: String, size: Int, env: Env): String = namedToken(prefix, size, env.env)

@@ -3157,16 +3157,18 @@ object ClusterLeaderUpdateMessage       {
           headersIn = item.select("hi").asOpt[Long].getOrElse(0L).atomic,
           headersOut = item.select("ho").asOpt[Long].getOrElse(0L).atomic
         ).some
-      case Some("custquots")   => CustomQuotasIncr(
-        expr = item.select("e").asString,
-        group = item.select("g").asString,
-        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
-      ).some
-      case Some("custthrot")   => CustomThrottlingIncr(
-        expr = item.select("e").asString,
-        group = item.select("g").asString,
-        calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
-      ).some
+      case Some("custquots") =>
+        CustomQuotasIncr(
+          expr = item.select("e").asString,
+          group = item.select("g").asString,
+          calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
+        ).some
+      case Some("custthrot") =>
+        CustomThrottlingIncr(
+          expr = item.select("e").asString,
+          group = item.select("g").asString,
+          calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
+        ).some
       case _                 => None
     }
   }
@@ -3270,9 +3272,9 @@ object ClusterLeaderUpdateMessage       {
 
     override def json: JsValue = Json.obj(
       "typ" -> "custthrot",
-      "e" -> expr,
-      "g" -> group,
-      "c" -> calls.get(),
+      "e"   -> expr,
+      "g"   -> group,
+      "c"   -> calls.get()
     )
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
@@ -3282,7 +3284,7 @@ object ClusterLeaderUpdateMessage       {
     }
 
     override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
-        env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
+      env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
     }
   }
 
@@ -3290,9 +3292,9 @@ object ClusterLeaderUpdateMessage       {
 
     override def json: JsValue = Json.obj(
       "typ" -> "custquots",
-      "e" -> expr,
-      "g" -> group,
-      "c" -> calls.get(),
+      "e"   -> expr,
+      "g"   -> group,
+      "c"   -> calls.get()
     )
 
     def increment(inc: Long): Long = calls.addAndGet(inc)

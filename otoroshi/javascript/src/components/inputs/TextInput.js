@@ -48,7 +48,17 @@ export class TextInput extends Component {
         <div className={this.props.flex ? 'col-sm-12' : 'col-sm-10'} style={{ display: 'flex' }}>
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
-              {this.props.prefix && <span className="input-group-text" onClick={this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>}
+              {this.props.prefix && (
+                <span
+                  className="input-group-text"
+                  onClick={
+                    this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined
+                  }
+                  style={this.props.prefixStyle || {}}
+                >
+                  {this.props.prefix}
+                </span>
+              )}
               <input
                 autoFocus={this.props.autoFocus}
                 type={this.props.type || 'text'}
@@ -61,7 +71,17 @@ export class TextInput extends Component {
                 onDrop={this.props.onDrop || this.onDrop}
                 onDragOver={(e) => e.preventDefault()}
               />
-              {this.props.suffix && <span className="input-group-text" onClick={this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined} style={this.props.suffixStyle || {}}>{this.props.suffix}</span>}
+              {this.props.suffix && (
+                <span
+                  className="input-group-text"
+                  onClick={
+                    this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined
+                  }
+                  style={this.props.suffixStyle || {}}
+                >
+                  {this.props.suffix}
+                </span>
+              )}
             </div>
           )}
           {!(this.props.prefix || this.props.suffix) && (
@@ -291,7 +311,17 @@ export class VerticalTextInput extends Component {
           <div>
             {(this.props.prefix || this.props.suffix) && (
               <div className="input-group">
-                {this.props.prefix && <span className="input-group-text" onClick={this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>}
+                {this.props.prefix && (
+                  <span
+                    className="input-group-text"
+                    onClick={
+                      this.props.prefixCb ? () => this.props.prefixCb(this.props.value) : undefined
+                    }
+                    style={this.props.prefixStyle || {}}
+                  >
+                    {this.props.prefix}
+                  </span>
+                )}
                 <input
                   type={this.props.type || 'text'}
                   className="form-control"
@@ -303,7 +333,17 @@ export class VerticalTextInput extends Component {
                   onDrop={this.props.onDrop || this.onDrop}
                   onDragOver={(e) => e.preventDefault()}
                 />
-                {this.props.prefix && <span className="input-group-text" onClick={this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined} style={this.props.prefixStyle || {}}>{this.props.prefix}</span>}
+                {this.props.prefix && (
+                  <span
+                    className="input-group-text"
+                    onClick={
+                      this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined
+                    }
+                    style={this.props.prefixStyle || {}}
+                  >
+                    {this.props.prefix}
+                  </span>
+                )}
               </div>
             )}
             {!(this.props.prefix || this.props.suffix) && (

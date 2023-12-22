@@ -7,8 +7,8 @@ import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
 import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
-import isString from 'lodash/isString'
-import isObject from 'lodash/isObject'
+import isString from 'lodash/isString';
+import isObject from 'lodash/isObject';
 
 const addShortcutButton = true;
 
@@ -126,7 +126,8 @@ export function DefaultSidebar(props) {
 
   const { openedSidebar } = sidebarContext;
 
-  const onRouteTab = window.location.pathname.startsWith('/bo/dashboard/routes/') ||
+  const onRouteTab =
+    window.location.pathname.startsWith('/bo/dashboard/routes/') ||
     window.location.pathname.startsWith('/bo/dashboard/route-compositions/');
 
   const links = graph(props.env);
@@ -168,45 +169,48 @@ export function DefaultSidebar(props) {
               writeStorage(shortcuts.filter((f) => f));
             }
           }, 50); // delay to avoid simple click
-        }}>
+        }}
+      >
+        {openedSidebar && !onRouteTab && shortcuts.length > 0 && (
+          <p className="sidebar-title">Shortcuts</p>
+        )}
 
-        {openedSidebar && !onRouteTab && shortcuts.length > 0 && <p className="sidebar-title">Shortcuts</p>}
-
-        {!onRouteTab && shortcuts
-          .map((shortcut) => {
-            if (isObject(shortcut)) {
-              shortcut.link = shortcut.link || shortcut.path;
-              shortcut.icon = shortcut.icon || (() => 'fa-star');
-              shortcut.custom = true;
-              return shortcut;
-            } else {
-              return features.find((feat) => feat.title.includes(shortcut));
-            }
-          })
-          .filter((s) => s)
-          .map((shortcut, initialIndex) => {
-            return (
-              <SidebarLink
-                key={shortcut.title}
-                dragging={
-                  draggingIndex === initialIndex
-                    ? {
-                      clientY: client.clientY - start.clientY,
-                    }
-                    : undefined
-                }
-                startDragging={(clientY) => {
-                  setStart({ clientY });
-                  setDraggingIndex(initialIndex);
-                }}
-                removeShortcut={() => removeShortcut(shortcut)}
-                rootClassName={rootClassName}
-                openedSidebar={openedSidebar}
-                clearSidebar={clearSidebar}
-                {...shortcut}
-              />
-            );
-          })}
+        {!onRouteTab &&
+          shortcuts
+            .map((shortcut) => {
+              if (isObject(shortcut)) {
+                shortcut.link = shortcut.link || shortcut.path;
+                shortcut.icon = shortcut.icon || (() => 'fa-star');
+                shortcut.custom = true;
+                return shortcut;
+              } else {
+                return features.find((feat) => feat.title.includes(shortcut));
+              }
+            })
+            .filter((s) => s)
+            .map((shortcut, initialIndex) => {
+              return (
+                <SidebarLink
+                  key={shortcut.title}
+                  dragging={
+                    draggingIndex === initialIndex
+                      ? {
+                          clientY: client.clientY - start.clientY,
+                        }
+                      : undefined
+                  }
+                  startDragging={(clientY) => {
+                    setStart({ clientY });
+                    setDraggingIndex(initialIndex);
+                  }}
+                  removeShortcut={() => removeShortcut(shortcut)}
+                  rootClassName={rootClassName}
+                  openedSidebar={openedSidebar}
+                  clearSidebar={clearSidebar}
+                  {...shortcut}
+                />
+              );
+            })}
       </ul>
       {openedSidebar && !onRouteTab && (
         <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
@@ -336,7 +340,7 @@ function Block({
               if (link.indexOf('http') === 0) {
                 const iconTitle = description ? `${title} - ${description}` : title;
                 return (
-                  <a  
+                  <a
                     href={link}
                     target="_blank"
                     key={title}
@@ -483,7 +487,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''}`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',

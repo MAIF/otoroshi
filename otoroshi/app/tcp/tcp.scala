@@ -192,8 +192,8 @@ case object TlsModePassThrough extends TlsMode {
 }
 object TlsMode {
 
-  val Disabled = TlsModeDisabled
-  val Enabled = TlsModeEnabled
+  val Disabled    = TlsModeDisabled
+  val Enabled     = TlsModeEnabled
   val PassThrough = TlsModePassThrough
 
   def apply(v: String): Option[TlsMode] =

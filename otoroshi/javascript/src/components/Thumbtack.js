@@ -1,13 +1,11 @@
-import React, { useContext } from "react";
-import { Button } from "./Button";
-import { SidebarContext } from "../apps/BackOfficeApp";
-import { graph } from "../pages/FeaturesPage";
+import React, { useContext } from 'react';
+import { Button } from './Button';
+import { SidebarContext } from '../apps/BackOfficeApp';
+import { graph } from '../pages/FeaturesPage';
 import _ from 'lodash';
 
 export default function Thumbtack({ env, getTitle, reloadEnv }) {
-
-  if (!env)
-    return null;
+  if (!env) return null;
 
   const { shortcuts } = useContext(SidebarContext);
 
@@ -76,38 +74,41 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
         });
       }
     });
-  }
+  };
 
   const uri = (window.location.pathname + window.location.search + window.location.hash).replace(
     '/bo/dashboard',
     ''
-  )
+  );
 
   let shortcutDisabled = !!shortcuts
     .filter((s) => _.isObject(s))
     .find((s) => {
-      return '/bo/dashboard' + s.link === uri || s.link === uri.replace('/bo/dashboard', '')
+      return '/bo/dashboard' + s.link === uri || s.link === uri.replace('/bo/dashboard', '');
     });
 
   if (!shortcutDisabled) {
     const feats = graph(env).flatMap((l) => l.features);
-    const found = feats.find((f) => '/bo/dashboard' + f.link === uri || f.link === uri.replace('/bo/dashboard', ''));
+    const found = feats.find(
+      (f) => '/bo/dashboard' + f.link === uri || f.link === uri.replace('/bo/dashboard', '')
+    );
 
     if (found) {
       shortcutDisabled = !!shortcuts.find((s) => s === found.title.toLowerCase());
     }
   }
 
-  if (shortcutDisabled)
-    return null;
+  if (shortcutDisabled) return null;
 
-  return <Button
-    type="quiet"
-    disabled={shortcutDisabled}
-    title="Add current page to sidebar shortcuts"
-    onClick={addShortcut}
-    className="ms-3 btn-sm align-self-center"
-  >
-    <i className="fas fa-thumbtack"></i>
-  </Button>
+  return (
+    <Button
+      type="quiet"
+      disabled={shortcutDisabled}
+      title="Add current page to sidebar shortcuts"
+      onClick={addShortcut}
+      className="ms-3 btn-sm align-self-center"
+    >
+      <i className="fas fa-thumbtack"></i>
+    </Button>
+  );
 }

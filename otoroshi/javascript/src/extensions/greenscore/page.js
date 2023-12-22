@@ -159,8 +159,9 @@ function FilterSelector({
             <div className="d-flex" style={{ gap: '.5rem' }}>
               <div
                 onClick={() => addToState('static')}
-                className={`d-flex align-items-center justify-content-center p-3 py-2 ${state && state !== 'dynamic' ? 'date-hover--selected' : ''
-                  }`}
+                className={`d-flex align-items-center justify-content-center p-3 py-2 ${
+                  state && state !== 'dynamic' ? 'date-hover--selected' : ''
+                }`}
                 style={{
                   flex: 1,
                   border: '1px solid var(--color-primary)',
@@ -173,8 +174,9 @@ function FilterSelector({
               </div>
               <div
                 onClick={() => addToState('dynamic')}
-                className={`d-flex align-items-center justify-content-center p-3 py-2 ${state && state !== 'static' ? 'date-hover--selected' : ''
-                  }`}
+                className={`d-flex align-items-center justify-content-center p-3 py-2 ${
+                  state && state !== 'static' ? 'date-hover--selected' : ''
+                }`}
                 style={{
                   flex: 1,
                   border: '1px solid var(--color-primary)',
@@ -364,8 +366,9 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                     <div
                       key={d.datetime}
                       onClick={() => setSelectedDate(d.datetime)}
-                      className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${selectedDate === d.datetime ? 'date-hover--selected' : ''
-                        }`}
+                      className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${
+                        selectedDate === d.datetime ? 'date-hover--selected' : ''
+                      }`}
                       style={{
                         border: '1px solid var(--color-primary)',
                         color: 'var(--text)',
@@ -459,11 +462,13 @@ export default class GreenScoreConfigsPage extends React.Component {
       });
     });
 
-    this.props.setTitle(() => <ManagerTitle
-      env={this.props.env}
-      reloadEnv={this.props.reloadEnv}
-      getTitle={this.props.getTitle}
-    />);
+    this.props.setTitle(() => (
+      <ManagerTitle
+        env={this.props.env}
+        reloadEnv={this.props.reloadEnv}
+        getTitle={this.props.getTitle}
+      />
+    ));
 
     document.getElementById('content-scroll-container').addEventListener('scroll', this.reveal);
 
@@ -771,11 +776,11 @@ export default class GreenScoreConfigsPage extends React.Component {
                             loading={loading}
                             letter={getLetter(
                               valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) /
-                              (valuesAtCurrentDate.length / 4)
+                                (valuesAtCurrentDate.length / 4)
                             )}
                             color={getColor(
                               valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) /
-                              (valuesAtCurrentDate.length / 4)
+                                (valuesAtCurrentDate.length / 4)
                             )}
                           />
 
@@ -853,7 +858,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                             letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
                             color={
                               Object.keys(GREEN_SCORE_GRADES)[
-                              Math.round((1 - scalingDynamicScore) * 5)
+                                Math.round((1 - scalingDynamicScore) * 5)
                               ]
                             }
                             dynamic
@@ -948,7 +953,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                                     Math.abs(
                                       (this.scaling(dynamicValues.raw[key], thresholds[key]) /
                                         thresholds[key]) *
-                                      5
+                                        5
                                     ) - 1;
                                   return (
                                     <GlobalScore
@@ -957,7 +962,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                                       loading={loading}
                                       color={
                                         Object.keys(GREEN_SCORE_GRADES)[
-                                        Math.round(scalingValue < 0 ? 0 : scalingValue)
+                                          Math.round(scalingValue < 0 ? 0 : scalingValue)
                                         ]
                                       }
                                       maxScore={thresholds[key]}

@@ -11,7 +11,7 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait OtoroshiAdminType  {
+trait OtoroshiAdminType {
   def name: String
   def json: JsValue = name.json
 }
@@ -25,7 +25,7 @@ case object OtoroshiAdminTypeWebAuthnAdmin extends OtoroshiAdminType {
 }
 object OtoroshiAdminType {
 
-  val SimpleAdmin = OtoroshiAdminTypeSimpleAdmin
+  val SimpleAdmin   = OtoroshiAdminTypeSimpleAdmin
   val WebAuthnAdmin = OtoroshiAdminTypeWebAuthnAdmin
 
   def fromJson(jsValue: JsValue): Option[OtoroshiAdminType] = {

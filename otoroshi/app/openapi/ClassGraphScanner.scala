@@ -134,10 +134,10 @@ class ClassGraphScanner {
     //if (dev) {
     //  scanAndGenerateSchema(scanResult)
     //} else {
-      readSchemaFromFiles(scanResult, env) match {
-        case Left(err)  => throw new RuntimeException(err)
-        case Right(oas) => oas
-      }
+    readSchemaFromFiles(scanResult, env) match {
+      case Left(err)  => throw new RuntimeException(err)
+      case Right(oas) => oas
+    }
     //}
   }
 }

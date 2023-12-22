@@ -118,7 +118,7 @@ sealed trait OAuth1Provider {
 case class OAuth1ProviderMethods(requestToken: String, accessToken: String)
 
 case object OAuth1ProviderPost extends OAuth1Provider {
-  val name = "post"
+  val name                           = "post"
   val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
     requestToken = "POST",
     accessToken = "POST"
@@ -126,7 +126,7 @@ case object OAuth1ProviderPost extends OAuth1Provider {
 }
 
 case object OAuth1ProviderGet extends OAuth1Provider {
-  val name = "get"
+  val name                           = "get"
   val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
     requestToken = "GET",
     accessToken = "GET"
@@ -136,7 +136,7 @@ case object OAuth1ProviderGet extends OAuth1Provider {
 object OAuth1Provider {
 
   val Post = OAuth1ProviderPost
-  val Get = OAuth1ProviderGet
+  val Get  = OAuth1ProviderGet
 
   def apply(value: String): OAuth1Provider = value match {
     case "post" => Post

@@ -22,11 +22,5 @@ export default {
       type: 'string',
     },
   },
-  config_flow: [
-    "per_route",
-    "global",
-    "group",
-    "expression",
-    "throttling_quota",
-  ],
+  config_flow: ['per_route', 'global', 'group', 'expression', 'throttling_quota'],
 };
