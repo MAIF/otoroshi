@@ -414,10 +414,6 @@ export class DangerZonePage extends Component {
   ];
 
   elasticConfigFormSchema = {
-    clusterUri: {
-      type: 'string',
-      props: { label: 'Cluster URI', placeholder: 'Elastic cluster URI' },
-    },
     uris: {
       type: 'array',
       props: { label: 'Cluster URIs', placeholder: 'Elastic cluster URI' },
@@ -1347,6 +1343,7 @@ export class DangerZonePage extends Component {
 
   updateState = (raw) => {
     const value = { ...raw };
+    delete value.elasticReadsConfig.clusterUri;
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
   };
 

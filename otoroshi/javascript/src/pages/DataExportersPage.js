@@ -535,7 +535,10 @@ export class NewExporterForm extends Component {
   };
 
   dataChange = (obj) => {
-    this.props.onChange({ ...this.props.value, ...obj });
+    delete obj.config.clusterUri;
+    const ns = { ...this.props.value, ...obj };
+    delete ns.config.clusterUri;
+    this.props.onChange(ns);
   };
 
   testMatchAndProject = () => {
@@ -810,10 +813,6 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.trustedCerts',
     ],
     schema: {
-      clusterUri: {
-        type: 'string',
-        props: { label: 'Cluster URI', placeholder: 'Elastic cluster URI' },
-      },
       uris: {
         type: 'array',
         props: { label: 'Cluster URIs', placeholder: 'Elastic cluster URI' },
