@@ -809,13 +809,42 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         if (hasFilters) {
           val reducedItems  = if (hasFilters) {
             val items: Seq[JsValue] = arr.value.filter { elem =>
-              filters.forall { case (key, value) =>
-                (elem \ key).as[JsValue] match {
-                  case JsString(v)     => v == value
-                  case JsBoolean(v)    => v == value.toBoolean
-                  case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.contains(JsString(value))
-                  case _               => false
+              filters.forall { 
+                case (key, value) if key.startsWith("$") && key.contains(".") => {
+                  elem.atPath(key).as[JsValue] match {
+                    case JsString(v)     => v == value
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
+                }
+                case (key, value) if key.contains(".") => {
+                  elem.at(key).as[JsValue] match {
+                    case JsString(v)     => v == value
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
+                }
+                case (key, value) if key.contains("/") => {
+                  elem.atPointer(key).as[JsValue] match {
+                    case JsString(v)     => v == value
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
+                }
+                case (key, value) => {
+                  (elem \ key).as[JsValue] match {
+                    case JsString(v)     => v == value
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
                 }
               }
             }
