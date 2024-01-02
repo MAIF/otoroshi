@@ -855,13 +855,48 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
 
 trait NgBackendCall extends NgNamedPlugin {
   def useDelegates: Boolean
-  def bodyResponse(
+  def sourceBodyResponse(
       status: Int,
       headers: Map[String, String],
       body: Source[ByteString, _]
   ): Either[NgProxyEngineError, BackendCallResponse] = {
+    val finalHeaders = headers.getIgnoreCase("Transfer-Encoding") match {
+      case None => headers.getIgnoreCase("Content-Length") match {
+        case None => headers ++ Map("Transfer-Encoding" -> s"chunked")
+        case Some(_) => headers ++ Map("Transfer-Encoding" -> s"chunked") - "Content-Length" - "content-length"
+      }
+      case Some(_) => headers
+    }
     BackendCallResponse(
-      NgPluginHttpResponse(status, headers, Seq.empty, body),
+      NgPluginHttpResponse(status, finalHeaders, Seq.empty, body),
+      None
+    ).right[NgProxyEngineError]
+  }
+  def inMemoryBodyResponse(
+    status: Int,
+    headers: Map[String, String],
+    body: ByteString
+  ): Either[NgProxyEngineError, BackendCallResponse] = {
+    val finalHeaders = headers.getIgnoreCase("Transfer-Encoding") match {
+      case None => headers.getIgnoreCase("Content-Length") match {
+        case None => headers ++ Map("Content-Length" -> s"${body.length}")
+        case Some(_) => headers
+      }
+      case Some(_) => headers
+    }
+    BackendCallResponse(
+      NgPluginHttpResponse(status, finalHeaders, Seq.empty, body.chunks(16 * 1024)),
+      None
+    ).right[NgProxyEngineError]
+  }
+
+  def emptyBodyResponse(
+    status: Int,
+    headers: Map[String, String],
+  ): Either[NgProxyEngineError, BackendCallResponse] = {
+    val finalHeaders = headers ++ Map("Content-Length" -> s"0")
+    BackendCallResponse(
+      NgPluginHttpResponse(status, finalHeaders, Seq.empty, Source.empty),
       None
     ).right[NgProxyEngineError]
   }

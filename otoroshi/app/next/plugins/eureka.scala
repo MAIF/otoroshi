@@ -157,14 +157,14 @@ class EurekaServerSink extends NgBackendCall {
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
 
   private def notFoundResponse() = {
-    bodyResponse(404, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+    emptyBodyResponse(404, Map("Content-Type" -> "application/json")).vfuture
   }
 
   private def successfulResponse(body: Seq[JsValue]) = {
-    bodyResponse(
+    inMemoryBodyResponse(
       200,
       Map("Content-Type" -> "application/xml"),
-      otoroshi.utils.xml.Xml.toXml(Json.obj("applications" -> body)).toString().byteString.singleSource
+      otoroshi.utils.xml.Xml.toXml(Json.obj("applications" -> body)).toString().byteString
     ).vfuture
   }
 
@@ -208,32 +208,31 @@ class EurekaServerSink extends NgBackendCall {
               )
               .flatMap { res =>
                 if (res) {
-                  bodyResponse(204, Map.empty, Source.empty).vfuture
+                  emptyBodyResponse(204, Map.empty).vfuture
                 } else {
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     400,
                     Map("Content-Type" -> "application/json"),
                     Json
                       .obj("error" -> "an error happened during registration of new app")
                       .stringify
                       .byteString
-                      .singleSource
                   ).vfuture
                 }
               }
           case None             =>
-            bodyResponse(
+            inMemoryBodyResponse(
               400,
               Map("Content-Type" -> "application/json"),
-              Json.obj("error" -> "missing instance id").stringify.byteString.singleSource
+              Json.obj("error" -> "missing instance id").stringify.byteString
             ).vfuture
         }
       }
     else
-      bodyResponse(
+      inMemoryBodyResponse(
         400,
         Map("Content-Type" -> "application/json"),
-        Json.obj("error" -> "missing body or invalid body").stringify.byteString.singleSource
+        Json.obj("error" -> "missing body or invalid body").stringify.byteString
       ).vfuture
   }
 
@@ -248,7 +247,7 @@ class EurekaServerSink extends NgBackendCall {
         if (instances.isEmpty)
           notFoundResponse()
         else
-          bodyResponse(
+          inMemoryBodyResponse(
             200,
             Map("Content-Type" -> "application/xml"),
             otoroshi.utils.xml.Xml
@@ -264,7 +263,6 @@ class EurekaServerSink extends NgBackendCall {
               )
               .toString()
               .byteString
-              .singleSource
           ).vfuture
       }
   }
@@ -278,13 +276,13 @@ class EurekaServerSink extends NgBackendCall {
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
       .flatMap {
         case Some(instance) =>
-          bodyResponse(
+          inMemoryBodyResponse(
             200,
             Map("Content-Type" -> "application/xml"),
-            otoroshi.utils.xml.Xml.toXml(instance.utf8String.parseJson).toString().byteString.singleSource
+            otoroshi.utils.xml.Xml.toXml(instance.utf8String.parseJson).toString().byteString
           ).vfuture
         case None           =>
-          bodyResponse(404, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+          emptyBodyResponse(404, Map("Content-Type" -> "application/json")).vfuture
       }
   }
 
@@ -297,12 +295,12 @@ class EurekaServerSink extends NgBackendCall {
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:*:$instanceId")
       .flatMap { instances =>
         if (instances.isEmpty)
-          bodyResponse(404, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+          emptyBodyResponse(404, Map("Content-Type" -> "application/json")).vfuture
         else
-          bodyResponse(
+          inMemoryBodyResponse(
             200,
             Map("Content-Type" -> "application/xml"),
-            otoroshi.utils.xml.Xml.toXml(instances.head.utf8String.parseJson).toString().byteString.singleSource
+            otoroshi.utils.xml.Xml.toXml(instances.head.utf8String.parseJson).toString().byteString
           ).vfuture
       }
   }
@@ -315,10 +313,10 @@ class EurekaServerSink extends NgBackendCall {
     env.datastores.rawDataStore
       .del(Seq(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId"))
       .flatMap { _ =>
-        bodyResponse(
+        inMemoryBodyResponse(
           200,
           Map("Content-Type" -> "application/json"),
-          Json.obj("deleted" -> "done").stringify.byteString.singleSource
+          Json.obj("deleted" -> "done").stringify.byteString
         ).vfuture
       }
   }
@@ -332,7 +330,7 @@ class EurekaServerSink extends NgBackendCall {
     env.datastores.rawDataStore
       .get(key)
       .flatMap {
-        case None    => bodyResponse(404, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+        case None    => emptyBodyResponse(404, Map("Content-Type" -> "application/json")).vfuture
         case Some(v) =>
           env.datastores.rawDataStore
             .set(
@@ -351,8 +349,8 @@ class EurekaServerSink extends NgBackendCall {
               (evictionTimeout * 1000).seconds.toMillis.some
             )
             .flatMap {
-              case true  => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.empty).vfuture
-              case false => bodyResponse(400, Map.empty, Source.empty).vfuture
+              case true  => emptyBodyResponse(200, Map("Content-Type" -> "application/json")).vfuture
+              case false => emptyBodyResponse(400, Map.empty).vfuture
             }
       }
   }
@@ -387,7 +385,7 @@ class EurekaServerSink extends NgBackendCall {
             )
             .flatMap {
               case true  =>
-                bodyResponse(200, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+                emptyBodyResponse(200, Map("Content-Type" -> "application/json")).vfuture
               case false =>
                 notFoundResponse()
             }
@@ -401,10 +399,10 @@ class EurekaServerSink extends NgBackendCall {
       mat: Materializer
   ) = {
     if (queryString.isEmpty)
-      bodyResponse(
+      inMemoryBodyResponse(
         400,
         Map("Content-Type" -> "application/json"),
-        Json.obj("error" -> "missing query string").stringify.byteString.singleSource
+        Json.obj("error" -> "missing query string").stringify.byteString
       ).vfuture
     else
       env.datastores.rawDataStore
@@ -435,7 +433,7 @@ class EurekaServerSink extends NgBackendCall {
               )
               .flatMap {
                 case true  =>
-                  bodyResponse(200, Map("Content-Type" -> "application/json"), Source.empty).vfuture
+                  emptyBodyResponse(200, Map("Content-Type" -> "application/json")).vfuture
                 case false =>
                   notFoundResponse()
               }

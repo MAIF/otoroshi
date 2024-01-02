@@ -74,7 +74,7 @@ class StaticResponse extends NgBackendCall {
       case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
       case str                              => str.byteString
     }
-    bodyResponse(config.status, config.headers, Source.single(body)).future
+    inMemoryBodyResponse(config.status, config.headers, body).future
   }
 }
 
@@ -336,14 +336,14 @@ class MockResponses extends NgBackendCall {
           case str if str.startsWith("Base64(") => replaceOn(str.substring(7).init).byteString.decodeBase64
           case str                              => replaceOn(str).byteString
         }
-        bodyResponse(response.status, response.headers, Source.single(body)).future
+        inMemoryBodyResponse(response.status, response.headers, body).future
       })
       .getOrElse {
         if (!config.passThrough)
-          bodyResponse(
+          inMemoryBodyResponse(
             404,
             Map("Content-Type" -> "application/json"),
-            Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)
+            Json.obj("error" -> "resource not found !").stringify.byteString
           ).future
         else
           delegates()
@@ -453,7 +453,8 @@ class NgErrorRewriter extends NgRequestTransformer {
         val response     = ctx.otoroshiResponse.copy(
           status = ctx.otoroshiResponse.status,
           headers = Map(
-            "content-type" -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html")
+            "content-type" -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html"),
+            "content-length" -> responseBody.length.toString
           ),
           cookies = Seq.empty,
           body = responseBody.byteString.chunks(16 * 1024)

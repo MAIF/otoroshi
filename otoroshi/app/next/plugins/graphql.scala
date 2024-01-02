@@ -174,29 +174,29 @@ class GraphQLQuery extends NgBackendCall {
           val partialBody = resp.json.atPath(config.responsePath.getOrElse("$")).asOpt[JsValue].getOrElse(JsNull)
           config.responseFilter match {
             case None         =>
-              bodyResponse(
+              inMemoryBodyResponse(
                 200,
                 Map("Content-Type" -> "application/json"),
-                partialBody.stringify.byteString.chunks(16 * 1024)
+                partialBody.stringify.byteString
               )
             case Some(filter) =>
               applyJq(partialBody, filter) match {
                 case Left(error) =>
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     500,
                     Map("Content-Type" -> "application/json"),
-                    error.stringify.byteString.chunks(16 * 1024)
+                    error.stringify.byteString
                   )
                 case Right(resp) =>
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     200,
                     Map("Content-Type" -> "application/json"),
-                    resp.stringify.byteString.chunks(16 * 1024)
+                    resp.stringify.byteString
                   )
               }
           }
         } else {
-          bodyResponse(resp.status, Map("Content-Type" -> resp.contentType), resp.bodyAsSource)
+          sourceBodyResponse(resp.status, Map("Content-Type" -> resp.contentType), resp.bodyAsSource)
         }
       }
   }
@@ -286,10 +286,10 @@ class GraphQLBackend extends NgBackendCall {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     QueryParser.parse(query) match {
       case Failure(error)    =>
-        bodyResponse(
+        inMemoryBodyResponse(
           200,
           Map("Content-Type" -> "application/json"),
-          Json.obj("error" -> error.getMessage).stringify.byteString.chunks(16 * 1024)
+          Json.obj("error" -> error.getMessage).stringify.byteString
         ).future
       case Success(queryAst) =>
         Executor
@@ -305,14 +305,14 @@ class GraphQLBackend extends NgBackendCall {
             )
           )
           .map { res =>
-            bodyResponse(
+            inMemoryBodyResponse(
               200,
               Map("Content-Type" -> "application/json"),
-              res.stringify.byteString.chunks(16 * 1024)
+              res.stringify.byteString
             )
           }
           .recoverWith { case e: Exception =>
-            bodyResponse(
+            inMemoryBodyResponse(
               200,
               Map("Content-Type" -> "application/json"),
               Json
@@ -328,7 +328,6 @@ class GraphQLBackend extends NgBackendCall {
                 )
                 .stringify
                 .byteString
-                .chunks(16 * 1024)
             ).future
           }
     }
@@ -1114,10 +1113,10 @@ class GraphQLBackend extends NgBackendCall {
   }
 
   def jsonResponse(status: Int, body: JsValue) =
-    bodyResponse(
+    inMemoryBodyResponse(
       status,
       Map("Content-Type" -> "application/json"),
-      Source.single(body.stringify.byteString)
+      body.stringify.byteString
     )
 
   def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(implicit
@@ -1391,16 +1390,16 @@ class GraphQLProxy extends NgBackendCall {
     val method = ctx.request.method
     val config = ctx.cachedConfig(internalName)(GraphQLProxyConfig.format).getOrElse(GraphQLProxyConfig.default)
     if (method != "POST") {
-      bodyResponse(
+      inMemoryBodyResponse(
         404,
         Map("Content-Type" -> "application/json"),
-        Json.obj("error" -> "resource not found").stringify.byteString.chunks(16 * 1024)
+        Json.obj("error" -> "resource not found").stringify.byteString
       ).vfuture
     } else if (path != config.path) {
-      bodyResponse(
+      inMemoryBodyResponse(
         404,
         Map("Content-Type" -> "application/json"),
-        Json.obj("error" -> "resource not found").stringify.byteString.chunks(16 * 1024)
+        Json.obj("error" -> "resource not found").stringify.byteString
       ).vfuture
     } else {
       val builder: ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
@@ -1412,13 +1411,13 @@ class GraphQLProxy extends NgBackendCall {
         val operationName = body.select("operationName").asOpt[String]
         if (operationName.contains("IntrospectionQuery")) {
           callBackendApi(bodyRaw, config).map { res =>
-            bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+            sourceBodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
           }
         } else {
           val query = body.select("query").asString
           getSchema(builder, config).flatMap {
             case Left(errors)  => {
-              bodyResponse(
+              inMemoryBodyResponse(
                 200,
                 Map("Content-Type" -> "application/json"),
                 Json
@@ -1432,13 +1431,12 @@ class GraphQLProxy extends NgBackendCall {
                   )
                   .stringify
                   .byteString
-                  .chunks(16 * 1024)
               ).vfuture
             }
             case Right(schema) => {
               executeGraphQLCall(schema, query, Json.obj(), config.maxDepth, config.maxComplexity).flatMap {
                 case Left(errors) => {
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     200,
                     Map("Content-Type" -> "application/json"),
                     Json
@@ -1448,7 +1446,6 @@ class GraphQLProxy extends NgBackendCall {
                       )
                       .stringify
                       .byteString
-                      .chunks(16 * 1024)
                   ).future
                 }
                 case Right(_)     => {
@@ -1465,7 +1462,7 @@ class GraphQLProxy extends NgBackendCall {
                         config.maxComplexity
                       ).map {
                         case Left(errors)    => {
-                          bodyResponse(
+                          inMemoryBodyResponse(
                             200,
                             Map("Content-Type" -> "application/json"),
                             Json
@@ -1475,19 +1472,18 @@ class GraphQLProxy extends NgBackendCall {
                               )
                               .stringify
                               .byteString
-                              .chunks(16 * 1024)
                           )
                         }
                         case Right(response) => {
-                          bodyResponse(
+                          inMemoryBodyResponse(
                             200,
                             Map("Content-Type" -> "application/json"),
-                            response.stringify.byteString.singleSource
+                            response.stringify.byteString
                           )
                         }
                       }
                     } else {
-                      bodyResponse(
+                      sourceBodyResponse(
                         res.status,
                         res.headers.mapValues(_.last),
                         res.bodyAsSource

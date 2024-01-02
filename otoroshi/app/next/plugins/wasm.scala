@@ -277,19 +277,19 @@ class WasmBackend extends NgBackendCall {
                   }
                 AttrsHelper.updateAttrs(ctx.attrs, response)
                 val body     = BodyHelper.extractBodyFrom(response)
-                bodyResponse(
+                inMemoryBodyResponse(
                   status = response.select("status").asOpt[Int].getOrElse(200),
                   headers = response
                     .select("headers")
                     .asOpt[Map[String, String]]
                     .getOrElse(Map("Content-Type" -> "application/json")),
-                  body = body.chunks(16 * 1024)
+                  body = body
                 )
               case Left(value)   =>
-                bodyResponse(
+                inMemoryBodyResponse(
                   status = 400,
                   headers = Map.empty,
-                  body = Json.stringify(value).byteString.chunks(16 * 1024)
+                  body = Json.stringify(value).byteString
                 )
             }.andThen { case _ =>
               vm.release()

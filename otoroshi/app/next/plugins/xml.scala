@@ -401,10 +401,10 @@ class SOAPAction extends NgBackendCall {
     }
     bodyF.flatMap {
       case Left(err)   =>
-        bodyResponse(
+        inMemoryBodyResponse(
           500,
           Map("Content-Type" -> "application/json"),
-          Source.single(Json.parse(err).stringify.byteString)
+          Json.parse(err).stringify.byteString
         ).future
       case Right(body) => {
         val soapEnvelop: String = el(config.envelope, body, ctx, env)
@@ -453,38 +453,38 @@ class SOAPAction extends NgBackendCall {
               transformResponseBody(jsonBody, config) match {
                 case Left(error)     =>
                   val rb = error.byteString
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     500,
                     headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
-                    Source.single(rb)
+                    rb
                   )
                 case Right(response) =>
                   val rb = response.byteString
-                  bodyResponse(
+                  inMemoryBodyResponse(
                     status,
                     headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
-                    Source.single(rb)
+                    rb
                   )
               }
             } else {
               val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
               if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
-                bodyResponse(
+                inMemoryBodyResponse(
                   400,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  Source.single(resp.body.byteString)
+                  resp.body.byteString
                 )
               } else if (resp.body.contains(":Fault>")) {
-                bodyResponse(
+                inMemoryBodyResponse(
                   500,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  Source.single(resp.body.byteString)
+                  resp.body.byteString
                 )
               } else {
-                bodyResponse(
+                inMemoryBodyResponse(
                   200,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  Source.single(resp.body.byteString)
+                  resp.body.byteString
                 )
               }
             }

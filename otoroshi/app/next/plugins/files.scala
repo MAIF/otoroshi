@@ -116,25 +116,25 @@ class StaticBackend extends NgBackendCall {
       val filePath      = fileUtils.normalize(askedFilePath, config.rootPath)
       fileCache.getIfPresent(filePath) match {
         case Some((contentType, content)) =>
-          bodyResponse(200, Map("Content-Type" -> contentType), Source(content.grouped(16 * 1024).toList)).vfuture
+          inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture
         case None                         => {
           val file = new File(filePath)
           if (!file.exists()) {
-            bodyResponse(
+            inMemoryBodyResponse(
               404,
               Map("Content-Type" -> "text/plain"),
-              Source.single("resource not found".byteString)
+              "resource not found".byteString
             ).vfuture
           } else {
             val content     = ByteString(Files.readAllBytes(Path.of(filePath)))
             val contentType = fileUtils.contentType(filePath)
             fileCache.put(filePath, (contentType, content))
-            bodyResponse(200, Map("Content-Type" -> contentType), Source(content.grouped(16 * 1024).toList)).vfuture
+            inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture
           }
         }
       }
     } else {
-      bodyResponse(405, Map("Content-Type" -> "text/plain"), Source.single("method not allowed".byteString)).vfuture
+      inMemoryBodyResponse(405, Map("Content-Type" -> "text/plain"), "method not allowed".byteString).vfuture
     }
   }
 }
@@ -256,26 +256,26 @@ class S3Backend extends NgBackendCall {
       normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
         fileCache.getIfPresent(cacheKey) match {
           case Some((om, content)) =>
-            bodyResponse(200, buildHeaders(om), Source(content.grouped(16 * 1024).toList)).vfuture
+            inMemoryBodyResponse(200, buildHeaders(om), content).vfuture
           case None                => {
             fileExists(filePath, config).flatMap {
               case false =>
-                bodyResponse(
+                inMemoryBodyResponse(
                   404,
                   Map("Content-Type" -> "text/plain"),
-                  Source.single("resource not found".byteString)
+                  "resource not found".byteString
                 ).vfuture
               case true  => {
                 fileContent(filePath, config).flatMap {
                   case None                =>
-                    bodyResponse(
+                    inMemoryBodyResponse(
                       404,
                       Map("Content-Type" -> "text/plain"),
-                      Source.single("resource not found".byteString)
+                      "resource not found".byteString
                     ).vfuture
                   case Some((om, content)) => {
                     fileCache.put(cacheKey, (om, content))
-                    bodyResponse(200, buildHeaders(om), Source(content.grouped(16 * 1024).toList)).vfuture
+                    inMemoryBodyResponse(200, buildHeaders(om), content).vfuture
                   }
                 }
               }
@@ -284,7 +284,7 @@ class S3Backend extends NgBackendCall {
         }
       }
     } else {
-      bodyResponse(405, Map("Content-Type" -> "text/plain"), Source.single("method not allowed".byteString)).vfuture
+      inMemoryBodyResponse(405, Map("Content-Type" -> "text/plain"), "method not allowed".byteString).vfuture
     }
   }
 }
