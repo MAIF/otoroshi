@@ -1456,7 +1456,7 @@ object KubernetesCRDsJob {
         if (useProxyState) env.proxyState.allNgServices().vfuture
         else env.datastores.routeCompositionDataStore.findAll()
       otobackends           <-
-        if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
+        if (useProxyState) env.proxyState.allStoredBackends().vfuture else env.datastores.backendsDataStore.findAll()
 
       otoextres <- env.adminExtensions
                      .resources()

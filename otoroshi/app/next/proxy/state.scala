@@ -33,6 +33,7 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .result()
 
+  private val globalConfigRef     = new AtomicReference[GlobalConfig]()
   private val raw_routes          = new UnboundedTrieMap[String, NgRoute]()
   private val apikeys             = new UnboundedTrieMap[String, ApiKey]()
   private val backends            = new UnboundedTrieMap[String, NgBackend]()
@@ -104,9 +105,11 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
+  def globalConfig(): Option[GlobalConfig]                          = Option(globalConfigRef.get())
   def wasmPlugin(id: String): Option[WasmPlugin]                    = wasmPlugins.get(id)
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
+  def storedBackend(id: String): Option[StoredNgBackend]            = ngbackends.get(id)
   def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
   def route(id: String): Option[NgRoute]                            = routes.get(id)
   def routeComposition(id: String): Option[NgRouteComposition]      = ngroutecompositions.get(id)
@@ -147,7 +150,8 @@ class NgProxyState(env: Env) {
   def allTcpServices(): Seq[TcpService]               = tcpServices.values.toSeq
 
   def allNgServices(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
-  def allBackends(): Seq[StoredNgBackend]      = ngbackends.values.toSeq
+  def allStoredBackends(): Seq[StoredNgBackend]    = ngbackends.values.toSeq
+  def allBackends(): Seq[NgBackend]    = backends.values.toSeq
 
   def updateRawRoutes(values: Seq[NgRoute]): Unit = {
     raw_routes
@@ -254,6 +258,10 @@ class NgProxyState(env: Env) {
     ngroutecompositions
       .addAll(values.map(v => (v.id, v)))
       .remAll(ngroutecompositions.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateGlobalConfig(gc: GlobalConfig): Unit = {
+    globalConfigRef.set(gc)
   }
 
   private val fakeRoutesCount = 10 //10000 // 300000
@@ -520,8 +528,8 @@ class NgProxyState(env: Env) {
   def sync()(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val ev  = env
     val start        = System.currentTimeMillis()
-    val config       = env.datastores.globalConfigDataStore
-      .latest()
+    val gc           = env.datastores.globalConfigDataStore.latest()
+    val config       = gc
       .plugins
       .config
       .select(ProxyEngine.configRoot)
@@ -595,6 +603,7 @@ class NgProxyState(env: Env) {
                              } else Seq.empty[NgRoute].vfuture
       _                   <- env.adminExtensions.syncStates()
     } yield {
+      env.proxyState.updateGlobalConfig(gc)
       env.proxyState.updateRawRoutes(routes)
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateBackends(backends)
