@@ -179,7 +179,8 @@ libraryDependencies ++= Seq(
   "fr.maif"                         %% "wasm4s"                                    % "2.4.0" classifier "bundle",
   "com.github.Opetushallitus"        % "scala-schema"                              % "2.23.0_2.12" excludeAll (
     ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
-    ExclusionRule("ch.qos.logback", "logback-classic"),
+    ExclusionRule("ch.qos.logback"),
+    ExclusionRule("org.slf4j"),
   ),
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
