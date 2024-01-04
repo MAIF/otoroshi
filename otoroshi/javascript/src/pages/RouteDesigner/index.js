@@ -108,8 +108,8 @@ function MoreActionsButton({ value, menu, history }) {
     const kind = e.target.value;
 
     if (kind === 'json') {
-      const entityKind = 'JwtVerifier';
       const what = window.location.pathname.split('/')[3];
+      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
       const itemName = entityKind
         ? entityKind.toLowerCase()
         : what === 'routes'
@@ -129,8 +129,8 @@ function MoreActionsButton({ value, menu, history }) {
       a.click();
       setTimeout(() => document.body.removeChild(a), 300);
     } else {
-      const entityKind = 'JwtVerifier';
       const what = window.location.pathname.split('/')[3];
+      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
       const itemName = entityKind
         ? entityKind.toLowerCase()
         : what === 'routes'

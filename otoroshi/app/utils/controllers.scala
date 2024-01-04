@@ -702,10 +702,10 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val rawBody        = ctx.request.body.asObject
     val dev            = if (env.isDev) "_dev" else ""
     val id             = rawBody
-      .select("client_id")
+      .select("id")
       .asOpt[String]
       .orElse(rawBody.select("clientId").asOpt[String])
-      .orElse(rawBody.select("id").asOpt[String])
+      .orElse(rawBody.select("client_id").asOpt[String])
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
     val body: JsObject = rawBody ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
     readAndValidateEntity(body, ctx.backOfficeUser) match {
