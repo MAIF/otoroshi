@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.models._
 import otoroshi.next.plugins.api._
 import otoroshi.next.utils.JsonHelpers
@@ -12,7 +13,7 @@ import otoroshi.script.PreRoutingError
 import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.Result
+import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
@@ -775,6 +776,126 @@ class ApikeyAuthModule extends NgPreRouting {
             }
         }
       case _                                       => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
+    }
+  }
+}
+
+case class NgApikeyMandatoryTagsConfig(tags: Seq[String] = Seq.empty) extends NgPluginConfig {
+  def json: JsValue = NgApikeyMandatoryTagsConfig.format.writes(this)
+}
+
+object NgApikeyMandatoryTagsConfig {
+  val format = new Format[NgApikeyMandatoryTagsConfig] {
+    override def writes(o: NgApikeyMandatoryTagsConfig): JsValue = Json.obj(
+      "tags" -> o.tags
+    )
+    override def reads(json: JsValue): JsResult[NgApikeyMandatoryTagsConfig] = Try {
+      NgApikeyMandatoryTagsConfig(
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
+
+class NgApikeyMandatoryTags extends NgAccessValidator {
+
+  override def name: String = "Apikey mandatory tags"
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyMandatoryTagsConfig().some
+  override def description: Option[String] =
+    "This plugin checks that if an apikey is provided, there is one or more tags on it".some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(NgApikeyMandatoryTagsConfig.format)
+      .getOrElse(NgApikeyMandatoryTagsConfig())
+    ctx.apikey match {
+      case None => NgAccess.NgAllowed.vfuture
+      case Some(apikey) => {
+        if (apikey.tags.containsAll(config.tags)) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          Errors
+            .craftResponseResult(
+              "forbidden",
+              Results.Forbidden,
+              ctx.request,
+              None,
+              Some("errors.no.matching.tags"),
+              duration = ctx.report.getDurationNow(),
+              overhead = ctx.report.getOverheadInNow(),
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => NgAccess.NgDenied(r))
+        }
+      }
+    }
+  }
+}
+
+case class NgApikeyMandatoryMetadataConfig(metadata: Map[String, String] = Map.empty) extends NgPluginConfig {
+  def json: JsValue = NgApikeyMandatoryMetadataConfig.format.writes(this)
+}
+
+object NgApikeyMandatoryMetadataConfig {
+  val format = new Format[NgApikeyMandatoryMetadataConfig] {
+    override def writes(o: NgApikeyMandatoryMetadataConfig): JsValue = Json.obj(
+      "metadata" -> o.metadata
+    )
+    override def reads(json: JsValue): JsResult[NgApikeyMandatoryMetadataConfig] = Try {
+      NgApikeyMandatoryMetadataConfig(
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+  }
+}
+
+class NgApikeyMandatoryMetadata extends NgAccessValidator {
+
+  override def name: String = "Apikey mandatory metadata"
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyMandatoryMetadataConfig().some
+  override def description: Option[String] =
+    "This plugin checks that if an apikey is provided, there is one or more metadata on it".some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(NgApikeyMandatoryMetadataConfig.format)
+      .getOrElse(NgApikeyMandatoryMetadataConfig())
+    ctx.apikey match {
+      case None => NgAccess.NgAllowed.vfuture
+      case Some(apikey) => {
+        if (apikey.metadata.containsAll(config.metadata)) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          Errors
+            .craftResponseResult(
+              "forbidden",
+              Results.Forbidden,
+              ctx.request,
+              None,
+              Some("errors.no.matching.metadata"),
+              duration = ctx.report.getDurationNow(),
+              overhead = ctx.report.getOverheadInNow(),
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => NgAccess.NgDenied(r))
+        }
+      }
     }
   }
 }

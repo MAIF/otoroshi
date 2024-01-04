@@ -87,6 +87,11 @@ import NgDiscoverySelfRegistrationTransformer from './NgDiscoverySelfRegistratio
 import NgDiscoveryTargetsSelector from './NgDiscoveryTargetsSelector';
 import NgDeferPlugin from './NgDeferPlugin';
 import NgClientCredentials from './NgClientCredentials';
+import NgApikeyMandatoryTags from './NgApikeyMandatoryTags';
+import NgApikeyMandatoryMetadata from './NgApikeyMandatoryMetadata';
+import NgExternalValidator from './NgExternalValidator';
+import NgGenericAllowedList from './NgGenericAllowedList';
+import NgGenericBlockList from './NgGenericBlockList';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
 import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
@@ -224,6 +229,11 @@ const pluginsArray = [
   NgDiscoveryTargetsSelector,
   NgDeferPlugin,
   NgClientCredentials,
+  NgApikeyMandatoryTags,
+  NgApikeyMandatoryMetadata,
+  NgExternalValidator,
+  NgGenericAllowedList,
+  NgGenericBlockList,
   OAuth1Caller,
   OAuth2Caller,
   OIDCAccessTokenAsApikey,

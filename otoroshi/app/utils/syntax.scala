@@ -119,6 +119,12 @@ object implicits {
     }
   }
 
+  implicit class BetterMapOf[K, V](val map: Map[K, V]) extends AnyVal {
+    def containsAll(elems: Map[K, V]): Boolean = {
+      elems.forall(e => map.contains(e._1) && map.get(e._1).contains(e._2))
+    }
+  }
+
   implicit class BetterMapOfStringString(val seq: Map[String, String]) extends AnyVal {
     @inline
     def appendOpt[A](opt: Option[A], f: A => (String, String)): Map[String, String] = {
@@ -644,6 +650,9 @@ object implicits {
     def getOrUpdate(k: String)(op: => B): B                                 = theMap.getOrElseUpdate(k, op)
   }
   implicit class BetterSeqOfA[A](val seq: Seq[A])                             extends AnyVal {
+    def containsAll(elems: Seq[A]): Boolean = {
+      elems.forall(e => seq.contains(e))
+    }
     def avgBy(f: A => Int): Double = {
       if (seq.isEmpty) 0.0
       else {

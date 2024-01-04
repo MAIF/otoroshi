@@ -292,7 +292,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
   def categories: Seq[NgPluginCategory]
   def tags: Seq[String]                              = Seq.empty
   def steps: Seq[NgStep]
-  def multiInstance: Boolean
+  def multiInstance: Boolean = true
   def defaultConfigObject: Option[NgPluginConfig]
   override final def defaultConfig: Option[JsObject] =
     defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))

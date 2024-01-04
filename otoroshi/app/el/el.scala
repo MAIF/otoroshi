@@ -145,6 +145,7 @@ object GlobalExpressionLanguage {
 
             case "req.fullUrl" if req.isDefined                                             =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
+            case "req.id" if req.isDefined                                                  => req.get.id.toString
             case "req.path" if req.isDefined                                                => req.get.path
             case "req.uri" if req.isDefined                                                 => req.get.relativeUri
             case "req.host" if req.isDefined                                                => req.get.theHost(env)
@@ -152,6 +153,7 @@ object GlobalExpressionLanguage {
             case "req.method" if req.isDefined                                              => req.get.method
             case "req.protocol" if req.isDefined                                            => req.get.theProtocol(env)
             case "req.ip" if req.isDefined                                                  => req.get.theIpAddress(env)
+            case "req.ip_address" if req.isDefined                                          => req.get.theIpAddress(env)
             case "req.secured" if req.isDefined                                             => req.get.theSecured(env).toString
             case "req.version" if req.isDefined                                             => req.get.version
             case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
