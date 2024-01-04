@@ -218,6 +218,9 @@
         color: var(--color_level2);
         padding: 12px;
         padding-bottom: 0;
+
+        display: flex;
+        margin-bottom: .5rem;
     }
 
     .input-group-append {
@@ -326,11 +329,12 @@
     .editor-view-informations {
         border-bottom: 1px solid var(--color-primary);
         border-right: 0;
+        border-radius: 0;
     }
 
     .editor-view-icon {
         color: var(--color-white);
-        border-bottom-left-radius: 0;
+        border-radius: 0;
     }
 
     .editor-view-text {

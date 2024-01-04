@@ -2310,7 +2310,7 @@ class EditView extends React.Component {
         id="form"
         onClick={(e) => e.stopPropagation()}
         className="plugins-stack editor-view"
-        style={{ top: offset }}
+        style={{ top: offset, left: 0 }}
       >
         <EditViewHeader
           icon={icon}
