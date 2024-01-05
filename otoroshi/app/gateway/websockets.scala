@@ -2,12 +2,12 @@ package otoroshi.gateway
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{BinaryMessage, InvalidUpgradeResponse, TextMessage, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
@@ -18,18 +18,16 @@ import otoroshi.events._
 import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
+import otoroshi.next.models.{NgPluginInstance, NgRoute}
+import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgTransformerRequestContext, NgWebsocketPlugin, NgWebsocketPluginContext}
+import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
+import otoroshi.next.utils.FEither
 import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
 import otoroshi.utils.UrlSanitizer
 import play.api.Logger
-import play.api.http.websocket.{
-  CloseMessage,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
@@ -588,6 +586,7 @@ class WebSocketHandler()(implicit env: Env) {
                       out,
                       httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
                       descriptor,
+                      None, // TODO - check if we can pass the current route
                       httpRequest.target.getOrElse(_target),
                       env
                     )
@@ -621,10 +620,11 @@ object WebSocketProxyActor {
       out: ActorRef,
       headers: Seq[(String, String)],
       descriptor: ServiceDescriptor,
+      route: Option[NgRoute],
       target: Target,
       env: Env
   ) =
-    Props(new WebSocketProxyActor(url, out, headers, descriptor, target, env))
+    Props(new WebSocketProxyActor(url, out, headers, descriptor, route, target, env))
 
   def wsCall(url: String, headers: Seq[(String, String)], descriptor: ServiceDescriptor, target: Target)(implicit
       env: Env,
@@ -743,6 +743,7 @@ class WebSocketProxyActor(
     out: ActorRef,
     headers: Seq[(String, String)],
     descriptor: ServiceDescriptor,
+    route: Option[NgRoute],
     target: Target,
     env: Env
 ) extends Actor {
@@ -751,6 +752,7 @@ class WebSocketProxyActor(
 
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
+  implicit val e = env
 
   lazy val source = Source.queue[akka.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
@@ -775,7 +777,7 @@ class WebSocketProxyActor(
             case Failure(e)   => List.empty
           }
         case (key, value) if key.toLowerCase == "host"       =>
-          Seq(akka.http.scaladsl.model.headers.Host(value))
+          Seq(akka.http.scaladsl.model.headers.Host(value.split(":").head))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>
@@ -864,28 +866,108 @@ class WebSocketProxyActor(
     // out ! PoisonPill
   }
 
-  def receive = {
-    case msg: PlayWSBinaryMessage     => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-    }
-    case msg: PlayWSTextMessage       => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
-    }
-    case msg: PingMessage             => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-    }
-    case msg: PongMessage             => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-    }
-    case CloseMessage(status, reason) => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
-      Option(queueRef.get()).foreach(_.complete())
-      // out ! PoisonPill
-    }
-    case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
+  def receive: Receive = {
+    case data: play.api.http.websocket.Message => new WebsocketEngine()
+      .handle(route.get, data)
+      .map(_ => data match {
+        case msg: PlayWSBinaryMessage     => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
+          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+        }
+        case msg: PlayWSTextMessage       => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
+          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
+        }
+        case msg: PingMessage             => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
+          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+        }
+        case msg: PongMessage             => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
+          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+        }
+        case CloseMessage(status, reason) => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
+          Option(queueRef.get()).foreach(_.complete())
+          // out ! PoisonPill
+        }
+        case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
+      })
   }
+}
+
+class WebsocketEngine {
+
+  def handle(route: NgRoute, data: play.api.http.websocket.Message)
+            (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
+    val (requestValidators, responseValidators) = route.plugins.slots
+        .filter(_.enabled)
+        // .filter(_.matches(request))
+        .map(inst => (inst, inst.getPlugin[NgWebsocketPlugin]))
+        .collect { case (inst, Some(plugin)) =>
+          NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+        }
+        .partition(_.plugin.onRequestFlow)
+
+    val _ctx = NgWebsocketPluginContext(
+      snowflake = "snowflake",
+      request = null,
+      //      rawRequest = rawRequest,
+      //      otoroshiRequest = otoroshiRequest,
+      //      apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+      //      user = attrs.get(otoroshi.plugins.Keys.UserKey),
+      route = route,
+      config = Json.obj(),
+      //      globalConfig = globalConfig.plugins.config,
+      attrs = null,
+      report = null,
+      //      sequence = sequence,
+      //      markPluginItem = markPluginItem
+    )
+
+    val promise = Promise[Either[NgProxyEngineError, Done]]()
+
+    def next(plugins: Seq[NgPluginWrapper[NgWebsocketPlugin]]): Unit = {
+      plugins.headOption match {
+        case None => promise.trySuccess(Right(Done))
+        case Some(wrapper) => {
+          val pluginConfig: JsValue = wrapper.plugin.defaultConfig
+            .map(dc => dc ++ wrapper.instance.config.raw)
+            .getOrElse(wrapper.instance.config.raw)
+          val ctx = _ctx.copy(
+            config = pluginConfig,
+            //            apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+            //            user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+            //            idx = wrapper.instance.instanceId
+          )
+
+          wrapper.plugin.access(ctx, data match {
+            case PlayWSTextMessage(data) => data
+            case PlayWSBinaryMessage(data) => data.utf8String
+            case CloseMessage(statusCode, reason) => ""
+            case PingMessage(data) => data.utf8String
+            case PongMessage(data) => data.utf8String
+          }).andThen {
+            case Failure(_) =>
+              promise.trySuccess(
+                Left(
+                  NgResultProxyEngineError(Results.InternalServerError)
+                )
+              )
+            case Success(NgAccess.NgDenied(result)) =>
+              promise.trySuccess(Left(NgResultProxyEngineError(result)))
+            case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
+              promise.trySuccess(Right(Done))
+            case Success(NgAccess.NgAllowed) =>
+              next(plugins.tail)
+          }
+        }
+      }
+    }
+
+    next(requestValidators)
+    FEither.apply(promise.future)
+  }
+
+
 }

@@ -19,6 +19,7 @@ import EurekaTarget from './EurekaTarget';
 import ExternalEurekaTarget from './ExternalEurekaTarget';
 import ForceHttpsTraffic from './ForceHttpsTraffic';
 import ForwardedHeader from './ForwardedHeader';
+import FrameFormatValidator from './FrameFormatValidator';
 import GlobalMaintenanceMode from './GlobalMaintenanceMode';
 import GlobalPerIpAddressThrottling from './GlobalPerIpAddressThrottling';
 import GlobalThrottling from './GlobalThrottling';
@@ -163,6 +164,7 @@ const pluginsArray = [
   ExternalEurekaTarget,
   ForceHttpsTraffic,
   ForwardedHeader,
+  FrameFormatValidator,
   GlobalMaintenanceMode,
   GlobalPerIpAddressThrottling,
   GlobalThrottling,

@@ -2699,6 +2699,7 @@ class ProxyEngine() extends RequestHandler {
                 out,
                 request.headers.toSeq,
                 route.serviceDescriptor,
+                route.some,
                 finalTarget,
                 env
               )

@@ -216,6 +216,7 @@ object NgPluginCategory {
   case object Wasm             extends NgPluginCategory { def name: String = "Wasm"             }
   case object Classic          extends NgPluginCategory { def name: String = "Classic"          }
   case object ServiceDiscovery extends NgPluginCategory { def name: String = "ServiceDiscovery" }
+  case object Websocket        extends NgPluginCategory { def name: String = "Websocket"        }
 
   val all = Seq(
     Classic,
@@ -233,7 +234,8 @@ object NgPluginCategory {
     TrafficControl,
     Transformations,
     Tunnel,
-    Wasm
+    Wasm,
+    Websocket
   )
 }
 
@@ -1229,4 +1231,33 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
     }
     next(plugins, plugins.size)
   }
+}
+
+case class NgWebsocketPluginContext(
+                            snowflake: String,
+                            config: JsValue,
+                            idx: Int = 0,
+                            request: RequestHeader,
+                            route: NgRoute,
+                            attrs: TypedMap,
+                            report: NgExecutionReport,
+                          ) extends NgCachedConfigContext {
+  def json: JsValue = Json.obj(
+    "config"        -> config
+  )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
+    (json.asObject ++ Json.obj(
+      "route" -> route.json
+    ))
+  }
+}
+
+trait NgWebsocketPlugin extends NgNamedPlugin {
+  def onRequestFlow: Boolean = true
+  def onResponseFlow: Boolean = true
+
+  def accessSync(ctx: NgWebsocketPluginContext, message: String)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
+
+  def access(ctx: NgWebsocketPluginContext, message: String)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx, message).vfuture
 }
