@@ -177,7 +177,7 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "2.4.0" classifier "bundle",
-  "com.github.Opetushallitus"        % "scala-schema"                              % "2.23.0_2.12" excludeAll (
+  "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
     ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
     ExclusionRule("ch.qos.logback"),
     ExclusionRule("org.slf4j"),
