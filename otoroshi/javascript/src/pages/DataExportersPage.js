@@ -535,9 +535,13 @@ export class NewExporterForm extends Component {
   };
 
   dataChange = (obj) => {
-    delete obj.config.clusterUri;
+    if (obj.config && obj.config.clusterUri) {
+      delete obj.config.clusterUri;
+    }
     const ns = { ...this.props.value, ...obj };
-    delete ns.config.clusterUri;
+    if (ns.config && ns.config.clusterUri) {
+      delete ns.config.clusterUri;
+    }
     this.props.onChange(ns);
   };
 
