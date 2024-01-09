@@ -634,7 +634,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
                 .Forbidden(
                   Json.obj(
                     "error"             -> "access_denied",
-                    "error_description" -> s"cslient has not been granted scopes: ${scope.get}"
+                    "error_description" -> s"client has not been granted scopes: ${scope.get}"
                   )
                 )
                 .future

@@ -26,9 +26,7 @@ object Implicits {
           " -._~!$'()*,;&=@:",
           "-"
         )
-        .replaceAll("--", "-")
-        .replaceAll("---", "-")
-        .replaceAll("----", "-")
+        .replaceAll("-+", "-")
         .toLowerCase
         .trim
     }
