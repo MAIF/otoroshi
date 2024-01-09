@@ -1866,6 +1866,7 @@ export class TopBar extends Component {
                             return (
                               <div
                                 style={{
+                                  cursor:'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
                                   padding: '.5rem',
