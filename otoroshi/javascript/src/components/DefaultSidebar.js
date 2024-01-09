@@ -133,7 +133,9 @@ export function DefaultSidebar(props) {
   const links = graph(props.env);
 
   const features = links.flatMap((l) =>
-    l.features.map((f) => ({ ...f, title: f.title.toLowerCase() }))
+    l.features
+      .map((f) => ({ ...f, title: f.title.toLowerCase() }))
+      .sort((a, b) => a.title.localeCompare(b.title))
   );
   return (
     <>
@@ -195,8 +197,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                          clientY: client.clientY - start.clientY,
-                        }
+                        clientY: client.clientY - start.clientY,
+                      }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -335,6 +337,7 @@ function Block({
         <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2 animOpacity">
           {features
             .filter((d) => d.display === undefined || d.display())
+            .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
             .map(({ title, link, icon }) => {
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
               if (link.indexOf('http') === 0) {
@@ -487,9 +490,8 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
-        openedSidebar ? 'nav-item--open' : ''
-      }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
+        }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',

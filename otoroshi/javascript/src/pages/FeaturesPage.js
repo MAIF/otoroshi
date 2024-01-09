@@ -496,6 +496,7 @@ export class FeaturesPage extends Component {
             <Features title={title} description={description} key={title}>
               {features
                 .filter((d) => d.display === undefined || d.display())
+                .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
                 .map(
                   ({
                     title = 'A module',
