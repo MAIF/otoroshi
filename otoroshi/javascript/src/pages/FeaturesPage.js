@@ -26,7 +26,7 @@ export const graph = (env) => {
           icon: () => snowmonkeyIcon,
         },
         {
-          title: 'Clever cloud apps',
+          title: 'Clever Cloud apps',
           img: 'clever',
           description: 'Create routes from Clever Cloud apps',
           display: () => env.userAdmin,

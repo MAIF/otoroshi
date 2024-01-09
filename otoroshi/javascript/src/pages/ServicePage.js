@@ -590,7 +590,7 @@ class CleverSelector extends Component {
           </button>
           <ReactSelectOverride
             style={{ width: 300, border: '1px solid #ccc' }}
-            placeholder="Select a target from CleverCloud"
+            placeholder="Select a target from Clever Cloud"
             value={this.state.value}
             options={this.state.services.map((s) => ({ label: s.name, value: s.url }))}
             onChange={(v) => this.onChange({ value: v })}
@@ -600,7 +600,7 @@ class CleverSelector extends Component {
     }
     return (
       <button type="button" className="btn btn-sm btn-success" onClick={this.show}>
-        <i className="fas fa-plus-circle" /> Select a target from CleverCloud
+        <i className="fas fa-plus-circle" /> Select a target from Clever Cloud
       </button>
     );
   }

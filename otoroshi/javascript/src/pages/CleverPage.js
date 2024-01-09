@@ -20,7 +20,7 @@ export class CleverPage extends Component {
       cell: (value) => (value ? <Link to={value}>View service</Link> : ''),
     },
     {
-      title: 'Clevercloud',
+      title: 'Clever Cloud',
       style: { textAlign: 'center', width: 100 },
       notFilterable: true,
       content: (item) => (item.exists ? item.console : ''),
@@ -67,7 +67,7 @@ export class CleverPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Clevercloud Apps`);
+    this.props.setTitle(`Clever Cloud Apps`);
   }
 
   createService = (e, slug) => {
@@ -91,7 +91,7 @@ export class CleverPage extends Component {
       <Table
         parentProps={this.props}
         selfUrl="clever"
-        defaultTitle="Clevercloud Apps"
+        defaultTitle="Clever Cloud Apps"
         defaultValue={() => ({})}
         itemName="user"
         columns={this.columns}

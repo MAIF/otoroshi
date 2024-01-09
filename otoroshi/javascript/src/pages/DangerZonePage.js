@@ -890,15 +890,15 @@ export class DangerZonePage extends Component {
     'cleverSettings.consumerKey': {
       type: 'string',
       props: {
-        label: 'CleverCloud consumer key',
-        placeholder: 'CleverCloud consumer key',
+        label: 'Clever Cloud consumer key',
+        placeholder: 'Clever Cloud consumer key',
       },
     },
     'cleverSettings.consumerSecret': {
       type: 'string',
       props: {
-        label: 'CleverCloud consumer secret',
-        placeholder: 'CleverCloud consumer secret',
+        label: 'Clever Cloud consumer secret',
+        placeholder: 'Clever Cloud consumer secret',
       },
     },
     'cleverSettings.token': {
@@ -918,8 +918,8 @@ export class DangerZonePage extends Component {
     'cleverSettings.orgaId': {
       type: 'string',
       props: {
-        label: 'CleverCloud orga. Id',
-        placeholder: 'CleverCloud orga. Id',
+        label: 'Clever Cloud orga. Id',
+        placeholder: 'Clever Cloud orga. Id',
       },
     },
     'statsdConfig.datadog': {

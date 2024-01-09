@@ -688,7 +688,7 @@ export class TopBar extends Component {
           value: 'Audit-Log',
         });
         options.push({
-          label: 'CleverCloud Apps',
+          label: 'Clever Cloud Apps',
           value: 'CleverCloud-Apps',
           env: <i className="fas fa-list-alt" />,
           action: () => this.routeTo('/clever'),
