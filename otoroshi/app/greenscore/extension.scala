@@ -272,6 +272,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
             classOf[GreenScoreEntity],
             id => datastores.greenscoresDatastore.key(id),
             c => datastores.greenscoresDatastore.extractId(c),
+            (json) => json.select("id").asString,
+            () => "id",
             stateAll = () => states.allGreenScores(),
             stateOne = id => states.greenScore(id),
             stateUpdate = values => states.updateGreenScores(values),

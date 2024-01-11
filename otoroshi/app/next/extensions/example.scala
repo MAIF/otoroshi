@@ -282,6 +282,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             classOf[Foo],
             id => datastores.fooDatastore.key(id),
             c => datastores.fooDatastore.extractId(c),
+            (json) => json.select("id").asString,
+            () => "id",
             stateAll = () => states.allFoos(),
             stateOne = id => states.foo(id),
             stateUpdate = values => states.updateFoos(values)
