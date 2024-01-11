@@ -819,10 +819,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private def extractIdSafe(entity: JsValue): Option[String] = {
     entity
-      .select("client_id")
+      .select("id")
       .asOpt[String]
+      .orElse(entity.select("client_id").asOpt[String])
       .orElse(entity.select("clientId").asOpt[String])
-      .orElse(entity.select("id").asOpt[String])
   }
 
   private def extractId(entity: JsValue): String = extractIdSafe(entity).get
@@ -1699,7 +1699,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       bodyIn(ctx.request) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(__body) => {
-          val _body = __body.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+          val _body = if (entity == "apikey" || entity == "apikeys") {
+            __body.asObject ++ Json.obj("clientId" -> id, "client_id" -> id)
+          } else {
+            __body.asObject ++ Json.obj("id" -> id)
+          }
           //resource.access.findOne(version, id).flatMap {
           //  case None                                                =>
           //    result(
@@ -1779,7 +1783,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       bodyIn(ctx.request) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(__body) => {
-          val _body = __body.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+          val _body = if (entity == "apikey" || entity == "apikeys") {
+            __body.asObject ++ Json.obj("clientId" -> id, "client_id" -> id)
+          } else {
+            __body.asObject ++ Json.obj("id" -> id)
+          }
           resource.access.findOne(version, id).flatMap {
             case None                                                =>
               result(
@@ -1850,7 +1858,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               ).vfuture
             case Some(current)                                   => {
               val _patchedBody = patchJson(body, current)
-              val patchedBody  = _patchedBody.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+              val patchedBody = if (entity == "apikey" || entity == "apikeys") {
+                _patchedBody.asObject ++ Json.obj("clientId" -> id, "client_id" -> id)
+              } else {
+                _patchedBody.asObject ++ Json.obj("id" -> id)
+              }
               resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
                 case JsError(errs)   =>
                   result(

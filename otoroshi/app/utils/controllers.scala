@@ -691,6 +691,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   import Results._
 
+  def isApikey: Boolean = false
+
   def env: Env
 
   def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
@@ -707,7 +709,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       .orElse(rawBody.select("clientId").asOpt[String])
       .orElse(rawBody.select("client_id").asOpt[String])
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
-    val body: JsObject = rawBody ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+    val body: JsObject = if (isApikey) {
+      rawBody ++ Json.obj("client_id" -> id, "clientId" -> id)
+    } else {
+      rawBody ++ Json.obj("id" -> id)
+    }
     readAndValidateEntity(body, ctx.backOfficeUser) match {
       case Left(e)                                    => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
       case Right(entity) if !ctx.canUserWrite(entity) =>
@@ -988,7 +994,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    val body = ctx.request.body.asObject ++ Json.obj("id" -> id, "client_id" -> id, "clientId" -> id)
+    val body: JsObject = if (isApikey) {
+      ctx.request.body.asObject ++ Json.obj("client_id" -> id, "clientId" -> id)
+    } else {
+      ctx.request.body.asObject ++ Json.obj("id" -> id)
+    }
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         =>
         Status(error.status)(
@@ -1062,11 +1072,16 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
           case Some(oldEntity)                                 => {
             val currentJson = writeEntity(oldEntity)
-            val newJson     = patchJson(ctx.request.body, currentJson).asObject ++ Json.obj(
-              "id"        -> id,
-              "client_id" -> id,
-              "clientId"  -> id
-            )
+            val newJson     = patchJson(ctx.request.body, currentJson).asObject ++ (if (isApikey) {
+              Json.obj(
+                "client_id" -> id,
+                "clientId"  -> id
+              )
+            } else {
+              Json.obj(
+                "id"        -> id
+              )
+            })
             readAndValidateEntity(newJson, ctx.backOfficeUser) match {
               case Left(e)                                          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
               case Right(newEntity) if !ctx.canUserWrite(newEntity) =>

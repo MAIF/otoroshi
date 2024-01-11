@@ -675,6 +675,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   lazy val logger = Logger("otoroshi-apikeys-api")
 
+  override def isApikey: Boolean = true
+
   override def singularName: String = "apikey"
 
   override def buildError(status: Int, message: String): ApiError[JsValue] =
