@@ -2,6 +2,7 @@ package otoroshi.wasm
 
 import akka.util.ByteString
 import com.sun.jna.Pointer
+import org.extism.sdk.ExtismCurrentPlugin
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
@@ -33,7 +34,7 @@ class ProxyWasmState(
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
   }
 
-  override def proxyLog(plugin: WasmOtoroshiInternal, logLevel: Int, messageData: Int, messageSize: Int): Result = {
+  override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result = {
     getMemory(plugin, messageData, messageSize)
       .fold(
         Error.toResult,
@@ -61,18 +62,18 @@ class ProxyWasmState(
       )
   }
 
-  override def proxyResumeStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyResumeStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_stream")
     null
   }
 
-  override def proxyCloseStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyCloseStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_close_stream")
     null
   }
 
   override def proxySendHttpResponse(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       responseCode: Int,
       responseCodeDetailsData: Int,
       responseCodeDetailsSize: Int,
@@ -108,17 +109,17 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def proxyResumeHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyResumeHttpStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_resume_http_stream")
     null
   }
 
-  override def proxyCloseHttpStream(plugin: WasmOtoroshiInternal, streamType: StreamType): Result = {
+  override def proxyCloseHttpStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {
     traceVmHost("proxy_close_http_stream")
     null
   }
 
-  override def getBuffer(plugin: WasmOtoroshiInternal, data: VmData, bufferType: BufferType): IoBuffer = {
+  override def getBuffer(plugin: ExtismCurrentPlugin, data: VmData, bufferType: BufferType): IoBuffer = {
     bufferType match {
       case BufferTypeHttpRequestBody      =>
         getHttpRequestBody(plugin, data)
@@ -142,7 +143,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetBuffer(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -178,7 +179,7 @@ class ProxyWasmState(
   }
 
   override def proxySetBuffer(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       bufferType: Int,
       offset: Int,
@@ -213,7 +214,7 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def getMap(plugin: WasmOtoroshiInternal, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
+  override def getMap(plugin: ExtismCurrentPlugin, vmData: VmData, mapType: MapType): Map[String, ByteString] = {
     mapType match {
       case MapTypeHttpRequestHeaders       => getHttpRequestHeader(plugin, vmData)
       case MapTypeHttpRequestTrailers      => getHttpRequestTrailer(plugin, vmData)
@@ -230,13 +231,13 @@ class ProxyWasmState(
 
   def copyMapIntoInstance(
       m: Map[String, String],
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       returnMapData: Int,
       returnMapSize: Int
   ): Unit = unimplementedFunction("copyMapIntoInstance")
 
   override def proxyGetHeaderMapPairs(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       mapType: Int,
       returnDataPtr: Int,
@@ -312,7 +313,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetHeaderMapValue(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -346,7 +347,7 @@ class ProxyWasmState(
   }
 
   override def proxyReplaceHeaderMapValue(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       mapType: Int,
       keyData: Int,
@@ -386,7 +387,7 @@ class ProxyWasmState(
   }
 
   override def proxyOpenSharedKvstore(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       kvstoreNameData: Int,
       kvstoreNameSiz: Int,
       createIfNotExist: Int,
@@ -394,7 +395,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenSharedKvstore")
 
   override def proxyGetSharedKvstoreKeyValues(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -404,7 +405,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyGetSharedKvstoreKeyValues")
 
   override def proxySetSharedKvstoreKeyValues(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -414,7 +415,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxySetSharedKvstoreKeyValues")
 
   override def proxyAddSharedKvstoreKeyValues(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
@@ -424,19 +425,19 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyAddSharedKvstoreKeyValues")
 
   override def proxyRemoveSharedKvstoreKey(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       kvstoreID: Int,
       keyData: Int,
       keySize: Int,
       cas: Int
   ): Result = unimplementedFunction("proxyRemoveSharedKvstoreKey")
 
-  override def proxyDeleteSharedKvstore(plugin: WasmOtoroshiInternal, kvstoreID: Int): Result = unimplementedFunction(
+  override def proxyDeleteSharedKvstore(plugin: ExtismCurrentPlugin, kvstoreID: Int): Result = unimplementedFunction(
     "proxyDeleteSharedKvstore"
   )
 
   override def proxyOpenSharedQueue(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       queueNameData: Int,
       queueNameSize: Int,
       createIfNotExist: Int,
@@ -444,39 +445,39 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenSharedQueue")
 
   override def proxyDequeueSharedQueueItem(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       queueID: Int,
       returnPayloadData: Int,
       returnPayloadSize: Int
   ): Result = unimplementedFunction("proxyDequeueSharedQueueItem")
 
   override def proxyEnqueueSharedQueueItem(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       queueID: Int,
       payloadData: Int,
       payloadSize: Int
   ): Result = unimplementedFunction("proxyEnqueueSharedQueueItem")
 
-  override def proxyDeleteSharedQueue(plugin: WasmOtoroshiInternal, queueID: Int): Result = unimplementedFunction(
+  override def proxyDeleteSharedQueue(plugin: ExtismCurrentPlugin, queueID: Int): Result = unimplementedFunction(
     "proxyDeleteSharedQueue"
   )
 
-  override def proxyCreateTimer(plugin: WasmOtoroshiInternal, period: Int, oneTime: Int, returnTimerID: Int): Result =
+  override def proxyCreateTimer(plugin: ExtismCurrentPlugin, period: Int, oneTime: Int, returnTimerID: Int): Result =
     unimplementedFunction("proxyCreateTimer")
 
-  override def proxyDeleteTimer(plugin: WasmOtoroshiInternal, timerID: Int): Result = unimplementedFunction(
+  override def proxyDeleteTimer(plugin: ExtismCurrentPlugin, timerID: Int): Result = unimplementedFunction(
     "proxyDeleteTimer"
   )
 
   override def proxyCreateMetric(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       metricType: MetricType,
       metricNameData: Int,
       metricNameSize: Int,
       returnMetricID: Int
   ): MetricType = unimplementedFunction("proxyCreateMetric")
 
-  override def proxyGetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, returnValue: Int): Result = {
+  override def proxyGetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, returnValue: Int): Result = {
     // TODO - get metricID
     val value = 10
 
@@ -490,11 +491,11 @@ class ProxyWasmState(
       )
   }
 
-  override def proxySetMetricValue(plugin: WasmOtoroshiInternal, metricID: Int, value: Int): Result =
+  override def proxySetMetricValue(plugin: ExtismCurrentPlugin, metricID: Int, value: Int): Result =
     unimplementedFunction("proxySetMetricValue")
 
   override def proxyIncrementMetricValue(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       metricID: Int,
       offset: Long
@@ -503,12 +504,12 @@ class ProxyWasmState(
     ResultOk
   }
 
-  override def proxyDeleteMetric(plugin: WasmOtoroshiInternal, metricID: Int): Result = unimplementedFunction(
+  override def proxyDeleteMetric(plugin: ExtismCurrentPlugin, metricID: Int): Result = unimplementedFunction(
     "proxyDeleteMetric"
   )
 
   override def proxyDefineMetric(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       metricType: Int,
       namePtr: Int,
       nameSize: Int,
@@ -534,7 +535,7 @@ class ProxyWasmState(
   }
 
   override def proxyDispatchHttpCall(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       headersMapData: Int,
@@ -548,7 +549,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyDispatchHttpCall")
 
   override def proxyDispatchGrpcCall(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -564,7 +565,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyDispatchGrpcCall")
 
   override def proxyOpenGrpcStream(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       upstreamNameData: Int,
       upstreamNameSize: Int,
       serviceNameData: Int,
@@ -577,22 +578,22 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyOpenGrpcStream")
 
   override def proxySendGrpcStreamMessage(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       calloutID: Int,
       grpcMessageData: Int,
       grpcMessageSize: Int
   ): Result = unimplementedFunction("proxySendGrpcStreamMessage")
 
-  override def proxyCancelGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction(
+  override def proxyCancelGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Result = unimplementedFunction(
     "proxyCancelGrpcCall"
   )
 
-  override def proxyCloseGrpcCall(plugin: WasmOtoroshiInternal, calloutID: Int): Result = unimplementedFunction(
+  override def proxyCloseGrpcCall(plugin: ExtismCurrentPlugin, calloutID: Int): Result = unimplementedFunction(
     "proxyCloseGrpcCall"
   )
 
   override def proxyCallCustomFunction(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       customFunctionID: Int,
       parametersData: Int,
       parametersSize: Int,
@@ -601,7 +602,7 @@ class ProxyWasmState(
   ): Result = unimplementedFunction("proxyCallCustomFunction")
 
   override def copyIntoInstance(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       memory: Pointer,
       value: IoBuffer,
       retPtr: Int,
@@ -618,7 +619,7 @@ class ProxyWasmState(
   }
 
   override def proxyGetProperty(
-      plugin: WasmOtoroshiInternal,
+      plugin: ExtismCurrentPlugin,
       data: VmData,
       pathPtr: Int,
       pathSize: Int,
@@ -676,85 +677,85 @@ class ProxyWasmState(
     StatusOK
   }
 
-  override def proxySetEffectiveContext(plugin: WasmOtoroshiInternal, contextID: Int): Status = {
+  override def proxySetEffectiveContext(plugin: ExtismCurrentPlugin, contextID: Int): Status = {
     // TODO - manage context id changes
     // this.contextId = contextID
     StatusOK
   }
 
-  override def getPluginConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
+  override def getPluginConfig(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = {
     new IoBuffer(data.configuration)
   }
 
-  override def getHttpRequestBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
+  override def getHttpRequestBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = {
     data.bodyIn match {
       case None       => new IoBuffer(ByteString.empty)
       case Some(body) => new IoBuffer(body)
     }
   }
 
-  override def getHttpResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = {
+  override def getHttpResponseBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = {
     data.bodyOut match {
       case None       => new IoBuffer(ByteString.empty)
       case Some(body) => new IoBuffer(body)
     }
   }
 
-  override def getDownStreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+  override def getDownStreamData(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = unimplementedFunction(
     "getDownStreamData"
   )
 
-  override def getUpstreamData(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+  override def getUpstreamData(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = unimplementedFunction(
     "getUpstreamData"
   )
 
-  override def getHttpCalloutResponseBody(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction(
+  override def getHttpCalloutResponseBody(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = unimplementedFunction(
     "getHttpCalloutResponseBody"
   )
 
-  override def getVmConfig(plugin: WasmOtoroshiInternal, data: VmData): IoBuffer = unimplementedFunction("getVmConfig")
+  override def getVmConfig(plugin: ExtismCurrentPlugin, data: VmData): IoBuffer = unimplementedFunction("getVmConfig")
 
   override def getCustomBuffer(bufferType: BufferType): IoBuffer = unimplementedFunction("getCustomBuffer")
 
-  override def getHttpRequestHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     data.properties
       .filter(entry => entry._1.startsWith("request.headers.") || entry._1.startsWith(":"))
       .map(t => (t._1.replace("request.headers.", ""), ByteString(t._2)))
   }
 
-  override def getHttpRequestTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     Map.empty
   }
 
-  override def getHttpRequestMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpRequestMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     Map.empty
   }
 
-  override def getHttpResponseHeader(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] = {
+  override def getHttpResponseHeader(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] = {
     data.properties
       .filter(entry => entry._1.startsWith("response.headers.") || entry._1.startsWith(":"))
       .map(t => (t._1.replace("response.headers.", ""), ByteString(t._2)))
   }
 
-  override def getHttpResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+  override def getHttpResponseTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] =
     unimplementedFunction("getHttpResponseTrailer")
 
-  override def getHttpResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+  override def getHttpResponseMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] =
     unimplementedFunction("getHttpResponseMetadata")
 
-  override def getHttpCallResponseHeaders(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+  override def getHttpCallResponseHeaders(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] =
     unimplementedFunction("getHttpCallResponseHeaders")
 
-  override def getHttpCallResponseTrailer(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+  override def getHttpCallResponseTrailer(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] =
     unimplementedFunction("getHttpCallResponseTrailer")
 
-  override def getHttpCallResponseMetadata(plugin: WasmOtoroshiInternal, data: VmData): Map[String, ByteString] =
+  override def getHttpCallResponseMetadata(plugin: ExtismCurrentPlugin, data: VmData): Map[String, ByteString] =
     unimplementedFunction("getHttpCallResponseMetadata")
 
-  override def getCustomMap(plugin: WasmOtoroshiInternal, data: VmData, mapType: MapType): Map[String, ByteString] =
+  override def getCustomMap(plugin: ExtismCurrentPlugin, data: VmData, mapType: MapType): Map[String, ByteString] =
     unimplementedFunction("getCustomMap")
 
-  override def getMemory(plugin: WasmOtoroshiInternal, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] =
+  override def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] =
     plugin.synchronized {
       val memory: Pointer = plugin.getLinearMemory("memory")
       if (memory == null) {
@@ -770,7 +771,7 @@ class ProxyWasmState(
       (memory -> ByteString(memory.share(addr).getByteArray(0, size))).right[Error]
     }
 
-  override def getMemory(plugin: WasmOtoroshiInternal): Either[Error, Pointer] = plugin.synchronized {
+  override def getMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer] = plugin.synchronized {
 
     val memory: Pointer = plugin.getLinearMemory("memory")
     if (memory == null) {
