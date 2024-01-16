@@ -47,9 +47,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -118,14 +118,14 @@ class ApikeyBearer extends Component {
                 <i className="fas fa-eye" />
               </span>
             )}
-            <span
+            {navigator.clipboard && window.isSecureContext && <span
               className="input-group-text"
               style={{ cursor: 'pointer' }}
               title="copy bearer"
               onClick={this.copy}
             >
               <i className={this.state.cname} />
-            </span>
+            </span>}
           </div>
         </div>
       </div>
@@ -204,14 +204,14 @@ class ApikeySecret extends Component {
                 <i className="fas fa-eye" />
               </span>
             )}
-            <span
+            {navigator.clipboard && window.isSecureContext && <span
               className="input-group-text"
               style={{ cursor: 'pointer' }}
               title="copy secret"
               onClick={this.copy}
             >
               <i className={this.state.cname} />
-            </span>
+            </span>}
           </div>
         </div>
       </div>
@@ -242,11 +242,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -792,9 +790,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -936,7 +933,7 @@ export class ServiceApiKeysPage extends Component {
         selfUrl={
           this.onRoutes
             ? // ? `services/${this.props.params.routeId}/apikeys`
-              `routes/${this.props.params.routeId}/apikeys`
+            `routes/${this.props.params.routeId}/apikeys`
             : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
         }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
