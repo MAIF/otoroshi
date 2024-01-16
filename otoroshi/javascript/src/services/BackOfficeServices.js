@@ -944,25 +944,25 @@ export function changeLogLevel(name, level) {
   }).then((r) => r.json());
 }
 
-export function fetchTop10() {
-  return fetch(`/bo/api/services/top10`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
-}
+// export function fetchTop10() {
+//   return fetch(`/bo/api/services/top10`, {
+//     method: 'GET',
+//     credentials: 'include',
+//     headers: {
+//       Accept: 'application/json',
+//     },
+//   }).then((r) => r.json());
+// }
 
-export function fetchServicesMap() {
-  return fetch(`/bo/api/services/map`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
-}
+// export function fetchServicesMap() {
+//   return fetch(`/bo/api/services/map`, {
+//     method: 'GET',
+//     credentials: 'include',
+//     headers: {
+//       Accept: 'application/json',
+//     },
+//   }).then((r) => r.json());
+// }
 
 export function fetchServicesTree() {
   return new Promise((s) =>

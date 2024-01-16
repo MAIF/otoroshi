@@ -760,12 +760,12 @@ export class TopBar extends Component {
           env: <i className="fas fa-cubes" />,
           action: () => this.routeTo('/tcp/services'),
         });
-        options.push({
-          action: () => this.routeTo('/map'),
-          env: <span className="fas fa-globe" />,
-          label: 'Services map',
-          value: 'Services-map',
-        });
+        // options.push({
+        //   action: () => this.routeTo('/map'),
+        //   env: <span className="fas fa-globe" />,
+        //   label: 'Services map',
+        //   value: 'Services-map',
+        // });
         options.push({
           action: () => this.routeTo('/sessions/admin'),
           env: <span className="fas fa-user" />,
@@ -778,12 +778,12 @@ export class TopBar extends Component {
           label: 'Priv. apps sessions',
           value: 'Priv-apps-sessions',
         });
-        options.push({
-          action: () => this.routeTo('/top10'),
-          env: <span className="fas fa-fire" />,
-          label: 'Top 10 services',
-          value: 'Top-10-services',
-        });
+        // options.push({
+        //   action: () => this.routeTo('/top10'),
+        //   env: <span className="fas fa-fire" />,
+        //   label: 'Top 10 services',
+        //   value: 'Top-10-services',
+        // });
         options.push({
           action: () => this.routeTo('/apikeys'),
           env: <span className="fas fa-key" />,
@@ -1302,16 +1302,16 @@ export class TopBar extends Component {
                     <i className="fas fa-list" /> Events log
                   </Link>
                 </li>
-                <li className="hide">
+                {/* <li className="hide">
                   <Link to="/top10" className="dropdown-item">
                     <span className="fas fa-fire" /> Top 10 services
                   </Link>
-                </li>
-                <li className="hide">
+                </li> */}
+                {/* <li className="hide">
                   <Link to="/map" className="dropdown-item">
                     <span className="fas fa-globe" /> Services map
                   </Link>
-                </li>
+                </li> */}
                 <li role="separator" className="divider hide" />
                 <li className="hide">
                   <Link to="/loggers" className="dropdown-item">
