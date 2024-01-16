@@ -37,11 +37,18 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
 
   override def extractId(entity: DataExporterConfig): String = entity.id
 
-  override def readEntity(json: JsValue): Either[JsValue, DataExporterConfig] =
-    DataExporterConfig.format.reads(json).asEither match {
-      case Left(e)  => Left(JsError.toJson(e))
+  override def readEntity(json: JsValue): Either[JsValue, DataExporterConfig] = {
+    val result = DataExporterConfig.format.reads(json)
+    result.asEither match {
+      case Left(e)  =>
+        scala.util.Try {
+          Left(JsError.toJson(e))
+        } recover { case _ =>
+          Left(Json.obj("error" -> "something wrong appened"))
+        } get
       case Right(r) => Right(r)
     }
+  }
 
   override def writeEntity(entity: DataExporterConfig): JsValue = DataExporterConfig.format.writes(entity)
 

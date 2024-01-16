@@ -359,7 +359,7 @@ class CopyFromLineItem extends Component {
       <button
         type="button"
         className="btn btn-sm btn-primary"
-        onClick={(e) => {
+        onClick={() => {
           this.clipboard.select();
           document.execCommand('Copy');
         }}
