@@ -19,7 +19,7 @@ The reference documentation is available at https://maif.github.io/otoroshi/manu
 
 You can find the roadmap or topics considered for the roadmap in the [Roadmap 2024](https://github.com/orgs/MAIF/projects/10/views/1) project.
 
-The roadmap for 2023 is also available [here](https://github.com/orgs/MAIF/projects/2/views/1).
+The roadmap for 2024 is also available [here](https://github.com/orgs/MAIF/projects/10/views/1).
 
 ## Community
 
