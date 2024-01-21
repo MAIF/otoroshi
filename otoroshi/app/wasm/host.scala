@@ -126,7 +126,7 @@ object HFunction {
         case None    => Optional.empty[A]()
         case Some(d) => Optional.of(d)
       }
-    )
+    ).withNamespace("env")
   }
 }
 

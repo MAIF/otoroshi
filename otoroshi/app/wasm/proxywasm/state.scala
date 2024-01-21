@@ -29,6 +29,8 @@ class ProxyWasmState(
 
   val u32Len = 4
 
+  var memoryPointer: Option[Pointer] = None
+
   def unimplementedFunction[A](name: String): A = {
     logger.error(s"unimplemented state function: '${name}'")
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
@@ -193,7 +195,11 @@ class ProxyWasmState(
       return ResultBadArgument
     }
 
-    val memory: Pointer = plugin.getLinearMemory("memory")
+    if (memoryPointer.isEmpty) {
+        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+      }
+
+    val memory: Pointer = memoryPointer.get
 
     val content = new Array[Byte](bufferSize)
     memory.read(bufferData, content, 0, bufferSize)
@@ -269,7 +275,12 @@ class ProxyWasmState(
 //        }
 
     plugin.synchronized {
-      val memory: Pointer = plugin.getLinearMemory("memory")
+
+      if (memoryPointer.isEmpty) {
+        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+      }
+
+      val memory: Pointer = memoryPointer.get
       memory.setInt(addr, header.size)
       //        if err != nil {
       //            return int32(v2.ResultInvalidMemoryAccess)
@@ -610,6 +621,8 @@ class ProxyWasmState(
   ): Result = {
     val addr = plugin.alloc(value.length)
 
+    println("copyIntoInstance", value.buf.utf8String)
+
     memory.write(addr, value.buf.toArray, 0, value.length)
 
     memory.setInt(retPtr, addr)
@@ -757,7 +770,12 @@ class ProxyWasmState(
 
   override def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] =
     plugin.synchronized {
-      val memory: Pointer = plugin.getLinearMemory("memory")
+
+      if (memoryPointer.isEmpty) {
+        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+      }
+
+      val memory: Pointer = memoryPointer.get
       if (memory == null) {
         return Error.ErrorExportsNotFound.left
       }
@@ -773,7 +791,11 @@ class ProxyWasmState(
 
   override def getMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer] = plugin.synchronized {
 
-    val memory: Pointer = plugin.getLinearMemory("memory")
+    if (memoryPointer.isEmpty) {
+        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+      }
+
+    val memory: Pointer = memoryPointer.get
     if (memory == null) {
       return Error.ErrorExportsNotFound.left
     }

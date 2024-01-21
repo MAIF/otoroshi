@@ -8,12 +8,12 @@ object WasmUtils {
   val logger = Logger("otoroshi-proxy-wasm-utils")
 
   def traceVmHost(message: String): Unit = {
-    // println("[vm->host]: " + message)
+     println("[vm->host]: " + message)
     if (logger.isTraceEnabled) logger.trace("[vm->host]: " + message)
   }
 
   def traceHostVm(message: String) {
-    // println("[host->vm]: " + message)
+     println("[host->vm]: " + message)
     if (logger.isTraceEnabled) logger.trace("[host->vm]: " + message)
   }
 
