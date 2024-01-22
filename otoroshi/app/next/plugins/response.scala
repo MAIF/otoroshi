@@ -453,7 +453,7 @@ class NgErrorRewriter extends NgRequestTransformer {
         val response     = ctx.otoroshiResponse.copy(
           status = ctx.otoroshiResponse.status,
           headers = Map(
-            "content-type" -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html"),
+            "content-type"   -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html"),
             "content-length" -> responseBody.length.toString
           ),
           cookies = Seq.empty,

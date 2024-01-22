@@ -1073,15 +1073,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           case Some(oldEntity)                                 => {
             val currentJson = writeEntity(oldEntity)
             val newJson     = patchJson(ctx.request.body, currentJson).asObject ++ (if (isApikey) {
-              Json.obj(
-                "client_id" -> id,
-                "clientId"  -> id
-              )
-            } else {
-              Json.obj(
-                "id"        -> id
-              )
-            })
+                                                                                  Json.obj(
+                                                                                    "client_id" -> id,
+                                                                                    "clientId"  -> id
+                                                                                  )
+                                                                                } else {
+                                                                                  Json.obj(
+                                                                                    "id" -> id
+                                                                                  )
+                                                                                })
             readAndValidateEntity(newJson, ctx.backOfficeUser) match {
               case Left(e)                                          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
               case Right(newEntity) if !ctx.canUserWrite(newEntity) =>

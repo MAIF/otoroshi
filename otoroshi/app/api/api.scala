@@ -147,7 +147,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
     val dev   = if (env.isDev) "_dev" else ""
-    val resId = id.orElse(Try(extractIdJson(body)).toOption)
+    val resId = id
+      .orElse(Try(extractIdJson(body)).toOption)
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
     format.reads(body) match {
       case err @ JsError(_)    => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
@@ -354,12 +355,12 @@ class OtoroshiResources(env: Env) {
         classOf[NgRoute],
         env.datastores.routeDataStore.key,
         env.datastores.routeDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.routeDataStore.template(env).json,
         stateAll = () => env.proxyState.allRawRoutes(),
-        stateOne = (id) => env.proxyState.rawRoute(id),
-        stateUpdate = (seq) => env.proxyState.updateRawRoutes(seq),
+        stateOne = id => env.proxyState.rawRoute(id),
+        stateUpdate = seq => env.proxyState.updateRawRoutes(seq)
       )
     ),
     Resource(
@@ -373,12 +374,12 @@ class OtoroshiResources(env: Env) {
         classOf[StoredNgBackend],
         env.datastores.backendsDataStore.key,
         env.datastores.backendsDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.backendsDataStore.template(env).json,
         stateAll = () => env.proxyState.allStoredBackends(),
-        stateOne = (id) => env.proxyState.storedBackend(id),
-        stateUpdate = (seq) => env.proxyState.updateBackends(seq),
+        stateOne = id => env.proxyState.storedBackend(id),
+        stateUpdate = seq => env.proxyState.updateBackends(seq)
       )
     ),
     Resource(
@@ -392,12 +393,12 @@ class OtoroshiResources(env: Env) {
         classOf[NgRouteComposition],
         env.datastores.routeCompositionDataStore.key,
         env.datastores.routeCompositionDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.routeCompositionDataStore.template(env).json,
         stateAll = () => env.proxyState.allRouteCompositions(),
-        stateOne = (id) => env.proxyState.routeComposition(id),
-        stateUpdate = (seq) => env.proxyState.updateNgSRouteCompositions(seq),
+        stateOne = id => env.proxyState.routeComposition(id),
+        stateUpdate = seq => env.proxyState.updateNgSRouteCompositions(seq)
       )
     ),
     Resource(
@@ -411,12 +412,12 @@ class OtoroshiResources(env: Env) {
         classOf[ServiceDescriptor],
         env.datastores.serviceDescriptorDataStore.key,
         env.datastores.serviceDescriptorDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.serviceDescriptorDataStore.template(env).json,
         stateAll = () => env.proxyState.allServices(),
-        stateOne = (id) => env.proxyState.service(id),
-        stateUpdate = (seq) => env.proxyState.updateServices(seq),
+        stateOne = id => env.proxyState.service(id),
+        stateUpdate = seq => env.proxyState.updateServices(seq)
       )
     ),
     Resource(
@@ -430,12 +431,12 @@ class OtoroshiResources(env: Env) {
         classOf[TcpService],
         env.datastores.tcpServiceDataStore.key,
         env.datastores.tcpServiceDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.tcpServiceDataStore.template(env).json,
         stateAll = () => env.proxyState.allTcpServices(),
-        stateOne = (id) => env.proxyState.tcpService(id),
-        stateUpdate = (seq) => env.proxyState.updateTcpServices(seq),
+        stateOne = id => env.proxyState.tcpService(id),
+        stateUpdate = seq => env.proxyState.updateTcpServices(seq)
       )
     ),
     Resource(
@@ -449,8 +450,8 @@ class OtoroshiResources(env: Env) {
         classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
         env.datastores.errorTemplateDataStore.extractId,
-        (json) => json.select("serviceId").asString,
-        () => "serviceId",
+        json => json.select("serviceId").asString,
+        () => "serviceId"
       )
     ),
     //////
@@ -476,12 +477,12 @@ class OtoroshiResources(env: Env) {
         classOf[ApiKey],
         env.datastores.apiKeyDataStore.key,
         env.datastores.apiKeyDataStore.extractId,
-        (json) => json.select("clientId").asString,
+        json => json.select("clientId").asString,
         () => "clientId",
         (v, p) => env.datastores.apiKeyDataStore.template(env).json,
         stateAll = () => env.proxyState.allApikeys(),
-        stateOne = (id) => env.proxyState.apikey(id),
-        stateUpdate = (seq) => env.proxyState.updateApikeys(seq),
+        stateOne = id => env.proxyState.apikey(id),
+        stateUpdate = seq => env.proxyState.updateApikeys(seq)
       )
     ),
     //////
@@ -496,7 +497,7 @@ class OtoroshiResources(env: Env) {
         classOf[Cert],
         env.datastores.certificatesDataStore.key,
         env.datastores.certificatesDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) =>
           env.datastores.certificatesDataStore
@@ -504,8 +505,8 @@ class OtoroshiResources(env: Env) {
             .awaitf(10.seconds)(env.otoroshiExecutionContext)
             .json,
         stateAll = () => env.proxyState.allCertificates(),
-        stateOne = (id) => env.proxyState.certificate(id),
-        stateUpdate = (seq) => env.proxyState.updateCertificates(seq),
+        stateOne = id => env.proxyState.certificate(id),
+        stateUpdate = seq => env.proxyState.updateCertificates(seq)
       )
     ),
     //////
@@ -520,12 +521,12 @@ class OtoroshiResources(env: Env) {
         classOf[GlobalJwtVerifier],
         env.datastores.globalJwtVerifierDataStore.key,
         env.datastores.globalJwtVerifierDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.globalJwtVerifierDataStore.template(env).json,
         stateAll = () => env.proxyState.allJwtVerifiers(),
-        stateOne = (id) => env.proxyState.jwtVerifier(id),
-        stateUpdate = (seq) => env.proxyState.updateJwtVerifiers(seq),
+        stateOne = id => env.proxyState.jwtVerifier(id),
+        stateUpdate = seq => env.proxyState.updateJwtVerifiers(seq)
       )
     ),
     Resource(
@@ -539,12 +540,12 @@ class OtoroshiResources(env: Env) {
         classOf[AuthModuleConfig],
         env.datastores.authConfigsDataStore.key,
         env.datastores.authConfigsDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.authConfigsDataStore.template(p.get("type"), env)(env.otoroshiExecutionContext).json,
         stateAll = () => env.proxyState.allAuthModules(),
-        stateOne = (id) => env.proxyState.authModule(id),
-        stateUpdate = (seq) => env.proxyState.updateAuthModules(seq),
+        stateOne = id => env.proxyState.authModule(id),
+        stateUpdate = seq => env.proxyState.updateAuthModules(seq)
       )
     ),
     Resource(
@@ -558,13 +559,13 @@ class OtoroshiResources(env: Env) {
         classOf[BackOfficeUser],
         env.datastores.backOfficeUserDataStore.key,
         env.datastores.backOfficeUserDataStore.extractId,
-        (json) => json.select("randomId").asString,
+        json => json.select("randomId").asString,
         () => "randomId",
         canCreate = false,
         canUpdate = false,
         stateAll = () => env.proxyState.allBackofficeSessions(),
-        stateOne = (id) => env.proxyState.backofficeSession(id),
-        stateUpdate = (seq) => throw new UnsupportedOperationException("..."),
+        stateOne = id => env.proxyState.backofficeSession(id),
+        stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
     ),
     Resource(
@@ -578,18 +579,20 @@ class OtoroshiResources(env: Env) {
         classOf[SimpleOtoroshiAdmin],
         env.datastores.simpleAdminDataStore.key,
         env.datastores.simpleAdminDataStore.extractId,
-        (json) => json.select("username").asString,
+        json => json.select("username").asString,
         () => "username",
         canCreate = true,
         canUpdate = false,
         canDelete = true,
-        stateAll = () => env.proxyState.allOtoroshiAdmins().collect {
-          case u: SimpleOtoroshiAdmin => u
-        },
-        stateOne = (id) => env.proxyState.otoroshiAdmin(id).collect {
-          case u: SimpleOtoroshiAdmin => u
-        },
-        stateUpdate = (seq) => throw new UnsupportedOperationException("..."),
+        stateAll = () =>
+          env.proxyState.allOtoroshiAdmins().collect { case u: SimpleOtoroshiAdmin =>
+            u
+          },
+        stateOne = id =>
+          env.proxyState.otoroshiAdmin(id).collect { case u: SimpleOtoroshiAdmin =>
+            u
+          },
+        stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
     ),
     Resource(
@@ -603,13 +606,13 @@ class OtoroshiResources(env: Env) {
         classOf[PrivateAppsUser],
         env.datastores.privateAppsUserDataStore.key,
         env.datastores.privateAppsUserDataStore.extractId,
-        (json) => json.select("randomId").asString,
+        json => json.select("randomId").asString,
         () => "randomId",
         canCreate = false,
         canUpdate = false,
         stateAll = () => env.proxyState.allPrivateAppsSessions(),
-        stateOne = (id) => env.proxyState.privateAppsSession(id),
-        stateUpdate = (seq) => throw new UnsupportedOperationException("..."),
+        stateOne = id => env.proxyState.privateAppsSession(id),
+        stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
     ),
     //////
@@ -667,12 +670,12 @@ class OtoroshiResources(env: Env) {
         classOf[ServiceGroup],
         env.datastores.serviceGroupDataStore.key,
         env.datastores.serviceGroupDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.serviceGroupDataStore.template(env).json,
         stateAll = () => env.proxyState.allServiceGroups(),
-        stateOne = (id) => env.proxyState.serviceGroup(id),
-        stateUpdate = (seq) => env.proxyState.updateServiceGroups(seq),
+        stateOne = id => env.proxyState.serviceGroup(id),
+        stateUpdate = seq => env.proxyState.updateServiceGroups(seq)
       )
     ),
     Resource(
@@ -686,12 +689,12 @@ class OtoroshiResources(env: Env) {
         classOf[Tenant],
         env.datastores.tenantDataStore.key,
         env.datastores.tenantDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.tenantDataStore.template(env).json,
         stateAll = () => env.proxyState.allTenants(),
-        stateOne = (id) => env.proxyState.tenant(id),
-        stateUpdate = (seq) => env.proxyState.updateTenants(seq),
+        stateOne = id => env.proxyState.tenant(id),
+        stateUpdate = seq => env.proxyState.updateTenants(seq)
       )
     ),
     Resource(
@@ -705,12 +708,12 @@ class OtoroshiResources(env: Env) {
         classOf[Tenant],
         env.datastores.tenantDataStore.key,
         env.datastores.tenantDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.tenantDataStore.template(env).json,
         stateAll = () => env.proxyState.allTenants(),
-        stateOne = (id) => env.proxyState.tenant(id),
-        stateUpdate = (seq) => env.proxyState.updateTenants(seq),
+        stateOne = id => env.proxyState.tenant(id),
+        stateUpdate = seq => env.proxyState.updateTenants(seq)
       )
     ),
     Resource(
@@ -724,12 +727,12 @@ class OtoroshiResources(env: Env) {
         classOf[Team],
         env.datastores.teamDataStore.key,
         env.datastores.teamDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.teamDataStore.template(TenantId.default).json,
         stateAll = () => env.proxyState.allTeams(),
-        stateOne = (id) => env.proxyState.team(id),
-        stateUpdate = (seq) => env.proxyState.updateTeams(seq),
+        stateOne = id => env.proxyState.team(id),
+        stateUpdate = seq => env.proxyState.updateTeams(seq)
       )
     ),
     //////
@@ -744,12 +747,12 @@ class OtoroshiResources(env: Env) {
         classOf[DataExporterConfig],
         env.datastores.dataExporterConfigDataStore.key,
         env.datastores.dataExporterConfigDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.dataExporterConfigDataStore.template(p.get("type")).json,
         stateAll = () => env.proxyState.allDataExporters(),
-        stateOne = (id) => env.proxyState.dataExporter(id),
-        stateUpdate = (seq) => env.proxyState.updateDataExporters(seq),
+        stateOne = id => env.proxyState.dataExporter(id),
+        stateUpdate = seq => env.proxyState.updateDataExporters(seq)
       )
     ),
     //////
@@ -764,12 +767,12 @@ class OtoroshiResources(env: Env) {
         classOf[Script],
         env.datastores.scriptDataStore.key,
         env.datastores.scriptDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.scriptDataStore.template(env).json,
         stateAll = () => env.proxyState.allScripts(),
-        stateOne = (id) => env.proxyState.script(id),
-        stateUpdate = (seq) => env.proxyState.updateScripts(seq),
+        stateOne = id => env.proxyState.script(id),
+        stateUpdate = seq => env.proxyState.updateScripts(seq)
       )
     ),
     Resource(
@@ -783,12 +786,12 @@ class OtoroshiResources(env: Env) {
         classOf[WasmPlugin],
         env.datastores.wasmPluginsDataStore.key,
         env.datastores.wasmPluginsDataStore.extractId,
-        (json) => json.select("id").asString,
+        json => json.select("id").asString,
         () => "id",
         (v, p) => env.datastores.wasmPluginsDataStore.template(env).json,
         stateAll = () => env.proxyState.allWasmPlugins(),
-        stateOne = (id) => env.proxyState.wasmPlugin(id),
-        stateUpdate = (seq) => env.proxyState.updateWasmPlugins(seq),
+        stateOne = id => env.proxyState.wasmPlugin(id),
+        stateUpdate = seq => env.proxyState.updateWasmPlugins(seq)
       )
     ),
     //////
@@ -803,15 +806,15 @@ class OtoroshiResources(env: Env) {
         classOf[TweakedGlobalConfig],
         id => env.datastores.globalConfigDataStore.key(id),
         c => env.datastores.globalConfigDataStore.extractId(c.config),
-        (json) => "global",
+        json => "global",
         () => "id",
         (v, p) => env.datastores.globalConfigDataStore.template.json,
         canCreate = false,
         canDelete = false,
         canBulk = false,
         stateAll = () => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply).toSeq,
-        stateOne = (id) => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply),
-        stateUpdate = (seq) => throw new UnsupportedOperationException("..."),
+        stateOne = id => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply),
+        stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
     )
   ) ++ env.adminExtensions.resources()
@@ -912,7 +915,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         if (hasFilters) {
           val reducedItems  = if (hasFilters) {
             val items: Seq[JsValue] = arr.value.filter { elem =>
-              filters.forall { 
+              filters.forall {
                 case (key, value) if key.startsWith("$") && key.contains(".") => {
                   elem.atPath(key).as[JsValue] match {
                     case JsString(v)     => v == value
@@ -922,7 +925,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     case _               => false
                   }
                 }
-                case (key, value) if key.contains(".") => {
+                case (key, value) if key.contains(".")                        => {
                   elem.at(key).as[JsValue] match {
                     case JsString(v)     => v == value
                     case JsBoolean(v)    => v == value.toBoolean
@@ -931,7 +934,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     case _               => false
                   }
                 }
-                case (key, value) if key.contains("/") => {
+                case (key, value) if key.contains("/")                        => {
                   elem.atPointer(key).as[JsValue] match {
                     case JsString(v)     => v == value
                     case JsBoolean(v)    => v == value.toBoolean
@@ -940,7 +943,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     case _               => false
                   }
                 }
-                case (key, value) => {
+                case (key, value)                                             => {
                   (elem \ key).as[JsValue] match {
                     case JsString(v)     => v == value
                     case JsBoolean(v)    => v == value.toBoolean
@@ -1209,7 +1212,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             .map(bs => Try(Json.parse(bs.utf8String)))
             .collect { case Success(e) => e }
             .mapAsync(1) { e =>
-              resource.access.findOne(version, resource.access.extractIdJson(e)).map(ee => (e.select("patch").asValue, ee))
+              resource.access
+                .findOne(version, resource.access.extractIdJson(e))
+                .map(ee => (e.select("patch").asValue, ee))
             }
             .map {
               case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
@@ -1242,7 +1247,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                       .vfuture
                   case JsSuccess(_, _) =>
                     resource.access
-                      .create(version, resource.singularName, resource.access.extractIdJson(patchedEntity).some, patchedEntity)
+                      .create(
+                        version,
+                        resource.singularName,
+                        resource.access.extractIdJson(patchedEntity).some,
+                        patchedEntity
+                      )
                       .map {
                         case Left(error)          =>
                           error.stringify.byteString
@@ -1256,10 +1266,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                           )
                           Json
                             .obj(
-                              "status" -> 200,
-                              "updated" -> true,
-                              "id" -> resource.access.extractIdJson(createdEntity),
-                              "id_field" -> resource.access.idFieldName(),
+                              "status"   -> 200,
+                              "updated"  -> true,
+                              "id"       -> resource.access.extractIdJson(createdEntity),
+                              "id_field" -> resource.access.idFieldName()
                             )
                             .stringify
                             .byteString
@@ -1313,8 +1323,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     .stringify
                     .byteString
                     .future
-                case Right((_, _entity))  => {
-                  val id = resource.access.extractIdJson(_entity)
+                case Right((_, _entity)) => {
+                  val id     = resource.access.extractIdJson(_entity)
                   val entity = _entity.asObject ++ Json.obj(resource.access.idFieldName() -> id)
                   resource.access.findOne(version, id).flatMap {
                     case Some(_) =>
@@ -1357,10 +1367,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                               )
                               Json
                                 .obj(
-                                  "status" -> 201,
-                                  "created" -> true,
-                                  "id" -> resource.access.extractIdJson(createdEntity),
-                                  "id_field" -> resource.access.idFieldName(),
+                                  "status"   -> 201,
+                                  "created"  -> true,
+                                  "id"       -> resource.access.extractIdJson(createdEntity),
+                                  "id_field" -> resource.access.idFieldName()
                                 )
                                 .stringify
                                 .byteString
@@ -1472,10 +1482,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                                 )
                                 Json
                                   .obj(
-                                    "status" -> 200,
-                                    "updated" -> true,
-                                    "id" -> resource.access.extractIdJson(createdEntity),
-                                    "id_field" -> resource.access.idFieldName(),
+                                    "status"   -> 200,
+                                    "updated"  -> true,
+                                    "id"       -> resource.access.extractIdJson(createdEntity),
+                                    "id_field" -> resource.access.idFieldName()
                                   )
                                   .stringify
                                   .byteString
@@ -1542,12 +1552,15 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     s"${resource.singularName}Deleted".some
                   )
                   resource.access.deleteOne(version, resource.access.extractIdJson(entity)).map { _ =>
-                    Json.obj(
-                      "status" -> 200,
-                      "deleted" -> true,
-                      "id" -> resource.access.extractIdJson(entity),
-                      "id_field" -> resource.access.idFieldName(),
-                    ).stringify.byteString
+                    Json
+                      .obj(
+                        "status"   -> 200,
+                        "deleted"  -> true,
+                        "id"       -> resource.access.extractIdJson(entity),
+                        "id_field" -> resource.access.idFieldName()
+                      )
+                      .stringify
+                      .byteString
                   }
                 }
               }
@@ -1623,9 +1636,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             ctx.request,
             resource.some
           ).vfuture
-        case Right(_body)                                => {
-          val dev = if (env.isDev) "_dev" else ""
-          val id  = Try(resource.access.extractIdJson(_body))
+        case Right(_body)                               => {
+          val dev  = if (env.isDev) "_dev" else ""
+          val id   = Try(resource.access.extractIdJson(_body))
             .getOrElse(IdGenerator.lowerCaseToken(16))
           val body = _body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
           resource.access.findOne(version, id).flatMap {
@@ -1911,7 +1924,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               ).vfuture
             case Some(current)                                   => {
               val _patchedBody = patchJson(body, current)
-              val patchedBody = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
+              val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
               resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
                 case JsError(errs)   =>
                   result(

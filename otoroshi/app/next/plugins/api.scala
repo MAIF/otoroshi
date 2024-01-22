@@ -292,7 +292,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
   def categories: Seq[NgPluginCategory]
   def tags: Seq[String]                              = Seq.empty
   def steps: Seq[NgStep]
-  def multiInstance: Boolean = true
+  def multiInstance: Boolean                         = true
   def defaultConfigObject: Option[NgPluginConfig]
   override final def defaultConfig: Option[JsObject] =
     defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
@@ -861,10 +861,11 @@ trait NgBackendCall extends NgNamedPlugin {
       body: Source[ByteString, _]
   ): Either[NgProxyEngineError, BackendCallResponse] = {
     val finalHeaders = headers.getIgnoreCase("Transfer-Encoding") match {
-      case None => headers.getIgnoreCase("Content-Length") match {
-        case None => headers ++ Map("Transfer-Encoding" -> s"chunked")
-        case Some(_) => headers ++ Map("Transfer-Encoding" -> s"chunked") - "Content-Length" - "content-length"
-      }
+      case None    =>
+        headers.getIgnoreCase("Content-Length") match {
+          case None    => headers ++ Map("Transfer-Encoding" -> s"chunked")
+          case Some(_) => headers ++ Map("Transfer-Encoding" -> s"chunked") - "Content-Length" - "content-length"
+        }
       case Some(_) => headers
     }
     BackendCallResponse(
@@ -873,15 +874,16 @@ trait NgBackendCall extends NgNamedPlugin {
     ).right[NgProxyEngineError]
   }
   def inMemoryBodyResponse(
-    status: Int,
-    headers: Map[String, String],
-    body: ByteString
+      status: Int,
+      headers: Map[String, String],
+      body: ByteString
   ): Either[NgProxyEngineError, BackendCallResponse] = {
     val finalHeaders = headers.getIgnoreCase("Transfer-Encoding") match {
-      case None => headers.getIgnoreCase("Content-Length") match {
-        case None => headers ++ Map("Content-Length" -> s"${body.length}")
-        case Some(_) => headers
-      }
+      case None    =>
+        headers.getIgnoreCase("Content-Length") match {
+          case None    => headers ++ Map("Content-Length" -> s"${body.length}")
+          case Some(_) => headers
+        }
       case Some(_) => headers
     }
     BackendCallResponse(
@@ -891,8 +893,8 @@ trait NgBackendCall extends NgNamedPlugin {
   }
 
   def emptyBodyResponse(
-    status: Int,
-    headers: Map[String, String],
+      status: Int,
+      headers: Map[String, String]
   ): Either[NgProxyEngineError, BackendCallResponse] = {
     val finalHeaders = headers ++ Map("Content-Length" -> s"0")
     BackendCallResponse(

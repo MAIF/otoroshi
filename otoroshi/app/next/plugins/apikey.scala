@@ -786,7 +786,7 @@ case class NgApikeyMandatoryTagsConfig(tags: Seq[String] = Seq.empty) extends Ng
 
 object NgApikeyMandatoryTagsConfig {
   val format = new Format[NgApikeyMandatoryTagsConfig] {
-    override def writes(o: NgApikeyMandatoryTagsConfig): JsValue = Json.obj(
+    override def writes(o: NgApikeyMandatoryTagsConfig): JsValue             = Json.obj(
       "tags" -> o.tags
     )
     override def reads(json: JsValue): JsResult[NgApikeyMandatoryTagsConfig] = Try {
@@ -802,13 +802,13 @@ object NgApikeyMandatoryTagsConfig {
 
 class NgApikeyMandatoryTags extends NgAccessValidator {
 
-  override def name: String = "Apikey mandatory tags"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean = true
+  override def name: String                                = "Apikey mandatory tags"
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyMandatoryTagsConfig().some
-  override def description: Option[String] =
+  override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more tags on it".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -816,7 +816,7 @@ class NgApikeyMandatoryTags extends NgAccessValidator {
       .cachedConfig(internalName)(NgApikeyMandatoryTagsConfig.format)
       .getOrElse(NgApikeyMandatoryTagsConfig())
     ctx.apikey match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None         => NgAccess.NgAllowed.vfuture
       case Some(apikey) => {
         if (apikey.tags.containsAll(config.tags)) {
           NgAccess.NgAllowed.vfuture
@@ -846,7 +846,7 @@ case class NgApikeyMandatoryMetadataConfig(metadata: Map[String, String] = Map.e
 
 object NgApikeyMandatoryMetadataConfig {
   val format = new Format[NgApikeyMandatoryMetadataConfig] {
-    override def writes(o: NgApikeyMandatoryMetadataConfig): JsValue = Json.obj(
+    override def writes(o: NgApikeyMandatoryMetadataConfig): JsValue             = Json.obj(
       "metadata" -> o.metadata
     )
     override def reads(json: JsValue): JsResult[NgApikeyMandatoryMetadataConfig] = Try {
@@ -862,13 +862,13 @@ object NgApikeyMandatoryMetadataConfig {
 
 class NgApikeyMandatoryMetadata extends NgAccessValidator {
 
-  override def name: String = "Apikey mandatory metadata"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean = true
+  override def name: String                                = "Apikey mandatory metadata"
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyMandatoryMetadataConfig().some
-  override def description: Option[String] =
+  override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more metadata on it".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -876,7 +876,7 @@ class NgApikeyMandatoryMetadata extends NgAccessValidator {
       .cachedConfig(internalName)(NgApikeyMandatoryMetadataConfig.format)
       .getOrElse(NgApikeyMandatoryMetadataConfig())
     ctx.apikey match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None         => NgAccess.NgAllowed.vfuture
       case Some(apikey) => {
         if (apikey.metadata.containsAll(config.metadata)) {
           NgAccess.NgAllowed.vfuture

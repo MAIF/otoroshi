@@ -149,9 +149,9 @@ class NgProxyState(env: Env) {
   def allPrivateAppsSessions(): Seq[PrivateAppsUser]  = privateAppsSessions.values.toSeq
   def allTcpServices(): Seq[TcpService]               = tcpServices.values.toSeq
 
-  def allNgServices(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
-  def allStoredBackends(): Seq[StoredNgBackend]    = ngbackends.values.toSeq
-  def allBackends(): Seq[NgBackend]    = backends.values.toSeq
+  def allNgServices(): Seq[NgRouteComposition]  = ngroutecompositions.values.toSeq
+  def allStoredBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
+  def allBackends(): Seq[NgBackend]             = backends.values.toSeq
 
   def updateRawRoutes(values: Seq[NgRoute]): Unit = {
     raw_routes
@@ -529,9 +529,7 @@ class NgProxyState(env: Env) {
     implicit val ev  = env
     val start        = System.currentTimeMillis()
     val gc           = env.datastores.globalConfigDataStore.latest()
-    val config       = gc
-      .plugins
-      .config
+    val config       = gc.plugins.config
       .select(ProxyEngine.configRoot)
       .asOpt[JsObject]
       .map(v => ProxyEngineConfig.parse(v, env))

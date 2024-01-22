@@ -8,12 +8,12 @@ export default {
     ttl: {
       label: 'TTL',
       type: 'number',
-      suffix: 'milliseconds'
+      suffix: 'milliseconds',
     },
     timeout: {
       label: 'HTTP timeout',
       type: 'number',
-      suffix: 'milliseconds'
+      suffix: 'milliseconds',
     },
     url: {
       label: 'URL',
@@ -30,7 +30,15 @@ export default {
     error_status: {
       label: 'Error HTTP status',
       type: 'number',
-    }
+    },
   },
-  config_flow: ['cache_expression', 'ttl', 'url', 'headers', 'timeout', 'error_status', 'error_message'],
+  config_flow: [
+    'cache_expression',
+    'ttl',
+    'url',
+    'headers',
+    'timeout',
+    'error_status',
+    'error_message',
+  ],
 };

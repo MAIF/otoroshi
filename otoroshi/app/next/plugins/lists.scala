@@ -11,15 +11,16 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgGenericListConfig(expression: Option[String] = "${req.ip_address}".some, values: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgGenericListConfig(expression: Option[String] = "${req.ip_address}".some, values: Seq[String] = Seq.empty)
+    extends NgPluginConfig {
   def json: JsValue = NgGenericListConfig.format.writes(this)
 }
 
 object NgGenericListConfig {
   val format = new Format[NgGenericListConfig] {
-    override def writes(o: NgGenericListConfig): JsValue = Json.obj(
+    override def writes(o: NgGenericListConfig): JsValue             = Json.obj(
       "expression" -> o.expression.map(_.json).getOrElse(JsNull).asValue,
-      "values" -> o.values,
+      "values"     -> o.values
     )
     override def reads(json: JsValue): JsResult[NgGenericListConfig] = Try {
       NgGenericListConfig(
@@ -35,12 +36,12 @@ object NgGenericListConfig {
 
 class NgGenericAllowedList extends NgAccessValidator {
 
-  override def name: String = "Generic allowed list"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def name: String                                = "Generic allowed list"
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
   override def defaultConfigObject: Option[NgPluginConfig] = NgGenericListConfig().some
-  override def description: Option[String] =
+  override def description: Option[String]                 =
     "This plugin checks let requests pass based on an el expression".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -49,7 +50,7 @@ class NgGenericAllowedList extends NgAccessValidator {
       .getOrElse(NgGenericListConfig())
     if (config.values.nonEmpty) {
       config.expression match {
-        case None => NgAccess.NgAllowed.vfuture
+        case None             => NgAccess.NgAllowed.vfuture
         case Some(expression) => {
           val value = GlobalExpressionLanguage.apply(
             value = expression,
@@ -101,13 +102,13 @@ class NgGenericAllowedList extends NgAccessValidator {
 
 class NgGenericBlockList extends NgAccessValidator {
 
-  override def name: String = "Generic block list"
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean = true
+  override def name: String                                = "Generic block list"
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = NgGenericListConfig().some
-  override def description: Option[String] =
+  override def description: Option[String]                 =
     "This plugin checks let requests is blocked based on an el expression".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -116,7 +117,7 @@ class NgGenericBlockList extends NgAccessValidator {
       .getOrElse(NgGenericListConfig())
     if (config.values.nonEmpty) {
       config.expression match {
-        case None => NgAccess.NgAllowed.vfuture
+        case None             => NgAccess.NgAllowed.vfuture
         case Some(expression) => {
           val value = GlobalExpressionLanguage.apply(
             value = expression,
