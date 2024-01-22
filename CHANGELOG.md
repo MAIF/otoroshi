@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.13.0] - 2024-01-22
+
+
+https://github.com/MAIF/otoroshi/milestone/84?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.12.0...v16.13.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.13.0
+
+
+### Added 
+
+- allow deep search in the findAll operation of the admin api (#1803)
+- read local state from the admin api when necessary (#1804)
+- plugin to block request based on an el expression (#1806)
+- plugin to allow request based on an el expression (#1807)
+- plugin to block request if an apikey does no have the specified metadata (#1808)
+- plugin to block request if an apikey does no have the specified tags (#1809)
+- plugin to validate the current request with an external service using http request (#1810)       
+      
+
+### Fixed 
+
+- elastic search config. forms needs to be sanitized (#1801)
+- slf4j warning at startup (#1802)
+- backend call plugins do not sent content-length when not provided (#1805)
+- export buttons on entities are present two times in the UI (#1811)
+- in some cases, clientId is wrongly inferred as entity id (#1812)
+- extracting json or yaml on a route downloads an entity with kind JwtVerifier (#1813)
+- 2.23.x of scala-schema is no longer available (#1814)
+- data exporter form does not work with exporters other than elasticsearch (#1815)
+- [data-exporter] elastic - cluster uris seems broken (#1817)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @quentinovega
+
 ## [16.12.0] - 2023-12-22
 
 
