@@ -270,10 +270,11 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def proxyOnResponseHeaders(
       contextId: Int,
       response: NgPluginHttpResponse,
-      attrs: TypedMap
+      body_bytes: Option[ByteString],
+      attrs: TypedMap,
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withResponse(response, attrs)(env)
+    val data        = VmData.empty().withResponse(response, attrs, body_bytes)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs         = new WasmOtoroshiParameters(3).pushInts(contextId, sizeHeaders, endOfStream)
@@ -303,7 +304,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withResponse(response, attrs)(env)
+    val data        = VmData.empty().withResponse(response, attrs, body_bytes.some)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody    = body_bytes.size.bytes.length
@@ -397,7 +398,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[mvc.Result, Unit]] = {
     val contId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).get
-    proxyOnResponseHeaders(contId, response, attrs).flatMap {
+    proxyOnResponseHeaders(contId, response, body_bytes, attrs).flatMap {
       case Left(e)  => Left(e).vfuture
       case Right(_) => {
         val res =
