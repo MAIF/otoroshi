@@ -196,7 +196,7 @@ class ProxyWasmState(
     }
 
     if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+        memoryPointer = Some(plugin.customMemoryGet())
       }
 
     val memory: Pointer = memoryPointer.get
@@ -267,7 +267,7 @@ class ProxyWasmState(
     })
 
     // TODO - try to call proxy_on_memory_allocate
-    val addr = plugin.alloc(totalBytesLen)
+    val addr = plugin.customMemoryAlloc(totalBytesLen)
 
     // TODO - manage error
 //        if err != nil {
@@ -277,7 +277,7 @@ class ProxyWasmState(
     plugin.synchronized {
 
       if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+        memoryPointer = Some(plugin.customMemoryGet())
       }
 
       val memory: Pointer = memoryPointer.get
@@ -619,9 +619,7 @@ class ProxyWasmState(
       retPtr: Int,
       retSize: Int
   ): Result = {
-    val addr = plugin.alloc(value.length)
-
-    println("copyIntoInstance", value.buf.utf8String)
+    val addr = plugin.customMemoryAlloc(value.length)
 
     memory.write(addr, value.buf.toArray, 0, value.length)
 
@@ -772,7 +770,7 @@ class ProxyWasmState(
     plugin.synchronized {
 
       if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+        memoryPointer = Some(plugin.customMemoryGet())
       }
 
       val memory: Pointer = memoryPointer.get
@@ -792,7 +790,7 @@ class ProxyWasmState(
   override def getMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer] = plugin.synchronized {
 
     if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.getLinearMemory("memory", null))
+        memoryPointer = Some(plugin.customMemoryGet())
       }
 
     val memory: Pointer = memoryPointer.get

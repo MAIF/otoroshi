@@ -1113,7 +1113,6 @@ class WasmOPA extends NgAccessValidator {
     vm.callOpa("execute", ctx.wasmJson.stringify)
       .flatMap {
         case Right((rawResult, _)) =>
-          println("ICI", rawResult)
           val response  = Json.parse(if(rawResult.isEmpty) "[{\"result\":false}]" else rawResult)
           val result    = response.asOpt[JsArray].getOrElse(Json.arr())
           val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
