@@ -305,7 +305,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data        = VmData.empty().withResponse(response, attrs, body_bytes.some)(env)
-    data.bodyInRef.set(body_bytes)
+    data.bodyOutRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody    = body_bytes.size.bytes.length
     val prs         = new WasmOtoroshiParameters(3).pushInts(contextId, sizeBody, endOfStream)
