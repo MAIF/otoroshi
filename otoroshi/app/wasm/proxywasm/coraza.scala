@@ -113,9 +113,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
               res._2
             }
           }
-          .andThen { case _ =>
-            vm.release()
-          }
       }
     }
   }
@@ -141,9 +138,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
               /* TODO - REPLACE WITH logger.error( */ println(s"error while calling plugin: ${err}")
               Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
             case Right((_, results)) => results.vfuture
-          }
-          .andThen { case _ =>
-            vm.release()
           }
       }
     }
@@ -314,7 +308,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data        = VmData.empty().withResponse(response, attrs)(env)
-    data.bodyInRef.set(body_bytes)
+    data.bodyOutRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody    = body_bytes.size.bytes.length
     val prs         = new Parameters(3).pushInts(contextId, sizeBody, endOfStream)
@@ -469,8 +463,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-//      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.1.2.wasm?$key"
-      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/mainraw.wasm?$key"
+      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
@@ -483,7 +476,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           // lifetime = WasmVmLifetime.Forever,
           instances = config.poolCapacity,
           killOptions = WasmVmKillOptions(
-            maxCalls = 20, // TODO - replace this value by 2000
+            maxCalls = 20000, // TODO - replace this value by 2000
             maxMemoryUsage = 0.9,
             maxAvgCallDuration = 1.day,
             maxUnusedDuration = 5.minutes

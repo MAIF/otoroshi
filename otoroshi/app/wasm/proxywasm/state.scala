@@ -29,14 +29,13 @@ class ProxyWasmState(
 
   val u32Len = 4
 
-  var memoryPointer: Option[Pointer] = None
-
   def unimplementedFunction[A](name: String): A = {
     logger.error(s"unimplemented state function: '${name}'")
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
   }
 
   override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result = {
+    // println(s"proxyLog: $logLevel - $messageData - $messageSize")
     getMemory(plugin, messageData, messageSize)
       .fold(
         Error.toResult,
@@ -195,11 +194,7 @@ class ProxyWasmState(
       return ResultBadArgument
     }
 
-    if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.customMemoryGet())
-      }
-
-    val memory: Pointer = memoryPointer.get
+    val memory: Pointer = plugin.customMemoryGet()
 
     val content = new Array[Byte](bufferSize)
     memory.read(bufferData, content, 0, bufferSize)
@@ -276,11 +271,7 @@ class ProxyWasmState(
 
     plugin.synchronized {
 
-      if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.customMemoryGet())
-      }
-
-      val memory: Pointer = memoryPointer.get
+      val memory: Pointer = plugin.customMemoryGet()
       memory.setInt(addr, header.size)
       //        if err != nil {
       //            return int32(v2.ResultInvalidMemoryAccess)
@@ -769,11 +760,7 @@ class ProxyWasmState(
   override def getMemory(plugin: ExtismCurrentPlugin, addr: Int, size: Int): Either[Error, (Pointer, ByteString)] =
     plugin.synchronized {
 
-      if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.customMemoryGet())
-      }
-
-      val memory: Pointer = memoryPointer.get
+      val memory: Pointer = plugin.customMemoryGet()
       if (memory == null) {
         return Error.ErrorExportsNotFound.left
       }
@@ -789,11 +776,7 @@ class ProxyWasmState(
 
   override def getMemory(plugin: ExtismCurrentPlugin): Either[Error, Pointer] = plugin.synchronized {
 
-    if (memoryPointer.isEmpty) {
-        memoryPointer = Some(plugin.customMemoryGet())
-      }
-
-    val memory: Pointer = memoryPointer.get
+    val memory: Pointer = plugin.customMemoryGet()
     if (memory == null) {
       return Error.ErrorExportsNotFound.left
     }
