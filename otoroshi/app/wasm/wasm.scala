@@ -3,7 +3,7 @@ package otoroshi.wasm
 import akka.stream.Materializer
 import io.otoroshi.wasm4s.scaladsl._
 import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
-import org.extism.sdk.wasmotoroshi.{WasmOtoroshiHostFunction, WasmOtoroshiHostUserData}
+import org.extism.sdk.{HostFunction, HostUserData}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginVisibility, NgStep}
@@ -261,7 +261,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   override def hostFunctions(
       config: WasmConfiguration,
       pluginId: String
-  ): Array[WasmOtoroshiHostFunction[_ <: WasmOtoroshiHostUserData]] = {
+  ): Array[HostFunction[_ <: HostUserData]] = {
     HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)
   }
 }
