@@ -3,20 +3,18 @@ package otoroshi.wasm
 import akka.util.ByteString
 import com.sun.jna.Pointer
 import org.extism.sdk.ExtismCurrentPlugin
-import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
-import otoroshi.wasm.proxywasm.{IoBuffer, _}
 import otoroshi.wasm.proxywasm.BufferType._
 import otoroshi.wasm.proxywasm.MapType._
 import otoroshi.wasm.proxywasm.Result._
 import otoroshi.wasm.proxywasm.Status._
+import otoroshi.wasm.proxywasm.WasmUtils.traceVmHost
+import otoroshi.wasm.proxywasm.{IoBuffer, _}
 import play.api.Logger
-import play.api.libs.json.Json
 
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+import java.util.concurrent.atomic.AtomicInteger
 
 class ProxyWasmState(
     val rootContextId: Int,

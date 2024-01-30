@@ -476,7 +476,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           // lifetime = WasmVmLifetime.Forever,
           instances = config.poolCapacity,
           killOptions = WasmVmKillOptions(
-            maxCalls = 20000, // TODO - replace this value by 2000
+            maxCalls = 2000,
             maxMemoryUsage = 0.9,
             maxAvgCallDuration = 1.day,
             maxUnusedDuration = 5.minutes
