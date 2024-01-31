@@ -1,6 +1,17 @@
 export default {
-  id: 'cp:otoroshi.next.plugins.FrameFormatValidator',
+  id: 'cp:otoroshi.next.plugins.WebsocketContentValidatorIn',
   config_schema: {
+    reject_strategy: {
+      type: 'select',
+      label: 'Strategy used when bad format is detected',
+      props: {
+        defaultValue: 'drop',
+        options: [
+          { value: 'drop', label: 'Drop message' },
+          { value: 'close', label: 'Close connection' },
+        ],
+      },
+    },
     validator: {
       label: 'validator',
       type: 'object',
@@ -10,7 +21,7 @@ export default {
           label: 'path',
           type: 'string',
           props: {
-            subTitle: 'Example: $.apikey.metadata.foo',
+            subTitle: 'Example: $.message',
           },
         },
         value: {
@@ -26,5 +37,5 @@ export default {
       flow: ['path', 'value'],
     },
   },
-  config_flow: ['validator'],
+  config_flow: ['reject_strategy', 'validator'],
 };

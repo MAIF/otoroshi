@@ -2698,6 +2698,7 @@ class ProxyEngine() extends RequestHandler {
                 UrlSanitizer.sanitize(request.url),
                 out,
                 request.headers.toSeq,
+                rawRequest,
                 route.serviceDescriptor,
                 route.some,
                 finalTarget,

@@ -19,7 +19,6 @@ import EurekaTarget from './EurekaTarget';
 import ExternalEurekaTarget from './ExternalEurekaTarget';
 import ForceHttpsTraffic from './ForceHttpsTraffic';
 import ForwardedHeader from './ForwardedHeader';
-import FrameFormatValidator from './FrameFormatValidator';
 import GlobalMaintenanceMode from './GlobalMaintenanceMode';
 import GlobalPerIpAddressThrottling from './GlobalPerIpAddressThrottling';
 import GlobalThrottling from './GlobalThrottling';
@@ -137,6 +136,9 @@ import WasmJob from './WasmJob';
 import WasmPreRoute from './WasmPreRoute';
 import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
+import WebsocketContentValidatorIn from './WebsocketContentValidatorIn';
+import WebsocketJsonFormatValidator from './WebsocketJsonFormatValidator';
+import WebsocketTypeValidator from './WebsocketTypeValidator';
 import ZipFileBackend from './ZipFileBackend';
 
 export const Backend = NgBackend;
@@ -164,7 +166,6 @@ const pluginsArray = [
   ExternalEurekaTarget,
   ForceHttpsTraffic,
   ForwardedHeader,
-  FrameFormatValidator,
   GlobalMaintenanceMode,
   GlobalPerIpAddressThrottling,
   GlobalThrottling,
@@ -280,6 +281,9 @@ const pluginsArray = [
   WasmJob,
   WasmPreRoute,
   WasmRouter,
+  WebsocketContentValidatorIn,
+  WebsocketJsonFormatValidator,
+  WebsocketTypeValidator,
   ZipFileBackend,
 ];
 
