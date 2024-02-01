@@ -1288,15 +1288,25 @@ object WebsocketMessage {
   }
 }
 
+case class NgWebsocketResponse(
+                                result: NgAccess = NgAccess.NgAllowed,
+                                statusCode: Option[Int] = None,
+                                reason: Option[String] = None)
+
+object NgWebsocketResponse {
+  def default: Future[NgWebsocketResponse] = NgWebsocketResponse().future
+  def denied(result: Result, statusCode: Int, reason: String) = NgWebsocketResponse(NgAccess.NgDenied(result), statusCode.some, reason.some)
+  def fdenied(result: Result, statusCode: Int, reason: String) = denied(result, statusCode, reason).future
+}
 
 trait NgWebsocketPlugin extends NgNamedPlugin {
   def onRequestFlow: Boolean = true
   def onResponseFlow: Boolean = true
 
-  def accessSync[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A]): NgAccess = NgAccess.NgAllowed
+  def accessSync[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A]): NgWebsocketResponse = NgWebsocketResponse()
 
   def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
-               (implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx, message).vfuture
+               (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = accessSync(ctx, message).vfuture
 }
 
 trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {

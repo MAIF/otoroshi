@@ -18,7 +18,7 @@ import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketPluginContext, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
@@ -797,7 +797,14 @@ class WebSocketProxyActor(
           .fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
                    data => new WebsocketEngine()
-                      .handleResponse(route.get, rawRequest, data)(() => out ! PoisonPill)
+                      .handleResponse(route.get, rawRequest, data)((message: NgWebsocketResponse) => {
+                          Option(queueRef.get()).foreach(_.complete())
+
+                //          message match {
+                //            case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
+                //          }
+
+                      })
                       .map(_ => data match {
                         case akka.http.scaladsl.model.ws.TextMessage.Strict(text) =>
                           if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from target")
@@ -875,7 +882,14 @@ class WebSocketProxyActor(
 
   def receive: Receive = {
     case data: play.api.http.websocket.Message => new WebsocketEngine()
-      .handleRequest(route.get, rawRequest, data)(() => out ! PoisonPill)
+      .handleRequest(route.get, rawRequest, data)((message: NgWebsocketResponse) => {
+          Option(queueRef.get()).foreach(_.complete())
+
+          message match {
+            case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
+          }
+
+      })
       .map(_ => data match {
         case msg: PlayWSBinaryMessage     => {
           if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
@@ -919,7 +933,7 @@ class WebsocketEngine {
   private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]],
                      route: NgRoute,
                      rawRequest: RequestHeader,
-                     data: WebsocketMessage[A])(closeConnection: () => Unit)
+                     data: WebsocketMessage[A])(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val promise = Promise[Either[NgProxyEngineError, Done]]()
 
@@ -939,17 +953,19 @@ class WebsocketEngine {
           wrapper.plugin.access(ctx, data).andThen {
             case Failure(_) =>
               promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError)))
-            case Success(NgAccess.NgDenied(result)) =>
-              println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name)
-              wrapper.plugin.rejectStrategy(ctx) match {
-                case RejectStrategy.Drop => // TODO - do additional things ???
-                case RejectStrategy.Close => closeConnection()
-              }
-              promise.trySuccess(Left(NgResultProxyEngineError(result)))
-            case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
-              promise.trySuccess(Right(Done))
-            case Success(NgAccess.NgAllowed) =>
-              next(plugins.tail)
+            case Success(value) => value match {
+              case response @ NgWebsocketResponse(NgAccess.NgDenied(result), status, reason) =>
+                println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, status, reason)
+                wrapper.plugin.rejectStrategy(ctx) match {
+                  case RejectStrategy.Close => closeConnection(response)
+                  case _ => // TODO - logging ??
+                }
+                promise.trySuccess(Left(NgResultProxyEngineError(result)))
+              case NgWebsocketResponse(NgAccess.NgAllowed, _, _) if plugins.size == 1 =>
+                promise.trySuccess(Right(Done))
+              case NgWebsocketResponse(NgAccess.NgAllowed, _, _) =>
+                next(plugins.tail)
+            }
           }
       }
     }
@@ -960,7 +976,7 @@ class WebsocketEngine {
 
   def handleRequest(route: NgRoute,
                     rawRequest: RequestHeader,
-                    data: play.api.http.websocket.Message)(closeConnection: () => Unit)
+                    data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]] = getValidators(route)(_.plugin.onRequestFlow)
 
@@ -969,7 +985,7 @@ class WebsocketEngine {
 
   def handleResponse(route: NgRoute,
                      rawRequest: RequestHeader,
-                     data: akka.http.scaladsl.model.ws.Message)(closeConnection: () => Unit)
+                     data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
     (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val responseValidators = getValidators(route)(_.plugin.onResponseFlow)
 

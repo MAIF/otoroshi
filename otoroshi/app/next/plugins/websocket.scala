@@ -8,9 +8,11 @@ import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
+import play.api.http.websocket.CloseCodes
 import play.api.libs.json._
 import play.api.mvc.Results
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 
@@ -139,11 +141,11 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
   }
 
   override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
-                            (implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+                            (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
     validate(ctx, message)
       .map {
-        case true => NgAccess.NgAllowed
-        case false => NgAccess.NgDenied(Errors
+        case true => NgWebsocketResponse()
+        case false => NgWebsocketResponse.denied(Errors
         .craftResponseResultSync(
           "forbidden",
           Results.Forbidden,
@@ -152,7 +154,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
           None,
           attrs = ctx.attrs,
           maybeRoute = ctx.route.some
-        ))
+        ), CloseCodes.PolicyViolated, "failed to validate message")
     }
   }
 
@@ -177,46 +179,48 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = false
   override def onRequestFlow: Boolean                      = true
 
-  override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     val config = ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
 
-    val accepted: Future[Boolean] = config.allowedFormat match {
-      case FrameFormat.All => true.future
-      case FrameFormat.Binary => message.isBinary.future
-      case FrameFormat.Text => message.isText.future
+    (config.allowedFormat match {
+      case FrameFormat.Binary if !message.isBinary => NgWebsocketResponse.fdenied(getResultError(ctx), CloseCodes.Unacceptable, "expected binary content")
+      case FrameFormat.Text if !message.isText => NgWebsocketResponse.fdenied(getResultError(ctx), CloseCodes.Unacceptable, "expected text content")
+      case FrameFormat.Text if message.isText => message.str()
+          .map(str => {
+            if (!StandardCharsets.UTF_8.newEncoder().canEncode(str)) {
+              NgWebsocketResponse.denied(getResultError(ctx), CloseCodes.InconsistentData, "non-UTF-8 data within content")
+            } else {
+              NgWebsocketResponse()
+            }
+          })
       case FrameFormat.Json if message.isText => message.str()
-          .map(bs => Try(Json.parse(bs)))
-          .map {
-            case Success(_) => true
-            case _ => false
-          }
-      case _ => false.future
-    }
-
-    accepted.map {
-        case true => NgAccess.NgAllowed
-        case false =>
-          val result = Errors
-            .craftResponseResultSync(
-              "forbidden",
-              Results.Forbidden,
-              ctx.request,
-              None,
-              None,
-              attrs = ctx.attrs,
-              maybeRoute = ctx.route.some
-            )
-
-          NgAccess.NgDenied(result)
-      }
+          .map(bs => (Try(Json.parse(bs)), bs))
+          .map(res => {
+            res._1 match {
+              case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) =>  NgWebsocketResponse.denied(getResultError(ctx), CloseCodes.InconsistentData, "non-UTF-8 data within content")
+              case Failure(_) =>  NgWebsocketResponse.denied(getResultError(ctx), CloseCodes.Unacceptable, "expected json content")
+              case _ => NgWebsocketResponse()
+            }
+          })
+      case _ => NgWebsocketResponse.default
+    })
   }
+
+  private def getResultError(ctx: NgWebsocketPluginContext)(implicit env: Env, ec: ExecutionContext) = Errors
+      .craftResponseResultSync(
+        "forbidden",
+        Results.Forbidden,
+        ctx.request,
+        None,
+        None,
+        attrs = ctx.attrs,
+        maybeRoute = ctx.route.some
+      )
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
     val config = ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
-    println("HERHE")
-    println(config)
     config.rejectStrategy
   }
 }
@@ -268,26 +272,27 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = false
   override def onRequestFlow: Boolean                      = true
 
-  override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
+    println(config)
+
     message.str()
       .map(data => {
-        val userSchema = config.schema.get
+        val userSchema = config.schema.getOrElse("")
 
-        val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.valueOf(config.specification))
+        val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.fromId(config.specification).get())
 
         val schemaConfig = new SchemaValidatorsConfig()
         schemaConfig.setPathType(PathType.JSON_POINTER)
         schemaConfig.setFormatAssertionsEnabled(true)
 
         val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
-
         schema.validate(data, InputFormat.JSON).isEmpty
       })
       .map {
-        case true => NgAccess.NgAllowed
+        case true => NgWebsocketResponse()
         case false =>
           val result = Errors
             .craftResponseResultSync(
@@ -300,12 +305,12 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
               maybeRoute = ctx.route.some
             )
 
-          NgAccess.NgDenied(result)
+          NgWebsocketResponse.denied(result, CloseCodes.PolicyViolated, "failed to validate message")
       }
   }
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
-    val config = ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
+    val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
     config.rejectStrategy
   }
 }
