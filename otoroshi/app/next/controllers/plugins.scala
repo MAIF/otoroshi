@@ -3,20 +3,7 @@ package otoroshi.next.controllers
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgAccessValidator,
-  NgBackendCall,
-  NgNamedPlugin,
-  NgPluginCategory,
-  NgPluginVisibility,
-  NgPreRouting,
-  NgRequestSink,
-  NgRequestSinkContext,
-  NgRequestTransformer,
-  NgRouteMatcher,
-  NgStep,
-  NgTunnelHandler
-}
+import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginCategory, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestSinkContext, NgRequestTransformer, NgRouteMatcher, NgStep, NgTunnelHandler, NgWebsocketPlugin}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -67,10 +54,12 @@ class NgPluginsController(
         case _: NgRequestSink        => true
         case _: NgRouteMatcher       => true
         case _: NgTunnelHandler      => true
+        case p: NgWebsocketPlugin    => p.onRequestFlow
         case _                       => false
       }
       val onResponse = plugin match {
         case a: NgRequestTransformer => a.transformsResponse || a.transformsError
+        case p: NgWebsocketPlugin    => p.onResponseFlow
         case _: NgPreRouting         => false
         case _: NgAccessValidator    => false
         case _: NgRequestSink        => false

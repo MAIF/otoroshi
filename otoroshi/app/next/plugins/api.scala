@@ -1,29 +1,27 @@
 package otoroshi.next.plugins.api
 
 import akka.Done
-import akka.http.scaladsl.model.{StatusCodes, Uri, ws}
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import otoroshi.auth.{AuthModule, BasicAuthModule, BasicAuthModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, BackOfficeUser, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.gateway.Errors
+import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
 import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgRoute, NgTarget}
 import otoroshi.next.plugins.RejectStrategy
 import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
-import otoroshi.next.utils.{FEither, JsonHelpers}
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
-import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage}
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
-import play.api.mvc.{AnyContent, Cookie, Request, RequestHeader, Result, Results}
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
@@ -1241,16 +1239,11 @@ case class NgWebsocketPluginContext(
                             request: RequestHeader,
                             route: NgRoute,
                             attrs: TypedMap,
+                            target: Target
                           ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "config"        -> config
   )
-
-  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
-    (json.asObject ++ Json.obj(
-      "route" -> route.json
-    ))
-  }
 }
 
 sealed trait WebsocketMessage[A] {
@@ -1274,7 +1267,7 @@ object WebsocketMessage {
         case _ => "".future
       }
 
-    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
+      override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
         case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.length.future
         case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
           source.runFold("")((concat, str) => concat + str).map(_.length)
@@ -1315,18 +1308,41 @@ case class NgWebsocketResponse(
 
 object NgWebsocketResponse {
   def default: Future[NgWebsocketResponse] = NgWebsocketResponse().future
-  def denied(result: Result, statusCode: Int, reason: String) = NgWebsocketResponse(NgAccess.NgDenied(result), statusCode.some, reason.some)
-  def fdenied(result: Result, statusCode: Int, reason: String) = denied(result, statusCode, reason).future
+  def error[A](ctx: NgWebsocketPluginContext,
+                message: WebsocketMessage[A],
+                statusCode: Int,
+                reason: String)(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+    implicit val m: Materializer = env.otoroshiMaterializer
+    (for {
+      frame <- message.str
+      size <- message.size()
+    } yield (frame, size))
+      .collect {
+        case (frame, frameSize) =>
+          NgWebsocketResponse.denied(Errors
+            .craftWebsocketResponseResultSync(
+              frame = frame,
+              frameSize = frameSize,
+              statusCode = statusCode.some,
+              reason = reason.some,
+              req = ctx.request,
+              route = ctx.route,
+              target = ctx.target
+            ), statusCode, reason)
+      }
+  }
+  private def denied(result: Result, statusCode: Int, reason: String) = NgWebsocketResponse(NgAccess.NgDenied(result), statusCode.some, reason.some)
 }
 
 trait NgWebsocketPlugin extends NgNamedPlugin {
-  def onRequestFlow: Boolean = true
-  def onResponseFlow: Boolean = true
+  def onRequestFlow: Boolean = false
+  def onResponseFlow: Boolean = false
 
-  def accessSync[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A]): NgWebsocketResponse = NgWebsocketResponse()
+  def canAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
+               (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = NgWebsocketResponse.default
 
-  def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
-               (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = accessSync(ctx, message).vfuture
+  def canAccessResponse[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
+               (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = NgWebsocketResponse.default
 }
 
 trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {

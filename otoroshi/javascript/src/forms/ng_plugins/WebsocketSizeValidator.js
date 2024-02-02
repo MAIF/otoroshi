@@ -15,7 +15,11 @@ export default {
     client_max_payload: {
       label: 'Client max payload',
       type: 'number'
+    },
+    upstream_max_payload: {
+      label: 'Upstream max payload',
+      type: 'number'
     }
   },
-  config_flow: ['reject_strategy', 'client_max_payload'],
+  config_flow: ['reject_strategy', 'client_max_payload', 'upstream_max_payload'],
 };

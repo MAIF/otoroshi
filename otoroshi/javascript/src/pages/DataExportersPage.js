@@ -116,9 +116,8 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
-                    props?.rootValue?.eventType || 'GatewayEvent'
-                  }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
+                    }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -535,9 +534,13 @@ export class NewExporterForm extends Component {
   };
 
   dataChange = (obj) => {
-    delete obj.config.clusterUri;
+    if (obj.config && obj.config.clusterUri) {
+      delete obj.config.clusterUri;
+    }
     const ns = { ...this.props.value, ...obj };
-    delete ns.config.clusterUri;
+    if (ns.config && ns.config.clusterUri) {
+      delete ns.config.clusterUri;
+    }
     this.props.onChange(ns);
   };
 

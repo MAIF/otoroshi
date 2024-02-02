@@ -797,13 +797,13 @@ class WebSocketProxyActor(
           .fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
                    data => new WebsocketEngine()
-                      .handleResponse(route.get, rawRequest, data)((message: NgWebsocketResponse) => {
+                      .handleResponse(route.get, rawRequest, target, data)((message: NgWebsocketResponse) => {
                           Option(queueRef.get()).foreach(_.complete())
 
-                //          message match {
-                //            case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
-                //          }
-
+                          message match {
+                            case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
+                            case _ => // do nothing
+                          }
                       })
                       .map(_ => data match {
                         case akka.http.scaladsl.model.ws.TextMessage.Strict(text) =>
@@ -882,13 +882,13 @@ class WebSocketProxyActor(
 
   def receive: Receive = {
     case data: play.api.http.websocket.Message => new WebsocketEngine()
-      .handleRequest(route.get, rawRequest, data)((message: NgWebsocketResponse) => {
+      .handleRequest(route.get, rawRequest, target, data)((message: NgWebsocketResponse) => {
           Option(queueRef.get()).foreach(_.complete())
 
           message match {
             case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
+            case _ => // do nothing
           }
-
       })
       .map(_ => data match {
         case msg: PlayWSBinaryMessage     => {
@@ -931,9 +931,11 @@ class WebsocketEngine {
   }
 
   private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]],
-                     route: NgRoute,
-                     rawRequest: RequestHeader,
-                     data: WebsocketMessage[A])(closeConnection: NgWebsocketResponse => Unit)
+                        route: NgRoute,
+                        target: Target,
+                        rawRequest: RequestHeader,
+                        data: WebsocketMessage[A],
+                        applyResponseFilter: Boolean = false)(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val promise = Promise[Either[NgProxyEngineError, Done]]()
 
@@ -947,10 +949,15 @@ class WebsocketEngine {
             attrs = TypedMap.empty,
             config = wrapper.plugin.defaultConfig
               .map(dc => dc ++ wrapper.instance.config.raw)
-              .getOrElse(wrapper.instance.config.raw)
+              .getOrElse(wrapper.instance.config.raw),
+            target = target
           )
 
-          wrapper.plugin.access(ctx, data).andThen {
+          (if(applyResponseFilter) {
+            wrapper.plugin.canAccessResponse(ctx, data)
+          } else {
+            wrapper.plugin.canAccess(ctx, data)
+          }).andThen {
             case Failure(_) =>
               promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError)))
             case Success(value) => value match {
@@ -976,19 +983,21 @@ class WebsocketEngine {
 
   def handleRequest(route: NgRoute,
                     rawRequest: RequestHeader,
+                    target: Target,
                     data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]] = getValidators(route)(_.plugin.onRequestFlow)
 
-    handle(requestValidators, route, rawRequest, WebsocketMessage.PlayMessage(data))(closeConnection)
+    handle(requestValidators, route, target, rawRequest, WebsocketMessage.PlayMessage(data))(closeConnection)
   }
 
   def handleResponse(route: NgRoute,
                      rawRequest: RequestHeader,
+                     target: Target,
                      data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
     (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
     val responseValidators = getValidators(route)(_.plugin.onResponseFlow)
 
-    handle(responseValidators, route, rawRequest, WebsocketMessage.AkkaMessage(data))(closeConnection)
+    handle(responseValidators, route, target, rawRequest, WebsocketMessage.AkkaMessage(data), applyResponseFilter = true)(closeConnection)
   }
 }
