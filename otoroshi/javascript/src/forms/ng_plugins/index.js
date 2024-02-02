@@ -138,6 +138,7 @@ import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
 import WebsocketContentValidatorIn from './WebsocketContentValidatorIn';
 import WebsocketJsonFormatValidator from './WebsocketJsonFormatValidator';
+import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
 import ZipFileBackend from './ZipFileBackend';
 
@@ -284,6 +285,7 @@ const pluginsArray = [
   WebsocketContentValidatorIn,
   WebsocketJsonFormatValidator,
   WebsocketTypeValidator,
+  WebsocketSizeValidator,
   ZipFileBackend,
 ];
 

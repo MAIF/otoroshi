@@ -1256,6 +1256,7 @@ case class NgWebsocketPluginContext(
 sealed trait WebsocketMessage[A] {
   def data: A
   def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]
+  def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int]
   def isBinary: Boolean
   def isText: Boolean = !isBinary
 }
@@ -1263,17 +1264,28 @@ sealed trait WebsocketMessage[A] {
 object WebsocketMessage {
   case class AkkaMessage(override val data: akka.http.scaladsl.model.ws.Message) extends WebsocketMessage[akka.http.scaladsl.model.ws.Message] {
       override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String] = data match {
-      case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.future
-      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
-        source.runFold("")((concat, str) => concat + str)
-      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.utf8String.future
-      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
-        source
-          .runFold(ByteString.empty)((concat, str) => concat ++ str).map(_.utf8String)
-      case _ => "".future
-    }
+        case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.future
+        case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+          source.runFold("")((concat, str) => concat + str)
+        case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.utf8String.future
+        case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+          source
+            .runFold(ByteString.empty)((concat, str) => concat ++ str).map(_.utf8String)
+        case _ => "".future
+      }
 
-    override def isBinary: Boolean = !data.isText
+    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
+        case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.length.future
+        case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+          source.runFold("")((concat, str) => concat + str).map(_.length)
+        case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.size.future
+        case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+          source
+            .runFold(ByteString.empty)((concat, str) => concat ++ str).map(_.size)
+        case _ => 0.future
+      }
+
+      override def isBinary: Boolean = !data.isText
   }
   case class PlayMessage(override val data: play.api.http.websocket.Message) extends WebsocketMessage[play.api.http.websocket.Message] {
     override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String] = (data match {
@@ -1282,6 +1294,14 @@ object WebsocketMessage {
       case CloseMessage(_, _) => ""
       case PingMessage(data) => data.utf8String
       case PongMessage(data) => data.utf8String
+    }).future
+
+    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = (data match {
+      case PlayWSTextMessage(data) => data.length
+      case PlayWSBinaryMessage(data) => data.size
+      case CloseMessage(_, _) => 0
+      case PingMessage(data) => data.size
+      case PongMessage(data) => data.size
     }).future
 
     override def isBinary: Boolean = data.isInstanceOf[play.api.http.websocket.BinaryMessage]

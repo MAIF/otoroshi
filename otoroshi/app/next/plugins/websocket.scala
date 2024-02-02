@@ -276,7 +276,6 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
-    println(config)
 
     message.str()
       .map(data => {
@@ -311,6 +310,77 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
     val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
+    config.rejectStrategy
+  }
+}
+
+case class WebsocketSizeValidatorConfig(clientMaxPayload: Int = 4096, rejectStrategy: RejectStrategy = RejectStrategy.Drop)
+ extends NgPluginConfig {
+  override def json: JsValue = WebsocketSizeValidatorConfig.format.writes(this)
+}
+
+object WebsocketSizeValidatorConfig {
+  val default = WebsocketSizeValidatorConfig()
+  val format  = new Format[WebsocketSizeValidatorConfig] {
+    override def writes(o: WebsocketSizeValidatorConfig): JsValue = Json.obj(
+      "client_max_payload" -> o.clientMaxPayload,
+      "reject_strategy" -> o.rejectStrategy.json
+    )
+    override def reads(json: JsValue): JsResult[WebsocketSizeValidatorConfig] = {
+      Try {
+        WebsocketSizeValidatorConfig(
+          clientMaxPayload = json.select("client_max_payload").asOpt[Int].getOrElse(4096),
+          rejectStrategy = RejectStrategy.read(json)
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(s) => JsSuccess(s)
+      }
+    }
+  }
+}
+
+class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
+
+  override def multiInstance: Boolean                      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(WebsocketSizeValidatorConfig.default)
+  override def core: Boolean                               = false
+  override def name: String                                = "Websocket size validator"
+  override def description: Option[String]                 = "Make sure the frame does not exceed the maximum size set.".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+
+  override def onResponseFlow: Boolean                     = false
+  override def onRequestFlow: Boolean                      = true
+
+  override def access[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+    implicit val m: Materializer = env.otoroshiMaterializer
+
+    val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
+
+    message.size()
+      .map(_ <= config.clientMaxPayload)
+      .map {
+        case true => NgWebsocketResponse()
+        case false =>
+          val result = Errors
+            .craftResponseResultSync(
+              "forbidden",
+              Results.Forbidden,
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+
+          NgWebsocketResponse.denied(result, CloseCodes.TooBig, "limit exceeded")
+      }
+  }
+
+  override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
+    val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
     config.rejectStrategy
   }
 }
