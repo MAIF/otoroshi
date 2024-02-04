@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
@@ -568,7 +568,8 @@ class WebSocketHandler()(implicit env: Env) {
                   HeadersHelper
                     .addClaims(httpRequest.headers, httpRequest.claims, descriptor),
                   descriptor,
-                  httpRequest.target.getOrElse(_target)
+                  target = httpRequest.target.getOrElse(_target),
+                  rawRequest = req,
                 )
               )
             )
@@ -628,11 +629,16 @@ object WebSocketProxyActor {
   ) =
     Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, target, env))
 
-  def wsCall(url: String, headers: Seq[(String, String)], descriptor: ServiceDescriptor, target: Target)(implicit
+  def wsCall(url: String,
+             headers: Seq[(String, String)],
+             descriptor: ServiceDescriptor,
+             target: Target,
+             rawRequest: RequestHeader,
+             route: Option[NgRoute] = None)(implicit
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Flow[PlayWSMessage, PlayWSMessage, Future[NotUsed]] = {
+  ): Flow[PlayWSMessage, PlayWSMessage, _] = {
     val avoid                                = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers                             = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
       case (key, value) if key.toLowerCase == "cookie"     =>
@@ -646,7 +652,8 @@ object WebSocketProxyActor {
           case Failure(e)   => List.empty
         }
       case (key, value) if key.toLowerCase == "host"       =>
-        Seq(akka.http.scaladsl.model.headers.Host(value))
+        val part = value.split(":")
+        Seq(akka.http.scaladsl.model.headers.Host(part.head))
       case (key, value) if key.toLowerCase == "user-agent" =>
         Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
       case (key, value)                                    =>
@@ -695,7 +702,8 @@ object WebSocketProxyActor {
         }
       }
     )
-    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
+
+    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, Any] { () =>
       connected.flatMap { r =>
         if (logger.isTraceEnabled)
           logger.trace(
@@ -703,32 +711,62 @@ object WebSocketProxyActor {
           )
         r match {
           case ValidUpgrade(response, chosenSubprotocol) =>
-            val f: Flow[PlayWSMessage, PlayWSMessage, NotUsed] = Flow.fromSinkAndSource(
-              Sink.fromSubscriber(subscriber).contramap {
-                case PlayWSTextMessage(text)      => akka.http.scaladsl.model.ws.TextMessage(text)
-                case PlayWSBinaryMessage(data)    => akka.http.scaladsl.model.ws.BinaryMessage(data)
-                case PingMessage(data)            => akka.http.scaladsl.model.ws.BinaryMessage(data)
-                case PongMessage(data)            => akka.http.scaladsl.model.ws.BinaryMessage(data)
-                case CloseMessage(status, reason) =>
-                  logger.error(s"close message $status: $reason")
-                  akka.http.scaladsl.model.ws.BinaryMessage(ByteString.empty)
-                // throw new RuntimeException(reason)
-                case m                            =>
-                  logger.error(s"Unknown message $m")
-                  throw new RuntimeException(s"Unknown message $m")
-              },
+            val f: Flow[PlayWSMessage, PlayWSMessage, _] = Flow.fromSinkAndSource(
+               Sink.foreach[akka.http.scaladsl.model.ws.Message] {
+                 data =>
+                   new WebsocketEngine()
+                     .handleResponse(route.get, rawRequest, target, data)((message: NgWebsocketResponse) => {
+
+                       message match {
+                         case NgWebsocketResponse(_, Some(status), Some(reason)) =>
+                         //                              out ! CloseMessage(status, reason)
+                         case _ => // do nothing
+                       }
+                     })
+                     .map(_ => data match {
+                       case akka.http.scaladsl.model.ws.TextMessage.Strict(text) =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from target")
+
+                       case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] streamed text message from target")
+                         source.runFold("")((concat, str) => concat + str)
+                           .map(text => ())
+                       case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
+                         ()
+                       case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
+                         source
+                           .runFold(ByteString.empty)((concat, str) => concat ++ str)
+                           .map(data => ())
+                       case other => logger.error(s"Unkown message type ${other}")
+                     })
+               },
+//              Sink.fromSubscriber(subscriber).contramap {
+//                  case PlayWSTextMessage(text) => akka.http.scaladsl.model.ws.TextMessage(text)
+//                  case PlayWSBinaryMessage(data) => akka.http.scaladsl.model.ws.BinaryMessage(data)
+//                  case PingMessage(data) => akka.http.scaladsl.model.ws.BinaryMessage(data)
+//                  case PongMessage(data) => akka.http.scaladsl.model.ws.BinaryMessage(data)
+//                  case CloseMessage(status, reason) =>
+//                    logger.error(s"close message $status: $reason")
+//                    akka.http.scaladsl.model.ws.BinaryMessage(ByteString.empty)
+//                  // throw new RuntimeException(reason)
+//                  case m =>
+//                    logger.error(s"Unknown message $m")
+//                    throw new RuntimeException(s"Unknown message $m")
+//              },
               Source.fromPublisher(publisher).mapAsync(1) {
-                case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
-                  FastFuture.successful(PlayWSTextMessage(text))
-                case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
-                  source.runFold("")((concat, str) => concat + str).map(str => PlayWSTextMessage(str))
-                case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
-                  FastFuture.successful(PlayWSBinaryMessage(data))
-                case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
-                  source
-                    .runFold(ByteString.empty)((concat, str) => concat ++ str)
-                    .map(data => PlayWSBinaryMessage(data))
-                case other                                                      => FastFuture.failed(new RuntimeException(s"Unkown message type ${other}"))
+                  case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
+                    FastFuture.successful(PlayWSTextMessage(text))
+                  case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+                    source.runFold("")((concat, str) => concat + str).map(str => PlayWSTextMessage(str))
+                  case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
+                    FastFuture.successful(PlayWSBinaryMessage(data))
+                  case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+                    source
+                      .runFold(ByteString.empty)((concat, str) => concat ++ str)
+                      .map(data => PlayWSBinaryMessage(data))
+                  case other                                                      => FastFuture.failed(new RuntimeException(s"Unkown message type ${other}"))
               }
             )
             FastFuture.successful(f)
@@ -793,8 +831,7 @@ class WebSocketProxyActor(
         request = request,
         targetOpt = Some(target),
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
-        clientFlow = Flow
-          .fromSinkAndSourceMat(
+        clientFlow = Flow.fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
                    data => new WebsocketEngine()
                       .handleResponse(route.get, rawRequest, target, data)((message: NgWebsocketResponse) => {

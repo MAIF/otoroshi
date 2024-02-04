@@ -2685,7 +2685,9 @@ class ProxyEngine() extends RequestHandler {
               UrlSanitizer.sanitize(request.url),
               request.headers.toSeq,
               route.serviceDescriptor,
-              finalTarget
+              target = finalTarget,
+              rawRequest = rawRequest,
+              route = route.some
             )
             .right
             .vfuture
