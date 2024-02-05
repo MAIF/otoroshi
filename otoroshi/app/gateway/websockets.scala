@@ -815,25 +815,27 @@ class WebSocketProxyActor(
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
         clientFlow = Flow.fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-               data => wsEngine.handleResponse(data)(closeFunction)
-                 .map {
-                   case Left(error) =>
-                     println("error", error)
-                     Option(queueRef.get()).foreach(_.complete())
-                   case Right(msg) => {
-                     msg.asPlay.map { msg =>
-                       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
-                       out ! msg
+               data => {
+                 wsEngine.handleResponse(data)(closeFunction)
+                   .map {
+                     case Left(error) =>
+                       Option(queueRef.get()).foreach(_.complete())
+                     case Right(msg) => {
+                       msg.asPlay.map { msg =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
+                         out ! msg
+                       }
                      }
                    }
-                 }
+               }
             },
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
-            if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
-            Option(queueRef.get()).foreach(_.complete())
-          // out ! PoisonPill
+              if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
+              Option(queueRef.get()).foreach(_.complete())
+              out ! PoisonPill
+              self ! PoisonPill
           }),
         customizer = descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
@@ -894,19 +896,27 @@ class WebSocketProxyActor(
   }
 
   def receive: Receive = {
-    case data: play.api.http.websocket.Message => wsEngine.handleRequest(data)(closeFunction)
-      .map {
-        case Left(error) => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
-          Option(queueRef.get()).foreach(_.complete())
-        }
-        case Right(msg) => {
-          msg.asAkka.map { msg =>
-            if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
-            Option(queueRef.get()).foreach(_.offer(msg))
+    case data: play.api.http.websocket.Message => {
+      wsEngine.handleRequest(data)(closeFunction)
+        .map {
+          case Left(error) => {
+            error.rejectStrategy.foreach {
+              case RejectStrategy.Close =>
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
+                Option(queueRef.get()).foreach(_.complete())
+              case _ => // TODO - logging ??
+            }
+          }
+          case Right(msg) => {
+            msg.asAkka.map { msg =>
+              if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
+              Option(queueRef.get()).foreach { q =>
+                q.offer(msg)
+              }
+            }
           }
         }
-      }
+    }
   }
 }
 
@@ -948,22 +958,20 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
             wrapper.plugin.onRequestMessage(ctx, current)
           }).andThen {
             case Failure(_) =>
-              println("failure")
-              promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some)))
+              promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some, wrapper.plugin.rejectStrategy(ctx).some)))
             case Success(Left(error)) => {
-              println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
+              //println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
               wrapper.plugin.rejectStrategy(ctx) match {
-                case RejectStrategy.Close => closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))
+                case RejectStrategy.Close =>
+                  closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))
                 case _ => // TODO - logging ??
               }
-              promise.trySuccess(Left(error))
+              promise.trySuccess(Left(error.copy(rejectStrategy = wrapper.plugin.rejectStrategy(ctx).some)))
             }
             case Success(Right(nextMessage)) if plugins.size == 1 => {
-              println("last one", nextMessage)
               promise.trySuccess(Right(nextMessage))
             }
             case Success(Right(nextMessage)) => {
-              println("next", nextMessage)
               next(nextMessage, plugins.tail)
             }
           }

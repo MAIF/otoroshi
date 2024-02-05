@@ -1342,8 +1342,6 @@ object WebsocketMessage {
     }
 
     override def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message] = {
-      implicit val ec = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
       data match {
         case msg: PlayWSBinaryMessage     => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
         case msg: PlayWSTextMessage       => akka.http.scaladsl.model.ws.TextMessage(msg.data).vfuture
@@ -1399,7 +1397,7 @@ trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {
   def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy
 }
 
-case class NgWebsocketError(statusCode: Option[Int] = None, reason: Option[String] = None)
+case class NgWebsocketError(statusCode: Option[Int] = None, reason: Option[String] = None, rejectStrategy: Option[RejectStrategy])
 object NgWebsocketError {
-  def apply(statusCode: Int, reason: String): NgWebsocketError = NgWebsocketError(statusCode.some, reason.some)
+  def apply(statusCode: Int, reason: String): NgWebsocketError = NgWebsocketError(statusCode.some, reason.some, None)
 }
