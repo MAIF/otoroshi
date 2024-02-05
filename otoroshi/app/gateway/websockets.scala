@@ -948,6 +948,7 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
             wrapper.plugin.onRequestMessage(ctx, current)
           }).andThen {
             case Failure(_) =>
+              println("failure")
               promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some)))
             case Success(Left(error)) => {
               println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
@@ -958,9 +959,11 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
               promise.trySuccess(Left(error))
             }
             case Success(Right(nextMessage)) if plugins.size == 1 => {
+              println("last one", nextMessage)
               promise.trySuccess(Right(nextMessage))
             }
-            case Success(Right(nextMessage)) if plugins.size == 1 => {
+            case Success(Right(nextMessage)) => {
+              println("next", nextMessage)
               next(nextMessage, plugins.tail)
             }
           }

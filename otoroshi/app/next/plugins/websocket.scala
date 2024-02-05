@@ -187,6 +187,7 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
       case FrameFormat.Json if message.isText => message.str()
           .map(bs => (Try(Json.parse(bs)), bs))
           .flatMap(res => {
+            println("pouet", res)
             res._1 match {
               case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) => Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
               case Failure(_) => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected json content")).vfuture
