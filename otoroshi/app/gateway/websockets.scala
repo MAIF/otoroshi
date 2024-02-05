@@ -18,7 +18,7 @@ import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
@@ -28,6 +28,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.future.Implicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
@@ -815,23 +816,16 @@ class WebSocketProxyActor(
         clientFlow = Flow.fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
                data => wsEngine.handleResponse(data)(closeFunction)
-                 .map(_ => data)
                  .map {
-                    case akka.http.scaladsl.model.ws.TextMessage.Strict(text) =>
-                      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from target")
-                      out ! PlayWSTextMessage(text)
-                    case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
-                      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] streamed text message from target")
-                      source.runFold("")((concat, str) => concat + str).map(text => out ! PlayWSTextMessage(text))
-                    case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) =>
-                      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
-                      out ! PlayWSBinaryMessage(data)
-                    case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
-                      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
-                      source
-                        .runFold(ByteString.empty)((concat, str) => concat ++ str)
-                        .map(data => out ! PlayWSBinaryMessage(data))
-                    case other => logger.error(s"Unkown message type ${other}")
+                   case Left(error) =>
+                     println("error", error)
+                     Option(queueRef.get()).foreach(_.complete())
+                   case Right(msg) => {
+                     msg.asPlay.map { msg =>
+                       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
+                       out ! msg
+                     }
+                   }
                  }
             },
             source
@@ -901,30 +895,17 @@ class WebSocketProxyActor(
 
   def receive: Receive = {
     case data: play.api.http.websocket.Message => wsEngine.handleRequest(data)(closeFunction)
-      .map(_ => data)
       .map {
-        case msg: PlayWSBinaryMessage     => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
-          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-        }
-        case msg: PlayWSTextMessage       => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
-          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
-        }
-        case msg: PingMessage             => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
-          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-        }
-        case msg: PongMessage             => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
-          Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
-        }
-        case CloseMessage(status, reason) => {
-          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
+        case Left(error) => {
+          if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
           Option(queueRef.get()).foreach(_.complete())
-          // out ! PoisonPill
         }
-        case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
+        case Right(msg) => {
+          msg.asAkka.map { msg =>
+            if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
+            Option(queueRef.get()).foreach(_.offer(msg))
+          }
+        }
       }
   }
 }
@@ -941,14 +922,15 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
   }
 
   private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]],
-                        data: WebsocketMessage[A],
+                        data: WebsocketMessage,
                         applyResponseFilter: Boolean = false)(closeConnection: NgWebsocketResponse => Unit)
-            (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
-    val promise = Promise[Either[NgProxyEngineError, Done]]()
+            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
 
-    def next(plugins: Seq[NgPluginWrapper[NgWebsocketValidatorPlugin]]): Unit = {
+    val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
+
+    def next(current: WebsocketMessage, plugins: Seq[NgPluginWrapper[NgWebsocketValidatorPlugin]]): Unit = {
       plugins.headOption match {
-        case None => promise.trySuccess(Right(Done))
+        case None => promise.trySuccess(Right(current))
         case Some(wrapper) =>
           val ctx = NgWebsocketPluginContext(
             route = route,
@@ -961,47 +943,49 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
           )
 
           (if(applyResponseFilter) {
-            wrapper.plugin.canAccessResponse(ctx, data)
+            wrapper.plugin.onResponseMessage(ctx, current)
           } else {
-            wrapper.plugin.canAccess(ctx, data)
+            wrapper.plugin.onRequestMessage(ctx, current)
           }).andThen {
             case Failure(_) =>
-              promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError)))
-            case Success(value) => value match {
-              case response @ NgWebsocketResponse(NgAccess.NgDenied(result), status, reason) =>
-                println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, status, reason)
-                wrapper.plugin.rejectStrategy(ctx) match {
-                  case RejectStrategy.Close => closeConnection(response)
-                  case _ => // TODO - logging ??
-                }
-                promise.trySuccess(Left(NgResultProxyEngineError(result)))
-              case NgWebsocketResponse(NgAccess.NgAllowed, _, _) if plugins.size == 1 =>
-                promise.trySuccess(Right(Done))
-              case NgWebsocketResponse(NgAccess.NgAllowed, _, _) =>
-                next(plugins.tail)
+              promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some)))
+            case Success(Left(error)) => {
+              println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
+              wrapper.plugin.rejectStrategy(ctx) match {
+                case RejectStrategy.Close => closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))
+                case _ => // TODO - logging ??
+              }
+              promise.trySuccess(Left(error))
+            }
+            case Success(Right(nextMessage)) if plugins.size == 1 => {
+              promise.trySuccess(Right(nextMessage))
+            }
+            case Success(Right(nextMessage)) if plugins.size == 1 => {
+              next(nextMessage, plugins.tail)
             }
           }
       }
     }
 
-    next(validators)
-    FEither.apply(promise.future)
+    next(data, validators)
+    promise.future
   }
 
-  def handleRequest(data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
-            (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
+  def handleRequest[A](data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
+            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
-      FEither.right(Done)
+      val r: Either[NgWebsocketError, WebsocketMessage] = Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
+      r.vfuture
     } else {
       val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]] = getValidators()(_.plugin.onRequestFlow)
       handle(requestValidators, WebsocketMessage.PlayMessage(data))(closeConnection)
     }
   }
 
-  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
-    (implicit env: Env, ec: ExecutionContext): FEither[NgProxyEngineError, Done] = {
+  def handleResponse[A](data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
+    (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
-      FEither.right(Done)
+      WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
     } else {
       val responseValidators = getValidators()(_.plugin.onResponseFlow)
       handle(responseValidators, WebsocketMessage.AkkaMessage(data), applyResponseFilter = true)(closeConnection)

@@ -125,7 +125,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = false
   override def onRequestFlow: Boolean                      = true
 
-  private def validate[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
+  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)
                          (implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     implicit val m: Materializer = env.otoroshiMaterializer
     val config = ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
@@ -140,12 +140,11 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
         })
   }
 
-  override def canAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])
-                            (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     validate(ctx, message)
       .flatMap {
-        case true => NgWebsocketResponse.default
-        case false => NgWebsocketResponse.error(ctx, message, CloseCodes.PolicyViolated, "failed to validate message")
+        case true => Right(message).vfuture
+        case false => Left(NgWebsocketError(CloseCodes.PolicyViolated.some, "failed to validate message".some)).vfuture
       }
   }
 
@@ -169,32 +168,32 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = false
   override def onRequestFlow: Boolean                      = true
 
-  override def canAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     val config = ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
 
     (config.allowedFormat match {
-      case FrameFormat.Binary if !message.isBinary => NgWebsocketResponse.error(ctx, message, CloseCodes.Unacceptable, "expected binary content")
-      case FrameFormat.Text if !message.isText => NgWebsocketResponse.error(ctx, message, CloseCodes.Unacceptable, "expected text content")
+      case FrameFormat.Binary if !message.isBinary =>  Left(NgWebsocketError(CloseCodes.Unacceptable, "expected binary content")).vfuture
+      case FrameFormat.Text if !message.isText => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected text content")).vfuture
       case FrameFormat.Text if message.isText => message.str()
           .flatMap(str => {
             if (!StandardCharsets.UTF_8.newEncoder().canEncode(str)) {
-              NgWebsocketResponse.error(ctx, message, CloseCodes.InconsistentData, "non-UTF-8 data within content")
+              Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
             } else {
-              NgWebsocketResponse.default
+              Right(message).vfuture
             }
           })
       case FrameFormat.Json if message.isText => message.str()
           .map(bs => (Try(Json.parse(bs)), bs))
           .flatMap(res => {
             res._1 match {
-              case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) =>  NgWebsocketResponse.error(ctx, message, CloseCodes.InconsistentData, "non-UTF-8 data within content")
-              case Failure(_) =>  NgWebsocketResponse.error(ctx, message, CloseCodes.Unacceptable, "expected json content")
-              case _ => NgWebsocketResponse.default
+              case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) => Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
+              case Failure(_) => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected json content")).vfuture
+              case _ => Right(message).vfuture
             }
           })
-      case _ => NgWebsocketResponse.default
+      case _ => Right(message).vfuture
     })
   }
 
@@ -251,7 +250,7 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = false
   override def onRequestFlow: Boolean                      = true
 
-  override def canAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
@@ -270,8 +269,8 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
         schema.validate(data, InputFormat.JSON).isEmpty
       })
       .flatMap {
-        case true => NgWebsocketResponse.default
-        case false => NgWebsocketResponse.error(ctx, message,  CloseCodes.PolicyViolated, "failed to validate message")
+        case true => Right(message).vfuture
+        case false => Left(NgWebsocketError(CloseCodes.PolicyViolated, "failed to validate message")).vfuture
       }
   }
 
@@ -326,19 +325,19 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean                     = true
   override def onRequestFlow: Boolean                      = true
 
-  private def internalCanAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A], maxSize: Int, reason: String)
-                                  (implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  private def internalCanAccess(ctx: NgWebsocketPluginContext, message: WebsocketMessage, maxSize: Int, reason: String)
+                                  (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
     message.size()
       .map(_ <= maxSize)
       .flatMap {
-        case true => NgWebsocketResponse.default
-        case false => NgWebsocketResponse.error(ctx, message, CloseCodes.TooBig, reason)
+        case true => Right(message).vfuture
+        case false => Left(NgWebsocketError(CloseCodes.TooBig, reason)).vfuture
       }
   }
 
-  override def canAccess[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
 
     internalCanAccess(ctx, message, config.clientMaxPayload, "limit exceeded")
@@ -349,7 +348,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
     config.rejectStrategy
   }
 
-  override def canAccessResponse[A](ctx: NgWebsocketPluginContext, message: WebsocketMessage[A])(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
 
     internalCanAccess(ctx, message, config.upstreamMaxPayload, reason = "upstream payload limit exceeded")
