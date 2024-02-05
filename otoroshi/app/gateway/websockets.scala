@@ -664,6 +664,7 @@ object WebSocketProxyActor {
     val request                              = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
       r.copy(extraHeaders = r.extraHeaders :+ header)
     )
+    // WARN: DOES NOT MAKE USE OF WS PLUGINS BECAUSE OF THE LIMITS OF THE AKKA STREAM SINK API
     val flow                                 = Flow.fromSinkAndSourceMat(
       Sink.asPublisher[akka.http.scaladsl.model.ws.Message](fanout = false),
       Source.asSubscriber[akka.http.scaladsl.model.ws.Message]
