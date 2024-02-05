@@ -1,6 +1,8 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
 import otoroshi.env.Env
@@ -8,12 +10,14 @@ import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.http.websocket.CloseCodes
 import play.api.libs.json._
 import play.api.mvc.Results
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util._
 
 sealed trait RejectStrategy {
@@ -352,5 +356,87 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
     val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
 
     internalCanAccess(ctx, message, config.upstreamMaxPayload, reason = "upstream payload limit exceeded")
+  }
+}
+
+case class JqWebsocketMessageTransformerConfig(requestFilter: String = ".", responseFilter: String = ".") extends NgPluginConfig {
+  override def json: JsValue = JqWebsocketMessageTransformerConfig.format.writes(this)
+}
+object JqWebsocketMessageTransformerConfig {
+  val format = new Format[JqWebsocketMessageTransformerConfig] {
+    override def reads(json: JsValue): JsResult[JqWebsocketMessageTransformerConfig] = Try {
+      JqWebsocketMessageTransformerConfig(
+        requestFilter = json.select("request_filter").asOpt[String].getOrElse("."),
+        responseFilter = json.select("response_filter").asOpt[String].getOrElse("."),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+    override def writes(o: JqWebsocketMessageTransformerConfig): JsValue = Json.obj(
+      "request_filter" -> o.requestFilter,
+      "response_filter" -> o.responseFilter,
+    )
+  }
+}
+
+class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
+
+  private val library = ImmutableJqLibrary.of()
+  private val logger  = Logger("otoroshi-plugins-jq-websocket")
+
+  override def multiInstance: Boolean                      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(JqWebsocketMessageTransformerConfig())
+  override def core: Boolean                               = false
+  override def name: String                                = "Websocket JQ transformer"
+  override def description: Option[String]                 = "Transform messages JSON content using JQ filters".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
+
+  override def onRequestFlow: Boolean = true
+  override def onResponseFlow: Boolean = true
+
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config = ctx.cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format).getOrElse(JqWebsocketMessageTransformerConfig())
+    onMessage(ctx, message, config.requestFilter)
+  }
+
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config = ctx.cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format).getOrElse(JqWebsocketMessageTransformerConfig())
+    onMessage(ctx, message, config.responseFilter)
+  }
+
+  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    implicit val mat = env.otoroshiMaterializer
+    if (message.isText) {
+      message.str().flatMap { bodyStr =>
+        Try(Json.parse(bodyStr)) match {
+          case Failure(e) => Right(message).vfuture
+          case Success(_) => {
+            val request  = ImmutableJqRequest
+              .builder()
+              .lib(library)
+              .input(bodyStr)
+              .putArgJson("context", ctx.json.stringify)
+              .filter(filter)
+              .build()
+            val response = request.execute()
+            if (response.hasErrors) {
+              logger.error(
+                s"error while transforming response body:\n${response.getErrors.asScala.mkString("\n")}"
+              )
+              val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
+              Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(errors.stringify))).vfuture
+            } else {
+              val rawBody = response.getOutput
+              Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(rawBody))).vfuture
+            }
+          }
+        }
+      }
+    } else {
+      Right(message).vfuture
+    }
   }
 }

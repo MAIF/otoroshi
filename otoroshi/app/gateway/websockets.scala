@@ -18,7 +18,7 @@ import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPlugin, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
@@ -922,23 +922,19 @@ class WebSocketProxyActor(
 
 class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawRequest: RequestHeader, target: Target) {
 
-  private def getValidators()(f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin] => Boolean): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]] = {
+  private def getPlugins()(f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin] => Boolean): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
     ctxPlugins.websocketPlugins
-      .collect {
-        case p if p.plugin.isInstanceOf[NgWebsocketValidatorPlugin] =>
-          NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin](instance = p.instance, plugin = p.plugin.asInstanceOf[NgWebsocketValidatorPlugin])
-      }
       .filter(f)
   }
 
-  private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]],
+  private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]],
                         data: WebsocketMessage,
                         applyResponseFilter: Boolean = false)(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
 
     val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
 
-    def next(current: WebsocketMessage, plugins: Seq[NgPluginWrapper[NgWebsocketValidatorPlugin]]): Unit = {
+    def next(current: WebsocketMessage, plugins: Seq[NgPluginWrapper[NgWebsocketPlugin]]): Unit = {
       plugins.headOption match {
         case None => promise.trySuccess(Right(current))
         case Some(wrapper) =>
@@ -982,23 +978,23 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
     promise.future
   }
 
-  def handleRequest[A](data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
+  def handleRequest(data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
             (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       val r: Either[NgWebsocketError, WebsocketMessage] = Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
       r.vfuture
     } else {
-      val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketValidatorPlugin]] = getValidators()(_.plugin.onRequestFlow)
+      val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = getPlugins()(_.plugin.onRequestFlow)
       handle(requestValidators, WebsocketMessage.PlayMessage(data))(closeConnection)
     }
   }
 
-  def handleResponse[A](data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
+  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
     (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
     } else {
-      val responseValidators = getValidators()(_.plugin.onResponseFlow)
+      val responseValidators = getPlugins()(_.plugin.onResponseFlow)
       handle(responseValidators, WebsocketMessage.AkkaMessage(data), applyResponseFilter = true)(closeConnection)
     }
   }

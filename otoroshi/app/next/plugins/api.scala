@@ -1387,15 +1387,14 @@ object NgWebsocketResponse {
 }
 
 trait NgWebsocketPlugin extends NgNamedPlugin {
+  def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
   def onRequestFlow: Boolean = false
   def onResponseFlow: Boolean = false
   def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = message.rightf
   def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = message.rightf
 }
 
-trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {
-  def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy
-}
+trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {}
 
 case class NgWebsocketError(statusCode: Option[Int] = None, reason: Option[String] = None, rejectStrategy: Option[RejectStrategy])
 object NgWebsocketError {

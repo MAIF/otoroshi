@@ -140,6 +140,7 @@ import WebsocketContentValidatorIn from './WebsocketContentValidatorIn';
 import WebsocketJsonFormatValidator from './WebsocketJsonFormatValidator';
 import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
+import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 
 export const Backend = NgBackend;
@@ -286,6 +287,7 @@ const pluginsArray = [
   WebsocketJsonFormatValidator,
   WebsocketTypeValidator,
   WebsocketSizeValidator,
+  JqWebsocketMessageTransformer,
   ZipFileBackend,
 ];
 
