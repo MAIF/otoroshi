@@ -24,6 +24,7 @@ case class PluginIndex(
     transformResponse: Option[Double] = None,
     matchRoute: Option[Double] = None,
     handlesTunnel: Option[Double] = None,
+    handlesWebsocket: Option[Double] = None,
     callBackend: Option[Double] = None
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
@@ -54,6 +55,8 @@ object PluginIndex {
           json.select("match_route").asOpt[Int].map(_.toDouble).orElse(json.select("match_route").asOpt[Double]),
         handlesTunnel =
           json.select("handles_tunnel").asOpt[Int].map(_.toDouble).orElse(json.select("handles_tunnel").asOpt[Double]),
+        handlesWebsocket =
+          json.select("handles_websocket").asOpt[Int].map(_.toDouble).orElse(json.select("handles_websocket").asOpt[Double]),
         callBackend =
           json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double])
       )
@@ -70,6 +73,7 @@ object PluginIndex {
       .applyOnWithOpt(o.transformResponse)((o, v) => o ++ Json.obj("transform_response" -> JsNumber(v)))
       .applyOnWithOpt(o.matchRoute)((o, v) => o ++ Json.obj("match_route" -> JsNumber(v)))
       .applyOnWithOpt(o.handlesTunnel)((o, v) => o ++ Json.obj("handles_tunnel" -> JsNumber(v)))
+      .applyOnWithOpt(o.handlesWebsocket)((o, v) => o ++ Json.obj("handles_websocket" -> JsNumber(v)))
   }
 }
 
@@ -522,6 +526,20 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
+  lazy val websocketPlugins = {
+    val pls                             = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgWebsocketPlugin]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesWebsocket.isDefined))
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.handlesWebsocket.get.compareTo(b.instance.pluginIndex.get.handlesWebsocket.get) < 0
+    ) ++ plsWithoutIndex
+  }
+
+  lazy val hasWebsocketPlugins       = websocketPlugins.nonEmpty
+  lazy val hasNoWebsocketPlugins     = websocketPlugins.isEmpty
   lazy val hasTunnelHandlerPlugin    = tunnelHandlerPlugins.nonEmpty
   lazy val tunnelHandlerPlugin       = tunnelHandlerPlugins.head
   lazy val tunnelHandlerPluginOption = tunnelHandlerPlugins.headOption
@@ -541,4 +559,17 @@ case class NgContextualPlugins(
   lazy val hasBackendCallPlugin    = backendCallPlugins.nonEmpty
   lazy val backendCallPlugin       = backendCallPlugins.head
   lazy val backendCallPluginOption = backendCallPlugins.headOption
+}
+
+object NgContextualPlugins {
+  def empty(request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
+    NgContextualPlugins(
+      plugins = NgPlugins.empty,
+      global_plugins = NgPlugins.empty,
+      request = request,
+      nextPluginsMerge = true,
+      _env = env,
+      _ec = ec,
+    )
+  }
 }

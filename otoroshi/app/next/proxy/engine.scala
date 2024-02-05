@@ -2678,7 +2678,7 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     } else {
-      if (route.useAkkaHttpWsClient) {
+      if (route.useAkkaHttpWsClient && ctxPlugins.hasNoWebsocketPlugins) {
         FEither(
           WebSocketProxyActor
             .wsCall(
@@ -2703,6 +2703,7 @@ class ProxyEngine() extends RequestHandler {
                 rawRequest,
                 route.serviceDescriptor,
                 route.some,
+                ctxPlugins.some,
                 finalTarget,
                 env
               )
