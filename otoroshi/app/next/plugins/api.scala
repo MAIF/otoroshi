@@ -1235,14 +1235,21 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
 
 case class NgWebsocketPluginContext(
                             config: JsValue,
+                            snowflake: String,
                             idx: Int = 0,
                             request: RequestHeader,
                             route: NgRoute,
                             attrs: TypedMap,
                             target: Target
                           ) extends NgCachedConfigContext {
-  def json: JsValue = Json.obj(
-    "config"        -> config
+  def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
+  def json: JsValue     = Json.obj(
+    "snowflake" -> snowflake,
+    "idx"     -> idx,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config"  -> config,
+    "target"  -> target.json,
+    "attrs"   -> attrs.json
   )
 }
 

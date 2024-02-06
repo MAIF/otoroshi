@@ -136,6 +136,7 @@ import WasmJob from './WasmJob';
 import WasmPreRoute from './WasmPreRoute';
 import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
+import WasmWebsocketTransformer from './WasmWebsocketTransformer';
 import WebsocketContentValidatorIn from './WebsocketContentValidatorIn';
 import WebsocketJsonFormatValidator from './WebsocketJsonFormatValidator';
 import WebsocketSizeValidator from './WebsocketSizeValidator';
@@ -287,6 +288,7 @@ const pluginsArray = [
   WebsocketJsonFormatValidator,
   WebsocketTypeValidator,
   WebsocketSizeValidator,
+  WasmWebsocketTransformer,
   JqWebsocketMessageTransformer,
   ZipFileBackend,
 ];

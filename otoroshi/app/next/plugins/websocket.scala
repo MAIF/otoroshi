@@ -1,15 +1,19 @@
 package otoroshi.next.plugins
 
+import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
+import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.CloseCodes
 import play.api.libs.json._
@@ -439,5 +443,101 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     } else {
       Left(NgWebsocketError(CloseCodes.PolicyViolated, "message payload is not text")).vfuture
     }
+  }
+}
+
+class WasmWebsocketTransformer extends NgWebsocketPlugin {
+
+  override def multiInstance: Boolean                      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(WasmConfig())
+  override def core: Boolean                               = false
+  override def name: String                                = "Wasm Websocket transformer"
+  override def description: Option[String]                 = "Transform messages and filter websocket messages".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
+
+  override def onRequestFlow: Boolean = true
+  override def onResponseFlow: Boolean = true
+  override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
+
+  def onMessage(
+    ctx: NgWebsocketPluginContext,
+    message: WebsocketMessage,
+    functionName: Option[String]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    implicit val mat = env.otoroshiMaterializer
+    val config = ctx
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
+    (if (message.isText) {
+      message.str().map { str =>
+        ctx.wasmJson.as[JsObject] ++ Json.obj(
+          "message" -> Json.obj(
+            "kind" -> "text",
+            "payload" -> str
+          )
+        )
+      }
+    } else {
+      message.bytes().map { bytes =>
+        ctx.wasmJson.as[JsObject] ++ Json.obj(
+          "message" -> Json.obj(
+            "kind" -> "text",
+            "payload" -> bytes
+          )
+        )
+      }
+    }).flatMap { input =>
+      env.wasmIntegration.wasmVmFor(config).flatMap {
+        case None => Left(NgWebsocketError(500, "plugin not found !")).vfuture
+        case Some((vm, localConfig)) =>
+          vm.call(
+            WasmFunctionParameters.ExtismFuntionCall(
+              functionName.getOrElse("on_message"),
+              input.stringify
+            ),
+            None
+          ).flatMap {
+            case Left(err) => Left(NgWebsocketError(500, err.stringify)).vfuture
+            case Right(resStr) => {
+              Try(Json.parse(resStr._1)) match {
+                case Failure(e) =>
+                  Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify)).vfuture
+                case Success(response) => {
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  val error = response.select("error").asOpt[Boolean].getOrElse(false)
+                  if (error) {
+                    val reason: String = response.select("reason").asOpt[String].getOrElse("error")
+                    val statusCode: Int = response.select("statusCode").asOpt[Int].getOrElse(500)
+                    Left(NgWebsocketError(statusCode, reason)).vfuture
+                  } else {
+                    val msg = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
+                    val kind = msg.select("kind").asOpt[String].getOrElse("text")
+                    val message: WebsocketMessage = if (kind == "text") {
+                      val payload = msg.select("payload").asOpt[String].getOrElse("")
+                      WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(payload))
+                    } else {
+                      val payload = msg.select("payload").asOpt[Array[Byte]].map(bytes => ByteString(bytes)).getOrElse(ByteString.empty)
+                      WebsocketMessage.PlayMessage(play.api.http.websocket.BinaryMessage(payload))
+                    }
+                    Right(message).vfuture
+                  }
+                }
+              }
+            }
+          }.andThen { case _ =>
+            vm.release()
+          }
+      }
+    }
+  }
+
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    onMessage(ctx, message, "on_request_message".some)
+  }
+
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    onMessage(ctx, message, "on_response_message".some)
   }
 }

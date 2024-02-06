@@ -2705,6 +2705,7 @@ class ProxyEngine() extends RequestHandler {
                 route.some,
                 ctxPlugins.some,
                 finalTarget,
+                attrs,
                 env
               )
             )(env.otoroshiActorSystem, env.otoroshiMaterializer)

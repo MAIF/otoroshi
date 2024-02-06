@@ -592,6 +592,7 @@ class WebSocketHandler()(implicit env: Env) {
                       None, // TODO - check if we can pass the current route
                       None,
                       httpRequest.target.getOrElse(_target),
+                      attrs,
                       env
                     )
                   )
@@ -628,9 +629,10 @@ object WebSocketProxyActor {
       route: Option[NgRoute],
       ctxPlugins: Option[NgContextualPlugins],
       target: Target,
+      attrs: TypedMap,
       env: Env
   ) =
-    Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, env))
+    Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, attrs, env))
 
   def wsCall(url: String,
              headers: Seq[(String, String)],
@@ -762,6 +764,7 @@ class WebSocketProxyActor(
     route: Option[NgRoute],
     ctxPlugins: Option[NgContextualPlugins],
     target: Target,
+    attrs: TypedMap,
     env: Env
 ) extends Actor {
 
@@ -780,9 +783,9 @@ class WebSocketProxyActor(
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
 
   val wsEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
-    new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, target)
+    new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, target, attrs)
   } else {
-    new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, target)
+    new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, target, attrs)
   }
 
   override def preStart() =
@@ -920,7 +923,7 @@ class WebSocketProxyActor(
   }
 }
 
-class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawRequest: RequestHeader, target: Target) {
+class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawRequest: RequestHeader, target: Target, attrs: TypedMap) {
 
   private def getPlugins()(f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin] => Boolean): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
     ctxPlugins.websocketPlugins
@@ -939,9 +942,10 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
         case None => promise.trySuccess(Right(current))
         case Some(wrapper) =>
           val ctx = NgWebsocketPluginContext(
+            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
             route = route,
             request = rawRequest,
-            attrs = TypedMap.empty,
+            attrs = attrs,
             config = wrapper.plugin.defaultConfig
               .map(dc => dc ++ wrapper.instance.config.raw)
               .getOrElse(wrapper.instance.config.raw),
