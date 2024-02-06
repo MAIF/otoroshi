@@ -396,6 +396,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
 
   override def onRequestFlow: Boolean = true
   override def onResponseFlow: Boolean = true
+  override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
   override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     val config = ctx.cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format).getOrElse(JqWebsocketMessageTransformerConfig())
@@ -412,7 +413,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     if (message.isText) {
       message.str().flatMap { bodyStr =>
         Try(Json.parse(bodyStr)) match {
-          case Failure(e) => Right(message).vfuture
+          case Failure(e) => Left(NgWebsocketError(CloseCodes.PolicyViolated, "message payload is not json")).vfuture
           case Success(_) => {
             val request  = ImmutableJqRequest
               .builder()
@@ -436,7 +437,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
         }
       }
     } else {
-      Right(message).vfuture
+      Left(NgWebsocketError(CloseCodes.PolicyViolated, "message payload is not text")).vfuture
     }
   }
 }
