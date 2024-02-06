@@ -494,7 +494,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
         case Some((vm, localConfig)) =>
           vm.call(
             WasmFunctionParameters.ExtismFuntionCall(
-              functionName.getOrElse("on_message"),
+              config.functionName.filter(_.nonEmpty).orElse(functionName).getOrElse("on_message"),
               input.stringify
             ),
             None
