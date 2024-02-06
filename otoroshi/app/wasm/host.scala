@@ -128,6 +128,30 @@ object HFunction {
       }
     ).withNamespace("env")
   }
+
+  def defineFunctionWithReturn[A <: HostUserData](
+                                         fname: String,
+                                         params: LibExtism.ExtismValType*
+                                       )(
+                                         f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], Option[A]) => Unit
+                                       ): HostFunction[A] = {
+    new HostFunction[A](
+      fname,
+      Array(params: _*),
+      Array(),
+      new ExtismFunction[A] {
+        override def invoke(
+                             plugin: ExtismCurrentPlugin,
+                             params: Array[LibExtism.ExtismVal],
+                             returns: Array[LibExtism.ExtismVal],
+                             data: Optional[A]
+                           ): Unit = {
+          f(plugin, params, returns, if (data.isEmpty) None else Some(data.get()))
+        }
+      },
+      Optional.empty[A]()
+    ).withNamespace("env")
+  }
 }
 
 object Logging extends AwaitCapable {
@@ -822,6 +846,56 @@ object DataStore extends AwaitCapable {
     )
 }
 
+object Wazero extends AwaitCapable {
+
+  def runtimeTicks() = HFunction.defineEmptyFunction(
+    "runtime.ticks",
+    LibExtism.ExtismValType.F64
+  ) { (plugin, params, returns) =>
+    returns(0).v.f64 = 0.0
+  }
+
+  def valueGet() = HFunction.defineEmptyFunction("syscall/js.valueGet", LibExtism.ExtismValType.I64,
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32) { (plugin, params, returns) => }
+
+  def valuePrepareString() = HFunction.defineFunctionWithReturn[EmptyUserData]("syscall/js.valuePrepareString",
+    LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32) { (plugin, params, returns, data) => }
+
+  def valueLoadString() = HFunction.defineFunctionWithReturn[EmptyUserData]("syscall/js.valueLoadString",
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32,  LibExtism.ExtismValType.I32,  LibExtism.ExtismValType.I32) { (plugin, params, returns, data) => }
+
+  def finalizeRef() = HFunction.defineFunctionWithReturn[EmptyUserData]("syscall/js.finalizeRef",
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32) { (plugin, params, returns, data) => }
+
+  def stringVal() = HFunction.defineEmptyFunction("syscall/js.stringVal", LibExtism.ExtismValType.I64,
+    LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32) { (plugin, params, returns) => }
+
+  def valueSet() = HFunction.defineFunctionWithReturn[EmptyUserData]("syscall/js.valueSet",
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32){ (plugin, params, returns, data) => }
+
+  def valueLength() = HFunction.defineEmptyFunction("syscall/js.valueLength", LibExtism.ExtismValType.I32,
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32) { (plugin, params, returns) => }
+
+  def valueIndex() = HFunction.defineEmptyFunction("syscall/js.valueIndex", LibExtism.ExtismValType.I64,
+    LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32) { (plugin, params, returns) => }
+
+  def valueCall() = HFunction.defineFunctionWithReturn[EmptyUserData]("syscall/js.valueCall",
+    LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32) { (plugin, params, returns, data) => }
+
+  def getFunctions(): Seq[HostFunctionWithAuthorization] = Seq(
+      HostFunctionWithAuthorization(runtimeTicks().withNamespace("gojs"), _ => true),
+      HostFunctionWithAuthorization(valueGet(), _ => true),
+      HostFunctionWithAuthorization(valuePrepareString(), _ => true),
+      HostFunctionWithAuthorization(valueLoadString(), _ => true),
+      HostFunctionWithAuthorization(finalizeRef(), _ => true),
+      HostFunctionWithAuthorization(stringVal(), _ => true),
+      HostFunctionWithAuthorization(valueSet(), _ => true),
+      HostFunctionWithAuthorization(valueLength(), _ => true),
+      HostFunctionWithAuthorization(valueIndex(), _ => true),
+      HostFunctionWithAuthorization(valueCall(), _ => true),
+    )
+}
+
 object State {
 
   private val cache: UnboundedTrieMap[String, UnboundedTrieMap[String, ByteString]] =
@@ -1200,8 +1274,8 @@ object HostFunctions {
       Logging.getFunctions(config) ++
       Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
-      DataStore.getFunctions(config, pluginId) //++
-    // OPA.getFunctions(config) // managed in common now
+      DataStore.getFunctions(config, pluginId) ++
+      Wazero.getFunctions()
 
     functions.collect {
       case func if func.authorized(config) => func.function
