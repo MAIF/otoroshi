@@ -747,7 +747,7 @@ class GraphQLBackend extends NgBackendCall {
       )
       val wsmCfg = WasmConfig(
         source = WasmSource(WasmSourceKind(wasmSourceKind.getOrElse("")), wasmSourcePath.getOrElse("")),
-        memoryPages = wasmMemoryPages.getOrElse(30),
+        memoryPages = wasmMemoryPages.getOrElse(100),
         functionName = wasmFunctionName,
         config = Map.empty,
         allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),

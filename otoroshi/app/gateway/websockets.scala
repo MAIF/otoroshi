@@ -779,7 +779,8 @@ class WebSocketProxyActor(
             case Failure(e)   => List.empty
           }
         case (key, value) if key.toLowerCase == "host"       =>
-          Seq(akka.http.scaladsl.model.headers.Host(value))
+          val part = value.split(":")
+          Seq(akka.http.scaladsl.model.headers.Host(part.head))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>
