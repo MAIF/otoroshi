@@ -343,7 +343,9 @@ class HttpHandler()(implicit env: Env) {
                   Identity(
                     identityType = "APIKEY",
                     identity = k.clientId,
-                    label = k.clientName
+                    label = k.clientName,
+                    tags = k.tags,
+                    metadata = k.metadata,
                   )
                 )
                 .orElse(
@@ -351,7 +353,9 @@ class HttpHandler()(implicit env: Env) {
                     Identity(
                       identityType = "PRIVATEAPP",
                       identity = k.email,
-                      label = k.name
+                      label = k.name,
+                      tags = k.tags,
+                      metadata = k.metadata,
                     )
                   )
                 ),

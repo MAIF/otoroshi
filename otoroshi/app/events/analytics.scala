@@ -18,6 +18,7 @@ import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -236,10 +237,32 @@ trait AnalyticEvent extends OtoroshiEvent {
   }
 }
 
-case class Identity(identityType: String, identity: String, label: String)
+case class Identity(identityType: String, identity: String, label: String, tags: Seq[String], metadata: Map[String, String]) {
+  def json: JsValue = Identity.format.writes(this)
+}
 
 object Identity {
-  implicit val format = Json.format[Identity]
+  implicit val format = new Format[Identity] {
+    override def writes(o: Identity): JsValue = Json.obj(
+      "identityType" -> o.identityType,
+      "identity" -> o.identity,
+      "label" -> o.label,
+      "metadata" -> o.metadata,
+      "tags" -> o.tags,
+    )
+    override def reads(json: JsValue): JsResult[Identity] = scala.util.Try {
+      Identity(
+        identityType = json.select("identityType").asString,
+        identity = json.select("identity").asString,
+        label = json.select("label").asString,
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+      )
+    } match {
+      case Success(s) => JsSuccess(s)
+      case Failure(e) => JsError(e.getMessage)
+    }
+  }
 }
 
 case class Location(host: String, scheme: String, uri: String)
