@@ -21,6 +21,7 @@ target
 oto-events*
 *.gor
 /project
+/local-scripts
 otoroshi/javascript/stats.json
 .bloop
 /otoroshi/hs_err_*.log
