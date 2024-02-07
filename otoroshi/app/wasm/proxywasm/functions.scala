@@ -237,7 +237,7 @@ object ProxyWasmFunctions {
             getCurrentVmData()
           ),
         Optional.empty[EnvUserData]()
-      ).withNamespace("env"),
+      ).withNamespace("env")
     )
   }
 

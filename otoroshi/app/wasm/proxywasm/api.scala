@@ -102,7 +102,9 @@ case class VmData(
         bodyOutRef = bodyOutRef
       )
   }
-  def withResponse(response: NgPluginHttpResponse, attrs: TypedMap, body_bytes: Option[ByteString])(implicit env: Env): VmData = {
+  def withResponse(response: NgPluginHttpResponse, attrs: TypedMap, body_bytes: Option[ByteString])(implicit
+      env: Env
+  ): VmData = {
     val newProps: Map[String, Array[Byte]] = properties ++ Map(
       "response.code"         -> response.status.bytes,
       "response.code_details" -> "".bytes,
@@ -110,17 +112,17 @@ case class VmData(
       //"response.grpc_status"  -> -1.bytes,
       ":status"               -> response.status.toString.bytes
     )
-    .applyOnWithOpt(body_bytes.map(_.size).orElse(response.contentLength)) {
-      case (props, len) => props ++ Map(
-        "response.size" -> len.toString.bytes,
-        "response.headers.content-length" ->  len.toString.bytes,
-      )
-    }
-    .applyOn { props =>
-      props ++ response.headers.map { case (key, value) =>
-        s"response.headers.${key.toLowerCase()}" -> value.bytes
+      .applyOnWithOpt(body_bytes.map(_.size).orElse(response.contentLength)) { case (props, len) =>
+        props ++ Map(
+          "response.size"                   -> len.toString.bytes,
+          "response.headers.content-length" -> len.toString.bytes
+        )
       }
-    }
+      .applyOn { props =>
+        props ++ response.headers.map { case (key, value) =>
+          s"response.headers.${key.toLowerCase()}" -> value.bytes
+        }
+      }
     copy(
       configuration = configuration,
       properties = newProps,

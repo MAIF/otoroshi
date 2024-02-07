@@ -24,7 +24,7 @@ export default {
           { value: 'binary', label: 'Binary' },
         ],
       },
-    }
+    },
   },
   config_flow: ['reject_strategy', 'allowed_format'],
 };

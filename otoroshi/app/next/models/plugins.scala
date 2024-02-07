@@ -55,8 +55,11 @@ object PluginIndex {
           json.select("match_route").asOpt[Int].map(_.toDouble).orElse(json.select("match_route").asOpt[Double]),
         handlesTunnel =
           json.select("handles_tunnel").asOpt[Int].map(_.toDouble).orElse(json.select("handles_tunnel").asOpt[Double]),
-        handlesWebsocket =
-          json.select("handles_websocket").asOpt[Int].map(_.toDouble).orElse(json.select("handles_websocket").asOpt[Double]),
+        handlesWebsocket = json
+          .select("handles_websocket")
+          .asOpt[Int]
+          .map(_.toDouble)
+          .orElse(json.select("handles_websocket").asOpt[Double]),
         callBackend =
           json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double])
       )
@@ -569,7 +572,7 @@ object NgContextualPlugins {
       request = request,
       nextPluginsMerge = true,
       _env = env,
-      _ec = ec,
+      _ec = ec
     )
   }
 }

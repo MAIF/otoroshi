@@ -3465,7 +3465,7 @@ class ProxyEngine() extends RequestHandler {
               identity = k.clientId,
               label = k.clientName,
               tags = k.tags,
-              metadata = k.metadata,
+              metadata = k.metadata
             )
           )
           .orElse(
@@ -3475,7 +3475,7 @@ class ProxyEngine() extends RequestHandler {
                 identity = k.email,
                 label = k.name,
                 tags = k.tags,
-                metadata = k.metadata,
+                metadata = k.metadata
               )
             )
           ),
@@ -3627,7 +3627,7 @@ class ProxyEngine() extends RequestHandler {
                 identity = k.clientId,
                 label = k.clientName,
                 tags = k.tags,
-                metadata = k.metadata,
+                metadata = k.metadata
               )
             )
             .orElse(
@@ -3637,7 +3637,7 @@ class ProxyEngine() extends RequestHandler {
                   identity = k.email,
                   label = k.name,
                   tags = k.tags,
-                  metadata = k.metadata,
+                  metadata = k.metadata
                 )
               )
             ),

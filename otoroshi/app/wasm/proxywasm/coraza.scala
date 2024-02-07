@@ -101,18 +101,21 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   ): Future[Either[JsValue, ResultsWrapper]] = {
     attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None     =>
-        /* TODO - REPLACE WITH logger.error( */ println("no vm found in attrs")
+        /* TODO - REPLACE WITH logger.error( */
+        println("no vm found in attrs")
         Left(Json.obj("error" -> "no vm found in attrs")).vfuture
       case Some(vm) => {
         WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
         val callId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).getOrElse(0)
-        vm.call(WasmFunctionParameters.NoResult(function, params), Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes))))
-          .map { opt =>
-            opt.map { res =>
-              res._2.free()
-              res._2
-            }
+        vm.call(
+          WasmFunctionParameters.NoResult(function, params),
+          Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes)))
+        ).map { opt =>
+          opt.map { res =>
+            res._2.free()
+            res._2
           }
+        }
       }
     }
   }
@@ -127,18 +130,22 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   ): Future[ResultsWrapper] = {
     attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None     =>
-        /* TODO - REPLACE WITH logger.error( */ println("no vm found in attrs")
+        /* TODO - REPLACE WITH logger.error( */
+        println("no vm found in attrs")
         Future.failed(new RuntimeException("no vm found in attrs"))
       case Some(vm) => {
         WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
         val callId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).getOrElse(0)
-        vm.call(WasmFunctionParameters.BothParamsResults(function, params, results), Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes))))
-          .flatMap {
-            case Left(err)           =>
-              /* TODO - REPLACE WITH logger.error( */ println(s"error while calling plugin: ${err}")
-              Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
-            case Right((_, results)) => results.vfuture
-          }
+        vm.call(
+          WasmFunctionParameters.BothParamsResults(function, params, results),
+          Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes)))
+        ).flatMap {
+          case Left(err)           =>
+            /* TODO - REPLACE WITH logger.error( */
+            println(s"error while calling plugin: ${err}")
+            Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
+          case Right((_, results)) => results.vfuture
+        }
       }
     }
   }
@@ -189,9 +196,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def proxyStart(attrs: TypedMap, rootData: VmData): Future[ResultsWrapper] = {
-    callPluginWithoutResults("_start", new Parameters(0), rootData, attrs, shouldBeCallOnce = true).map {
-      res =>
-        res.right.get
+    callPluginWithoutResults("_start", new Parameters(0), rootData, attrs, shouldBeCallOnce = true).map { res =>
+      res.right.get
     }
   }
 
@@ -206,7 +212,8 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def reportError(result: Result, vm: WasmVm, from: String): Unit = {
-    /* TODO - REPLACE WITH logger.error( */ println(s"[${vm.index}] from: $from - error: ${result.value} - ${vm.calls} / ${vm.current}")
+    /* TODO - REPLACE WITH logger.error( */
+    println(s"[${vm.index}] from: $from - error: ${result.value} - ${vm.calls} / ${vm.current}")
   }
 
   def proxyOnRequestHeaders(
@@ -275,7 +282,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       contextId: Int,
       response: NgPluginHttpResponse,
       body_bytes: Option[ByteString],
-      attrs: TypedMap,
+      attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val data        = VmData.empty().withResponse(response, attrs, body_bytes)(env)

@@ -733,33 +733,42 @@ object Errors {
       route: NgRoute,
       target: Target
   )(implicit ec: ExecutionContext, env: Env): Result = {
-      val errorId = env.snowflakeGenerator.nextIdStr()
+    val errorId = env.snowflakeGenerator.nextIdStr()
 
-      val finalRes = customResultSync(route.id, req, Status(statusCode.getOrElse(400)), "failed", None, emptyBody = true, errorId, modern = false)
-      if (sendEvent) {
-        WebsocketEvent(
-          `@id` = errorId,
-          reqId = env.snowflakeGenerator.nextIdStr(),
-          `@timestamp` =  DateTime.now(),
-          protocol = req.version,
-          to = Location(
-              scheme = req.theProtocol,
-              host = req.theHost,
-              uri = req.relativeUri
-            ),
-          target = Location(
-              scheme = target.scheme,
-              host = target.host,
-              uri = req.relativeUri
-          ),
-          frame = frame,
-          frameSize = frameSize,
-          statusCode = statusCode,
-          reason = reason,
-          `@serviceId` = route.id,
-          `@service` = route.name,
-        ).toAnalytics()(env)
-      }
-      finalRes
+    val finalRes = customResultSync(
+      route.id,
+      req,
+      Status(statusCode.getOrElse(400)),
+      "failed",
+      None,
+      emptyBody = true,
+      errorId,
+      modern = false
+    )
+    if (sendEvent) {
+      WebsocketEvent(
+        `@id` = errorId,
+        reqId = env.snowflakeGenerator.nextIdStr(),
+        `@timestamp` = DateTime.now(),
+        protocol = req.version,
+        to = Location(
+          scheme = req.theProtocol,
+          host = req.theHost,
+          uri = req.relativeUri
+        ),
+        target = Location(
+          scheme = target.scheme,
+          host = target.host,
+          uri = req.relativeUri
+        ),
+        frame = frame,
+        frameSize = frameSize,
+        statusCode = statusCode,
+        reason = reason,
+        `@serviceId` = route.id,
+        `@service` = route.name
+      ).toAnalytics()(env)
     }
+    finalRes
+  }
 }

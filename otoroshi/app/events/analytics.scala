@@ -237,18 +237,24 @@ trait AnalyticEvent extends OtoroshiEvent {
   }
 }
 
-case class Identity(identityType: String, identity: String, label: String, tags: Seq[String], metadata: Map[String, String]) {
+case class Identity(
+    identityType: String,
+    identity: String,
+    label: String,
+    tags: Seq[String],
+    metadata: Map[String, String]
+) {
   def json: JsValue = Identity.format.writes(this)
 }
 
 object Identity {
   implicit val format = new Format[Identity] {
-    override def writes(o: Identity): JsValue = Json.obj(
+    override def writes(o: Identity): JsValue             = Json.obj(
       "identityType" -> o.identityType,
-      "identity" -> o.identity,
-      "label" -> o.label,
-      "metadata" -> o.metadata,
-      "tags" -> o.tags,
+      "identity"     -> o.identity,
+      "label"        -> o.label,
+      "metadata"     -> o.metadata,
+      "tags"         -> o.tags
     )
     override def reads(json: JsValue): JsResult[Identity] = scala.util.Try {
       Identity(
@@ -256,7 +262,7 @@ object Identity {
         identity = json.select("identity").asString,
         label = json.select("label").asString,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Success(s) => JsSuccess(s)

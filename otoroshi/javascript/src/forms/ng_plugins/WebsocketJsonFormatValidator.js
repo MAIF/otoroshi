@@ -17,7 +17,7 @@ export default {
       type: 'code',
       props: {
         editorOnly: true,
-        label: 'Validation schema'
+        label: 'Validation schema',
       },
     },
     specification: {
@@ -26,14 +26,14 @@ export default {
       props: {
         defaultValue: 'https://json-schema.org/draft/2020-12/schema',
         options: [
-          { value: "http://json-schema.org/draft-04/schema#", label: 'V4' },
-          { value: "http://json-schema.org/draft-06/schema#", label: 'V6' },
-          { value: "http://json-schema.org/draft-07/schema#", label: 'V7' },
-          { value: "https://json-schema.org/draft/2019-09/schema", label: 'V201909' },
-          { value: "https://json-schema.org/draft/2020-12/schema", label: 'V202012' }
+          { value: 'http://json-schema.org/draft-04/schema#', label: 'V4' },
+          { value: 'http://json-schema.org/draft-06/schema#', label: 'V6' },
+          { value: 'http://json-schema.org/draft-07/schema#', label: 'V7' },
+          { value: 'https://json-schema.org/draft/2019-09/schema', label: 'V201909' },
+          { value: 'https://json-schema.org/draft/2020-12/schema', label: 'V202012' },
         ],
       },
-    }
+    },
   },
   config_flow: ['reject_strategy', 'schema', 'specification'],
 };

@@ -28,28 +28,29 @@ sealed trait RejectStrategy {
   def json: JsValue
 }
 object RejectStrategy       {
-  case object Drop       extends RejectStrategy { def json: JsValue = JsString("drop")       }
-  case object Close      extends RejectStrategy { def json: JsValue = JsString("close") }
+  case object Drop  extends RejectStrategy { def json: JsValue = JsString("drop")  }
+  case object Close extends RejectStrategy { def json: JsValue = JsString("close") }
   def parse(value: String): RejectStrategy = value.toLowerCase() match {
-    case "drop"   => Drop
-    case "close"  => Close
-    case _        => Drop
+    case "drop"  => Drop
+    case "close" => Close
+    case _       => Drop
   }
 
-  def read(json: JsValue): RejectStrategy = json.select("reject_strategy")
-      .asOpt[String]
-      .map(RejectStrategy.parse)
-      .getOrElse(RejectStrategy.Drop)
+  def read(json: JsValue): RejectStrategy = json
+    .select("reject_strategy")
+    .asOpt[String]
+    .map(RejectStrategy.parse)
+    .getOrElse(RejectStrategy.Drop)
 }
 
 sealed trait FrameFormat {
   def json: JsValue
 }
 object FrameFormat       {
-  case object All       extends FrameFormat { def json: JsValue = JsString("all")       }
-  case object Binary    extends FrameFormat { def json: JsValue = JsString("binary") }
-  case object Text      extends FrameFormat { def json: JsValue = JsString("text") }
-  case object Json      extends FrameFormat { def json: JsValue = JsString("json") }
+  case object All    extends FrameFormat { def json: JsValue = JsString("all")    }
+  case object Binary extends FrameFormat { def json: JsValue = JsString("binary") }
+  case object Text   extends FrameFormat { def json: JsValue = JsString("text")   }
+  case object Json   extends FrameFormat { def json: JsValue = JsString("json")   }
   def parse(value: String): FrameFormat = value.toLowerCase() match {
     case "all"    => All
     case "binary" => Binary
@@ -60,9 +61,9 @@ object FrameFormat       {
 }
 
 case class WebsocketTypeValidatorConfig(
-                                         allowedFormat: FrameFormat = FrameFormat.All,
-                                         rejectStrategy: RejectStrategy = RejectStrategy.Drop)
- extends NgPluginConfig {
+    allowedFormat: FrameFormat = FrameFormat.All,
+    rejectStrategy: RejectStrategy = RejectStrategy.Drop
+) extends NgPluginConfig {
   override def json: JsValue = WebsocketTypeValidatorConfig.format.writes(this)
 }
 
@@ -70,13 +71,14 @@ object WebsocketTypeValidatorConfig {
   val default = WebsocketTypeValidatorConfig()
   val format  = new Format[WebsocketTypeValidatorConfig] {
     override def writes(o: WebsocketTypeValidatorConfig): JsValue = Json.obj(
-      "allowed_format" -> o.allowedFormat.json,
+      "allowed_format"  -> o.allowedFormat.json,
       "reject_strategy" -> o.rejectStrategy.json
     )
     override def reads(json: JsValue): JsResult[WebsocketTypeValidatorConfig] = {
       Try {
         WebsocketTypeValidatorConfig(
-          allowedFormat = json.select("allowed_format")
+          allowedFormat = json
+            .select("allowed_format")
             .asOpt[String]
             .map(FrameFormat.parse)
             .getOrElse(FrameFormat.All),
@@ -101,13 +103,14 @@ object FrameFormatValidatorConfig {
   val default = FrameFormatValidatorConfig(validator = Some(JsonPathValidator("$.message", JsString("foo"), None)))
   val format  = new Format[FrameFormatValidatorConfig] {
     override def writes(o: FrameFormatValidatorConfig): JsValue = Json.obj(
-      "validator" -> o.validator.map(_.json),
+      "validator"       -> o.validator.map(_.json),
       "reject_strategy" -> o.rejectStrategy.json
     )
     override def reads(json: JsValue): JsResult[FrameFormatValidatorConfig] = {
       Try {
         FrameFormatValidatorConfig(
-          validator = (json \ "validator").asOpt[JsValue]
+          validator = (json \ "validator")
+            .asOpt[JsValue]
             .flatMap(v => JsonPathValidator.format.reads(v).asOpt),
           rejectStrategy = RejectStrategy.read(json)
         )
@@ -130,34 +133,41 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  override def onResponseFlow: Boolean                     = false
-  override def onRequestFlow: Boolean                      = true
+  override def onResponseFlow: Boolean = false
+  override def onRequestFlow: Boolean  = true
 
-  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)
-                         (implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
     implicit val m: Materializer = env.otoroshiMaterializer
-    val config = ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
+    val config                   =
+      ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
 
     message.str
       .map(message => {
-          val json = ctx.json.asObject ++ Json.obj(
-            "route" -> ctx.route.json,
-              "message" -> message
-          )
-          config.validator.forall(validator => validator.validate(json))
-        })
+        val json = ctx.json.asObject ++ Json.obj(
+          "route"   -> ctx.route.json,
+          "message" -> message
+        )
+        config.validator.forall(validator => validator.validate(json))
+      })
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     validate(ctx, message)
       .flatMap {
-        case true => Right(message).vfuture
+        case true  => Right(message).vfuture
         case false => Left(NgWebsocketError(CloseCodes.PolicyViolated, "failed to validate message")).vfuture
       }
   }
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
-    val config = ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
+    val config =
+      ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
     config.rejectStrategy
   }
 }
@@ -173,18 +183,26 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  override def onResponseFlow: Boolean                     = false
-  override def onRequestFlow: Boolean                      = true
+  override def onResponseFlow: Boolean = false
+  override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
-    val config = ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
+    val config =
+      ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
 
     (config.allowedFormat match {
-      case FrameFormat.Binary if !message.isBinary =>  Left(NgWebsocketError(CloseCodes.Unacceptable, "expected binary content")).vfuture
-      case FrameFormat.Text if !message.isText => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected text content")).vfuture
-      case FrameFormat.Text if message.isText => message.str()
+      case FrameFormat.Binary if !message.isBinary =>
+        Left(NgWebsocketError(CloseCodes.Unacceptable, "expected binary content")).vfuture
+      case FrameFormat.Text if !message.isText     =>
+        Left(NgWebsocketError(CloseCodes.Unacceptable, "expected text content")).vfuture
+      case FrameFormat.Text if message.isText      =>
+        message
+          .str()
           .flatMap(str => {
             if (!StandardCharsets.UTF_8.newEncoder().canEncode(str)) {
               Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
@@ -192,32 +210,34 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
               Right(message).vfuture
             }
           })
-      case FrameFormat.Json if message.isText => message.str()
+      case FrameFormat.Json if message.isText      =>
+        message
+          .str()
           .map(bs => (Try(Json.parse(bs)), bs))
           .flatMap(res => {
             res._1 match {
-              case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) => Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
-              case Failure(_) => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected json content")).vfuture
-              case _ => Right(message).vfuture
+              case Success(_) if !StandardCharsets.UTF_8.newEncoder().canEncode(res._2) =>
+                Left(NgWebsocketError(CloseCodes.InconsistentData, "non-UTF-8 data within content")).vfuture
+              case Failure(_)                                                           => Left(NgWebsocketError(CloseCodes.Unacceptable, "expected json content")).vfuture
+              case _                                                                    => Right(message).vfuture
             }
           })
-      case _ => Right(message).vfuture
+      case _                                       => Right(message).vfuture
     })
   }
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
-    val config = ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
+    val config =
+      ctx.cachedConfig(internalName)(WebsocketTypeValidatorConfig.format).getOrElse(WebsocketTypeValidatorConfig())
     config.rejectStrategy
   }
 }
 
-
 case class WebsocketJsonFormatValidatorConfig(
-                                               schema: Option[String] = None,
-                                               specification: String = VersionFlag.V202012.getId,
-                                               rejectStrategy: RejectStrategy = RejectStrategy.Drop
-                                             )
- extends NgPluginConfig {
+    schema: Option[String] = None,
+    specification: String = VersionFlag.V202012.getId,
+    rejectStrategy: RejectStrategy = RejectStrategy.Drop
+) extends NgPluginConfig {
   override def json: JsValue = WebsocketJsonFormatValidatorConfig.format.writes(this)
 }
 
@@ -225,8 +245,8 @@ object WebsocketJsonFormatValidatorConfig {
   val default = WebsocketJsonFormatValidatorConfig(schema = "{ \"type\": \"object\", \"required\": [\"name\"] }".some)
   val format  = new Format[WebsocketJsonFormatValidatorConfig] {
     override def writes(o: WebsocketJsonFormatValidatorConfig): JsValue = Json.obj(
-      "schema" -> o.schema,
-      "specification" -> o.specification,
+      "schema"          -> o.schema,
+      "specification"   -> o.specification,
       "reject_strategy" -> o.rejectStrategy.json
     )
     override def reads(json: JsValue): JsResult[WebsocketJsonFormatValidatorConfig] = {
@@ -255,15 +275,21 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  override def onResponseFlow: Boolean                     = false
-  override def onRequestFlow: Boolean                      = true
+  override def onResponseFlow: Boolean = false
+  override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
-    val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
+    val config = ctx
+      .cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format)
+      .getOrElse(WebsocketJsonFormatValidatorConfig())
 
-    message.str()
+    message
+      .str()
       .map(data => {
         val userSchema = config.schema.getOrElse("")
 
@@ -277,27 +303,29 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
         Try {
           schema.validate(data, InputFormat.JSON).isEmpty
-        } recover {
-          case _: Throwable => false
+        } recover { case _: Throwable =>
+          false
         } get
       })
       .flatMap {
-        case true => Right(message).vfuture
+        case true  => Right(message).vfuture
         case false => Left(NgWebsocketError(CloseCodes.PolicyViolated, "failed to validate message")).vfuture
       }
   }
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
-    val config = ctx.cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format).getOrElse(WebsocketJsonFormatValidatorConfig())
+    val config = ctx
+      .cachedConfig(internalName)(WebsocketJsonFormatValidatorConfig.format)
+      .getOrElse(WebsocketJsonFormatValidatorConfig())
     config.rejectStrategy
   }
 }
 
 case class WebsocketSizeValidatorConfig(
-                                         clientMaxPayload: Int = 4096,
-                                         upstreamMaxPayload: Int = 4096,
-                                         rejectStrategy: RejectStrategy = RejectStrategy.Drop)
- extends NgPluginConfig {
+    clientMaxPayload: Int = 4096,
+    upstreamMaxPayload: Int = 4096,
+    rejectStrategy: RejectStrategy = RejectStrategy.Drop
+) extends NgPluginConfig {
   override def json: JsValue = WebsocketSizeValidatorConfig.format.writes(this)
 }
 
@@ -305,9 +333,9 @@ object WebsocketSizeValidatorConfig {
   val default = WebsocketSizeValidatorConfig()
   val format  = new Format[WebsocketSizeValidatorConfig] {
     override def writes(o: WebsocketSizeValidatorConfig): JsValue = Json.obj(
-      "client_max_payload" -> o.clientMaxPayload,
+      "client_max_payload"   -> o.clientMaxPayload,
       "upstream_max_payload" -> o.upstreamMaxPayload,
-      "reject_strategy" -> o.rejectStrategy.json
+      "reject_strategy"      -> o.rejectStrategy.json
     )
     override def reads(json: JsValue): JsResult[WebsocketSizeValidatorConfig] = {
       Try {
@@ -335,40 +363,54 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformResponse)
 
-  override def onResponseFlow: Boolean                     = true
-  override def onRequestFlow: Boolean                      = true
+  override def onResponseFlow: Boolean = true
+  override def onRequestFlow: Boolean  = true
 
-  private def internalCanAccess(ctx: NgWebsocketPluginContext, message: WebsocketMessage, maxSize: Int, reason: String)
-                                  (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  private def internalCanAccess(ctx: NgWebsocketPluginContext, message: WebsocketMessage, maxSize: Int, reason: String)(
+      implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val m: Materializer = env.otoroshiMaterializer
 
-    message.size()
+    message
+      .size()
       .map(_ <= maxSize)
       .flatMap {
-        case true => Right(message).vfuture
+        case true  => Right(message).vfuture
         case false => Left(NgWebsocketError(CloseCodes.TooBig, reason)).vfuture
       }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config =
+      ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
 
     internalCanAccess(ctx, message, config.clientMaxPayload, "limit exceeded")
   }
 
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = {
-    val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
+    val config =
+      ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
     config.rejectStrategy
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    val config = ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config =
+      ctx.cachedConfig(internalName)(WebsocketSizeValidatorConfig.format).getOrElse(WebsocketSizeValidatorConfig())
 
     internalCanAccess(ctx, message, config.upstreamMaxPayload, reason = "upstream payload limit exceeded")
   }
 }
 
-case class JqWebsocketMessageTransformerConfig(requestFilter: String = ".", responseFilter: String = ".") extends NgPluginConfig {
+case class JqWebsocketMessageTransformerConfig(requestFilter: String = ".", responseFilter: String = ".")
+    extends NgPluginConfig                 {
   override def json: JsValue = JqWebsocketMessageTransformerConfig.format.writes(this)
 }
 object JqWebsocketMessageTransformerConfig {
@@ -376,15 +418,15 @@ object JqWebsocketMessageTransformerConfig {
     override def reads(json: JsValue): JsResult[JqWebsocketMessageTransformerConfig] = Try {
       JqWebsocketMessageTransformerConfig(
         requestFilter = json.select("request_filter").asOpt[String].getOrElse("."),
-        responseFilter = json.select("response_filter").asOpt[String].getOrElse("."),
+        responseFilter = json.select("response_filter").asOpt[String].getOrElse(".")
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: JqWebsocketMessageTransformerConfig): JsValue = Json.obj(
-      "request_filter" -> o.requestFilter,
-      "response_filter" -> o.responseFilter,
+    override def writes(o: JqWebsocketMessageTransformerConfig): JsValue             = Json.obj(
+      "request_filter"  -> o.requestFilter,
+      "response_filter" -> o.responseFilter
     )
   }
 }
@@ -403,21 +445,34 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
 
-  override def onRequestFlow: Boolean = true
-  override def onResponseFlow: Boolean = true
+  override def onRequestFlow: Boolean                                        = true
+  override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    val config = ctx.cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format).getOrElse(JqWebsocketMessageTransformerConfig())
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config = ctx
+      .cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format)
+      .getOrElse(JqWebsocketMessageTransformerConfig())
     onMessage(ctx, message, config.requestFilter)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    val config = ctx.cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format).getOrElse(JqWebsocketMessageTransformerConfig())
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    val config = ctx
+      .cachedConfig(internalName)(JqWebsocketMessageTransformerConfig.format)
+      .getOrElse(JqWebsocketMessageTransformerConfig())
     onMessage(ctx, message, config.responseFilter)
   }
 
-  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat = env.otoroshiMaterializer
     if (message.isText) {
       message.str().flatMap { bodyStr =>
@@ -462,40 +517,40 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket, NgPluginCategory.Wasm)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
 
-  override def onRequestFlow: Boolean = true
-  override def onResponseFlow: Boolean = true
+  override def onRequestFlow: Boolean                                        = true
+  override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
   def onMessage(
-    ctx: NgWebsocketPluginContext,
-    message: WebsocketMessage,
-    functionName: Option[String]
+      ctx: NgWebsocketPluginContext,
+      message: WebsocketMessage,
+      functionName: Option[String]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat = env.otoroshiMaterializer
-    val config = ctx
+    val config       = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     (if (message.isText) {
-      message.str().map { str =>
-        ctx.wasmJson.as[JsObject] ++ Json.obj(
-          "message" -> Json.obj(
-            "kind" -> "text",
-            "payload" -> str
-          )
-        )
-      }
-    } else {
-      message.bytes().map { bytes =>
-        ctx.wasmJson.as[JsObject] ++ Json.obj(
-          "message" -> Json.obj(
-            "kind" -> "text",
-            "payload" -> bytes
-          )
-        )
-      }
-    }).flatMap { input =>
+       message.str().map { str =>
+         ctx.wasmJson.as[JsObject] ++ Json.obj(
+           "message" -> Json.obj(
+             "kind"    -> "text",
+             "payload" -> str
+           )
+         )
+       }
+     } else {
+       message.bytes().map { bytes =>
+         ctx.wasmJson.as[JsObject] ++ Json.obj(
+           "message" -> Json.obj(
+             "kind"    -> "text",
+             "payload" -> bytes
+           )
+         )
+       }
+     }).flatMap { input =>
       env.wasmIntegration.wasmVmFor(config).flatMap {
-        case None => Left(NgWebsocketError(500, "plugin not found !")).vfuture
+        case None                    => Left(NgWebsocketError(500, "plugin not found !")).vfuture
         case Some((vm, localConfig)) =>
           vm.call(
             WasmFunctionParameters.ExtismFuntionCall(
@@ -504,26 +559,30 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
             ),
             None
           ).flatMap {
-            case Left(err) => Left(NgWebsocketError(500, err.stringify)).vfuture
+            case Left(err)     => Left(NgWebsocketError(500, err.stringify)).vfuture
             case Right(resStr) => {
               Try(Json.parse(resStr._1)) match {
-                case Failure(e) =>
+                case Failure(e)        =>
                   Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify)).vfuture
                 case Success(response) => {
                   AttrsHelper.updateAttrs(ctx.attrs, response)
                   val error = response.select("error").asOpt[Boolean].getOrElse(false)
                   if (error) {
-                    val reason: String = response.select("reason").asOpt[String].getOrElse("error")
+                    val reason: String  = response.select("reason").asOpt[String].getOrElse("error")
                     val statusCode: Int = response.select("statusCode").asOpt[Int].getOrElse(500)
                     Left(NgWebsocketError(statusCode, reason)).vfuture
                   } else {
-                    val msg = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
-                    val kind = msg.select("kind").asOpt[String].getOrElse("text")
+                    val msg                       = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
+                    val kind                      = msg.select("kind").asOpt[String].getOrElse("text")
                     val message: WebsocketMessage = if (kind == "text") {
                       val payload = msg.select("payload").asOpt[String].getOrElse("")
                       WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(payload))
                     } else {
-                      val payload = msg.select("payload").asOpt[Array[Byte]].map(bytes => ByteString(bytes)).getOrElse(ByteString.empty)
+                      val payload = msg
+                        .select("payload")
+                        .asOpt[Array[Byte]]
+                        .map(bytes => ByteString(bytes))
+                        .getOrElse(ByteString.empty)
                       WebsocketMessage.PlayMessage(play.api.http.websocket.BinaryMessage(payload))
                     }
                     Right(message).vfuture
@@ -538,11 +597,17 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     onMessage(ctx, message, "on_request_message".some)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     onMessage(ctx, message, "on_response_message".some)
   }
 }

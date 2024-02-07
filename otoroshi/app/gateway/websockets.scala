@@ -18,7 +18,16 @@ import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPlugin, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgPluginWrapper,
+  NgWebsocketError,
+  NgWebsocketPlugin,
+  NgWebsocketPluginContext,
+  NgWebsocketResponse,
+  NgWebsocketValidatorPlugin,
+  WebsocketMessage
+}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
@@ -32,7 +41,14 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.NotFound
@@ -269,7 +285,7 @@ class WebSocketHandler()(implicit env: Env) {
                     identity = k.clientId,
                     label = k.clientName,
                     tags = k.tags,
-                    metadata = k.metadata,
+                    metadata = k.metadata
                   )
                 )
                 .orElse(
@@ -279,7 +295,7 @@ class WebSocketHandler()(implicit env: Env) {
                       identity = k.email,
                       label = k.name,
                       tags = k.tags,
-                      metadata = k.metadata,
+                      metadata = k.metadata
                     )
                   )
                 ),
@@ -574,7 +590,7 @@ class WebSocketHandler()(implicit env: Env) {
                     .addClaims(httpRequest.headers, httpRequest.claims, descriptor),
                   descriptor,
                   target = httpRequest.target.getOrElse(_target),
-                  rawRequest = req,
+                  rawRequest = req
                 )
               )
             )
@@ -593,7 +609,7 @@ class WebSocketHandler()(implicit env: Env) {
                       httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
                       req,
                       descriptor,
-                      None, // TODO - check if we can pass the current route
+                      None,                      // TODO - check if we can pass the current route
                       None,
                       httpRequest.target.getOrElse(_target),
                       attrs,
@@ -638,12 +654,14 @@ object WebSocketProxyActor {
   ) =
     Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, attrs, env))
 
-  def wsCall(url: String,
-             headers: Seq[(String, String)],
-             descriptor: ServiceDescriptor,
-             target: Target,
-             rawRequest: RequestHeader,
-             route: Option[NgRoute] = None)(implicit
+  def wsCall(
+      url: String,
+      headers: Seq[(String, String)],
+      descriptor: ServiceDescriptor,
+      target: Target,
+      rawRequest: RequestHeader,
+      route: Option[NgRoute] = None
+  )(implicit
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -685,7 +703,8 @@ object WebSocketProxyActor {
         descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
           .filter(p =>
-            WSProxyServerUtils.isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+            WSProxyServerUtils
+              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
           )
           .map { proxySettings =>
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
@@ -776,7 +795,7 @@ class WebSocketProxyActor(
 
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
-  implicit val e = env
+  implicit val e   = env
 
   lazy val source = Source.queue[akka.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
@@ -820,29 +839,31 @@ class WebSocketProxyActor(
         request = request,
         targetOpt = Some(target),
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
-        clientFlow = Flow.fromSinkAndSourceMat(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-               data => {
-                 wsEngine.handleResponse(data)(closeFunction)
-                   .map {
-                     case Left(error) =>
-                       Option(queueRef.get()).foreach(_.complete())
-                     case Right(msg) => {
-                       msg.asPlay.map { msg =>
-                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
-                         out ! msg
-                       }
-                     }
-                   }
-               }
+        clientFlow = Flow
+          .fromSinkAndSourceMat(
+            Sink.foreach[akka.http.scaladsl.model.ws.Message] { data =>
+              {
+                wsEngine
+                  .handleResponse(data)(closeFunction)
+                  .map {
+                    case Left(error) =>
+                      Option(queueRef.get()).foreach(_.complete())
+                    case Right(msg)  => {
+                      msg.asPlay.map { msg =>
+                        if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
+                        out ! msg
+                      }
+                    }
+                  }
+              }
             },
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
-              if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
-              Option(queueRef.get()).foreach(_.complete())
-              // out ! PoisonPill
-              self ! PoisonPill
+            if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
+            Option(queueRef.get()).foreach(_.complete())
+            // out ! PoisonPill
+            self ! PoisonPill
           }),
         customizer = descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
@@ -898,23 +919,25 @@ class WebSocketProxyActor(
     Option(queueRef.get()).foreach(_.complete())
     message match {
       case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
-      case _ => // do nothing
+      case _                                                  => // do nothing
     }
   }
 
   def receive: Receive = {
     case data: play.api.http.websocket.Message => {
-      wsEngine.handleRequest(data)(closeFunction)
+      wsEngine
+        .handleRequest(data)(closeFunction)
         .map {
           case Left(error) => {
             error.rejectStrategy.foreach {
               case RejectStrategy.Close =>
-                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
+                if (logger.isDebugEnabled)
+                  logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
                 Option(queueRef.get()).foreach(_.complete())
-              case _ => // TODO - logging ??
+              case _                    => // TODO - logging ??
             }
           }
-          case Right(msg) => {
+          case Right(msg)  => {
             msg.asAkka.map { msg =>
               if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
               Option(queueRef.get()).foreach { q =>
@@ -927,23 +950,34 @@ class WebSocketProxyActor(
   }
 }
 
-class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawRequest: RequestHeader, target: Target, attrs: TypedMap) {
+class WebsocketEngine(
+    route: NgRoute,
+    ctxPlugins: NgContextualPlugins,
+    rawRequest: RequestHeader,
+    target: Target,
+    attrs: TypedMap
+) {
 
-  private def getPlugins()(f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin] => Boolean): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
+  private def getPlugins()(
+      f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin] => Boolean
+  ): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
     ctxPlugins.websocketPlugins
       .filter(f)
   }
 
-  private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]],
-                        data: WebsocketMessage,
-                        applyResponseFilter: Boolean = false)(closeConnection: NgWebsocketResponse => Unit)
-            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  private def handle[A](
+      validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]],
+      data: WebsocketMessage,
+      applyResponseFilter: Boolean = false
+  )(
+      closeConnection: NgWebsocketResponse => Unit
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
 
     val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
 
     def next(current: WebsocketMessage, plugins: Seq[NgPluginWrapper[NgWebsocketPlugin]]): Unit = {
       plugins.headOption match {
-        case None => promise.trySuccess(Right(current))
+        case None          => promise.trySuccess(Right(current))
         case Some(wrapper) =>
           val ctx = NgWebsocketPluginContext(
             snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
@@ -956,26 +990,28 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
             target = target
           )
 
-          (if(applyResponseFilter) {
-            wrapper.plugin.onResponseMessage(ctx, current)
-          } else {
-            wrapper.plugin.onRequestMessage(ctx, current)
-          }).andThen {
-            case Failure(_) =>
-              promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some, wrapper.plugin.rejectStrategy(ctx).some)))
-            case Success(Left(error)) => {
+          (if (applyResponseFilter) {
+             wrapper.plugin.onResponseMessage(ctx, current)
+           } else {
+             wrapper.plugin.onRequestMessage(ctx, current)
+           }).andThen {
+            case Failure(_)                                       =>
+              promise.trySuccess(
+                Left(NgWebsocketError(500.some, "internal_server_error".some, wrapper.plugin.rejectStrategy(ctx).some))
+              )
+            case Success(Left(error))                             => {
               //println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
               wrapper.plugin.rejectStrategy(ctx) match {
                 case RejectStrategy.Close =>
                   closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))
-                case _ => // TODO - logging ??
+                case _                    => // TODO - logging ??
               }
               promise.trySuccess(Left(error.copy(rejectStrategy = wrapper.plugin.rejectStrategy(ctx).some)))
             }
             case Success(Right(nextMessage)) if plugins.size == 1 => {
               promise.trySuccess(Right(nextMessage))
             }
-            case Success(Right(nextMessage)) => {
+            case Success(Right(nextMessage))                      => {
               next(nextMessage, plugins.tail)
             }
           }
@@ -986,19 +1022,23 @@ class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawReques
     promise.future
   }
 
-  def handleRequest(data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
-            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  def handleRequest(data: play.api.http.websocket.Message)(
+      closeConnection: NgWebsocketResponse => Unit
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
-      val r: Either[NgWebsocketError, WebsocketMessage] = Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
+      val r: Either[NgWebsocketError, WebsocketMessage] =
+        Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
       r.vfuture
     } else {
-      val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = getPlugins()(_.plugin.onRequestFlow)
+      val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] =
+        getPlugins()(_.plugin.onRequestFlow)
       handle(requestValidators, WebsocketMessage.PlayMessage(data))(closeConnection)
     }
   }
 
-  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
-    (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(
+      closeConnection: NgWebsocketResponse => Unit
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
     } else {

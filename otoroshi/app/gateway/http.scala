@@ -345,7 +345,7 @@ class HttpHandler()(implicit env: Env) {
                     identity = k.clientId,
                     label = k.clientName,
                     tags = k.tags,
-                    metadata = k.metadata,
+                    metadata = k.metadata
                   )
                 )
                 .orElse(
@@ -355,7 +355,7 @@ class HttpHandler()(implicit env: Env) {
                       identity = k.email,
                       label = k.name,
                       tags = k.tags,
-                      metadata = k.metadata,
+                      metadata = k.metadata
                     )
                   )
                 ),

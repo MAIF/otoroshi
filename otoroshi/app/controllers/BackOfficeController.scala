@@ -2140,7 +2140,7 @@ class BackOfficeController(
           identity = "client_id",
           label = "client",
           tags = Seq.empty,
-          metadata = Map.empty,
+          metadata = Map.empty
         ).some,
         responseChunked = false,
         `@serviceId` = s"route_${IdGenerator.uuid}",
