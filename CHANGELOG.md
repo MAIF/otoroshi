@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.14.0] - 2024-02-07
+
+
+https://github.com/MAIF/otoroshi/milestone/85?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.13.0...v16.14.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.14.0
+
+
+### Added 
+
+- upgrade coraza (#1822)
+- pass identity tags and metadata to analytics events (#1829)       
+      
+
+### Fixed 
+
+- wasm vm is released after each function call (#1821)
+- "Response chunk size read is different from the computed one logs" with coraza (#1824)
+- documentation style is broken on iOS (#1826)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.13.0] - 2024-01-22
 
 
