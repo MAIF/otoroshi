@@ -923,13 +923,18 @@ small {
     padding-top: 2rem;
     border-left: 0;
   }
+  .with-responsive-left-padding-5-rem {
+    padding-left: none;
+  }
 }
 
 @media screen and (min-width: 40em) {
   .site-footer-nav .nav-links {
     height: 8rem;
   }
-
+  .with-responsive-left-padding-5-rem {
+    padding-left: 5rem;
+  }
 }
 
 @media screen and (max-width: 511px) {

@@ -47,7 +47,7 @@ $navigation()$
 </nav>
 </div>
 
-<div class="small-12 medium-9 large-10 column" style="padding-left: 5rem">
+<div class="small-12 medium-9 large-10 column with-responsive-left-padding-5-rem">
 
 <header class="site-header expanded row">
 <div class="small-12 column" style="padding: 0">
