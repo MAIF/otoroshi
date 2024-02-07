@@ -274,7 +274,12 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
         schemaConfig.setFormatAssertionsEnabled(true)
 
         val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
-        schema.validate(data, InputFormat.JSON).isEmpty
+
+        Try {
+          schema.validate(data, InputFormat.JSON).isEmpty
+        } recover {
+          case _: Throwable => false
+        } get
       })
       .flatMap {
         case true => Right(message).vfuture

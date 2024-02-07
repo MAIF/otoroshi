@@ -841,7 +841,7 @@ class WebSocketProxyActor(
           .alsoTo(Sink.onComplete { _ =>
               if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
               Option(queueRef.get()).foreach(_.complete())
-              out ! PoisonPill
+              // out ! PoisonPill
               self ! PoisonPill
           }),
         customizer = descriptor.clientConfig.proxy
