@@ -8,8 +8,8 @@ You will need
 
 * git
 * JDK >= 11
-* SBT >= 1.3.x
-* Node 13 + yarn 1.x
+* SBT >= 1.7+
+* Node 18+ & yarn 1.x
 
 ## Clone the repository
 
