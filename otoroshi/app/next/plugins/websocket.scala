@@ -454,7 +454,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
   override def name: String                                = "Wasm Websocket transformer"
   override def description: Option[String]                 = "Transform messages and filter websocket messages".some
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket, NgPluginCategory.Wasm)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
 
   override def onRequestFlow: Boolean = true
