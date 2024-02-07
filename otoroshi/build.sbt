@@ -155,7 +155,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                     % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                      % jacksonVersion,
   "org.yaml"                         % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson: _*),
-  "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
+  // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-bom"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-context"                     % openTelemetryVersion excludeAll (excludesJackson: _*),
@@ -205,7 +205,13 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.51.Final" classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.21.Final",
   // tests
-  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test
+  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
+  "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
+    ExclusionRule("org.slf4j"),
+    ExclusionRule(organization = "com.fasterxml.jackson.core"),
+    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
+  ),
 )
 
 scalacOptions ++= Seq(

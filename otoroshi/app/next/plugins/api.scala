@@ -6,22 +6,22 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import otoroshi.auth.{AuthModule, BasicAuthModule, BasicAuthModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, BackOfficeUser, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.gateway.Errors
+import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
 import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgRoute, NgTarget}
+import otoroshi.next.plugins.RejectStrategy
 import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
-import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
-import play.api.http.websocket.Message
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
-import play.api.mvc.{AnyContent, Cookie, Request, RequestHeader, Result, Results}
+import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
@@ -216,6 +216,7 @@ object NgPluginCategory {
   case object Wasm             extends NgPluginCategory { def name: String = "Wasm"             }
   case object Classic          extends NgPluginCategory { def name: String = "Classic"          }
   case object ServiceDiscovery extends NgPluginCategory { def name: String = "ServiceDiscovery" }
+  case object Websocket        extends NgPluginCategory { def name: String = "Websocket"        }
 
   val all = Seq(
     Classic,
@@ -233,7 +234,8 @@ object NgPluginCategory {
     TrafficControl,
     Transformations,
     Tunnel,
-    Wasm
+    Wasm,
+    Websocket
   )
 }
 
@@ -1231,4 +1233,179 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
     }
     next(plugins, plugins.size)
   }
+}
+
+case class NgWebsocketPluginContext(
+                            config: JsValue,
+                            snowflake: String,
+                            idx: Int = 0,
+                            request: RequestHeader,
+                            route: NgRoute,
+                            attrs: TypedMap,
+                            target: Target
+                          ) extends NgCachedConfigContext {
+  def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
+  def json: JsValue     = Json.obj(
+    "snowflake" -> snowflake,
+    "idx"     -> idx,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config"  -> config,
+    "target"  -> target.json,
+    "attrs"   -> attrs.json
+  )
+}
+
+sealed trait WebsocketMessage {
+  def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString]
+  def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]
+  def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int]
+  def isBinary: Boolean
+  def isText: Boolean = !isBinary
+  def asPlay(implicit env: Env): Future[play.api.http.websocket.Message]
+  def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message]
+}
+
+object WebsocketMessage {
+  case class AkkaMessage(data: akka.http.scaladsl.model.ws.Message) extends WebsocketMessage {
+    override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
+      case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.byteString.future
+      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+        source.runFold(ByteString.empty)((concat, str) => concat ++ str.byteString)
+      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.future
+      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+        source
+          .runFold(ByteString.empty)((concat, str) => concat ++ str)
+      case _ => ByteString.empty.future
+    }
+    override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String] = data match {
+      case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.future
+      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+        source.runFold("")((concat, str) => concat + str)
+      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.utf8String.future
+      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+        source
+          .runFold(ByteString.empty)((concat, str) => concat ++ str).map(_.utf8String)
+      case _ => "".future
+    }
+
+    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
+      case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => text.length.future
+      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) =>
+        source.runFold("")((concat, str) => concat + str).map(_.length)
+      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => data.size.future
+      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+        source
+          .runFold(ByteString.empty)((concat, str) => concat ++ str).map(_.size)
+      case _ => 0.future
+    }
+
+    override def isBinary: Boolean = !data.isText
+
+    override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
+      implicit val ec = env.otoroshiExecutionContext
+      implicit val mat = env.otoroshiMaterializer
+      data match {
+        case akka.http.scaladsl.model.ws.TextMessage.Strict(text) => PlayWSTextMessage(text).vfuture
+        case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")((concat, str) => concat + str).map(text => PlayWSTextMessage(text))
+        case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => PlayWSBinaryMessage(data).vfuture
+        case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+          source
+            .runFold(ByteString.empty)((concat, str) => concat ++ str)
+            .map(data => PlayWSBinaryMessage(data))
+        case other => throw new RuntimeException(s"Unkown message type ${other}")
+      }
+    }
+    override def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message] = {
+      data.vfuture
+    }
+  }
+  case class PlayMessage(data: play.api.http.websocket.Message) extends WebsocketMessage {
+
+    override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
+      case PlayWSTextMessage(data) => data.byteString.vfuture
+      case PlayWSBinaryMessage(data) => data.vfuture
+      case CloseMessage(_, _) => ByteString.empty.vfuture
+      case PingMessage(data) => data.vfuture
+      case PongMessage(data) => data.vfuture
+    }
+    override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String] = (data match {
+      case PlayWSTextMessage(data) => data
+      case PlayWSBinaryMessage(data) => data.utf8String
+      case CloseMessage(_, _) => ""
+      case PingMessage(data) => data.utf8String
+      case PongMessage(data) => data.utf8String
+    }).future
+
+    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = (data match {
+      case PlayWSTextMessage(data) => data.length
+      case PlayWSBinaryMessage(data) => data.size
+      case CloseMessage(_, _) => 0
+      case PingMessage(data) => data.size
+      case PongMessage(data) => data.size
+    }).future
+
+    override def isBinary: Boolean = data.isInstanceOf[play.api.http.websocket.BinaryMessage]
+
+    override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
+      data.vfuture
+    }
+
+    override def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message] = {
+      data match {
+        case msg: PlayWSBinaryMessage     => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case msg: PlayWSTextMessage       => akka.http.scaladsl.model.ws.TextMessage(msg.data).vfuture
+        case msg: PingMessage             => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case msg: PongMessage             => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case other => throw new RuntimeException(s"Unkown message type ${other}")
+      }
+    }
+  }
+}
+
+case class NgWebsocketResponse(
+                                result: NgAccess = NgAccess.NgAllowed,
+                                statusCode: Option[Int] = None,
+                                reason: Option[String] = None)
+
+object NgWebsocketResponse {
+  def default: Future[NgWebsocketResponse] = NgWebsocketResponse().future
+  def error(ctx: NgWebsocketPluginContext,
+                message: WebsocketMessage,
+                statusCode: Int,
+                reason: String)(implicit env: Env, ec: ExecutionContext): Future[NgWebsocketResponse] = {
+    implicit val m: Materializer = env.otoroshiMaterializer
+    (for {
+      frame <- message.str
+      size <- message.size()
+    } yield (frame, size))
+      .collect {
+        case (frame, frameSize) =>
+          NgWebsocketResponse.denied(Errors
+            .craftWebsocketResponseResultSync(
+              frame = frame,
+              frameSize = frameSize,
+              statusCode = statusCode.some,
+              reason = reason.some,
+              req = ctx.request,
+              route = ctx.route,
+              target = ctx.target
+            ), statusCode, reason)
+      }
+  }
+  private def denied(result: Result, statusCode: Int, reason: String) = NgWebsocketResponse(NgAccess.NgDenied(result), statusCode.some, reason.some)
+}
+
+trait NgWebsocketPlugin extends NgNamedPlugin {
+  def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
+  def onRequestFlow: Boolean = false
+  def onResponseFlow: Boolean = false
+  def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = message.rightf
+  def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = message.rightf
+}
+
+trait NgWebsocketValidatorPlugin extends NgWebsocketPlugin {}
+
+case class NgWebsocketError(statusCode: Option[Int] = None, reason: Option[String] = None, rejectStrategy: Option[RejectStrategy])
+object NgWebsocketError {
+  def apply(statusCode: Int, reason: String): NgWebsocketError = NgWebsocketError(statusCode.some, reason.some, None)
 }

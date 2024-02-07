@@ -7,7 +7,7 @@ import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.Errors.{errorTemplate, messages}
-import otoroshi.models.{ErrorTemplate, RemainingQuotas, ServiceDescriptor}
+import otoroshi.models.{ErrorTemplate, RemainingQuotas, ServiceDescriptor, Target}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.{NgPluginHttpResponse, NgTransformerErrorContext}
 import otoroshi.next.proxy.NgExecutionReport
@@ -722,4 +722,44 @@ object Errors {
       }
     }
   }
+
+  def craftWebsocketResponseResultSync(
+      frame: String,
+      frameSize: Int,
+      statusCode: Option[Int] = None,
+      reason: Option[String] = None,
+      req: RequestHeader,
+      sendEvent: Boolean = true,
+      route: NgRoute,
+      target: Target
+  )(implicit ec: ExecutionContext, env: Env): Result = {
+      val errorId = env.snowflakeGenerator.nextIdStr()
+
+      val finalRes = customResultSync(route.id, req, Status(statusCode.getOrElse(400)), "failed", None, emptyBody = true, errorId, modern = false)
+      if (sendEvent) {
+        WebsocketEvent(
+          `@id` = errorId,
+          reqId = env.snowflakeGenerator.nextIdStr(),
+          `@timestamp` =  DateTime.now(),
+          protocol = req.version,
+          to = Location(
+              scheme = req.theProtocol,
+              host = req.theHost,
+              uri = req.relativeUri
+            ),
+          target = Location(
+              scheme = target.scheme,
+              host = target.host,
+              uri = req.relativeUri
+          ),
+          frame = frame,
+          frameSize = frameSize,
+          statusCode = statusCode,
+          reason = reason,
+          `@serviceId` = route.id,
+          `@service` = route.name,
+        ).toAnalytics()(env)
+      }
+      finalRes
+    }
 }

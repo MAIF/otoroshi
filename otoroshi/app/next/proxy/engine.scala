@@ -2678,14 +2678,16 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     } else {
-      if (route.useAkkaHttpWsClient) {
+      if (route.useAkkaHttpWsClient && ctxPlugins.hasNoWebsocketPlugins) {
         FEither(
           WebSocketProxyActor
             .wsCall(
               UrlSanitizer.sanitize(request.url),
               request.headers.toSeq,
               route.serviceDescriptor,
-              finalTarget
+              target = finalTarget,
+              rawRequest = rawRequest,
+              route = route.some
             )
             .right
             .vfuture
@@ -2698,8 +2700,12 @@ class ProxyEngine() extends RequestHandler {
                 UrlSanitizer.sanitize(request.url),
                 out,
                 request.headers.toSeq,
+                rawRequest,
                 route.serviceDescriptor,
+                route.some,
+                ctxPlugins.some,
                 finalTarget,
+                attrs,
                 env
               )
             )(env.otoroshiActorSystem, env.otoroshiMaterializer)

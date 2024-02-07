@@ -136,6 +136,12 @@ import WasmJob from './WasmJob';
 import WasmPreRoute from './WasmPreRoute';
 import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
+import WasmWebsocketTransformer from './WasmWebsocketTransformer';
+import WebsocketContentValidatorIn from './WebsocketContentValidatorIn';
+import WebsocketJsonFormatValidator from './WebsocketJsonFormatValidator';
+import WebsocketSizeValidator from './WebsocketSizeValidator';
+import WebsocketTypeValidator from './WebsocketTypeValidator';
+import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 
 export const Backend = NgBackend;
@@ -278,6 +284,12 @@ const pluginsArray = [
   WasmJob,
   WasmPreRoute,
   WasmRouter,
+  WebsocketContentValidatorIn,
+  WebsocketJsonFormatValidator,
+  WebsocketTypeValidator,
+  WebsocketSizeValidator,
+  WasmWebsocketTransformer,
+  JqWebsocketMessageTransformer,
   ZipFileBackend,
 ];
 

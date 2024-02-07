@@ -479,6 +479,45 @@ trait HealthCheckDataStore {
   def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
+case class WebsocketEvent(
+    `@type`: String = "WebsocketEvent",
+    `@id`: String,
+    `@timestamp`: DateTime,
+    reqId: String,
+    protocol: String,
+    to: Location,
+    target: Location,
+    frame: String,
+    frameSize: Int,
+    `@serviceId`: String,
+    `@service`: String,
+    statusCode: Option[Int] = None,
+    reason: Option[String] = None
+) extends AnalyticEvent {
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+  def toJson(implicit _env: Env): JsValue    = WebsocketEvent.writes(this, _env)
+}
+
+object WebsocketEvent {
+  def writes(o: WebsocketEvent, env: Env): JsValue =
+    Json.obj(
+      "@type"      -> o.`@type`,
+      "@id"        -> o.`@id`,
+      "@timestamp" -> o.`@timestamp`,
+      "reqId"      -> o.reqId,
+      "protocol"   -> o.protocol,
+      "to"         -> Location.format.writes(o.to),
+      "target"     -> Location.format.writes(o.target),
+      "@serviceId" -> o.`@serviceId`,
+      "@service"   -> o.`@service`,
+      "statusCode" -> o.statusCode,
+      "reason"     -> o.reason,
+      "frame"      -> o.frame,
+      "frameSize"  -> o.frameSize
+    )
+}
+
 sealed trait Filterable
 case class ServiceDescriptorFilterable(service: ServiceDescriptor) extends Filterable
 case class ApiKeyFilterable(apiKey: ApiKey)                        extends Filterable

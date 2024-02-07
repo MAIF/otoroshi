@@ -1,48 +1,47 @@
 package otoroshi.gateway
 
-import java.net.{InetAddress, InetSocketAddress}
-import java.util.concurrent.atomic.AtomicReference
-import akka.NotUsed
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
+import org.joda.time.DateTime
+import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models._
-import org.joda.time.DateTime
-import otoroshi.el.TargetExpressionLanguage
+import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
+import otoroshi.next.plugins.RejectStrategy
+import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPlugin, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
+import otoroshi.next.utils.FEither
 import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
-import otoroshi.utils.UrlSanitizer
-import play.api.Logger
-import play.api.http.websocket.{
-  CloseMessage,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
-import play.api.libs.json.{JsValue, Json}
-import play.api.libs.streams.ActorFlow
-import play.api.libs.ws.DefaultWSCookie
-import play.api.mvc.Results.NotFound
-import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.future.Implicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.{TypedMap, UrlSanitizer}
+import play.api.Logger
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.libs.json.{JsValue, Json}
+import play.api.libs.streams.ActorFlow
+import play.api.mvc.Results.NotFound
+import play.api.mvc._
 
+import java.net.{InetAddress, InetSocketAddress}
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 class WebSocketHandler()(implicit env: Env) {
@@ -574,7 +573,8 @@ class WebSocketHandler()(implicit env: Env) {
                   HeadersHelper
                     .addClaims(httpRequest.headers, httpRequest.claims, descriptor),
                   descriptor,
-                  httpRequest.target.getOrElse(_target)
+                  target = httpRequest.target.getOrElse(_target),
+                  rawRequest = req,
                 )
               )
             )
@@ -591,8 +591,12 @@ class WebSocketHandler()(implicit env: Env) {
                       UrlSanitizer.sanitize(httpRequest.url),
                       out,
                       httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
+                      req,
                       descriptor,
+                      None, // TODO - check if we can pass the current route
+                      None,
                       httpRequest.target.getOrElse(_target),
+                      attrs,
                       env
                     )
                   )
@@ -624,17 +628,26 @@ object WebSocketProxyActor {
       url: String,
       out: ActorRef,
       headers: Seq[(String, String)],
+      rawRequest: RequestHeader,
       descriptor: ServiceDescriptor,
+      route: Option[NgRoute],
+      ctxPlugins: Option[NgContextualPlugins],
       target: Target,
+      attrs: TypedMap,
       env: Env
   ) =
-    Props(new WebSocketProxyActor(url, out, headers, descriptor, target, env))
+    Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, attrs, env))
 
-  def wsCall(url: String, headers: Seq[(String, String)], descriptor: ServiceDescriptor, target: Target)(implicit
+  def wsCall(url: String,
+             headers: Seq[(String, String)],
+             descriptor: ServiceDescriptor,
+             target: Target,
+             rawRequest: RequestHeader,
+             route: Option[NgRoute] = None)(implicit
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Flow[PlayWSMessage, PlayWSMessage, Future[NotUsed]] = {
+  ): Flow[PlayWSMessage, PlayWSMessage, _] = {
     val avoid                                = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers                             = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
       case (key, value) if key.toLowerCase == "cookie"     =>
@@ -648,7 +661,8 @@ object WebSocketProxyActor {
           case Failure(e)   => List.empty
         }
       case (key, value) if key.toLowerCase == "host"       =>
-        Seq(akka.http.scaladsl.model.headers.Host(value))
+        val part = value.split(":")
+        Seq(akka.http.scaladsl.model.headers.Host(part.head))
       case (key, value) if key.toLowerCase == "user-agent" =>
         Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
       case (key, value)                                    =>
@@ -657,6 +671,7 @@ object WebSocketProxyActor {
     val request                              = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
       r.copy(extraHeaders = r.extraHeaders :+ header)
     )
+    // WARN: DOES NOT MAKE USE OF WS PLUGINS BECAUSE OF THE LIMITS OF THE AKKA STREAM SINK API
     val flow                                 = Flow.fromSinkAndSourceMat(
       Sink.asPublisher[akka.http.scaladsl.model.ws.Message](fanout = false),
       Source.asSubscriber[akka.http.scaladsl.model.ws.Message]
@@ -666,38 +681,40 @@ object WebSocketProxyActor {
       targetOpt = Some(target),
       mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
       clientFlow = flow,
-      //a => a
-      customizer = descriptor.clientConfig.proxy
-        .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
-        .filter(p =>
-          WSProxyServerUtils.isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
-        )
-        .map { proxySettings =>
-          val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
-          val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
-            case (Some(principal), Some(password)) => {
-              val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
-              ClientTransport.httpsProxy(proxyAddress, auth)
+      customizer = {
+        descriptor.clientConfig.proxy
+          .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
+          .filter(p =>
+            WSProxyServerUtils.isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+          )
+          .map { proxySettings =>
+            val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+            val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
+              case (Some(principal), Some(password)) => {
+                val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                ClientTransport.httpsProxy(proxyAddress, auth)
+              }
+              case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
-            case _                                 => ClientTransport.httpsProxy(proxyAddress)
-          }
-          a: ClientConnectionSettings =>
-            a.withTransport(httpsProxyTransport)
+            a: ClientConnectionSettings =>
+              a.withTransport(httpsProxyTransport)
+                .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
+                .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+          } getOrElse { a: ClientConnectionSettings =>
+          val maybeIpAddress = target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
+          if (env.manualDnsResolve && maybeIpAddress.isDefined) {
+            a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
               .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
               .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-        } getOrElse { a: ClientConnectionSettings =>
-        val maybeIpAddress = target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
-        if (env.manualDnsResolve && maybeIpAddress.isDefined) {
-          a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
-            .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
-            .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-        } else {
-          a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
-            .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+          } else {
+            a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
+              .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+          }
         }
       }
     )
-    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
+
+    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, Any] { () =>
       connected.flatMap { r =>
         if (logger.isTraceEnabled)
           logger.trace(
@@ -746,8 +763,12 @@ class WebSocketProxyActor(
     url: String,
     out: ActorRef,
     headers: Seq[(String, String)],
+    rawRequest: RequestHeader,
     descriptor: ServiceDescriptor,
+    route: Option[NgRoute],
+    ctxPlugins: Option[NgContextualPlugins],
     target: Target,
+    attrs: TypedMap,
     env: Env
 ) extends Actor {
 
@@ -755,6 +776,7 @@ class WebSocketProxyActor(
 
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
+  implicit val e = env
 
   lazy val source = Source.queue[akka.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
@@ -763,6 +785,12 @@ class WebSocketProxyActor(
 
   val avoid = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
+
+  val wsEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
+    new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, target, attrs)
+  } else {
+    new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, target, attrs)
+  }
 
   override def preStart() =
     try {
@@ -779,8 +807,7 @@ class WebSocketProxyActor(
             case Failure(e)   => List.empty
           }
         case (key, value) if key.toLowerCase == "host"       =>
-          val part = value.split(":")
-          Seq(akka.http.scaladsl.model.headers.Host(part.head))
+          Seq(akka.http.scaladsl.model.headers.Host(value.split(":").head))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>
@@ -793,31 +820,29 @@ class WebSocketProxyActor(
         request = request,
         targetOpt = Some(target),
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
-        clientFlow = Flow
-          .fromSinkAndSourceMat(
+        clientFlow = Flow.fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-              case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
-                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from target")
-                out ! PlayWSTextMessage(text)
-              case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
-                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] streamed text message from target")
-                source.runFold("")((concat, str) => concat + str).map(text => out ! PlayWSTextMessage(text))
-              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
-                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
-                out ! PlayWSBinaryMessage(data)
-              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
-                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
-                source
-                  .runFold(ByteString.empty)((concat, str) => concat ++ str)
-                  .map(data => out ! PlayWSBinaryMessage(data))
-              case other                                                      => logger.error(s"Unkown message type ${other}")
+               data => {
+                 wsEngine.handleResponse(data)(closeFunction)
+                   .map {
+                     case Left(error) =>
+                       Option(queueRef.get()).foreach(_.complete())
+                     case Right(msg) => {
+                       msg.asPlay.map { msg =>
+                         if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
+                         out ! msg
+                       }
+                     }
+                   }
+               }
             },
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
-            if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
-            Option(queueRef.get()).foreach(_.complete())
-          // out ! PoisonPill
+              if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
+              Option(queueRef.get()).foreach(_.complete())
+              out ! PoisonPill
+              self ! PoisonPill
           }),
         customizer = descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
@@ -869,28 +894,116 @@ class WebSocketProxyActor(
     // out ! PoisonPill
   }
 
-  def receive = {
-    case msg: PlayWSBinaryMessage     => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+  def closeFunction(message: NgWebsocketResponse): Unit = {
+    Option(queueRef.get()).foreach(_.complete())
+    message match {
+      case NgWebsocketResponse(_, Some(status), Some(reason)) => out ! CloseMessage(status, reason)
+      case _ => // do nothing
     }
-    case msg: PlayWSTextMessage       => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
+  }
+
+  def receive: Receive = {
+    case data: play.api.http.websocket.Message => {
+      wsEngine.handleRequest(data)(closeFunction)
+        .map {
+          case Left(error) => {
+            error.rejectStrategy.foreach {
+              case RejectStrategy.Close =>
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
+                Option(queueRef.get()).foreach(_.complete())
+              case _ => // TODO - logging ??
+            }
+          }
+          case Right(msg) => {
+            msg.asAkka.map { msg =>
+              if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
+              Option(queueRef.get()).foreach { q =>
+                q.offer(msg)
+              }
+            }
+          }
+        }
     }
-    case msg: PingMessage             => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+  }
+}
+
+class WebsocketEngine(route: NgRoute, ctxPlugins: NgContextualPlugins, rawRequest: RequestHeader, target: Target, attrs: TypedMap) {
+
+  private def getPlugins()(f: NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin] => Boolean): Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
+    ctxPlugins.websocketPlugins
+      .filter(f)
+  }
+
+  private def handle[A](validators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]],
+                        data: WebsocketMessage,
+                        applyResponseFilter: Boolean = false)(closeConnection: NgWebsocketResponse => Unit)
+            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+
+    val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
+
+    def next(current: WebsocketMessage, plugins: Seq[NgPluginWrapper[NgWebsocketPlugin]]): Unit = {
+      plugins.headOption match {
+        case None => promise.trySuccess(Right(current))
+        case Some(wrapper) =>
+          val ctx = NgWebsocketPluginContext(
+            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+            route = route,
+            request = rawRequest,
+            attrs = attrs,
+            config = wrapper.plugin.defaultConfig
+              .map(dc => dc ++ wrapper.instance.config.raw)
+              .getOrElse(wrapper.instance.config.raw),
+            target = target
+          )
+
+          (if(applyResponseFilter) {
+            wrapper.plugin.onResponseMessage(ctx, current)
+          } else {
+            wrapper.plugin.onRequestMessage(ctx, current)
+          }).andThen {
+            case Failure(_) =>
+              promise.trySuccess(Left(NgWebsocketError(500.some, "internal_server_error".some, wrapper.plugin.rejectStrategy(ctx).some)))
+            case Success(Left(error)) => {
+              //println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
+              wrapper.plugin.rejectStrategy(ctx) match {
+                case RejectStrategy.Close =>
+                  closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))
+                case _ => // TODO - logging ??
+              }
+              promise.trySuccess(Left(error.copy(rejectStrategy = wrapper.plugin.rejectStrategy(ctx).some)))
+            }
+            case Success(Right(nextMessage)) if plugins.size == 1 => {
+              promise.trySuccess(Right(nextMessage))
+            }
+            case Success(Right(nextMessage)) => {
+              next(nextMessage, plugins.tail)
+            }
+          }
+      }
     }
-    case msg: PongMessage             => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
-      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+
+    next(data, validators)
+    promise.future
+  }
+
+  def handleRequest(data: play.api.http.websocket.Message)(closeConnection: NgWebsocketResponse => Unit)
+            (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    if (ctxPlugins.hasNoWebsocketPlugins) {
+      val r: Either[NgWebsocketError, WebsocketMessage] = Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
+      r.vfuture
+    } else {
+      val requestValidators: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = getPlugins()(_.plugin.onRequestFlow)
+      handle(requestValidators, WebsocketMessage.PlayMessage(data))(closeConnection)
     }
-    case CloseMessage(status, reason) => {
-      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
-      Option(queueRef.get()).foreach(_.complete())
-      // out ! PoisonPill
+  }
+
+  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(closeConnection: NgWebsocketResponse => Unit)
+    (implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+    if (ctxPlugins.hasNoWebsocketPlugins) {
+      WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
+    } else {
+      val responseValidators = getPlugins()(_.plugin.onResponseFlow)
+      handle(responseValidators, WebsocketMessage.AkkaMessage(data), applyResponseFilter = true)(closeConnection)
     }
-    case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
   }
 }
