@@ -1,24 +1,9 @@
 package otoroshi.next.controllers
 
-import akka.http.scaladsl.util.FastFuture
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgAccessValidator,
-  NgBackendCall,
-  NgNamedPlugin,
-  NgPluginCategory,
-  NgPluginVisibility,
-  NgPreRouting,
-  NgRequestSink,
-  NgRequestSinkContext,
-  NgRequestTransformer,
-  NgRouteMatcher,
-  NgStep,
-  NgTunnelHandler,
-  NgWebsocketPlugin
-}
 import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.next.plugins.api._
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -64,10 +49,10 @@ class NgPluginsController(
       val onRequest  = plugin match {
         case a: NgRequestTransformer => a.transformsRequest
         case _: NgPreRouting         => true
+        case _: NgTunnelHandler      => true
         case _: NgAccessValidator    => true
         case _: NgRequestSink        => true
         case _: NgRouteMatcher       => true
-        case _: NgTunnelHandler      => true
         case p: NgWebsocketPlugin    => p.onRequestFlow
         case _                       => false
       }
@@ -75,11 +60,11 @@ class NgPluginsController(
         case a: NgRequestTransformer => a.transformsResponse || a.transformsError
         case p: NgWebsocketPlugin    => p.onResponseFlow
         case _: NgPreRouting         => false
+        case _: NgTunnelHandler      => false
         case _: NgAccessValidator    => false
         case _: NgRequestSink        => false
         case _: NgRouteMatcher       => false
-        case _: NgTunnelHandler      => false
-        case _                       => false
+        case _                       => true
       }
 
       val form                      = env.openApiSchema.asForms.get(name)
