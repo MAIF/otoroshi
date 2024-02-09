@@ -1292,16 +1292,52 @@ class Designer extends React.Component {
     const { selectedNode, nodes, hiddenSteps } = this.state;
 
     const matchRoute = nodes
-      .filter((n) => n.plugin_index.MatchRoute !== undefined)
+      .filter((n) => n.plugin_index.MatchRoute !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('MatchRoute') > -1)
+      .map((n, idx) => {
+        if (!n.plugin_index) {
+          n.plugin_index = {};
+        }
+        if (n.plugin_index.MatchRoute === undefined) {
+          n.plugin_index.MatchRoute = idx;
+        }
+        return n;
+      })
       .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute);
     const preRoute = nodes
-      .filter((n) => n.plugin_index.PreRoute !== undefined)
+      .filter((n) => n.plugin_index.PreRoute !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('PreRoute') > -1)
+      .map((n, idx) => {
+        if (!n.plugin_index) {
+          n.plugin_index = {};
+        }
+        if (n.plugin_index.PreRoute === undefined) {
+          n.plugin_index.PreRoute = idx;
+        }
+        return n;
+      })
       .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute);
     const validateAccess = nodes
-      .filter((n) => n.plugin_index.ValidateAccess !== undefined)
+      .filter((n) => n.plugin_index.ValidateAccess !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('ValidateAccess') > -1)
+      .map((n, idx) => {
+        if (!n.plugin_index) {
+          n.plugin_index = {};
+        }
+        if (n.plugin_index.ValidateAccess === undefined) {
+          n.plugin_index.ValidateAccess = idx;
+        }
+        return n;
+      })
       .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess);
     const transformRequest = nodes
-      .filter((n) => n.plugin_index.TransformRequest !== undefined)
+      .filter((n) => n.plugin_index.TransformRequest !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('TransformRequest') > -1)
+      .map((n, idx) => {
+        if (!n.plugin_index) {
+          n.plugin_index = {};
+        }
+        if (n.plugin_index.TransformRequest === undefined) {
+          n.plugin_index.TransformRequest = idx;
+        }
+        return n;
+      })
       .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest);
 
     return [matchRoute, preRoute, validateAccess, transformRequest].map((nodes, i) => {
@@ -1357,7 +1393,16 @@ class Designer extends React.Component {
 
   renderOutBound = () => {
     const responseNodes = this.state.nodes
-      .filter((n) => n.plugin_index.TransformResponse !== undefined)
+      .filter((n) => n.plugin_index.TransformResponse !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('TransformResponse') > -1)
+      .map((n, idx) => {
+        if (!n.plugin_index) {
+          n.plugin_index = {};
+        }
+        if (n.plugin_index.TransformResponse === undefined) {
+          n.plugin_index.TransformResponse = idx;
+        }
+        return n;
+      })
       .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse);
     return (
       this.state.hiddenSteps.TransformResponse &&
