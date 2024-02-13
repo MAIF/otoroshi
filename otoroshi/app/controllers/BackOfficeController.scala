@@ -1983,8 +1983,8 @@ class BackOfficeController(
           case Some(settings @ WasmoSettings(url, _, _, pluginsFilter, _)) =>
             val (header, token) = ApikeyHelper.generate(settings)
             Try {
-              env.Ws
-                .url(s"$url/plugins")
+              env.MtlsWs
+                .url(s"$url/plugins", MtlsConfig())
                 .withFollowRedirects(false)
                 .withHttpHeaders(
                   header -> token,
