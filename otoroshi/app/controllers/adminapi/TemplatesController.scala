@@ -663,6 +663,12 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .fromJsons(env.datastores.routeCompositionDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
+        case "WasmPlugin"  =>
+          FastFuture.successful(
+            WasmPlugin
+              .fromJsons(env.datastores.wasmPluginsDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .json
+          )
         case "ClientValidator"   =>
           FastFuture.successful(
             ClientCertificateValidator

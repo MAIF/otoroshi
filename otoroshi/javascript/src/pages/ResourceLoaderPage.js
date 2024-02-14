@@ -55,6 +55,8 @@ const UPDATE_ENTITIES = {
     BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.ROUTES, content),
   Backend: (content) =>
     BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.BACKENDS, content),
+  WasmPlugin: (content) =>
+    BackOfficeServices.nextClient.forEntityNext("wasm-plugins").create(content),
 };
 
 export function ResourceLoaderPage({ setTitle }) {
