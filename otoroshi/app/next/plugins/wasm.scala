@@ -219,7 +219,7 @@ class WasmPreRoute extends NgPreRouting {
 class WasmBackend extends NgBackendCall {
 
   private val logger                                       = Logger("otoroshi-plugins-wasm-backend")
-  override def useDelegates: Boolean                       = false
+  override def useDelegates: Boolean                       = true
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Wasm Backend"
@@ -265,7 +265,7 @@ class WasmBackend extends NgBackendCall {
                 input.stringify
               ),
               None
-            ).map {
+            ).flatMap {
               case Right(output) =>
                 val response =
                   try {
@@ -276,21 +276,26 @@ class WasmBackend extends NgBackendCall {
                       Json.obj()
                   }
                 AttrsHelper.updateAttrs(ctx.attrs, response)
-                val body     = BodyHelper.extractBodyFrom(response)
-                inMemoryBodyResponse(
-                  status = response.select("status").asOpt[Int].getOrElse(200),
-                  headers = response
-                    .select("headers")
-                    .asOpt[Map[String, String]]
-                    .getOrElse(Map("Content-Type" -> "application/json")),
-                  body = body
-                )
+                val delegatesCall = response.select("delegates_call").asOpt[Boolean].contains(true)
+                if (delegatesCall) {
+                  delegates()
+                } else {
+                  val body = BodyHelper.extractBodyFrom(response)
+                  inMemoryBodyResponse(
+                    status = response.select("status").asOpt[Int].getOrElse(200),
+                    headers = response
+                      .select("headers")
+                      .asOpt[Map[String, String]]
+                      .getOrElse(Map("Content-Type" -> "application/json")),
+                    body = body
+                  ).vfuture
+                }
               case Left(value)   =>
                 inMemoryBodyResponse(
                   status = 400,
                   headers = Map.empty,
                   body = Json.stringify(value).byteString
-                )
+                ).vfuture
             }.andThen { case _ =>
               vm.release()
             }
