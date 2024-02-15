@@ -286,7 +286,7 @@ export class WasmPluginsPage extends Component {
       type: 'select',
       props: {
         label: 'Kind',
-        possibleValues: ['Base64', 'Http', 'Wasmo', 'File'].map((v) => ({
+        possibleValues: ['Base64', 'Http', 'Wasmo', 'File', 'ClassPath'].map((v) => ({
           label: v,
           value: v,
         })),
