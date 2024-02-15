@@ -28,7 +28,7 @@ const schema = {
             return value;
           },
           label: 'Kind',
-          options: ['Base64', 'Http', 'Wasmo', 'Local', 'File'].map((v) => ({
+          options: ['Base64', 'Http', 'Wasmo', 'Local', 'File', 'ClassPath'].map((v) => ({
             label: v,
             value: v.toLowerCase(),
           })),

@@ -296,6 +296,7 @@ class WasmVmPoolCleaner extends Job {
       .asOpt[JsObject]
       .getOrElse(Json.obj())
     env.wasmIntegration.runVmCleanerJob(config)
+    env.wasmIntegration.runCacheCleanerJob()
   }
 }
 
