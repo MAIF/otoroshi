@@ -1,3 +1,4 @@
 /darwin-*
 /linux-*
 /native
+runtime.wasm

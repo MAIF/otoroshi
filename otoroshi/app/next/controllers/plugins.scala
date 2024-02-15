@@ -83,6 +83,7 @@ class NgPluginsController(
         "default_config"                -> plugin.defaultConfig.getOrElse(JsNull).as[JsValue],
         "config_schema"                 -> pluginSchema.deepMerge(overridedSchema),
         "config_flow"                   -> JsArray((plugin.configFlow ++ form.map(_.flow).getOrElse(Set.empty)).map(JsString.apply)),
+        "no_js_form"                    -> plugin.noJsForm,
         "plugin_type"                   -> "ng",
         "plugin_visibility"             -> plugin.visibility.json,
         "plugin_categories"             -> JsArray(plugin.categories.map(_.json)),

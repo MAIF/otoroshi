@@ -692,6 +692,7 @@ class Designer extends React.Component {
           ...p,
           legacy: true,
         })),
+        ...metadataPlugins.filter(p => p.no_js_form)
       ]
         .filter(this.filterSpecificPlugin)
         .map((plugin) => ({

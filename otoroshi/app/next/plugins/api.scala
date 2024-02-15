@@ -18,16 +18,9 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
-import play.api.libs.ws.{WSCookie, WSResponse}
+import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
@@ -130,6 +123,25 @@ case class NgPluginHttpRequest(
           )
         )
       )
+    )
+  }
+}
+
+object NgPluginHttpResponse {
+  def fromResult(result: Result): NgPluginHttpResponse = {
+    NgPluginHttpResponse(
+      status = result.header.status,
+      headers = result.header.headers,
+      cookies = result.newCookies.map(c => DefaultWSCookie(
+        name = c.name,
+        value = c.value,
+        maxAge = c.maxAge.map(_.toLong),
+        path = Option(c.path),
+        domain = c.domain,
+        secure = c.secure,
+        httpOnly = c.httpOnly,
+      )),
+      body = result.body.dataStream,
     )
   }
 }
@@ -302,6 +314,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
   def tags: Seq[String]                              = Seq.empty
   def steps: Seq[NgStep]
   def multiInstance: Boolean                         = true
+  def noJsForm: Boolean                              = false
   def defaultConfigObject: Option[NgPluginConfig]
   override final def defaultConfig: Option[JsObject] =
     defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
@@ -619,6 +632,15 @@ case class NgTransformerErrorContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
+      json.asObject ++ Json.obj(
+        "route"               -> route.json,
+        "response_body_bytes" -> bodyOut
+      )
+    }
+  }
 }
 
 trait NgFakePlugin        extends NgPlugin {}
