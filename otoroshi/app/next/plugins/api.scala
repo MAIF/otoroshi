@@ -732,7 +732,7 @@ object NgAccess {
   case class NgDenied(result: Result) extends NgAccess
 }
 
-trait NgAccessValidator extends NgNamedPlugin {
+trait NgAccessValidator extends NgPlugin {
   def isAccessAsync: Boolean                                                                  = true
   def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
   def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
@@ -768,7 +768,7 @@ case class NgRequestSinkContext(
   )
 }
 
-trait NgRequestSink extends NgNamedPlugin {
+trait NgRequestSink extends NgPlugin {
   def isSinkAsync: Boolean                                                                       = true
   def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result     =
@@ -802,7 +802,7 @@ case class NgRouteMatcherContext(
   )
 }
 
-trait NgRouteMatcher extends NgNamedPlugin {
+trait NgRouteMatcher extends NgPlugin {
   def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean
 }
 
@@ -822,7 +822,7 @@ case class NgTunnelHandlerContext(
   )
 }
 
-trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
+trait NgTunnelHandler extends NgPlugin with NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val isWebsocket = ctx.request.headers.get("Sec-WebSocket-Version").isDefined
     if (isWebsocket) {
@@ -884,7 +884,7 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
   def isChunked(): Option[Boolean]         = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)
 }
 
-trait NgBackendCall extends NgNamedPlugin {
+trait NgBackendCall extends NgPlugin {
   def useDelegates: Boolean
   def sourceBodyResponse(
       status: Int,
@@ -1432,7 +1432,7 @@ object NgWebsocketResponse {
     NgWebsocketResponse(NgAccess.NgDenied(result), statusCode.some, reason.some)
 }
 
-trait NgWebsocketPlugin extends NgNamedPlugin {
+trait NgWebsocketPlugin extends NgPlugin {
   def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
   def onRequestFlow: Boolean                                        = false
   def onResponseFlow: Boolean                                       = false
