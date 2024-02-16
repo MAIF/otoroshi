@@ -860,15 +860,13 @@ object Wazero extends AwaitCapable {
     LibExtism.ExtismValType.I64,
     LibExtism.ExtismValType.I64,
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32
   ) { (plugin, params, returns) => }
 
   def valuePrepareString() = HFunction.defineFunctionWithReturn[EmptyUserData](
     "syscall/js.valuePrepareString",
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32
+    LibExtism.ExtismValType.I64
   ) { (plugin, params, returns, data) => }
 
   def valueLoadString() = HFunction.defineFunctionWithReturn[EmptyUserData](
@@ -876,20 +874,17 @@ object Wazero extends AwaitCapable {
     LibExtism.ExtismValType.I64,
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32
   ) { (plugin, params, returns, data) => }
 
   def finalizeRef() = HFunction.defineFunctionWithReturn[EmptyUserData](
     "syscall/js.finalizeRef",
-    LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32
+    LibExtism.ExtismValType.I64
   ) { (plugin, params, returns, data) => }
 
   def stringVal() = HFunction.defineEmptyFunction(
     "syscall/js.stringVal",
     LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32
   ) { (plugin, params, returns) => }
@@ -899,22 +894,19 @@ object Wazero extends AwaitCapable {
     LibExtism.ExtismValType.I64,
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32
+    LibExtism.ExtismValType.I64
   ) { (plugin, params, returns, data) => }
 
   def valueLength() = HFunction.defineEmptyFunction(
     "syscall/js.valueLength",
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32
+    LibExtism.ExtismValType.I64
   ) { (plugin, params, returns) => }
 
   def valueIndex() = HFunction.defineEmptyFunction(
     "syscall/js.valueIndex",
     LibExtism.ExtismValType.I64,
     LibExtism.ExtismValType.I64,
-    LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32
   ) { (plugin, params, returns) => }
 
@@ -927,20 +919,19 @@ object Wazero extends AwaitCapable {
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
-    LibExtism.ExtismValType.I32
   ) { (plugin, params, returns, data) => }
 
   def getFunctions(): Seq[HostFunctionWithAuthorization] = Seq(
     HostFunctionWithAuthorization(runtimeTicks().withNamespace("gojs"), _ => true),
-    HostFunctionWithAuthorization(valueGet(), _ => true),
-    HostFunctionWithAuthorization(valuePrepareString(), _ => true),
-    HostFunctionWithAuthorization(valueLoadString(), _ => true),
-    HostFunctionWithAuthorization(finalizeRef(), _ => true),
-    HostFunctionWithAuthorization(stringVal(), _ => true),
-    HostFunctionWithAuthorization(valueSet(), _ => true),
-    HostFunctionWithAuthorization(valueLength(), _ => true),
-    HostFunctionWithAuthorization(valueIndex(), _ => true),
-    HostFunctionWithAuthorization(valueCall(), _ => true)
+    HostFunctionWithAuthorization(valueGet().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valuePrepareString().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valueLoadString().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(finalizeRef().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(stringVal().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valueSet().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valueLength().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valueIndex().withNamespace("gojs"), _ => true),
+    HostFunctionWithAuthorization(valueCall().withNamespace("gojs"), _ => true)
   )
 }
 
