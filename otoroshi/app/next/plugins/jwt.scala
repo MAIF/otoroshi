@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
-import otoroshi.models.{InCookie, InHeader, InQueryParam, OutputMode, RefJwtVerifier}
+import otoroshi.models.{DefaultToken, InCookie, InHeader, InQueryParam, OutputMode, RefJwtVerifier}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
@@ -312,7 +312,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                     "exp" -> (System.currentTimeMillis() + 60000L),
                     "sub" -> JsString(optSub.getOrElse("anonymous")),
                     "aud" -> "backend"
-                  )
+                  ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject]
 
                   val headerJson     = Json
                     .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
