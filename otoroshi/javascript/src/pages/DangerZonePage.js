@@ -332,7 +332,7 @@ function WasmoTester(props) {
                   ...props.rawValue.wasmoSettings,
                 }),
               })
-                .catch((_) => {})
+                .catch((_) => { })
                 .then((r) => {
                   console.log(r.status);
                   if (r.status !== 200) {
@@ -347,7 +347,7 @@ function WasmoTester(props) {
                         height={window.innerHeight - 320}
                         label=""
                         help="..."
-                        onChange={() => {}}
+                        onChange={() => { }}
                         value={value}
                       />
                       <p className="text-center" style={{ fontWeight: 'bold' }}>
@@ -1086,34 +1086,88 @@ export class DangerZonePage extends Component {
         help: 'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
-    'wasmoSettings.url': {
+    'wasmoSettings.settings.url': {
       type: 'string',
       props: {
         label: 'URL',
       },
     },
-    'wasmoSettings.clientId': {
+    'wasmoSettings.settings.clientId': {
       type: 'string',
       props: {
         label: 'Apikey id',
       },
     },
-    'wasmoSettings.clientSecret': {
+    'wasmoSettings.settings.clientSecret': {
       type: 'string',
       props: {
         label: 'Apikey secret',
       },
     },
-    'wasmoSettings.pluginsFilter': {
+    'wasmoSettings.settings.pluginsFilter': {
       type: 'string',
       props: {
         label: 'User(s)',
       },
     },
-    'wasmoSettings.legacyAuth': {
+    'wasmoSettings.settings.legacyAuth': {
       type: 'bool',
       props: {
         label: 'Use legacy auth.',
+      },
+    },
+    'wasmoSettings.tlsConfig.mtls': {
+      type: 'bool',
+      props: { label: 'Custom TLS Settings' },
+    },
+    'wasmoSettings.tlsConfig.loose': {
+      type: 'bool',
+      display: (v) => tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls),
+      props: { label: 'TLS loose' },
+    },
+    'wasmoSettings.tlsConfig.trustAll': {
+      type: 'bool',
+      display: (v) => tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls),
+      props: { label: 'TrustAll' },
+    },
+    'wasmoSettings.tlsConfig.certs': {
+      type: 'array',
+      display: (v) => tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls),
+      props: {
+        label: 'Client certificates',
+        placeholder: 'Choose a client certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: (a) => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
+    'wasmoSettings.tlsConfig.trustedCerts': {
+      type: 'array',
+      display: (v) => tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls && !v.wasmoSettings.tlsConfig.trustAll),
+      props: {
+        label: 'Trusted certificates',
+        placeholder: 'Choose a trusted certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: (a) => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
     },
     testing: {
@@ -1275,11 +1329,16 @@ export class DangerZonePage extends Component {
     '>>>Default templates',
     'templates',
     '>>>Wasmo',
-    'wasmoSettings.url',
-    'wasmoSettings.clientId',
-    'wasmoSettings.clientSecret',
-    'wasmoSettings.pluginsFilter',
-    'wasmoSettings.legacyAuth',
+    'wasmoSettings.settings.url',
+    'wasmoSettings.settings.clientId',
+    'wasmoSettings.settings.clientSecret',
+    'wasmoSettings.settings.pluginsFilter',
+    'wasmoSettings.settings.legacyAuth',
+    'wasmoSettings.tlsConfig.mtls',
+    'wasmoSettings.tlsConfig.loose',
+    'wasmoSettings.tlsConfig.trustAll',
+    'wasmoSettings.tlsConfig.certs',
+    'wasmoSettings.tlsConfig.trustedCerts',
     'testing',
     '>>>Global metadata',
     'tags',
@@ -1343,7 +1402,9 @@ export class DangerZonePage extends Component {
 
   updateState = (raw) => {
     const value = { ...raw };
-    delete value.elasticReadsConfig.clusterUri;
+
+    if (value.elasticReadsConfig)
+      delete value.elasticReadsConfig.clusterUri;
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
   };
 
@@ -1846,11 +1907,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
-      plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-    }`;
+      }`;
   };
 
   return (
