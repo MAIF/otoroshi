@@ -323,7 +323,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <button id="instructions-toggle-button">close</button>
 </div>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.14.0-dev/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.15.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
@@ -555,9 +555,9 @@ pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&g
 <h3><a href="#pairing-otoroshi-and-wasmo" name="pairing-otoroshi-and-wasmo" class="anchor"><span class="anchor-link"></span></a>Pairing Otoroshi and Wasmo</h3>
 <p>Now that we have our compiled plugin, we have to connect Otoroshi with Wasmo. Let&rsquo;s navigate to the danger zone, and add the following values in the Wasmo section:</p>
 <ul>
-  <li><code>URL</code>: admin-api-apikey-id</li>
-  <li><code>Apikey id</code>: admin-api-apikey-secret</li>
-  <li><code>Apikey secret</code>: <a href="http://localhost:5001">http://localhost:5001</a></li>
+  <li><code>URL</code>: <a href="http://localhost:5001">http://localhost:5001</a></li>
+  <li><code>Apikey id</code>: admin-api-apikey-id</li>
+  <li><code>Apikey secret</code>: admin-api-apikey-secret</li>
   <li><code>User(s)</code>: *</li>
   <li><code>Token secret</code>:</li>
 </ul>
