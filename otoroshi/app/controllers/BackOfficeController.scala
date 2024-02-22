@@ -1980,15 +1980,15 @@ class BackOfficeController(
       .singleton()
       .flatMap { globalConfig =>
         globalConfig.wasmoSettings match {
-          case Some(settings @ WasmoSettings(url, _, _, pluginsFilter, _)) =>
-            val (header, token) = ApikeyHelper.generate(settings)
+          case Some(config) =>
+            val (header, token) = ApikeyHelper.generate(config.settings)
             Try {
               env.MtlsWs
-                .url(s"$url/plugins", MtlsConfig())
+                .url(s"${config.settings.url}/plugins", config.tlsConfig)
                 .withFollowRedirects(false)
                 .withHttpHeaders(
                   header -> token,
-                  "kind" -> pluginsFilter.getOrElse("*")
+                  "kind" -> config.settings.pluginsFilter.getOrElse("*")
                 )
                 .get()
                 .map(res => {
@@ -2019,16 +2019,16 @@ class BackOfficeController(
   def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
-    val wasmoSettings   = WasmoSettings.format.reads(jsonBody).get
-    val (header, token) = ApikeyHelper.generate(wasmoSettings)
+    val wasmoConfiguration   = TlsWasmoSettings.format.reads(jsonBody).get
+    val (header, token) = ApikeyHelper.generate(wasmoConfiguration.settings)
 
     Try {
-      env.Ws
-        .url(s"${wasmoSettings.url}/plugins")
+      env.MtlsWs
+        .url(s"${wasmoConfiguration.settings.url}/plugins", wasmoConfiguration.tlsConfig)
         .withFollowRedirects(false)
         .withHttpHeaders(
           header -> token,
-          "kind" -> wasmoSettings.pluginsFilter.getOrElse("*")
+          "kind" -> wasmoConfiguration.settings.pluginsFilter.getOrElse("*")
         )
         .get()
         .map(res => {

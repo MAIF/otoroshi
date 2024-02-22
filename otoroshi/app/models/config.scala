@@ -579,6 +579,39 @@ object DefaultTemplates {
   }
 }
 
+case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig: MtlsConfig = MtlsConfig()) {
+  def json: JsValue = TlsWasmoSettings.format.writes(this)
+}
+
+object TlsWasmoSettings {
+  val format = new Format[TlsWasmoSettings] {
+    override def writes(o: TlsWasmoSettings): JsValue =
+      Json.obj(
+        "settings" -> o.settings.json,
+        "tlsConfig"      -> o.tlsConfig.json
+      )
+
+    override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
+      Try {
+        WasmoSettings.format.reads(json) match {
+          case JsSuccess(value, _) => TlsWasmoSettings(
+            settings = value
+          )
+          case JsError(_) =>
+            TlsWasmoSettings(
+              settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
+              tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
+            )
+        }
+
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(ac) => JsSuccess(ac)
+      }
+    }
+  }
+}
+
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
@@ -626,7 +659,7 @@ case class GlobalConfig(
     quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
     templates: DefaultTemplates = DefaultTemplates(),
-    wasmoSettings: Option[WasmoSettings] = None,
+    wasmoSettings: Option[TlsWasmoSettings] = None,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     env: JsObject = Json.obj(),
@@ -681,6 +714,30 @@ object GlobalConfig {
   lazy val logger = Logger("otoroshi-global-config")
 
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
+
+    def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
+      TlsWasmoSettings.format.reads(json) match {
+        case JsSuccess(value, path) => value.some
+        case JsError(errors) => {
+          val wasmoSettings: JsResult[WasmoSettings] = WasmoSettings.format.reads(
+            (json \ "wasmoSettings")
+              .asOpt[JsValue]
+              .getOrElse(JsNull)
+          )
+          val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
+            .reads(
+              (json \ "wasmManagerSettings")
+                .asOpt[JsValue]
+                .getOrElse(JsNull)
+            )
+
+          wasmoSettings.map(r => r.some)
+            .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
+            .map(value => TlsWasmoSettings(settings = value))
+        }
+      }
+    }
+
     override def writes(o: GlobalConfig): JsValue = {
       val mailerSettings: JsValue = o.mailerSettings match {
         case None         => JsNull
@@ -906,22 +963,7 @@ object GlobalConfig {
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
             .orElse(json.select("templates").asOpt(DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
-          wasmoSettings = WasmoSettings.format
-            .reads(
-              (json \ "wasmoSettings")
-                .asOpt[JsValue]
-                .getOrElse(JsNull)
-            )
-            .getOrElse(
-              WasmoSettings.format
-                .reads(
-                  (json \ "wasmManagerSettings")
-                    .asOpt[JsValue]
-                    .getOrElse(JsNull)
-                )
-                .getOrElse(WasmoSettings())
-            )
-            .some,
+          wasmoSettings = readWasmoSettings(json),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
