@@ -269,9 +269,9 @@ Resubmit the command. It should pass.
 
 Now that we have our compiled plugin, we have to connect Otoroshi with Wasmo. Let's navigate to the danger zone, and add the following values in the Wasmo section:
 
-* `URL`: admin-api-apikey-id
-* `Apikey id`: admin-api-apikey-secret
-* `Apikey secret`: http://localhost:5001
+* `URL`: http://localhost:5001
+* `Apikey id`: admin-api-apikey-id
+* `Apikey secret`: admin-api-apikey-secret
 * `User(s)`: *
 * `Token secret`:
 
