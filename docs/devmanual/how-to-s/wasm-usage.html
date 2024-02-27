@@ -656,29 +656,6 @@ export function execute() {
 
     return 0;
 }</code></pre></dd>
-  <dt>target.js
-  </dt>
-  <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">// (2)
-export function execute() {
-  let str = Host.inputString();
-  let context = JSON.parse(str);
-  
-  // (3)
-  let headers = { ...context.request.headers };
-  headers[&quot;foo&quot;] = &quot;bar&quot;;
-
-  // (4)
-  let response = {
-    headers,
-    body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;,
-    status: 200
-  };
-  
-  Host.outputString(JSON.stringify(response));
-
-  return 0;
-}</code></pre></dd>
   <dt>target.go
   </dt>
   <dd>
@@ -720,7 +697,7 @@ func main() {}</code></pre></dd>
   <li>Creates a map of new headers that will be merged with incoming request headers.</li>
   <li>Creates the response object with the map of merged headers, a simple JSON body and a successfull status code.</li>
 </ol>
-<p>The file is downloadable <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm">here</a>.</p>
+<p>The file is downloadable <a href="https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm">here</a>.</p>
 <p>Let&rsquo;s update the route using the this wasm file.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X PUT &quot;http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi&quot; \
 -H &quot;Content-type: application/json&quot; \
@@ -813,34 +790,33 @@ EOF
   <li>Create a new file named <code>index.html</code></li>
   <li>Copy and paste the following content</li>
 </ol>
-<pre class="prettyprint"><code class="language-html"> &lt;!DOCTYPE html&gt;
+<pre class="prettyprint"><code class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html&gt;
-&lt;head&gt;
-  &lt;title&gt;Wasmo plugin&lt;/title&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;h1&gt;Hello from Wasmo&lt;/h1&gt;
-&lt;/body&gt;
+  &lt;head&gt;
+    &lt;title&gt;Wasmo plugin&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Hello from Wasmo&lt;/h1&gt;
+  &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-<p>This snippet is a short HTML template with a title to indicate that it comes from Wasmo. </p>
-<p>Now we can write our javascript function to parse and return the content of our HTML to Otoroshi. </p>
+<p>This snippet is a short HTML template with a title to indicate that it comes from Wasmo.</p>
+<p>Now we can write our javascript function to parse and return the content of our HTML to Otoroshi.</p>
 <ol>
   <li>Navigate to the <code>index.js</code> file</li>
   <li>Replace the content with the following content</li>
 </ol>
-<pre class="prettyprint"><code class="language-js">import IndexPage from &#39;./index.html&#39;
+<pre class="prettyprint"><code class="language-js">import IndexPage from &quot;./index.html&quot;;
 
 export function execute() {
-  
   let response = {
     headers: {
-      &#39;Content-Type&#39;: &#39;text/html; charset=utf-8&#39;
+      &quot;Content-Type&quot;: &quot;text/html; charset=utf-8&quot;,
     },
     body: IndexPage,
-    status: 200
+    status: 200,
   };
-  
+
   Host.outputString(JSON.stringify(response));
 
   return 0;
@@ -849,21 +825,20 @@ export function execute() {
 <p>The code is pretty self-explanatory. We start by importing our HTML page and we build the response with the correct content type, the body and a 200 http status.</p>
 <p>Just before testing, we need to change the esbuild configuration to specify how to bundle the HTML file.</p>
 <p>The contents of your <code>esbuild.js</code> file should look this:</p>
-<pre class="prettyprint"><code class="language-js">const esbuild = require(&#39;esbuild&#39;);
+<pre class="prettyprint"><code class="language-js">const esbuild = require(&quot;esbuild&quot;);
 
-esbuild
-  .build({
-    entryPoints: [&#39;index.js&#39;],
-    outdir: &#39;dist&#39;,
-    bundle: true,
-    loader: {
-      &#39;.html&#39;: &#39;text&#39;
-    },
-    sourcemap: true,
-    minify: false, // might want to use true for production build
-    format: &#39;cjs&#39;, // needs to be CJS for now
-    target: [&#39;es2020&#39;] // don&#39;t go over es2020 because quickjs doesn&#39;t support it
-  })
+esbuild.build({
+  entryPoints: [&quot;index.js&quot;],
+  outdir: &quot;dist&quot;,
+  bundle: true,
+  loader: {
+    &quot;.html&quot;: &quot;text&quot;,
+  },
+  sourcemap: true,
+  minify: false, // might want to use true for production build
+  format: &quot;cjs&quot;, // needs to be CJS for now
+  target: [&quot;es2020&quot;], // don&#39;t go over es2020 because quickjs doesn&#39;t support it
+});
 </code></pre>
 <p>Check your browser at <code>http://demo-otoroshi.oto.tools:8080</code> and you should see your page content updated to the new text.</p>
 <p>If you need to expose more than a HTML page, we highly recommend to use the <a href="zip-backend-plugin.html">Zip Backend plugin</a></p>

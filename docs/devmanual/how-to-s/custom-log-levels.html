@@ -311,13 +311,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   ...
 }
 </code></pre>
-<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>. Default one is <code>WARN</code>.</p>
+<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>, <code>OFF</code>. Default one is <code>WARN</code>.</p>
 <h2><a href="#customize-log-level-for-one-logger-with-environment-variable" name="customize-log-level-for-one-logger-with-environment-variable" class="anchor"><span class="anchor-link"></span></a>Customize log level for one logger with environment variable</h2>
 <p>Let say you want to see <code>DEBUG</code> messages from the logger <code>otoroshi-http-handler</code>.</p>
-<p>Then you just have to declare an environment variable named <code>OTOROSHI_LOGGERS_OTOROSHI_HTTP_HANDLER</code> with value <code>DEBUG</code>. The rule is </p>
+<p>Then you just have to declare an environment variable named <code>OTOROSHI_LOGGERS_OTOROSHI_HTTP_HANDLER</code> with value <code>DEBUG</code>. The rule is</p>
 <pre class="prettyprint"><code class="language-scala">&quot;OTOROSHI_LOGGERS_&quot; + loggerName.toUpperCase().replace(&quot;-&quot;, &quot;_&quot;)
 </code></pre>
-<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>. Default one is <code>WARN</code>.</p>
+<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>, <code>OFF</code>. Default one is <code>WARN</code>.</p>
 <h2><a href="#list-of-loggers" name="list-of-loggers" class="anchor"><span class="anchor-link"></span></a>List of loggers</h2>
 <ul>
   <li><a href="https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-error-handler%22%29"><code>otoroshi-error-handler</code></a></li>
@@ -487,6 +487,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-global-oauth2-config%22%29"><code>otoroshi-global-oauth2-config</code></a></li>
   <li><a href="https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-global-oauth2-module%22%29"><code>otoroshi-global-oauth2-module</code></a></li>
   <li><a href="https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-ldap-auth-config%22%29"><code>otoroshi-ldap-auth-config</code></a></li>
+  <li><a href="https://github.com/search?q=repo%3AMAIF%2Fotoroshi+Logger%28%22otoroshi-wasm-integration%22%29"><code>otoroshi-wasm-integration</code></a></li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/custom-initial-state.html">Initial state customization</a></p>
