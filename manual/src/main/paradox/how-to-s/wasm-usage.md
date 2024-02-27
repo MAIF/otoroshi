@@ -33,22 +33,22 @@ For this tutorial, we will start with an existing wasm file. The main function o
 The main function of this validator, written in rust, should look like:
 
 validator.rs
-:   @@snip [validator.rs](../snippets/wasmo/validator.rs) 
+: @@snip [validator.rs](../snippets/wasmo/validator.rs)
 
 validator.js
-:   @@snip [validator.js](../snippets/wasmo/validator.js) 
+: @@snip [validator.js](../snippets/wasmo/validator.js)
 
 validator.ts
-:   @@snip [validator.ts](../snippets/wasmo/validator.ts) 
+: @@snip [validator.ts](../snippets/wasmo/validator.ts)
 
 validator.js
-:   @@snip [validator.js](../snippets/wasmo/validator.js) 
+: @@snip [validator.js](../snippets/wasmo/validator.js)
 
 validator.go
-:   @@snip [validator.js](../snippets/wasmo/validator.go) 
+: @@snip [validator.js](../snippets/wasmo/validator.go)
 
-The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as `WasmAccessValidatorContext` object. 
-Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header. 
+The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as `WasmAccessValidatorContext` object.
+Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header.
 Obviously, the previous snippet is an example and the editor allows you to write whatever you want as a check.
 
 Let's create a route that uses the previous wasm file as an access validator plugin :
@@ -101,10 +101,10 @@ EOF
 
 This request will apply the following process:
 
-* names the route *demo-otoroshi*
-* creates a frontend exposed on the `demo-otoroshi.oto.tools` 
-* forward requests on one target, reachable at `mirror.otoroshi.io` using TLS on port 443
-* adds the *WasmAccessValidator* plugin to validate access based on the foo header to the route
+- names the route _demo-otoroshi_
+- creates a frontend exposed on the `demo-otoroshi.oto.tools`
+- forward requests on one target, reachable at `mirror.otoroshi.io` using TLS on port 443
+- adds the _WasmAccessValidator_ plugin to validate access based on the foo header to the route
 
 You can validate the route creation by navigating to the [dashboard](http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi?tab=flow)
 
@@ -134,32 +134,29 @@ HTTP/1.1 200 OK
 
 ## Update the route by replacing the backend with a WASM file
 
-The next step in this tutorial is to use a WASM file as backend  of the route. We will use an existing WASM file, available in our wasm demos repository on github. 
+The next step in this tutorial is to use a WASM file as backend of the route. We will use an existing WASM file, available in our wasm demos repository on github.
 The content of this plugin, called `wasm-target.wasm`, looks like:
 
 target.rs
-:   @@snip [target.rs](../snippets/wasmo/target.rs) 
+: @@snip [target.rs](../snippets/wasmo/target.rs)
 
 target.js
-:   @@snip [target.js](../snippets/wasmo/target.js) 
+: @@snip [target.js](../snippets/wasmo/target.js)
 
 target.ts
-:   @@snip [target.ts](../snippets/wasmo/target.ts) 
-
-target.js
-:   @@snip [target.js](../snippets/wasmo/target.js) 
+: @@snip [target.ts](../snippets/wasmo/target.ts)
 
 target.go
-:   @@snip [target.js](../snippets/wasmo/target.go) 
+: @@snip [target.js](../snippets/wasmo/target.go)
 
 Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
 
 1. Includes all public structures from `types.rs` file. This file contains predefined Otoroshi structures that plugins can manipulate.
-2. Necessary imports. [Extism](https://extism.org/docs/overview)'s goal is to make all software programmable by providing a plug-in system. 
+2. Necessary imports. [Extism](https://extism.org/docs/overview)'s goal is to make all software programmable by providing a plug-in system.
 3. Creates a map of new headers that will be merged with incoming request headers.
 4. Creates the response object with the map of merged headers, a simple JSON body and a successfull status code.
 
-The file is downloadable [here](#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm).
+The file is downloadable [here](https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm).
 
 Let's update the route using the this wasm file.
 
@@ -255,7 +252,6 @@ This should output:
 
 In this response, we can find our headers send in the curl command and those added by the wasm plugin.
 
-
 ## Expose a single file as WASM backend
 
 A WASM backend plugin can directly expose a file written in Wasmo. This is the simplest possibility to write HTML, Javascript, JSON or expose a simple PNG image.
@@ -269,37 +265,36 @@ Let's expose a HTML page. In your Wasmo instance, execute the following instruct
 5. Copy and paste the following content
 
 ```html
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
-<head>
-  <title>Wasmo plugin</title>
-</head>
-<body>
-  <h1>Hello from Wasmo</h1>
-</body>
+  <head>
+    <title>Wasmo plugin</title>
+  </head>
+  <body>
+    <h1>Hello from Wasmo</h1>
+  </body>
 </html>
 ```
 
-This snippet is a short HTML template with a title to indicate that it comes from Wasmo. 
+This snippet is a short HTML template with a title to indicate that it comes from Wasmo.
 
-Now we can write our javascript function to parse and return the content of our HTML to Otoroshi. 
+Now we can write our javascript function to parse and return the content of our HTML to Otoroshi.
 
 1. Navigate to the `index.js` file
 2. Replace the content with the following content
 
 ```js
-import IndexPage from './index.html'
+import IndexPage from "./index.html";
 
 export function execute() {
-  
   let response = {
     headers: {
-      'Content-Type': 'text/html; charset=utf-8'
+      "Content-Type": "text/html; charset=utf-8",
     },
     body: IndexPage,
-    status: 200
+    status: 200,
   };
-  
+
   Host.outputString(JSON.stringify(response));
 
   return 0;
@@ -310,24 +305,23 @@ The code is pretty self-explanatory. We start by importing our HTML page and we 
 
 Just before testing, we need to change the esbuild configuration to specify how to bundle the HTML file.
 
-The contents of your `esbuild.js`  file should look this:
+The contents of your `esbuild.js` file should look this:
 
 ```js
-const esbuild = require('esbuild');
+const esbuild = require("esbuild");
 
-esbuild
-  .build({
-    entryPoints: ['index.js'],
-    outdir: 'dist',
-    bundle: true,
-    loader: {
-      '.html': 'text'
-    },
-    sourcemap: true,
-    minify: false, // might want to use true for production build
-    format: 'cjs', // needs to be CJS for now
-    target: ['es2020'] // don't go over es2020 because quickjs doesn't support it
-  })
+esbuild.build({
+  entryPoints: ["index.js"],
+  outdir: "dist",
+  bundle: true,
+  loader: {
+    ".html": "text",
+  },
+  sourcemap: true,
+  minify: false, // might want to use true for production build
+  format: "cjs", // needs to be CJS for now
+  target: ["es2020"], // don't go over es2020 because quickjs doesn't support it
+});
 ```
 
 Check your browser at `http://demo-otoroshi.oto.tools:8080` and you should see your page content updated to the new text.
