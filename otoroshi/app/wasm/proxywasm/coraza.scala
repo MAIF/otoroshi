@@ -471,11 +471,12 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
+      //val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
+      val url = "wasm/coraza-proxy-wasm-v0.5.0.wasm"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
-            kind = WasmSourceKind.Http,
+            kind = WasmSourceKind.ClassPath,
             path = url
           ),
           memoryPages = 10000,
