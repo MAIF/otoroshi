@@ -12,7 +12,7 @@ import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import otoroshi.models._
 import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore}
-import otoroshi.script.ScriptDataStore
+import otoroshi.script.{NamedPlugin, PluginType, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
 import otoroshi.storage.stores._
@@ -33,7 +33,8 @@ case object Healthy     extends DataStoreHealth
 case object Unhealthy   extends DataStoreHealth
 case object Unreachable extends DataStoreHealth
 
-trait DataStoresBuilder {
+trait DataStoresBuilder extends NamedPlugin {
+  override def pluginType: PluginType = PluginType.CompositeType
   def build(
       configuration: Configuration,
       environment: Environment,
