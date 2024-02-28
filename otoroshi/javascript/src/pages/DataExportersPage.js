@@ -1611,11 +1611,17 @@ const possibleExporterConfigFormValues = {
     schema: {
       ref: {
         type: 'select',
-        props: { label: 'Exporter', valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter` },
+        props: {
+          label: 'Exporter',
+          valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
+          transformer: (item) => ({ label: item.name, value: item.id })
+        },
       },
       config: {
-        type: 'code',
-        props: { label: 'Exporter config.' },
+        type: 'jsonobjectcode',
+        props: {
+          label: 'Exporter config.'
+        },
       },
     },
   },
