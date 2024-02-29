@@ -527,6 +527,34 @@ export class WasmPluginsPage extends Component {
     },
   };
 
+  wasmSourcePathAlert = (create) => {
+    window.newAlert(<>
+      <p>It seems you have forgotten the <span className="badge bg-warning">path</span> value of your wasm source.</p>
+      <p>Please add one if you want to {create ? 'create' : 'save'} this wasm plugin :)</p>
+    </>, 'Validation error')
+  }
+
+  createItem = (item) => {
+    console.log(item, item.path)
+    if (!item.config.source.path) {
+      this.wasmSourcePathAlert(true);
+    } else if (item.config.source.path && !item.config.source.path.trim()) {
+      this.wasmSourcePathAlert(true);
+    } else {
+      return BackOfficeServices.createWasmPlugin(item);
+    }
+  }
+
+  updateItem = (item) => {
+    if (!item.config.source.path) {
+      this.wasmSourcePathAlert();
+    } else if (item.config.source.path && !item.config.source.path.trim()) {
+      this.wasmSourcePathAlert();
+    } else {
+      return BackOfficeServices.updateWasmPlugin(item);
+    }
+  }
+
   render() {
     return (
       <div>
@@ -546,9 +574,9 @@ export class WasmPluginsPage extends Component {
               //fields: ['id', 'name', 'description'],
             })
           }
-          updateItem={BackOfficeServices.updateWasmPlugin}
+          updateItem={this.updateItem}
           deleteItem={BackOfficeServices.deleteWasmPlugin}
-          createItem={BackOfficeServices.createWasmPlugin}
+          createItem={this.createItem}
           showActions={true}
           showLink={false}
           rowNavigation={true}
