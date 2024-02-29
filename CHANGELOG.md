@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.15.0] - 2024-02-29
+
+
+https://github.com/MAIF/otoroshi/milestone/86?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.14.0...v16.15.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.15.0
+
+
+### Added 
+
+- Bump to the latest wasm4s version to be able to use the Classpath source kind (#1842)
+- Coraza plugin could benefits from latest wasm4s enhancements (#1848)       
+      
+### Changed 
+
+- prevent creating wasmo wasm plugin without source (#1838)       
+      
+### Fixed 
+
+- routes created with admin api doesn't show plugins if they don't have nodeId/plugin_index (#1832)
+- Default Token Strategy doesn't include json content (#1835)
+- DataStoresBuilder does not extends NamedPlugin (#1839)
+- Custom data exporter list is not well displayed in the data exporter pages (#1840)
+- Some plugins API does not extends the right parent API (#1841)
+- the WasmPlugin entity does not provide template API (#1843)
+- There is no easy way to consume next gen apis from the backoffice (#1844)
+- wasm backendcall plugins must be able to delegate call if needed (#1845)
+- plugin without js form descriptor embedded in the backoffice cannot be displayed in the route designer (#1846)
+- wasmo configuration values are broken in documentation (#1847)       
+      
+### Documentation 
+
+- wasmo configuration values are broken in documentation (#1847)       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @ptitFicus
+
 ## [16.14.0] - 2024-02-07
 
 
