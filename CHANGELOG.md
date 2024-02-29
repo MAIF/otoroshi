@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.15.1] - 2024-02-29
+
+
+https://github.com/MAIF/otoroshi/milestone/88?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.15.0...v16.15.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.15.1
+
+
+
+### Changed 
+
+- Plugin can have a custom category (#1849)       
+      
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.15.0] - 2024-02-29
 
 
