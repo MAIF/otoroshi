@@ -535,7 +535,6 @@ export class WasmPluginsPage extends Component {
   }
 
   createItem = (item) => {
-    console.log(item, item.path)
     if (!item.config.source.path) {
       this.wasmSourcePathAlert(true);
     } else if (item.config.source.path && !item.config.source.path.trim()) {
