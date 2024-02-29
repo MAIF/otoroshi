@@ -153,6 +153,11 @@ class NgProxyState(env: Env) {
   def allStoredBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
   def allBackends(): Seq[NgBackend]             = backends.values.toSeq
 
+  def hasCert(id: String): Boolean = certificates.contains(id)
+  def addCert(id: String, cert: Cert): Unit = {
+    certificates.put(id, cert)
+  }
+
   def updateRawRoutes(values: Seq[NgRoute]): Unit = {
     raw_routes
       .addAll(values.map(v => (v.cacheableId, v)))
