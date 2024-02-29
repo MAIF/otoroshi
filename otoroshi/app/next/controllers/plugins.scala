@@ -21,7 +21,9 @@ class NgPluginsController(
       .filterNot(_.contains(".NgMerged"))
       .flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))
       .flatMap(_._2.categories)
-    val categories = (NgPluginCategory.all ++ pluginsCategories).distinct.sortWith((a, b) => a.name.compareToIgnoreCase(b.name) < 0).map(_.json)
+    val categories        = (NgPluginCategory.all ++ pluginsCategories).distinct
+      .sortWith((a, b) => a.name.compareToIgnoreCase(b.name) < 0)
+      .map(_.json)
     Ok(JsArray(categories))
   }
 
