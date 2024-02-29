@@ -157,7 +157,9 @@ class NgProxyState(env: Env) {
   def addCert(id: String, cert: Cert): Unit = {
     certificates.put(id, cert)
   }
-
+  def removeCert(id: String): Unit = {
+    certificates.remove(id)
+  }
   def updateRawRoutes(values: Seq[NgRoute]): Unit = {
     raw_routes
       .addAll(values.map(v => (v.cacheableId, v)))
