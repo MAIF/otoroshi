@@ -2006,7 +2006,7 @@ class BackOfficeController(
               case Failure(err) => Ok(Json.arr()).vfuture
               case Success(v)   => v
             }
-          case _                                                           =>
+          case _            =>
             BadRequest(
               Json.obj(
                 "error" -> "Missing config in global configuration"
@@ -2019,8 +2019,8 @@ class BackOfficeController(
   def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
-    val wasmoConfiguration   = TlsWasmoSettings.format.reads(jsonBody).get
-    val (header, token) = ApikeyHelper.generate(wasmoConfiguration.settings)
+    val wasmoConfiguration = TlsWasmoSettings.format.reads(jsonBody).get
+    val (header, token)    = ApikeyHelper.generate(wasmoConfiguration.settings)
 
     Try {
       env.MtlsWs

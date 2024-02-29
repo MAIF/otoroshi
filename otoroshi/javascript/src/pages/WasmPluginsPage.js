@@ -528,11 +528,17 @@ export class WasmPluginsPage extends Component {
   };
 
   wasmSourcePathAlert = (create) => {
-    window.newAlert(<>
-      <p>It seems you have forgotten the <span className="badge bg-warning">path</span> value of your wasm source.</p>
-      <p>Please add one if you want to {create ? 'create' : 'save'} this wasm plugin :)</p>
-    </>, 'Validation error')
-  }
+    window.newAlert(
+      <>
+        <p>
+          It seems you have forgotten the <span className="badge bg-warning">path</span> value of
+          your wasm source.
+        </p>
+        <p>Please add one if you want to {create ? 'create' : 'save'} this wasm plugin :)</p>
+      </>,
+      'Validation error'
+    );
+  };
 
   createItem = (item) => {
     if (!item.config.source.path) {
@@ -542,7 +548,7 @@ export class WasmPluginsPage extends Component {
     } else {
       return BackOfficeServices.createWasmPlugin(item);
     }
-  }
+  };
 
   updateItem = (item) => {
     if (!item.config.source.path) {
@@ -552,7 +558,7 @@ export class WasmPluginsPage extends Component {
     } else {
       return BackOfficeServices.updateWasmPlugin(item);
     }
-  }
+  };
 
   render() {
     return (

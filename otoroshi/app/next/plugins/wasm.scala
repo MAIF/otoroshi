@@ -267,7 +267,7 @@ class WasmBackend extends NgBackendCall {
               None
             ).flatMap {
               case Right(output) =>
-                val response =
+                val response      =
                   try {
                     Json.parse(output._1)
                   } catch {

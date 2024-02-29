@@ -1614,13 +1614,13 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'Exporter',
           valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
-          transformer: (item) => ({ label: item.name, value: item.id })
+          transformer: (item) => ({ label: item.name, value: item.id }),
         },
       },
       config: {
         type: 'jsonobjectcode',
         props: {
-          label: 'Exporter config.'
+          label: 'Exporter config.',
         },
       },
     },

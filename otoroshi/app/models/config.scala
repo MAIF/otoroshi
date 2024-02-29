@@ -587,17 +587,18 @@ object TlsWasmoSettings {
   val format = new Format[TlsWasmoSettings] {
     override def writes(o: TlsWasmoSettings): JsValue =
       Json.obj(
-        "settings" -> o.settings.json,
-        "tlsConfig"      -> o.tlsConfig.json
+        "settings"  -> o.settings.json,
+        "tlsConfig" -> o.tlsConfig.json
       )
 
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         WasmoSettings.format.reads(json) match {
-          case JsSuccess(value, _) => TlsWasmoSettings(
-            settings = value
-          )
-          case JsError(_) =>
+          case JsSuccess(value, _) =>
+            TlsWasmoSettings(
+              settings = value
+            )
+          case JsError(_)          =>
             TlsWasmoSettings(
               settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
               tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
@@ -718,8 +719,8 @@ object GlobalConfig {
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
       TlsWasmoSettings.format.reads(json) match {
         case JsSuccess(value, path) => value.some
-        case JsError(errors) => {
-          val wasmoSettings: JsResult[WasmoSettings] = WasmoSettings.format.reads(
+        case JsError(errors)        => {
+          val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
             (json \ "wasmoSettings")
               .asOpt[JsValue]
               .getOrElse(JsNull)
@@ -731,7 +732,8 @@ object GlobalConfig {
                 .getOrElse(JsNull)
             )
 
-          wasmoSettings.map(r => r.some)
+          wasmoSettings
+            .map(r => r.some)
             .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
             .map(value => TlsWasmoSettings(settings = value))
         }

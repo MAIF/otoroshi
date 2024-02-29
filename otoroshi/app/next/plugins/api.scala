@@ -18,7 +18,14 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  Message,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -132,16 +139,18 @@ object NgPluginHttpResponse {
     NgPluginHttpResponse(
       status = result.header.status,
       headers = result.header.headers,
-      cookies = result.newCookies.map(c => DefaultWSCookie(
-        name = c.name,
-        value = c.value,
-        maxAge = c.maxAge.map(_.toLong),
-        path = Option(c.path),
-        domain = c.domain,
-        secure = c.secure,
-        httpOnly = c.httpOnly,
-      )),
-      body = result.body.dataStream,
+      cookies = result.newCookies.map(c =>
+        DefaultWSCookie(
+          name = c.name,
+          value = c.value,
+          maxAge = c.maxAge.map(_.toLong),
+          path = Option(c.path),
+          domain = c.domain,
+          secure = c.secure,
+          httpOnly = c.httpOnly
+        )
+      ),
+      body = result.body.dataStream
     )
   }
 }

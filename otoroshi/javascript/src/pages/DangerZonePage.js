@@ -332,7 +332,7 @@ function WasmoTester(props) {
                   ...props.rawValue.wasmoSettings,
                 }),
               })
-                .catch((_) => { })
+                .catch((_) => {})
                 .then((r) => {
                   console.log(r.status);
                   if (r.status !== 200) {
@@ -347,7 +347,7 @@ function WasmoTester(props) {
                         height={window.innerHeight - 320}
                         label=""
                         help="..."
-                        onChange={() => { }}
+                        onChange={() => {}}
                         value={value}
                       />
                       <p className="text-center" style={{ fontWeight: 'bold' }}>
@@ -1152,7 +1152,8 @@ export class DangerZonePage extends Component {
     },
     'wasmoSettings.tlsConfig.trustedCerts': {
       type: 'array',
-      display: (v) => tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls && !v.wasmoSettings.tlsConfig.trustAll),
+      display: (v) =>
+        tryOrTrue(() => v.wasmoSettings.tlsConfig.mtls && !v.wasmoSettings.tlsConfig.trustAll),
       props: {
         label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
@@ -1403,8 +1404,7 @@ export class DangerZonePage extends Component {
   updateState = (raw) => {
     const value = { ...raw };
 
-    if (value.elasticReadsConfig)
-      delete value.elasticReadsConfig.clusterUri;
+    if (value.elasticReadsConfig) delete value.elasticReadsConfig.clusterUri;
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
   };
 
@@ -1907,10 +1907,11 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
+      plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-      }`;
+    }`;
   };
 
   return (

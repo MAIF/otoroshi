@@ -692,7 +692,7 @@ class Designer extends React.Component {
           ...p,
           legacy: true,
         })),
-        ...metadataPlugins.filter(p => p.no_js_form)
+        ...metadataPlugins.filter((p) => p.no_js_form),
       ]
         .filter(this.filterSpecificPlugin)
         .map((plugin) => ({
@@ -1293,7 +1293,11 @@ class Designer extends React.Component {
     const { selectedNode, nodes, hiddenSteps } = this.state;
 
     const matchRoute = nodes
-      .filter((n) => n.plugin_index.MatchRoute !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('MatchRoute') > -1)
+      .filter(
+        (n) =>
+          n.plugin_index.MatchRoute !== undefined ||
+          this.state.plugins.find((p) => p.id === n.plugin)?.plugin_steps.indexOf('MatchRoute') > -1
+      )
       .map((n, idx) => {
         if (!n.plugin_index) {
           n.plugin_index = {};
@@ -1305,7 +1309,11 @@ class Designer extends React.Component {
       })
       .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute);
     const preRoute = nodes
-      .filter((n) => n.plugin_index.PreRoute !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('PreRoute') > -1)
+      .filter(
+        (n) =>
+          n.plugin_index.PreRoute !== undefined ||
+          this.state.plugins.find((p) => p.id === n.plugin)?.plugin_steps.indexOf('PreRoute') > -1
+      )
       .map((n, idx) => {
         if (!n.plugin_index) {
           n.plugin_index = {};
@@ -1317,7 +1325,13 @@ class Designer extends React.Component {
       })
       .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute);
     const validateAccess = nodes
-      .filter((n) => n.plugin_index.ValidateAccess !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('ValidateAccess') > -1)
+      .filter(
+        (n) =>
+          n.plugin_index.ValidateAccess !== undefined ||
+          this.state.plugins
+            .find((p) => p.id === n.plugin)
+            ?.plugin_steps.indexOf('ValidateAccess') > -1
+      )
       .map((n, idx) => {
         if (!n.plugin_index) {
           n.plugin_index = {};
@@ -1329,7 +1343,13 @@ class Designer extends React.Component {
       })
       .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess);
     const transformRequest = nodes
-      .filter((n) => n.plugin_index.TransformRequest !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('TransformRequest') > -1)
+      .filter(
+        (n) =>
+          n.plugin_index.TransformRequest !== undefined ||
+          this.state.plugins
+            .find((p) => p.id === n.plugin)
+            ?.plugin_steps.indexOf('TransformRequest') > -1
+      )
       .map((n, idx) => {
         if (!n.plugin_index) {
           n.plugin_index = {};
@@ -1394,7 +1414,13 @@ class Designer extends React.Component {
 
   renderOutBound = () => {
     const responseNodes = this.state.nodes
-      .filter((n) => n.plugin_index.TransformResponse !== undefined || this.state.plugins.find(p => p.id === n.plugin)?.plugin_steps.indexOf('TransformResponse') > -1)
+      .filter(
+        (n) =>
+          n.plugin_index.TransformResponse !== undefined ||
+          this.state.plugins
+            .find((p) => p.id === n.plugin)
+            ?.plugin_steps.indexOf('TransformResponse') > -1
+      )
       .map((n, idx) => {
         if (!n.plugin_index) {
           n.plugin_index = {};
