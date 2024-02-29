@@ -245,6 +245,7 @@ object NgPluginCategory {
   case object Classic          extends NgPluginCategory { def name: String = "Classic"          }
   case object ServiceDiscovery extends NgPluginCategory { def name: String = "ServiceDiscovery" }
   case object Websocket        extends NgPluginCategory { def name: String = "Websocket"        }
+  case class Custom(name: String) extends NgPluginCategory
 
   val all = Seq(
     Classic,
