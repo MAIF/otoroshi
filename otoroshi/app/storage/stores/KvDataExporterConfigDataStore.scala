@@ -242,6 +242,19 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = CustomMetricsSettings()
         )
+      case Some("custom")  =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Custom,
+          id = IdGenerator.namedId("data-exporter", env),
+          name = "New custom exporter config",
+          desc = "New custom exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = ExporterRef("", Json.obj())
+        )
       case Some("wasm")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.Wasm,
