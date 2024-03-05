@@ -98,7 +98,7 @@ object WasmAuthorizations {
 
 case class WasmConfig(
     source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
-    memoryPages: Int = 20,
+    memoryPages: Int = 50,
     functionName: Option[String] = None,
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
