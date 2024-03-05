@@ -791,6 +791,91 @@ const ChooserButton = ({ isActive, value, onChange, label, description, style = 
   );
 };
 
+class CustomExporterForm extends Component {
+
+  state = {
+    value: this.props.rawValue,
+    flow: [],
+    schema: {},
+  }
+
+  componentDidMount() {
+    this.update();
+  }
+
+  update = () => {
+    fetch(`/bo/api/proxy/api/scripts/_list?type=exporter`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+    .then((r) => r.json())
+    .then((values) => {
+      const exp = values.find(v => v.id === this.props.rawValue.ref);
+      if (exp) {
+        this.setState({
+          flow: exp.configFlow,
+          schema: exp.configSchema
+        })
+      } else {
+        this.setState({
+          flow: [],
+          schema: {}
+        })
+      }
+    }).catch(e => {
+      console.log("error while fetching exporter metadata", e);
+      this.setState({
+        flow: [],
+        schema: {}
+      })
+    })
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (prevProps.rawValue.ref !== this.props.rawValue.ref) {
+      this.update();
+    }
+  }
+
+  onChange = (v) => {
+    this.setState({ value: v });
+    this.props.rawOnChange(v)
+  }
+
+  render() {
+    const flow = ['ref', ...this.state.flow, 'config'];
+    const schema = {
+      ...this.state.schema,
+      ref: {
+        type: 'select',
+          props: {
+          label: 'Exporter',
+            valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
+            transformer: (item) => ({ label: item.name, value: item.id, exporter: item }),
+        },
+      },
+      config: {
+        type: 'jsonobjectcode',
+          props: {
+          label: 'Raw exporter config.',
+        },
+      },
+    }
+    return (
+      <Form
+        {...this.props}
+        schema={schema}
+        flow={flow}
+        value={this.props.rawValue}
+        onChange={this.onChange}
+      />
+    )
+  }
+}
+
 const possibleExporterConfigFormValues = {
   elastic: {
     flow: [
@@ -1607,24 +1692,32 @@ const possibleExporterConfigFormValues = {
     schema: {},
   },
   custom: {
-    flow: ['ref', 'config'],
+    flow: ['root'],
     schema: {
-      ref: {
-        type: 'select',
-        props: {
-          label: 'Exporter',
-          valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
-          transformer: (item) => ({ label: item.name, value: item.id, exporter: item }),
-        },
-      },
-      config: {
-        type: 'jsonobjectcode',
-        props: {
-          label: 'Exporter config.',
-        },
-      },
-    },
+      root: {
+        type: CustomExporterForm,
+      }
+    }
   },
+  //custom: {
+  //  flow: ['ref', 'config'],
+  //  schema: {
+  //    ref: {
+  //      type: 'select',
+  //      props: {
+  //        label: 'Exporter',
+  //        valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
+  //        transformer: (item) => ({ label: item.name, value: item.id, exporter: item }),
+  //      },
+  //    },
+  //    config: {
+  //      type: 'jsonobjectcode',
+  //      props: {
+  //        label: 'Exporter config.',
+  //      },
+  //    },
+  //  },
+  //},
   metrics: {
     label: 'request routing metrics',
     flow: ['labels'],
