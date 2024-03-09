@@ -1191,6 +1191,7 @@ export class NgSelectRenderer extends Component {
             creatable={creatable}
             value={formatValue ? formatValue(this.props.value) : this.props.value}
             isMulti={props.isMulti}
+            isClearable={props.isClearable}
             isLoading={this.state.loading}
             disabled={props.disabled}
             placeholder={props.placeholder || this.props.placeholder}
