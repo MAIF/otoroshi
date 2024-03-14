@@ -12,7 +12,7 @@
 
 APIs RESTful and GraphQL development has become one of the most popular activities for companies as well as users in recent times. In fast scaling companies, the multiplication of clients can cause the number of API needs to grow at scale.
 
-Otoroshi comes with a solution to create and meet your customers' needs without constantly creating and recreating APIs: the `GraphQL composer plugin`. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api or anything that supports the HTTP protocol. In fact, the plugin can define and expose for each of your client a specific GraphQL schema, which only corresponds to the needs of the customers.
+Otoroshi comes with a solution to create and meet your customers' needs without constantly creating and recreating APIs: the `GraphQL composer plugin`. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api, raw JSON or WASM binary or anything that supports the HTTP protocol. 
 
 @@@ div { .centered-img }
 <img src="../imgs/graphql-composer.png" width="620px" />
@@ -21,18 +21,19 @@ Otoroshi comes with a solution to create and meet your customers' needs without 
 
 ## Tutorial
 
-Let's take an example to get a better view of this plugin. We want to build a schema with two types: 
+Let's set up the plugin to align with the specified models:
 
-* an user with a name and a password 
-* an country with a name and its users.
+A user model with attributes for name and password.
+A country model with attributes for name and its associated users.
 
-To build this schema, we need to use three custom directives. A `directive` decorates part of a GraphQL schema or operation with additional configuration. Directives are preceded by the @ character, like so:
+The plugin provides custom directives to compose your API. A `directive` decorates part of a GraphQL schema or operation with additional configuration. Directives are preceded by the **@** character, like so:
 
 * @ref:[rest](#directives) : to call a http rest service with dynamic path params
 * @ref:[permission](#directives) : to restrict the access to the sensitive field
 * @ref:[graphql](#directives) : to call a graphQL service by passing a url and the associated query
 
-The final schema of our tutorial should look like this
+The GraphQL schema of our tutorial should look like this
+
 ```graphql
 type Country {
   name: String
@@ -51,44 +52,27 @@ type Query {
 }
 ```
 
-Now you know the GraphQL Composer basics and how it works, let's configure it on our project:
+Now that we've covered the fundamentals of GraphQL Composer, let's proceed with setting it up in our project :
 
-* create a route using the new Otoroshi router describing the previous countries API
-* add the GraphQL composer plugin
-* configure the plugin with the schema
-* try to call it
+* set up a route containing the GraphQL Composer plugin
+* configure the plugin with the appropriate schema
+* conduct a test to ensure everything is functioning correctly
 
 @@@ div { .centered-img }
 <img src="../imgs/countries-api.png" width="620px" />
 @@@
 
-### Setup environment
+### Setup your environment
 
-First of all, we need to download the latest Otoroshi.
-
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.15/otoroshi.jar'
-```
-
-Now, just run the command belows to start the Otoroshi, and look the console to see the output.
-
-```sh
-java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
-```
-
-Now, login to [the UI](http://otoroshi.oto.tools:8080) with 
-```sh
-user = admin@otoroshi.io
-password = password
-```
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Create our countries API
 
-First thing to do in any new API is of course creating a `route`. We need 4 informations which are:
+Let's create the `route` with few informations :
 
 * name: `My countries API`
-* frontend: exposed on `countries-api.oto.tools`
-* plugins: the list of plugins with only the `GraphQL composer` plugin
+* frontend: `countries-api.oto.tools`
+* plugins: `GraphQL composer` plugin
 
 Let's make a request call through the Otoroshi Admin API (with the default apikey), like the example below
 ```sh
@@ -121,9 +105,9 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
   -u admin-api-apikey-id:admin-api-apikey-secret
 ```
 
-### Build the countries API 
+### Configure our countries API 
 
-Let's continue our API by patching the configuration of the GraphQL plugin with the complete schema.
+Let's continue our API by updating the configuration of the GraphQL plugin with the initial schema.
 
 ```sh
 curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/routes/countries-api' \
@@ -161,10 +145,9 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/routes/countries-api' \
   -u admin-api-apikey-id:admin-api-apikey-secret
 ```
 
-The route is created but it expects an API, exposed on the localhost:8181, to work. 
+Our created route expects an API, exposed on the localhost:8181, designed to retrieve users based on their countries. 
 
-Let's create this simple API which returns a list of users and of countries. This should look like the following snippet.
-The API uses express as http server.
+Let's develop this API using NodeJS. The API uses express as http server.
 
 ```js
 const express = require('express')
@@ -216,7 +199,7 @@ app.listen(8181, () => {
 
 ```
 
-Let's try to make a first call to our countries API.
+Let's initiate our first request to the countries API.
 
 ```sh
 curl 'countries.oto.tools:9999/' \
@@ -247,16 +230,15 @@ You should see the following content in your terminal.
 
 The call graph should looks like
 
-```
-1. Calls https://countries.trevorblades.com
-2. For each country:
-   - extract the field name
-   - calls http://localhost:8181/countries/${country}/users to get the list of users for this country
-```
 
-You may have noticed that we added an argument at the end of the graphql directive named `paginate`. It enabled the paging for the client accepting limit and offset parameters. These parameters are used by the plugin to filter and reduce the content.
+1. Initiate a request to https://countries.trevorblades.com
+2. For each country retrieved:
+   - extract the `name` field
+   - sends a request to http://localhost:8181/countries/${country}/users to retrieve the list of users associated with this country.
 
-Let's make a new call that does not accept any country.
+You may have noticed that we appended an argument called `pagniate` to the end of the graphql directive. This argument enables pagination for the client, allowing it to accept parameters such as limit and offset. The plugin utilizes these parameters to filter and streamline the content.
+
+Let's initiate a new call that doesn't specify any country.
 
 ```sh
 curl 'countries.oto.tools:9999/' \
@@ -282,7 +264,7 @@ Let's move on to the next section to secure sensitive field of our API.
 
 ### Basics of permissions 
 
-The permission directives has been created to protect the fields of the graphql schema. The validation process starts by create a `context` for all incoming requests, based on the list of paths defined in the permissions field of the plugin. The permissions paths can refer to the request data (url, headers, etc), user credentials (api key, etc) and informations about the matched route. Then the process can validate that the value or values are present in the `context`.
+The permission directives have been established to safeguard the fields within the GraphQL schema. The validation process commences by generating a context for all incoming requests, derived from the list of paths specified in the permissions field of the plugin. These permissions paths can reference various components of the request data (such as URL, headers, etc.), user credentials (such as API key, etc.), and details regarding the matched route. Subsequently, the process verifies that the specified value or values are present within the context.
 
 @@@div { .simple-block }
 
@@ -293,9 +275,9 @@ The permission directives has been created to protect the fields of the graphql 
 
 *Arguments : value and unauthorized_value*
 
-The permission directive can be used to secure a field on **one** value. The directive checks that a specific value is present in the `context`.
+The permission directive is designed to to secure a field on **one** value. The directive checks that a specific value is present in the `context`.
 
-Two arguments are available, the first, named `value`, is required and designates the value found. The second optional value, `unauthorized_value`, can be used to indicates, in the outcoming response, the rejection message.
+Two arguments are available : `value` which is mandatory and specifies the expected value. Optionally, `unauthorized_value`, which can be utilized to indicate the rejection message in the outgoing response.
 
 **Example**
 ```js
