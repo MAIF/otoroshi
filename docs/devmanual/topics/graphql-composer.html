@@ -310,21 +310,18 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <p>GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools. <a href="https://graphql.org/">Official GraphQL website</a></p>
 </blockquote>
 <p>APIs RESTful and GraphQL development has become one of the most popular activities for companies as well as users in recent times. In fast scaling companies, the multiplication of clients can cause the number of API needs to grow at scale.</p>
-<p>Otoroshi comes with a solution to create and meet your customers&rsquo; needs without constantly creating and recreating APIs: the <code>GraphQL composer plugin</code>. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api or anything that supports the HTTP protocol. In fact, the plugin can define and expose for each of your client a specific GraphQL schema, which only corresponds to the needs of the customers.</p><div class="centered-img">
+<p>Otoroshi comes with a solution to create and meet your customers&rsquo; needs without constantly creating and recreating APIs: the <code>GraphQL composer plugin</code>. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api, raw JSON or WASM binary or anything that supports the HTTP protocol. </p><div class="centered-img">
 <img src="../imgs/graphql-composer.png" width="620px" /></div>
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
-<p>Let&rsquo;s take an example to get a better view of this plugin. We want to build a schema with two types: </p>
-<ul>
-  <li>an user with a name and a password</li>
-  <li>an country with a name and its users.</li>
-</ul>
-<p>To build this schema, we need to use three custom directives. A <code>directive</code> decorates part of a GraphQL schema or operation with additional configuration. Directives are preceded by the @ character, like so:</p>
+<p>Let&rsquo;s set up the plugin to align with the specified models:</p>
+<p>A user model with attributes for name and password. A country model with attributes for name and its associated users.</p>
+<p>The plugin provides custom directives to compose your API. A <code>directive</code> decorates part of a GraphQL schema or operation with additional configuration. Directives are preceded by the <strong>@</strong> character, like so:</p>
 <ul>
   <li><a href="graphql-composer.html#directives">rest</a> : to call a http rest service with dynamic path params</li>
   <li><a href="graphql-composer.html#directives">permission</a> : to restrict the access to the sensitive field</li>
   <li><a href="graphql-composer.html#directives">graphql</a> : to call a graphQL service by passing a url and the associated query</li>
 </ul>
-<p>The final schema of our tutorial should look like this</p>
+<p>The GraphQL schema of our tutorial should look like this</p>
 <pre class="prettyprint"><code class="language-graphql">type Country {
   name: String
   users: [User] @rest(url: &quot;http://localhost:5000/countries/${item.name}/users&quot;)
@@ -341,31 +338,54 @@ type Query {
   countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com&quot;, query: &quot;{ countries { name }}&quot;, paginate: true)
 }
 </code></pre>
-<p>Now you know the GraphQL Composer basics and how it works, let&rsquo;s configure it on our project:</p>
+<p>Now that we&rsquo;ve covered the fundamentals of GraphQL Composer, let&rsquo;s proceed with setting it up in our project :</p>
 <ul>
-  <li>create a route using the new Otoroshi router describing the previous countries API</li>
-  <li>add the GraphQL composer plugin</li>
-  <li>configure the plugin with the schema</li>
-  <li>try to call it</li>
+  <li>set up a route containing the GraphQL Composer plugin</li>
+  <li>configure the plugin with the appropriate schema</li>
+  <li>conduct a test to ensure everything is functioning correctly</li>
 </ul><div class="centered-img">
 <img src="../imgs/countries-api.png" width="620px" /></div>
-<h3><a href="#setup-environment" name="setup-environment" class="anchor"><span class="anchor-link"></span></a>Setup environment</h3>
-<p>First of all, we need to download the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.15/otoroshi.jar&#39;
+<h3><a href="#setup-your-environment" name="setup-your-environment" class="anchor"><span class="anchor-link"></span></a>Setup your environment</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">Set up an Otoroshi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.16.0-dev/otoroshi.jar&#39;
 </code></pre>
-<p>Now, just run the command belows to start the Otoroshi, and look the console to see the output.</p>
+<p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>Now, login to <a href="http://otoroshi.oto.tools:8080">the UI</a> with </p>
-<pre class="prettyprint"><code class="language-sh">user = admin@otoroshi.io
-password = password
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;name&quot;: &quot;my-service&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myservice.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  }
+}
+EOF
 </code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
 <h3><a href="#create-our-countries-api" name="create-our-countries-api" class="anchor"><span class="anchor-link"></span></a>Create our countries API</h3>
-<p>First thing to do in any new API is of course creating a <code>route</code>. We need 4 informations which are:</p>
+<p>Let&rsquo;s create the <code>route</code> with few informations :</p>
 <ul>
   <li>name: <code>My countries API</code></li>
-  <li>frontend: exposed on <code>countries-api.oto.tools</code></li>
-  <li>plugins: the list of plugins with only the <code>GraphQL composer</code> plugin</li>
+  <li>frontend: <code>countries-api.oto.tools</code></li>
+  <li>plugins: <code>GraphQL composer</code> plugin</li>
 </ul>
 <p>Let&rsquo;s make a request call through the Otoroshi Admin API (with the default apikey), like the example below</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
@@ -396,8 +416,8 @@ password = password
   -H &quot;Content-type: application/json&quot; \
   -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
-<h3><a href="#build-the-countries-api" name="build-the-countries-api" class="anchor"><span class="anchor-link"></span></a>Build the countries API</h3>
-<p>Let&rsquo;s continue our API by patching the configuration of the GraphQL plugin with the complete schema.</p>
+<h3><a href="#configure-our-countries-api" name="configure-our-countries-api" class="anchor"><span class="anchor-link"></span></a>Configure our countries API</h3>
+<p>Let&rsquo;s continue our API by updating the configuration of the GraphQL plugin with the initial schema.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X PUT &#39;http://otoroshi-api.oto.tools:8080/api/routes/countries-api&#39; \
   -d &#39;{
     &quot;id&quot;: &quot;countries-api&quot;,
@@ -432,8 +452,8 @@ password = password
   -H &quot;Content-type: application/json&quot; \
   -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
-<p>The route is created but it expects an API, exposed on the localhost:8181, to work. </p>
-<p>Let&rsquo;s create this simple API which returns a list of users and of countries. This should look like the following snippet. The API uses express as http server.</p>
+<p>Our created route expects an API, exposed on the localhost:8181, designed to retrieve users based on their countries. </p>
+<p>Let&rsquo;s develop this API using NodeJS. The API uses express as http server.</p>
 <pre class="prettyprint"><code class="language-js">const express = require(&#39;express&#39;)
 
 const app = express()
@@ -482,7 +502,7 @@ app.listen(8181, () =&gt; {
 });
 
 </code></pre>
-<p>Let&rsquo;s try to make a first call to our countries API.</p>
+<p>Let&rsquo;s initiate our first request to the countries API.</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
 --header &#39;Content-Type: application/json&#39; \
 --data-binary @- &lt;&lt; EOF
@@ -506,13 +526,16 @@ EOF
 }
 </code></pre>
 <p>The call graph should looks like</p>
-<pre><code>1. Calls https://countries.trevorblades.com
-2. For each country:
-   - extract the field name
-   - calls http://localhost:8181/countries/${country}/users to get the list of users for this country
-</code></pre>
-<p>You may have noticed that we added an argument at the end of the graphql directive named <code>paginate</code>. It enabled the paging for the client accepting limit and offset parameters. These parameters are used by the plugin to filter and reduce the content.</p>
-<p>Let&rsquo;s make a new call that does not accept any country.</p>
+<ol>
+  <li>Initiate a request to <a href="https://countries.trevorblades.com">https://countries.trevorblades.com</a></li>
+  <li>For each country retrieved:</li>
+</ol>
+<ul>
+  <li>extract the <code>name</code> field</li>
+  <li>sends a request to <a href="http://localhost:8181/countries/${country}/users">http://localhost:8181/countries/${country}/users</a> to retrieve the list of users associated with this country.</li>
+</ul>
+<p>You may have noticed that we appended an argument called <code>pagniate</code> to the end of the graphql directive. This argument enables pagination for the client, allowing it to accept parameters such as limit and offset. The plugin utilizes these parameters to filter and streamline the content.</p>
+<p>Let&rsquo;s initiate a new call that doesn&rsquo;t specify any country.</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
 --header &#39;Content-Type: application/json&#39; \
 --data-binary @- &lt;&lt; EOF
@@ -530,14 +553,14 @@ EOF
 </code></pre>
 <p>Let&rsquo;s move on to the next section to secure sensitive field of our API.</p>
 <h3><a href="#basics-of-permissions" name="basics-of-permissions" class="anchor"><span class="anchor-link"></span></a>Basics of permissions</h3>
-<p>The permission directives has been created to protect the fields of the graphql schema. The validation process starts by create a <code>context</code> for all incoming requests, based on the list of paths defined in the permissions field of the plugin. The permissions paths can refer to the request data (url, headers, etc), user credentials (api key, etc) and informations about the matched route. Then the process can validate that the value or values are present in the <code>context</code>.</p><div class="simple-block">
+<p>The permission directives have been established to safeguard the fields within the GraphQL schema. The validation process commences by generating a context for all incoming requests, derived from the list of paths specified in the permissions field of the plugin. These permissions paths can reference various components of the request data (such as URL, headers, etc.), user credentials (such as API key, etc.), and details regarding the matched route. Subsequently, the process verifies that the specified value or values are present within the context.</p><div class="simple-block">
 <div class="simple-block-toggle">
 <span class="simple-block-title">Permission</span>
 <button class="simple-block-button">Close</button>
 </div>
 <p><em>Arguments : value and unauthorized_value</em></p>
-<p>The permission directive can be used to secure a field on <strong>one</strong> value. The directive checks that a specific value is present in the <code>context</code>.</p>
-<p>Two arguments are available, the first, named <code>value</code>, is required and designates the value found. The second optional value, <code>unauthorized_value</code>, can be used to indicates, in the outcoming response, the rejection message.</p>
+<p>The permission directive is designed to to secure a field on <strong>one</strong> value. The directive checks that a specific value is present in the <code>context</code>.</p>
+<p>Two arguments are available : <code>value</code> which is mandatory and specifies the expected value. Optionally, <code>unauthorized_value</code>, which can be utilized to indicate the rejection message in the outgoing response.</p>
 <p><strong>Example</strong></p>
 <pre class="prettyprint"><code class="language-js">type User {
     id: String @permission(
