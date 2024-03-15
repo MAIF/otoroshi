@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.15.2] - 2024-03-15
+
+
+https://github.com/MAIF/otoroshi/milestone/87?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.15.1...v16.15.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.15.2
+
+
+
+### Changed 
+
+- Custom data exporters should support custom config. forms (#1854)
+- Supports NotContainedIn and ContainedIn expressions in EL (#1855)       
+      
+### Fixed 
+
+- Missing template for Custom data exporter (#1853)
+- build does not publish the maif/otoroshi:xxxx image (#1856)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [16.15.1] - 2024-02-29
 
 
