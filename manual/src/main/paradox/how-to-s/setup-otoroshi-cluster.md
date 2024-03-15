@@ -16,7 +16,7 @@ In this tutorial, you create an cluster of Otoroshi.
 Let's start by downloading the latest jar of Otoroshi.
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.16.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.15.3/otoroshi.jar'
 ```
 
 Then create an instance of Otoroshi and indicates with the `otoroshi.cluster.mode` environment variable that it will be the leader.
