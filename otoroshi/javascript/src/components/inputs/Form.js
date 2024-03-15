@@ -42,9 +42,13 @@ export class Form extends Component {
   };
 
   changeValue = (name, value) => {
+    const oldValue = cloneDeep(this.theValue());
     const newValue = cloneDeep(this.theValue());
     deepSet(newValue, name, value);
     this.props.onChange(newValue);
+    if (this.props.onStateChange) {
+      this.props.onStateChange(newValue, oldValue, this.props.onChange)
+    }
     //if (name.indexOf('.') > -1) {
     //  const [key1, key2] = name.split('.');
     //  const newValue = {

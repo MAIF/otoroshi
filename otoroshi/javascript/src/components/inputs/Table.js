@@ -675,6 +675,7 @@ export class Table extends Component {
                   style={{ paddingTop: '30px', ...this.props.style }}
                 >
                   {React.createElement(this.props.formComponent, {
+                    onStateChange: this.props.onStateChange,
                     showAdvancedForm: true,
                     //this.state.showAdvancedForm, // advanced view in creation mode
                     onChange: (currentItem) => {
@@ -734,6 +735,7 @@ export class Table extends Component {
                 />
               ) : (
                 <Form
+                  onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
@@ -772,6 +774,7 @@ export class Table extends Component {
                 : null,
               <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
+                  onStateChange: this.props.onStateChange,
                   onChange: (currentItem) => {
                     this.setState({ currentItem });
 
@@ -810,6 +813,7 @@ export class Table extends Component {
                 />
               ) : (
                 <Form
+                  onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
