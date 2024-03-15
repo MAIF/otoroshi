@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.15.3] - 2024-03-15
+
+
+https://github.com/MAIF/otoroshi/milestone/90?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.15.2...v16.15.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.15.3
+
+
+
+### Changed 
+
+- Add state callback in the Table component (#1858)
+- better handling of Websockets errors when using the Websocket Wasm transform plugin (#1860)       
+      
+### Fixed 
+
+- retrieving and updating wasmo settings from danger zone didn't work (#1857)       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
 ## [16.15.2] - 2024-03-15
 
 
