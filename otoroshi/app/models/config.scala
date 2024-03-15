@@ -593,18 +593,10 @@ object TlsWasmoSettings {
 
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
-        WasmoSettings.format.reads(json) match {
-          case JsSuccess(value, _) =>
-            TlsWasmoSettings(
-              settings = value
-            )
-          case JsError(_)          =>
-            TlsWasmoSettings(
-              settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
-              tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
-            )
-        }
-
+        TlsWasmoSettings(
+          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
+          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
+        )
       } match {
         case Failure(e)  => JsError(e.getMessage)
         case Success(ac) => JsSuccess(ac)
@@ -717,25 +709,29 @@ object GlobalConfig {
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
 
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
-      TlsWasmoSettings.format.reads(json) match {
-        case JsSuccess(value, path) => value.some
-        case JsError(errors)        => {
-          val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
+      if (json.atPath("wasmoSettings.settings").isEmpty) {
+        val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
             (json \ "wasmoSettings")
               .asOpt[JsValue]
               .getOrElse(JsNull)
           )
-          val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
-            .reads(
-              (json \ "wasmManagerSettings")
-                .asOpt[JsValue]
-                .getOrElse(JsNull)
-            )
+        val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
+          .reads(
+            (json \ "wasmManagerSettings")
+              .asOpt[JsValue]
+              .getOrElse(JsNull)
+          )
 
-          wasmoSettings
-            .map(r => r.some)
-            .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
-            .map(value => TlsWasmoSettings(settings = value))
+        wasmoSettings
+          .map(r => r.some)
+          .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
+          .map(value => TlsWasmoSettings(settings = value))
+      } else {
+        TlsWasmoSettings.format.reads((json \ "wasmoSettings")
+                .asOpt[JsValue]
+                .getOrElse(JsNull)) match {
+          case JsSuccess(value, path) => value.some
+          case JsError(_) => TlsWasmoSettings().some
         }
       }
     }
