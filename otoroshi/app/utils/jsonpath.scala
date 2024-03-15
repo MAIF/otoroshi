@@ -109,10 +109,10 @@ object JsonPathUtils {
     getAtPolyF(payload, path) match {
       case Right(value)                                      => value.some
       case Left(JsonPathReadError(message, _, _, Some(err))) =>
-        logger.error(s"${message} : '$path' on '$payload'", err)
+        if(logger.isDebugEnabled) logger.debug(s"${message} : '$path' on '$payload'", err)
         None
       case Left(JsonPathReadError(message, _, _, _))         =>
-        logger.error(message)
+        if(logger.isDebugEnabled) logger.debug(message)
         None
     }
   }
