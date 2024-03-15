@@ -355,7 +355,7 @@ export const graph = (env) => {
         },
       ],
     },
-    ...Otoroshi.extensions().flatMap((ext) => ext.categories || [])
+    ...Otoroshi.extensions().flatMap((ext) => ext.categories || []),
   ];
 };
 

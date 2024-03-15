@@ -792,12 +792,11 @@ const ChooserButton = ({ isActive, value, onChange, label, description, style = 
 };
 
 class CustomExporterForm extends Component {
-
   state = {
     value: this.props.rawValue,
     flow: [],
     schema: {},
-  }
+  };
 
   componentDidMount() {
     this.update();
@@ -811,28 +810,29 @@ class CustomExporterForm extends Component {
         Accept: 'application/json',
       },
     })
-    .then((r) => r.json())
-    .then((values) => {
-      const exp = values.find(v => v.id === this.props.rawValue.ref);
-      if (exp) {
-        this.setState({
-          flow: exp.configFlow,
-          schema: exp.configSchema
-        })
-      } else {
+      .then((r) => r.json())
+      .then((values) => {
+        const exp = values.find((v) => v.id === this.props.rawValue.ref);
+        if (exp) {
+          this.setState({
+            flow: exp.configFlow,
+            schema: exp.configSchema,
+          });
+        } else {
+          this.setState({
+            flow: [],
+            schema: {},
+          });
+        }
+      })
+      .catch((e) => {
+        console.log('error while fetching exporter metadata', e);
         this.setState({
           flow: [],
-          schema: {}
-        })
-      }
-    }).catch(e => {
-      console.log("error while fetching exporter metadata", e);
-      this.setState({
-        flow: [],
-        schema: {}
-      })
-    })
-  }
+          schema: {},
+        });
+      });
+  };
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps.rawValue.ref !== this.props.rawValue.ref) {
@@ -842,8 +842,8 @@ class CustomExporterForm extends Component {
 
   onChange = (v) => {
     this.setState({ value: v });
-    this.props.rawOnChange(v)
-  }
+    this.props.rawOnChange(v);
+  };
 
   render() {
     const flow = ['ref', ...this.state.flow, 'config'];
@@ -851,19 +851,19 @@ class CustomExporterForm extends Component {
       ...this.state.schema,
       ref: {
         type: 'select',
-          props: {
+        props: {
           label: 'Exporter',
-            valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
-            transformer: (item) => ({ label: item.name, value: item.id, exporter: item }),
+          valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter`,
+          transformer: (item) => ({ label: item.name, value: item.id, exporter: item }),
         },
       },
       config: {
         type: 'jsonobjectcode',
-          props: {
+        props: {
           label: 'Raw exporter config.',
         },
       },
-    }
+    };
     return (
       <Form
         {...this.props}
@@ -872,7 +872,7 @@ class CustomExporterForm extends Component {
         value={this.props.rawValue}
         onChange={this.onChange}
       />
-    )
+    );
   }
 }
 
@@ -1696,8 +1696,8 @@ const possibleExporterConfigFormValues = {
     schema: {
       root: {
         type: CustomExporterForm,
-      }
-    }
+      },
+    },
   },
   //custom: {
   //  flow: ['ref', 'config'],
