@@ -193,6 +193,9 @@ class Env(
   private lazy val halloweenStop  =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
+  lazy val jsonPathNullReadIsJsNull =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.jsonPathNullReadIsJsNull").getOrElse(false)
+
   lazy val dynamicBodySizeCompute =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.dynamicBodySizeCompute").getOrElse(true)
 

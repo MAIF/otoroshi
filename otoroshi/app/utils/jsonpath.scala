@@ -86,6 +86,8 @@ object JsonPathUtils {
     // }
   }
 
+  private lazy val jsonPathNullReadIsJsNull = OtoroshiEnvHolder.get().jsonPathNullReadIsJsNull
+
   def getAtPolyF(payload: String, path: String): Either[JsonPathReadError, JsValue] = {
     //val env = OtoroshiEnvHolder.get()
     //env.metrics.withTimer("JsonPathUtils.getAtPolyF") {
@@ -95,7 +97,11 @@ object JsonPathUtils {
       if (read != null) {
         Right(Writes.jsonNodeWrites.writes(read))
       } else {
-        Left(JsonPathReadError("null read", path, payload, None))
+        if (jsonPathNullReadIsJsNull) {
+          Right(JsNull)
+        } else {
+          Left(JsonPathReadError("null read", path, payload, None))
+        }
       }
     } match {
       case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
