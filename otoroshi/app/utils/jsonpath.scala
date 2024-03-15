@@ -93,14 +93,13 @@ object JsonPathUtils {
       val docCtx = JsonPath.parse(payload, config)
       val read   = docCtx.read[JsonNode](path)
       if (read != null) {
-        Writes.jsonNodeWrites.writes(read)
+        Right(Writes.jsonNodeWrites.writes(read))
       } else {
-        throw JsonPathReadErrorException(JsonPathReadError("null read", path, payload, None))
+        Left(JsonPathReadError("null read", path, payload, None))
       }
     } match {
-      case Failure(JsonPathReadErrorException(err)) => Left(err)
       case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
-      case Success(s)                               => Right(s)
+      case Success(s)                               => s
     }
     //}
   }
@@ -119,7 +118,6 @@ object JsonPathUtils {
 }
 
 case class JsonPathReadError(message: String, path: String, payload: String, err: Option[Throwable])
-case class JsonPathReadErrorException(err: JsonPathReadError) extends RuntimeException with NoStackTrace
 
 case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) extends JsonValidator {
   def json: JsValue         = JsonPathValidator.format.writes(this)
