@@ -711,10 +711,10 @@ object GlobalConfig {
     def readWasmoSettings(json: JsValue): Option[TlsWasmoSettings] = {
       if (json.atPath("wasmoSettings.settings").isEmpty) {
         val wasmoSettings: JsResult[WasmoSettings]       = WasmoSettings.format.reads(
-            (json \ "wasmoSettings")
-              .asOpt[JsValue]
-              .getOrElse(JsNull)
-          )
+          (json \ "wasmoSettings")
+            .asOpt[JsValue]
+            .getOrElse(JsNull)
+        )
         val wasmManagerSettings: JsResult[WasmoSettings] = WasmoSettings.format
           .reads(
             (json \ "wasmManagerSettings")
@@ -727,11 +727,13 @@ object GlobalConfig {
           .getOrElse(wasmManagerSettings.map(r => r.some).getOrElse(None))
           .map(value => TlsWasmoSettings(settings = value))
       } else {
-        TlsWasmoSettings.format.reads((json \ "wasmoSettings")
-                .asOpt[JsValue]
-                .getOrElse(JsNull)) match {
+        TlsWasmoSettings.format.reads(
+          (json \ "wasmoSettings")
+            .asOpt[JsValue]
+            .getOrElse(JsNull)
+        ) match {
           case JsSuccess(value, path) => value.some
-          case JsError(_) => TlsWasmoSettings().some
+          case JsError(_)             => TlsWasmoSettings().some
         }
       }
     }

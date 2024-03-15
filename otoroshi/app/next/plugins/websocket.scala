@@ -521,7 +521,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
   override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
-  private val logger  = Logger("otoroshi-plugins-wasm-websocket-transformer")
+  private val logger = Logger("otoroshi-plugins-wasm-websocket-transformer")
 
   def onMessage(
       ctx: NgWebsocketPluginContext,
@@ -598,11 +598,10 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
 
             e match {
               case Failure(exception) => logger.error(exception.getMessage)
-              case Success(_) =>
+              case Success(_)         =>
             }
-          }.recover {
-            case e:Throwable =>
-              Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify))
+          }.recover { case e: Throwable =>
+            Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify))
           }
       }
     }

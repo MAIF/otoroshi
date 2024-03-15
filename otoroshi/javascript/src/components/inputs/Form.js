@@ -47,7 +47,7 @@ export class Form extends Component {
     deepSet(newValue, name, value);
     this.props.onChange(newValue);
     if (this.props.onStateChange) {
-      this.props.onStateChange(newValue, oldValue, this.props.onChange)
+      this.props.onStateChange(newValue, oldValue, this.props.onChange);
     }
     //if (name.indexOf('.') > -1) {
     //  const [key1, key2] = name.split('.');
