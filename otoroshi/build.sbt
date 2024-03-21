@@ -130,6 +130,7 @@ libraryDependencies ++= Seq(
   "org.gnieh"                       %% "diffson-play-json"                         % "4.3.0" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
   "org.scala-lang"                   % "scala-compiler"                            % scalaLangVersion,
   "org.scala-lang"                   % "scala-library"                             % scalaLangVersion,
+  "org.scala-lang"                   % "scala-reflect"                             % scalaLangVersion,
   "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
@@ -177,11 +178,16 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "3.2.0" classifier "bundle",
-  "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
-    ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
-    ExclusionRule("ch.qos.logback"),
-    ExclusionRule("org.slf4j"),
-  ),
+  // included in libs as jitpack is not stable at all
+  // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
+  //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
+  //   ExclusionRule("ch.qos.logback"),
+  //   ExclusionRule("org.slf4j"),
+  // ),
+  "org.reflections" % "reflections" % "0.10.2",
+  "org.json4s" % "json4s-jackson_2.12" % "4.0.7",
+  "org.json4s" % "json4s-ast_2.12" % "4.0.7",
+  "org.json4s" % "json4s-ext_2.12" % "4.0.7",
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
@@ -222,7 +228,7 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-resolvers += "jitpack" at "https://jitpack.io"
+// resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
@@ -252,6 +258,7 @@ assembly / assemblyMergeStrategy := { e =>
     case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
     case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
     case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
+    case PathList("scala", xs @ _*)                                     => MergeStrategy.first
     case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
     case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
     case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
@@ -297,6 +304,7 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList(ps @ _*) if ps.contains("wrappers.proto")             => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("library.properties")         => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
