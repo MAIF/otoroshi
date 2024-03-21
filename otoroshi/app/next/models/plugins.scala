@@ -25,6 +25,7 @@ case class PluginIndex(
     matchRoute: Option[Double] = None,
     handlesTunnel: Option[Double] = None,
     handlesWebsocket: Option[Double] = None,
+    handlesWebsocketBackend: Option[Double] = None,
     callBackend: Option[Double] = None
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
@@ -541,11 +542,24 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
-  lazy val hasWebsocketPlugins       = websocketPlugins.nonEmpty
-  lazy val hasNoWebsocketPlugins     = websocketPlugins.isEmpty
-  lazy val hasTunnelHandlerPlugin    = tunnelHandlerPlugins.nonEmpty
-  lazy val tunnelHandlerPlugin       = tunnelHandlerPlugins.head
-  lazy val tunnelHandlerPluginOption = tunnelHandlerPlugins.headOption
+  lazy val websocketBackendPlugins = {
+    val pls                             = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgWebsocketBackendPlugin]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesWebsocketBackend.isDefined))
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.handlesWebsocketBackend.get.compareTo(b.instance.pluginIndex.get.handlesWebsocketBackend.get) < 0
+    ) ++ plsWithoutIndex
+  }
+
+  lazy val hasWebsocketPlugins        = websocketPlugins.nonEmpty
+  lazy val hasNoWebsocketPlugins      = websocketPlugins.isEmpty
+  lazy val hasWebsocketBackendPlugins = websocketBackendPlugins.nonEmpty
+  lazy val hasTunnelHandlerPlugin     = tunnelHandlerPlugins.nonEmpty
+  lazy val tunnelHandlerPlugin        = tunnelHandlerPlugins.head
+  lazy val tunnelHandlerPluginOption  = tunnelHandlerPlugins.headOption
 
   lazy val backendCallPlugins = {
     val pls                             = allPlugins

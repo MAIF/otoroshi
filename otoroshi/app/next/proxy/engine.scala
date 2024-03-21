@@ -2677,6 +2677,47 @@ class ProxyEngine() extends RequestHandler {
             .map(r => Left(NgResultProxyEngineError(r)))
         )
       }
+    } else if (ctxPlugins.hasWebsocketBackendPlugins) {
+      val handler = ctxPlugins.websocketBackendPlugins.head
+      val wsEngine = if (ctxPlugins.hasWebsocketPlugins) {
+        new WebsocketEngine(route, ctxPlugins, rawRequest, finalTarget, attrs)
+      } else {
+        new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, finalTarget, attrs)
+      }
+      val ctx = NgWebsocketPluginContext(
+        idx = 0,
+        snowflake = snowflake,
+        request = rawRequest,
+        route = route,
+        config = handler.instance.config.raw,
+        attrs = attrs,
+        target = finalTarget,
+      )
+      val flow: Flow[PlayWSMessage, PlayWSMessage, _] = handler.plugin.callBackend(ctx)
+      val outFlow: Flow[PlayWSMessage, PlayWSMessage, _] = flow.mapAsync(1) { mess =>
+          WebsocketMessage.PlayMessage(mess).asAkka.flatMap { m =>
+            wsEngine.handleResponse(m)(_ => ())
+          }
+        }
+        .takeWhile(_.isRight)
+        .collect {
+          case Right(message) => message
+        }
+        .mapAsync(1) { message =>
+          message.asPlay
+        }
+      val inFlow = Flow.fromFunction[PlayWSMessage, PlayWSMessage](identity).mapAsync(1) { mess =>
+          wsEngine.handleRequest(mess)(_ => ())
+        }
+        .takeWhile(_.isRight)
+        .collect {
+          case Right(message) => message
+        }
+        .mapAsync(1) { message =>
+          message.asPlay
+        }
+      val finalFlow = inFlow.via(outFlow)
+      FEither(finalFlow.right.vfuture)
     } else {
       if (route.useAkkaHttpWsClient && ctxPlugins.hasNoWebsocketPlugins) {
         FEither(
