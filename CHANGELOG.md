@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.15.4] - 2024-03-21
+
+
+https://github.com/MAIF/otoroshi/milestone/91?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.15.3...v16.15.4
+https://github.com/MAIF/otoroshi/releases/tag/v16.15.4
+
+
+### Added 
+
+- Add new kind of plugin for websocket backend calls (#1863)       
+      
+### Changed 
+
+- Enhance jsonpath api for better performances and better DX (#1862)       
+      
+### Fixed 
+
+- move scala-schema jar in lib as jitpack is not reliable enough (#1864)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.15.3] - 2024-03-15
 
 
