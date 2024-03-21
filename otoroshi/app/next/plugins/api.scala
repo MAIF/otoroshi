@@ -18,7 +18,14 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  Message,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -1451,9 +1458,11 @@ trait NgWebsocketPlugin extends NgPlugin {
 
 trait NgWebsocketBackendPlugin extends NgPlugin {
 
-  import play.api.http.websocket.{ Message => PlayWSMessage }
+  import play.api.http.websocket.{Message => PlayWSMessage}
 
-  def callBackend(ctx: NgWebsocketPluginContext)(implicit env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
+  def callBackend(
+      ctx: NgWebsocketPluginContext
+  )(implicit env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
     Flow.fromSinkAndSource(Sink.ignore, Source.empty)
   }
 }

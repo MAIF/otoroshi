@@ -184,10 +184,10 @@ libraryDependencies ++= Seq(
   //   ExclusionRule("ch.qos.logback"),
   //   ExclusionRule("org.slf4j"),
   // ),
-  "org.reflections" % "reflections" % "0.10.2",
-  "org.json4s" % "json4s-jackson_2.12" % "4.0.7",
-  "org.json4s" % "json4s-ast_2.12" % "4.0.7",
-  "org.json4s" % "json4s-ext_2.12" % "4.0.7",
+  "org.reflections"                  % "reflections"                               % "0.10.2",
+  "org.json4s"                       % "json4s-jackson_2.12"                       % "4.0.7",
+  "org.json4s"                       % "json4s-ast_2.12"                           % "4.0.7",
+  "org.json4s"                       % "json4s-ext_2.12"                           % "4.0.7",
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {

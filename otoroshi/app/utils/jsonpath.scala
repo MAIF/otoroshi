@@ -104,8 +104,8 @@ object JsonPathUtils {
         }
       }
     } match {
-      case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
-      case Success(s)                               => s
+      case Failure(e) => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
+      case Success(s) => s
     }
     //}
   }
@@ -114,10 +114,10 @@ object JsonPathUtils {
     getAtPolyF(payload, path) match {
       case Right(value)                                      => value.some
       case Left(JsonPathReadError(message, _, _, Some(err))) =>
-        if(logger.isDebugEnabled) logger.debug(s"${message} : '$path' on '$payload'", err)
+        if (logger.isDebugEnabled) logger.debug(s"${message} : '$path' on '$payload'", err)
         None
       case Left(JsonPathReadError(message, _, _, _))         =>
-        if(logger.isDebugEnabled) logger.debug(message)
+        if (logger.isDebugEnabled) logger.debug(message)
         None
     }
   }

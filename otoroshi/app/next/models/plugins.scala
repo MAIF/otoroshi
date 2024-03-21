@@ -548,9 +548,11 @@ case class NgContextualPlugins(
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesWebsocketBackend.isDefined))
+    val (plsWithIndex, plsWithoutIndex) =
+      pls.partition(_.instance.pluginIndex.exists(_.handlesWebsocketBackend.isDefined))
     plsWithIndex.sortWith((a, b) =>
-      a.instance.pluginIndex.get.handlesWebsocketBackend.get.compareTo(b.instance.pluginIndex.get.handlesWebsocketBackend.get) < 0
+      a.instance.pluginIndex.get.handlesWebsocketBackend.get
+        .compareTo(b.instance.pluginIndex.get.handlesWebsocketBackend.get) < 0
     ) ++ plsWithoutIndex
   }
 
