@@ -1482,8 +1482,8 @@ object NgWebsocketError {
 class YesWebsocketBackend extends NgWebsocketBackendPlugin {
 
   private val logger = Logger("otoroshi-yes-websocket-plugin")
-  override def name: String = "Yes websocket"
-  override def description: Option[String] = "Outputs Ys".some
+  override def name: String = "Yes"
+  override def description: Option[String] = "Outputs Ys to the client".some
   override def core: Boolean = false
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Websocket)
