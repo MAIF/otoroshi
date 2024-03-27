@@ -17,7 +17,6 @@ import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, Startabl
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
-import otoroshi_plugins.com.cloud.apim.otoroshi.extensions.eventbrokers.plugins.IngesterConsumerWebsocketConfig
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
