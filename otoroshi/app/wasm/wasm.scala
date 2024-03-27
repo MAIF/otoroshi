@@ -227,7 +227,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   }
 
   override def wasmoSettings: Future[Option[WasmoSettings]] =
-    env.datastores.globalConfigDataStore.latest().wasmoSettings.flatMap(_.settings.some).vfuture
+    env.datastores.globalConfigDataStore.latest().wasmoSettings.map(_.toWasm4sSettings).vfuture
 
   override def wasmConfig(path: String): Future[Option[WasmConfiguration]] =
     env.proxyState.wasmPlugin(path).map(_.config).vfuture

@@ -581,6 +581,23 @@ object DefaultTemplates {
 
 case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig: MtlsConfig = MtlsConfig()) {
   def json: JsValue = TlsWasmoSettings.format.writes(this)
+  def toWasm4sSettings: WasmoSettings = { // here to avoid breaking the API compatibility
+    settings.tlsConfig match {
+      case None if !tlsConfig.mtls => settings
+      case Some(cfg) if cfg.enabled => settings
+      case _ => {
+        settings.copy(
+          tlsConfig = Some(io.otoroshi.wasm4s.scaladsl.security.TlsConfig(
+            certs = tlsConfig.certs,
+            trustedCerts = tlsConfig.trustedCerts,
+            enabled = tlsConfig.mtls,
+            loose = tlsConfig.loose,
+            trustAll = tlsConfig.trustAll,
+          ))
+        )
+      }
+    }
+  }
 }
 
 object TlsWasmoSettings {
