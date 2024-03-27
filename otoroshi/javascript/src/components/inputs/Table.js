@@ -151,10 +151,10 @@ export class Table extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -261,7 +261,6 @@ export class Table extends Component {
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    console.log();
     window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
       if (ok) {
         this.props
@@ -431,6 +430,7 @@ export class Table extends Component {
       });
   };
 
+
   render() {
     if (this.state.hasError) {
       return <h3>Something went wrong !!!</h3>;
@@ -560,9 +560,6 @@ export class Table extends Component {
         ),
       });
     }
-
-    // console.log(this.state)
-
     return (
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
@@ -677,7 +674,6 @@ export class Table extends Component {
                   {React.createElement(this.props.formComponent, {
                     onStateChange: this.props.onStateChange,
                     showAdvancedForm: true,
-                    //this.state.showAdvancedForm, // advanced view in creation mode
                     onChange: (currentItem) => {
                       this.setState({ currentItem });
 
@@ -786,7 +782,7 @@ export class Table extends Component {
                       );
                   },
                   value: this.state.currentItem,
-                  showAdvancedForm: this.state.showAdvancedForm,
+                  showAdvancedForm: this.props.selfUrl === 'jwt-verifiers' ? true : this.state.showAdvancedForm,
                   ...(this.props.formPassProps || {}),
                 })}
               </form>,

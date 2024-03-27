@@ -49,9 +49,10 @@ export function FormSelector({ onChange, entity, className = '' }) {
       type="info"
       className={`btn-sm ${className}`}
       onClick={() => {
-        toggleLegacyForm(!showLegacyForm);
-        onChange(!showLegacyForm);
-        saveEntities(entity, !showLegacyForm);
+        const newValue = !showLegacyForm;
+        toggleLegacyForm(newValue);
+        onChange(newValue);
+        saveEntities(entity, newValue);
       }}
       text={showLegacyForm ? 'Simple view' : 'Advanced view'}
     />

@@ -377,6 +377,9 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-profile-$field")
+            case r"nbf"                                                     => "{nbf}"
+            case r"iat"                                                     => "{iat}"
+            case r"exp"                                                     => "{exp}"
             case expr                                                       => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import { JwtVerifier } from '../components/JwtVerifier';
@@ -132,12 +132,12 @@ export class JwtVerifiersPage extends Component {
                   <i className="fas fa-times" /> Cancel
                 </Button>
                 {buttons || null}
-                {state.showEditForm && (
+                {/* {state.showEditForm && (
                   <FormSelector
-                    onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
+                    onChange={(showAdvancedForm) => setState({ showAdvancedForm: true })}
                     entity={ENTITIES.JWT_VERIFIERS}
                   />
-                )}
+                )} */}
               </div>
             );
           }}
