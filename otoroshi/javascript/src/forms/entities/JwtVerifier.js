@@ -316,6 +316,7 @@ export default {
     'strategy',
     'strategy.verificationSettings',
     'strategy.transformSettings',
+    // 'strategy.token',
     {
       type: 'group',
       name: 'Misc.',
@@ -324,14 +325,7 @@ export default {
     },
   ],
   config_schema: {
-    token: {
-      type: 'code',
-      label: 'JSON Payload',
-      props: {
-        mode: 'json',
-        editorOnly: true,
-      },
-    },
+
     _loc: {
       type: 'location',
       props: {
@@ -564,6 +558,15 @@ export default {
           },
           flow: ['location', 'mappingSettings'],
         },
+        token: {
+          visible: (value) => value?.strategy?.type === 'DefaultToken',
+          type: 'json',
+          label: 'JSON Payload',
+          // props: {
+          //   mode: 'json',
+          //   editorOnly: true,
+          // },
+        }
       },
       flow: (_, v) => {
         const strategy = v.value?.type;

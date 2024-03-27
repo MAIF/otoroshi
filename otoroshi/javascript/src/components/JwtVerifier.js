@@ -218,7 +218,7 @@ export class JwtVerifier extends Component {
                       ? {
                           type: 'group',
                           name: 'Token payload',
-                          fields: ['token'],
+                          fields: ['strategy.token'],
                         }
                       : undefined,
                     'graph',
@@ -243,7 +243,7 @@ export class JwtVerifier extends Component {
                 ? {
                     type: 'group',
                     name: 'Token payload',
-                    fields: ['token'],
+                    fields: ['strategy.token'],
                   }
                 : undefined,
             ].filter((f) => f)}

@@ -9,8 +9,8 @@ export default {
       props: {
         componentLauncher: JwtVerifierLauncher,
         componentsProps: {
-          allowedStrategy: 'PassThrough',
-          allowedNewStrategy: 'PassThrough',
+          // allowedStrategy: 'PassThrough',
+          // allowedNewStrategy: 'PassThrough',
         },
       },
     },
