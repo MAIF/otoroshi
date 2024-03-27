@@ -2693,34 +2693,38 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         target = finalTarget
       )
-      val flow: Flow[PlayWSMessage, PlayWSMessage, _]    = handler.plugin.callBackend(ctx)
-      val outFlow: Flow[PlayWSMessage, PlayWSMessage, _] = flow
-        .mapAsync(1) { mess =>
-          WebsocketMessage.PlayMessage(mess).asAkka.flatMap { m =>
-            wsEngine.handleResponse(m)(_ => ())
-          }
+      FEither(handler.plugin.callBackendOrError(ctx).flatMap {
+        case Left(proxyError) => proxyError.leftf
+        case Right(flow) => {
+          val outFlow: Flow[PlayWSMessage, PlayWSMessage, _] = flow
+            .mapAsync(1) { mess =>
+              WebsocketMessage.PlayMessage(mess).asAkka.flatMap { m =>
+                wsEngine.handleResponse(m)(_ => ())
+              }
+            }
+            .takeWhile(_.isRight)
+            .collect { case Right(message) =>
+              message
+            }
+            .mapAsync(1) { message =>
+              message.asPlay
+            }
+          val inFlow = Flow
+            .fromFunction[PlayWSMessage, PlayWSMessage](identity)
+            .mapAsync(1) { mess =>
+              wsEngine.handleRequest(mess)(_ => ())
+            }
+            .takeWhile(_.isRight)
+            .collect { case Right(message) =>
+              message
+            }
+            .mapAsync(1) { message =>
+              message.asPlay
+            }
+          val finalFlow = inFlow.via(outFlow)
+          finalFlow.right.vfuture
         }
-        .takeWhile(_.isRight)
-        .collect { case Right(message) =>
-          message
-        }
-        .mapAsync(1) { message =>
-          message.asPlay
-        }
-      val inFlow                                         = Flow
-        .fromFunction[PlayWSMessage, PlayWSMessage](identity)
-        .mapAsync(1) { mess =>
-          wsEngine.handleRequest(mess)(_ => ())
-        }
-        .takeWhile(_.isRight)
-        .collect { case Right(message) =>
-          message
-        }
-        .mapAsync(1) { message =>
-          message.asPlay
-        }
-      val finalFlow                                      = inFlow.via(outFlow)
-      FEither(finalFlow.right.vfuture)
+      })
     } else {
       if (route.useAkkaHttpWsClient && ctxPlugins.hasNoWebsocketPlugins) {
         FEither(

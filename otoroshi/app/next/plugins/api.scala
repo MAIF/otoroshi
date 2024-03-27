@@ -17,15 +17,10 @@ import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, Startabl
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
+import otoroshi_plugins.com.cloud.apim.otoroshi.extensions.eventbrokers.plugins.IngesterConsumerWebsocketConfig
+import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -1460,8 +1455,14 @@ trait NgWebsocketBackendPlugin extends NgPlugin {
 
   import play.api.http.websocket.{Message => PlayWSMessage}
 
-  def callBackend(
+  def callBackendOrError(
       ctx: NgWebsocketPluginContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    callBackend(ctx).rightf
+  }
+
+  def callBackend(
+    ctx: NgWebsocketPluginContext
   )(implicit env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
     Flow.fromSinkAndSource(Sink.ignore, Source.empty)
   }
@@ -1476,4 +1477,37 @@ case class NgWebsocketError(
 )
 object NgWebsocketError {
   def apply(statusCode: Int, reason: String): NgWebsocketError = NgWebsocketError(statusCode.some, reason.some, None)
+}
+
+class YesWebsocketBackend extends NgWebsocketBackendPlugin {
+
+  private val logger = Logger("otoroshi-yes-websocket-plugin")
+  override def name: String = "Yes websocket"
+  override def description: Option[String] = "Outputs Ys".some
+  override def core: Boolean = false
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Websocket)
+  override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def noJsForm: Boolean = true
+
+  override def callBackendOrError(ctx: NgWebsocketPluginContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+    implicit val mat = env.otoroshiMaterializer
+    ctx.request.getQueryString("fail") match {
+      case Some("yes") => NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "fail !"))).leftf
+      case _ => {
+        Flow.fromSinkAndSource[Message, Message](
+          Sink.foreach { m =>
+            val message = WebsocketMessage.PlayMessage(m)
+            message.str().map { str =>
+              logger.info(s"from client: ${str}")
+            }
+          },
+          Source
+            .tick(0.second, 300.milliseconds, ())
+            .map(_ => PlayWSTextMessage("y"))
+        ).rightf
+      }
+    }
+  }
 }
