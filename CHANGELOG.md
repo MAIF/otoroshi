@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.16.0] - 2024-03-31
+
+
+https://github.com/MAIF/otoroshi/milestone/89?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.15.4...v16.16.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.16.0
+
+
+
+### Changed 
+
+- Default Jwt token : added values do not support expression language (#1867)
+- NgWebsocketBackendPlugin needs to be able to return an error instead on the WS flow (#1869)
+- upgrade to latest wasm4s version (#1871)       
+      
+### Fixed 
+
+- login form is not responsive on mobile phone (#1827)
+- Default Jwt Token : The claim 'nbf' contained a non-numeric date value. (#1866)
+- Default Jwt token : the format of claim dates is in milliseconds (#1868)
+- JWT selector in Jwt plugins is too limited on types (#1870)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [16.15.4] - 2024-03-21
 
 
