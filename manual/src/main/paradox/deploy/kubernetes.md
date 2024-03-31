@@ -18,7 +18,7 @@ You can also create a `kustomization.yaml` file with a remote base
 
 ```yaml
 bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.16.0
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v16.17.0-dev
 ```
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
@@ -87,7 +87,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:16.16.0
+      - image: maif/otoroshi:16.17.0-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']

@@ -28,7 +28,7 @@ You can test to get the same values than the right part by creating these follow
 
 ```sh
 # Let's start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.16.0/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.17.0-dev/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
