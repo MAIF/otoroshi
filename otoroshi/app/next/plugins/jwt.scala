@@ -305,33 +305,41 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                   val apikey                 = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
                   val optSub: Option[String] = apikey.map(_.clientName).orElse(user.map(_.email))
 
-                  val token = JsObject(JwtExpressionLanguage
-                    .fromJson(
-                      Json.obj(
-                        "jti" -> IdGenerator.uuid,
-                        "iat" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
-                        "nbf" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
-                        "iss" -> "Otoroshi",
-                        "exp" -> Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong,
-                        "sub" -> JsString(optSub.getOrElse("anonymous")),
-                        "aud" -> "backend"
-                      ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
-                      Some(ctx.request),
-                      None,
-                      ctx.route.some,
-                      apikey,
-                      user,
-                      Map.empty,
-                      ctx.attrs,
-                      env
-                    )
-                    .as[JsObject]
-                    .value.map { case (key, value) => value match {
-                      case JsString(v) if v == "{iat}" => (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
-                      case JsString(v) if v == "{nbf}" => (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
-                      case JsString(v) if v == "{exp}" => (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong))
-                      case _ => (key, value.as[JsValue])
-                    }})
+                  val token = JsObject(
+                    JwtExpressionLanguage
+                      .fromJson(
+                        Json.obj(
+                          "jti" -> IdGenerator.uuid,
+                          "iat" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
+                          "nbf" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
+                          "iss" -> "Otoroshi",
+                          "exp" -> Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong,
+                          "sub" -> JsString(optSub.getOrElse("anonymous")),
+                          "aud" -> "backend"
+                        ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
+                        Some(ctx.request),
+                        None,
+                        ctx.route.some,
+                        apikey,
+                        user,
+                        Map.empty,
+                        ctx.attrs,
+                        env
+                      )
+                      .as[JsObject]
+                      .value
+                      .map { case (key, value) =>
+                        value match {
+                          case JsString(v) if v == "{iat}" =>
+                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                          case JsString(v) if v == "{nbf}" =>
+                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                          case JsString(v) if v == "{exp}" =>
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong))
+                          case _                           => (key, value.as[JsValue])
+                        }
+                      }
+                  )
 
                   val headerJson     = Json
                     .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")

@@ -26,7 +26,7 @@ export default {
         componentLauncher: JwtVerifierLauncher,
         componentsProps: {
           allowedNewStrategy: 'Generate',
-          allowedStrategy: 'DefaultToken'
+          allowedStrategy: 'DefaultToken',
         },
       },
     },

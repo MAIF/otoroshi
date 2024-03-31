@@ -2678,13 +2678,13 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     } else if (ctxPlugins.hasWebsocketBackendPlugins) {
-      val handler                                        = ctxPlugins.websocketBackendPlugins.head
-      val wsEngine                                       = if (ctxPlugins.hasWebsocketPlugins) {
+      val handler  = ctxPlugins.websocketBackendPlugins.head
+      val wsEngine = if (ctxPlugins.hasWebsocketPlugins) {
         new WebsocketEngine(route, ctxPlugins, rawRequest, finalTarget, attrs)
       } else {
         new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, finalTarget, attrs)
       }
-      val ctx                                            = NgWebsocketPluginContext(
+      val ctx      = NgWebsocketPluginContext(
         idx = 0,
         snowflake = snowflake,
         request = rawRequest,
@@ -2695,7 +2695,7 @@ class ProxyEngine() extends RequestHandler {
       )
       FEither(handler.plugin.callBackendOrError(ctx).flatMap {
         case Left(proxyError) => proxyError.leftf
-        case Right(flow) => {
+        case Right(flow)      => {
           val outFlow: Flow[PlayWSMessage, PlayWSMessage, _] = flow
             .mapAsync(1) { mess =>
               WebsocketMessage.PlayMessage(mess).asAkka.flatMap { m =>
@@ -2709,7 +2709,7 @@ class ProxyEngine() extends RequestHandler {
             .mapAsync(1) { message =>
               message.asPlay
             }
-          val inFlow = Flow
+          val inFlow                                         = Flow
             .fromFunction[PlayWSMessage, PlayWSMessage](identity)
             .mapAsync(1) { mess =>
               wsEngine.handleRequest(mess)(_ => ())
@@ -2721,7 +2721,7 @@ class ProxyEngine() extends RequestHandler {
             .mapAsync(1) { message =>
               message.asPlay
             }
-          val finalFlow = inFlow.via(outFlow)
+          val finalFlow                                      = inFlow.via(outFlow)
           finalFlow.right.vfuture
         }
       })

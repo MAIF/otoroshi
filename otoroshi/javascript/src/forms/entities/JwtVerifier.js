@@ -325,7 +325,6 @@ export default {
     },
   ],
   config_schema: {
-
     _loc: {
       type: 'location',
       props: {
@@ -566,7 +565,7 @@ export default {
           //   mode: 'json',
           //   editorOnly: true,
           // },
-        }
+        },
       },
       flow: (_, v) => {
         const strategy = v.value?.type;
