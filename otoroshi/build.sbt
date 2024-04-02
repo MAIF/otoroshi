@@ -56,7 +56,7 @@ lazy val root = (project in file("."))
 // lazy val scalaLangVersion    = "2.13.10"
 lazy val scalaLangVersion        = "2.12.16"
 lazy val metricsVersion          = "4.2.12"
-lazy val acme4jVersion           = "2.14"
+lazy val acme4jVersion           = "3.2.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "2.9.3"
 lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
@@ -76,6 +76,9 @@ lazy val excludesJackson         = Seq(
 )
 lazy val excludeScalaJava8Compat = Seq(
   ExclusionRule(organization = "org.scala-lang.modules")
+)
+lazy val excludeSlf4jAndJackson = excludesJackson ++ Seq(
+  ExclusionRule(organization = "org.slf4j")
 )
 
 // BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
@@ -116,9 +119,7 @@ libraryDependencies ++= Seq(
   } else {
     "com.github.blemale" %% "scaffeine" % "5.2.1"
   },
-  "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludesJackson: _*),
-  "org.shredzone.acme4j"             % "acme4j-utils"                              % acme4jVersion excludeAll (excludesJackson: _*),
-  "org.shredzone.acme4j"             % "acme4j"                                    % acme4jVersion excludeAll (excludesJackson: _*),
+  "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
   "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
   "com.ongres.scram"                 % "common"                                    % "2.1",

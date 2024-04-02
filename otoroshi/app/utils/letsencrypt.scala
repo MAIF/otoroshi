@@ -1,27 +1,26 @@
 package otoroshi.utils.letsencrypt
 
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.util.ByteString
+import org.shredzone.acme4j._
+import org.shredzone.acme4j.challenge._
+import org.shredzone.acme4j.util._
+import otoroshi.env.Env
+import otoroshi.events.{Alerts, CertRenewalAlert}
+import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
+import otoroshi.ssl.{Cert, PemHeaders}
+import otoroshi.utils.RegexPool
+import play.api.Logger
+import play.api.libs.json._
+
 import java.io.StringWriter
 import java.security.cert.X509Certificate
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
-import otoroshi.env.Env
-import otoroshi.events.{Alerts, CertRenewalAlert}
-import org.shredzone.acme4j._
-import org.shredzone.acme4j.challenge._
-import org.shredzone.acme4j.util._
-import otoroshi.utils.RegexPool
-import play.api.Logger
-import play.api.libs.json._
-import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
-import otoroshi.ssl.{Cert, PemHeaders}
-import otoroshi.utils.syntax.implicits.BetterSyntax
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -295,15 +294,23 @@ object LetsEncryptHelper {
       mat: Materializer
   ): Future[Either[String, Seq[Status]]] = {
     Source(order.getAuthorizations.asScala.toList)
-      .mapAsync(1) { authorization =>
-        val challenge = authorization.findChallenge(classOf[Http01Challenge])
-        logger.info("setting challenge content in datastore")
-        env.datastores.rawDataStore.set(
-          s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
-          ByteString(challenge.getAuthorization),
-          Some(10.minutes.toMillis)
-        )
-        authorizeOrder(domain, authorization.getStatus, challenge)
+      .mapAsync(1) { auth =>
+        Future {
+          (auth, auth.findChallenge(classOf[Http01Challenge]))
+        }(blockingEc)
+      }
+      .collect {
+        case (auth, opt) if opt.isPresent => (auth, opt.get())
+      }
+      .mapAsync(1) {
+        case (authorization, challenge) =>
+          logger.info("setting challenge content in datastore")
+          env.datastores.rawDataStore.set(
+            s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
+            ByteString(challenge.getAuthorization),
+            Some(10.minutes.toMillis)
+          )
+          authorizeOrder(domain, authorization.getStatus, challenge)
       }
       .toMat(Sink.seq)(Keep.right)
       .run()
