@@ -20,6 +20,7 @@ import play.api.Logger
 import play.api.libs.json._
 import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
 import otoroshi.ssl.{Cert, PemHeaders}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -96,7 +97,7 @@ object LetsEncryptSettings {
         "enabled"    -> o.enabled,
         "server"     -> o.server,
         "emails"     -> JsArray(o.emails.map(JsString.apply)),
-        "contacts"   -> JsArray(o.emails.map(JsString.apply)),
+        "contacts"   -> JsArray(o.contacts.map(JsString.apply)),
         "publicKey"  -> o.publicKey,
         "privateKey" -> o.privateKey
       )
