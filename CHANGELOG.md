@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.16.1] - 2024-04-03
+
+
+https://github.com/MAIF/otoroshi/milestone/93?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.16.0...v16.16.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.16.1
+
+
+
+### Changed 
+
+- bump acme4j version (#1885)
+- bump bouncycastle version (#1886)       
+      
+### Fixed 
+
+- parsing error when reading letsEncrypt settings (#1884)
+- ACME challenge can be triggered before challenge authorization has been stored (#1887)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.16.0] - 2024-03-31
 
 
