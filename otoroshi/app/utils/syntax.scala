@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
+import otoroshi.env.Env
 import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.TraversableOnce
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.{NoStackTrace, NonFatal}
@@ -593,6 +594,16 @@ object implicits {
       } else {
         initValue
       }
+    }
+  }
+  implicit class BetterFiniteDuration(val duration: FiniteDuration)                       extends AnyVal {
+    def timeout(implicit env: Env, ec: ExecutionContext): Future[Unit] = await(env, ec)
+    def await(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+      val promise = Promise.apply[Unit]()
+      env.otoroshiScheduler.scheduleOnce(duration) {
+        promise.trySuccess(())
+      }
+      promise.future
     }
   }
   implicit class BetterDuration(val duration: Duration)                       extends AnyVal {

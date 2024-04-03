@@ -12,6 +12,7 @@ import otoroshi.events.{Alerts, CertRenewalAlert}
 import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
 import otoroshi.ssl.{Cert, PemHeaders}
 import otoroshi.utils.RegexPool
+import otoroshi.utils.syntax.implicits.BetterFiniteDuration
 import play.api.Logger
 import play.api.libs.json._
 
@@ -309,8 +310,11 @@ object LetsEncryptHelper {
             s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
             ByteString(challenge.getAuthorization),
             Some(10.minutes.toMillis)
-          )
-          authorizeOrder(domain, authorization.getStatus, challenge)
+          ).flatMap { _ =>
+            3.seconds.timeout.flatMap { _ =>
+              authorizeOrder(domain, authorization.getStatus, challenge)
+            }
+          }
       }
       .toMat(Sink.seq)(Keep.right)
       .run()
@@ -333,7 +337,7 @@ object LetsEncryptHelper {
       } else {
         challenge.trigger()
         Source
-          .tick(1.seconds, 3.seconds, ())
+          .tick(3.seconds, 3.seconds, ())
           .mapAsync(1) { _ =>
             Future {
               challenge.update()
@@ -364,7 +368,7 @@ object LetsEncryptHelper {
       order.execute(csr)
     }(blockingEc).flatMap { _ =>
       Source
-        .tick(1.seconds, 5.seconds, ())
+        .tick(3.seconds, 5.seconds, ())
         .mapAsync(1) { _ =>
           Future {
             order.update()
