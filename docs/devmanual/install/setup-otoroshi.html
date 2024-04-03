@@ -1893,6 +1893,8 @@ otoroshi {
     }
   }
   options {
+    jsonPathNullReadIsJsNull = false
+    jsonPathNullReadIsJsNull = ${?OTOROSHI_OPTIONS_JSONPATHNULLREADISJSNULL}
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = true
@@ -3239,6 +3241,7 @@ otoroshi {
     }
   }
   options {
+    jsonPathNullReadIsJsNull = ${?OTOROSHI_OPTIONS_JSONPATHNULLREADISJSNULL}
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = ${?OTOROSHI_OPTIONS_EMPTYCONTENTLENGTHISCHUNKED}
     detectApiKeySooner = ${?OTOROSHI_OPTIONS_DETECTAPIKEYSOONER}
