@@ -303,14 +303,15 @@ object LetsEncryptHelper {
       .collect {
         case (auth, opt) if opt.isPresent => (auth, opt.get())
       }
-      .mapAsync(1) {
-        case (authorization, challenge) =>
-          logger.info("setting challenge content in datastore")
-          env.datastores.rawDataStore.set(
+      .mapAsync(1) { case (authorization, challenge) =>
+        logger.info("setting challenge content in datastore")
+        env.datastores.rawDataStore
+          .set(
             s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
             ByteString(challenge.getAuthorization),
             Some(10.minutes.toMillis)
-          ).flatMap { _ =>
+          )
+          .flatMap { _ =>
             3.seconds.timeout.flatMap { _ =>
               authorizeOrder(domain, authorization.getStatus, challenge)
             }

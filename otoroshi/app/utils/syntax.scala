@@ -596,7 +596,7 @@ object implicits {
       }
     }
   }
-  implicit class BetterFiniteDuration(val duration: FiniteDuration)                       extends AnyVal {
+  implicit class BetterFiniteDuration(val duration: FiniteDuration)           extends AnyVal {
     def timeout(implicit env: Env, ec: ExecutionContext): Future[Unit] = await(env, ec)
     def await(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
       val promise = Promise.apply[Unit]()

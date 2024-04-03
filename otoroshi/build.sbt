@@ -77,7 +77,7 @@ lazy val excludesJackson         = Seq(
 lazy val excludeScalaJava8Compat = Seq(
   ExclusionRule(organization = "org.scala-lang.modules")
 )
-lazy val excludeSlf4jAndJackson = excludesJackson ++ Seq(
+lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
 
