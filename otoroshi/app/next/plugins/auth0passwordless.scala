@@ -2,6 +2,7 @@ package otoroshi.next.plugins
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
+import akka.util.ByteString
 import otoroshi.auth.{GenericOauth2Module, GenericOauth2ModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models.PrivateAppsUser
@@ -121,53 +122,62 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
   override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
 
+  private def doStartFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val domain = Uri(oauthConfig.authorizeUrl).authority.host.toString()
+    val state = IdGenerator.uuid
+    val payload = Json.obj(
+        "client_id" -> oauthConfig.clientId,
+        "client_secret" -> oauthConfig.clientSecret,
+        "connection" -> config.connection.name,
+        "send" -> config.send.name,
+        "authParams" -> Json.obj(
+          "scope" -> "openid",
+          "state" -> state
+        )
+      )
+      .applyOn { obj =>
+        config.connection match {
+          case Auth0PasswordlessConnectionKind.Email =>
+            val email = params.select("username").asOpt[String].orElse(params.select("email").asOpt[String]).getOrElse("")
+            obj ++ Json.obj("email" -> email)
+          case Auth0PasswordlessConnectionKind.Sms =>
+            val phoneNumber = params.select("username").asOpt[String].orElse(params.select("phone_number").asOpt[String]).getOrElse("")
+            obj ++ Json.obj("phone_number" -> phoneNumber)
+        }
+      }
+    env.Ws.url(s"https://${domain}/passwordless/start")
+      .withRequestTimeout(10.seconds)
+      .post(payload)
+      .map { response =>
+        if (response.status == 200) {
+          val username = params.select("username").asOpt[String].orElse(params.select("email").asOpt[String]).orElse(params.select("phone_number").asOpt[String]).getOrElse("")
+          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj(
+            "auth0_response" -> response.json,
+            "state" -> state,
+            "username" -> username,
+          ))), None).right
+        } else {
+          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Status(response.status).apply(response.json)), None).right
+        }
+      }
+  }
+
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(Auth0PasswordlessAuthConfig.format).getOrElse(Auth0PasswordlessAuthConfig.default)
     env.proxyState.authModule(config.ref) match {
       case Some(authModule) if authModule.isInstanceOf[GenericOauth2ModuleConfig] => {
-        val oautConfig = authModule.asInstanceOf[GenericOauth2ModuleConfig]
-        val domain = Uri(oautConfig.authorizeUrl).authority.host.toString()
-        val state = IdGenerator.uuid
-        val payload = Json.obj(
-          "client_id" -> oautConfig.clientId,
-          "client_secret" -> oautConfig.clientSecret, // For Regular Web Applications
-          "connection" -> config.connection.name,
-          "send" -> config.send.name,
-          "authParams" -> Json.obj(
-            "scope" -> "openid",
-            "state" -> state
-          )
-        )
-        .applyOn { obj =>
-          config.connection match {
-            case Auth0PasswordlessConnectionKind.Email =>
-              val email = ctx.request.queryParam("email").getOrElse("")
-              obj ++ Json.obj("email" -> email)
-            case Auth0PasswordlessConnectionKind.Sms =>
-              val phoneNumber = ctx.request.queryParam("phone_number").getOrElse("")
-              obj ++ Json.obj("phone_number" -> phoneNumber)
+        val oauthConfig = authModule.asInstanceOf[GenericOauth2ModuleConfig]
+        if (ctx.request.method == "POST" && ctx.request.hasBody && ctx.request.contentType.contains("application/json")) {
+          ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+            doStartFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
+        } else {
+          doStartFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
         }
-        env.Ws.url(s"https://${domain}/passwordless/start")
-          .withRequestTimeout(10.seconds)
-          .post(payload)
-          .map { response =>
-            if (response.status == 200) {
-              val username = ctx.request.queryParam("email").orElse(ctx.request.queryParam("phone_number")).getOrElse("")
-              BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj(
-                "auth0_response" -> response.json,
-                "state" -> state,
-                "username" -> username,
-              ))), None).right
-            } else {
-              BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Status(response.status).apply(response.json)), None).right
-            }
-          }
       }
       case None => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))), None).rightf
     }
   }
-
 }
 
 class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
@@ -185,89 +195,98 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
 
+  private def doEndFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val username = params.select("username").asOpt[String].getOrElse("")
+    val code = params.select("code").asOpt[String].getOrElse("")
+    val payload = Json.obj(
+        "grant_type" -> "http://auth0.com/oauth/grant-type/passwordless/otp",
+        "client_id" -> oauthConfig.clientId,
+        "client_secret" -> oauthConfig.clientSecret,
+        "username" -> username,
+        "otp" -> code,
+        "realm" -> config.connection.name,
+        "audience" -> config.audience,
+        "scope" -> oauthConfig.scope
+      )
+      .applyOnWithOpt(config.audience) {
+        case (obj, audience) => obj ++ Json.obj("audience" -> audience)
+      }
+    env.Ws.url(oauthConfig.tokenUrl)
+      .withRequestTimeout(10.seconds)
+      .post(payload)
+      .flatMap { response =>
+        if (response.status == 200) {
+          val token = response.json
+          val accessToken = token.select("access_token").asString
+          val module = GenericOauth2Module(oauthConfig)
+          module.getUserInfo(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap { profile =>
+            val name = profile.select(oauthConfig.nameField).asOpt[String].getOrElse(username)
+            val email = profile.select(oauthConfig.emailField).asOpt[String].getOrElse(username)
+            val meta: Option[JsObject] = PrivateAppsUser
+              .select(profile, oauthConfig.otoroshiDataField)
+              .asOpt[String]
+              .map(s => Json.parse(s))
+              .orElse(
+                Option(PrivateAppsUser.select(profile, oauthConfig.otoroshiDataField))
+              )
+              .map(_.asOpt[JsObject].getOrElse(Json.obj()))
+            PrivateAppsUser(
+              randomId = IdGenerator.token(64),
+              name = name,
+              email = email,
+              profile = profile,
+              realm = oauthConfig.cookieSuffix(ctx.route.legacy),
+              token = token,
+              authConfigId = oauthConfig.id,
+              otoroshiData = oauthConfig.dataOverride
+                .get(email)
+                .map(v => oauthConfig.extraMetadata.deepMerge(v))
+                .orElse(Some(oauthConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
+              tags = oauthConfig.theTags,
+              metadata = oauthConfig.metadata,
+              location = oauthConfig.location
+            )
+            .validate(oauthConfig.userValidators) match {
+              case Left(err) =>
+                BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj(
+                  "error" -> "unauthorized",
+                  "error_description" -> err
+                ))), None).rightf
+              case Right(user) => {
+                user
+                  .save(Duration(oauthConfig.sessionMaxAge, TimeUnit.SECONDS))
+                  .map { _ =>
+                    val host = ctx.request.host
+                    val cookies = env.createPrivateSessionCookies(host, user.randomId, ctx.route.legacy, oauthConfig, user.some)
+                    val sessionId = cookies.head.value
+                    val cookieName = "oto-papps-" + oauthConfig.cookieSuffix(ctx.route.legacy)
+                    BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj(
+                      "user" -> profile,
+                      "session_id_cookie_name" -> cookieName,
+                      "session_id" -> sessionId, // can be passed as cookie value, or "Otoroshi-Token" header, or "pappsToken" query params
+                    )).withCookies(cookies: _*)), None).right
+                  }
+              }
+            }
+          }
+        } else {
+          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Status(response.status).apply(response.json)), None).rightf
+        }
+      }
+  }
+
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(Auth0PasswordlessAuthConfig.format).getOrElse(Auth0PasswordlessAuthConfig.default)
     env.proxyState.authModule(config.ref) match {
       case Some(authModule) if authModule.isInstanceOf[GenericOauth2ModuleConfig] => {
-        val oautConfig = authModule.asInstanceOf[GenericOauth2ModuleConfig]
-        val username = ctx.request.queryParam("username").getOrElse("")
-        val code = ctx.request.queryParam("code").getOrElse("")
-        val payload = Json.obj(
-            "grant_type" -> "http://auth0.com/oauth/grant-type/passwordless/otp",
-            "client_id" -> oautConfig.clientId,
-            "client_secret" -> oautConfig.clientSecret,
-            "username" -> username,
-            "otp" -> code,
-            "realm" -> config.connection.name,
-            "audience" -> config.audience,
-            "scope" -> oautConfig.scope
-          )
-          .applyOnWithOpt(config.audience) {
-            case (obj, audience) => obj ++ Json.obj("audience" -> audience)
+        val oauthConfig = authModule.asInstanceOf[GenericOauth2ModuleConfig]
+        if (ctx.request.method == "POST" && ctx.request.hasBody && ctx.request.contentType.contains("application/json")) {
+          ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+            doEndFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
-        env.Ws.url(oautConfig.tokenUrl)
-          .withRequestTimeout(10.seconds)
-          .post(payload)
-          .flatMap { response =>
-            if (response.status == 200) {
-
-              val token = response.json
-              val accessToken = token.select("access_token").asString
-              val module = GenericOauth2Module(oautConfig)
-              module.getUserInfo(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap { profile =>
-                val name = profile.select(oautConfig.nameField).asOpt[String].getOrElse(username)
-                val email = profile.select(oautConfig.emailField).asOpt[String].getOrElse(username)
-                val meta: Option[JsObject] = PrivateAppsUser
-                  .select(profile, oautConfig.otoroshiDataField)
-                  .asOpt[String]
-                  .map(s => Json.parse(s))
-                  .orElse(
-                    Option(PrivateAppsUser.select(profile, oautConfig.otoroshiDataField))
-                  )
-                  .map(_.asOpt[JsObject].getOrElse(Json.obj()))
-                PrivateAppsUser(
-                  randomId = IdGenerator.token(64),
-                  name = name,
-                  email = email,
-                  profile = profile,
-                  realm = oautConfig.cookieSuffix(ctx.route.legacy),
-                  token = token,
-                  authConfigId = oautConfig.id,
-                  otoroshiData = oautConfig.dataOverride
-                    .get(email)
-                    .map(v => oautConfig.extraMetadata.deepMerge(v))
-                    .orElse(Some(oautConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
-                  tags = oautConfig.theTags,
-                  metadata = oautConfig.metadata,
-                  location = oautConfig.location
-                )
-                  .validate(oautConfig.userValidators) match {
-                  case Left(err) =>
-                    BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj(
-                      "error" -> "unauthorized",
-                      "error_description" -> err
-                    ))), None).rightf
-                  case Right(user) => {
-                    user
-                      .save(Duration(oautConfig.sessionMaxAge, TimeUnit.SECONDS))
-                      .map { _ =>
-                        val host = ctx.request.host
-                        val cookies = env.createPrivateSessionCookies(host, user.randomId, ctx.route.legacy, oautConfig, user.some)
-                        val sessionId = cookies.head.value
-                        val cookieName = "oto-papps-" + oautConfig.cookieSuffix(ctx.route.legacy)
-                        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj(
-                          "user" -> profile,
-                          "session_id_cookie_name" -> cookieName,
-                          "session_id" -> sessionId, // can be passed as cookie value, or Otoroshi-Token header, or pappsToken query params
-                        )).withCookies(cookies: _*)), None).right
-                      }
-                  }
-                }
-              }
-            } else {
-              BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Status(response.status).apply(response.json)), None).rightf
-            }
-          }
+        } else {
+          doEndFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
+        }
       }
       case None => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))), None).rightf
     }
