@@ -106,40 +106,6 @@ object Auth0PasswordlessAuthConfig {
   ))
 }
 
-class Auth0PasswordlessAuthValidator extends NgAccessValidator {
-
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean            = true
-  override def core: Boolean                     = true
-  override def name: String                      = "Auth0 Passwordless login validator"
-  override def description: Option[String]       = "This plugin ensure a user is present".some
-  override def defaultConfigObject: Option[NgPluginConfig] = Some(Auth0PasswordlessAuthConfig.default)
-  override def noJsForm: Boolean = true
-  override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
-  override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
-
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    ctx.user match {
-      case None => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
-      case Some(user) => {
-        val config = ctx.cachedConfig(internalName)(Auth0PasswordlessAuthConfig.format).getOrElse(Auth0PasswordlessAuthConfig.default)
-        env.proxyState.authModule(config.ref) match {
-          case None => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
-          case Some(authModule) => {
-            if (user.authConfigId == authModule.id) {
-              NgAccess.NgAllowed.vfuture
-            } else {
-              NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
