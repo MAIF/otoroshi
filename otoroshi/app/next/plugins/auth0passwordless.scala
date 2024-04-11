@@ -5,7 +5,8 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import otoroshi.auth.{GenericOauth2Module, GenericOauth2ModuleConfig}
 import otoroshi.env.Env
-import otoroshi.models.PrivateAppsUser
+import otoroshi.gateway.Errors
+import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.IdGenerator
@@ -21,6 +22,7 @@ import scala.util._
 sealed trait Auth0PasswordlessConnectionKind {
   def name: String
 }
+
 object Auth0PasswordlessConnectionKind {
   case object Email extends Auth0PasswordlessConnectionKind { def name: String = "email" }
   case object Sms extends Auth0PasswordlessConnectionKind { def name: String = "sms" }
@@ -33,6 +35,7 @@ object Auth0PasswordlessConnectionKind {
 sealed trait Auth0PasswordlessSendKind {
   def name: String
 }
+
 object Auth0PasswordlessSendKind {
   case object Link extends Auth0PasswordlessSendKind { def name: String = "link" }
   case object Code extends Auth0PasswordlessSendKind { def name: String = "code" }
@@ -122,7 +125,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
   override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
 
-  private def doStartFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  def doStartFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val domain = Uri(oauthConfig.authorizeUrl).authority.host.toString()
     val state = IdGenerator.uuid
     val payload = Json.obj(
@@ -195,7 +198,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
 
-  private def doEndFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  def doEndFlow(ctx: NgbBackendCallContext, params: JsObject, config: Auth0PasswordlessAuthConfig, oauthConfig: GenericOauth2ModuleConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val username = params.select("username").asOpt[String].getOrElse("")
     val code = params.select("code").asOpt[String].getOrElse("")
     val payload = Json.obj(
@@ -256,7 +259,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
                 user
                   .save(Duration(oauthConfig.sessionMaxAge, TimeUnit.SECONDS))
                   .map { _ =>
-                    val host = ctx.request.host
+                    val host = ctx.rawRequest.domain
                     val cookies = env.createPrivateSessionCookies(host, user.randomId, ctx.route.legacy, oauthConfig, user.some)
                     val sessionId = cookies.head.value
                     val cookieName = "oto-papps-" + oauthConfig.cookieSuffix(ctx.route.legacy)
@@ -293,3 +296,101 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   }
 }
 
+class Auth0PasswordlessStartEndFlowEndpoints extends NgBackendCall {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def name: String = "Auth0 Passwordless start/end flow endpoints"
+  override def description: Option[String] = "This plugin provide endpoints to start and end a passwordless flow".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(Auth0PasswordlessAuthConfig.default)
+  override def useDelegates: Boolean = false
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
+  override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    if (ctx.request.path.endsWith("/start")) {
+      env.scriptManager.getAnyScript[Auth0PasswordlessStartFlowEndpoint](s"cp:${classOf[Auth0PasswordlessStartFlowEndpoint].getName}") match {
+        case Left(err) => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.InternalServerError(Json.obj("error" -> "plugin not found"))), None).rightf
+        case Right(plugin) => plugin.callBackend(ctx, delegates)
+      }
+    } else if (ctx.request.path.endsWith("/end")) {
+      env.scriptManager.getAnyScript[Auth0PasswordlessEndFlowEndpoint](s"cp:${classOf[Auth0PasswordlessEndFlowEndpoint].getName}") match {
+        case Left(err) => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.InternalServerError(Json.obj("error" -> "plugin not found"))), None).rightf
+        case Right(plugin) => plugin.callBackend(ctx, delegates)
+      }
+    } else {
+      BackendCallResponse(NgPluginHttpResponse.fromResult(Results.NotFound(Json.obj("error" -> "not found"))), None).rightf
+    }
+  }
+}
+
+
+class Auth0PasswordlessFlow extends NgBackendCall with NgAccessValidator {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def name: String = "Auth0 Passwordless start/end flow"
+  override def description: Option[String] = "This plugin provide endpoints to start and end a passwordless flow".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(Auth0PasswordlessAuthConfig.default)
+  override def useDelegates: Boolean = true
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = Auth0PasswordlessAuthConfig.configFlow
+  override def configSchema: Option[JsObject] = Auth0PasswordlessAuthConfig.configSchema
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    ctx.user match {
+      case Some(_) => NgAccess.NgAllowed.vfuture
+      case None => {
+        val config = ctx.cachedConfig(internalName)(Auth0PasswordlessAuthConfig.format).getOrElse(Auth0PasswordlessAuthConfig.default)
+        env.proxyState.authModule(config.ref) match {
+          case None       =>
+            Errors
+              .craftResponseResult(
+                "Auth. config. not found on the descriptor",
+                Results.InternalServerError,
+                ctx.request,
+                None,
+                "errors.auth.config.not.found".some,
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(NgAccess.NgDenied.apply)
+          case Some(auth) => {
+            // here there is a datastore access (by key) to get the user session
+            PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(ctx.request, ctx.route.legacy, auth).flatMap {
+              case Some(paUsr) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
+                NgAccess.NgAllowed.vfuture
+              case None  => {
+                NgAccess.NgDenied(Results.Unauthorized(otoroshi.views.html.privateapps.passwordless(env))).vfuture
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    if (ctx.request.method == "POST" && ctx.request.path.endsWith("/passwordless/start")) {
+      env.scriptManager.getAnyScript[Auth0PasswordlessStartFlowEndpoint](s"cp:${classOf[Auth0PasswordlessStartFlowEndpoint].getName}") match {
+        case Left(err) => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.InternalServerError(Json.obj("error" -> "plugin not found"))), None).rightf
+        case Right(plugin) => plugin.callBackend(ctx, delegates)
+      }
+    } else if (ctx.request.method == "POST" && ctx.request.path.endsWith("/passwordless/end")) {
+      env.scriptManager.getAnyScript[Auth0PasswordlessEndFlowEndpoint](s"cp:${classOf[Auth0PasswordlessEndFlowEndpoint].getName}") match {
+        case Left(err) => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.InternalServerError(Json.obj("error" -> "plugin not found"))), None).rightf
+        case Right(plugin) => plugin.callBackend(ctx, delegates)
+      }
+    } else {
+      delegates()
+    }
+  }
+}
