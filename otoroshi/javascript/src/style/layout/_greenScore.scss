@@ -13,6 +13,40 @@
   animation: bgColor 2s infinite alternate;
 }
 
+.heatmap-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 3px;
+  row-gap: 3px;
+  height: 231px;
+  width: 820px;
+}
+
+.heatmap-container .heatpoint {
+  width: 30px; height: 30px;
+  border-radius: 5px;
+
+  &.high {
+    background-color: #4E944F;
+  }
+
+  &.medium-high {
+    background-color: #83BD75;
+  }
+
+  &.medium-low {
+    background-color: #B4E197;
+  }
+
+  &.low {
+    background-color: #E9EFC0;
+  }
+}
+
 @keyframes bgColor {
   0% {
     opacity: 0.1;

@@ -1,25 +1,32 @@
 version: '3'
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+    expose:
+      - 9200
     ports:
     - 9200:9200
     environment:
-    - "xpack.security.enabled=false"
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "xpack.security.enabled=false"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     networks:
       docker-elk:
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.3.2
+    image: docker.elastic.co/kibana/kibana:7.15.1
+    expose:
+      - 5601
     ports:
-    - 5601:5601
+      - 5601:5601
     environment:
-    - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+      - SERVER_NAME=kibana.oto.tools
     networks:
-    - docker-elk
+      - docker-elk
     depends_on:
-    - elasticsearch
+      - elasticsearch
 networks:
   docker-elk:
     driver: bridge

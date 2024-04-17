@@ -12,6 +12,7 @@ import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, S
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import otoroshi.jobs.updates.Version
+import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
@@ -2130,6 +2131,87 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             Json.obj("timestamp" -> timestamp, "duration" -> duration)
           }))
         )
+    }
+  }
+
+  override def fetchRouteEfficience(route: NgRoute, from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
+
+    val rangeCriteria = from
+      .map { f =>
+        Json.obj(
+          "lte" -> to.getOrElse(DateTime.now()).getMillis,
+          "gte" -> f.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "lte" -> to.getOrElse(DateTime.now()).getMillis
+        )
+      }
+
+    val queryJson = Json.obj(
+      "size" -> 0,
+      "query" -> Json.obj(
+        "bool" -> Json.obj(
+          "must" -> Json.arr(
+            Json.obj("match" -> Json.obj("@type" -> "GatewayEvent")),
+            Json.obj("match" -> Json.obj("@serviceId" -> "route_93c31229e-9192-4a41-a8c4-e84340873842")),
+            Json.obj("range" -> Json.obj(
+              "@timestamp" -> rangeCriteria
+            ))
+          )
+        )
+      ),
+      "aggs" -> Json.obj(
+        "dates" -> Json.obj(
+          "date_histogram" -> Json
+            .obj(
+              "field" -> "@callAt",
+              "fixed_interval" -> "1h",
+              "extended_bounds" -> extendedBounds
+            ),
+          "aggs" -> Json.obj(
+            "avgDuration" -> Json.obj(
+              "avg" -> Json.obj(
+                "field" -> "backendDuration"
+              )
+            )
+          )
+        )
+      )
+    )
+    for {
+      resp <- query(queryJson)
+    } yield {
+
+      (resp.resp \ "aggregations" \ "dates" \ "buckets")
+        .asOpt[JsArray]
+        .map { date =>
+          JsArray(date.value.map(d => {
+            val timestamp = (d \ "key").as[Long]
+            val hits = (d \ "doc_count").as[Long]
+            val avgDuration = (d \ "avgDuration" \ "value").asOpt[Float]
+
+            val fl = avgDuration.getOrElse(0F)
+            Json.obj(
+              "date" -> timestamp,
+              "hits" -> hits,
+              "avgDuration" -> fl
+            )
+          }))
+        }
     }
   }
 }

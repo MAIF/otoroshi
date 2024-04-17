@@ -621,6 +621,11 @@ trait AnalyticsReadsService {
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
+  def fetchRouteEfficience(route: NgRoute, from: Option[DateTime], to: Option[DateTime])(
+    implicit
+    env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]]
 }
 
 trait AnalyticsWritesService {
@@ -845,6 +850,13 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServiceResponseTime(servicesDescriptor, from, to))
+        .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchRouteEfficience(route: NgRoute, from: Option[DateTime], to: Option[DateTime])
+                                   (implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap(
+      _.map(_.fetchRouteEfficience(route, from, to))
         .getOrElse(FastFuture.successful(None))
     )
 }
