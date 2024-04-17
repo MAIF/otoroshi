@@ -39,19 +39,23 @@ export const EfficienceScore = (props) => {
     )
   }
 
+  //todo: paginate to get just 5 first routes
+  //todo: add a search input to filter route
+
   return (
     <Section
       full={true}
       title="Score by entity"
-      subTitle="lorem ipsum"
+      subTitle="lorem ipsum" //todo: 
     >
       {groups.filter(g => filteredGroups.some(fg => fg.value === g.id)).map((fg, idx) => {
+        console.debug({fg, groups})
         return (
-          <div>
+          <div key={idx}>
             <div>{fg.name}</div>
             {fg.routes.map((route => {
               return (
-                <EfficienceChart key={route.routeId} route={route.routeId} />
+                <EfficienceChart key={route.routeId} route={route.routeId} group={fg.id} configuration={fg.efficiency}/>
               )
             }))}
           </div>

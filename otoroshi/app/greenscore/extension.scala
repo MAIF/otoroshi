@@ -7,18 +7,17 @@ import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersio
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticsReadsServiceImpl, GatewayEvent, OtoroshiEvent}
-import otoroshi.models.{EntityLocation, EntityLocationSupport, ServiceDescriptor}
+import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
-import otoroshi.next.utils.JsonHelpers.requestBody
+import otoroshi.next.utils.FOption
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.SourceBody
 import play.api.mvc.Results
-import play.api.mvc.Results.NotFound
+import play.api.mvc.Results.{NotFound, Ok}
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Future
@@ -70,7 +69,8 @@ case class GreenScoreEntity(
     tags: Seq[String],
     metadata: Map[String, String],
     routes: Seq[RouteRules],
-    thresholds: Thresholds = Thresholds()
+    thresholds: Thresholds = Thresholds(),
+    efficiency: Efficiency = Efficiency()
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = GreenScoreEntity.format.writes(this)
@@ -94,7 +94,8 @@ object GreenScoreEntity {
           "rulesConfig" -> route.rulesConfig.json
         )
       })),
-      "thresholds"  -> o.thresholds.json()
+      "thresholds"  -> o.thresholds.json(),
+      "efficiency" -> o.efficiency.json()
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -122,7 +123,8 @@ object GreenScoreEntity {
                 .get
             })
           })
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        efficiency = json.select("efficiency").asOpt(Efficiency.reads).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -260,97 +262,9 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
     ),
     AdminExtensionAdminApiRoute(
       "GET",
-      "/api/extensions/green-score/efficience/:route",
+      "/api/extensions/green-score/efficiency/:group/:route",
       false,
       (routerCtx, request, _, _) => {
-        //        val random = new Random()
-        //        Results.Ok(
-        //          Json.arr(
-        //            Json.obj("key" -> 1649810400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649814000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649817600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649821200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649824800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649828400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649832000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649835600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649839200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649842800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649846400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649850000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649853600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649857200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649860800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649864400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649868000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649871600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649875200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649878800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649882400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649886000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649889600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649893200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649896800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649900400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649904000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649907600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649911200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649914800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649918400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649922000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649925600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649929200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649932800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649936400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649940000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649943600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649947200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649950800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649954400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649958000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649961600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649965200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649968800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649972400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649976000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649979600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649983200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649986800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649990400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649994000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1649997600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650001200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650004800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650008400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650012000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650015600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650019200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650022800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650026400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650030000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650033600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650037200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650040800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650044400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650048000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650051600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650055200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650058800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650062400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650066000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650069600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650073200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650076800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650080400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650084000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650087600000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650091200000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650094800000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650098400000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650102000000L, "doc_count" -> random.nextInt(1001)),
-        //            Json.obj("key" -> 1650105600000L, "doc_count" -> random.nextInt(1001))
-        //          )
-        //        ).future
         implicit val e = env;
         implicit val ctx = env.analyticsExecutionContext;
 
@@ -362,22 +276,23 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
           val from = DateTime.now().minusDays(6).withTimeAtStartOfDay().some
           val to = DateTime.now().some
 
-//          val fromDate =
-//            from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
-//          val toDate   = to.map(f => new DateTime(f.toLong))
+          //          val fromDate =
+          //            from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+          //          val toDate   = to.map(f => new DateTime(f.toLong))
 
           //todo: use ctx.canUserRead ????
-          routerCtx.named("route") match {
-            case Some(routeId) => env.datastores.routeDataStore.findById(routeId)
+          (routerCtx.named("route"), routerCtx.named("group")) match {
+            case (Some(routeId), Some(groupId)) => env.datastores.routeDataStore.findById(routeId)
               .flatMap {
-                case Some(route) => analyticsService.fetchRouteEfficience(route, from, to)
-                  .map {
-                  case Some(value) => Results.Ok(value)
-                  case None        => NotFound(Json.obj("error" -> "No entity found (1)"))
-                }
-                case None => NotFound(Json.obj("error" -> "No entity found (2)")).future
+                case Some(route) =>
+                  (for {
+                    group <- FOption(datastores.greenscoresDatastore.findById(groupId))
+                    efficiency <- FOption(analyticsService.fetchRouteEfficiency(route, from, to, group.efficiency.paths))
+                  } yield Ok(efficiency))
+                    .getOrElse(NotFound(Json.obj("error" -> "No entity found")))
+                case None => NotFound(Json.obj("error" -> "No entity found")).future
               }
-            case None => NotFound(Json.obj("error" -> "No entity found (3)")).future
+            case _ => NotFound(Json.obj("error" -> "No entity found")).future
           }
         }
       }

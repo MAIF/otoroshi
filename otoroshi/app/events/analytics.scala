@@ -621,7 +621,7 @@ trait AnalyticsReadsService {
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchRouteEfficience(route: NgRoute, from: Option[DateTime], to: Option[DateTime])(
+  def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String])(
     implicit
     env: Env,
     ec: ExecutionContext
@@ -853,10 +853,10 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchRouteEfficience(route: NgRoute, from: Option[DateTime], to: Option[DateTime])
+  override def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String])
                                    (implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
-      _.map(_.fetchRouteEfficience(route, from, to))
+      _.map(_.fetchRouteEfficiency(route, from, to, excludedPaths))
         .getOrElse(FastFuture.successful(None))
     )
 }

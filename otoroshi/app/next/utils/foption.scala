@@ -66,6 +66,12 @@ class FOption[R](val value: Future[Option[R]]) {
     case Some(_) => true
     case None    => false
   }
+
+  def getOrElse(default: => R)(implicit executor: ExecutionContext): Future[R] =
+    value.map(_.getOrElse(default))
+
+  def get(implicit executor: ExecutionContext): Future[R] =
+    value.map(_.get)
 }
 
 object FOption {

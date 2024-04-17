@@ -108,6 +108,12 @@ export default function EditGroup({}) {
       collapsed: true,
       fields: ['metadata', 'tags'],
     },
+    {
+      type: 'group',
+      name: 'Efficiency',
+      collapsed: true,
+      fields: ['efficiency.threshold', 'efficiency.paths'],
+    },
   ];
   const schema = {
     id: {
@@ -143,6 +149,19 @@ export default function EditGroup({}) {
     thresholds: {
       renderer: ThresholdsTable,
     },
+    efficiency: {
+      threshold: {
+        type: 'number',
+        help: 'This threshold is used to evaluate the efficiency of the route, based on the hits count on an interval of 1 hour',
+        label: 'Threshold'
+      },
+      paths: {
+        type: 'string',
+        label: 'Paths',
+        help: "Hits on the following paths will not be taken into account in the efficiency calculation",
+        array: true,
+      }
+    }
   };
 
   if (!group || !routes || !rulesBySection) return null;
