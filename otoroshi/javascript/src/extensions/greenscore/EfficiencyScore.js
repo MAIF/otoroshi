@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import { NgSelectRenderer } from '../../components/nginputs';
 import { EfficiencyChart } from './EfficiencyChart';
@@ -7,13 +7,35 @@ import Section from './Section';
 
 
 export const EfficiencyScore = (props) => {
-  const { groups, onGroupsChange, filteredGroups } = props
-  const nbElementPerPage = 5
-
+  const { groups, onGroupsChange, filteredGroups, routes } = props;
+  const nbElementPerPage = 1;
 
   const [page, setPage] = useState(0);
+  const [filter, setFilter] = useState("");
+  const [filteredRoutes, setfilteredRoutes] = useState(routes)
 
-  const totalPageSize = useMemo(() => Math.ceil(groups.length / nbElementPerPage), [groups])
+  const getFilteredGRoutes = () => groups
+  .find(g => filteredGroups.some(fg => fg.value === g.id))
+  .routes
+  .filter(r => filteredRoutes.some(fr => fr.id === r.routeId))
+ 
+  useEffect(() => {
+    if (filter) {
+      const delayDebounceFn = setTimeout(() => {
+        setfilteredRoutes(routes.filter(r => r.name.includes(filter)))
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      setfilteredRoutes(routes)
+    }
+  }, [filter]);
+
+  const totalPageSize = useMemo(() => {
+    if (!props.filteredGroups || !props.filteredGroups.length) {
+      return 0
+    }
+    return Math.ceil(getFilteredGRoutes().length / nbElementPerPage)
+  }, [filteredGroups]);
 
   if (!props.filteredGroups || !props.filteredGroups.length) {
     return (
@@ -37,12 +59,8 @@ export const EfficiencyScore = (props) => {
     )
   }
 
-  //todo: paginate to get just 5 first routes
-  //todo: add a search input to filter route
-
-
   const group = groups
-    .find(g => filteredGroups.some(fg => fg.value === g.id))
+    .find(g => filteredGroups.some(fg => fg.value === g.id));
 
   return (
     <div>
@@ -57,8 +75,10 @@ export const EfficiencyScore = (props) => {
           options={groups}
           optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
         />
+        <input className='mx-3 form-control flex-grow-1' type="text" onChange={e => setFilter(e.target.value)} />
       </div>
-      {group.routes.slice(page * nbElementPerPage, (page + 1) * nbElementPerPage)
+      {getFilteredGRoutes()
+        .slice(page * nbElementPerPage, (page + 1) * nbElementPerPage)
         .map((route => {
           return (
             <EfficiencyChart key={route.routeId} route={route.routeId} group={group.id} configuration={group.efficiency} />

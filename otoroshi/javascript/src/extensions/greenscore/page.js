@@ -1021,7 +1021,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                       groups={groups}
                     />
                   )} */}
-                  <EfficiencyScore loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
+                  <EfficiencyScore routes={this.state.routes} loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
                 </div>
               </div>
             )
