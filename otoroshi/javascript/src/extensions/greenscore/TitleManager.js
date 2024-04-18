@@ -157,10 +157,10 @@ export function ManagerTitle(props) {
             isActive={location.pathname === '/extensions/green-score'}
           />
           <Tab
-            title="Efficience"
+            title="Efficiency"
             icon="lightbulb"
-            to="/extensions/green-score/efficience"
-            isActive={location.pathname === '/extensions/green-score/efficience'}
+            to="/extensions/green-score/efficiency"
+            isActive={location.pathname === '/extensions/green-score/efficiency'}
           />
 
           <Tab

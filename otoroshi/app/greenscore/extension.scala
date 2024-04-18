@@ -272,7 +272,6 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
-          //todo: getDate from request ???
           val from = DateTime.now().minusDays(6).withTimeAtStartOfDay().some
           val to = DateTime.now().some
 

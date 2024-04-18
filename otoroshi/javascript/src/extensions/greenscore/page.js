@@ -10,7 +10,7 @@ import { nextClient } from '../../services/BackOfficeServices';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
 import StackedBarChart from './StackedBarChart';
-import { EfficienceScore } from './EfficienceScore';
+import { EfficiencyScore } from './EfficiencyScore';
 import { DynamicChart } from './DynamicChart';
 import CustomTable from './CustomTable';
 import { ManagerTitle, Tab } from './TitleManager';
@@ -426,7 +426,7 @@ export default class GreenScoreConfigsPage extends React.Component {
     date: undefined,
     loading: true,
     mode: 'all',
-    efficience: []
+    efficiency: []
   };
 
   componentDidMount() {
@@ -446,7 +446,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           Accept: 'application/json',
         },
       }).then((r) => r.json()),
-    ]).then(([routes, rulesTemplate, { groups, scores }, efficience]) => {
+    ]).then(([routes, rulesTemplate, { groups, scores }]) => {
       this.setState({
         routes,
         groups,
@@ -457,8 +457,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         date: [...new Set(scores.score_by_route.map((section) => section.date))]
           .sort()
           .reverse()[0],
-        loading: scores.score_by_route.length <= 0,
-        efficience
+        loading: scores.score_by_route.length <= 0
       });
     });
 
@@ -988,7 +987,7 @@ export default class GreenScoreConfigsPage extends React.Component {
           />
           <Route
             exact
-            path="/extensions/green-score/efficience"
+            path="/extensions/green-score/efficiency"
             component={() => (
               <div style={{
                 minHeight: 320,
@@ -1022,7 +1021,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                       groups={groups}
                     />
                   )} */}
-                  <EfficienceScore loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
+                  <EfficiencyScore loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
                 </div>
               </div>
             )

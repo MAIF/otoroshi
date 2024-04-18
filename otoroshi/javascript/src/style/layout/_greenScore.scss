@@ -14,19 +14,26 @@
 }
 
 .heatmap-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
-  align-content: flex-start;
+  display: grid;
+  grid-template-rows: repeat(24, 30px) 50px;
+  grid-template-columns: 100px repeat(7, 30px); 
+  // display: flex;
+  // flex-direction: row;
+  // flex-wrap: wrap;
+  // justify-content: center;
+  // align-items: flex-start;
+  // align-content: flex-start;
   gap: 3px;
-  row-gap: 3px;
-  height: 231px;
-  width: 820px;
+  // row-gap: 3px;
+  height: 260px;
+  width: 892px;
 }
 
-.heatmap-container .heatpoint {
+.heatmap-hour {
+  // width: 30px;
+}
+
+.heatpoint {
   width: 30px; height: 30px;
   border-radius: 5px;
 
