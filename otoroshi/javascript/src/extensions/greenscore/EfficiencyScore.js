@@ -7,18 +7,19 @@ import Section from './Section';
 
 
 export const EfficiencyScore = (props) => {
-  const { groups, onGroupsChange, filteredGroups, routes } = props;
-  const nbElementPerPage = 1;
+  const { groups, routes } = props;
+  const nbElementPerPage = 5;
 
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
   const [filteredRoutes, setfilteredRoutes] = useState(routes)
+  const [selectedGroup, setSelectedGroup] = useState()
 
   const getFilteredGRoutes = () => groups
-  .find(g => filteredGroups.some(fg => fg.value === g.id))
-  .routes
-  .filter(r => filteredRoutes.some(fr => fr.id === r.routeId))
- 
+    .find(g => selectedGroup === g.id)
+    .routes
+    .filter(r => filteredRoutes.some(fr => fr.id === r.routeId))
+
   useEffect(() => {
     if (filter) {
       const delayDebounceFn = setTimeout(() => {
@@ -31,13 +32,13 @@ export const EfficiencyScore = (props) => {
   }, [filter]);
 
   const totalPageSize = useMemo(() => {
-    if (!props.filteredGroups || !props.filteredGroups.length) {
+    if (!selectedGroup) {
       return 0
     }
     return Math.ceil(getFilteredGRoutes().length / nbElementPerPage)
-  }, [filteredGroups]);
+  }, [selectedGroup]);
 
-  if (!props.filteredGroups || !props.filteredGroups.length) {
+  if (!selectedGroup) {
     return (
       <Section>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -45,12 +46,10 @@ export const EfficiencyScore = (props) => {
             Not enough data to display the dashboard
           </p>
           <NgSelectRenderer
-            value={filteredGroups}
             ngOptions={{
               spread: true,
             }}
-            isMulti
-            onChange={onGroupsChange}
+            onChange={setSelectedGroup}
             options={groups}
             optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
           />
@@ -60,18 +59,17 @@ export const EfficiencyScore = (props) => {
   }
 
   const group = groups
-    .find(g => filteredGroups.some(fg => fg.value === g.id));
+    .find(g => selectedGroup === g.id);
 
   return (
     <div>
       <div className='d-flex flex-row'>
         <NgSelectRenderer
-          value={[group.value]}
+          value={selectedGroup}
           ngOptions={{
             spread: true,
           }}
-          onChange={onGroupsChange}
-          isMulti
+          onChange={setSelectedGroup}
           options={groups}
           optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
         />
@@ -85,27 +83,27 @@ export const EfficiencyScore = (props) => {
           )
         }))}
       <div className="ReactTable">
-        <div class="pagination-bottom">
-          <div class="-pagination">
-            <div class="-previous">
+        <div className="pagination-bottom">
+          <div className="-pagination">
+            <div className="-previous">
               <button
                 type="button"
                 disabled={page === 0}
-                class="-btn"
+                className="-btn"
                 onClick={() => setPage(page - 1)}
               >
                 Previous
               </button>
             </div>
-            <div class="-center">
-              <span class="-pageInfo">
+            <div className="-center">
+              <span className="-pageInfo">
                 Page {page + 1} of {totalPageSize}{' '}
               </span>
             </div>
-            <div class="-next">
+            <div className="-next">
               <button
                 type="button"
-                class="-btn"
+                className="-btn"
                 disabled={page + 1 === totalPageSize}
                 onClick={() => setPage(page + 1)}
               >

@@ -431,7 +431,6 @@ export default class GreenScoreConfigsPage extends React.Component {
 
   componentDidMount() {
     this.props.setTitle(`Green Score groups`);
-
     Promise.all([
       nextClient.forEntity(nextClient.ENTITIES.ROUTES).findAll(),
       fetch('/bo/api/proxy/api/extensions/green-score/template', {
@@ -1003,24 +1002,6 @@ export default class GreenScoreConfigsPage extends React.Component {
                     flexWrap: 'wrap'
                   }}
                 >
-                  {/* {groups.length > 0 && (
-                    <FilterSelector
-                      enabledFilters={
-                        (mode !== 'all' ? 1 : 0) +
-                        (this.state.date ? 1 : 0) +
-                        (filteredGroups.length > 0 ? 1 : 0)
-                      }
-                      opened={filterStatusView === 'filter'}
-                      close={() => this.setState({ filterStatusView: undefined })}
-                      open={() => this.setState({ filterStatusView: 'filter' })}
-                      onChange={(mode, filteredGroups) => {
-                        this.onFiltersChange(mode, filteredGroups);
-                      }}
-                      mode={mode}
-                      filteredGroups={filteredGroups}
-                      groups={groups}
-                    />
-                  )} */}
                   <EfficiencyScore routes={this.state.routes} loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
                 </div>
               </div>
