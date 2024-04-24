@@ -882,9 +882,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               if (isKubeArmored) {
                 val specName = yml.select("spec").select("name").asOpt[String]
                 val metaName = yml.select("metadata").select("name").asOpt[String]
+                val name: String =  specName.orElse(metaName).getOrElse("no name")
+                val kind = yml.select("kind").asOpt[String].getOrElse("nokind")
                 Right(yml.select("spec").asObject ++ Json.obj(
-                  "name" -> specName.orElse(metaName).getOrElse("no name"),
-                  "kind" -> yml.select("kind").asOpt[String].getOrElse("nokind"),
+                  "name" -> name,
+                  "kind" -> kind,
                 ))
               } else {
                 Right(yml)
@@ -1154,8 +1156,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
       }
-      case _ if !request.accepts("application/json") && request.accepts("application/yaml")                =>
-        res(Yaml.write(entity)) // TODO: writes a k8s resource ?
+      case _ if !request.accepts("application/json") && (request.accepts("application/yaml") || request.accepts("application/yml")) =>
+        res(Yaml.write(entity))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
@@ -1163,7 +1165,23 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
-      case _                                                                                               =>
+      case _ if !request.accepts("application/json") && (request.accepts("application/yaml+k8s") || request.accepts("application/yml+k8s")) =>
+        res(Yaml.write(Json.obj(
+          "apiVersion" -> "proxy.otoroshi.io/v1",
+          "kind" -> resEntity.get.kind,
+          "metadata" -> Json.obj(
+            "name" -> entity.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String],
+          ),
+          "spec" -> entity
+        )))
+          .as("application/yaml")
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
+          .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
+            r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
+          }
+      case _ =>
         res(entity)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
