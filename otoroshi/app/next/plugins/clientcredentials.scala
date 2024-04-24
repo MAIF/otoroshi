@@ -4,8 +4,8 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.clevercloud.biscuit.datalog.SymbolTable
-import com.clevercloud.biscuit.token.builder.parser.Parser
+import org.biscuitsec.biscuit.datalog.SymbolTable
+import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -227,10 +227,10 @@ class NgClientCredentials extends NgRequestSink {
         possibleApiKey.flatMap {
           case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" => {
 
-            import com.clevercloud.biscuit.crypto.KeyPair
-            import com.clevercloud.biscuit.token.Biscuit
-            import com.clevercloud.biscuit.token.builder.Block
-            import com.clevercloud.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.crypto.KeyPair
+            import org.biscuitsec.biscuit.token.Biscuit
+            import org.biscuitsec.biscuit.token.builder.Block
+            import org.biscuitsec.biscuit.token.builder.Utils._
 
             import collection.JavaConverters._
 

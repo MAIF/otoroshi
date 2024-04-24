@@ -1,13 +1,13 @@
 package otoroshi.plugins.biscuit
 
 import akka.http.scaladsl.util.FastFuture
-import com.clevercloud.biscuit.crypto._
-import com.clevercloud.biscuit.datalog.SymbolTable
-import com.clevercloud.biscuit.error.Error
-import com.clevercloud.biscuit.token.builder.Term.Str
-import com.clevercloud.biscuit.token.builder.Utils.{fact, string}
-import com.clevercloud.biscuit.token.builder.parser.Parser
-import com.clevercloud.biscuit.token.{Authorizer, Biscuit}
+import org.biscuitsec.biscuit.crypto._
+import org.biscuitsec.biscuit.datalog.SymbolTable
+import org.biscuitsec.biscuit.error.Error
+import org.biscuitsec.biscuit.token.builder.Term.Str
+import org.biscuitsec.biscuit.token.builder.Utils.{fact, string}
+import org.biscuitsec.biscuit.token.builder.parser.Parser
+import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -143,7 +143,7 @@ object BiscuitHelper {
 
   def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(implicit
       env: Env
-  ): Either[com.clevercloud.biscuit.error.Error, Unit] = {
+  ): Either[org.biscuitsec.biscuit.error.Error, Unit] = {
     verifier.set_time()
     verifier.add_fact(s"""operation("${readOrWrite(ctx.request.method)}")""")
     verifier.add_fact(
@@ -189,8 +189,8 @@ object BiscuitHelper {
     } else {
       // TODO: here, add rules from config, query some stuff, etc ..
       Try(verifier.allow().authorize()).toEither match {
-        case Left(err: com.clevercloud.biscuit.error.Error) => Left(err)
-        case Left(err)                                      => Left(new com.clevercloud.biscuit.error.Error.InternalError())
+        case Left(err: org.biscuitsec.biscuit.error.Error) => Left(err)
+        case Left(err)                                      => Left(new org.biscuitsec.biscuit.error.Error.InternalError())
         case Right(_)                                       => Right(())
       }
     }
@@ -224,29 +224,29 @@ class BiscuitExtractor extends PreRouting {
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
-  val client_id_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
+  val client_id_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_id_res",
-    Seq(com.clevercloud.biscuit.token.builder.Utils.`var`("id")).asJava,
+    Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("id")).asJava,
     Seq(
-      com.clevercloud.biscuit.token.builder.Utils.pred(
+      org.biscuitsec.biscuit.token.builder.Utils.pred(
         "client_id",
         Seq(
-          com.clevercloud.biscuit.token.builder.Utils.s("authority"),
-          com.clevercloud.biscuit.token.builder.Utils.`var`("id")
+          org.biscuitsec.biscuit.token.builder.Utils.s("authority"),
+          org.biscuitsec.biscuit.token.builder.Utils.`var`("id")
         ).asJava
       )
     ).asJava
   )
 
-  val client_sign_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
+  val client_sign_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_sign_res",
-    Seq(com.clevercloud.biscuit.token.builder.Utils.`var`("sign")).asJava,
+    Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("sign")).asJava,
     Seq(
-      com.clevercloud.biscuit.token.builder.Utils.pred(
+      org.biscuitsec.biscuit.token.builder.Utils.pred(
         "client_sign",
         Seq(
-          com.clevercloud.biscuit.token.builder.Utils.s("authority"),
-          com.clevercloud.biscuit.token.builder.Utils.`var`("sign")
+          org.biscuitsec.biscuit.token.builder.Utils.s("authority"),
+          org.biscuitsec.biscuit.token.builder.Utils.`var`("sign")
         ).asJava
       )
     ).asJava
@@ -254,8 +254,8 @@ class BiscuitExtractor extends PreRouting {
 
   def testing(): Unit = {
 
-    import com.clevercloud.biscuit.token.builder.Block
-    import com.clevercloud.biscuit.token.builder.Utils._
+    import org.biscuitsec.biscuit.token.builder.Block
+    import org.biscuitsec.biscuit.token.builder.Utils._
 
     val client_id         = "tdrw4ixcssyvljrq"
     val client_secret     = "pdpzme7xpg58y1za0yqyihycschnq74iu7437qqfjor0h3jeo505n6w4ofg1pa17"
