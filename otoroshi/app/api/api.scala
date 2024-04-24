@@ -2,6 +2,7 @@ package otoroshi.api
 
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
+import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.auth.AuthModuleConfig
@@ -15,13 +16,14 @@ import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
 import otoroshi.utils.JsonValidator
 import otoroshi.utils.controllers.GenericAlert
-import otoroshi.utils.json.JsonOperationsHelper
+import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
+import play.core.parsers.FormUrlEncodedParser
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
@@ -869,7 +871,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private def notFoundBody: JsValue = Json.obj("error" -> "not_found", "error_description" -> "resource not found")
 
-  private def bodyIn(request: Request[Source[ByteString, _]]): Future[Either[JsValue, JsValue]] = {
+  private def bodyIn(request: Request[Source[ByteString, _]], resource: Resource, version: String, defaultEntity: Option[JsObject] = None): Future[Either[JsValue, JsValue]] = {
     Option(request.body) match {
       case Some(body) if request.contentType.contains("application/yaml") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -885,7 +887,38 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           Right(Json.parse(bodyRaw.utf8String))
         }
       }
-      case _                                                              => Left(Json.obj("error" -> "bad_request", "error_description" -> "bad content type")).vfuture
+      case Some(body) if request.contentType.contains("application/x-www-form-urlencoded") => {
+        body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+          val values: Map[String, String] = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last)
+          val default = defaultEntity.orElse(resource.access.template(version, Map.empty).asOpt[JsObject]).getOrElse(Json.obj())
+          val jsonValues: Map[String, JsValue] = values.mapValues {
+            case str if str == "null" => JsNull
+            case str if str == "true" => JsBoolean(true)
+            case str if str == "false" => JsBoolean(false)
+            case str if str.startsWith("{") && str.endsWith("}") => Json.parse(str).asObject
+            case str if str.startsWith("[") && str.endsWith("]") => Json.parse(str).asArray
+            case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
+            case str if NumberUtils.isCreatable(str) => JsNumber(BigDecimal(str))
+            case str => JsString(str)
+          }
+          Right(jsonValues.toSeq.foldLeft(default) {
+            case (obj, (key, value)) if key.contains(".") => {
+              val pointer = if(key.startsWith("/")) s"${key.replace(".", "/")}" else s"/${key.replace(".", "/")}"
+              val parts = key.split("\\.").toSeq
+              val newObj = JsonOperationsHelper.genericInsertAtPath(obj, parts, Json.obj())
+              val ops = if (obj.atPointer(pointer).isDefined) Seq(
+                Json.obj("op" -> "remove", "path" -> pointer),
+                Json.obj("op" -> "add", "path" -> pointer, "value" -> value)
+              ) else Seq(
+                Json.obj("op" -> "add", "path" -> pointer, "value" -> value)
+              )
+              JsonPatchHelpers.patchJson(JsArray(ops), newObj).asObject
+            }
+            case (obj, (key, value)) => obj ++ Json.obj(key -> value)
+          })
+        }
+      }
+      case _ => Left(Json.obj("error" -> "bad_request", "error_description" -> "bad content type")).vfuture
     }
   }
 
@@ -1627,7 +1660,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // POST /apis/:group/:version/:entity
   def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request) flatMap {
+      bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(body) if !ctx.canUserWriteJson(body) =>
           result(
@@ -1770,7 +1803,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // POST /apis/:group/:version/:entity/:id
   def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request) flatMap {
+      bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(__body) => {
           val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
@@ -1850,7 +1883,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // PUT /apis/:group/:version/:entity/:id
   def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request) flatMap {
+      bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
         case Right(__body) => {
           val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
@@ -1910,20 +1943,22 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
     import otoroshi.utils.json.JsonPatchHelpers.patchJson
     withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request) flatMap {
-        case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
-        case Right(body) => {
-          resource.access.findOne(version, id).flatMap {
-            case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
-            case Some(current) if !ctx.canUserWriteJson(current) =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                ctx.request,
-                resource.some
-              ).vfuture
-            case Some(current)                                   => {
-              val _patchedBody = patchJson(body, current)
+      resource.access.findOne(version, id).flatMap {
+        case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
+        case Some(current) if !ctx.canUserWriteJson(current) =>
+          result(
+            Results.Unauthorized,
+            Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+            ctx.request,
+            resource.some
+          ).vfuture
+        case Some(current)                                   => {
+          val isFormDataBody = ctx.request.contentType.contains("application/x-www-form-urlencoded")
+          val defaultEntity: Option[JsObject] = if (isFormDataBody) Some(current.asObject) else None
+          bodyIn(ctx.request, resource, version, defaultEntity) flatMap {
+            case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
+            case Right(body) => {
+              val _patchedBody = if (isFormDataBody) body else patchJson(body, current)
               val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
               resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
                 case JsError(errs)   =>

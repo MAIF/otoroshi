@@ -602,7 +602,7 @@ object NgApikeyCallsConfig {
         extractors = (json \ "extractors").asOpt(NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
         routing = (json \ "routing").asOpt(NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
-        mandatory = (json \ "mandatory").asOpt[Boolean].getOrElse(false),
+        mandatory = (json \ "mandatory").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),
         wipeBackendRequest = (json \ "wipe_backend_request").asOpt[Boolean].getOrElse(true),
         updateQuotas = (json \ "update_quotas").asOpt[Boolean].getOrElse(true)

@@ -15,7 +15,7 @@ import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
-import otoroshi.next.models.NgOverflowStrategy
+import otoroshi.next.models.{NgOverflowStrategy, NgTarget}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -1776,7 +1776,7 @@ case class ServiceDescriptor(
       .getOrElse(rawUri)
   }
 
-  def target: Target                                                 = targets.head
+  def target: Target                                                 = targets.headOption.getOrElse(NgTarget.default.legacy)
   def save()(implicit ec: ExecutionContext, env: Env)                = env.datastores.serviceDescriptorDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.exists(this)

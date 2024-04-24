@@ -1,7 +1,7 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.WasmJob
+import otoroshi.next.plugins.{OverrideHost, WasmJob}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
@@ -82,6 +82,10 @@ object PluginIndex {
 }
 
 object NgPluginInstance {
+  def default = NgPluginInstance(
+    plugin = s"cp:${classOf[OverrideHost].getName}",
+    pluginIndex = Some(PluginIndex(transformRequest = Some(0)))
+  )
   def readFrom(obj: JsValue): NgPluginInstance = {
     NgPluginInstance(
       plugin = obj.select("plugin").asString,
@@ -289,6 +293,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 }
 
 object NgPlugins {
+  def default: NgPlugins = NgPlugins(Seq(NgPluginInstance.default))
   def empty: NgPlugins = NgPlugins(Seq.empty)
   def readFrom(lookup: JsLookupResult): NgPlugins = {
     lookup.asOpt[JsArray] match {

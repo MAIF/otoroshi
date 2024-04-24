@@ -756,6 +756,15 @@ object NgRoute {
     )
   )
 
+  def default = {
+    val emp = empty
+    emp.copy(
+      backend = emp.backend.copy(
+        targets = Seq(NgTarget.default)
+      ),
+      plugins = NgPlugins.empty
+    )
+  }
   def empty = NgRoute(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
@@ -1265,7 +1274,7 @@ object NgRoute {
 
 trait NgRouteDataStore extends BasicStore[NgRoute] {
   def template(env: Env): NgRoute = {
-    val default = NgRoute.empty
+    val default = NgRoute.default
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
