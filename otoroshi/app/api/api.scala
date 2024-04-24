@@ -875,10 +875,21 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     Option(request.body) match {
       case Some(body) if request.contentType.contains("application/yaml") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-          // TODO: read as k8s resource too
           Yaml.parse(bodyRaw.utf8String) match {
             case None      => Left(Json.obj("error" -> "bad_request", "error_description" -> "error while parsing yaml"))
-            case Some(yml) => Right(yml)
+            case Some(yml) => {
+              val isKubeArmored = yml.select("apiVersion").isDefined && yml.select("spec").isDefined
+              if (isKubeArmored) {
+                val specName = yml.select("spec").select("name").asOpt[String]
+                val metaName = yml.select("metadata").select("name").asOpt[String]
+                Right(yml.select("spec").asObject ++ Json.obj(
+                  "name" -> specName.orElse(metaName).getOrElse("no name"),
+                  "kind" -> yml.select("kind").asOpt[String].getOrElse("nokind"),
+                ))
+              } else {
+                Right(yml)
+              }
+            }
           }
         }
       }
