@@ -333,7 +333,7 @@ object NgBackend {
     lookup.asOpt[JsObject] match {
       case None      => empty
       case Some(obj) =>
-        val optTargetUrl = obj.select("url").asOpt[String].orElse(obj.select("target").asOpt[String])
+        val optTargetUrl = obj.select("url").asOpt[String].orElse(obj.select("target").asOpt[String]).orElse(obj.select("target_url").asOpt[String])
         val root = optTargetUrl.map(url => Uri(url).path.toString()).orElse(obj.select("root").asOpt[String]).getOrElse("/")
         val simpleTarget: Option[NgTarget] = optTargetUrl.map(NgTarget.parse)
         NgBackend(
