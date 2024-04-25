@@ -10,6 +10,7 @@ import io.netty.handler.codec.http._
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils._
 import otoroshi.ssl.{DynamicKeyManager, DynamicSSLEngineProvider}
@@ -26,14 +27,14 @@ import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Try}
 
-// TODO: support working remotaddress
 class Http1RequestHandler(
     handler: HttpRequestHandler,
     sessionCookieBaker: SessionCookieBaker,
     flashCookieBaker: FlashCookieBaker,
     env: Env,
     logger: Logger,
-    addressGet: () => String
+    addressGet: () => String,
+    config: ReactorNettyServerConfig,
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
@@ -49,6 +50,13 @@ class Http1RequestHandler(
   private var request: HttpRequest = _
   private val hotSource            = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
   private val hotFlux              = hotSource.asFlux()
+
+  private var log_method: String      = "NONE"
+  private var log_status: Int         = 0
+  private var log_uri: String         = "NONE"
+  private var log_start: Long         = 0L
+  private var log_contentLength: Long = 0L
+  private var log_protocol: String = "-"
 
   private def send100Continue(ctx: ChannelHandlerContext): Unit = {
     val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
@@ -95,6 +103,7 @@ class Http1RequestHandler(
           )
       case _                                                  => None
     }
+    log_protocol = session.map(_.getProtocol).flatMap(TlsVersion.parseSafe).map(_.name).getOrElse("-")
     val rawOtoReq                =
       new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
@@ -106,6 +115,8 @@ class Http1RequestHandler(
         a.apply(nreq)
           .run(otoReq.body)
           .flatMap { result =>
+            log_status = result.header.status
+            log_contentLength = result.header.headers.getIgnoreCase("Content-Length").map(_.toLong).getOrElse(-1L)
             val response            = result.body match {
               case HttpEntity.NoEntity          =>
                 new DefaultFullHttpResponse(
@@ -458,15 +469,29 @@ class Http1RequestHandler(
               directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
             }
           }
+          .andThen {
+            case _ => accessLog()
+          }
       }
       case _                  => directResponse(ctx, msg, HttpResponseStatus.NOT_IMPLEMENTED, NOT_ESSENTIAL_ACTION.retainedDuplicate())
     }
   }
 
+  private def accessLog(): Unit = {
+    if (config.accessLog) {
+      val formattedDate = DateTime.now().toString("dd/MMM/yyyy:HH:mm:ss Z") //"yyyy-MM-dd HH:mm:ss.SSS Z"
+      val duration = System.currentTimeMillis() - log_start
+      AccessLogHandler.logger.info(s"""${addressGet.apply()} - - [${formattedDate}] "${log_method} ${log_uri} HTTP/3.0" ${log_status} ${log_contentLength} ${duration} ${log_protocol}""")
+    }
+  }
+
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
+    log_start = System.currentTimeMillis()
     msg match {
       case _req: FullHttpRequest       => {
         request = _req
+        log_method = request.method().name()
+        log_uri = request.uri()
         if (HttpUtil.is100ContinueExpected(request)) {
           send100Continue(ctx)
           hotSource.tryEmitComplete()
@@ -491,6 +516,8 @@ class Http1RequestHandler(
       }
       case _req: HttpRequest           => {
         request = _req
+        log_method = request.method().name()
+        log_uri = request.uri()
         if (HttpUtil.is100ContinueExpected(request)) {
           send100Continue(ctx)
           ReferenceCountUtil.release(msg)
@@ -631,7 +658,6 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                   new ChannelInitializer[QuicStreamChannel]() {
                     override def initChannel(ch: QuicStreamChannel): Unit = {
                       ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true, false))
-                      if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler(addressAccess))
                       ch.pipeline()
                         .addLast(
                           new Http1RequestHandler(
@@ -640,7 +666,8 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                             flashCookieBaker,
                             env,
                             logger,
-                            addressAccess
+                            addressAccess,
+                            config
                           )
                         )
                     }

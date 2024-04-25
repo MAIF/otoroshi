@@ -94,6 +94,7 @@ object AccessLogHandler {
   val logger = reactor.util.Loggers.getLogger("reactor.netty.http.server.AccessLog")
 }
 
+/*
 class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
 
   var method: String      = "NONE"
@@ -181,7 +182,7 @@ class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
     // ctx.write(msg, promise)
   }
 }
-
+*/
 object ImplicitUtils {
   implicit class BetterByteBuf(val buf: ByteBuf) extends AnyVal {
     def readContentAsByteString(): ByteString = {
