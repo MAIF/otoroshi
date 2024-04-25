@@ -67,8 +67,8 @@ lazy val openTelemetryVersion    = "1.28.0"
 lazy val jacksonVersion          = "2.13.4"
 lazy val akkaHttpVersion         = "10.2.10"
 lazy val akkaHttp2Version        = "10.2.10"
-lazy val reactorNettyVersion     = "1.1.12"
-lazy val nettyVersion            = "4.1.100.Final"
+lazy val reactorNettyVersion     = "1.1.18"
+lazy val nettyVersion            = "4.1.109.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -206,11 +206,11 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.23.Final",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.23.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.51.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.51.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.21.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.28.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
   "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
@@ -373,7 +373,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   //"-Dotoroshi.privateapps.subdomain=otoroshi",
-  "-Dotoroshi.ssl.fromOutside.clientAuth=Want",
+  "-Dotoroshi.ssl.fromOutside.clientAuth=None",
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
@@ -385,6 +385,8 @@ reStart / javaOptions ++= Seq(
   //"-Dotoroshi.loggers.otoroshi-wasm-vm-pool=DEBUG",
   //"-Dotoroshi.loggers.otoroshi-wasm-integration=DEBUG",
   //"-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE",
+  "-Dotoroshi.loggers.otoroshi-experimental-netty-http3-client=DEBUG",
+  "-Dotoroshi.loggers.otoroshi-experimental-netty-http3-server=DEBUG",
   "-Dotoroshi.options.enable-json-media-type-with-open-charset=true",
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
