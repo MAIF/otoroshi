@@ -146,7 +146,7 @@ class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
         "dd/MMM/yyyy:HH:mm:ss Z"
         //"yyyy-MM-dd HH:mm:ss.SSS Z"
       )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration} ${protocol}""")
-    ctx.write(response, promise.unvoid())
+    // ctx.write(response, promise.unvoid())
   }
 
   override def write(ctx: ChannelHandlerContext, msg: Object, promise: ChannelPromise) {
