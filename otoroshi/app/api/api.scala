@@ -900,6 +900,42 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           Right(Json.parse(bodyRaw.utf8String))
         }
       }
+      case Some(body) if request.contentType.contains("application/json+oto-patch") => {
+        body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+          val values: Seq[JsObject] = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val default = defaultEntity.orElse(resource.access.template(version, Map.empty).asOpt[JsObject]).getOrElse(Json.obj())
+          val jsonValues: Map[String, JsValue] = values
+            .map(obj => (obj.select("path").asString, obj.select("value").asValue))
+            .map {
+              case (key, JsString(str)) => (key, str match {
+                case str if str == "null" => JsNull
+                case str if str == "true" => JsBoolean(true)
+                case str if str == "false" => JsBoolean(false)
+                case str if str.startsWith("{") && str.endsWith("}") => Json.parse(str).asObject
+                case str if str.startsWith("[") && str.endsWith("]") => Json.parse(str).asArray
+                case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
+                case str if NumberUtils.isCreatable(str) => JsNumber(BigDecimal(str))
+                case str => JsString(str)
+              })
+              case (key, value) => (key, value)
+            }.toMap
+          Right(jsonValues.toSeq.foldLeft(default) {
+            case (obj, (key, value)) if key.contains(".") => {
+              val pointer = if(key.startsWith("/")) s"${key.replace(".", "/")}" else s"/${key.replace(".", "/")}"
+              val parts = key.split("\\.").toSeq
+              val newObj = JsonOperationsHelper.genericInsertAtPath(obj, parts, Json.obj())
+              val ops = if (obj.atPointer(pointer).isDefined) Seq(
+                Json.obj("op" -> "remove", "path" -> pointer),
+                Json.obj("op" -> "add", "path" -> pointer, "value" -> value)
+              ) else Seq(
+                Json.obj("op" -> "add", "path" -> pointer, "value" -> value)
+              )
+              JsonPatchHelpers.patchJson(JsArray(ops), newObj).asObject
+            }
+            case (obj, (key, value)) => obj ++ Json.obj(key -> value)
+          })
+        }
+      }
       case Some(body) if request.contentType.contains("application/x-www-form-urlencoded") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
           val values: Map[String, String] = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last)
@@ -1982,7 +2018,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             resource.some
           ).vfuture
         case Some(current)                                   => {
-          val isFormDataBody = ctx.request.contentType.contains("application/x-www-form-urlencoded")
+          val isFormDataBody = ctx.request.contentType.contains("application/x-www-form-urlencoded") || ctx.request.contentType.contains("application/json+oto-patch")
           val defaultEntity: Option[JsObject] = if (isFormDataBody) Some(current.asObject) else None
           bodyIn(ctx.request, resource, version, defaultEntity) flatMap {
             case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
