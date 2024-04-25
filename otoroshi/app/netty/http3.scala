@@ -8,7 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.incubator.codec.quic.{QuicConnectionEvent, QuicSslContext, QuicSslContextBuilder}
+import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils._
@@ -618,29 +618,39 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           val address                 = new AtomicReference[String]("0.0.0.0")
           def addressAccess(): String = address.get()
           override def initChannel(ch: QuicChannel): Unit = {
-            ch.pipeline()
-              .addLast(new ChannelInboundHandlerAdapter() {
-                override def channelInactive(ctx: ChannelHandlerContext): Unit = ctx.fireChannelInactive()
-                override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
-                  evt match {
-                    case event: QuicConnectionEvent => {
-                      Option(event.newAddress())
-                        .flatMap(v => Try(v.toString).toOption)
-                        .flatMap(v => Try(v.split("/").last).toOption)
-                        .flatMap(v => Try(v.split(":").head).toOption)
-                        .foreach(add => address.set(add))
-                    }
-                    case _                          =>
-                  }
-                }
-              })
+            ch.collectPathStats(0).addListener { fu: io.netty.util.concurrent.Future[QuicConnectionPathStats] =>
+              Option(fu.get())
+                .flatMap(v => Try(v.toString).toOption)
+                .flatMap(v => Try(v.split("/").last).toOption)
+                .flatMap(v => Try(v.split(":").head).toOption)
+                .foreach(add => address.set(add))
+            }
+            // ch.pipeline()
+            //   .addLast(new ChannelInboundHandlerAdapter() {
+            //     override def channelInactive(ctx: ChannelHandlerContext): Unit = ctx.fireChannelInactive()
+            //     override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
+            //       evt match {
+            //         case event: QuicPathEvent => {
+            //           Option(event.remote())
+            //              .flatMap(v => Try(v.toString).toOption)
+            //              .flatMap(v => Try(v.split("/").last).toOption)
+            //              .flatMap(v => Try(v.split(":").head).toOption)
+            //              .foreach(add => address.set(add))
+            //         }
+            //         case event: io.netty.handler.ssl.SniCompletionEvent => ()
+            //         case event: io.netty.incubator.codec.quic.QuicConnectionCloseEvent => ()
+            //         // case event: io.netty.incubator.codec.quic.QuicConnectionEvent =>
+            //         case _ => if (logger.isDebugEnabled) logger.debug("1 - " + evt.getClass.getName)
+            //       }
+            //     }
+            //   })
             ch.pipeline()
               .addLast(
                 new Http3ServerConnectionHandler(
                   new ChannelInitializer[QuicStreamChannel]() {
                     override def initChannel(ch: QuicStreamChannel): Unit = {
-                      ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true))
-                      if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler(addressAccess))
+                      ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true, false))
+                      //if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler(addressAccess))
                       ch.pipeline()
                         .addLast(
                           new Http1RequestHandler(

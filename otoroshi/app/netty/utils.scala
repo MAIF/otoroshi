@@ -2,21 +2,14 @@ package otoroshi.netty
 
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, ByteBufHolder}
-import io.netty.channel.epoll.{Epoll, EpollDomainSocketChannel}
+import io.netty.channel.epoll.EpollDomainSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
 import io.netty.handler.codec.http._
-import io.netty.incubator.codec.quic.QuicConnectionEvent
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
-import reactor.netty.resources.LoopResources
 import play.core.NamedThreadFactory
-import sangria.schema.InstanceCheck.field
-
-import java.lang.reflect.{Constructor, Field, Modifier}
-import java.util.concurrent.atomic.AtomicReference
-import scala.util.Try
 
 sealed trait TlsVersion {
   def name: String
