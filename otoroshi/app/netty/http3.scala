@@ -624,7 +624,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 .flatMap(v => Try(v.split("/").last).toOption)
                 .flatMap(v => Try(v.split(":").head).toOption)
                 .foreach(add => address.set(add))
-            }git 
+            }
             ch.pipeline()
               .addLast(
                 new Http3ServerConnectionHandler(
