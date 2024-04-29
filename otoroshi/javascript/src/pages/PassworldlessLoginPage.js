@@ -4,40 +4,44 @@ export class PasswordLessLoginPage extends Component {
   state = {
     phase: 1,
     username: '',
-    code: ''
+    code: '',
   };
 
   sendCode = () => {
     this.setState({ fetching: true });
-    const url = window.location.href
-    fetch(url + "/passwordless/start", {
+    const url = window.location.href;
+    fetch(url + '/passwordless/start', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username: this.state.username })
-    }).then(r => r.json()).then(r => {
-      console.log(r)
-      this.setState({ phase: 2, fetching: false });
+      body: JSON.stringify({ username: this.state.username }),
     })
-  }
+      .then((r) => r.json())
+      .then((r) => {
+        console.log(r);
+        this.setState({ phase: 2, fetching: false });
+      });
+  };
 
   login = () => {
     this.setState({ fetching: true });
-    const url = window.location.href
-    fetch(url + "/passwordless/end", {
+    const url = window.location.href;
+    fetch(url + '/passwordless/end', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username: this.state.username, code: this.state.code })
-    }).then(r => r.json()).then(r => {
-      console.log(r)
-      // window.location.reload();
+      body: JSON.stringify({ username: this.state.username, code: this.state.code }),
     })
-  }
+      .then((r) => r.json())
+      .then((r) => {
+        console.log(r);
+        // window.location.reload();
+      });
+  };
 
   render() {
     return (
@@ -69,20 +73,21 @@ export class PasswordLessLoginPage extends Component {
               placeholder="Username"
               autoFocus
             />
-            {this.state.phase === 2 && <input
-              type="text"
-              value={this.state.code}
-              onChange={(e) =>
-                this.setState({
-                  code: e.target.value,
-                  error: undefined,
-                })
-              }
-              className="form-control"
-              placeholder="Received code"
-              autoFocus
-            />}
-
+            {this.state.phase === 2 && (
+              <input
+                type="text"
+                value={this.state.code}
+                onChange={(e) =>
+                  this.setState({
+                    code: e.target.value,
+                    error: undefined,
+                  })
+                }
+                className="form-control"
+                placeholder="Received code"
+                autoFocus
+              />
+            )}
 
             {this.state.error && (
               <p
@@ -97,14 +102,26 @@ export class PasswordLessLoginPage extends Component {
             )}
 
             <div className="d-flex justify-content-center">
-              {this.state.phase === 1 &&
-                <button className="btn btn-primaryColor mt-3" type="button" disabled={this.setState.fetching} onClick={this.sendCode}>
+              {this.state.phase === 1 && (
+                <button
+                  className="btn btn-primaryColor mt-3"
+                  type="button"
+                  disabled={this.setState.fetching}
+                  onClick={this.sendCode}
+                >
                   Send me a code
-                </button>}
-              {this.state.phase === 2 &&
-                <button className="btn btn-primaryColor mt-3" type="button" disabled={this.setState.fetching} onClick={this.login}>
+                </button>
+              )}
+              {this.state.phase === 2 && (
+                <button
+                  className="btn btn-primaryColor mt-3"
+                  type="button"
+                  disabled={this.setState.fetching}
+                  onClick={this.login}
+                >
                   Login
-                </button>}
+                </button>
+              )}
             </div>
           </form>
         </div>

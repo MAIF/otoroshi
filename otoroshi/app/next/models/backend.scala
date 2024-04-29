@@ -333,11 +333,19 @@ object NgBackend {
     lookup.asOpt[JsObject] match {
       case None      => empty
       case Some(obj) =>
-        val optTargetUrl = obj.select("url").asOpt[String].orElse(obj.select("target").asOpt[String]).orElse(obj.select("target_url").asOpt[String])
-        val root = optTargetUrl.map(url => Uri(url).path.toString()).orElse(obj.select("root").asOpt[String]).getOrElse("/")
+        val optTargetUrl                   = obj
+          .select("url")
+          .asOpt[String]
+          .orElse(obj.select("target").asOpt[String])
+          .orElse(obj.select("target_url").asOpt[String])
+        val root                           =
+          optTargetUrl.map(url => Uri(url).path.toString()).orElse(obj.select("root").asOpt[String]).getOrElse("/")
         val simpleTarget: Option[NgTarget] = optTargetUrl.map(NgTarget.parse)
         NgBackend(
-          targets = simpleTarget.map(st => Seq(st)).orElse(obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom))).getOrElse(Seq.empty),
+          targets = simpleTarget
+            .map(st => Seq(st))
+            .orElse(obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)))
+            .getOrElse(Seq.empty),
           root = root,
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
@@ -456,8 +464,8 @@ object NgTarget {
     tlsConfig = NgTlsConfig.default
   )
   def parse(str: String): NgTarget = {
-    val uri = Uri(str)
-    val tls = uri.scheme.toLowerCase() == "https"
+    val uri  = Uri(str)
+    val tls  = uri.scheme.toLowerCase() == "https"
     val port = if (uri.authority.port == 0) {
       if (tls) 443 else 80
     } else uri.authority.port

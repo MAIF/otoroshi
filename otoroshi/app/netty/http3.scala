@@ -34,7 +34,7 @@ class Http1RequestHandler(
     env: Env,
     logger: Logger,
     addressGet: () => String,
-    config: ReactorNettyServerConfig,
+    config: ReactorNettyServerConfig
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
@@ -56,7 +56,7 @@ class Http1RequestHandler(
   private var log_uri: String         = "NONE"
   private var log_start: Long         = 0L
   private var log_contentLength: Long = 0L
-  private var log_protocol: String = "-"
+  private var log_protocol: String    = "-"
 
   private def send100Continue(ctx: ChannelHandlerContext): Unit = {
     val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
@@ -469,8 +469,8 @@ class Http1RequestHandler(
               directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
             }
           }
-          .andThen {
-            case _ => accessLog()
+          .andThen { case _ =>
+            accessLog()
           }
       }
       case _                  => directResponse(ctx, msg, HttpResponseStatus.NOT_IMPLEMENTED, NOT_ESSENTIAL_ACTION.retainedDuplicate())
@@ -480,8 +480,11 @@ class Http1RequestHandler(
   private def accessLog(): Unit = {
     if (config.accessLog) {
       val formattedDate = DateTime.now().toString("dd/MMM/yyyy:HH:mm:ss Z") //"yyyy-MM-dd HH:mm:ss.SSS Z"
-      val duration = System.currentTimeMillis() - log_start
-      AccessLogHandler.logger.info(s"""${addressGet.apply()} - - [${formattedDate}] "${log_method} ${log_uri} HTTP/3.0" ${log_status} ${log_contentLength} ${duration} ${log_protocol}""")
+      val duration      = System.currentTimeMillis() - log_start
+      AccessLogHandler.logger.info(
+        s"""${addressGet
+          .apply()} - - [${formattedDate}] "${log_method} ${log_uri} HTTP/3.0" ${log_status} ${log_contentLength} ${duration} ${log_protocol}"""
+      )
     }
   }
 

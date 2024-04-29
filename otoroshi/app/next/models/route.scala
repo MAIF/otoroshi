@@ -688,7 +688,7 @@ case class NgRoute(
 
 object NgRoute {
 
-  val fake = NgRoute(
+  val fake  = NgRoute(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "Fake route",

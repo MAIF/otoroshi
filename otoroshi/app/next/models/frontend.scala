@@ -45,7 +45,10 @@ object NgFrontend {
       case Some(obj) =>
         val optDomain = obj.select("domain").asOpt[String].map(NgDomainAndPath.apply)
         NgFrontend(
-          domains = optDomain.map(d => Seq(d)).orElse(obj.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply))).getOrElse(Seq.empty),
+          domains = optDomain
+            .map(d => Seq(d))
+            .orElse(obj.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply)))
+            .getOrElse(Seq.empty),
           stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
           exact = obj.select("exact").asOpt[Boolean].getOrElse(false),
           headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),

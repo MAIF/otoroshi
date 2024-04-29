@@ -190,8 +190,8 @@ object BiscuitHelper {
       // TODO: here, add rules from config, query some stuff, etc ..
       Try(verifier.allow().authorize()).toEither match {
         case Left(err: org.biscuitsec.biscuit.error.Error) => Left(err)
-        case Left(err)                                      => Left(new org.biscuitsec.biscuit.error.Error.InternalError())
-        case Right(_)                                       => Right(())
+        case Left(err)                                     => Left(new org.biscuitsec.biscuit.error.Error.InternalError())
+        case Right(_)                                      => Right(())
       }
     }
   }

@@ -294,7 +294,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
 object NgPlugins {
   def default: NgPlugins = NgPlugins(Seq(NgPluginInstance.default))
-  def empty: NgPlugins = NgPlugins(Seq.empty)
+  def empty: NgPlugins   = NgPlugins(Seq.empty)
   def readFrom(lookup: JsLookupResult): NgPlugins = {
     lookup.asOpt[JsArray] match {
       case None      => NgPlugins(Seq.empty)

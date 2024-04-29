@@ -85,7 +85,7 @@ case class NgPluginHttpRequest(
       transferEncoding
     )
   lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
-  lazy val queryParams = uri.query().toMap
+  lazy val queryParams                              = uri.query().toMap
   // val ctype = contentType
   // (method.toUpperCase(), header("Content-Length")) match {
   //   case ("GET", Some(_))    => true
