@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.17.0] - 2024-04-29
+
+
+https://github.com/MAIF/otoroshi/milestone/94?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.16.1...v16.17.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.17.0
+
+
+### Added 
+
+- Add plugins to implement Auth0 passwordless login flow (#1892)
+- support form-urlencoded payloads for write operations on generic admin apis (#1895)
+- support kubernetes armored payloads for read operations on generic admin apis (#1897)
+- JDK 22 support for docker images (#1898)       
+      
+### Changed 
+
+- bump wasm4s version (#1893)
+- support kubernetes armored payloads for write operations on generic admin apis (#1896)
+- bump biscuit version (#1899)
+- bump netty version (#1902)
+- bump reactor netty version (#1903)       
+      
+### Fixed 
+
+- zip backend plugin: stackoverflow when ttl expired (#1894)
+- http3 client send duplicated headers (#1900)
+- http3 client close connection pipe before end of body stream (#1901)
+- http3 server access log induce wrong http3 frame in the http3 decoder (#1904)
+- new netty version removes QuicConnectionEvent hence we're not able to get remote ip address (#1905)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.16.1] - 2024-04-03
 
 
