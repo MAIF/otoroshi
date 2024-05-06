@@ -739,7 +739,7 @@ class OtoroshiResources(env: Env) {
     ),
     //////
     Resource(
-      "DateExporter",
+      "DataExporter",
       "data-exporters",
       "data-exporter",
       "events.otoroshi.io",
