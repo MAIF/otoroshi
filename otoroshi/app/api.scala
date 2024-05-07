@@ -547,6 +547,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
 
   def start(): Otoroshi = {
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
@@ -558,6 +559,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   def startAndStopOnShutdown(): Otoroshi = {
     components.handlerRef.set(components.httpRequestHandler)
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()

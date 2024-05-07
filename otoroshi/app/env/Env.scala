@@ -43,7 +43,7 @@ import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
 import play.api._
-import play.api.http.HttpConfiguration
+import play.api.http.{HttpConfiguration, HttpRequestHandler}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
 import play.api.libs.ws._
@@ -133,6 +133,8 @@ class Env(
 ) extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
+
+  val handlerRef = new AtomicReference[HttpRequestHandler]()
 
   val otoroshiActorSystem: ActorSystem           = ActorSystem(
     "otoroshi-actor-system",

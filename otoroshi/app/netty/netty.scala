@@ -402,7 +402,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     (groupHttp.group, groupHttps.group)
   }
 
-  def createEventLoops(): (LoopResources, LoopResources) = {
+  def createEventLoops(print: Boolean): (LoopResources, LoopResources) = {
     val groupHttp  =
       if (config.nThread == 0) LoopResources.create("otoroshi-http")
       else LoopResources.create("otoroshi-http", 2, config.nThread, true)
@@ -410,8 +410,10 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       if (config.nThread == 0) LoopResources.create("otoroshi-https")
       else LoopResources.create("otoroshi-https", 2, config.nThread, true)
     EventLoopUtils.create(config.native, config.nThread).native.foreach { name =>
-      logger.info(s"  using ${name} native transport")
-      logger.info("")
+      if (print) {
+        logger.info(s"  using ${name} native transport")
+        logger.info("")
+      }
     }
     (groupHttp, groupHttps)
   }
@@ -419,17 +421,21 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   def start(handler: HttpRequestHandler): DisposableReactorNettyServer = {
     if (config.enabled) {
 
-      logger.info("")
-      logger.info(s"Starting the experimental Netty Server !!! exclusive: ${config.exclusive}")
-      logger.info("")
+      if (config.id == "classic") {
+        logger.info("")
+        logger.info(s"Starting the experimental Netty Server !!!")
+        logger.info("")
+      }
 
-      val (groupHttp, groupHttps) = createEventLoops()
+      val (groupHttp, groupHttps) = createEventLoops(config.id == "classic")
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
-      if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
-      logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
-      logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
-      logger.info("")
+      if (config.id == "classic") {
+        if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
+        logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
+        logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
+        logger.info("")
+      }
 
       def handleFunction(
           secure: Boolean

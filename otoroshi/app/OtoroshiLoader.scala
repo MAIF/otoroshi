@@ -36,6 +36,7 @@ class OtoroshiLoader extends ApplicationLoader {
     OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration, components.env)
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
     components.handlerRef.set(components.httpRequestHandler)
+    components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
