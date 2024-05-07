@@ -104,7 +104,7 @@ case class NgTreeRouter(
         val finalRoutes = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
           case None =>
             // println("should display on standard listener")
-            routes.copy(routes = routes.routes.filter(r => r.notBoundToListener))
+            routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener("standard")))
           case Some(listener) if forCurrentListenerOnly =>
             // println("should display on exclusive")
             routes.copy(routes = routes.routes.filter(r => r.boundToListener(listener)))
