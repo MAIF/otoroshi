@@ -288,21 +288,37 @@ class ProxyEngine() extends RequestHandler {
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    handleWithListener(request, defaultRouting, false)
+  }
+
+  override def handleWs(
+      request: RequestHeader,
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    handleWsWithListener(request, defaultRouting, false)
+  }
+
+  def handleWithListener(
+     request: Request[Source[ByteString, _]],
+     defaultRouting: Request[Source[ByteString, _]] => Future[Result],
+     forCurrentListenerOnly: Boolean,
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
-      handleRequest(request, config)
+      handleRequest(request, config, forCurrentListenerOnly)
     } else {
       defaultRouting(request)
     }
   }
 
-  override def handleWs(
-      request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  def handleWsWithListener(
+   request: RequestHeader,
+   defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+   forCurrentListenerOnly: Boolean,
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
@@ -310,14 +326,14 @@ class ProxyEngine() extends RequestHandler {
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
-      handleWsRequest(request, config)
+      handleWsRequest(request, config, forCurrentListenerOnly)
     } else {
       defaultRouting(request)
     }
   }
 
   @inline
-  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig)(implicit
+  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -348,7 +364,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestWebsocketKey   -> false,
       otoroshi.plugins.Keys.RequestCounterInKey   -> counterIn,
       otoroshi.plugins.Keys.RequestCounterOutKey  -> counterOut,
-      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise
+      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
     )
 
     val elCtx: Map[String, String] = Map(
@@ -525,7 +542,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig)(implicit
+  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -555,7 +572,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestStartKey      -> start,
       otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
       otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut,
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
     )
 
     val elCtx: Map[String, String] = Map(

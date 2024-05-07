@@ -105,7 +105,7 @@ class Http1RequestHandler(
     }
     log_protocol = session.map(_.getProtocol).flatMap(TlsVersion.parseSafe).map(_.name).getOrElse("-")
     val rawOtoReq                =
-      new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
+      new NettyRequest(config.id, req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
     val bodyIn: Flux[ByteString] = if (hasBody) hotFlux else Flux.empty()
     val otoReq                   = rawOtoReq.withBody(bodyIn)
@@ -570,9 +570,9 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
       handler: HttpRequestHandler,
       sessionCookieBaker: SessionCookieBaker,
       flashCookieBaker: FlashCookieBaker
-  ): Unit = {
+  ): DisposableNettyHttp3Server = {
 
-    if (config.http3.enabled) {
+    if (config.http3.enabled && config.http3.port != -1) {
 
       import io.netty.bootstrap._
       import io.netty.channel._
@@ -694,9 +694,19 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         .sync()
         .channel()
       channel.closeFuture()
+      val disposableServer = DisposableNettyHttp3Server(group.some)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
-        group.shutdownGracefully();
+        disposableServer.stop()
       }))
+      disposableServer
+    } else {
+      DisposableNettyHttp3Server(None)
     }
+  }
+}
+
+case class DisposableNettyHttp3Server(group: Option[NioEventLoopGroup]) {
+  def stop(): Unit = {
+    group.foreach(_.shutdownGracefully())
   }
 }

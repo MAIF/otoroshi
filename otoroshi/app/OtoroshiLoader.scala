@@ -39,7 +39,7 @@ class OtoroshiLoader extends ApplicationLoader {
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
     components.application
   }
 }

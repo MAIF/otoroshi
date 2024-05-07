@@ -70,6 +70,15 @@ case class NgRoute(
     "plugins"          -> plugins.json
   )
 
+  lazy val boundListeners: Seq[String] = metadata.get("Bound-Listeners").map {
+    case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty)
+    case value => Seq(value)
+  }.getOrElse(Seq.empty).map(_.toLowerCase())
+
+  lazy val notBoundToListener = boundListeners.isEmpty
+
+  def boundToListener(listener: String) = boundListeners.contains(listener.toLowerCase())
+
   def matches(
       request: RequestHeader,
       attrs: TypedMap,

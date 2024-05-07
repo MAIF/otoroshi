@@ -3,6 +3,7 @@ package otoroshi.next.models
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, EntityLocation}
+import otoroshi.netty.NettyRequestKeys
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -97,9 +98,17 @@ case class NgTreeRouter(
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
       .flatMap { routes =>
-        val routeIds = routes.routes.map(_.cacheableId)
+        val forCurrentListenerOnly = request.attrs.get(NettyRequestKeys.ListenerExclusiveKey)
+          .orElse(attrs.get(otoroshi.plugins.Keys.ForCurrentListenerOnlyKey))
+          .getOrElse(false)
+        val finalRoutes = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
+          case None => routes
+          case Some(listener) if forCurrentListenerOnly => routes.copy(routes = routes.routes.filter(r => r.boundToListener(listener)))
+          case Some(listener) => routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(listener)))
+        }
+        val routeIds = finalRoutes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
-        routes.find((r, matchedPath, pathParams, noMoreSegments) =>
+        finalRoutes.find((r, matchedPath, pathParams, noMoreSegments) =>
           r.matches(
             request,
             attrs,
