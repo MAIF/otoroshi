@@ -72,6 +72,7 @@ case class NgRoute(
 
   lazy val boundListeners: Seq[String] = metadata.get("Bound-Listeners").map {
     case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty)
+    case value if value.contains(",") => value.split(",").toSeq.map(_.trim)
     case value => Seq(value)
   }.getOrElse(Seq.empty).map(_.toLowerCase())
 

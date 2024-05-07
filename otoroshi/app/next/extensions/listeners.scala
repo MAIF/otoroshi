@@ -219,8 +219,8 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
           val listener = HttpListener(
             location = EntityLocation.default,
             id = cid,
-            name = "",
-            description = "",
+            name = cid,
+            description = cid,
             config = config,
             tags = Seq.empty,
             metadata = Map.empty,
@@ -243,7 +243,11 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
             if (listener != existing._1) {
               // restart
               dynamicListeners.get(listener.id).foreach(_._2.stop())
-              listener.start("dynamic", env, server => dynamicListeners.put(listener.id, (listener, server)))
+              if (!listener.config.enabled) {
+                dynamicListeners.put(listener.id, (listener, existing._2))
+              } else {
+                listener.start("dynamic", env, server => dynamicListeners.put(listener.id, (listener, server)))
+              }
             }
           }
         } else {
@@ -255,6 +259,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
         case (listener, server) => {
           newOnes.get(listener.id) match {
             case None =>
+              println("stop")
               server.stop()
               dynamicListeners.remove(listener.id)
             case Some(_) => ()

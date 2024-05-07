@@ -10,6 +10,7 @@ import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
+import otoroshi.next.extensions.HttpListener
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -539,19 +540,22 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         .idleTimeout(config.idleTimeout)
         .bindNow())
       val http3Server = new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
-      val disposableServer = DisposableReactorNettyServer(serverHttp, serverHttps, http3Server.some)
+      val disposableServer = DisposableReactorNettyServer(config.id, serverHttp, serverHttps, http3Server.some)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         disposableServer.stop()
       }))
       disposableServer
     } else {
-      DisposableReactorNettyServer(None, None, None)
+      DisposableReactorNettyServer(config.id, None, None, None)
     }
   }
 }
 
-case class DisposableReactorNettyServer(serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
+case class DisposableReactorNettyServer(name: String, serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
   def stop(): Unit = {
+    if (name != "classic" && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
+      HttpListener.logger.info(s"stopping http listener '${name}'")
+    }
     serverHttp.foreach(_.disposeNow())
     serverHttps.foreach(_.disposeNow())
     http3Server.foreach(_.stop())
