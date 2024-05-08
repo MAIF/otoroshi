@@ -90,7 +90,12 @@ export function setupHttpListenersExtension(registerExtension) {
           filterId: 'name',
           content: (item) => item.name,
         },
-        { title: 'Description', filterId: 'description', content: (item) => item.description },
+        { title: 'Host', filterId: 'host', content: (item) => item.config.host },
+        { title: 'Port', filterId: 'port', content: (item) => item.config.port },
+        { title: 'TLS', filterId: 'tls', content: (item) => item.config.tls, cell: (v, item) => item.config.tls ? <span className="badge bg-success">yes</span> : null },
+        { title: 'HTTP2', filterId: 'http2', content: (item) => item.config.http2, cell: (v, item) => item.config.http2 ? <span className="badge bg-success">yes</span> : null },
+        { title: 'H2C', filterId: 'h2c', content: (item) => item.config.h2c, cell: (v, item) => item.config.h2c ? <span className="badge bg-success">yes</span> : null },
+        { title: 'HTTP3', filterId: 'http3', content: (item) => item.config.http3, cell: (v, item) => item.config.http3 ? <span className="badge bg-success">yes</span> : null },
       ];
 
       formFlow = [
