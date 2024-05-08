@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
-import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 
 const extensionId = 'otoroshi.extensions.HttpListeners';
@@ -124,7 +123,7 @@ export function setupHttpListenersExtension(registerExtension) {
       ];
 
       componentDidMount() {
-        this.props.setTitle(`All HTTP Listener configs.`);
+        this.props.setTitle(`All HTTP Listeners.`);
       }
 
       client = BackOfficeServices.apisClient(
@@ -138,8 +137,8 @@ export function setupHttpListenersExtension(registerExtension) {
           Table,
           {
             parentProps: this.props,
-            selfUrl: 'extensions/http-listeners/listeners',
-            defaultTitle: 'All HTTP Listeners configs.',
+            selfUrl: 'extensions/http-listeners',
+            defaultTitle: 'All HTTP Listeners',
             defaultValue: () => ({
               id: 'http-listener_' + uuid(),
               name: 'Http listener',
@@ -169,9 +168,9 @@ export function setupHttpListenersExtension(registerExtension) {
             deleteItem: this.client.delete,
             createItem: this.client.create,
             navigateTo: (item) => {
-              window.location = `/bo/dashboard/extensions/http-listeners/listeners/edit/${item.id}`;
+              window.location = `/bo/dashboard/extensions/http-listeners/edit/${item.id}`;
             },
-            itemUrl: (item) => `/bo/dashboard/extensions/http-listeners/listeners/edit/${item.id}`,
+            itemUrl: (item) => `/bo/dashboard/extensions/http-listeners/edit/${item.id}`,
             showActions: true,
             showLink: true,
             rowNavigation: true,
@@ -192,38 +191,38 @@ export function setupHttpListenersExtension(registerExtension) {
       features: [
         {
           title: 'HTTP Listeners',
-          description: 'All your HTTP Listeners configs.',
-          img: 'private-apps',
-          link: '/extensions/http-listeners/listeners',
+          description: 'All your HTTP Listeners',
+          img: 'server',
+          link: '/extensions/http-listeners',
           display: () => true,
-          icon: () => 'fa-cubes',
+          icon: () => 'fa-network-wired',
         },
       ],
       searchItems: [
         {
           action: () => {
-            window.location.href = `/bo/dashboard/extensions/http-listeners/listeners`;
+            window.location.href = `/bo/dashboard/extensions/http-listeners`;
           },
-          env: <span className="fas fa-cubes" />,
+          env: <span className="fas fa-network-wired" />,
           label: 'HTTP Listeners',
           value: 'http-listeners',
         },
       ],
       routes: [
         {
-          path: '/extensions/http-listeners/listeners/:taction/:titem',
+          path: '/extensions/http-listeners/:taction/:titem',
           component: (props) => {
             return <HttpListenersPage {...props} />;
           },
         },
         {
-          path: '/extensions/http-listeners/listeners/:taction',
+          path: '/extensions/http-listeners/:taction',
           component: (props) => {
             return <HttpListenersPage {...props} />;
           },
         },
         {
-          path: '/extensions/http-listeners/listeners',
+          path: '/extensions/http-listeners',
           component: (props) => {
             return <HttpListenersPage {...props} />;
           },
