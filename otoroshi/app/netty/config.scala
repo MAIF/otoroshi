@@ -1,6 +1,7 @@
 package otoroshi.netty
 
 import otoroshi.env.Env
+import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.ssl._
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
@@ -202,7 +203,7 @@ object ReactorNettyServerConfig {
 
   def _parseFrom(env: Env): ReactorNettyServerConfig = {
     val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
-    parseFromConfig(config, env, "classic".some)
+    parseFromConfig(config, env, HttpListenerNames.Classic.some)
   }
 
   def parseFromConfig(config: Configuration, env: Env, maybeId: Option[String]): ReactorNettyServerConfig = {

@@ -10,7 +10,7 @@ import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
-import otoroshi.next.extensions.HttpListener
+import otoroshi.next.extensions.{HttpListener, HttpListenerNames}
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -422,13 +422,13 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   def start(handler: HttpRequestHandler): DisposableReactorNettyServer = {
     if (config.enabled) {
 
-      if (config.id == "classic") {
+      if (config.id == HttpListenerNames.Classic) {
         logger.info("")
         logger.info(s"Starting the experimental Netty Server !!!")
         logger.info("")
       }
 
-      val (groupHttp, groupHttps) = createEventLoops(config.id == "classic")
+      val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Classic)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
       if (config.id == "classic") {
@@ -553,7 +553,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
 case class DisposableReactorNettyServer(name: String, serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
   def stop(): Unit = {
-    if (name != "classic" && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
+    if (name != HttpListenerNames.Classic && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
       HttpListener.logger.info(s"stopping http listener '${name}'")
     }
     serverHttp.foreach(_.disposeNow())

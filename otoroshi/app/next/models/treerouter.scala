@@ -4,6 +4,7 @@ import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, EntityLocation}
 import otoroshi.netty.NettyRequestKeys
+import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -104,7 +105,7 @@ case class NgTreeRouter(
         val finalRoutes = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
           case None =>
             // println("should display on standard listener")
-            routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener("standard")))
+            routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(HttpListenerNames.Standard) || r.boundToListener(HttpListenerNames.Classic)))
           case Some(listener) if forCurrentListenerOnly =>
             // println("should display on exclusive")
             routes.copy(routes = routes.routes.filter(r => r.boundToListener(listener)))

@@ -15,6 +15,11 @@ import java.util.UUID
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
+object HttpListenerNames {
+  val Classic = "classic"
+  val Standard = "standard"
+}
+
 case class HttpListenerConfig(
   enabled: Boolean,
   exclusive: Boolean = false,
