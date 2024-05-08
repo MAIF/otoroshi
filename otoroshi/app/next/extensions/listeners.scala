@@ -20,6 +20,7 @@ case class HttpListenerConfig(
   exclusive: Boolean = false,
   tls: Boolean = true,
   http2: Boolean = true,
+  h2c: Boolean = false,
   http3: Boolean = false,
   port: Int,
   exposedPort: Int,
@@ -43,6 +44,7 @@ object HttpListenerConfig {
         exclusive = json.select("exclusive").asOpt[Boolean].getOrElse(false),
         tls = json.select("tls").asOpt[Boolean].getOrElse(true),
         http2 = json.select("http2").asOpt[Boolean].getOrElse(true),
+        h2c = json.select("h2c").asOpt[Boolean].getOrElse(false),
         http3 = json.select("http3").asOpt[Boolean].getOrElse(false),
         port = json.select("port").asOpt[Int].getOrElse(7890),
         exposedPort = json.select("exposedPort").asOpt[Int].getOrElse(7890),
@@ -59,6 +61,7 @@ object HttpListenerConfig {
       "exclusive" -> o.exclusive,
       "tls" -> o.tls,
       "http2" -> o.http2,
+      "h2c" -> o.h2c,
       "http3" -> o.http3,
       "port" -> o.port,
       "exposedPort" -> o.exposedPort,
@@ -107,7 +110,7 @@ case class HttpListener(
         .filterNot(_.isEmpty), // TODO: custom
       clientAuth = config.clientAuth,
       parser = HttpRequestParserConfig.default,
-      http2 = Http2Settings(enabled = config.http2, h2cEnabled = !config.tls),
+      http2 = Http2Settings(enabled = config.http2, h2cEnabled = config.h2c),
       http3 = Http3Settings.default.copy(
         enabled = config.tls && config.http3,
         port = config.port,

@@ -47,6 +47,10 @@ export function setupHttpListenersExtension(registerExtension) {
           type: 'bool',
           props: { label: 'http2' }
         },
+        'config.h2c': {
+          type: 'bool',
+          props: { label: 'h2c' }
+        },
         'config.http3': {
           type: 'bool',
           props: { label: 'http3' }
@@ -101,6 +105,7 @@ export function setupHttpListenersExtension(registerExtension) {
         'config.exclusive',
         'config.tls',
         'config.http2',
+        'config.h2c',
         'config.http3',
         'config.port',
         'config.exposedPort',
