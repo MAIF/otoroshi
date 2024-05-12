@@ -38,6 +38,7 @@ case class NgRoute(
     capture: Boolean,
     exportReporting: Boolean,
     groups: Seq[String] = Seq("default"),
+    boundListeners: Seq[String] = Seq.empty,
     frontend: NgFrontend,
     backend: NgBackend,
     backendRef: Option[String] = None,
@@ -63,6 +64,7 @@ case class NgRoute(
     "export_reporting" -> exportReporting,
     "capture"          -> capture,
     "groups"           -> groups,
+    "bound_listeners"           -> boundListeners,
     "frontend"         -> frontend.json,
     "backend"          -> backend.json,
     "backend_ref"      -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -70,11 +72,11 @@ case class NgRoute(
     "plugins"          -> plugins.json
   )
 
-  lazy val boundListeners: Seq[String] = metadata.get("Bound-Listeners").map {
-    case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty)
-    case value if value.contains(",") => value.split(",").toSeq.map(_.trim)
-    case value => Seq(value)
-  }.getOrElse(Seq.empty).map(_.toLowerCase())
+  // lazy val boundListeners: Seq[String] = metadata.get("Bound-Listeners").map {
+  //   case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty)
+  //   case value if value.contains(",") => value.split(",").toSeq.map(_.trim)
+  //   case value => Seq(value)
+  // }.getOrElse(Seq.empty).map(_.toLowerCase())
 
   lazy val notBoundToListener = boundListeners.isEmpty
 
@@ -831,6 +833,7 @@ object NgRoute {
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
         exportReporting = json.select("export_reporting").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
+        boundListeners = json.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
         frontend = NgFrontend.readFrom(json.select("frontend")),
         backend = ref match {
           case None    => NgBackend.readFrom(json.select("backend"))
