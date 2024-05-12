@@ -11,8 +11,9 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
-import otoroshi.netty.NettyHttpClient
+import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
+import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models._
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
@@ -355,6 +356,7 @@ class ProxyEngine() extends RequestHandler {
     val counterIn          = new AtomicLong(0L)
     val counterOut         = new AtomicLong(0L)
     val responseEndPromise = Promise[Done]()
+    val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
     implicit val attrs     = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey        -> report,
       otoroshi.plugins.Keys.RequestNumberKey      -> reqNumber,
@@ -366,6 +368,7 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestCounterOutKey  -> counterOut,
       otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
       otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
+      otoroshi.plugins.Keys.CurrentListenerKey -> currentListener,
     )
 
     val elCtx: Map[String, String] = Map(
