@@ -10,6 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
+import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.Keys
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
@@ -145,6 +146,7 @@ object GlobalExpressionLanguage {
 
             case "req.fullUrl" if req.isDefined                                             =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
+            case "req.listener" if req.isDefined                                            => attrs.get(otoroshi.plugins.Keys.CurrentListenerKey).getOrElse(HttpListenerNames.Standard)
             case "req.id" if req.isDefined                                                  => req.get.id.toString
             case "req.path" if req.isDefined                                                => req.get.path
             case "req.uri" if req.isDefined                                                 => req.get.relativeUri
