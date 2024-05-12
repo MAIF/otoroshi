@@ -478,14 +478,19 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         }
       }
 
+      val protocols = Seq.empty[HttpProtocol]
+        .applyOnIf(config.http1.enabled)(_ :+ HttpProtocol.HTTP11)
+        .applyOnIf(config.http2.enabled || config.http2.h2cEnabled)(_ :+ HttpProtocol.H2C)
+
       val serverHttps = if (config.httpsPort == -1) None else Some(HttpServer
         .create()
         .host(config.host)
         .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
-        .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        .applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
+        .protocol(protocols: _*)
+        //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
         .runOn(groupHttps)
         .httpRequestDecoder(spec =>
           spec
@@ -523,8 +528,9 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
-        .applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        .applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
+        .protocol(protocols: _*)
+        //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
         .handle(handleFunction(false))
         .runOn(groupHttp)
         .httpRequestDecoder(spec =>

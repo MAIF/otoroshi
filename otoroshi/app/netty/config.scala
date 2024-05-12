@@ -123,6 +123,25 @@ object Http3Settings {
     )
   }
 }
+case class Http1Settings(enabled: Boolean) {
+  def json: JsValue = Http1Settings.format.writes(this)
+}
+object Http1Settings {
+  lazy val default = format.reads(Json.obj()).get
+  val format = new Format[Http1Settings] {
+    override def reads(json: JsValue): JsResult[Http1Settings] = Try {
+      Http1Settings(
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(config) => JsSuccess(config)
+    }
+    override def writes(o: Http1Settings): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+    )
+  }
+}
 case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean) {
   def json: JsValue = Http2Settings.format.writes(this)
 }
@@ -187,6 +206,7 @@ case class ReactorNettyServerConfig(
     idleTimeout: java.time.Duration,
     clientAuth: ClientAuth,
     parser: HttpRequestParserConfig,
+    http1: Http1Settings,
     http2: Http2Settings,
     http3: Http3Settings,
     native: NativeSettings
@@ -264,6 +284,9 @@ object ReactorNettyServerConfig {
           .getOptionalWithFileSupport[Int]("parser.maxChunkSize")
           .getOrElse(8192)
       ),
+      http1 = Http1Settings(
+        enabled = config.getOptionalWithFileSupport[Boolean]("http1.enabled").getOrElse(true),
+      ),
       http2 = Http2Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http2.enabled").getOrElse(true),
         h2cEnabled = config.getOptionalWithFileSupport[Boolean]("http2.h2c").getOrElse(true)
@@ -327,6 +350,7 @@ object ReactorNettyServerConfig {
           idleTimeout = json.select("idle_timeout").asOpt[Long].map(v => java.time.Duration.ofMillis(v)).getOrElse(java.time.Duration.ofMillis(60000)),
           clientAuth = json.select("client_auth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
           parser = json.select("parser").asOpt(HttpRequestParserConfig.format).getOrElse(HttpRequestParserConfig.default),
+          http1 = json.select("http_1").asOpt(Http1Settings.format).getOrElse(Http1Settings.default),
           http2 = json.select("http_2").asOpt(Http2Settings.format).getOrElse(Http2Settings.default),
           http3 = json.select("http_3").asOpt(Http3Settings.format).getOrElse(Http3Settings.default),
           native = json.select("native").asOpt(NativeSettings.format).getOrElse(NativeSettings.default),

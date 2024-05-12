@@ -24,6 +24,7 @@ case class HttpListenerConfig(
   enabled: Boolean,
   exclusive: Boolean = false,
   tls: Boolean = true,
+  http1: Boolean = true,
   http2: Boolean = true,
   h2c: Boolean = false,
   http3: Boolean = false,
@@ -48,6 +49,7 @@ object HttpListenerConfig {
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         exclusive = json.select("exclusive").asOpt[Boolean].getOrElse(false),
         tls = json.select("tls").asOpt[Boolean].getOrElse(true),
+        http1 = json.select("http1").asOpt[Boolean].getOrElse(true),
         http2 = json.select("http2").asOpt[Boolean].getOrElse(true),
         h2c = json.select("h2c").asOpt[Boolean].getOrElse(false),
         http3 = json.select("http3").asOpt[Boolean].getOrElse(false),
@@ -65,6 +67,7 @@ object HttpListenerConfig {
       "enabled" -> o.enabled,
       "exclusive" -> o.exclusive,
       "tls" -> o.tls,
+      "http1" -> o.http1,
       "http2" -> o.http2,
       "h2c" -> o.h2c,
       "http3" -> o.http3,
@@ -115,6 +118,7 @@ case class HttpListener(
         .filterNot(_.isEmpty), // TODO: custom
       clientAuth = config.clientAuth,
       parser = HttpRequestParserConfig.default,
+      http1 = Http1Settings(enabled = config.http1),
       http2 = Http2Settings(enabled = config.http2, h2cEnabled = config.h2c),
       http3 = Http3Settings.default.copy(
         enabled = config.tls && config.http3,
@@ -126,7 +130,7 @@ case class HttpListener(
   }
   def start(kind: String, env: Env, cache: (DisposableReactorNettyServer) => Unit): Unit = {
     if (config.enabled) {
-      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - h1${if (config.http2) "/h2" else ""}${if (config.http3) "/h3" else ""}")
+      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${if (config.http1) "h1" else ""}${if (config.http2) "/h2" else ""}${if (config.http3) "/h3" else ""}")
       val nettyConfig = toNettyConfig(env)
       val server = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
       cache(server)

@@ -40,19 +40,23 @@ export function setupHttpListenersExtension(registerExtension) {
         },
         'config.tls': {
           type: 'bool',
-          props: { label: 'tls' }
+          props: { label: 'TLS' }
+        },
+        'config.http1': {
+          type: 'bool',
+          props: { label: 'HTTP/1.1' }
         },
         'config.http2': {
           type: 'bool',
-          props: { label: 'http2' }
+          props: { label: 'H2' }
         },
         'config.h2c': {
           type: 'bool',
-          props: { label: 'h2c' }
+          props: { label: 'H2C' }
         },
         'config.http3': {
           type: 'bool',
-          props: { label: 'http3' }
+          props: { label: 'H3' }
         },
         'config.port': {
           type: 'number',
@@ -92,6 +96,7 @@ export function setupHttpListenersExtension(registerExtension) {
         { title: 'Host', filterId: 'host', content: (item) => item.config.host },
         { title: 'Port', filterId: 'port', content: (item) => item.config.port },
         { title: 'TLS', filterId: 'tls', content: (item) => item.config.tls, cell: (v, item) => item.config.tls ? <span className="badge bg-success">yes</span> : null },
+        { title: 'HTTP1', filterId: 'http1', content: (item) => item.config.http1, cell: (v, item) => item.config.http1 ? <span className="badge bg-success">yes</span> : null },
         { title: 'HTTP2', filterId: 'http2', content: (item) => item.config.http2, cell: (v, item) => item.config.http2 ? <span className="badge bg-success">yes</span> : null },
         { title: 'H2C', filterId: 'h2c', content: (item) => item.config.h2c, cell: (v, item) => item.config.h2c ? <span className="badge bg-success">yes</span> : null },
         { title: 'HTTP3', filterId: 'http3', content: (item) => item.config.http3, cell: (v, item) => item.config.http3 ? <span className="badge bg-success">yes</span> : null },
@@ -115,6 +120,7 @@ export function setupHttpListenersExtension(registerExtension) {
         'config.tls',
         'config.clientAuth',
         '<<<Protocols',
+        'config.http1',
         'config.http2',
         'config.h2c',
         'config.http3',
