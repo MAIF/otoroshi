@@ -17,6 +17,11 @@ export const PLUGIN_INFORMATIONS_SCHEMA = {
     type: 'string',
     array: true,
   },
+  bound_listeners: {
+    label: 'Bound listeners',
+    type: 'string',
+    array: true,
+  },
 };
 
 export const EXCLUDED_PLUGINS = {
