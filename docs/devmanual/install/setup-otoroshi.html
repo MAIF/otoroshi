@@ -92,6 +92,7 @@ latest
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
     <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -213,6 +214,7 @@ latest
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
     <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -2455,8 +2457,26 @@ otoroshi {
         enabled = false
         enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
       }
+      otoroshi_extensions_httplisteners {
+        enabled = true
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_HTTPLISTENERS_ENABLED}
+        listeners = ${?otoroshi.http-listeners}
+        listeners_json = ${?otoroshi.http-listeners}
+        listeners_json = ${?OTOROSHI_ADMIN_EXTENSIONS_HTTPLISTENERS_LISTENERS}
+      }
   	}
   }
+  http-listeners = [
+    {
+      id = &quot;static&quot;
+      exclusive = false
+      enabled = true
+      port = 7890
+      http2 = true
+      http3 = false
+    }
+  ]
+  http-listeners-json = ${?OTOROSHI_HTTP_LISTENERS}
 }
 
 
@@ -3610,8 +3630,17 @@ otoroshi {
       otoroshi_extensions_greenscore {
         enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_GREENSCORE_ENABLED}
       }
+      otoroshi_extensions_httplisteners {
+        enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_HTTPLISTENERS_ENABLED}
+        listeners = ${?otoroshi.http-listeners}
+        listeners_json = ${?otoroshi.http-listeners}
+        listeners_json = ${?OTOROSHI_ADMIN_EXTENSIONS_HTTPLISTENERS_LISTENERS}
+      }
   	}
   }
+    {
+    }
+  http-listeners-json = ${?OTOROSHI_HTTP_LISTENERS}
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server
 http.port = ${?PORT}                   # the main http port for the otoroshi server
