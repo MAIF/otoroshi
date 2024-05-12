@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 
 object HttpListenerNames {
   val Classic = "classic"
-  val Standard = "standard"
+  val Standard = "standard-listener"
 }
 
 case class HttpListenerConfig(
