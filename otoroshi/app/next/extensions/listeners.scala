@@ -16,7 +16,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 object HttpListenerNames {
-  val Classic = "classic"
+  val Experimental = "experimental-listener"
   val Standard = "standard-listener"
 }
 

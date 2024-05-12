@@ -203,7 +203,7 @@ object ReactorNettyServerConfig {
 
   def _parseFrom(env: Env): ReactorNettyServerConfig = {
     val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
-    parseFromConfig(config, env, HttpListenerNames.Classic.some)
+    parseFromConfig(config, env, HttpListenerNames.Experimental.some)
   }
 
   def parseFromConfig(config: Configuration, env: Env, maybeId: Option[String]): ReactorNettyServerConfig = {

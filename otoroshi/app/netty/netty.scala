@@ -422,13 +422,13 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   def start(handler: HttpRequestHandler): DisposableReactorNettyServer = {
     if (config.enabled) {
 
-      if (config.id == HttpListenerNames.Classic) {
+      if (config.id == HttpListenerNames.Experimental) {
         logger.info("")
         logger.info(s"Starting the experimental Netty Server !!!")
         logger.info("")
       }
 
-      val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Classic)
+      val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Experimental)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
       if (config.id == "classic") {
@@ -553,7 +553,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
 case class DisposableReactorNettyServer(name: String, serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
   def stop(): Unit = {
-    if (name != HttpListenerNames.Classic && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
+    if (name != HttpListenerNames.Experimental && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
       HttpListener.logger.info(s"stopping http listener '${name}'")
     }
     serverHttp.foreach(_.disposeNow())
