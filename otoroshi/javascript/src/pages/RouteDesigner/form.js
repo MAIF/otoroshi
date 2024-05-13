@@ -547,7 +547,12 @@ export const schemas = {
           }),
         },
       },
-      bound_listeners: { type: 'array', props: { label: 'bound listeners' } },
+      bound_listeners: { 
+        type: 'array', 
+        props: { 
+          label: 'bound listeners' 
+        } 
+      },
       include: { type: 'array', props: { label: 'included paths', suffix: 'regex' } },
       exclude: { type: 'array', props: { label: 'excluded paths', suffix: 'regex' } },
       config: { type: 'jsonobjectcode', props: { label: 'plugin configuration' } },

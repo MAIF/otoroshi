@@ -102,9 +102,12 @@ export const Informations = forwardRef(
         },
       },
       bound_listeners: {
-        type: 'string',
-        array: true,
-        label: 'Bound Listeners',
+        type: 'array-select',
+        label: 'Bound listeners',
+        props: {
+          optionsFrom: '/extensions/cloud-apim/extensions/http-listeners/all',
+          optionsTransformer: (arr) => arr.map((item) => ({ value: item.value, label: item.label })),
+        },
       },
       core_metadata: {
         label: 'Metadata shortcuts',

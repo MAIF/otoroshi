@@ -18,9 +18,12 @@ export const PLUGIN_INFORMATIONS_SCHEMA = {
     array: true,
   },
   bound_listeners: {
+    type: 'array-select',
     label: 'Bound listeners',
-    type: 'string',
-    array: true,
+    props: {
+      optionsFrom: '/extensions/cloud-apim/extensions/http-listeners/all',
+      optionsTransformer: (arr) => arr.map((item) => ({ value: item.value, label: item.label })),
+    },
   },
 };
 

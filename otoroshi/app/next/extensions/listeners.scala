@@ -1,8 +1,10 @@
 package otoroshi.next.extensions
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.netty._
 import otoroshi.ssl.ClientAuth
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -10,6 +12,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -245,6 +248,25 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
     staticListeners.foreach(_._2.stop())
     dynamicListeners.foreach(_._2._2.stop())
   }
+
+  private def allListeners(
+    ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
+    req: RequestHeader,
+    user: Option[BackOfficeUser],
+    body: Option[Source[ByteString, _]]
+  ): Future[Result] = {
+    val all: Seq[(String, String)] = staticListeners.keySet.toSeq.map(v => (v, v)) ++ dynamicListeners.values.toSeq.map(l => (l._1.id, l._1.name))
+    Results.Ok(JsArray(all.map(t => Json.obj("label" -> t._2, "value" -> t._1)))).vfuture
+  }
+
+  override def backofficeAuthRoutes(): Seq[AdminExtensionBackofficeAuthRoute] = Seq(
+    AdminExtensionBackofficeAuthRoute(
+      method = "GET",
+      path = "/extensions/cloud-apim/extensions/http-listeners/all",
+      wantsBody = false,
+      handle = allListeners
+    )
+  )
 
   def syncServerStates(listeners: Seq[HttpListener]): Unit = {
     Future {
