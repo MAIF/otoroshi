@@ -147,6 +147,8 @@ export const EfficiencyChart = (props) => {
                 {dates.map(({ dateAsString, status, hits, avgDuration }, idx) => {
                   const row = Math.ceil((idx + 1) / 24);
                   const col = (idx + 1) - 24 * (row - 1)
+                  const clazz = mode === visualizationMode.heat ? status.health : hits > props.configuration.threshold ? 'high' : 'nul';
+
                   return (
                     <Popover
                       key={idx}
@@ -160,14 +162,9 @@ export const EfficiencyChart = (props) => {
                         </div>
                       }
                     >
-                      <>
-                        {mode === visualizationMode.heat && <div key={idx}
-                          className={`heatpoint ${status.health}`}
-                          style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />}
-                        {mode === visualizationMode.score && <div key={idx}
-                          className={`heatpoint ${hits > props.configuration.threshold ? 'high' : 'nul'}`}
-                          style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />}
-                      </>
+                      <div key={idx}
+                        className={`heatpoint ${clazz}`}
+                        style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />
                     </Popover>
                   )
                 })}
