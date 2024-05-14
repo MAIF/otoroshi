@@ -95,6 +95,7 @@ export function setupHttpListenersExtension(registerExtension) {
         },
         { title: 'Host', filterId: 'host', content: (item) => item.config.host },
         { title: 'Port', filterId: 'port', content: (item) => item.config.port },
+        { title: 'Enabled', filterId: 'enabled', content: (item) => item.config.enabled, cell: (v, item) => item.config.enabled ? <span className="badge bg-success">yes</span> : null },
         { title: 'TLS', filterId: 'tls', content: (item) => item.config.tls, cell: (v, item) => item.config.tls ? <span className="badge bg-success">yes</span> : null },
         { title: 'HTTP1', filterId: 'http1', content: (item) => item.config.http1, cell: (v, item) => item.config.http1 ? <span className="badge bg-success">yes</span> : null },
         { title: 'HTTP2', filterId: 'http2', content: (item) => item.config.http2, cell: (v, item) => item.config.http2 ? <span className="badge bg-success">yes</span> : null },
