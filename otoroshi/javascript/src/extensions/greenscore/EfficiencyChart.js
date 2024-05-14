@@ -34,6 +34,7 @@ export function getColor(score) {
 
 const visualizationMode = {
   heat: 'HEATMAP',
+  score: 'SCORE',
   graphs: 'GRAPHS'
 }
 
@@ -128,21 +129,25 @@ export const EfficiencyChart = (props) => {
           }}
         >
           <div className='d-flex justify-content-end'>
-            <button 
-              className='btn btn-primary' 
+            <button
+              className='btn btn-primary'
+              onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.score : visualizationMode.heat)}>
+              <i className='fas fa-bullseye' />
+            </button>
+            <button
+              className='btn btn-primary'
               onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
-                <i className='fas fa-chart-line' />
+              <i className='fas fa-chart-line' />
             </button>
           </div>
 
-          {mode === visualizationMode.heat && (
+          {(mode === visualizationMode.heat || mode === visualizationMode.score) && (
             <>
               <div className='heatmap-container'>
                 {dates.map(({ dateAsString, status, hits, avgDuration }, idx) => {
                   const row = Math.ceil((idx + 1) / 24);
                   const col = (idx + 1) - 24 * (row - 1)
                   return (
-
                     <Popover
                       key={idx}
                       placement="bottom"
@@ -151,13 +156,18 @@ export const EfficiencyChart = (props) => {
                           <div>{dateAsString}</div>
                           <div className={`info`}>{hits > 0 ? `${hits} hits` : 'no hit'}</div>
                           <div className={`info`}>usage time: {humanMillisecond(Math.round(avgDuration * hits))}</div>
-                          <div className={`info`}>unusage time: {humanMillisecond(60*60*1000 - Math.round(avgDuration * hits))}</div>
+                          <div className={`info`}>unusage time: {humanMillisecond(60 * 60 * 1000 - Math.round(avgDuration * hits))}</div>
                         </div>
                       }
                     >
-                      <div key={idx}
-                        className={`heatpoint ${status.health}`}
-                        style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />
+                      <>
+                        {mode === visualizationMode.heat && <div key={idx}
+                          className={`heatpoint ${status.health}`}
+                          style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />}
+                        {mode === visualizationMode.score && <div key={idx}
+                          className={`heatpoint ${hits > props.configuration.threshold ? 'high' : 'nul'}`}
+                          style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />}
+                      </>
                     </Popover>
                   )
                 })}
