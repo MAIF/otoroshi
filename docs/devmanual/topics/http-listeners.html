@@ -303,14 +303,208 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#custom-http-listeners" name="custom-http-listeners" class="anchor"><span class="anchor-link"></span></a>Custom HTTP Listeners</h1>
-<p>TODO</p>
+<p>starting from v16.18.0, otoroshi introduce the custom http listeners feature. While this feature can seems to be a little dull, it is actually quite powerful and can unlock a whole new world of capabilities.</p>
+<p>Custom HTTP Listeners is the ability to run new HTTP listeners on any port you want, with the protocols and tls settings you want, either statically from the otoroshi config. file or dynamically from specific new entities. Those listeners are capable of routing your traffic like the standard otoroshi listener but they are also capable of scoping the traffic to only certains routes or route plugins that are bound to one or more specific listeners.</p>
 <h2><a href="#http-listener-config-" name="http-listener-config-" class="anchor"><span class="anchor-link"></span></a>HTTP Listener config.</h2>
+<p>by default, the configuration of an http listener look like the following</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;enabled&quot;: true, // is the listener enabled
+  &quot;exclusive&quot;: false, // the the exclusive listeners section
+  &quot;tls&quot;: true, // is TLS enabled ?
+  &quot;http1&quot;: true, // is HTTP/1.1 enabled
+  &quot;http2&quot;: true, // is H2 enabled
+  &quot;http3&quot;: false, // is H3 enabled
+  &quot;h2c&quot;: false,  // is H2C enabled
+  &quot;port&quot;: 7890,  // the port on which the listener listens
+  &quot;exposedPort&quot;: 7890, // the exposed port (containers, public cloud, etc ...)
+  &quot;host&quot;: &quot;0.0.0.0&quot;, // the host on which the listener listens
+  &quot;accessLog&quot;: false, // is the access log enabled
+  &quot;clientAuth&quot;: &quot;None&quot; // do we want mTLS (values are None, Want, Need) ?
+}
+</code></pre>
+<p>all the values here are the default ones.</p>
+<p>this config. can be used as is from the otoroshi config. file (see the <a href="#static-http-listeners">How does is work</a> section) or embedded in the <code>HttpListener</code> entity (see the <a href="#dynamic-http-listeners">How does is work</a> section).</p>
+<h2><a href="#exclusive-listeners" name="exclusive-listeners" class="anchor"><span class="anchor-link"></span></a>Exclusive listeners</h2>
+<p>exclusive listener is a special kind of listener (marked with the <code>exclusive</code> flag) that can only handle routes or plugin routes that are bound to it. It can be quite handy to handle traffic for special routes, or privates routes that can be accessible only to certain people. When a listener is not exclusive, all the routes without a bound listener can be served from it.</p>
 <h2><a href="#static-http-listeners" name="static-http-listeners" class="anchor"><span class="anchor-link"></span></a>Static HTTP listeners</h2>
-<p>from the config. file or env. variables</p>
+<p>you can start an http listener right from the otoroshi config. file. To do so, just add an http listener config. at <code>otoroshi.http-listeners</code>. You can also provide the full HTTP listener json formatted config. array in the <code>OTOROSHI_HTTP_LISTENERS</code> env. variable.</p>
+<img src="../imgs/http-listener-static.png" />
+<p>those listeners will start at otoroshi startup, as soon as the admin extensions are started.</p>
+<p>static listeners MUST have an <code>id</code> field sor routes and plugins can be bound to it</p>
 <h2><a href="#dynamic-http-listeners" name="dynamic-http-listeners" class="anchor"><span class="anchor-link"></span></a>Dynamic HTTP Listeners</h2>
-<p>from the entity </p>
+<p>you can also defined dynamic http listeners from otoroshi admin. API or otoroshi admin. backoffice.</p>
+<img src="../imgs/http-listener-dynamic.png" />
+<p>the API is available at <code>http://otoroshi-api.oto.tools:8080/apis/http-listeners.extensions.otoroshi.io/v1/http-listeners/:id</code>. As soon as you create a new entity, the corresponding listener will be started. If you modify it, the listener will be restarted. If you delete it the listener will be stopped. </p>
+<p>for instance if we want to create an H2 only listener for some private routes on port 7892, then we could do</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/apis/http-listeners.extensions.otoroshi.io/v1/http-listeners/private_h2_listener&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  --data name=private_h2_listener \
+  --data config.port=7892 \
+  --data config.exposedPort=7892 \
+  --data config.exclusive=true \
+  --data config.http1=false
+</code></pre>
+<p>a few seconds later, a log will be shown in the otoroshi logs like</p>
+<img src="../imgs/http-listener-api-create-log.png" />
+<p>if we want to stop it, we could do something like</p>
+<pre class="prettyprint"><code class="language-sh">curl -X PATCH &#39;http://otoroshi-api.oto.tools:8080/apis/http-listeners.extensions.otoroshi.io/v1/http-listeners/private_h2_listener&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  --data config.enabled=false 
+</code></pre>
+<p>a few seconds later, a log will be shown in the otoroshi logs like</p>
+<img src="../imgs/http-listener-api-disable-log.png" />
+<p>or delete it like </p>
+<pre class="prettyprint"><code class="language-sh">curl -X DELETE &#39;http://otoroshi-api.oto.tools:8080/apis/http-listeners.extensions.otoroshi.io/v1/http-listeners/private_h2_listener&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
 <h2><a href="#bind-a-route-to-a-specific-http-listener" name="bind-a-route-to-a-specific-http-listener" class="anchor"><span class="anchor-link"></span></a>Bind a route to a specific HTTP Listener</h2>
+<p>with http listeners, a new property is available on <code>Routes</code>. The property <code>bound_listeners</code> is an array of values corresponding to the http listeners <code>id</code>. As soon as a route is bound to one or more http listeners, it will only be routed on those listeners.</p>
+<p>for instance, the following route in only accessible from the http listener with id <code>static-1</code>. The standard http listener will no be able to route it.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;_loc&quot;: {
+    &quot;tenant&quot;: &quot;default&quot;,
+    &quot;teams&quot;: [
+      &quot;default&quot;
+    ]
+  },
+  &quot;id&quot;: &quot;route_6ee30dc0a-0871-4ab2-9b37-db939c36c418&quot;,
+  &quot;name&quot;: &quot;my api&quot;,
+  &quot;description&quot;: &quot;my api&quot;,
+  &quot;tags&quot;: [],
+  &quot;metadata&quot;: {
+    &quot;created_at&quot;: &quot;2024-04-24T11:51:41.330+02:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;debug_flow&quot;: false,
+  &quot;export_reporting&quot;: false,
+  &quot;capture&quot;: false,
+  &quot;groups&quot;: [
+    &quot;default&quot;
+  ],
+  &quot;bound_listeners&quot;: [&quot;static-1&quot;],
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [
+      &quot;myapi.oto.tools&quot;
+    ],
+    &quot;strip_path&quot;: true,
+    &quot;exact&quot;: false,
+    &quot;headers&quot;: {},
+    &quot;query&quot;: {},
+    &quot;methods&quot;: []
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;id&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true,
+        &quot;weight&quot;: 1,
+        &quot;predicate&quot;: {
+          &quot;type&quot;: &quot;AlwaysMatch&quot;
+        },
+        &quot;protocol&quot;: &quot;HTTP/1.1&quot;,
+        &quot;ip_address&quot;: null
+      }
+    ],
+    &quot;root&quot;: &quot;&quot;,
+    &quot;rewrite&quot;: false,
+    &quot;load_balancing&quot;: {
+      &quot;type&quot;: &quot;RoundRobin&quot;
+    }
+  },
+  &quot;backend_ref&quot;: null,
+  &quot;plugins&quot;: [],
+  &quot;kind&quot;: &quot;Route&quot;
+}
+</code></pre>
 <h2><a href="#bind-a-plugin-to-a-specific-http-listener" name="bind-a-plugin-to-a-specific-http-listener" class="anchor"><span class="anchor-link"></span></a>Bind a plugin to a specific HTTP Listener</h2>
+<p>if you need something more subtle, it is also possible to apply plugins only on specific listeners. For instance in the following route, the apikey plugin will only be applied from the <code>static-1</code> listener</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;_loc&quot;: {
+    &quot;tenant&quot;: &quot;default&quot;,
+    &quot;teams&quot;: [
+      &quot;default&quot;
+    ]
+  },
+  &quot;id&quot;: &quot;route_6ee30dc0a-0871-4ab2-9b37-db939c36c418&quot;,
+  &quot;name&quot;: &quot;my api&quot;,
+  &quot;description&quot;: &quot;my api&quot;,
+  &quot;tags&quot;: [],
+  &quot;metadata&quot;: {
+    &quot;created_at&quot;: &quot;2024-04-24T11:51:41.330+02:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;debug_flow&quot;: false,
+  &quot;export_reporting&quot;: false,
+  &quot;capture&quot;: false,
+  &quot;groups&quot;: [
+    &quot;default&quot;
+  ],
+  &quot;bound_listeners&quot;: [],
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [
+      &quot;myapi.oto.tools&quot;
+    ],
+    &quot;strip_path&quot;: true,
+    &quot;exact&quot;: false,
+    &quot;headers&quot;: {},
+    &quot;query&quot;: {},
+    &quot;methods&quot;: []
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;id&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true,
+        &quot;weight&quot;: 1,
+        &quot;predicate&quot;: {
+          &quot;type&quot;: &quot;AlwaysMatch&quot;
+        },
+        &quot;protocol&quot;: &quot;HTTP/1.1&quot;,
+        &quot;ip_address&quot;: null
+      }
+    ],
+    &quot;root&quot;: &quot;&quot;,
+    &quot;rewrite&quot;: false,
+    &quot;load_balancing&quot;: {
+      &quot;type&quot;: &quot;RoundRobin&quot;
+    }
+  },
+  &quot;backend_ref&quot;: null,
+  &quot;plugins&quot;: [
+    {
+      &quot;enabled&quot;: true,
+      &quot;debug&quot;: false,
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+      &quot;include&quot;: [],
+      &quot;exclude&quot;: [],
+      &quot;config&quot;: {},
+      &quot;bound_listeners&quot;: [&quot;static-1&quot;],
+      &quot;plugin_index&quot;: {
+        &quot;validate_access&quot;: 0,
+        &quot;transform_request&quot;: 0,
+        &quot;match_route&quot;: 0
+      }
+    },
+    {
+      &quot;enabled&quot;: true,
+      &quot;debug&quot;: false,
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
+      &quot;include&quot;: [],
+      &quot;exclude&quot;: [],
+      &quot;config&quot;: {},
+      &quot;bound_listeners&quot;: [],
+      &quot;plugin_index&quot;: {
+        &quot;transform_request&quot;: 1
+      }
+    }
+  ],
+  &quot;kind&quot;: &quot;Route&quot;
+}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
@@ -326,6 +520,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../topics/http-listeners.html#custom-http-listeners" class="header">Custom HTTP Listeners</a>
   <ul>
     <li><a href="../topics/http-listeners.html#http-listener-config-" class="header">HTTP Listener config.</a></li>
+    <li><a href="../topics/http-listeners.html#exclusive-listeners" class="header">Exclusive listeners</a></li>
     <li><a href="../topics/http-listeners.html#static-http-listeners" class="header">Static HTTP listeners</a></li>
     <li><a href="../topics/http-listeners.html#dynamic-http-listeners" class="header">Dynamic HTTP Listeners</a></li>
     <li><a href="../topics/http-listeners.html#bind-a-route-to-a-specific-http-listener" class="header">Bind a route to a specific HTTP Listener</a></li>
