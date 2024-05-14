@@ -55,7 +55,7 @@ object GlobalExpressionLanguage {
       context: Map[String, String],
       attrs: TypedMap,
       env: Env
-  ): String = {
+  ): String = env.metrics.withTimer(s"el.apply") {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
