@@ -57,7 +57,7 @@ object HttpListenerConfig {
         h2c = json.select("h2c").asOpt[Boolean].getOrElse(false),
         http3 = json.select("http3").asOpt[Boolean].getOrElse(false),
         port = json.select("port").asOpt[Int].getOrElse(7890),
-        exposedPort = json.select("exposedPort").asOpt[Int].getOrElse(7890),
+        exposedPort = json.select("exposedPort").asOpt[Int].orElse(json.select("port").asOpt[Int]).getOrElse(7890),
         host = json.select("host").asOpt[String].getOrElse("0.0.0.0"),
         accessLog = json.select("accessLog").asOpt[Boolean].getOrElse(false),
         clientAuth = json.select("clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
@@ -133,7 +133,12 @@ case class HttpListener(
   }
   def start(kind: String, env: Env, cache: (DisposableReactorNettyServer) => Unit): Unit = {
     if (config.enabled) {
-      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${if (config.http1) "h1" else ""}${if (config.http2) "/h2" else ""}${if (config.http3) "/h3" else ""}")
+      val protocols = Seq.empty[String]
+        .applyOnIf(config.http1)(seq => seq :+ "h1")
+        .applyOnIf(config.http2)(seq => seq :+ "h2")
+        .applyOnIf(config.h2c)(seq => seq :+ "h2c")
+        .applyOnIf(config.http3)(seq => seq :+ "h3")
+      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}")
       val nettyConfig = toNettyConfig(env)
       val server = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
       cache(server)
@@ -293,7 +298,6 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
         case (listener, server) => {
           newOnes.get(listener.id) match {
             case None =>
-              println("stop")
               server.stop()
               dynamicListeners.remove(listener.id)
             case Some(_) => ()
