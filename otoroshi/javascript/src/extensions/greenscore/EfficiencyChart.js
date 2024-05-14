@@ -5,7 +5,7 @@ import { Popover } from 'antd';
 import { nextClient } from '../../services/BackOfficeServices';
 import { GlobalScore } from './GlobalScore';
 import Section from './Section'
-
+import { humanMillisecond } from '../../util'
 //todo: refactor to use same fucntion than green score ???
 
 export const MAX_GREEN_SCORE_NOTE = 168;
@@ -72,18 +72,18 @@ export const EfficiencyChart = (props) => {
     let health = '';
     if (hits === 0) {
       health = 'nul';
-    } else if (hits <= maxHits * 0.1) {
+    } else if (hits <= maxHits * 0.05) {
       health = 'low';
     } else if (hits <= maxHits * 0.5) {
       health = 'medium-low';
-    } else if (hits <= maxHits * 0.9) {
+    } else if (hits <= maxHits * 0.95) {
       health = 'medium-high';
     } else {
       health = 'high';
     }
 
     const dateAsString = new Date(date).toLocaleString()
-    return ({ hits, date, dateAsString, status: { health }, note: +(hits > props.configuration.threshold) })
+    return ({ hits, date, dateAsString, status: { health }, note: +(hits > props.configuration.threshold), avgDuration })
   })
 
   const globalNote = dates.reduce((acc, curr) => acc + curr.note, 0)
@@ -128,13 +128,17 @@ export const EfficiencyChart = (props) => {
           }}
         >
           <div className='d-flex justify-content-end'>
-            <button className='btn btn-primary' onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}><i className='fas fa-redo' /></button>
+            <button 
+              className='btn btn-primary' 
+              onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
+                <i className='fas fa-chart-line' />
+            </button>
           </div>
 
           {mode === visualizationMode.heat && (
             <>
               <div className='heatmap-container'>
-                {dates.map(({ dateAsString, status, hits }, idx) => {
+                {dates.map(({ dateAsString, status, hits, avgDuration }, idx) => {
                   const row = Math.ceil((idx + 1) / 24);
                   const col = (idx + 1) - 24 * (row - 1)
                   return (
@@ -146,6 +150,8 @@ export const EfficiencyChart = (props) => {
                         <div className="d-flex flex-column">
                           <div>{dateAsString}</div>
                           <div className={`info`}>{hits > 0 ? `${hits} hits` : 'no hit'}</div>
+                          <div className={`info`}>usage time: {humanMillisecond(Math.round(avgDuration * hits))}</div>
+                          <div className={`info`}>unusage time: {humanMillisecond(60*60*1000 - Math.round(avgDuration * hits))}</div>
                         </div>
                       }
                     >
@@ -153,12 +159,10 @@ export const EfficiencyChart = (props) => {
                         className={`heatpoint ${status.health}`}
                         style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />
                     </Popover>
-
-
                   )
                 })}
                 <>
-                  {[2, 4, 6].map((idx => {
+                  {[1, 3, 5, 7].map((idx => {
                     return (
                       <div key={idx} className='' style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1 }}>{new Date(dates[24 * (idx - 1)].date).toLocaleDateString()}</div>
                     )
@@ -176,10 +180,10 @@ export const EfficiencyChart = (props) => {
               <div className='heatmap-legend d-flex gap-1 justify-content-end align-items-baseline'>
                 <div>low</div>
                 <div className={`heatpoint nul`} />
-                <div className={`heatpoint low`} />
-                <div className={`heatpoint medium-low`} />
-                <div className={`heatpoint medium-high`} />
-                <div className={`heatpoint high`} />
+                <Popover content={`from 0 to ${~~(maxHits * 0.05)} hits`}><div className={`heatpoint low`} /></Popover>
+                <Popover content={`from ${~~(maxHits * 0.05) + 1} to ${~~(maxHits * 0.5)} hits`}><div className={`heatpoint medium-low`} /></Popover>
+                <Popover content={`from ${~~(maxHits * 0.5) + 1} to ${~~(maxHits * 0.95)} hits`}><div className={`heatpoint medium-high`} /></Popover>
+                <Popover content={`from ${~~(maxHits * 0.95) + 1} to ${maxHits} hits`}><div className={`heatpoint high`} /></Popover>
                 <div>High</div>
               </div>
             </>
