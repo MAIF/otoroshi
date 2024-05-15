@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { Popover } from 'antd';
+import moment from 'moment';
 
 import { nextClient } from '../../services/BackOfficeServices';
 import { GlobalScore } from './GlobalScore';
@@ -44,28 +45,55 @@ export const EfficiencyChart = (props) => {
   const [route, setRoute] = useState();
 
   const [mode, setMode] = useState(visualizationMode.heat)
+  const [day, setDay] = useState();
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([
-      fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}`, {
-        credentials: 'include',
-        headers: {
-          Accept: ' application/json'
-        }
-      }).then((r) => r.json()),
-      nextClient.forEntity(nextClient.ENTITIES.ROUTES).findById(props.route),
-      ,
-    ])
-      .then(([d, r]) => {
-        setData(d)
+    nextClient.forEntity(nextClient.ENTITIES.ROUTES).findById(props.route)
+      .then((r) => {
         setRoute(r)
-        setLoading(false)
       })
+      .then(getDataForSevenLastDays)
+      .then(() => setLoading(false))
       .catch(e => {
         setLoading(false)
       })
   }, []);
+
+  const getDataForSevenLastDays = () => {
+    return fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}`, {
+      credentials: 'include',
+      headers: {
+        Accept: ' application/json'
+      }
+    })
+      .then((r) => r.json())
+      .then(setData)
+  }
+
+  const getDataForADay = (day) => {
+    setDay(day)
+    return fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}?day=${day}`, {
+      credentials: 'include',
+      headers: {
+        Accept: ' application/json'
+      }
+    })
+      .then((r) => r.json())
+      .then(d => {
+        setData(d)
+      })
+  }
+
+  const getData = (day) => {
+    const fetchData = day ? getDataForADay : getDataForSevenLastDays;
+
+    setDay(day)
+    setLoading(true)
+    return fetchData(day)
+      .then(() => setLoading(false))
+      .catch(() => setLoading(false))
+  }
 
   const maxHits = Math.max(...data.map(item => item.hits));
 
@@ -113,6 +141,7 @@ export const EfficiencyChart = (props) => {
   }
 
 
+  console.debug({ day })
   return (
     <Section
       title={route.name}
@@ -125,28 +154,37 @@ export const EfficiencyChart = (props) => {
             gap: '.5rem',
             display: 'flex',
             flexDirection: 'column',
-            background: 'var(--bg-color_level2)'
+            background: 'var(--bg-color_level2)',
+            minWidth: '1000px'
           }}
         >
-          <div className='d-flex justify-content-end'>
-            <button
-              className='btn btn-primary'
-              onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.score : visualizationMode.heat)}>
-              <i className='fas fa-bullseye' />
-            </button>
-            <button
-              className='btn btn-primary'
-              onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
-              <i className='fas fa-chart-line' />
-            </button>
+          <div className='d-flex justify-content-between'>
+            {!day && <h4>last 7 days efficiency</h4>}
+            {!!day && <div>
+              <h4>{moment(day).format('ddd D MMM')} efficiency</h4>
+              <button className='btn btn-primary' onClick={() => getData(undefined)}>back</button>
+            </div>}
+            <div>
+              <button
+                className='btn btn-primary'
+                onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.score : visualizationMode.heat)}>
+                <i className='fas fa-bullseye' />
+              </button>
+              <button
+                className='btn btn-primary'
+                onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
+                <i className='fas fa-chart-line' />
+              </button>
+            </div>
           </div>
 
           {(mode === visualizationMode.heat || mode === visualizationMode.score) && (
             <>
               <div className='heatmap-container'>
-                {dates.map(({ dateAsString, status, hits, avgDuration }, idx) => {
-                  const row = Math.ceil((idx + 1) / 24);
-                  const col = (idx + 1) - 24 * (row - 1)
+                {dates.map(({ date, dateAsString, status, hits, avgDuration }, idx) => {
+                  const zeDate = new Date(date)
+                  const row = !day ? Math.ceil((idx + 1) / 24) : (zeDate.getMinutes() / 10) + 1;
+                  const col = !day ? (idx + 1) - 24 * (row - 1) : zeDate.getHours() + 1;
                   const clazz = mode === visualizationMode.heat ? status.health : hits > props.configuration.threshold ? 'high' : 'nul';
 
                   return (
@@ -168,13 +206,18 @@ export const EfficiencyChart = (props) => {
                     </Popover>
                   )
                 })}
-                <>
-                  {[1, 3, 5, 7].map((idx => {
-                    return (
-                      <div key={idx} className='' style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1 }}>{new Date(dates[24 * (idx - 1)].date).toLocaleDateString()}</div>
-                    )
-                  }))}
-                </>
+                {!day && [1, 2, 3, 4, 5, 6, 7].map((idx => {
+                  const date = new Date(dates[24 * (idx - 1)].date)
+                  return (
+                    <div
+                      key={idx}
+                      className='d-flex align-items-center justify-content-end me-3'
+                      style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1, cursor: 'pointer' }}
+                      onClick={() => getData(date.valueOf())}>
+                      {moment(date).format('DD/MM')}
+                    </div>
+                  )
+                }))}
                 {[1, 7, 13, 19, 24].map((idx => {
                   return (
                     <div key={idx}
@@ -210,7 +253,7 @@ export const EfficiencyChart = (props) => {
                 <XAxis dataKey="dateAsString" />
                 <YAxis />
                 <Legend />
-                <Line type="monotone" dataKey="hits" stroke="#8884d8" />
+                <Line type="monotone" dataKey="hits" stroke="#8884d8" dot={false}/>
               </LineChart>
             </ResponsiveContainer>
             <ResponsiveContainer width="45%" height="100%">
@@ -219,7 +262,7 @@ export const EfficiencyChart = (props) => {
                 <XAxis dataKey="rangeStart" />
                 <YAxis />
                 <Legend />
-                <Line type="monotone" dataKey="frequency" stroke="#8884d8" />
+                <Line type="monotone" dataKey="frequency" stroke="#8884d8" dot={false}/>
               </LineChart>
             </ResponsiveContainer>
           </div>}

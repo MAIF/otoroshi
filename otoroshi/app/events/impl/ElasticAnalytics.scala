@@ -2134,7 +2134,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     }
   }
 
-  override def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String] = Seq.empty)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  override def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String] = Seq.empty, interval: Option[String])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     val extendedBounds = from
       .map { from =>
         Json.obj(
@@ -2189,7 +2189,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           "date_histogram" -> Json
             .obj(
               "field" -> "@callAt",
-              "fixed_interval" -> "1h",
+              "fixed_interval" -> JsString(interval.getOrElse("1h")),
               "extended_bounds" -> extendedBounds
             ),
           "aggs" -> Json.obj(
@@ -2231,4 +2231,5 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         }
     }
   }
+
 }
