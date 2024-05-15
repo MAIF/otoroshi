@@ -60,6 +60,7 @@ import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
 import NgHasClientCertValidator from './NgHasClientCertValidator';
 import NgHasClientCertMatchingApikeyValidator from './NgHasClientCertMatchingApikeyValidator';
 import NgHasClientCertMatchingValidator from './NgHasClientCertMatchingValidator';
+import NgHttpWasm from './NgHttpWasm';
 import NgClientCertChainHeader from './NgClientCertChainHeader';
 import NgCertificateAsApikey from './NgCertificateAsApikey';
 import NgCustomQuotas from './NgCustomQuotas';
@@ -161,6 +162,7 @@ const pluginsArray = [
   CanaryMode,
   ContextValidation,
   NgCorazaWAF,
+  NgHttpWasm,
   Cors,
   DisableHttp10,
   EndlessHttpResponse,

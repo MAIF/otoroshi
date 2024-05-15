@@ -1,19 +1,23 @@
 package otoroshi.wasm.httpwasm.api
 
-import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import cats.implicits.catsSyntaxOptionId
 import com.sun.jna.Pointer
-import org.extism.sdk.{ExtismCurrentPlugin, HostUserData}
+import io.otoroshi.wasm4s.scaladsl.{EnvUserData, ResultsWrapper, WasmFunctionParameters, WasmVmData, WasmVmInitOptions, WasmVmPool}
+import org.extism.sdk.wasmotoroshi.Parameters
+import org.extism.sdk.{ExtismCurrentPlugin, HostFunction, HostUserData}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
 import otoroshi.utils.TypedMap
+import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.httpwasm.{HttpWasmFunctions, HttpWasmVmData}
+import otoroshi.wasm.proxywasm.{VmData, WasmUtils}
+import otoroshi.wasm.WasmConfig
 import play.api.Logger
-import play.api.mvc.RequestHeader
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 sealed trait HeaderKind {
@@ -21,30 +25,15 @@ sealed trait HeaderKind {
 }
 
 object HeaderKind {
-  // HeaderKindRequest represents an operation on HTTP request headers.
   case object HeaderKindRequest extends HeaderKind {
     def value: Int = 0
   }
-
-  // HeaderKindResponse represents an operation on HTTP response headers.
   case object HeaderKindResponse extends HeaderKind {
     def value: Int = 1
   }
-
-  // HeaderKindRequestTrailers represents an operation on HTTP request
-  // trailers (trailing headers). This requires FeatureTrailers.
-  //
-  // To enable FeatureTrailers, call FuncEnableFeatures prior to FuncNext.
-  // Doing otherwise, may result in a panic.
   case object HeaderKindRequestTrailers extends HeaderKind {
     def value: Int = 2
   }
-
-  // HeaderKindResponseTrailers represents an operation on HTTP response
-  // trailers (trailing headers). This requires FeatureTrailers.
-  //
-  // To enable FeatureTrailers, call FuncEnableFeatures prior to FuncNext.
-  // Doing otherwise, may result in a panic.
   case object HeaderKindResponseTrailers extends HeaderKind {
     def value: Int = 3
   }
@@ -87,6 +76,16 @@ object LogLevel {
 
   case object LogLevelNone extends LogLevel {
     def value: Int = 3
+  }
+
+  def fromValue(value: Int): LogLevel = {
+    value match {
+      case -1 => LogLevelDebug
+      case 0 => LogLevelInfo
+      case 1 => LogLevelWarn
+      case 2 => LogLevelError
+      case 3 => LogLevelNone
+    }
   }
 }
 
@@ -137,8 +136,8 @@ class RequestState(
 
   def setHeader(kind: HeaderKind, key: String, value: Seq[String]) = {
     kind match {
-      case HeaderKind.HeaderKindRequest => request.headers.add((key -> value.head))
-      case HeaderKind.HeaderKindResponse => response.headers ++ ((key -> value.head))
+      case HeaderKind.HeaderKindRequest => request = request.copy(headers = request.headers ++ Map(key -> value.head))
+      case HeaderKind.HeaderKindResponse => response = response.copy(headers = response.headers ++ Map(key -> value.head))
       case HeaderKind.HeaderKindRequestTrailers => ???  // TODO
       case HeaderKind.HeaderKindResponseTrailers => ???  // TODO
     }
@@ -146,29 +145,79 @@ class RequestState(
 
   def removeHeader(kind: HeaderKind, key: String) = {
     kind match {
-      case HeaderKind.HeaderKindRequest => request.headers.remove(key)
-      case HeaderKind.HeaderKindResponse => response.headers - key
+      case HeaderKind.HeaderKindRequest => request = request.copy(headers = request.headers.removeAllArgs(key))
+      case HeaderKind.HeaderKindResponse => response = response.copy(headers = response.headers.removeAllArgs(key))
       case HeaderKind.HeaderKindRequestTrailers => ???  // TODO
       case HeaderKind.HeaderKindResponseTrailers => ???  // TODO
     }
   }
 }
 
-class HttpHandler(config: ByteString, env: Env) {
+class HttpHandler(wasm: WasmConfig, config: ByteString, key: String, env: Env) {
+
+  // private lazy val state = RequestState()
+  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
+
+  implicit val ex = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
+  implicit val e = env
 
   val logger = Logger("otoroshi-http-wasm-handler")
 
-  // enable_features
-  def enableFeatures(state: RequestState, features: Int): Int = {
+  def createFunctions(ref: AtomicReference[WasmVmData]): Seq[HostFunction[EnvUserData]] = {
+    HttpWasmFunctions.build(this, ref)
+  }
+
+  def start(attrs: TypedMap): Future[Unit] = {
+    pool.getPooledVm(WasmVmInitOptions(
+      importDefaultHostFunctions = false,
+      resetMemory = false, // was true in proxy wasm
+      createFunctions)).flatMap { vm =>
+      attrs.put(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey -> vm)
+      vm.finitialize {
+       Future.successful()
+      }
+    }
+  }
+
+  def callPluginWithResults(
+                             function: String,
+                             params: Parameters,
+                             results: Int,
+                             data: VmData,
+                             attrs: TypedMap
+                           ): Future[ResultsWrapper] = {
+    attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
+      case None =>
+        println("no vm found in attrs")
+        Future.failed(new RuntimeException("no vm found in attrs"))
+      case Some(vm) => {
+        WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
+        val callId = attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey).getOrElse(0).asInstanceOf[Int]
+        vm.call(
+          WasmFunctionParameters.BothParamsResults(function, params, results),
+          Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes)))
+        ).flatMap {
+          case Left(err) =>
+            println(s"error while calling plugin: ${err}")
+            Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
+          case Right((_, results)) => results.vfuture
+        }
+      }
+    }
+  }
+
+  def enableFeatures(vmData: HttpWasmVmData, features: Int): Int = {
+    val state = vmData.state
     state.features = new Features(features).some
     features
   }
 
-  def getConfig(plugin: ExtismCurrentPlugin, state: RequestState, buf: Long, bufLimit: Int) = {
+  def getConfig(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int) = {
     writeIfUnderLimit(plugin, buf, bufLimit, config)
   }
 
-  def writeIfUnderLimit(plugin: ExtismCurrentPlugin, offset: Long, limit: Long, v: ByteString): Long = {
+  def writeIfUnderLimit(plugin: ExtismCurrentPlugin, offset: Int, limit: Int, v: ByteString): Int = {
     val vLen = v.length
     if (vLen > limit || vLen == 0) {
       return vLen
@@ -179,7 +228,7 @@ class HttpHandler(config: ByteString, env: Env) {
     vLen
   }
 
-  def writeNullTerminated(plugin: ExtismCurrentPlugin, buf: Long, bufLimit: Int, input: Seq[String]): BigInt = {
+  def writeNullTerminated(plugin: ExtismCurrentPlugin, buf: Int, bufLimit: Int, input: Seq[String]): BigInt = {
     val count = BigInt(input.length)
     if (count == 0) {
       return 0
@@ -211,20 +260,21 @@ class HttpHandler(config: ByteString, env: Env) {
 
   def writeStringIfUnderLimit(
                                plugin: ExtismCurrentPlugin,
-                               offset: Long,
-                               limit: Long,
+                               offset: Int,
+                               limit: Int,
                                v: String
-  ): Long = {
+  ): Int = {
     this.writeIfUnderLimit(plugin, offset, limit, ByteString(v))
   }
 
   def getHeaderNames(
       plugin: ExtismCurrentPlugin,
-      state: RequestState,
+      vmData: HttpWasmVmData,
       kind: HeaderKind,
-      buf: Long,
+      buf: Int,
       bufLimit: Int,
   ): BigInt = {
+    val state = vmData.state
     val headers = state.headers(kind)
 
     val headerNames = headers.keys.toSeq
@@ -232,12 +282,12 @@ class HttpHandler(config: ByteString, env: Env) {
   }
 
   def getHeaderValues(
-      state: RequestState,
+      vmData: HttpWasmVmData,
       plugin: ExtismCurrentPlugin,
       kind: HeaderKind,
-      name: Long,
-      nameLen: Long,
-      buf: Long,
+      name: Int,
+      nameLen: Int,
+      buf: Int,
       bufLimit: Int
   ): BigInt = {
 
@@ -245,9 +295,10 @@ class HttpHandler(config: ByteString, env: Env) {
       throw new Error("HTTP header name cannot be empty")
     }
 
+    val state = vmData.state
     val headers = state.headers(kind)
 
-    val n = this.mustReadString("name", name, nameLen).toLowerCase()
+    val n = this.mustReadString(plugin, "name", name, nameLen).toLowerCase()
     val value = headers.get(n)
     var values: Seq[String] = Seq.empty
 
@@ -266,11 +317,13 @@ class HttpHandler(config: ByteString, env: Env) {
     this.writeNullTerminated(plugin, buf, bufLimit, values)
   }
 
-  def getMethod(state: RequestState, plugin: ExtismCurrentPlugin, buf: Long, bufLimit: Int): Long = {
+  def getMethod(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, buf: Int, bufLimit: Int): Int = {
+    val state = vmData.state
     writeStringIfUnderLimit (plugin, buf, bufLimit, state.request.method)
   }
 
-  def getProtocolVersion(state: RequestState, plugin: ExtismCurrentPlugin, buf: Long, bufLimit: Int): Long = {
+  def getProtocolVersion(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, buf: Int, bufLimit: Int): Int = {
+    val state = vmData.state
     var httpVersion = state.request.version
     httpVersion match {
       case "1.0" => httpVersion = "HTTP/1.0"
@@ -285,12 +338,13 @@ class HttpHandler(config: ByteString, env: Env) {
     request.response.status
   }
 
-  def getUri(state: RequestState, plugin: ExtismCurrentPlugin, buf: Long, bufLimit: Int): Long = {
+  def getUri(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, buf: Int, bufLimit: Int): Int = {
+    val state = vmData.state
     this.writeStringIfUnderLimit (plugin, buf, bufLimit, state.request.uri.toString());
   }
 
-  def log(level: LogLevel, buf: Long, bufLimit: Int) = {
-    val s = mustReadString("log", buf, bufLimit)
+  def log(plugin: ExtismCurrentPlugin, level: LogLevel, buf: Int, bufLimit: Int) = {
+    val s = mustReadString(plugin, "log", buf, bufLimit)
 
     level match {
       case LogLevel.LogLevelDebug => logger.debug(s)
@@ -307,8 +361,8 @@ class HttpHandler(config: ByteString, env: Env) {
     0
   }
 
-  def readBody(state: RequestState, plugin: ExtismCurrentPlugin, kind: BodyKind, buf: Long, bufLimit: Int): BigInt = {
-
+  def readBody(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, kind: BodyKind, buf: Int, bufLimit: Int): BigInt = {
+    val state = vmData.state
     val memory = plugin.customMemoryGet()
 
     if (kind == BodyKind.BodyKindRequest) {
@@ -347,13 +401,15 @@ class HttpHandler(config: ByteString, env: Env) {
     BigInt (slice.length)
   }
 
-  def setMethod(state: RequestState, name: Int, nameLen: Int) {
+  def setMethod(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, name: Int, nameLen: Int) {
+    val state = vmData.state
     val req = state.request
-    val method = this.mustReadString("method", name, nameLen)
+    val method = this.mustReadString(plugin, "method", name, nameLen)
     state.request.copy(method = method)
   }
 
-  def writeBody(state: RequestState, plugin: ExtismCurrentPlugin, kind: BodyKind, body: Int, bodyLen: Int) = {
+  def writeBody(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, kind: BodyKind, body: Int, bodyLen: Int) = {
+    val state = vmData.state
     var b: ByteString = ByteString.empty
 
     if (bodyLen == 0) {
@@ -381,19 +437,22 @@ class HttpHandler(config: ByteString, env: Env) {
   }
 
   def addHeader(
-      state: RequestState,
+      plugin: ExtismCurrentPlugin,
+      vmData: HttpWasmVmData,
       kind: HeaderKind,
       name: Int,
       nameLen: Int,
       value: Int,
       valueLen: Int
   ) = {
+    val state = vmData.state
+
     if (nameLen == 0) {
       throw new Error ("HTTP header name cannot be empty")
     }
 
-    val n = this.mustReadString ("name", name, nameLen)
-    val v = this.mustReadString ("value", value, valueLen)
+    val n = this.mustReadString (plugin, "name", name, nameLen)
+    val v = this.mustReadString (plugin, "value", value, valueLen)
 
     val headers = state.headers(kind)
     val existing = headers.get(n)
@@ -403,42 +462,52 @@ class HttpHandler(config: ByteString, env: Env) {
   }
 
   def setHeader(
-                 state: RequestState,
+                 plugin: ExtismCurrentPlugin,
+                 vmData: HttpWasmVmData,
                  kind: HeaderKind,
                  name: Int,
                  nameLen: Int,
                  value: Int,
                  valueLen: Int
   ) = {
+    val state = vmData.state
+
     if (nameLen == 0) {
       throw new Error ("HTTP header name cannot be empty")
     }
 
-    val n = this.mustReadString ("name", name, nameLen)
-    val v = this.mustReadString ("value", value, valueLen)
+    val n = this.mustReadString (plugin, "name", name, nameLen)
+    val v = this.mustReadString (plugin, "value", value, valueLen)
 
     state.setHeader (kind, n, Seq(v))
   }
 
-  def removeHeader(state: RequestState,
+  def removeHeader(vmData: HttpWasmVmData,
+                   plugin: ExtismCurrentPlugin,
                    kind: HeaderKind,
                    name: Int,
                    nameLen: Int): Unit = {
+    val state = vmData.state
+
     if (nameLen == 0) {
       throw new Error ("HTTP header name cannot be empty")
     }
 
-    val n = this.mustReadString ("name", name, nameLen)
+    val n = this.mustReadString (plugin, "name", name, nameLen)
     state.removeHeader (kind, n)
   }
 
-  def setStatusCode(state: RequestState, statusCode: Int): Unit = {
+  def setStatusCode(vmData: HttpWasmVmData, statusCode: Int): Unit = {
+    val state = vmData.state
+
     state.response.copy(status = statusCode)
   }
 
-  def setUri(state: RequestState, uri: Int, uriLen: Int) = {
+  def setUri(vmData: HttpWasmVmData, plugin: ExtismCurrentPlugin, uri: Int, uriLen: Int) = {
+    val state = vmData.state
+
     val u = if (uriLen > 0) {
-      this.mustReadString("uri", uri, uriLen)
+      this.mustReadString(plugin, "uri", uri, uriLen)
     } else {
       ""
     }
@@ -447,21 +516,22 @@ class HttpHandler(config: ByteString, env: Env) {
   }
 
   def mustReadString(
-    fieldName: String,
-    offset: Long,
-    byteCount: Long,
+      plugin: ExtismCurrentPlugin,
+      fieldName: String,
+      offset: Int,
+      byteCount: Int,
   ): String = {
     if (byteCount == 0) {
       return ""
     }
 
-    this.mustRead(fieldName, offset, byteCount).toString()
+    this.mustRead(plugin, fieldName, offset, byteCount).toString()
   }
 
   def mustRead(
       plugin: ExtismCurrentPlugin,
       fieldName: String,
-      offset: Long,
+      offset: Int,
       byteCount: Int
   ): ByteString = {
     if (byteCount == 0) {
