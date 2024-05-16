@@ -35,7 +35,6 @@ export function getColor(score) {
 
 const visualizationMode = {
   heat: 'HEATMAP',
-  score: 'SCORE',
   graphs: 'GRAPHS'
 }
 
@@ -133,7 +132,18 @@ export const EfficiencyChart = (props) => {
   });
 
   if (loading) {
-    return <div>loading</div>
+    return (
+      <Section title={route?.name}>
+        <div
+          className='p-3 efficiency-loading'
+          style={{
+            background: 'var(--bg-color_level2)',
+            minWidth: '1000px'
+          }}>
+            <div className='heatmap-loading'></div>
+          </div>
+      </Section>
+    )
   }
 
   if (!route) {
@@ -141,11 +151,8 @@ export const EfficiencyChart = (props) => {
   }
 
 
-  console.debug({ day })
   return (
-    <Section
-      title={route.name}
-    >
+    <Section title={route.name}>
       <div style={{ display: 'flex', gap: '.5rem' }}>
         <div
           className='p-3'
@@ -167,25 +174,20 @@ export const EfficiencyChart = (props) => {
             <div>
               <button
                 className='btn btn-primary'
-                onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.score : visualizationMode.heat)}>
-                <i className='fas fa-bullseye' />
-              </button>
-              <button
-                className='btn btn-primary'
                 onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
                 <i className='fas fa-chart-line' />
               </button>
             </div>
           </div>
 
-          {(mode === visualizationMode.heat || mode === visualizationMode.score) && (
-            <>
+          {(mode === visualizationMode.heat) && (
+            <div className='d-flex flex-row justify-content-around'>
               <div className='heatmap-container'>
                 {dates.map(({ date, dateAsString, status, hits, avgDuration }, idx) => {
                   const zeDate = new Date(date)
                   const row = !day ? Math.ceil((idx + 1) / 24) : (zeDate.getMinutes() / 10) + 1;
                   const col = !day ? (idx + 1) - 24 * (row - 1) : zeDate.getHours() + 1;
-                  const clazz = mode === visualizationMode.heat ? status.health : hits > props.configuration.threshold ? 'high' : 'nul';
+                  const clazz = status.health;
 
                   return (
                     <Popover
@@ -227,19 +229,19 @@ export const EfficiencyChart = (props) => {
                   )
                 }))}
               </div>
-              <div className='heatmap-legend d-flex gap-1 justify-content-end align-items-baseline'>
+              <div className='heatmap-legend d-flex flex-column-reverse gap-1 justify-content-end align-items-baseline'>
                 <div>low</div>
-                <div className={`heatpoint nul`} />
-                <Popover content={`from 0 to ${~~(maxHits * 0.05)} hits`}><div className={`heatpoint low`} /></Popover>
+                <Popover content={`no hit`}><div className={`heatpoint nul`} /></Popover>
+                <Popover content={`from 1 to ${~~(maxHits * 0.05)} hits`}><div className={`heatpoint low`} /></Popover>
                 <Popover content={`from ${~~(maxHits * 0.05) + 1} to ${~~(maxHits * 0.5)} hits`}><div className={`heatpoint medium-low`} /></Popover>
                 <Popover content={`from ${~~(maxHits * 0.5) + 1} to ${~~(maxHits * 0.95)} hits`}><div className={`heatpoint medium-high`} /></Popover>
                 <Popover content={`from ${~~(maxHits * 0.95) + 1} to ${maxHits} hits`}><div className={`heatpoint high`} /></Popover>
                 <div>High</div>
               </div>
-            </>
+            </div>
           )}
           {mode === visualizationMode.graphs && <div style={{ maxHeight: 420, flex: 1, display: 'flex' }}>
-            <ResponsiveContainer width="45%" height="100%">
+            <ResponsiveContainer width="45%" height={300}>
               <LineChart
                 margin={{
                   top: 75,
@@ -253,27 +255,19 @@ export const EfficiencyChart = (props) => {
                 <XAxis dataKey="dateAsString" />
                 <YAxis />
                 <Legend />
-                <Line type="monotone" dataKey="hits" stroke="#8884d8" dot={false}/>
+                <Line type="monotone" dataKey="hits" stroke="#8884d8" dot={false} />
               </LineChart>
             </ResponsiveContainer>
-            <ResponsiveContainer width="45%" height="100%">
+            <ResponsiveContainer width="45%" height={300}>
               <LineChart data={hitRanges}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="rangeStart" />
                 <YAxis />
                 <Legend />
-                <Line type="monotone" dataKey="frequency" stroke="#8884d8" dot={false}/>
+                <Line type="monotone" dataKey="frequency" stroke="#8884d8" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>}
-        </div>
-        <div style={{ gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
-          <GlobalScore
-            loading={loading}
-            letter={getLetter(globalNote)}
-            color={getColor(globalNote)}
-            title="Score"
-          />
         </div>
       </div>
     </Section>

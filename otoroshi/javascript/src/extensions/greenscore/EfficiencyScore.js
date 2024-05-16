@@ -62,7 +62,7 @@ export const EfficiencyScore = (props) => {
     .find(g => selectedGroup === g.id);
 
   return (
-    <div>
+    <div className='col-12'>
       <div className='d-flex flex-row'>
         <NgSelectRenderer
           value={selectedGroup}
