@@ -1668,7 +1668,7 @@ class ProxyEngine() extends RequestHandler {
                     Json
                       .obj(
                         "error"             -> "internal_server_error",
-                        "error_description" -> "an error happened during pre-routing plugins phase"
+                        "error_description" -> "an error happened during access plugins phase"
                       )
                       .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
@@ -1731,7 +1731,7 @@ class ProxyEngine() extends RequestHandler {
                           Json
                             .obj(
                               "error"             -> "internal_server_error",
-                              "error_description" -> "an error happened during pre-routing plugins phase"
+                              "error_description" -> "an error happened during access plugins phase"
                             )
                             .applyOnIf(env.isDev) { obj =>
                               obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
