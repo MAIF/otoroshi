@@ -21,24 +21,30 @@
 .efficiency-loading {
   animation: bgColor 2s infinite alternate;
 }
+
+.heatmap-container--mini {
+  display: grid;
+  grid-template-rows: repeat(1, 35px);
+  grid-template-columns: 60px repeat(24, 35px); 
+  gap: 3px;
+  height: 35px;
+  width: 972px;
+  margin-bottom: 15px;
+}
+
 .heatmap-container {
   display: grid;
   grid-template-rows: repeat(7, 35px) 50px;
   grid-template-columns: 60px repeat(24, 35px); 
-  // display: flex;
-  // flex-direction: row;
-  // flex-wrap: wrap;
-  // justify-content: center;
-  // align-items: flex-start;
-  // align-content: flex-start;
   gap: 3px;
-  // row-gap: 3px;
   height: 316px;
   width: 972px;
 }
 
-.heatmap-hour {
-  // width: 30px;
+.heatmap-date {
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .heatpoint {

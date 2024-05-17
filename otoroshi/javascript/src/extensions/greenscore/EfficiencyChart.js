@@ -47,6 +47,27 @@ export const EfficiencyChart = (props) => {
   const [mode, setMode] = useState(visualizationMode.heat);
   const [day, setDay] = useState();
 
+  const betterData = (d) => {
+    const maxHits = Math.max(...d.map(item => item.hits), 1);
+    return d.map(({ date, hits, avgDuration }) => {
+      let health = '';
+      if (hits === 0) {
+        health = 'nul';
+      } else if (hits <= maxHits * 0.05) {
+        health = 'low';
+      } else if (hits <= maxHits * 0.5) {
+        health = 'medium-low';
+      } else if (hits <= maxHits * 0.95) {
+        health = 'medium-high';
+      } else {
+        health = 'high';
+      }
+  
+      const dateAsString = moment(date).format('DD/MM')
+      return ({ hits, date, dateAsString, status: { health }, avgDuration })
+    })
+  }
+
   useEffect(() => {
     setLoading(true)
     nextClient.forEntity(nextClient.ENTITIES.ROUTES).findById(props.route)
@@ -61,7 +82,7 @@ export const EfficiencyChart = (props) => {
       }))
       .then((r) => r.json())
       .then(d => {
-        setData(d)
+        setData(betterData(d))
         setLoading(false)
       })
       .catch(e => {
@@ -80,33 +101,14 @@ export const EfficiencyChart = (props) => {
     })
       .then((r) => r.json())
       .then(d => {
-        setDayData(d)
+        setDayData(betterData(d))
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }
 
   const maxHits = Math.max(...data.map(item => item.hits), 1);
-
   const zeData = !!day ? dayData : data;
-  const dates = zeData.map(({ date, hits, avgDuration }) => {
-    let health = '';
-    if (hits === 0) {
-      health = 'nul';
-    } else if (hits <= maxHits * 0.05) {
-      health = 'low';
-    } else if (hits <= maxHits * 0.5) {
-      health = 'medium-low';
-    } else if (hits <= maxHits * 0.95) {
-      health = 'medium-high';
-    } else {
-      health = 'high';
-    }
-
-    const dateAsString = moment(date).format('DD/MM')
-    return ({ hits, date, dateAsString, status: { health }, note: +(hits > props.configuration.threshold), avgDuration })
-  })
-
 
   const roundedValue = (value, floor = 10000) => {
     if (value === 0) {
@@ -185,64 +187,97 @@ export const EfficiencyChart = (props) => {
           </div>
 
           {(mode === visualizationMode.heat) && (
-            <div className='d-flex flex-row justify-content-around'>
-              <div className='heatmap-container'>
-                {dates.map(({ date, dateAsString, status, hits, avgDuration }, idx) => {
-                  const zeDate = new Date(date)
-                  const row = !day ? Math.ceil((idx + 1) / 24) : (zeDate.getMinutes() / 10) + 1;
-                  const col = !day ? (idx + 1) - 24 * (row - 1) : zeDate.getHours() + 1;
-                  const clazz = status.health;
+            <>
+              {!!day && (
+                <div className='d-flex flex-row justify-content-around'>
+                  <div className='heatmap-container--mini'>
+                    {data
+                      .filter(({ date }) => moment(day).isSame(moment(date), 'day'))
+                      .map(({ date, status, hits, avgDuration }, idx) => {
+                        const col = (idx + 1);
 
-                  return (
-                    <Popover
-                      key={idx}
-                      placement="bottom"
-                      content={
-                        <div className="d-flex flex-column">
-                          <div>{dateAsString}</div>
-                          <div className={`info`}>{hits > 0 ? `${hits} hits` : 'no hit'}</div>
-                          <div className={`info`}>usage time: {humanMillisecond(Math.round(avgDuration * hits))}</div>
-                          <div className={`info`}>unusage time: {humanMillisecond(60 * 60 * 1000 - Math.round(avgDuration * hits))}</div>
-                        </div>
-                      }
-                    >
+                        return (
+                          <Popover
+                            key={idx}
+                            placement="bottom"
+                            content={
+                              <div className="d-flex flex-column">
+                                <div>{moment(date).format("DD/MM HH:mm")}</div>
+                                <div className={`info`}>{hits > 0 ? `${hits} hits` : 'no hit'}</div>
+                                <div className={`info`}>usage time: {humanMillisecond(Math.round(avgDuration * hits))}</div>
+                                <div className={`info`}>unusage time: {humanMillisecond(60 * 60 * 1000 - Math.round(avgDuration * hits))}</div>
+                              </div>
+                            }
+                          >
+                            <div key={idx}
+                              className={`heatpoint ${status.health}`}
+                              style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: 1, gridRowEnd: 1 }} />
+                          </Popover>
+                        )
+                      })}
+                  </div>
+                  <div style={{width: '35px'}}/>
+                </div>
+              )}
+              <div className='d-flex flex-row justify-content-around'>
+                <div className='heatmap-container'>
+                  {zeData.map(({ date, status, hits, avgDuration }, idx) => {
+                    const zeDate = new Date(date)
+                    const row = !day ? Math.ceil((idx + 1) / 24) : (zeDate.getMinutes() / 10) + 1;
+                    const col = !day ? (idx + 1) - 24 * (row - 1) : zeDate.getHours() + 1;
+                    const clazz = status.health;
+
+                    return (
+                      <Popover
+                        key={idx}
+                        placement="bottom"
+                        content={
+                          <div className="d-flex flex-column">
+                            <div>{moment(date).format("DD/MM HH:mm")}</div>
+                            <div className={`info`}>{hits > 0 ? `${hits} hits` : 'no hit'}</div>
+                            <div className={`info`}>usage time: {humanMillisecond(Math.round(avgDuration * hits))}</div>
+                            <div className={`info`}>unusage time: {humanMillisecond(60 * 60 * 1000 - Math.round(avgDuration * hits))}</div>
+                          </div>
+                        }
+                      >
+                        <div key={idx}
+                          className={`heatpoint ${clazz}`}
+                          style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />
+                      </Popover>
+                    )
+                  })}
+                  {!day && [1, 2, 3, 4, 5, 6, 7].map((idx => {
+                    const date = new Date(zeData[24 * (idx - 1)].date)
+                    return (
+                      <div
+                        key={idx}
+                        className='d-flex align-items-center justify-content-end me-3 heatmap-date'
+                        style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1, cursor: 'pointer' }}
+                        onClick={() => getDataForADay(date.valueOf())}>
+                        {moment(date).format('DD/MM')}
+                      </div>
+                    )
+                  }))}
+                  {[1, 7, 13, 19, 24].map((idx => {
+                    return (
                       <div key={idx}
-                        className={`heatpoint ${clazz}`}
-                        style={{ gridColumnStart: col + 1, gridColumnEnd: col + 2, gridRowStart: row, gridRowEnd: row + 1 }} />
-                    </Popover>
-                  )
-                })}
-                {!day && [1, 2, 3, 4, 5, 6, 7].map((idx => {
-                  const date = new Date(dates[24 * (idx - 1)].date)
-                  return (
-                    <div
-                      key={idx}
-                      className='d-flex align-items-center justify-content-end me-3'
-                      style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1, cursor: 'pointer' }}
-                      onClick={() => getDataForADay(date.valueOf())}>
-                      {moment(date).format('DD/MM')}
-                    </div>
-                  )
-                }))}
-                {[1, 7, 13, 19, 24].map((idx => {
-                  return (
-                    <div key={idx}
-                      className='heatmap-hour'
-                      style={{ gridColumnStart: idx + 1, gridColumnEnd: idx + 4, gridRowStart: 8, gridRowEnd: 9 }}>
-                      {new Date(dates[(idx - 1)].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  )
-                }))}
+                        className='heatmap-hour'
+                        style={{ gridColumnStart: idx + 1, gridColumnEnd: idx + 4, gridRowStart: 8, gridRowEnd: 9 }}>
+                        {new Date(zeData[(idx - 1)].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    )
+                  }))}
+                </div>
+                <div className='heatmap-legend d-flex flex-column-reverse gap-1 justify-content-end align-items-baseline'>
+                  <div>low</div>
+                  <Popover content={`no hit`}><div className={`heatpoint nul`} /></Popover>
+                  <Popover content={`from 1 to ${~~(maxHits * 0.05)} hits`}><div className={`heatpoint low`} /></Popover>
+                  <Popover content={`from ${~~(maxHits * 0.05) + 1} to ${~~(maxHits * 0.5)} hits`}><div className={`heatpoint medium-low`} /></Popover>
+                  <Popover content={`from ${~~(maxHits * 0.5) + 1} to ${~~(maxHits * 0.95)} hits`}><div className={`heatpoint medium-high`} /></Popover>
+                  <Popover content={`from ${~~(maxHits * 0.95) + 1} to ${maxHits} hits`}><div className={`heatpoint high`} /></Popover>
+                  <div>High</div>
+                </div>
               </div>
-              <div className='heatmap-legend d-flex flex-column-reverse gap-1 justify-content-end align-items-baseline'>
-                <div>low</div>
-                <Popover content={`no hit`}><div className={`heatpoint nul`} /></Popover>
-                <Popover content={`from 1 to ${~~(maxHits * 0.05)} hits`}><div className={`heatpoint low`} /></Popover>
-                <Popover content={`from ${~~(maxHits * 0.05) + 1} to ${~~(maxHits * 0.5)} hits`}><div className={`heatpoint medium-low`} /></Popover>
-                <Popover content={`from ${~~(maxHits * 0.5) + 1} to ${~~(maxHits * 0.95)} hits`}><div className={`heatpoint medium-high`} /></Popover>
-                <Popover content={`from ${~~(maxHits * 0.95) + 1} to ${maxHits} hits`}><div className={`heatpoint high`} /></Popover>
-                <div>High</div>
-              </div>
-            </div>
+            </>
           )}
 
           {mode === visualizationMode.graphs && <div style={{ maxHeight: 420, flex: 1, display: 'flex' }}>
@@ -253,24 +288,24 @@ export const EfficiencyChart = (props) => {
                   left: 20,
                   right: 20,
                 }}
-                data={dates}
+                data={zeData}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="dateAsString" interval="preserveStartEnd" label={{ value: 'Date', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }}/>
-                <YAxis label={{ value: 'Hits', angle: -90, position: 'insideLeft', fill: "var(--text)" }}/>
+                <XAxis dataKey="dateAsString" interval="preserveStartEnd" label={{ value: 'Date', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }} />
+                <YAxis label={{ value: 'Hits', angle: -90, position: 'insideLeft', fill: "var(--text)" }} />
                 <Legend />
                 <Line type="monotone" dataKey="hits" stroke="var(--color-primary)" dot={false} />
               </LineChart>
             </ResponsiveContainer>
             <ResponsiveContainer width="45%" height={300}>
               <LineChart margin={{
-                  bottom: 10,
-                  left: 20,
-                  right: 20,
-                }} data={hitRanges}>
+                bottom: 10,
+                left: 20,
+                right: 20,
+              }} data={hitRanges}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="rangeStart" interval="preserveStartEnd" label={{ value: 'Hit range', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }}/>
-                <YAxis label={{ value: 'Frequency', angle: -90, position: 'insideLeft', fill: "var(--text)" }}/>
+                <XAxis dataKey="rangeStart" interval="preserveStartEnd" label={{ value: 'Hit range', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }} />
+                <YAxis label={{ value: 'Frequency', angle: -90, position: 'insideLeft', fill: "var(--text)" }} />
                 <Legend />
                 <Line type="monotone" dataKey="frequency" stroke="var(--color-primary)" dot={false} />
               </LineChart>
