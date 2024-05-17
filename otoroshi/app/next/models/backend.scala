@@ -1,5 +1,6 @@
 package otoroshi.next.models
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.OverflowStrategy
 import otoroshi.env.Env
 import otoroshi.models._
@@ -332,9 +333,20 @@ object NgBackend {
     lookup.asOpt[JsObject] match {
       case None      => empty
       case Some(obj) =>
+        val optTargetUrl                   = obj
+          .select("url")
+          .asOpt[String]
+          .orElse(obj.select("target").asOpt[String])
+          .orElse(obj.select("target_url").asOpt[String])
+        val root                           =
+          optTargetUrl.map(url => Uri(url).path.toString()).orElse(obj.select("root").asOpt[String]).getOrElse("/")
+        val simpleTarget: Option[NgTarget] = optTargetUrl.map(NgTarget.parse)
         NgBackend(
-          targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
-          root = obj.select("root").asOpt[String].getOrElse("/"),
+          targets = simpleTarget
+            .map(st => Seq(st))
+            .orElse(obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)))
+            .getOrElse(Seq.empty),
+          root = root,
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
@@ -451,6 +463,24 @@ object NgTarget {
     ipAddress = None,
     tlsConfig = NgTlsConfig.default
   )
+  def parse(str: String): NgTarget = {
+    val uri  = Uri(str)
+    val tls  = uri.scheme.toLowerCase() == "https"
+    val port = if (uri.authority.port == 0) {
+      if (tls) 443 else 80
+    } else uri.authority.port
+    NgTarget(
+      id = uri.authority.host.toString(),
+      hostname = uri.authority.host.toString(),
+      port = port,
+      tls = tls,
+      weight = 1,
+      protocol = HttpProtocols.HTTP_1_1,
+      predicate = AlwaysMatch,
+      ipAddress = None,
+      tlsConfig = NgTlsConfig.default
+    )
+  }
   def fromLegacy(target: Target): NgTarget = fromTarget(target)
   def fromTarget(target: Target): NgTarget = {
     NgTarget(

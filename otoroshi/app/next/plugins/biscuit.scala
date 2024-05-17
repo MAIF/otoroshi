@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
 import akka.Done
-import com.clevercloud.biscuit.crypto.PublicKey
-import com.clevercloud.biscuit.token.builder.Term.Str
-import com.clevercloud.biscuit.token.{Authorizer, Biscuit}
+import org.biscuitsec.biscuit.crypto.PublicKey
+import org.biscuitsec.biscuit.token.builder.Term.Str
+import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
@@ -89,29 +89,29 @@ class NgBiscuitExtractor extends NgPreRouting {
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
-  private val client_id_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
+  private val client_id_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_id_res",
-    Seq(com.clevercloud.biscuit.token.builder.Utils.`var`("id")).asJava,
+    Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("id")).asJava,
     Seq(
-      com.clevercloud.biscuit.token.builder.Utils.pred(
+      org.biscuitsec.biscuit.token.builder.Utils.pred(
         "client_id",
         Seq(
-          com.clevercloud.biscuit.token.builder.Utils.s("authority"),
-          com.clevercloud.biscuit.token.builder.Utils.`var`("id")
+          org.biscuitsec.biscuit.token.builder.Utils.s("authority"),
+          org.biscuitsec.biscuit.token.builder.Utils.`var`("id")
         ).asJava
       )
     ).asJava
   )
 
-  private val client_sign_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
+  private val client_sign_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_sign_res",
-    Seq(com.clevercloud.biscuit.token.builder.Utils.`var`("sign")).asJava,
+    Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("sign")).asJava,
     Seq(
-      com.clevercloud.biscuit.token.builder.Utils.pred(
+      org.biscuitsec.biscuit.token.builder.Utils.pred(
         "client_sign",
         Seq(
-          com.clevercloud.biscuit.token.builder.Utils.s("authority"),
-          com.clevercloud.biscuit.token.builder.Utils.`var`("sign")
+          org.biscuitsec.biscuit.token.builder.Utils.s("authority"),
+          org.biscuitsec.biscuit.token.builder.Utils.`var`("sign")
         ).asJava
       )
     ).asJava

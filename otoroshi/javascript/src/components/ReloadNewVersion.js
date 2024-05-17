@@ -81,7 +81,7 @@ export class ReloadNewVersion extends Component {
           A new version of Otoroshi has been deployed
           <button
             type="button"
-            className="btn btn-danger btn-sm"
+            className="btn btn-quiet btn-sm"
             style={{ marginLeft: 10 }}
             onClick={(e) => window.location.reload()}
           >

@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.17.0-dev"
+version := "16.18.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -67,8 +67,8 @@ lazy val openTelemetryVersion    = "1.28.0"
 lazy val jacksonVersion          = "2.13.4"
 lazy val akkaHttpVersion         = "10.2.10"
 lazy val akkaHttp2Version        = "10.2.10"
-lazy val reactorNettyVersion     = "1.1.12"
-lazy val nettyVersion            = "4.1.100.Final"
+lazy val reactorNettyVersion     = "1.1.18"
+lazy val nettyVersion            = "4.1.109.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -141,7 +141,7 @@ libraryDependencies ++= Seq(
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                        % "jsoup"                                     % "1.15.3",
-  "org.biscuitsec"                   % "biscuit"                                   % "2.3.1",
+  "org.biscuitsec"                   % "biscuit"                                   % "3.0.1",
   "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "3.3.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "3.4.0" classifier "bundle",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
@@ -206,11 +206,11 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.23.Final",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.23.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.51.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.51.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.21.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.28.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
   "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
@@ -337,6 +337,7 @@ resolvers += Resolver.mavenLocal
 
 bashScriptExtraDefines += """
 addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
+addJava "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
 addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED" 
 addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
@@ -351,6 +352,7 @@ reStart / javaOptions ++= Seq(
   "-Xms2g",
   "-Xmx8g",
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
+  "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",
   "-Dlog4j2.formatMsgNoLookups=true",
@@ -371,7 +373,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   //"-Dotoroshi.privateapps.subdomain=otoroshi",
-  "-Dotoroshi.ssl.fromOutside.clientAuth=Want",
+  "-Dotoroshi.ssl.fromOutside.clientAuth=None",
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
@@ -383,6 +385,8 @@ reStart / javaOptions ++= Seq(
   //"-Dotoroshi.loggers.otoroshi-wasm-vm-pool=DEBUG",
   //"-Dotoroshi.loggers.otoroshi-wasm-integration=DEBUG",
   //"-Dotoroshi.loggers.otoroshi-proxy-wasm=TRACE",
+  //"-Dotoroshi.loggers.otoroshi-experimental-netty-http3-client=DEBUG",
+  //"-Dotoroshi.loggers.otoroshi-experimental-netty-http3-server=DEBUG",
   "-Dotoroshi.options.enable-json-media-type-with-open-charset=true",
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",

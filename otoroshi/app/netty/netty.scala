@@ -10,6 +10,7 @@ import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
+import otoroshi.next.extensions.{HttpListener, HttpListenerNames}
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -23,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
-import reactor.netty.NettyOutbound
+import reactor.netty.{DisposableServer, NettyOutbound}
 import reactor.netty.http.server.logging.{AccessLog, AccessLogArgProvider, AccessLogFactory}
 
 import java.net.{InetSocketAddress, SocketAddress}
@@ -44,7 +45,13 @@ case class HttpServerBodyResponse(
     chunked: Boolean
 )
 
-class ReactorNettyServer(env: Env) {
+object ReactorNettyServer {
+  def classic(env: Env): ReactorNettyServer = {
+    new ReactorNettyServer(ReactorNettyServerConfig.parseFromWithCache(env), env)
+  }
+}
+
+class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
   import reactor.core.publisher.Flux
   import reactor.netty.http.HttpProtocol
@@ -61,8 +68,6 @@ class ReactorNettyServer(env: Env) {
     .right
     .get
     .asInstanceOf[ProxyEngine]
-
-  val config = ReactorNettyServerConfig.parseFromWithCache(env)
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
   private val sessionCookieBaker   =
@@ -243,6 +248,7 @@ class ReactorNettyServer(env: Env) {
   }
 
   private def handleWebsocket(
+      listenerId: String,
       req: HttpServerRequest,
       res: HttpServerResponse,
       version: String,
@@ -250,8 +256,8 @@ class ReactorNettyServer(env: Env) {
       session: Option[SSLSession]
   ): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq = new ReactorNettyRequestHeader(req, version, secure, session, sessionCookieBaker, flashCookieBaker)
-      engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
+      val otoReq = new ReactorNettyRequestHeader(listenerId, req, version, secure, session, sessionCookieBaker, flashCookieBaker)
+      engine.handleWsWithListener(otoReq, engine.badDefaultRoutingWs, config.exclusive).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow)  => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
@@ -270,6 +276,7 @@ class ReactorNettyServer(env: Env) {
   }
 
   private def handleHttp(
+      listenerId: String,
       req: HttpServerRequest,
       res: HttpServerResponse,
       secure: Boolean,
@@ -289,11 +296,11 @@ class ReactorNettyServer(env: Env) {
         .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     if (isWebSocket) {
-      handleWebsocket(req, res, version, secure, sessionOpt)
+      handleWebsocket(listenerId, req, res, version, secure, sessionOpt)
     } else {
       ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-        val otoReq = new ReactorNettyRequest(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
-        engine.handle(otoReq, engine.badDefaultRoutingHttp).map { result =>
+        val otoReq = new ReactorNettyRequest(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+        engine.handleWithListener(otoReq, engine.badDefaultRoutingHttp, config.exclusive).map { result =>
           sendResultAsHttpResponse(result, res)
         }
       }
@@ -301,6 +308,7 @@ class ReactorNettyServer(env: Env) {
   }
 
   private def handle(
+      listenerId: String,
       req: HttpServerRequest,
       res: HttpServerResponse,
       secure: Boolean,
@@ -321,7 +329,7 @@ class ReactorNettyServer(env: Env) {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
       val version            =
         sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
-      val otoReq             = new ReactorNettyRequest(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+      val otoReq             = new ReactorNettyRequest(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, config.exclusive.some)
       val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
       reqHandler match {
         case a: EssentialAction          => {
@@ -395,7 +403,7 @@ class ReactorNettyServer(env: Env) {
     (groupHttp.group, groupHttps.group)
   }
 
-  def createEventLoops(): (LoopResources, LoopResources) = {
+  def createEventLoops(print: Boolean): (LoopResources, LoopResources) = {
     val groupHttp  =
       if (config.nThread == 0) LoopResources.create("otoroshi-http")
       else LoopResources.create("otoroshi-http", 2, config.nThread, true)
@@ -403,26 +411,32 @@ class ReactorNettyServer(env: Env) {
       if (config.nThread == 0) LoopResources.create("otoroshi-https")
       else LoopResources.create("otoroshi-https", 2, config.nThread, true)
     EventLoopUtils.create(config.native, config.nThread).native.foreach { name =>
-      logger.info(s"  using ${name} native transport")
-      logger.info("")
+      if (print) {
+        logger.info(s"  using ${name} native transport")
+        logger.info("")
+      }
     }
     (groupHttp, groupHttps)
   }
 
-  def start(handler: HttpRequestHandler): Unit = {
+  def start(handler: HttpRequestHandler): DisposableReactorNettyServer = {
     if (config.enabled) {
 
-      logger.info("")
-      logger.info(s"Starting the experimental Netty Server !!!")
-      logger.info("")
+      if (config.id == HttpListenerNames.Experimental) {
+        logger.info("")
+        logger.info(s"Starting the experimental Netty Server !!!")
+        logger.info("")
+      }
 
-      val (groupHttp, groupHttps) = createEventLoops()
+      val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Experimental)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
-      if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
-      logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
-      logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
-      logger.info("")
+      if (config.id == "classic") {
+        if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
+        logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
+        logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
+        logger.info("")
+      }
 
       def handleFunction(
           secure: Boolean
@@ -430,12 +444,12 @@ class ReactorNettyServer(env: Env) {
         if (config.newEngineOnly) { (req, res) =>
           {
             val channel = NettyHelper.getChannel(req)
-            handleHttp(req, res, secure, channel)
+            handleHttp(config.id, req, res, secure, channel)
           }
         } else { (req, res) =>
           {
             val channel = NettyHelper.getChannel(req)
-            handle(req, res, secure, channel, handler)
+            handle(config.id, req, res, secure, channel, handler)
           }
         }
       }
@@ -464,14 +478,19 @@ class ReactorNettyServer(env: Env) {
         }
       }
 
-      val serverHttps = HttpServer
+      val protocols = Seq.empty[HttpProtocol]
+        .applyOnIf(config.http1.enabled)(_ :+ HttpProtocol.HTTP11)
+        .applyOnIf(config.http2.enabled || config.http2.h2cEnabled)(_ :+ HttpProtocol.H2C)
+
+      val serverHttps = if (config.httpsPort == -1) None else Some(HttpServer
         .create()
         .host(config.host)
         .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
-        .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        .applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
+        .protocol(protocols: _*)
+        //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
         .runOn(groupHttps)
         .httpRequestDecoder(spec =>
           spec
@@ -501,16 +520,17 @@ class ReactorNettyServer(env: Env) {
           channel.pipeline().addLast(new OtoroshiErrorHandler(logger))
         }
         .handle(handleFunction(true))
-        .bindNow()
-      val serverHttp  = HttpServer
+        .bindNow())
+      val serverHttp  = if (config.httpPort == -1) None else Some(HttpServer
         .create()
         .host(config.host)
         .noSSL()
         .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
-        .applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        .applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
+        .protocol(protocols: _*)
+        //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
         .handle(handleFunction(false))
         .runOn(groupHttp)
         .httpRequestDecoder(spec =>
@@ -524,15 +544,27 @@ class ReactorNettyServer(env: Env) {
             .validateHeaders(config.parser.validateHeaders)
         )
         .idleTimeout(config.idleTimeout)
-        .bindNow()
-      new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
+        .bindNow())
+      val http3Server = new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
+      val disposableServer = DisposableReactorNettyServer(config.id, serverHttp, serverHttps, http3Server.some)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
-        serverHttp.disposeNow()
-        serverHttps.disposeNow()
+        disposableServer.stop()
       }))
+      disposableServer
     } else {
-      ()
+      DisposableReactorNettyServer(config.id, None, None, None)
     }
+  }
+}
+
+case class DisposableReactorNettyServer(name: String, serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
+  def stop(): Unit = {
+    if (name != HttpListenerNames.Experimental && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
+      HttpListener.logger.info(s"stopping http listener '${name}'")
+    }
+    serverHttp.foreach(_.disposeNow())
+    serverHttps.foreach(_.disposeNow())
+    http3Server.foreach(_.stop())
   }
 }
 

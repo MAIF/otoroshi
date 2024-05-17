@@ -1,7 +1,9 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.WasmJob
+import otoroshi.netty.NettyRequestKeys
+import otoroshi.next.extensions.HttpListenerNames
+import otoroshi.next.plugins.{OverrideHost, WasmJob}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
@@ -82,6 +84,10 @@ object PluginIndex {
 }
 
 object NgPluginInstance {
+  def default = NgPluginInstance(
+    plugin = s"cp:${classOf[OverrideHost].getName}",
+    pluginIndex = Some(PluginIndex(transformRequest = Some(0)))
+  )
   def readFrom(obj: JsValue): NgPluginInstance = {
     NgPluginInstance(
       plugin = obj.select("plugin").asString,
@@ -89,6 +95,7 @@ object NgPluginInstance {
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
       include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
       exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
+      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
       config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
       pluginIndex = obj.select("plugin_index").asOpt(PluginIndex.format)
     )
@@ -103,7 +110,8 @@ case class NgPluginInstance(
     exclude: Seq[String] = Seq.empty,
     config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
     pluginIndex: Option[PluginIndex] = None,
-    instanceId: Int = -1
+    instanceId: Int = -1,
+    boundListeners: Seq[String] = Seq.empty,
 ) {
   def json: JsValue = Json
     .obj(
@@ -112,7 +120,8 @@ case class NgPluginInstance(
       "plugin"  -> plugin,
       "include" -> include,
       "exclude" -> exclude,
-      "config"  -> config.json
+      "config"  -> config.json,
+      "bound_listeners" -> boundListeners,
     )
     .applyOnWithOpt(pluginIndex)((o, v) => o ++ Json.obj("plugin_index" -> v.json))
   def matches(request: RequestHeader): Boolean = {
@@ -289,7 +298,8 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 }
 
 object NgPlugins {
-  def empty: NgPlugins = NgPlugins(Seq.empty)
+  def default: NgPlugins = NgPlugins(Seq(NgPluginInstance.default))
+  def empty: NgPlugins   = NgPlugins(Seq.empty)
   def readFrom(lookup: JsLookupResult): NgPlugins = {
     lookup.asOpt[JsArray] match {
       case None      => NgPlugins(Seq.empty)
@@ -313,6 +323,8 @@ case class NgContextualPlugins(
   implicit val env: Env             = _env
   implicit val ec: ExecutionContext = _ec
 
+  lazy val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
+
   lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots).zipWithIndex
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
@@ -322,7 +334,12 @@ case class NgContextualPlugins(
       eps.filterNot(p => env.blacklistedPlugins.contains(p.plugin))
     }
 
-  lazy val (allPlugins, filteredPlugins) = whitelistedPlugins
+  lazy val currentListenerPLugin = whitelistedPlugins.filter {
+    case plugin if plugin.boundListeners.isEmpty => true
+    case plugin => plugin.boundListeners.contains(currentListener)
+  }
+
+  lazy val (allPlugins, filteredPlugins) = currentListenerPLugin
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .partition(_.matches(request))
 

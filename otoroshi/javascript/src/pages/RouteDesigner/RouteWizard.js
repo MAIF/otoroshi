@@ -225,6 +225,7 @@ const ProcessStep = ({ state, history }) => {
                 enabled: true,
                 exclude: [],
                 include: [],
+                bound_listeners: [],
                 plugin: plugin.id,
               };
             }),

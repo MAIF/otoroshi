@@ -100,8 +100,8 @@ export class Toasts extends Component {
           justifyContent: 'flex-end',
           alignItems: 'center',
           position: 'fixed',
-          right: 10,
-          top: 10,
+          right: 0,
+          top: 50,
           width: '30vw',
         }}
       >

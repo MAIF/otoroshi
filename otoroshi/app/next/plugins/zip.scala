@@ -93,6 +93,7 @@ class ZipFileBackend extends NgBackendCall {
       fileCache.get(filename) match {
         case Some((at, fu)) if at + config.ttl < System.currentTimeMillis() => {
           new File(filename).delete()
+          fileCache.remove(filename)
           getZipFile(config)
         }
         case Some((_, fu))                                                  => fu.future.map(s => Right(new ZipFile(s)))

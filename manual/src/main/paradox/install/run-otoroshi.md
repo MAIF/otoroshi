@@ -22,6 +22,7 @@ if you want to run the jar file for on a JDK above JDK11, you'll have to add the
 ```sh
 java \
   --add-opens=java.base/javax.net.ssl=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED \
   --add-exports=java.base/sun.security.x509=ALL-UNNAMED \
   --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \

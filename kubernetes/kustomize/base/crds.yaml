@@ -499,7 +499,7 @@ metadata:
 spec:
   group: "proxy.otoroshi.io"
   names:
-    kind: "DateExporter"
+    kind: "DataExporter"
     plural: "data-exporters"
     singular: "data-exporter"
   scope: "Namespaced"

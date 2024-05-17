@@ -6,8 +6,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.clevercloud.biscuit.datalog.SymbolTable
-import com.clevercloud.biscuit.token.builder.parser.Parser
+import org.biscuitsec.biscuit.datalog.SymbolTable
+import org.biscuitsec.biscuit.token.builder.parser.Parser
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
@@ -1135,10 +1135,10 @@ class ClientCredentialService extends RequestSink {
                 clientSecret
               )) && bearerKind == "biscuit" => {
 
-            import com.clevercloud.biscuit.crypto.KeyPair
-            import com.clevercloud.biscuit.token.Biscuit
-            import com.clevercloud.biscuit.token.builder.Block
-            import com.clevercloud.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.crypto.KeyPair
+            import org.biscuitsec.biscuit.token.Biscuit
+            import org.biscuitsec.biscuit.token.builder.Block
+            import org.biscuitsec.biscuit.token.builder.Utils._
 
             import collection.JavaConverters._
 
@@ -1205,7 +1205,7 @@ class ClientCredentialService extends RequestSink {
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
               Biscuit
-                .make(rng, keypair, io.vavr.control.Option.none(), symbols, authority_builder.build())
+                .make(rng, keypair, symbols, authority_builder.build())
                 .serialize_b64url()
             }
 

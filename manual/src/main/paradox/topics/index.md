@@ -23,6 +23,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Anonymous reporting](./anonymous-reporting.md)
 * @ref:[OpenTelemetry support](./opentelemetry.md)
 * @ref:[Green score](./green-score.md)
+* @ref:[Custom HTTP Listeners](./http-listeners.md)
 
 @@@ index
 
@@ -47,5 +48,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Anonymous reporting](./anonymous-reporting.md)
 * [OpenTelemetry support](./opentelemetry.md)
 * [Green score](./green-score.md)
+* [Custom HTTP Listeners](./http-listeners.md)
   
 @@@

@@ -13,6 +13,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import browserUpdate from 'browser-update';
 import { SimpleLoginPage } from './pages/SimpleLoginPage';
+import { PasswordLessLoginPage } from './pages/PassworldlessLoginPage';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
@@ -49,4 +50,11 @@ export function simpleLogin(opts, node) {
   setupWindowUtils();
 
   ReactDOM.render(<SimpleLoginPage {...opts} />, node);
+}
+
+export function auth0PasswordlessLogin(opts, node) {
+  setupOutdatedBrowser();
+  setupWindowUtils();
+
+  ReactDOM.render(<PasswordLessLoginPage {...opts} />, node);
 }

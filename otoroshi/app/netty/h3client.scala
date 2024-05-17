@@ -36,7 +36,7 @@ import reactor.core.publisher.{Flux, Sinks}
 import java.io.File
 import java.net.{InetSocketAddress, URI}
 import java.util
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import javax.net.ssl.SSLSessionContext
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -60,7 +60,7 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
   override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator                     =
     sslContext.applicationProtocolNegotiator()
-  override def sessionContext(): SSLSessionContext                                                = sslContext.sessionContext()
+  override def sessionContext(): QuicSslSessionContext                                            = sslContext.sessionContext()
 }
 
 case class NettyHttp3ClientBody(source: Flux[ByteString], contentType: Option[String], contentLength: Option[Long])
@@ -210,6 +210,8 @@ class NettyHttp3Client(val env: Env) {
 
         override def channelInactive(ctx: ChannelHandlerContext): Unit = {
           if (logger.isDebugEnabled) logger.debug("channel inactive")
+          //ctx.close()
+          //hotSource.tryEmitComplete()
         }
 
         override def handleHttp3Exception(ctx: ChannelHandlerContext, exception: Http3Exception): Unit = {
@@ -226,13 +228,13 @@ class NettyHttp3Client(val env: Env) {
 
         override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
           if (logger.isDebugEnabled) logger.debug("channelReadComplete")
-          ctx.close()
-          hotSource.tryEmitComplete()
+          //ctx.close()
+          //hotSource.tryEmitComplete()
         }
 
         override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame): Unit = {
           val isLast = headersReceived
-          if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast}")
+          if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast} - ${frame}")
           if (headersReceived) {
             val trailerHeaders = frame
               .headers()
@@ -628,17 +630,18 @@ case class NettyHttp3ClientWsRequest(
         .authority(uri.getHost)
         .scheme(uri.getScheme)
         .applyOn { heads =>
-          headers.map { case (name, values) =>
-            heads.add(name.toLowerCase(), values.asJava)
-          }
+          headers
+            .filterNot(_._1.toLowerCase == "host")
+            .filterNot(_._1.toLowerCase == "content-length")
+            .filterNot(_._1.toLowerCase == "transfer-encoding")
+            .filterNot(_._1.toLowerCase.startsWith("x-http3-"))
+            .map { case (name, values) =>
+              heads.add(name.toLowerCase(), values.distinct.asJava)
+            }
           heads
         }
         .add("content-length", "0")
       if (hasBody) {
-        frame.headers().method(method)
-        headers.map { case (name, values) =>
-          frame.headers().add(name.toLowerCase(), values.asJava)
-        }
         frame.headers().remove("content-length")
         realContentType.foreach(ct => frame.headers().add("content-type", ct.value))
         realContentLength.foreach(cl => frame.headers().add("content-length", cl.toString))

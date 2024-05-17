@@ -101,6 +101,14 @@ export const Informations = forwardRef(
           optionsTransformer: (arr) => arr.map((item) => ({ value: item.id, label: item.name })),
         },
       },
+      bound_listeners: {
+        type: 'array-select',
+        label: 'Bound listeners',
+        props: {
+          optionsFrom: '/extensions/cloud-apim/extensions/http-listeners/all',
+          optionsTransformer: (arr) => arr.map((item) => ({ value: item.value, label: item.label })),
+        },
+      },
       core_metadata: {
         label: 'Metadata shortcuts',
         type: 'string',
@@ -303,7 +311,7 @@ export const Informations = forwardRef(
         type: 'group',
         name: 'Misc.',
         collapsed: true,
-        fields: ['tags', 'metadata', 'core_metadata'],
+        fields: ['bound_listeners', 'tags', 'metadata', 'core_metadata'],
       },
       {
         type: 'group',

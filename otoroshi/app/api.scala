@@ -547,10 +547,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
 
   def start(): Otoroshi = {
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     this
   }
@@ -558,10 +559,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   def startAndStopOnShutdown(): Otoroshi = {
     components.handlerRef.set(components.httpRequestHandler)
     otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     stopOnShutdown()
   }
