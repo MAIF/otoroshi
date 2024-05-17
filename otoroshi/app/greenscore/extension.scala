@@ -286,7 +286,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
                 case Some(route) =>
                   (for {
                     group <- FOption(datastores.greenscoresDatastore.findById(groupId))
-                    efficiency <- FOption(analyticsService.fetchRouteEfficiency(route, fromAndTo._1.some, fromAndTo._2.some, group.efficiency.paths, request.getQueryString("day").map(_ => "10m")))
+                    efficiency <- FOption(analyticsService.fetchRouteEfficiency(route, fromAndTo._1.some, fromAndTo._2.some, group.efficiency.excludedPaths, request.getQueryString("day").map(_ => "10m")))
                   } yield Ok(efficiency))
                     .getOrElse(NotFound(Json.obj("error" -> "No entity found")))
                 case None => NotFound(Json.obj("error" -> "No entity found")).future

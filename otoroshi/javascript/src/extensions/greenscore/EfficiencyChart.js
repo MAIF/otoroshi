@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Label } from 'recharts';
 import { Popover } from 'antd';
 import moment from 'moment';
 
@@ -41,9 +41,10 @@ const visualizationMode = {
 export const EfficiencyChart = (props) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [dayData, setDayData] = useState([]);
   const [route, setRoute] = useState();
 
-  const [mode, setMode] = useState(visualizationMode.heat)
+  const [mode, setMode] = useState(visualizationMode.heat);
   const [day, setDay] = useState();
 
   useEffect(() => {
@@ -52,27 +53,26 @@ export const EfficiencyChart = (props) => {
       .then((r) => {
         setRoute(r)
       })
-      .then(getDataForSevenLastDays)
-      .then(() => setLoading(false))
+      .then(() => fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}`, {
+        credentials: 'include',
+        headers: {
+          Accept: ' application/json'
+        }
+      }))
+      .then((r) => r.json())
+      .then(d => {
+        setData(d)
+        setLoading(false)
+      })
       .catch(e => {
         setLoading(false)
       })
   }, []);
 
-  const getDataForSevenLastDays = () => {
-    return fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}`, {
-      credentials: 'include',
-      headers: {
-        Accept: ' application/json'
-      }
-    })
-      .then((r) => r.json())
-      .then(setData)
-  }
-
   const getDataForADay = (day) => {
     setDay(day)
-    return fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}?day=${day}`, {
+    setLoading(true)
+    fetch(`/bo/api/proxy/api/extensions/green-score/efficiency/${props.group}/${props.route}?day=${day}`, {
       credentials: 'include',
       headers: {
         Accept: ' application/json'
@@ -80,23 +80,16 @@ export const EfficiencyChart = (props) => {
     })
       .then((r) => r.json())
       .then(d => {
-        setData(d)
+        setDayData(d)
+        setLoading(false)
       })
-  }
-
-  const getData = (day) => {
-    const fetchData = day ? getDataForADay : getDataForSevenLastDays;
-
-    setDay(day)
-    setLoading(true)
-    return fetchData(day)
-      .then(() => setLoading(false))
       .catch(() => setLoading(false))
   }
 
-  const maxHits = Math.max(...data.map(item => item.hits));
+  const maxHits = Math.max(...data.map(item => item.hits), 1);
 
-  const dates = data.map(({ date, hits, avgDuration }) => {
+  const zeData = !!day ? dayData : data;
+  const dates = zeData.map(({ date, hits, avgDuration }) => {
     let health = '';
     if (hits === 0) {
       health = 'nul';
@@ -110,20 +103,29 @@ export const EfficiencyChart = (props) => {
       health = 'high';
     }
 
-    const dateAsString = new Date(date).toLocaleString()
+    const dateAsString = moment(date).format('DD/MM')
     return ({ hits, date, dateAsString, status: { health }, note: +(hits > props.configuration.threshold), avgDuration })
   })
 
-  const globalNote = dates.reduce((acc, curr) => acc + curr.note, 0)
 
-  const step = 2000;
+  const roundedValue = (value, floor = 10000) => {
+    if (value === 0) {
+      return 1
+    } else if (value < floor) {
+      return roundedValue(value, floor / 10)
+    } else {
+      return Math.floor(value / floor) * floor;
+    }
+  }
+
+  const step = roundedValue(maxHits / 10);
   const hitRanges = Array.from({ length: Math.ceil(maxHits / step) }, (_, i) => ({
     rangeStart: i * step,
     rangeEnd: i * step + (step - 1),
     frequency: 0,
   }));
 
-  data.forEach(item => {
+  zeData.forEach(item => {
     const hits = item.hits;
     const matchingRange = hitRanges.find(range => hits >= range.rangeStart && hits <= range.rangeEnd);
     if (matchingRange) {
@@ -140,8 +142,8 @@ export const EfficiencyChart = (props) => {
             background: 'var(--bg-color_level2)',
             minWidth: '1000px'
           }}>
-            <div className='heatmap-loading'></div>
-          </div>
+          <div className='heatmap-loading'></div>
+        </div>
       </Section>
     )
   }
@@ -167,15 +169,17 @@ export const EfficiencyChart = (props) => {
         >
           <div className='d-flex justify-content-between'>
             {!day && <h4>last 7 days efficiency</h4>}
-            {!!day && <div>
-              <h4>{moment(day).format('ddd D MMM')} efficiency</h4>
-              <button className='btn btn-primary' onClick={() => getData(undefined)}>back</button>
-            </div>}
+            {!!day && (
+              <div>
+                <h4>{moment(day).format('ddd D MMM')} efficiency</h4>
+                <button className='btn btn-primary' onClick={() => setDay(undefined)}>back</button>
+              </div>
+            )}
             <div>
               <button
                 className='btn btn-primary'
                 onClick={() => setMode(mode === visualizationMode.heat ? visualizationMode.graphs : visualizationMode.heat)}>
-                <i className='fas fa-chart-line' />
+                <i className='fas fa-bar-chart' />
               </button>
             </div>
           </div>
@@ -215,7 +219,7 @@ export const EfficiencyChart = (props) => {
                       key={idx}
                       className='d-flex align-items-center justify-content-end me-3'
                       style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: idx, gridRowEnd: idx + 1, cursor: 'pointer' }}
-                      onClick={() => getData(date.valueOf())}>
+                      onClick={() => getDataForADay(date.valueOf())}>
                       {moment(date).format('DD/MM')}
                     </div>
                   )
@@ -240,11 +244,11 @@ export const EfficiencyChart = (props) => {
               </div>
             </div>
           )}
+
           {mode === visualizationMode.graphs && <div style={{ maxHeight: 420, flex: 1, display: 'flex' }}>
             <ResponsiveContainer width="45%" height={300}>
               <LineChart
                 margin={{
-                  top: 75,
                   bottom: 10,
                   left: 20,
                   right: 20,
@@ -252,19 +256,23 @@ export const EfficiencyChart = (props) => {
                 data={dates}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="dateAsString" />
-                <YAxis />
+                <XAxis dataKey="dateAsString" interval="preserveStartEnd" label={{ value: 'Date', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }}/>
+                <YAxis label={{ value: 'Hits', angle: -90, position: 'insideLeft', fill: "var(--text)" }}/>
                 <Legend />
-                <Line type="monotone" dataKey="hits" stroke="#8884d8" dot={false} />
+                <Line type="monotone" dataKey="hits" stroke="var(--color-primary)" dot={false} />
               </LineChart>
             </ResponsiveContainer>
             <ResponsiveContainer width="45%" height={300}>
-              <LineChart data={hitRanges}>
+              <LineChart margin={{
+                  bottom: 10,
+                  left: 20,
+                  right: 20,
+                }} data={hitRanges}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="rangeStart" />
-                <YAxis />
+                <XAxis dataKey="rangeStart" interval="preserveStartEnd" label={{ value: 'Hit range', position: 'insideBottomRight', offset: -20, fill: "var(--text)" }}/>
+                <YAxis label={{ value: 'Frequency', angle: -90, position: 'insideLeft', fill: "var(--text)" }}/>
                 <Legend />
-                <Line type="monotone" dataKey="frequency" stroke="#8884d8" dot={false} />
+                <Line type="monotone" dataKey="frequency" stroke="var(--color-primary)" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>}

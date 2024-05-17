@@ -68,10 +68,9 @@ case class Thresholds(
   )
 }
 
-case class Efficiency(threshold: Int = 100, paths: Seq[String] = Seq.empty) {
+case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
   def json() = Json.obj(
-    "threshold" -> threshold,
-    "paths" -> JsArray(paths.map(JsString))
+    "paths" -> JsArray(excludedPaths.map(JsString))
   )
 }
 
@@ -80,8 +79,7 @@ object Efficiency {
     Try {
       JsSuccess(
         Efficiency(
-          threshold = item.select("threshold").as[Int],
-          paths = item.select("paths").as[Seq[String]]
+          excludedPaths = item.select("paths").as[Seq[String]]
         )
       )
     } recover { case e =>

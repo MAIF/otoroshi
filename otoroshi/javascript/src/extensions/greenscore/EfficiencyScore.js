@@ -64,15 +64,17 @@ export const EfficiencyScore = (props) => {
   return (
     <div className='col-12'>
       <div className='d-flex flex-row'>
-        <NgSelectRenderer
-          value={selectedGroup}
-          ngOptions={{
-            spread: true,
-          }}
-          onChange={setSelectedGroup}
-          options={groups}
-          optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
-        />
+        <div className='col-2'>
+          <NgSelectRenderer
+            value={selectedGroup}
+            ngOptions={{
+              spread: true,
+            }}
+            onChange={setSelectedGroup}
+            options={groups}
+            optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
+          />
+        </div>
         <input className='mx-3 form-control flex-grow-1' type="text" onChange={e => setFilter(e.target.value)} />
       </div>
       {getFilteredGRoutes()
