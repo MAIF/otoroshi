@@ -17,6 +17,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
+import otoroshi.wasm.httpwasm.HttpWasmFunctions
 import play.api.Logger
 import play.api.libs.json._
 
@@ -126,7 +127,7 @@ object HFunction {
         case None    => Optional.empty[A]()
         case Some(d) => Optional.of(d)
       }
-    ).withNamespace("env")
+    ).withNamespace("otoroshi/user")
   }
 
   def defineFunctionWithReturn[A <: HostUserData](
@@ -150,7 +151,7 @@ object HFunction {
         }
       },
       Optional.empty[A]()
-    ).withNamespace("env")
+    ).withNamespace("otoroshi/user")
   }
 }
 
@@ -1225,7 +1226,6 @@ object HostFunctions {
       Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
       DataStore.getFunctions(config, pluginId)
-
     functions.collect {
       case func if func.authorized(config) => func.function
     }.toArray
