@@ -273,7 +273,6 @@ return (
                   )
                 }))}
                 {!!day && [0, 6, 12, 18, 23].map((idx => {
-                  console.debug(idx)
                   return (
                     <div key={idx}
                       className='heatmap-hour'
