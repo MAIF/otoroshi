@@ -166,13 +166,12 @@ return (
   <Section title={route.name}>
     <div style={{ display: 'flex', gap: '.5rem' }}>
       <div
-        className='p-3'
+        className='p-3 heatmap-section'
         style={{
           flex: 1,
           gap: '.5rem',
           display: 'flex',
           flexDirection: 'column',
-          background: 'var(--bg-color_level2)',
           minWidth: '1000px'
         }}
       >

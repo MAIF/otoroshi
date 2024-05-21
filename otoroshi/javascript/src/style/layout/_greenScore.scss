@@ -50,29 +50,11 @@
   border-radius: 5px;
 }
 
-[data-theme="dark"] .heatpoint {
-  &.high {
-    background-color: #39d353;
-  }
-
-  &.medium-high {
-    background-color: #26a641;
-  }
-
-  &.medium-low {
-    background-color: #006d32;
-  }
-
-  &.low {
-    background-color: #0e4429;
-  }
-
-  &.nul {
-    background-color: #161b22;
-  }
+.heatmap-section {
+  background-color: var(--bg-color_level2);
 }
 
-[data-theme="light"] .heatpoint {
+.heatpoint {
   &.high {
     background-color: #216e39;
   }
