@@ -20,3 +20,10 @@ To start the process, click on Add New Group, give a name and select a first rou
 * **Headers out**: the amount of headers produced by the downstream service
 
 The Green Score works for all architectures, including simple leader or more advanced concept like [clustering](https://maif.github.io/otoroshi/manual/deploy/clustering.html).
+
+
+## efficiency
+
+In addition to a performance calculation, the green score also provide a view to display the number of hits of selected APIs in a defined time interval.
+By default data are displayed for the last 7 days with an interval of one hour. By clicking on the day in the legend, data is retrieved for the selected day with an interval of 10 minutes.
+On hover, you can see the number of hits and the average usage time (calculate with the average duration).
