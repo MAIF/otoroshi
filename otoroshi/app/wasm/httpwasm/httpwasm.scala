@@ -16,7 +16,7 @@ import otoroshi.wasm.httpwasm.api.{BodyKind, HeaderKind}
 import play.api._
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results.Ok
+import play.api.mvc.Results.{Ok, Status}
 import play.api.mvc.{RequestHeader, Results}
 
 import java.util.Optional
@@ -35,40 +35,11 @@ class HttpWasmPlugin(wasm: WasmConfig, key: String, env: Env) {
   private implicit val ec = env.otoroshiExecutionContext
   private implicit val ma = env.otoroshiMaterializer
 
-  private lazy val started                 = new AtomicBoolean(false)
-  private lazy val logger                  = Logger("otoroshi-plugin-http-wasm")
   private lazy val state                   = new HttpWasmState(env)
   private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def createFunctions(ref: AtomicReference[WasmVmData]): Seq[HostFunction[_ <: HostUserData]] = {
     HttpWasmFunctions.build(state, ref)
-  }
-
-  def callPluginWithResults(
-      function: String,
-      params: Parameters,
-      results: Int,
-      data: HttpWasmVmData,
-      attrs: TypedMap
-  ): Future[ResultsWrapper] = {
-    attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
-      case None     =>
-        println("no vm found in attrs")
-        Future.failed(new RuntimeException("no vm found in attrs"))
-      case Some(vm) => {
-        println(function + s" - vm: ${vm.index}")
-        vm.call(
-          WasmFunctionParameters.BothParamsResults(function, params, results),
-          Some(data.copy(properties = data.properties))
-        ).flatMap {
-          case Left(err)           =>
-            /* TODO - REPLACE WITH logger.error( */
-            println(s"error while calling plugin: ${err}")
-            Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
-          case Right((_, results)) => results.vfuture
-        }
-      }
-    }
   }
 
   def start(attrs: TypedMap): Future[Unit] = {
@@ -87,56 +58,7 @@ class HttpWasmPlugin(wasm: WasmConfig, key: String, env: Env) {
     }
   }
 
-  def stop(attrs: TypedMap): Future[Unit] = {
-    ().vfuture
-  }
-
-
-  def handleRequest(
-      request: RequestHeader,
-      req: NgPluginHttpRequest,
-      body_bytes: Option[ByteString],
-      attrs: TypedMap
-  ): Future[Either[mvc.Result, Unit]] = {
-    val data = HttpWasmVmData.withRequest(req)
-
-    println("handle request")
-
-//    callPluginWithResults("handle_request", new Parameters(0), 1, data, attrs)
-//      .map { res =>
-//        println(res.results.getValues().head)
-//
-//        Left(Ok(Json.obj()))
-//      }
-
-    Left(Ok(Json.obj())).future
-  }
-
-  def handleResponse(
-      response: NgPluginHttpResponse,
-      body_bytes: Option[ByteString],
-      attrs: TypedMap
-  ): Future[Either[mvc.Result, Unit]] = {
-    Left(Ok(Json.obj())).future
-  }
 }
-
-//case class NgHttpWasmConfig(ref: String) extends NgPluginConfig {
-//  override def json: JsValue = NgHttpWasmConfig.format.writes(this)
-//}
-//
-//object NgHttpWasmConfig {
-//  val format = new Format[NgHttpWasmConfig] {
-//    override def writes(o: NgHttpWasmConfig): JsValue             = Json.obj("ref" -> o.ref)
-//    override def reads(json: JsValue): JsResult[NgHttpWasmConfig] = Try {
-//      NgHttpWasmConfig(
-//        ref = json.select("ref").asString
-//      )
-//    } match {
-//      case Success(e) => JsSuccess(e)
-//      case Failure(e) => JsError(e.getMessage)
-//    }
-//  }
 
 class NgHttpWasm extends NgRequestTransformer {
 
@@ -156,39 +78,83 @@ class NgHttpWasm extends NgRequestTransformer {
   override def transformsResponse: Boolean       = true
   override def transformsError: Boolean          = false
 
-    override def beforeRequest(
-                              ctx: NgBeforeRequestContext
-                            )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-
-      println("BEFORE REQUEST")
+    override def beforeRequest(ctx: NgBeforeRequestContext)
+                              (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     new HttpWasmPlugin(config, "http-wasm", env).start(ctx.attrs)
   }
 
-  override def afterRequest(
-                             ctx: NgAfterRequestContext
-                           )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-//    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey).foreach(_.release())
-    ().vfuture
+  private def handleResponse(vm: WasmVm, vmData: HttpWasmVmData, reqCtx: Int, isError: Int)
+                            (implicit env: Env, ec: ExecutionContext) = {
+    println(s"calling handle_response with reqCtx $reqCtx")
+    vm.call(
+       WasmFunctionParameters.NoResult("handle_response", new Parameters(2).pushInts(reqCtx, isError)),
+        vmData.some
+    )
   }
 
   private def execute(vm: WasmVm, ctx: NgTransformerRequestContext)
-                     (implicit env: Env, ec: ExecutionContext) = {
-    // input: Option[String] = None, parameters: Option[WasmOtoroshiParameters] = None, context: Option[WasmVmData] = None
-    println("Calling execute function")
+                     (implicit env: Env, ec: ExecutionContext): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
+    val vmData = HttpWasmVmData
+          .withRequest(ctx.otoroshiRequest)
+          .some
+
     vm.callWithParamsAndResult("handle_request",
         new Parameters(0),
         1,
         None,
-        HttpWasmVmData
-          .withRequest(ctx.otoroshiRequest).some
+        vmData
       )
-      .map {
-        case Left(error) => println(error)
-        case Right(value) => println(value)
-      }
-      .andThen { case _ =>
-        vm.release()
+      .flatMap {
+        case Left(error) => {
+          println("got an error on handle_request")
+          Errors.craftResponseResult(
+              error.toString(),
+              Status(401),
+              ctx.request,
+              None,
+              None,
+              attrs = TypedMap.empty
+            ).map(r => Left(r))
+        }
+        case Right(res) =>
+          println("ending handle_Request and get result")
+          val ctxNext = res.results.getValue(0).v.i64
+
+          println(s"handle request has returned $ctxNext")
+
+          val data = vmData.get
+          if ((ctxNext & 0x1) != 0x1) {
+              println("returning response as guest asked")
+              Left(data.response.asResult).future
+          } else {
+            data.nextCalled = true
+
+            val reqCtx = ctxNext >> 32
+            handleResponse(vm, data, reqCtx.toInt, 0)
+
+            println(s"request has body ${data.request.hasBody}")
+
+            implicit val mat = env.otoroshiMaterializer
+            data.request.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+              println(bodyRaw)
+            }
+
+            if (data.request.hasBody) {
+              Right(ctx.otoroshiRequest.copy(
+                headers = data.request.headers,
+                url = data.request.url,
+                method = data.request.method,
+                body = data.request.body
+              )).future
+            } else {
+              Right(ctx.otoroshiRequest.copy(
+                headers = data.request.headers,
+                url = data.request.url,
+                method = data.request.method,
+              )).future
+            }
+          }
       }
   }
 
@@ -197,41 +163,18 @@ class NgHttpWasm extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer):
   Future[Either[mvc.Result, NgPluginHttpRequest]] = {
     println("Calling transform request")
-
-
-    //    val hasBody                            = ctx.request.theHasBody
-    //    val bytesf: Future[Option[ByteString]] = if (!hasBody) {
-    //      None.vfuture
-    //    } else {
-    //      ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
-    //    }
-
     ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
       case None =>
         println("no vm found in attrs")
         Future.failed(new RuntimeException("no vm found in attrs"))
-      case Some(vm) => execute(vm, ctx).map(_ => {
-        Right(ctx.otoroshiRequest)
-      })
+      case Some(vm) => execute(vm, ctx)
     }
-    //  override def transformResponse(
-    //      ctx: NgTransformerResponseContext
-    //  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
-    //    val config                             = ctx.cachedConfig(internalName)(NgHttpWasmConfig.format).getOrElse(NgHttpWasmConfig("none"))
-    //    val plugin                             = getPlugin(config.ref, ctx.attrs)
-    //    val bytesf: Future[Option[ByteString]] = ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
-    //    bytesf.flatMap { bytes =>
-    //      val res = ctx.otoroshiResponse.copy(body = bytes.get.chunks(16 * 1024))
-    //      plugin.handleResponse(
-    //          res,
-    //          bytes,
-    //          ctx.attrs
-    //        )
-    //        .map {
-    //          case Left(result) => Left(result)
-    //          case Right(_)     => Right(res)
-    //        }
-    //    }
-    //  }
+  }
+
+    override def afterRequest(
+                             ctx: NgAfterRequestContext
+                           )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey).foreach(_.release())
+    ().vfuture
   }
 }

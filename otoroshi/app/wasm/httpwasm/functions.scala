@@ -24,9 +24,7 @@ case class HttpWasmVmData(
                            var features: Features = Features(3 | Feature.FeatureBufferRequest.value | Feature.FeatureBufferResponse.value | Feature.FeatureTrailers.value),
                            var nextCalled: Boolean = false,
                            var requestBodyReadIndex: Int = 0,
-                           var responseBodyReadIndex: Int = 0,
-                           var requestBodyReplaced: Boolean = false,
-                           var responseBodyReplaced: Boolean = false
+                           var responseBodyReadIndex: Int = 0
                          ) extends HostUserData
   with WasmVmData {
   def headers(kind: HeaderKind): Map[String, String] = {
@@ -47,6 +45,7 @@ case class HttpWasmVmData(
   }
 
   def setHeader(kind: HeaderKind, key: String, value: Seq[String]) = {
+    println("set header", kind, key, value)
     kind match {
       case HeaderKind.HeaderKindRequest => setRequest(request.copy(headers = request.headers ++ Map(key -> value.head)))
       case HeaderKind.HeaderKindResponse => setResponse(response.copy(headers = response.headers ++ Map(key -> value.head)))
@@ -80,14 +79,14 @@ object AdministrativeFunctions {
     Seq(
       new HostFunction[EnvUserData](
         "enable_features",
-        parameters(2),
+        parameters(1),
         parameters(1),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.enableFeatures(getCurrentVmData(), params(0).v.i32),
+        ) => returns(0).v.i32 = state.enableFeatures(getCurrentVmData(), params(0).v.i32),
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -145,25 +144,41 @@ object HeaderFunctions {
       new HostFunction[EnvUserData](
         "get_header_names",
         parameters(3),
-        parameters(1),
+        Array(LibExtism.ExtismValType.I64),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.getHeaderNames(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32),
+        ) => {
+          returns(0).v.i64 = state.getHeaderNames(plugin,
+            getCurrentVmData(),
+            HeaderKind.fromValue(params(0).v.i32),
+            params(1).v.i32,
+            params(2).v.i32).longValue()
+
+          println(s"ending get_header_names with ${returns(0).v.i64}")
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
         "get_header_values",
         parameters(5),
-        parameters(0),
+        Array(LibExtism.ExtismValType.I64),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.getHeaderValues(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32),
+        ) => {
+          println("calling get header values")
+           returns(0).v.i64 = state.getHeaderValues(plugin, getCurrentVmData(),
+             HeaderKind.fromValue(params(0).v.i32),
+             params(1).v.i32,
+             params(2).v.i32,
+             params(3).v.i32,
+             params(4).v.i32).longValue()
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -175,25 +190,31 @@ object HeaderFunctions {
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.setHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32),
+        ) => {
+          println("SET HEADER VALUE")
+          state.setHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32)
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
         "add_header_value",
         parameters(5),
-        parameters(1),
+        parameters(0),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.addHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32),
+        ) => {
+          println("ADD HEADER VALUE")
+          state.addHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32)
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
         "remove_header",
         parameters(3),
-        parameters(1),
+        parameters(0),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
@@ -213,13 +234,13 @@ object BodyFunctions {
       new HostFunction[EnvUserData](
         "read_body",
         parameters(3),
-        parameters(1),
+        Array(LibExtism.ExtismValType.I64),
         (
           plugin: ExtismCurrentPlugin,
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.readBody(plugin, getCurrentVmData(), BodyKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32),
+        ) => returns(0).v.i64 = state.readBody(plugin, getCurrentVmData(), BodyKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32).longValue(),
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -251,7 +272,7 @@ object RequestFunctions {
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.getMethod(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
+        ) => returns(0).v.i32 = state.getMethod(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -277,8 +298,6 @@ object RequestFunctions {
           data: Optional[EnvUserData]
         ) => {
           returns(0).v.i32 = state.getUri(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32)
-
-          println("get_uri ended")
         },
         Optional.empty[EnvUserData]()
       ),
@@ -303,7 +322,9 @@ object RequestFunctions {
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.getProtocolVersion(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
+        ) => {
+          returns(0).v.i32 = state.getProtocolVersion(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32)
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -371,7 +392,7 @@ object HttpWasmFunctions {
         case Some(data: HttpWasmVmData) => data
         case _                  =>
           println("missing vm data")
-          //          new RuntimeException("missing vm data").printStackTrace()
+          new RuntimeException("missing vm data").printStackTrace()
           throw new RuntimeException("missing vm data")
       }
     }

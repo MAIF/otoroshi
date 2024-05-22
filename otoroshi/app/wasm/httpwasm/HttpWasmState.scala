@@ -3,7 +3,7 @@ package otoroshi.wasm.httpwasm
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.sun.jna.Pointer
-import org.extism.sdk.ExtismCurrentPlugin
+import org.extism.sdk.{ExtismCurrentPlugin, HostFunction}
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.httpwasm.api.{LogLevel, _}
@@ -38,7 +38,6 @@ class HttpWasmState(env: Env) {
       return vLen
     }
 
-
     println("vLen", vLen)
     val memory: Pointer = plugin.customMemoryGet()
     println("memory", memory)
@@ -49,15 +48,21 @@ class HttpWasmState(env: Env) {
   }
 
   def writeNullTerminated(plugin: ExtismCurrentPlugin, buf: Int, bufLimit: Int, input: Seq[String]): BigInt = {
-    val count = BigInt(input.length)
+    val count = input.length
     if (count == 0) {
       return 0
     }
 
-    val encodedInput = input.map(i => ByteString(i))
-    val byteCount = encodedInput.foldLeft(0) { case (acc, i) => acc + i.length + 1 }
+    println(s"writeNullTerminated buf $buf - bufLimit $bufLimit")
 
-    val countLen = (count << 32) | BigInt (byteCount)
+    val encodedInput = input.map(i => ByteString(i))
+    val byteCount = encodedInput.foldLeft(0) { case (acc, i) => acc + i.length }
+
+    println(s"byteCount $byteCount input $input count $count")
+
+    val countLen = (count << 32) | BigInt(byteCount)
+
+    println(s"countLen $countLen")
 
     if (byteCount > bufLimit) {
       return countLen
@@ -69,7 +74,7 @@ class HttpWasmState(env: Env) {
 
     encodedInput.foreach(s => {
       val sLen = s.length
-      memory.write(buf + offset, s.toArray, 0, s.length)
+      memory.write(buf + offset, s.toArray, 0, sLen)
       offset += sLen
       memory.setInt(buf + offset, 0)
       offset += 1
@@ -94,6 +99,7 @@ class HttpWasmState(env: Env) {
       buf: Int,
       bufLimit: Int,
   ): BigInt = {
+    println("get headers names")
     val headers = vmData.headers(kind)
 
     val headerNames = headers.keys.toSeq
@@ -147,6 +153,9 @@ class HttpWasmState(env: Env) {
       case "2" => httpVersion = "HTTP/2.0"
       case "2.0" => httpVersion = "HTTP/2.0"
     }
+
+    println(s"get protocol version $httpVersion")
+
     this.writeStringIfUnderLimit (plugin, buf, bufLimit, httpVersion)
   }
 
@@ -154,7 +163,7 @@ class HttpWasmState(env: Env) {
 
   def getUri(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int): Int = {
     println("get_uri")
-    val uri = vmData.request.uri.toString()
+    val uri = vmData.request.relativeUri
     this.writeStringIfUnderLimit (plugin, buf, bufLimit, if (uri.isEmpty) "/" else uri)
   }
 
@@ -219,7 +228,9 @@ class HttpWasmState(env: Env) {
 
   def setMethod(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, name: Int, nameLen: Int) {
     val method = this.mustReadString(plugin, "method", name, nameLen)
-    vmData.request.copy(method = method)
+    println(s"reading method from set method - $name - $nameLen - $method")
+
+    vmData.setRequest(vmData.request.copy(method = method))
   }
 
   def writeBody(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, kind: BodyKind, body: Int, bodyLen: Int) = {
@@ -231,21 +242,13 @@ class HttpWasmState(env: Env) {
       b = this.mustRead(plugin, "body", body, bodyLen)
     }
 
+    println(s"write body $b - $body - $bodyLen")
+
     kind match {
       case BodyKind.BodyKindRequest =>
-        if (vmData.requestBodyReplaced) {
-          vmData.setRequest(vmData.request.copy(body = vmData.request.body.concat(Source.single(b))))
-        } else {
-          vmData.setRequest(vmData.request.copy(body = Source.single(b)))
-        }
+        vmData.setRequest(vmData.request.copy(body = Source.single(b)))
       case BodyKind.BodyKindResponse =>
-        if (!vmData.nextCalled) {
-          vmData.setResponse(vmData.response.copy(body = Source.single(b)))
-        } else if (vmData.responseBodyReplaced) {
-          vmData.setResponse(vmData.response.copy(body = vmData.response.body.concat(Source.single(b))))
-        } else {
-          vmData.setResponse(vmData.response.copy(body = Source.single(b)))
-        }
+        vmData.setResponse(vmData.response.copy(body = Source.single(b)))
     }
   }
 
@@ -281,6 +284,7 @@ class HttpWasmState(env: Env) {
                  value: Int,
                  valueLen: Int
   ) = {
+    println("set header value call")
     if (nameLen == 0) {
       throw new RuntimeException("HTTP header name cannot be empty")
     }
@@ -310,14 +314,16 @@ class HttpWasmState(env: Env) {
   }
 
   def setUri(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, uri: Int, uriLen: Int) = {
-    println("set_uri")
+    println(s"set_uri $uri $uriLen")
+
     val u = if (uriLen > 0) {
       this.mustReadString(plugin, "uri", uri, uriLen)
     } else {
       ""
     }
-    
+
     vmData.setRequest(vmData.request.copy(url = u))
+    println(s"set_uri $u")
   }
 
   def mustReadString(
@@ -330,7 +336,7 @@ class HttpWasmState(env: Env) {
       return ""
     }
 
-    this.mustRead(plugin, fieldName, offset, byteCount).toString()
+    this.mustRead(plugin, fieldName, offset, byteCount).utf8String
   }
 
   def mustRead(
