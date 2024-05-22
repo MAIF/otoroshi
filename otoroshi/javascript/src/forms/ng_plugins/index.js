@@ -143,6 +143,7 @@ import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
 import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
+import NgHttpWasm from './NgHttpWasm';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -161,6 +162,7 @@ const pluginsArray = [
   CanaryMode,
   ContextValidation,
   NgCorazaWAF,
+  NgHttpWasm,
   Cors,
   DisableHttp10,
   EndlessHttpResponse,

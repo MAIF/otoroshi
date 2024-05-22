@@ -1,6 +1,7 @@
 package otoroshi.wasm.httpwasm
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk.{ExtismCurrentPlugin, HostFunction, HostUserData, LibExtism}
 import otoroshi.env.Env
@@ -18,29 +19,37 @@ case class HttpWasmVmData(
                            config: JsObject = Json.obj(),
                            properties: Map[String, Array[Byte]] = Map.empty,
                            var requestStatusCode: Int = 200,
-                           var request: Option[NgPluginHttpRequest] = None,
-                           var response: Option[NgPluginHttpResponse] = None,
+                           var request: NgPluginHttpRequest,
+                           var response: NgPluginHttpResponse,
                            var features: Features = Features(3 | Feature.FeatureBufferRequest.value | Feature.FeatureBufferResponse.value | Feature.FeatureTrailers.value),
                            var nextCalled: Boolean = false,
                            var requestBodyReadIndex: Int = 0,
                            var responseBodyReadIndex: Int = 0,
                            var requestBodyReplaced: Boolean = false,
                            var responseBodyReplaced: Boolean = false
-                 ) extends HostUserData
+                         ) extends HostUserData
   with WasmVmData {
-def headers(kind: HeaderKind): Map[String, String] = {
+  def headers(kind: HeaderKind): Map[String, String] = {
     kind match {
-      case HeaderKind.HeaderKindRequest => request.map(_.headers).getOrElse(Map.empty)
-      case HeaderKind.HeaderKindResponse => response.map(_.headers).getOrElse(Map.empty)
+      case HeaderKind.HeaderKindRequest => request.headers
+      case HeaderKind.HeaderKindResponse => response.headers
       case HeaderKind.HeaderKindRequestTrailers => ???  // TODO
       case HeaderKind.HeaderKindResponseTrailers => ??? // TODO
     }
   }
 
+  def setRequest(newRequest: NgPluginHttpRequest) = {
+    request = newRequest
+  }
+
+  def setResponse(newResponse: NgPluginHttpResponse) = {
+    response = newResponse
+  }
+
   def setHeader(kind: HeaderKind, key: String, value: Seq[String]) = {
     kind match {
-      case HeaderKind.HeaderKindRequest => request = request.map(req => req.copy(headers = req.headers ++ Map(key -> value.head)))
-      case HeaderKind.HeaderKindResponse => response = response.map(req => req.copy(headers = req.headers ++ Map(key -> value.head)))
+      case HeaderKind.HeaderKindRequest => setRequest(request.copy(headers = request.headers ++ Map(key -> value.head)))
+      case HeaderKind.HeaderKindResponse => setResponse(response.copy(headers = response.headers ++ Map(key -> value.head)))
       case HeaderKind.HeaderKindRequestTrailers => ???  // TODO
       case HeaderKind.HeaderKindResponseTrailers => ???  // TODO
     }
@@ -48,8 +57,8 @@ def headers(kind: HeaderKind): Map[String, String] = {
 
   def removeHeader(kind: HeaderKind, key: String) = {
     kind match {
-      case HeaderKind.HeaderKindRequest => request = request.map(req => req.copy(headers = req.headers - key))
-      case HeaderKind.HeaderKindResponse => response = response.map(req => req.copy(headers = req.headers - key))
+      case HeaderKind.HeaderKindRequest => setRequest(request.copy(headers = request.headers - key))
+      case HeaderKind.HeaderKindResponse => setResponse(response.copy(headers = response.headers - key))
       case HeaderKind.HeaderKindRequestTrailers => ???  // TODO
       case HeaderKind.HeaderKindResponseTrailers => ???  // TODO
     }
@@ -57,9 +66,13 @@ def headers(kind: HeaderKind): Map[String, String] = {
 }
 
 object HttpWasmVmData {
-  def empty() = HttpWasmVmData()
-
-  def withRequest(request: NgPluginHttpRequest) = HttpWasmVmData(request = request.some)
+  def withRequest(request: NgPluginHttpRequest) = HttpWasmVmData(
+    request = request,
+    response = NgPluginHttpResponse(
+    status = 200,
+    headers = Map.empty[String, String],
+    body = Source.empty
+  ))
 }
 
 object AdministrativeFunctions {
@@ -253,7 +266,7 @@ object RequestFunctions {
         ) => state.setMethod(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
         Optional.empty[EnvUserData]()
       ),
-       new HostFunction[EnvUserData](
+      new HostFunction[EnvUserData](
         "get_uri",
         parameters(2),
         parameters(1),
@@ -262,10 +275,14 @@ object RequestFunctions {
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => state.getUri(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
+        ) => {
+          returns(0).v.i32 = state.getUri(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32)
+
+          println("get_uri ended")
+        },
         Optional.empty[EnvUserData]()
       ),
-       new HostFunction[EnvUserData](
+      new HostFunction[EnvUserData](
         "set_uri",
         parameters(2),
         parameters(0),
@@ -277,7 +294,7 @@ object RequestFunctions {
         ) => state.setUri(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
         Optional.empty[EnvUserData]()
       ),
-       new HostFunction[EnvUserData](
+      new HostFunction[EnvUserData](
         "get_protocol_version",
         parameters(2),
         parameters(1),
@@ -289,7 +306,7 @@ object RequestFunctions {
         ) => state.getProtocolVersion(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
         Optional.empty[EnvUserData]()
       ),
-       new HostFunction[EnvUserData](
+      new HostFunction[EnvUserData](
         "get_source_addr",
         parameters(2),
         parameters(1),
@@ -348,13 +365,13 @@ object HttpWasmFunctions {
   def build(
              state: HttpWasmState,
              vmDataRef: AtomicReference[WasmVmData]
-  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[HostFunction[EnvUserData]] = {
+           )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Seq[HostFunction[EnvUserData]] = {
     def getCurrentVmData(): HttpWasmVmData = {
       Option(vmDataRef.get()) match {
         case Some(data: HttpWasmVmData) => data
         case _                  =>
           println("missing vm data")
-//          new RuntimeException("missing vm data").printStackTrace()
+          //          new RuntimeException("missing vm data").printStackTrace()
           throw new RuntimeException("missing vm data")
       }
     }
