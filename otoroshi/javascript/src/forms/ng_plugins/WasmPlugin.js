@@ -274,6 +274,7 @@ export default {
       // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source.kind.toLowerCase() !== 'local' && 'authorizations',
       v.source.kind.toLowerCase() !== 'local' && 'killOptions',
+      'httpwasm',
       v.source.kind.toLowerCase() !== 'local' && {
         type: 'group',
         name: 'Advanced settings',
