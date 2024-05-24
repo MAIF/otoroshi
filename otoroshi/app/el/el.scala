@@ -12,7 +12,6 @@ import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.Keys
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 

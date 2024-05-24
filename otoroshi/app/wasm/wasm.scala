@@ -107,6 +107,7 @@ case class WasmConfig(
     // lifetime: WasmVmLifetime = WasmVmLifetime.Forever,
     wasi: Boolean = false,
     opa: Boolean = false,
+    httpWasm: Boolean = false,
     instances: Int = 1,
     killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
     authorizations: WasmAuthorizations = WasmAuthorizations()
@@ -124,6 +125,7 @@ case class WasmConfig(
     "allowedPaths"   -> allowedPaths,
     "wasi"           -> wasi,
     "opa"            -> opa,
+    "httpWasm"       -> httpWasm,
     // "lifetime"       -> lifetime.json,
     "authorizations" -> authorizations.json,
     "instances"      -> instances,
@@ -168,6 +170,7 @@ object WasmConfig {
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         opa = (json \ "opa").asOpt[Boolean].getOrElse(false),
+        httpWasm = (json \ "httpWasm").asOpt[Boolean].getOrElse(false),
         // lifetime = json
         //   .select("lifetime")
         //   .asOpt[String]
