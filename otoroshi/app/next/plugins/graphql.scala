@@ -1164,10 +1164,7 @@ class GraphQLBackend extends NgBackendCall {
                   builder = customBuilder,
                   initialData = config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
                   maxDepth = config.maxDepth,
-                  variables = (jsonBody \ "variables").asOpt[JsValue]
-                    .getOrElse(Json.obj())
-                    .asOpt[JsObject]
-                    .getOrElse(Json.obj())
+                  variables = (jsonBody \ "variables").asOpt[JsObject].getOrElse(Json.obj())
                 )
               case None        => jsonResponse(400, Json.obj("error" -> "query field missing")).future
             }

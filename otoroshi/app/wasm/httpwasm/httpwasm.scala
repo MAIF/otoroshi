@@ -1,27 +1,20 @@
 package otoroshi.wasm.httpwasm
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk.wasmotoroshi._
-import org.extism.sdk.{ExtismCurrentPlugin, HostFunction, HostUserData, LibExtism}
+import org.extism.sdk.{HostFunction, HostUserData}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.BadResponse
 import otoroshi.next.plugins.api._
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
-import otoroshi.wasm.httpwasm.HttpWasmFunctions.parameters
-import otoroshi.wasm.httpwasm.api.{BodyKind, HeaderKind}
 import play.api._
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results.{BadRequest, Ok, Status}
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc.Results.{BadRequest, Status}
 
-import java.util.Optional
 import java.util.concurrent.atomic._
 import scala.concurrent._
 import scala.util._
@@ -108,7 +101,6 @@ class NgHttpWasm extends NgRequestTransformer {
       )
       .flatMap {
         case Left(error) => {
-          println("got an error on handle_request")
           Errors.craftResponseResult(
               error.toString(),
               Status(401),
@@ -137,7 +129,6 @@ class NgHttpWasm extends NgRequestTransformer {
               )).future
             }
           } else {
-            println("missing handle request result")
             Left(BadRequest(Json.obj("error" -> "missing handle request result"))).future
           }
       }
@@ -147,11 +138,8 @@ class NgHttpWasm extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer):
   Future[Either[mvc.Result, NgPluginHttpRequest]] = {
-    println("Calling transform request")
     ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
-      case None =>
-        println("no vm found in attrs")
-        Future.failed(new RuntimeException("no vm found in attrs"))
+      case None => Future.failed(new RuntimeException("no vm found in attrs"))
       case Some(vm) => execute(vm, ctx)
     }
   }
