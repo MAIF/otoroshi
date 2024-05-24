@@ -127,7 +127,7 @@ object HFunction {
         case None    => Optional.empty[A]()
         case Some(d) => Optional.of(d)
       }
-    ).withNamespace("otoroshi/user")
+    ).withNamespace("env")
   }
 
   def defineFunctionWithReturn[A <: HostUserData](
@@ -151,7 +151,7 @@ object HFunction {
         }
       },
       Optional.empty[A]()
-    ).withNamespace("otoroshi/user")
+    ).withNamespace("env")
   }
 }
 
