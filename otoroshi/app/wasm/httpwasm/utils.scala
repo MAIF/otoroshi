@@ -1,9 +1,5 @@
 package otoroshi.wasm.httpwasm.api
 
-import org.extism.sdk.HostUserData
-import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
-import otoroshi.utils.syntax.implicits._
-
 sealed trait HeaderKind {
   def value: Int
 }
@@ -28,6 +24,7 @@ object HeaderKind {
       case 1 => HeaderKindResponse
       case 2 => HeaderKindRequestTrailers
       case 3 => HeaderKindResponseTrailers
+      case _ => throw new Exception("invalid header kind")
     }
   }
 }
@@ -49,6 +46,14 @@ object BodyKind {
     value match {
       case 0 => BodyKindRequest
       case 1 => BodyKindResponse
+    }
+  }
+
+  def toString(value: BodyKind): String = {
+    value match {
+      case BodyKindRequest => "BodyKindRequest"
+      case BodyKindResponse => "BodyKindResponse"
+      case _ => throw new Exception("invalid body kind")
     }
   }
 }
@@ -85,6 +90,7 @@ object LogLevel {
       case 1 => LogLevelWarn
       case 2 => LogLevelError
       case 3 => LogLevelNone
+      case _ => throw new Exception("invalid log level")
     }
   }
 }
@@ -106,10 +112,24 @@ object Feature {
   case object FeatureTrailers extends Feature {
     def value: Int = 1 << 2
   }
+
+  def toString(feature: Feature): String = {
+    feature match {
+      case FeatureBufferRequest => "FeatureBufferRequest"
+      case FeatureBufferResponse => "FeatureBufferResponse"
+      case FeatureTrailers => "FeatureTrailers"
+      case _ => throw new Exception("invalid feature")
+    }
+  }
 }
 
-case class Features(features: Int) {
-  def has(feature: Feature): Boolean = {
-    (features & feature.value) == feature.value
+case class Features(f: Int) {
+  def withEnabled(feature: Int): Features = {
+      Features(f | feature)
+  }
+
+  // returns true if the feature (or group of features) is enabled.
+  def isEnabled(feature: Feature): Boolean = {
+    (f & feature.value) != 0
   }
 }

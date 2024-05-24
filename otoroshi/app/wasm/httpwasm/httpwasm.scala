@@ -8,6 +8,7 @@ import org.extism.sdk.wasmotoroshi._
 import org.extism.sdk.{ExtismCurrentPlugin, HostFunction, HostUserData, LibExtism}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
+import otoroshi.models.BadResponse
 import otoroshi.next.plugins.api._
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
@@ -17,7 +18,7 @@ import otoroshi.wasm.httpwasm.api.{BodyKind, HeaderKind}
 import play.api._
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results.{Ok, Status}
+import play.api.mvc.Results.{BadRequest, Ok, Status}
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.util.Optional
@@ -84,6 +85,7 @@ class NgHttpWasm extends NgRequestTransformer {
 
   private def handleResponse(vm: WasmVm, vmData: HttpWasmVmData, reqCtx: Int, isError: Int)
                             (implicit env: Env, ec: ExecutionContext) = {
+    vmData.afterNext = true
     vm.call(
        WasmFunctionParameters.NoResult("handle_response", new Parameters(2).pushInts(reqCtx, isError)),
         vmData.some
@@ -95,6 +97,8 @@ class NgHttpWasm extends NgRequestTransformer {
     val vmData = HttpWasmVmData
           .withRequest(ctx.otoroshiRequest)
           .some
+
+    vmData.get.remoteAddress = ctx.request.remoteAddress.some
 
     vm.callWithParamsAndResult("handle_request",
         new Parameters(0),
@@ -115,49 +119,42 @@ class NgHttpWasm extends NgRequestTransformer {
             ).map(r => Left(r))
         }
         case Right(res) =>
-          val ctxNext = res.results.getValue(0).v.i64
+          if (res.results.getLength > 0) {
+            val ctxNext = res.results.getValue(0).v.i64
 
-          val data = vmData.get
-          if ((ctxNext & 0x1) != 0x1) {
+            val data = vmData.get
+            if ((ctxNext & 0x1) != 0x1) {
               Left(data.response.asResult).future
-          } else {
-            data.nextCalled = true
+            } else {
+              val reqCtx = ctxNext >> 32
+              handleResponse(vm, data, reqCtx.toInt, 0)
 
-            val reqCtx = ctxNext >> 32
-            handleResponse(vm, data, reqCtx.toInt, 0)
-
-            implicit val mat = env.otoroshiMaterializer
-
-            if (data.request.hasBody) {
               Right(ctx.otoroshiRequest.copy(
                 headers = data.request.headers,
                 url = data.request.url,
                 method = data.request.method,
                 body = data.request.body
               )).future
-            } else {
-              Right(ctx.otoroshiRequest.copy(
-                headers = data.request.headers,
-                url = data.request.url,
-                method = data.request.method,
-              )).future
             }
+          } else {
+            println("missing handle request result")
+            Left(BadRequest(Json.obj("error" -> "missing handle request result"))).future
           }
       }
   }
 
-//  override def transformRequest(
-//      ctx: NgTransformerRequestContext
-//  )(implicit env: Env, ec: ExecutionContext, mat: Materializer):
-//  Future[Either[mvc.Result, NgPluginHttpRequest]] = {
-//    println("Calling transform request")
-//    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
-//      case None =>
-//        println("no vm found in attrs")
-//        Future.failed(new RuntimeException("no vm found in attrs"))
-//      case Some(vm) => execute(vm, ctx)
-//    }
-//  }
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer):
+  Future[Either[mvc.Result, NgPluginHttpRequest]] = {
+    println("Calling transform request")
+    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
+      case None =>
+        println("no vm found in attrs")
+        Future.failed(new RuntimeException("no vm found in attrs"))
+      case Some(vm) => execute(vm, ctx)
+    }
+  }
 
     override def afterRequest(
                              ctx: NgAfterRequestContext
@@ -166,79 +163,86 @@ class NgHttpWasm extends NgRequestTransformer {
     ().vfuture
   }
 
-  override def transformResponse(
-                         ctx: NgTransformerResponseContext
-                       )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
-      case None =>
-        println("no vm found in attrs")
-        Future.failed(new RuntimeException("no vm found in attrs"))
-      case Some(vm) =>
-        val vmData = HttpWasmVmData
-          .withRequest(NgPluginHttpRequest(
-            headers = ctx.otoroshiResponse.headers,
-            url = ctx.request.uri,
-            method = ctx.request.method,
-            version = ctx.request.version,
-            clientCertificateChain = () => None,
-            cookies = Seq.empty,
-            body = Source.empty,
-            backend = None
-          ))
-        vmData.response = vmData.response.copy(
-          headers = ctx.otoroshiResponse.headers,
-          status = ctx.otoroshiResponse.status,
-          cookies = ctx.otoroshiResponse.cookies,
-          body = ctx.otoroshiResponse.body
-        )
-
-        vm.callWithParamsAndResult("handle_request",
-          new Parameters(0),
-          1,
-          None,
-          vmData.some
-        )
-          .flatMap {
-            case Left(error) => {
-              Errors.craftResponseResult(
-                error.toString(),
-                Status(401),
-                ctx.request,
-                None,
-                None,
-                attrs = TypedMap.empty
-              ).map(r => Left(r))
-            }
-            case Right(res) =>
-              val ctxNext = res.results.getValue(0).v.i64
-
-              val data = vmData
-              if ((ctxNext & 0x1) != 0x1) {
-                Left(data.response.asResult).future
-              } else {
-                data.nextCalled = true
-
-                val reqCtx = ctxNext >> 32
-                handleResponse(vm, data, reqCtx.toInt, 0)
-
-                implicit val mat = env.otoroshiMaterializer
-
-                if (data.request.hasBody) {
-                  Right(ctx.otoroshiResponse.copy(
-                    headers = data.response.headers,
-                    status = data.response.status,
-                    cookies = data.response.cookies,
-                    body = data.response.body,
-                  )).future
-                } else {
-                  Right(ctx.otoroshiResponse.copy(
-                    headers = data.response.headers,
-                    status = data.response.status,
-                    cookies = data.response.cookies
-                  )).future
-                }
-              }
-          }
-    }
-  }
+  // TODO - only useful for testing
+//  override def transformResponse(
+//                         ctx: NgTransformerResponseContext
+//                       )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+//    ctx.attrs.get(otoroshi.wasm.httpwasm.HttpWasmPluginKeys.HttpWasmVmKey) match {
+//      case None =>
+//        println("no vm found in attrs")
+//        Future.failed(new RuntimeException("no vm found in attrs"))
+//      case Some(vm) =>
+//        val vmData = HttpWasmVmData
+//          .withRequest(NgPluginHttpRequest(
+//            headers = ctx.otoroshiResponse.headers,
+//            url = ctx.request.uri,
+//            method = ctx.request.method,
+//            version = ctx.request.version,
+//            clientCertificateChain = () => None,
+//            cookies = Seq.empty,
+//            body = Source.empty,
+//            backend = None
+//          ))
+//        vmData.remoteAddress = ctx.request.remoteAddress.some
+//        vmData.response = vmData.response.copy(
+//          headers = ctx.otoroshiResponse.headers,
+//          status = ctx.otoroshiResponse.status,
+//          cookies = ctx.otoroshiResponse.cookies,
+//          body = ctx.otoroshiResponse.body
+//        )
+//
+//        vm.callWithParamsAndResult("handle_request",
+//          new Parameters(0),
+//          1,
+//          None,
+//          vmData.some
+//        )
+//          .flatMap {
+//            case Left(error) => {
+//              Errors.craftResponseResult(
+//                error.toString(),
+//                Status(401),
+//                ctx.request,
+//                None,
+//                None,
+//                attrs = TypedMap.empty
+//              ).map(r => Left(r))
+//            }
+//            case Right(res) =>
+//              if(res.results.getLength() > 0){
+//                val ctxNext = res.results.getValue(0).v.i64
+//
+//                val data = vmData
+//                if ((ctxNext & 0x1) != 0x1) {
+//                  Left(data.response.asResult).future
+//                } else {
+//                  data.nextCalled = true
+//
+//                  val reqCtx = ctxNext >> 32
+//                  handleResponse(vm, data, reqCtx.toInt, 0)
+//
+//                  implicit val mat = env.otoroshiMaterializer
+//
+//                  if (data.request.hasBody) {
+//                    Right(ctx.otoroshiResponse.copy(
+//                      headers = data.response.headers,
+//                      status = data.response.status,
+//                      cookies = data.response.cookies,
+//                      body = data.response.body,
+//                    )).future
+//                  } else {
+//                    Right(ctx.otoroshiResponse.copy(
+//                      headers = data.response.headers,
+//                      status = data.response.status,
+//                      cookies = data.response.cookies
+//                    )).future
+//                  }
+//                }
+//              } else {
+//                println("missing handle request result")
+//                Left(BadRequest(Json.obj("error" -> "missing handle request result"))).future
+//              }
+//          }
+//    }
+//  }
 }

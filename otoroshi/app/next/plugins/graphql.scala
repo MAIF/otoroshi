@@ -100,7 +100,7 @@ object GraphQLQueryConfig {
       "query"           -> o.query,
       "timeout"         -> o.timeout,
       "response_path"   -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue,
-      "response_filter" -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue
+      "response_filter" -> o.responseFilter.map(JsString.apply).getOrElse(JsNull).asValue
     )
   }
 }
@@ -1164,7 +1164,10 @@ class GraphQLBackend extends NgBackendCall {
                   builder = customBuilder,
                   initialData = config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
                   maxDepth = config.maxDepth,
-                  variables = (jsonBody \ "variables").asOpt[JsValue].getOrElse(Json.obj()).as[JsObject]
+                  variables = (jsonBody \ "variables").asOpt[JsValue]
+                    .getOrElse(Json.obj())
+                    .asOpt[JsObject]
+                    .getOrElse(Json.obj())
                 )
               case None        => jsonResponse(400, Json.obj("error" -> "query field missing")).future
             }

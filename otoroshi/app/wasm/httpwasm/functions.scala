@@ -2,6 +2,7 @@ package otoroshi.wasm.httpwasm
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk.{ExtismCurrentPlugin, HostFunction, HostUserData, LibExtism}
 import otoroshi.env.Env
@@ -24,7 +25,11 @@ case class HttpWasmVmData(
                            var features: Features = Features(3 | Feature.FeatureBufferRequest.value | Feature.FeatureBufferResponse.value | Feature.FeatureTrailers.value),
                            var nextCalled: Boolean = false,
                            var requestBodyReadIndex: Int = 0,
-                           var responseBodyReadIndex: Int = 0
+                           var responseBodyReadIndex: Int = 0,
+                           var bufferedRequestBody: Option[ByteString] = None,
+                           var bufferedResponseBody: Option[ByteString] = None,
+                           var afterNext: Boolean = false,
+                           var remoteAddress: Option[String] = None
                          ) extends HostUserData
   with WasmVmData {
   def headers(kind: HeaderKind): Map[String, String] = {
@@ -44,8 +49,23 @@ case class HttpWasmVmData(
     response = newResponse
   }
 
+  def setMethod(method: String) = {
+    setRequest(request.copy(method = method))
+  }
+
+  def setUri(uri: String) = {
+    setRequest(request.copy(url = uri))
+  }
+
+  def setBody(body: Source[ByteString, _], bodyKind: BodyKind) = {
+    bodyKind match {
+      case BodyKind.BodyKindRequest => setRequest(request.copy(body = body))
+      case BodyKind.BodyKindResponse => setResponse(response.copy(body = body))
+    }
+
+  }
+
   def setHeader(kind: HeaderKind, key: String, value: Seq[String]) = {
-    println("set header", kind, key, value)
     kind match {
       case HeaderKind.HeaderKindRequest => setRequest(request.copy(headers = request.headers ++ Map(key -> value.head)))
       case HeaderKind.HeaderKindResponse => setResponse(response.copy(headers = response.headers ++ Map(key -> value.head)))
@@ -75,7 +95,8 @@ object HttpWasmVmData {
 }
 
 object AdministrativeFunctions {
-  def all(state: HttpWasmState, getCurrentVmData: () => HttpWasmVmData) = {
+  def all(state: HttpWasmState, getCurrentVmData: () => HttpWasmVmData)
+         (implicit mat: Materializer, ec: ExecutionContext) = {
     Seq(
       new HostFunction[EnvUserData](
         "enable_features",
@@ -156,8 +177,6 @@ object HeaderFunctions {
             HeaderKind.fromValue(params(0).v.i32),
             params(1).v.i32,
             params(2).v.i32).longValue()
-
-          println(s"ending get_header_names with ${returns(0).v.i64}")
         },
         Optional.empty[EnvUserData]()
       ),
@@ -171,7 +190,6 @@ object HeaderFunctions {
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
         ) => {
-          println("calling get header values")
            returns(0).v.i64 = state.getHeaderValues(plugin, getCurrentVmData(),
              HeaderKind.fromValue(params(0).v.i32),
              params(1).v.i32,
@@ -191,7 +209,6 @@ object HeaderFunctions {
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
         ) => {
-          println("SET HEADER VALUE")
           state.setHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32)
         },
         Optional.empty[EnvUserData]()
@@ -206,7 +223,6 @@ object HeaderFunctions {
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
         ) => {
-          println("ADD HEADER VALUE")
           state.addHeader(plugin, getCurrentVmData(), HeaderKind.fromValue(params(0).v.i32), params(1).v.i32, params(2).v.i32, params(3).v.i32, params(4).v.i32)
         },
         Optional.empty[EnvUserData]()
@@ -272,7 +288,9 @@ object RequestFunctions {
           params: Array[LibExtism.ExtismVal],
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
-        ) => returns(0).v.i32 = state.getMethod(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32),
+        ) => {
+          returns(0).v.i32 = state.getMethod(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32)
+        },
         Optional.empty[EnvUserData]()
       ),
       new HostFunction[EnvUserData](
@@ -337,7 +355,7 @@ object RequestFunctions {
           returns: Array[LibExtism.ExtismVal],
           data: Optional[EnvUserData]
         ) => {
-          println("get_source_addr TODO - not defined")
+          returns(0).v.i32 = state.getSourceAddr(plugin, getCurrentVmData(), params(0).v.i32, params(1).v.i32)
         },
         Optional.empty[EnvUserData]()
       )
@@ -391,7 +409,6 @@ object HttpWasmFunctions {
       Option(vmDataRef.get()) match {
         case Some(data: HttpWasmVmData) => data
         case _                  =>
-          println("missing vm data")
           new RuntimeException("missing vm data").printStackTrace()
           throw new RuntimeException("missing vm data")
       }
