@@ -156,6 +156,8 @@ class HttpWasmState(env: Env) {
 
     println(s"get protocol version $httpVersion")
 
+//    vmData.setRequest(vmData.request.copy(version = httpVersion))
+
     this.writeStringIfUnderLimit (plugin, buf, bufLimit, httpVersion)
   }
 
@@ -284,13 +286,14 @@ class HttpWasmState(env: Env) {
                  value: Int,
                  valueLen: Int
   ) = {
-    println("set header value call")
     if (nameLen == 0) {
       throw new RuntimeException("HTTP header name cannot be empty")
     }
 
     val n = this.mustReadString (plugin, "name", name, nameLen)
     val v = this.mustReadString (plugin, "value", value, valueLen)
+
+    println(s"Set header with $kind - $name - $value")
 
     vmData.setHeader (kind, n, Seq(v))
   }
