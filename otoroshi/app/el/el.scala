@@ -11,8 +11,6 @@ import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.Keys
-import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
@@ -143,7 +141,6 @@ object GlobalExpressionLanguage {
               route.get.metadata.get(field).getOrElse(dv)
             case r"route.metadata.$field@(.*)" if route.isDefined                =>
               route.get.metadata.get(field).getOrElse(s"no-meta-$field")
-//            case r"route.groups\['$field@(.*)'\].metadata.$name@(.*)" if route.isDefined  => env.proxyState.serviceGroup(field).flatMap(_.metadata.get(name)).getOrElse("bad-expr")
 
             case "req.fullUrl" if req.isDefined                                             =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
