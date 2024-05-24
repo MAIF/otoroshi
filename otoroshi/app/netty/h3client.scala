@@ -1,7 +1,7 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -60,7 +60,7 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
   override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator                     =
     sslContext.applicationProtocolNegotiator()
-  override def sessionContext(): QuicSslSessionContext = sslContext.sessionContext()
+  override def sessionContext(): QuicSslSessionContext                                            = sslContext.sessionContext()
 }
 
 case class NettyHttp3ClientBody(source: Flux[ByteString], contentType: Option[String], contentLength: Option[Long])

@@ -48,4 +48,6 @@ object Keys {
   val MatchedOutputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
   val StrippedPathKey               = TypedKey[String]("otoroshi.core.StrippedPath")
   val ResponseEndPromiseKey         = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
+  val ForCurrentListenerOnlyKey     = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")
+  val CurrentListenerKey            = TypedKey[String]("otoroshi.core.CurrentListener")
 }

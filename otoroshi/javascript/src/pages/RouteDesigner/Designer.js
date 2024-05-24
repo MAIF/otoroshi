@@ -975,6 +975,7 @@ class Designer extends React.Component {
                 debug: node.debug || false,
                 include: node.include || [],
                 exclude: node.exclude || [],
+                bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
                       plugin: newNode.id,
@@ -1058,6 +1059,7 @@ class Designer extends React.Component {
               debug: node.debug || false,
               include: node.include || [],
               exclude: node.exclude || [],
+              bound_listeners: node.bound_listeners || [],
               config: {
                 ...newNode.config,
                 plugin: newNode.legacy ? newNode.id : undefined,
@@ -1113,6 +1115,7 @@ class Designer extends React.Component {
               debug: node.debug || false,
               include: node.include || [],
               exclude: node.exclude || [],
+              bound_listeners: node.bound_listeners || [],
               config: {
                 ...newNode.config,
                 plugin: newNode.legacy ? newNode.id : undefined,
@@ -2281,6 +2284,7 @@ class EditView extends React.Component {
             debug: node.debug !== undefined ? node.debug : false,
             include: node.include !== undefined ? node.include : [],
             exclude: node.exclude !== undefined ? node.exclude : [],
+            bound_listeners: node.bound_listeners !== undefined ? node.bound_listeners : [],
           },
         };
     } else {

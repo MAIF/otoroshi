@@ -11,8 +11,9 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
-import otoroshi.netty.NettyHttpClient
+import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
+import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models._
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
@@ -288,21 +289,37 @@ class ProxyEngine() extends RequestHandler {
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    handleWithListener(request, defaultRouting, false)
+  }
+
+  override def handleWs(
+      request: RequestHeader,
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    handleWsWithListener(request, defaultRouting, false)
+  }
+
+  def handleWithListener(
+     request: Request[Source[ByteString, _]],
+     defaultRouting: Request[Source[ByteString, _]] => Future[Result],
+     forCurrentListenerOnly: Boolean,
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
-      handleRequest(request, config)
+      handleRequest(request, config, forCurrentListenerOnly)
     } else {
       defaultRouting(request)
     }
   }
 
-  override def handleWs(
-      request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  def handleWsWithListener(
+   request: RequestHeader,
+   defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+   forCurrentListenerOnly: Boolean,
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
@@ -310,14 +327,14 @@ class ProxyEngine() extends RequestHandler {
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
-      handleWsRequest(request, config)
+      handleWsRequest(request, config, forCurrentListenerOnly)
     } else {
       defaultRouting(request)
     }
   }
 
   @inline
-  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig)(implicit
+  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -339,6 +356,7 @@ class ProxyEngine() extends RequestHandler {
     val counterIn          = new AtomicLong(0L)
     val counterOut         = new AtomicLong(0L)
     val responseEndPromise = Promise[Done]()
+    val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
     implicit val attrs     = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey        -> report,
       otoroshi.plugins.Keys.RequestNumberKey      -> reqNumber,
@@ -348,7 +366,9 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestWebsocketKey   -> false,
       otoroshi.plugins.Keys.RequestCounterInKey   -> counterIn,
       otoroshi.plugins.Keys.RequestCounterOutKey  -> counterOut,
-      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise
+      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
+      otoroshi.plugins.Keys.CurrentListenerKey -> currentListener,
     )
 
     val elCtx: Map[String, String] = Map(
@@ -525,7 +545,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig)(implicit
+  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -555,7 +575,8 @@ class ProxyEngine() extends RequestHandler {
       otoroshi.plugins.Keys.RequestStartKey      -> start,
       otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
       otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut,
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
     )
 
     val elCtx: Map[String, String] = Map(
@@ -1647,7 +1668,7 @@ class ProxyEngine() extends RequestHandler {
                     Json
                       .obj(
                         "error"             -> "internal_server_error",
-                        "error_description" -> "an error happened during pre-routing plugins phase"
+                        "error_description" -> "an error happened during access plugins phase"
                       )
                       .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
@@ -1710,7 +1731,7 @@ class ProxyEngine() extends RequestHandler {
                           Json
                             .obj(
                               "error"             -> "internal_server_error",
-                              "error_description" -> "an error happened during pre-routing plugins phase"
+                              "error_description" -> "an error happened during access plugins phase"
                             )
                             .applyOnIf(env.isDev) { obj =>
                               obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))

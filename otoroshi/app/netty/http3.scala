@@ -34,7 +34,7 @@ class Http1RequestHandler(
     env: Env,
     logger: Logger,
     addressGet: () => String,
-    config: ReactorNettyServerConfig,
+    config: ReactorNettyServerConfig
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
@@ -56,7 +56,7 @@ class Http1RequestHandler(
   private var log_uri: String         = "NONE"
   private var log_start: Long         = 0L
   private var log_contentLength: Long = 0L
-  private var log_protocol: String = "-"
+  private var log_protocol: String    = "-"
 
   private def send100Continue(ctx: ChannelHandlerContext): Unit = {
     val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
@@ -105,7 +105,7 @@ class Http1RequestHandler(
     }
     log_protocol = session.map(_.getProtocol).flatMap(TlsVersion.parseSafe).map(_.name).getOrElse("-")
     val rawOtoReq                =
-      new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
+      new NettyRequest(config.id, req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
     val bodyIn: Flux[ByteString] = if (hasBody) hotFlux else Flux.empty()
     val otoReq                   = rawOtoReq.withBody(bodyIn)
@@ -469,8 +469,8 @@ class Http1RequestHandler(
               directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
             }
           }
-          .andThen {
-            case _ => accessLog()
+          .andThen { case _ =>
+            accessLog()
           }
       }
       case _                  => directResponse(ctx, msg, HttpResponseStatus.NOT_IMPLEMENTED, NOT_ESSENTIAL_ACTION.retainedDuplicate())
@@ -480,8 +480,11 @@ class Http1RequestHandler(
   private def accessLog(): Unit = {
     if (config.accessLog) {
       val formattedDate = DateTime.now().toString("dd/MMM/yyyy:HH:mm:ss Z") //"yyyy-MM-dd HH:mm:ss.SSS Z"
-      val duration = System.currentTimeMillis() - log_start
-      AccessLogHandler.logger.info(s"""${addressGet.apply()} - - [${formattedDate}] "${log_method} ${log_uri} HTTP/3.0" ${log_status} ${log_contentLength} ${duration} ${log_protocol}""")
+      val duration      = System.currentTimeMillis() - log_start
+      AccessLogHandler.logger.info(
+        s"""${addressGet
+          .apply()} - - [${formattedDate}] "${log_method} ${log_uri} HTTP/3.0" ${log_status} ${log_contentLength} ${duration} ${log_protocol}"""
+      )
     }
   }
 
@@ -567,9 +570,9 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
       handler: HttpRequestHandler,
       sessionCookieBaker: SessionCookieBaker,
       flashCookieBaker: FlashCookieBaker
-  ): Unit = {
+  ): DisposableNettyHttp3Server = {
 
-    if (config.http3.enabled) {
+    if (config.http3.enabled && config.http3.port != -1) {
 
       import io.netty.bootstrap._
       import io.netty.channel._
@@ -691,9 +694,19 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         .sync()
         .channel()
       channel.closeFuture()
+      val disposableServer = DisposableNettyHttp3Server(group.some)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
-        group.shutdownGracefully();
+        disposableServer.stop()
       }))
+      disposableServer
+    } else {
+      DisposableNettyHttp3Server(None)
     }
+  }
+}
+
+case class DisposableNettyHttp3Server(group: Option[NioEventLoopGroup]) {
+  def stop(): Unit = {
+    group.foreach(_.shutdownGracefully())
   }
 }

@@ -27,6 +27,7 @@ import { registerAlert, registerConfirm, registerPrompt, registerPopup } from '.
 
 import { setupGreenScoreExtension } from './extensions/greenscore';
 import { setupCorazaExtension } from './extensions/coraza';
+import { setupHttpListenersExtension } from './extensions/httplisteners';
 
 import * as Forms from './forms/ng_plugins/index';
 
@@ -253,4 +254,5 @@ export function getExtension(name) {
 function setupLocalExtensions() {
   setupGreenScoreExtension(registerExtension);
   setupCorazaExtension(registerExtension);
+  setupHttpListenersExtension(registerExtension);
 }

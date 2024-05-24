@@ -421,9 +421,13 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val template           =
       if (useDefaultTemplate) getDefaultTemplate(templateName, _spec)
       else (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
-    val spec               = template.deepMerge(
-      opt.map(v => toJson(v).as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject]
-    )
+    val spec               = if (client.config.crdsOverride) {
+      template.deepMerge(_spec.as[JsObject])
+    } else {
+      template.deepMerge(
+        opt.map(v => toJson(v).as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject]
+      )
+    }
     spec.applyOnIf(enabledExtr.isDefined) { s =>
       opt match {
         case None         => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> true)

@@ -19,7 +19,7 @@ object JsonPatchHelpers {
     val patch = diffson.playJson.DiffsonProtocol.JsonPatchFormat.reads(patchOps).get
     patch.apply(document) match {
       case JsSuccess(value, _) => value
-      case JsError(err) => JsNull
+      case JsError(err)        => JsNull
     }
   }
 }
@@ -66,7 +66,7 @@ object JsonOperationsHelper {
 
   def genericInsertAtPath(acc: JsValue, path: Seq[String], value: JsValue): JsValue = {
     acc match {
-      case acc @ JsObject(_) => {
+      case acc @ JsObject(_)         => {
         if (path.length == 1) {
           acc.deepMerge(Json.obj(path.head -> value))
         } else {
@@ -91,11 +91,17 @@ object JsonOperationsHelper {
             val oldValue = underlying.apply(idx)
             JsArray(underlying.updated(idx, genericInsertAtPath(oldValue, path.tail, value)))
           } else {
-            JsArray(underlying :+ genericInsertAtPath((acc \ path.head).asOpt[JsValue].getOrElse(Json.obj()), path.tail, value))
+            JsArray(
+              underlying :+ genericInsertAtPath(
+                (acc \ path.head).asOpt[JsValue].getOrElse(Json.obj()),
+                path.tail,
+                value
+              )
+            )
           }
         }
       }
-      case _ => acc
+      case _                         => acc
     }
   }
 

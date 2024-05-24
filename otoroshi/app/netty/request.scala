@@ -8,6 +8,7 @@ import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import org.reactivestreams.Publisher
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.typedmap.{TypedKey, TypedMap}
 import play.api.mvc._
@@ -28,6 +29,8 @@ object NettyRequestKeys {
   val TlsSessionKey       = TypedKey[Option[SSLSession]]("Tls-Session")
   val TlsVersionKey       = TypedKey[Option[TlsVersion]]("Tls-Version")
   val TrailerHeadersIdKey = TypedKey[String]("Trailer-Headers-Id")
+  val ListenerIdKey = TypedKey[String]("Listener-Id")
+  val ListenerExclusiveKey = TypedKey[Boolean]("Listener-Exclusive")
 }
 
 object NettyRequestAwaitingTrailers {
@@ -108,13 +111,15 @@ class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
 }
 
 class ReactorNettyRequest(
+    listenerId: String,
     req: HttpServerRequest,
     version: String,
     secure: Boolean,
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
-    flashCookieBaker: FlashCookieBaker
-) extends ReactorNettyRequestHeader(req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+    flashCookieBaker: FlashCookieBaker,
+    exclusive: Option[Boolean] = None,
+) extends ReactorNettyRequestHeader(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, exclusive)
     with Request[Source[ByteString, _]] {
   lazy val body: Source[ByteString, _] = {
     val flux: Publisher[ByteString] = req.receive().map { bb =>
@@ -127,12 +132,14 @@ class ReactorNettyRequest(
 }
 
 class ReactorNettyRequestHeader(
+    listenerId: String,
     req: HttpServerRequest,
     httpVersion: String,
     secure: Boolean,
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
-    flashCookieBaker: FlashCookieBaker
+    flashCookieBaker: FlashCookieBaker,
+    exclusive: Option[Boolean] = None,
 ) extends RequestHeader {
 
   lazy val zeSession: Session = {
@@ -157,6 +164,7 @@ class ReactorNettyRequestHeader(
     RequestAttrKey.Session               -> Cell(zeSession),
     RequestAttrKey.Flash                 -> Cell(zeFlash),
     RequestAttrKey.Server                -> "netty-experimental",
+    NettyRequestKeys.ListenerIdKey       -> listenerId,
     NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
     NettyRequestKeys.TlsSessionKey       -> sessionOpt,
     NettyRequestKeys.TlsVersionKey       -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
@@ -196,7 +204,9 @@ class ReactorNettyRequestHeader(
         }
       }
     }))
-  )
+  ).applyOnWithOpt(exclusive) {
+    case (attrs, exclusive) => attrs + (NettyRequestKeys.ListenerExclusiveKey -> exclusive)
+  }
   lazy val method: String               = req.method().toString
   lazy val version: String              = httpVersion
   lazy val headers: Headers             = Headers(
@@ -278,6 +288,7 @@ class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
 }
 
 class NettyRequest(
+    listenerId: String,
     req: HttpRequest,
     ctx: ChannelHandlerContext,
     rawBody: Flux[ByteString],
@@ -286,16 +297,17 @@ class NettyRequest(
     sessionCookieBaker: SessionCookieBaker,
     flashCookieBaker: FlashCookieBaker,
     addressGet: () => String
-) extends NettyRequestHeader(req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
+) extends NettyRequestHeader(listenerId, req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
     with Request[Source[ByteString, _]] {
   lazy val body: Source[ByteString, _] = {
     Source.fromPublisher(rawBody)
   }
   def withBody(newBody: Flux[ByteString]): NettyRequest =
-    new NettyRequest(req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
+    new NettyRequest(listenerId, req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
 }
 
 class NettyRequestHeader(
+    listenerId: String,
     req: HttpRequest,
     ctx: ChannelHandlerContext,
     secure: Boolean,
@@ -333,6 +345,7 @@ class NettyRequestHeader(
     RequestAttrKey.Session               -> Cell(zeSession),
     RequestAttrKey.Flash                 -> Cell(zeFlash),
     RequestAttrKey.Server                -> "netty-experimental",
+    NettyRequestKeys.ListenerIdKey       -> listenerId,
     NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
     NettyRequestKeys.TlsSessionKey       -> sessionOpt,
     NettyRequestKeys.TlsVersionKey       -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
