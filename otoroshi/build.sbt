@@ -102,7 +102,7 @@ libraryDependencies ++= Seq(
   "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "com.auth0"                        % "java-jwt"                                  % "4.2.0" excludeAll (excludesJackson: _*),
   "com.auth0"                        % "jwks-rsa"                                  % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.25.6",
+  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.39.1",
   "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
   "com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0",
   "io.github.classgraph"             % "classgraph"                                % "4.8.149" excludeAll (excludesJackson: _*),
