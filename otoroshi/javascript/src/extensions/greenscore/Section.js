@@ -5,7 +5,7 @@ export default function Section({ title, subTitle, children, full = true }) {
     <div
       style={{
         margin: full ? '5rem 0' : '1rem 0',
-        width: '100%',
+        width: '100%'
       }}
       className="d-flex flex-column justify-content-center"
     >

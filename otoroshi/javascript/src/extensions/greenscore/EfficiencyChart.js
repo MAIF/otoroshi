@@ -233,6 +233,7 @@ return (
                   const col = !day ? (idx + 1) - 24 * (row - 1) : zeDate.getHours() + 1;
                   const clazz = status.health;
 
+
                   return (
                     <Popover
                       key={idx}
@@ -253,7 +254,7 @@ return (
                   )
                 })}
                 {!day && [1, 2, 3, 4, 5, 6, 7].map((idx => {
-                  const date = new Date(zeData[24 * (idx - 1)].date)
+                  const date = new Date(zeData[24 * (idx - 1)]?.date)
                   return (
                     <div
                       key={idx}
@@ -269,7 +270,7 @@ return (
                     <div key={idx}
                       className='heatmap-hour'
                       style={{ gridColumnStart: idx + 1, gridColumnEnd: idx + 4, gridRowStart: 8, gridRowEnd: 9 }}>
-                      {new Date(zeData[(idx - 1)].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      {new Date(zeData[(idx - 1)]?.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   )
                 }))}
                 {!!day && [0, 6, 12, 18, 23].map((idx => {
@@ -277,7 +278,7 @@ return (
                     <div key={idx}
                       className='heatmap-hour'
                       style={{ gridColumnStart: idx + 2, gridColumnEnd: idx + 5, gridRowStart: 8, gridRowEnd: 9 }}>
-                      {new Date(zeData[(idx * 6)].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      {new Date(zeData[(idx * 6)]?.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   )
                 }))}
               </div>

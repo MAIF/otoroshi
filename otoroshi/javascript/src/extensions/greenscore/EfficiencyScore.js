@@ -45,14 +45,16 @@ export const EfficiencyScore = (props) => {
           <p style={{ fontSize: '2rem', marginBottom: '1rem' }}>
             Not enough data to display the dashboard
           </p>
-          <NgSelectRenderer
-            ngOptions={{
-              spread: true,
-            }}
-            onChange={setSelectedGroup}
-            options={groups}
-            optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
-          />
+          <div style={{ minWidth: 300 }}>
+            <NgSelectRenderer
+              ngOptions={{
+                spread: true,
+              }}
+              onChange={setSelectedGroup}
+              options={groups}
+              optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
+            />
+          </div>
         </div>
       </Section>
     )
