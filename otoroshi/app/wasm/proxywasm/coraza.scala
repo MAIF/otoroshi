@@ -96,8 +96,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       function: String,
       params: Parameters,
       data: VmData,
-      attrs: TypedMap,
-      shouldBeCallOnce: Boolean = false
+      attrs: TypedMap
   ): Future[Either[JsValue, ResultsWrapper]] = {
     attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None     =>
@@ -125,8 +124,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       params: Parameters,
       results: Int,
       data: VmData,
-      attrs: TypedMap,
-      shouldBeCallOnce: Boolean = false
+      attrs: TypedMap
   ): Future[ResultsWrapper] = {
     attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
       case None     =>
@@ -160,7 +158,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def proxyOnVmStart(attrs: TypedMap, rootData: VmData): Future[Boolean] = {
     val prs = new Parameters(2)
       .pushInts(0, vmConfigurationSize)
-    callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs, shouldBeCallOnce = true).map {
+    callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).map {
       proxyOnVmStartAction =>
         val res = proxyOnVmStartAction.results.getValues()(0).v.i32 != 0
         proxyOnVmStartAction.free()
@@ -171,7 +169,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Future[Boolean] = {
     val prs = new Parameters(2)
       .pushInts(rootContextId, pluginConfigurationSize)
-    callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs, shouldBeCallOnce = true).map {
+    callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).map {
       proxyOnConfigureAction =>
         val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
         proxyOnConfigureAction.free()
@@ -196,7 +194,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   }
 
   def proxyStart(attrs: TypedMap, rootData: VmData): Future[ResultsWrapper] = {
-    callPluginWithoutResults("_start", new Parameters(0), rootData, attrs, shouldBeCallOnce = true).map { res =>
+    callPluginWithoutResults("_start", new Parameters(0), rootData, attrs).map { res =>
       res.right.get
     }
   }
@@ -206,8 +204,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       "proxy_abi_version_0_2_0",
       new Parameters(0),
       rootData,
-      attrs,
-      shouldBeCallOnce = true
+      attrs
     ).map(_ => ())
   }
 

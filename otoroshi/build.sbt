@@ -102,7 +102,7 @@ libraryDependencies ++= Seq(
   "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "com.auth0"                        % "java-jwt"                                  % "4.2.0" excludeAll (excludesJackson: _*),
   "com.auth0"                        % "jwks-rsa"                                  % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.25.6",
+  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.39.1",
   "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
   "com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0",
   "io.github.classgraph"             % "classgraph"                                % "4.8.149" excludeAll (excludesJackson: _*),
@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "3.4.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "3.5.0" classifier "bundle",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),

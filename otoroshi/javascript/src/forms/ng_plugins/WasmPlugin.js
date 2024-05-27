@@ -104,6 +104,13 @@ const schema = {
       description: 'The WASM source is an OPA rego policy compiled to WASM',
     },
   },
+  httpwasm: {
+    type: 'box-bool',
+    label: 'HTTP-WASM',
+    props: {
+      description: 'The WASM source is a HTTP WASM',
+    },
+  },
   authorizations: {
     label: 'Host functions authorizations',
     type: 'form',
@@ -220,13 +227,6 @@ const schema = {
     flow: ['max_calls', 'max_memory_usage', 'max_avg_call_duration', 'max_unused_duration'],
     schema: {
       max_calls: {
-        type: 'bool',
-        label: 'Immortal',
-        props: {
-          help: 'The vm instances cannot be killed',
-        },
-      },
-      max_calls: {
         type: 'number',
         label: 'Max calls',
         suffix: 'calls',
@@ -274,6 +274,7 @@ export default {
       // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source.kind.toLowerCase() !== 'local' && 'authorizations',
       v.source.kind.toLowerCase() !== 'local' && 'killOptions',
+      'httpwasm',
       v.source.kind.toLowerCase() !== 'local' && {
         type: 'group',
         name: 'Advanced settings',
