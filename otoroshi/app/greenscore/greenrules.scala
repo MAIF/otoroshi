@@ -68,6 +68,27 @@ case class Thresholds(
   )
 }
 
+case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
+  def json() = Json.obj(
+    "paths" -> JsArray(excludedPaths.map(JsString))
+  )
+}
+
+object Efficiency {
+  def reads(item: JsValue): JsResult[Efficiency] = {
+    Try {
+      JsSuccess(
+        Efficiency(
+          excludedPaths = item.select("paths").as[Seq[String]]
+        )
+      )
+    } recover { case e =>
+      JsError(e.getMessage)
+    } get
+  }
+}
+
+
 object Thresholds {
   def reads(item: JsValue): JsResult[Thresholds] = {
     Try {

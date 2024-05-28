@@ -2,21 +2,22 @@ package otoroshi.greenscore
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.util.ByteString
+import org.joda.time.{DateTime, Days}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.env.Env
-import otoroshi.events.{GatewayEvent, OtoroshiEvent}
+import otoroshi.events.{AnalyticsReadsServiceImpl, GatewayEvent, OtoroshiEvent}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions.{AdminExtension, AdminExtensionAdminApiRoute, AdminExtensionEntity, AdminExtensionId}
-import otoroshi.next.utils.JsonHelpers.requestBody
+import otoroshi.next.utils.FOption
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.SourceBody
 import play.api.mvc.Results
+import play.api.mvc.Results.{NotFound, Ok}
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Future
@@ -68,7 +69,8 @@ case class GreenScoreEntity(
     tags: Seq[String],
     metadata: Map[String, String],
     routes: Seq[RouteRules],
-    thresholds: Thresholds = Thresholds()
+    thresholds: Thresholds = Thresholds(),
+    efficiency: Efficiency = Efficiency()
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = GreenScoreEntity.format.writes(this)
@@ -92,7 +94,8 @@ object GreenScoreEntity {
           "rulesConfig" -> route.rulesConfig.json
         )
       })),
-      "thresholds"  -> o.thresholds.json()
+      "thresholds"  -> o.thresholds.json(),
+      "efficiency" -> o.efficiency.json()
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -120,7 +123,8 @@ object GreenScoreEntity {
                 .get
             })
           })
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        efficiency = json.select("efficiency").asOpt(Efficiency.reads).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -254,6 +258,42 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       false,
       (_, _, _, _) => {
         Results.Ok(JsArray(RulesManager.rules.map(_.json()))).vfuture
+      }
+    ),
+    AdminExtensionAdminApiRoute(
+      "GET",
+      "/api/extensions/green-score/efficiency/:group/:route",
+      false,
+      (routerCtx, request, _, _) => {
+        implicit val e = env
+        implicit val ctx = env.analyticsExecutionContext
+
+        val fromAndTo = request.getQueryString("day")
+          .map(day => {
+            val date = new DateTime(day.toLong)
+            val from = date.withTimeAtStartOfDay()
+            val to = if(Days.daysBetween(DateTime.now(), date).getDays == 0) DateTime.now() else date.plusDays(1).withTimeAtStartOfDay()
+            (from, to)
+          })
+          .getOrElse((DateTime.now().minusDays(6).withTimeAtStartOfDay(), DateTime.now()))
+
+        env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+          val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+          (routerCtx.named("route"), routerCtx.named("group")) match {
+            case (Some(routeId), Some(groupId)) => env.datastores.routeDataStore.findById(routeId)
+              .flatMap {
+                case Some(route) =>
+                  (for {
+                    group <- FOption(datastores.greenscoresDatastore.findById(groupId))
+                    efficiency <- FOption(analyticsService.fetchRouteEfficiency(route, fromAndTo._1.some, fromAndTo._2.some, group.efficiency.excludedPaths, request.getQueryString("day").map(_ => "10m")))
+                  } yield Ok(efficiency))
+                    .getOrElse(NotFound(Json.obj("error" -> "No entity found")))
+                case None => NotFound(Json.obj("error" -> "No entity found")).future
+              }
+            case _ => NotFound(Json.obj("error" -> "No entity found")).future
+          }
+        }
       }
     )
   )

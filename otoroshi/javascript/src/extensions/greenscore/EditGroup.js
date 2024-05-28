@@ -104,6 +104,12 @@ export default function EditGroup({}) {
     },
     {
       type: 'group',
+      name: 'Efficiency',
+      collapsed: true,
+      fields: ['efficiency.paths'],
+    },
+    {
+      type: 'group',
       name: 'Misc.',
       collapsed: true,
       fields: ['metadata', 'tags'],
@@ -143,6 +149,14 @@ export default function EditGroup({}) {
     thresholds: {
       renderer: ThresholdsTable,
     },
+    efficiency: {
+      paths: {
+        type: 'string',
+        label: 'Excluded Paths',
+        help: "Hits on the following paths will not be taken into account in the efficiency calculation",
+        array: true,
+      }
+    }
   };
 
   if (!group || !routes || !rulesBySection) return null;

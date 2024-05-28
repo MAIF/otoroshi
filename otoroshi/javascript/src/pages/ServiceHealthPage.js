@@ -104,7 +104,7 @@ export class ServiceHealthPage extends Component {
         {!this.state.service || !this.state.status.length ? (
           <>
             <p>
-              Your don't have any service health data available. Maybe you don't have an
+              You don't have any service health data available. Maybe you don't have an
               ElasticSearch instance connected to your Otoroshi
             </p>
             <p>

@@ -59,7 +59,7 @@ export class GlobalStatusPage extends Component {
       return (
         <>
           <p>
-            Your don't have any service health data available. Maybe you don't have an ElasticSearch
+            You don't have any service health data available. Maybe you don't have an ElasticSearch
             instance connected to your Otoroshi
           </p>
           <p>

@@ -12,6 +12,7 @@ import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, S
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import otoroshi.jobs.updates.Version
+import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
@@ -2132,4 +2133,97 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         )
     }
   }
+
+  override def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String] = Seq.empty, interval: Option[String])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
+
+    val rangeCriteria = from
+      .map { f =>
+        Json.obj(
+          "lte" -> to.getOrElse(DateTime.now()).getMillis,
+          "gte" -> f.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "lte" -> to.getOrElse(DateTime.now()).getMillis
+        )
+      }
+
+    val excludedPathsCriteria = if (excludedPaths.isEmpty) Json.obj() else Json.obj(
+      "filter" -> Json.arr(
+        Json.obj("bool" -> Json.obj(
+          "must_not" -> JsArray(excludedPaths.map(path => Json.obj("match" -> Json.obj(
+            "target.uri" -> path
+          ))))
+        ))
+      )
+    )
+
+    val queryJson = Json.obj(
+      "size" -> 0,
+      "query" -> Json.obj(
+        "bool" -> Json.obj(
+          "must" -> Json.arr(
+            Json.obj("match" -> Json.obj("@type" -> "GatewayEvent")),
+            Json.obj("match" -> Json.obj("@serviceId" -> route.id)),
+            Json.obj("range" -> Json.obj(
+              "@timestamp" -> rangeCriteria
+            ))
+          )
+        ).++(excludedPathsCriteria)
+      ),
+      "aggs" -> Json.obj(
+        "dates" -> Json.obj(
+          "date_histogram" -> Json
+            .obj(
+              "field" -> "@callAt",
+              "fixed_interval" -> JsString(interval.getOrElse("1h")),
+              "extended_bounds" -> extendedBounds
+            ),
+          "aggs" -> Json.obj(
+            "avgDuration" -> Json.obj(
+              "avg" -> Json.obj(
+                "field" -> "backendDuration"
+              )
+            )
+          )
+        )
+      )
+    )
+
+    for {
+      resp <- query(queryJson)
+    } yield {
+
+      (resp.resp \ "aggregations" \ "dates" \ "buckets")
+        .asOpt[JsArray]
+        .map { date =>
+          JsArray(date.value.map(d => {
+            val timestamp = (d \ "key").as[Long]
+            val hits = (d \ "doc_count").as[Long]
+            val avgDuration = (d \ "avgDuration" \ "value").asOpt[Float]
+
+            val fl = avgDuration.getOrElse(0F)
+            Json.obj(
+              "date" -> timestamp,
+              "hits" -> hits,
+              "avgDuration" -> fl
+            )
+          }))
+        }
+    }
+  }
+
 }

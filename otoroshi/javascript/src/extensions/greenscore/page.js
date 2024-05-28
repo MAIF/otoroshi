@@ -10,6 +10,7 @@ import { nextClient } from '../../services/BackOfficeServices';
 import RulesRadarchart from './RulesRadarchart';
 import { GlobalScore } from './GlobalScore';
 import StackedBarChart from './StackedBarChart';
+import { EfficiencyScore } from './EfficiencyScore';
 import { DynamicChart } from './DynamicChart';
 import CustomTable from './CustomTable';
 import { ManagerTitle, Tab } from './TitleManager';
@@ -38,7 +39,7 @@ function DatePickerSelector({ icon, onClick }) {
   );
 }
 
-function ModeWrapper({ mode, value, children }) {
+export function ModeWrapper({ mode, value, children }) {
   if (value === mode || mode === 'all') return children;
 
   return null;
@@ -159,9 +160,8 @@ function FilterSelector({
             <div className="d-flex" style={{ gap: '.5rem' }}>
               <div
                 onClick={() => addToState('static')}
-                className={`d-flex align-items-center justify-content-center p-3 py-2 ${
-                  state && state !== 'dynamic' ? 'date-hover--selected' : ''
-                }`}
+                className={`d-flex align-items-center justify-content-center p-3 py-2 ${state && state !== 'dynamic' ? 'date-hover--selected' : ''
+                  }`}
                 style={{
                   flex: 1,
                   border: '1px solid var(--color-primary)',
@@ -174,9 +174,8 @@ function FilterSelector({
               </div>
               <div
                 onClick={() => addToState('dynamic')}
-                className={`d-flex align-items-center justify-content-center p-3 py-2 ${
-                  state && state !== 'static' ? 'date-hover--selected' : ''
-                }`}
+                className={`d-flex align-items-center justify-content-center p-3 py-2 ${state && state !== 'static' ? 'date-hover--selected' : ''
+                  }`}
                 style={{
                   flex: 1,
                   border: '1px solid var(--color-primary)',
@@ -366,9 +365,8 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                     <div
                       key={d.datetime}
                       onClick={() => setSelectedDate(d.datetime)}
-                      className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${
-                        selectedDate === d.datetime ? 'date-hover--selected' : ''
-                      }`}
+                      className={`d-flex align-items-center justify-content-center p-3 py-2 date-hover ${selectedDate === d.datetime ? 'date-hover--selected' : ''
+                        }`}
                       style={{
                         border: '1px solid var(--color-primary)',
                         color: 'var(--text)',
@@ -428,11 +426,11 @@ export default class GreenScoreConfigsPage extends React.Component {
     date: undefined,
     loading: true,
     mode: 'all',
+    efficiency: []
   };
 
   componentDidMount() {
     this.props.setTitle(`Green Score groups`);
-
     Promise.all([
       nextClient.forEntity(nextClient.ENTITIES.ROUTES).findAll(),
       fetch('/bo/api/proxy/api/extensions/green-score/template', {
@@ -458,7 +456,7 @@ export default class GreenScoreConfigsPage extends React.Component {
         date: [...new Set(scores.score_by_route.map((section) => section.date))]
           .sort()
           .reverse()[0],
-        loading: scores.score_by_route.length <= 0,
+        loading: scores.score_by_route.length <= 0
       });
     });
 
@@ -776,11 +774,11 @@ export default class GreenScoreConfigsPage extends React.Component {
                             loading={loading}
                             letter={getLetter(
                               valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) /
-                                (valuesAtCurrentDate.length / 4)
+                              (valuesAtCurrentDate.length / 4)
                             )}
                             color={getColor(
                               valuesAtCurrentDate.reduce((acc, v) => v.score.score + acc, 0) /
-                                (valuesAtCurrentDate.length / 4)
+                              (valuesAtCurrentDate.length / 4)
                             )}
                           />
 
@@ -858,7 +856,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                             letter={String.fromCharCode(65 + (1 - scalingDynamicScore) * 5)}
                             color={
                               Object.keys(GREEN_SCORE_GRADES)[
-                                Math.round((1 - scalingDynamicScore) * 5)
+                              Math.round((1 - scalingDynamicScore) * 5)
                               ]
                             }
                             dynamic
@@ -953,7 +951,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                                     Math.abs(
                                       (this.scaling(dynamicValues.raw[key], thresholds[key]) /
                                         thresholds[key]) *
-                                        5
+                                      5
                                     ) - 1;
                                   return (
                                     <GlobalScore
@@ -962,7 +960,7 @@ export default class GreenScoreConfigsPage extends React.Component {
                                       loading={loading}
                                       color={
                                         Object.keys(GREEN_SCORE_GRADES)[
-                                          Math.round(scalingValue < 0 ? 0 : scalingValue)
+                                        Math.round(scalingValue < 0 ? 0 : scalingValue)
                                         ]
                                       }
                                       maxScore={thresholds[key]}
@@ -986,8 +984,32 @@ export default class GreenScoreConfigsPage extends React.Component {
               </>
             )}
           />
-
           <Route
+            exact
+            path="/extensions/green-score/efficiency"
+            component={() => (
+              <div style={{
+                minHeight: 320,
+                paddingTop: 50,
+              }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    // flex: 1,
+                    // gap: '.5rem',
+                    marginBottom: '.5rem',
+                    position: 'relative',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <EfficiencyScore routes={this.state.routes} loading={loading} groups={groups} filteredGroups={filteredGroups} onGroupsChange={g => this.onFiltersChange(this.state.mode, g)} />
+                </div>
+              </div>
+            )
+            }
+          />
+
+          < Route
             exact
             path="/extensions/green-score/groups"
             component={() => (
@@ -1049,9 +1071,9 @@ export default class GreenScoreConfigsPage extends React.Component {
             )}
           />
 
-          <Route exact path="/extensions/green-score/groups/:group_id" component={EditGroup} />
-        </Switch>
-      </div>
+          < Route exact path="/extensions/green-score/groups/:group_id" component={EditGroup} />
+        </Switch >
+      </div >
     );
   }
 }
