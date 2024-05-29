@@ -25,5 +25,21 @@ The Green Score works for all architectures, including simple leader or more adv
 ## efficiency
 
 In addition to a performance calculation, the green score also provide a view to display the number of hits of selected APIs in a defined time interval.
-By default data are displayed for the last 7 days with an interval of one hour. By clicking on the day in the legend, data is retrieved for the selected day with an interval of 10 minutes.
+By default data are displayed for the last 7 days with an interval of one hour. 
 On hover, you can see the number of hits and the average usage time (calculate with the average duration).
+
+@@@ div { .centered-img }
+<img src="../imgs/efficiency.png" />
+@@@
+
+By clicking on the `graph button` in the upper right corner, an alternative view allows you to visualize the data using 2 graphs including a frequency graph.
+
+@@@ div { .centered-img }
+<img src="../imgs/efficiency-graph.png" />
+@@@
+
+By clicking on the day in the legend, data is retrieved for the selected day with an interval of 10 minutes. The scale of the 7 last days is kept, in the top, the selected days is displayed.
+
+@@@ div { .centered-img }
+<img src="../imgs/efficiency-by-day.png" />
+@@@
