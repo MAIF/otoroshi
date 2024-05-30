@@ -1550,6 +1550,106 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  def invalidateSession(sessionId: String): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-invalidate-user-session"
+        ) { tryCount =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"Invalidating user session '$sessionId' with a leader")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/apis/security.otoroshi.io/v1/auth-module-users/${sessionId}", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                             -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
+              ClusterAgent.OtoroshiWorkerJavaVersionHeader       -> env.theJavaVersion.jsonStr,
+              ClusterAgent.OtoroshiWorkerOsHeader                -> env.os.jsonStr,
+              ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader         -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .delete()
+            .filter { resp =>
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled)
+                Cluster.logger.debug(s"User session $sessionId has been invalided")
+              resp.ignoreIf(resp.status != 200)
+              resp.status == 200
+            }
+            .map(resp => Some(Json.parse(resp.body)))
+        }
+        .recover { case e =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while invalidating user session with Otoroshi leader cluster"
+            )
+          None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
+  def disableApikey(clientId: String): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-disabling-apikey"
+        ) { tryCount =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"Disabling apikey '$clientId' with a leader")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/apis/apim.otoroshi.io/v1/apikeys/${clientId}", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                             -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
+              ClusterAgent.OtoroshiWorkerJavaVersionHeader       -> env.theJavaVersion.jsonStr,
+              ClusterAgent.OtoroshiWorkerOsHeader                -> env.os.jsonStr,
+              ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader         -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .patch(Json.arr(Json.obj("op" -> "replace", "path" -> "enabled", "value" -> false)))
+            .filter { resp =>
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled)
+                Cluster.logger.debug(s"Apikey $clientId has been disabled")
+              resp.ignoreIf(resp.status != 200)
+              resp.status == 200
+            }
+            .map(resp => Some(Json.parse(resp.body)))
+        }
+        .recover { case e =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while disabled apikey with Otoroshi leader cluster"
+            )
+          None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
   def getUserToken(token: String): Future[Option[JsValue]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
