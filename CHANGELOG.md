@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.0] - 2024-05-31
+
+
+https://github.com/MAIF/otoroshi/milestone/95?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.17.0...v16.18.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.0
+
+
+### Added 
+
+- add infrastructure to support several http listeners per otoroshi instance (#1908)
+- bind routes only to specific http listeners  (#1909)
+- make individual http listeners configurable from config. file or env. variables (#1910)
+- make individual http listeners dynamic (#1911)
+- Spec http-wasm (#1914)
+- Provide a plugin to block non HTTPS traffic (#1919)       
+      
+### Changed 
+
+- Kubernetes integration : enhance findAndMerge methods to support one-way trust for CRD (#1907)
+- bump nimbus-jose-jwt version (#1915)
+- bump wasm4s version (#1916)       
+      
+### Fixed 
+
+- Fix the misspelling of DataExporter (#1906)
+- auth. module login when already logged in should use current domain redirection (#1920)       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
 ## [16.17.0] - 2024-04-29
 
 
