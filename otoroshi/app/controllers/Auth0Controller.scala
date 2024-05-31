@@ -317,7 +317,7 @@ class AuthController(
                               }
                               case redirectTo                  => {
                                 // TODO - check if ref is needed
-                                val url                = new java.net.URL(redirectTo)
+                                val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
@@ -423,7 +423,7 @@ class AuthController(
                                 )
                               }
                               case redirectTo                  => {
-                                val url                = new java.net.URL(redirectTo)
+                                val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
