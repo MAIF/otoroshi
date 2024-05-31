@@ -158,22 +158,20 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   def proxyOnVmStart(attrs: TypedMap, rootData: VmData): Future[Boolean] = {
     val prs = new Parameters(2)
       .pushInts(0, vmConfigurationSize)
-    callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).map {
-      proxyOnVmStartAction =>
-        val res = proxyOnVmStartAction.results.getValues()(0).v.i32 != 0
-        proxyOnVmStartAction.free()
-        res
+    callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).map { proxyOnVmStartAction =>
+      val res = proxyOnVmStartAction.results.getValues()(0).v.i32 != 0
+      proxyOnVmStartAction.free()
+      res
     }
   }
 
   def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Future[Boolean] = {
     val prs = new Parameters(2)
       .pushInts(rootContextId, pluginConfigurationSize)
-    callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).map {
-      proxyOnConfigureAction =>
-        val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
-        proxyOnConfigureAction.free()
-        res
+    callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).map { proxyOnConfigureAction =>
+      val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
+      proxyOnConfigureAction.free()
+      res
     }
   }
 

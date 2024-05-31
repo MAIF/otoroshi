@@ -57,30 +57,30 @@ export const entityFromURI = (location) => {
   };
 };
 
-  export const humanMillisecond = function (ms, digits=1) {
-    const levels=[
-      ["ms", 1000],
-      ["sec", 60],
-      ["min", 60],
-      ["hrs", 24],
-      ["days", 7],
-      ["weeks", (30/7)],
-      ["months", 12.1666666666666666],
-      ["years", 10],
-      ["decades", 10],
-      ["centuries", 10],
-      ["millenia", 10],
-    ];
-    var value=ms;
-    var name="";
-    var step=1;
-    for(var i=0, max=levels.length;i<max;++i){
-        value/=step;
-        name=levels[i][0];
-        step=levels[i][1];
-        if(value < step){
-            break;
-        }
+export const humanMillisecond = function (ms, digits = 1) {
+  const levels = [
+    ['ms', 1000],
+    ['sec', 60],
+    ['min', 60],
+    ['hrs', 24],
+    ['days', 7],
+    ['weeks', 30 / 7],
+    ['months', 12.1666666666666666],
+    ['years', 10],
+    ['decades', 10],
+    ['centuries', 10],
+    ['millenia', 10],
+  ];
+  var value = ms;
+  var name = '';
+  var step = 1;
+  for (var i = 0, max = levels.length; i < max; ++i) {
+    value /= step;
+    name = levels[i][0];
+    step = levels[i][1];
+    if (value < step) {
+      break;
     }
-    return value.toFixed(digits)+" "+name;
   }
+  return value.toFixed(digits) + ' ' + name;
+};

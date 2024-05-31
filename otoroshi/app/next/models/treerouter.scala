@@ -99,21 +99,28 @@ case class NgTreeRouter(
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
       .flatMap { routes =>
-        val forCurrentListenerOnly = request.attrs.get(NettyRequestKeys.ListenerExclusiveKey)
+        val forCurrentListenerOnly = request.attrs
+          .get(NettyRequestKeys.ListenerExclusiveKey)
           .orElse(attrs.get(otoroshi.plugins.Keys.ForCurrentListenerOnlyKey))
           .getOrElse(false)
-        val finalRoutes = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
-          case None =>
+        val finalRoutes            = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
+          case None                                     =>
             // println("should display on standard listener")
-            routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(HttpListenerNames.Standard) || r.boundToListener(HttpListenerNames.Experimental)))
+            routes.copy(routes =
+              routes.routes.filter(r =>
+                r.notBoundToListener || r.boundToListener(HttpListenerNames.Standard) || r.boundToListener(
+                  HttpListenerNames.Experimental
+                )
+              )
+            )
           case Some(listener) if forCurrentListenerOnly =>
             // println("should display on exclusive")
             routes.copy(routes = routes.routes.filter(r => r.boundToListener(listener)))
-          case Some(listener) =>
+          case Some(listener)                           =>
             // println("should display on non exclusive")
             routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(listener)))
         }
-        val routeIds = finalRoutes.routes.map(_.cacheableId)
+        val routeIds               = finalRoutes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
         finalRoutes.find((r, matchedPath, pathParams, noMoreSegments) =>
           r.matches(

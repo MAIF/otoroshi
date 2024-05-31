@@ -105,7 +105,17 @@ class Http1RequestHandler(
     }
     log_protocol = session.map(_.getProtocol).flatMap(TlsVersion.parseSafe).map(_.name).getOrElse("-")
     val rawOtoReq                =
-      new NettyRequest(config.id, req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
+      new NettyRequest(
+        config.id,
+        req,
+        ctx,
+        Flux.empty(),
+        true,
+        session,
+        sessionCookieBaker,
+        flashCookieBaker,
+        addressGet
+      )
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
     val bodyIn: Flux[ByteString] = if (hasBody) hotFlux else Flux.empty()
     val otoReq                   = rawOtoReq.withBody(bodyIn)
@@ -582,13 +592,13 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
       import java.util.concurrent.TimeUnit
 
-      val cert       = new SelfSignedCertificate()
-      val fakeCtx    = QuicSslContextBuilder
+      val cert             = new SelfSignedCertificate()
+      val fakeCtx          = QuicSslContextBuilder
         .forServer(cert.key(), null, cert.cert())
         .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
         .earlyData(true)
         .build()
-      val sslContext = QuicSslContextBuilder.buildForServerWithSni(new Mapping[String, QuicSslContext] {
+      val sslContext       = QuicSslContextBuilder.buildForServerWithSni(new Mapping[String, QuicSslContext] {
         override def map(domain: String): QuicSslContext = {
           if (logger.isDebugEnabled) logger.debug(s"sni domain: ${domain}")
           if (domain == null) {
@@ -630,7 +640,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         }
       })
-      val codec      = Http3.newQuicServerCodecBuilder
+      val codec            = Http3.newQuicServerCodecBuilder
         .sslContext(sslContext)
         .maxIdleTimeout(config.idleTimeout.toMillis, TimeUnit.MILLISECONDS)
         .maxSendUdpPayloadSize(config.http3.maxSendUdpPayloadSize)
@@ -684,9 +694,9 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         })
         .build()
-      val group      = new NioEventLoopGroup(config.nThread)
-      val bs         = new Bootstrap()
-      val channel    = bs
+      val group            = new NioEventLoopGroup(config.nThread)
+      val bs               = new Bootstrap()
+      val channel          = bs
         .group(group)
         .channel(classOf[NioDatagramChannel])
         .handler(codec)

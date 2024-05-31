@@ -65,7 +65,7 @@ class HttpWasmState(env: Env) {
     }
 
     val encodedInput = input.map(i => ByteString(i))
-    val byteCount = encodedInput.foldLeft(0) { case (acc, i) => acc + i.length }
+    val byteCount    = encodedInput.foldLeft(0) { case (acc, i) => acc + i.length }
 
     val countLen = (count << 32) | BigInt(byteCount)
 
@@ -89,10 +89,10 @@ class HttpWasmState(env: Env) {
   }
 
   private def writeStringIfUnderLimit(
-                               plugin: ExtismCurrentPlugin,
-                               offset: Int,
-                               limit: Int,
-                               v: String
+      plugin: ExtismCurrentPlugin,
+      offset: Int,
+      limit: Int,
+      v: String
   ): Int = this.writeIfUnderLimit(plugin, offset, limit, ByteString(v))
 
   def getHeaderNames(
@@ -100,12 +100,12 @@ class HttpWasmState(env: Env) {
       vmData: HttpWasmVmData,
       kind: HeaderKind,
       buf: Int,
-      bufLimit: Int,
+      bufLimit: Int
   ): BigInt = {
     val headers = vmData.headers(kind)
 
     val headerNames = headers.keys.toSeq
-    this.writeNullTerminated (plugin, buf, bufLimit, headerNames)
+    this.writeNullTerminated(plugin, buf, bufLimit, headerNames)
   }
 
   def getHeaderValues(
@@ -124,15 +124,15 @@ class HttpWasmState(env: Env) {
 
     val headers = vmData.headers(kind)
 
-    val n = this.mustReadString(plugin, "name", name, nameLen).toLowerCase()
-    val value = headers.get(n)
+    val n                   = this.mustReadString(plugin, "name", name, nameLen).toLowerCase()
+    val value               = headers.get(n)
     val values: Seq[String] = value.map(value => value.split("; ").toSeq).getOrElse(Seq.empty)
 
     this.writeNullTerminated(plugin, buf, bufLimit, values)
   }
 
   def getMethod(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int): Int = {
-    writeStringIfUnderLimit (plugin, buf, bufLimit, vmData.request.method)
+    writeStringIfUnderLimit(plugin, buf, bufLimit, vmData.request.method)
   }
 
   def getProtocolVersion(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int): Int = {
@@ -140,23 +140,23 @@ class HttpWasmState(env: Env) {
     httpVersion match {
       case "1.0" => httpVersion = "HTTP/1.0"
       case "1.1" => httpVersion = "HTTP/1.1"
-      case "2" => httpVersion = "HTTP/2.0"
+      case "2"   => httpVersion = "HTTP/2.0"
       case "2.0" => httpVersion = "HTTP/2.0"
-      case _ => httpVersion = httpVersion
+      case _     => httpVersion = httpVersion
     }
 
-    this.writeStringIfUnderLimit (plugin, buf, bufLimit, httpVersion)
+    this.writeStringIfUnderLimit(plugin, buf, bufLimit, httpVersion)
   }
 
   def getSourceAddr(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int): Int = {
-    this.writeStringIfUnderLimit (plugin, buf, bufLimit, vmData.remoteAddress.get)
+    this.writeStringIfUnderLimit(plugin, buf, bufLimit, vmData.remoteAddress.get)
   }
 
   def getStatusCode(vmData: HttpWasmVmData): Int = vmData.requestStatusCode
 
   def getUri(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int): Int = {
     val uri = vmData.request.relativeUri
-    this.writeStringIfUnderLimit (plugin, buf, bufLimit, if (uri.isEmpty) "/" else uri)
+    this.writeStringIfUnderLimit(plugin, buf, bufLimit, if (uri.isEmpty) "/" else uri)
   }
 
   def log(plugin: ExtismCurrentPlugin, level: LogLevel, buf: Int, bufLimit: Int) = {
@@ -164,10 +164,10 @@ class HttpWasmState(env: Env) {
 
     level match {
       case LogLevel.LogLevelDebug => logger.debug(s)
-      case LogLevel.LogLevelInfo => logger.info(s)
-      case LogLevel.LogLevelWarn => logger.warn(s)
+      case LogLevel.LogLevelInfo  => logger.info(s)
+      case LogLevel.LogLevelWarn  => logger.warn(s)
       case LogLevel.LogLevelError => logger.error(s)
-      case _ => throw new Exception("invalid log level")
+      case _                      => throw new Exception("invalid log level")
     }
   }
 
@@ -180,80 +180,101 @@ class HttpWasmState(env: Env) {
 
   private def mustHeaderMutable(vmData: HttpWasmVmData, op: String, kind: HeaderKind) {
     kind match {
-      case HeaderKind.HeaderKindRequest => mustBeforeNext(vmData, op, "request header")
-      case HeaderKind.HeaderKindResponse => mustBeforeNextOrFeature(vmData, Feature.FeatureBufferResponse, op, "response header")
-      case HeaderKind.HeaderKindRequestTrailers => mustBeforeNext(vmData, op, "request trailer")
-      case HeaderKind.HeaderKindResponseTrailers => mustBeforeNextOrFeature(vmData, Feature.FeatureBufferResponse, op, "response trailer")
+      case HeaderKind.HeaderKindRequest          => mustBeforeNext(vmData, op, "request header")
+      case HeaderKind.HeaderKindResponse         =>
+        mustBeforeNextOrFeature(vmData, Feature.FeatureBufferResponse, op, "response header")
+      case HeaderKind.HeaderKindRequestTrailers  => mustBeforeNext(vmData, op, "request trailer")
+      case HeaderKind.HeaderKindResponseTrailers =>
+        mustBeforeNextOrFeature(vmData, Feature.FeatureBufferResponse, op, "response trailer")
     }
   }
 
   private def mustBeforeNext(vmData: HttpWasmVmData, op: String, kind: String) {
-	if (vmData.afterNext) {
-        throw new RuntimeException(s"can't $op $kind after next handler")
-	}
+    if (vmData.afterNext) {
+      throw new RuntimeException(s"can't $op $kind after next handler")
+    }
   }
 
   private def mustBeforeNextOrFeature(vmData: HttpWasmVmData, feature: Feature, op: String, kind: String): Unit = {
-	if (!vmData.afterNext) {
-		// Assume this is serving a response from the guest.
-	} else if (vmData.features.isEnabled(feature)) {
-		// Assume the guest is overwriting the response from next.
-	} else {
-		throw new RuntimeException(s"can't $op $kind after next handler unless " +
-          s"${Feature.toString(feature)} is enabled")
-	}
+    if (!vmData.afterNext) {
+      // Assume this is serving a response from the guest.
+    } else if (vmData.features.isEnabled(feature)) {
+      // Assume the guest is overwriting the response from next.
+    } else {
+      throw new RuntimeException(
+        s"can't $op $kind after next handler unless " +
+        s"${Feature.toString(feature)} is enabled"
+      )
+    }
   }
 
-  private def _readBody(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, buf: Int, bufLimit: Int, body: ByteString, kind: BodyKind): BigInt = {
-	// buf_limit 0 serves no purpose as implementations won't return EOF on it.
+  private def _readBody(
+      plugin: ExtismCurrentPlugin,
+      vmData: HttpWasmVmData,
+      buf: Int,
+      bufLimit: Int,
+      body: ByteString,
+      kind: BodyKind
+  ): BigInt = {
+    // buf_limit 0 serves no purpose as implementations won't return EOF on it.
     if (bufLimit == 0) {
       throw new RuntimeException("buf_limit==0 reading body")
     }
 
     val memory = plugin.customMemoryGet()
 
-	val start = kind match {
-      case BodyKind.BodyKindRequest => vmData.requestBodyReadIndex
+    val start = kind match {
+      case BodyKind.BodyKindRequest  => vmData.requestBodyReadIndex
       case BodyKind.BodyKindResponse => vmData.requestBodyReadIndex
-      case _ => throw new Exception("invalid body kind")
+      case _                         => throw new Exception("invalid body kind")
     }
-    val end = Math.min (start + bufLimit, body.length)
+    val end   = Math.min(start + bufLimit, body.length)
     val slice = body.slice(start, end)
 
     memory.write(buf, slice.toArray, 0, slice.length)
     kind match {
-      case BodyKind.BodyKindRequest =>
-            vmData.requestBodyReadIndex = end
+      case BodyKind.BodyKindRequest  =>
+        vmData.requestBodyReadIndex = end
       case BodyKind.BodyKindResponse =>
-            vmData.responseBodyReadIndex = end
+        vmData.responseBodyReadIndex = end
     }
 
     if (end == body.length) {
-      return (1 << 32) | BigInt (slice.length)
+      return (1 << 32) | BigInt(slice.length)
     }
-    BigInt (slice.length)
-}
-
+    BigInt(slice.length)
+  }
 
   def readBody(plugin: ExtismCurrentPlugin, vmData: HttpWasmVmData, kind: BodyKind, buf: Int, bufLimit: Int): BigInt = {
     val body = kind match {
       case BodyKind.BodyKindRequest =>
-        mustBeforeNextOrFeature(vmData, Feature.FeatureBufferRequest, "read", BodyKind.toString(BodyKind.BodyKindRequest))
+        mustBeforeNextOrFeature(
+          vmData,
+          Feature.FeatureBufferRequest,
+          "read",
+          BodyKind.toString(BodyKind.BodyKindRequest)
+        )
 
         if (vmData.bufferedRequestBody.isEmpty) {
-          vmData.bufferedRequestBody = Some(Await.result(vmData.request.body.runFold(ByteString.empty)(_ ++ _)
-          (env.otoroshiMaterializer), 10.seconds))
+          vmData.bufferedRequestBody = Some(
+            Await.result(vmData.request.body.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer), 10.seconds)
+          )
         }
 
         vmData.bufferedRequestBody.get
 
       case BodyKind.BodyKindResponse =>
-        mustBeforeNextOrFeature(vmData, Feature.FeatureBufferResponse, "read", BodyKind.toString(BodyKind.BodyKindResponse))
-
+        mustBeforeNextOrFeature(
+          vmData,
+          Feature.FeatureBufferResponse,
+          "read",
+          BodyKind.toString(BodyKind.BodyKindResponse)
+        )
 
         if (vmData.bufferedResponseBody.isEmpty) {
-          vmData.bufferedResponseBody = Some(Await.result(vmData.response.body.runFold(ByteString.empty)(_ ++ _)
-          (env.otoroshiMaterializer), 10.seconds))
+          vmData.bufferedResponseBody = Some(
+            Await.result(vmData.response.body.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer), 10.seconds)
+          )
         }
 
         vmData.bufferedResponseBody.get
@@ -266,8 +287,8 @@ class HttpWasmState(env: Env) {
     mustBeforeNext(vmData, "set", "method")
 
     if (methodLen == 0) {
-		throw new RuntimeException("HTTP method cannot be empty")
-	}
+      throw new RuntimeException("HTTP method cannot be empty")
+    }
 
     val readMethod = this.mustReadString(plugin, "method", method, methodLen)
 
@@ -299,12 +320,12 @@ class HttpWasmState(env: Env) {
       throw new RuntimeException("HTTP header name cannot be empty")
     }
 
-	mustHeaderMutable(vmData, "add", kind)
+    mustHeaderMutable(vmData, "add", kind)
 
-    val n = this.mustReadString (plugin, "name", name, nameLen)
-    val v = this.mustReadString (plugin, "value", value, valueLen)
+    val n = this.mustReadString(plugin, "name", name, nameLen)
+    val v = this.mustReadString(plugin, "value", value, valueLen)
 
-    val headers = vmData.headers(kind)
+    val headers  = vmData.headers(kind)
     val existing = headers.get(n)
     val newValue = existing.map(existing => Seq(existing, v)).getOrElse(Seq(v))
 
@@ -312,13 +333,13 @@ class HttpWasmState(env: Env) {
   }
 
   def setHeader(
-                 plugin: ExtismCurrentPlugin,
-                 vmData: HttpWasmVmData,
-                 kind: HeaderKind,
-                 name: Int,
-                 nameLen: Int,
-                 value: Int,
-                 valueLen: Int
+      plugin: ExtismCurrentPlugin,
+      vmData: HttpWasmVmData,
+      kind: HeaderKind,
+      name: Int,
+      nameLen: Int,
+      value: Int,
+      valueLen: Int
   ) = {
     if (nameLen == 0) {
       throw new RuntimeException("HTTP header name cannot be empty")
@@ -326,26 +347,27 @@ class HttpWasmState(env: Env) {
 
     mustHeaderMutable(vmData, "set", kind)
 
-    val n = this.mustReadString (plugin, "name", name, nameLen)
-    val v = this.mustReadString (plugin, "value", value, valueLen)
+    val n = this.mustReadString(plugin, "name", name, nameLen)
+    val v = this.mustReadString(plugin, "value", value, valueLen)
 
-    vmData.setHeader (kind, n, Seq(v))
+    vmData.setHeader(kind, n, Seq(v))
   }
 
   def removeHeader(
-                    plugin: ExtismCurrentPlugin,
-                    vmData: HttpWasmVmData,
-                    kind: HeaderKind,
-                    name: Int,
-                    nameLen: Int): Unit = {
+      plugin: ExtismCurrentPlugin,
+      vmData: HttpWasmVmData,
+      kind: HeaderKind,
+      name: Int,
+      nameLen: Int
+  ): Unit = {
     if (nameLen == 0) {
-      throw new RuntimeException ("HTTP header name cannot be empty")
+      throw new RuntimeException("HTTP header name cannot be empty")
     }
 
     mustHeaderMutable(vmData, "remove", kind)
 
-    val n = this.mustReadString (plugin, "name", name, nameLen)
-    vmData.removeHeader (kind, n)
+    val n = this.mustReadString(plugin, "name", name, nameLen)
+    vmData.removeHeader(kind, n)
   }
 
   def setStatusCode(vmData: HttpWasmVmData, statusCode: Int): Unit = {
@@ -369,7 +391,7 @@ class HttpWasmState(env: Env) {
       plugin: ExtismCurrentPlugin,
       fieldName: String,
       offset: Int,
-      byteCount: Int,
+      byteCount: Int
   ): String = {
     if (byteCount == 0) {
       return ""

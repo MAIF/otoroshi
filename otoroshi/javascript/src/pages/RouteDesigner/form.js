@@ -547,18 +547,27 @@ export const schemas = {
           }),
         },
       },
-      bound_listeners: { 
-        type: 'array', 
-        props: { 
-          label: 'bound listeners' 
-        } 
+      bound_listeners: {
+        type: 'array',
+        props: {
+          label: 'bound listeners',
+        },
       },
       include: { type: 'array', props: { label: 'included paths', suffix: 'regex' } },
       exclude: { type: 'array', props: { label: 'excluded paths', suffix: 'regex' } },
       config: { type: 'jsonobjectcode', props: { label: 'plugin configuration' } },
       plugin_index: { type: 'jsonobjectcode', props: { label: 'plugin index', height: '50px' } },
     }),
-    flow: ['plugin', 'enabled', 'debug', 'include', 'exclude', 'bound_listeners', 'plugin_index', 'config'],
+    flow: [
+      'plugin',
+      'enabled',
+      'debug',
+      'include',
+      'exclude',
+      'bound_listeners',
+      'plugin_index',
+      'config',
+    ],
   },
 };
 

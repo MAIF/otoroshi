@@ -88,7 +88,6 @@ object Efficiency {
   }
 }
 
-
 object Thresholds {
   def reads(item: JsValue): JsResult[Thresholds] = {
     Try {

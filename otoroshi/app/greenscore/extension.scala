@@ -95,7 +95,7 @@ object GreenScoreEntity {
         )
       })),
       "thresholds"  -> o.thresholds.json(),
-      "efficiency" -> o.efficiency.json()
+      "efficiency"  -> o.efficiency.json()
     )
 
     override def reads(json: JsValue): JsResult[GreenScoreEntity] = Try {
@@ -265,14 +265,17 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/efficiency/:group/:route",
       false,
       (routerCtx, request, _, _) => {
-        implicit val e = env
+        implicit val e   = env
         implicit val ctx = env.analyticsExecutionContext
 
-        val fromAndTo = request.getQueryString("day")
+        val fromAndTo = request
+          .getQueryString("day")
           .map(day => {
             val date = new DateTime(day.toLong)
             val from = date.withTimeAtStartOfDay()
-            val to = if(Days.daysBetween(DateTime.now(), date).getDays == 0) DateTime.now() else date.plusDays(1).withTimeAtStartOfDay()
+            val to   =
+              if (Days.daysBetween(DateTime.now(), date).getDays == 0) DateTime.now()
+              else date.plusDays(1).withTimeAtStartOfDay()
             (from, to)
           })
           .getOrElse((DateTime.now().minusDays(6).withTimeAtStartOfDay(), DateTime.now()))
@@ -281,17 +284,27 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
           (routerCtx.named("route"), routerCtx.named("group")) match {
-            case (Some(routeId), Some(groupId)) => env.datastores.routeDataStore.findById(routeId)
-              .flatMap {
-                case Some(route) =>
-                  (for {
-                    group <- FOption(datastores.greenscoresDatastore.findById(groupId))
-                    efficiency <- FOption(analyticsService.fetchRouteEfficiency(route, fromAndTo._1.some, fromAndTo._2.some, group.efficiency.excludedPaths, request.getQueryString("day").map(_ => "10m")))
-                  } yield Ok(efficiency))
-                    .getOrElse(NotFound(Json.obj("error" -> "No entity found")))
-                case None => NotFound(Json.obj("error" -> "No entity found")).future
-              }
-            case _ => NotFound(Json.obj("error" -> "No entity found")).future
+            case (Some(routeId), Some(groupId)) =>
+              env.datastores.routeDataStore
+                .findById(routeId)
+                .flatMap {
+                  case Some(route) =>
+                    (for {
+                      group      <- FOption(datastores.greenscoresDatastore.findById(groupId))
+                      efficiency <- FOption(
+                                      analyticsService.fetchRouteEfficiency(
+                                        route,
+                                        fromAndTo._1.some,
+                                        fromAndTo._2.some,
+                                        group.efficiency.excludedPaths,
+                                        request.getQueryString("day").map(_ => "10m")
+                                      )
+                                    )
+                    } yield Ok(efficiency))
+                      .getOrElse(NotFound(Json.obj("error" -> "No entity found")))
+                  case None        => NotFound(Json.obj("error" -> "No entity found")).future
+                }
+            case _                              => NotFound(Json.obj("error" -> "No entity found")).future
           }
         }
       }

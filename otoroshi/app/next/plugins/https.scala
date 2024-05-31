@@ -37,13 +37,14 @@ class ForceHttpsTraffic extends NgPreRouting {
   }
 }
 
-case class BlockHttpTrafficConfig(revokeApikeys: Boolean, revokeUserSession: Boolean, message: Option[String]) extends NgPluginConfig {
+case class BlockHttpTrafficConfig(revokeApikeys: Boolean, revokeUserSession: Boolean, message: Option[String])
+    extends NgPluginConfig {
   def json: JsValue = BlockHttpTrafficConfig.format.writes(this)
 }
 
 object BlockHttpTrafficConfig {
   val default = BlockHttpTrafficConfig(revokeApikeys = true, revokeUserSession = false, None)
-  val format = new Format[BlockHttpTrafficConfig] {
+  val format  = new Format[BlockHttpTrafficConfig] {
 
     override def reads(json: JsValue): JsResult[BlockHttpTrafficConfig] = Try {
       BlockHttpTrafficConfig(
@@ -57,15 +58,15 @@ object BlockHttpTrafficConfig {
     }
 
     override def writes(o: BlockHttpTrafficConfig): JsValue = Json.obj(
-      "revoke_apikeys" -> o.revokeApikeys,
+      "revoke_apikeys"      -> o.revokeApikeys,
       "revoke_user_session" -> o.revokeUserSession,
-      "message" -> o.message.map(_.json).getOrElse(JsNull).asValue
+      "message"             -> o.message.map(_.json).getOrElse(JsNull).asValue
     )
   }
   val configFlow: Seq[String]        = Seq("revoke_apikeys", "revoke_user_session", "message")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "revoke_apikeys" -> Json.obj(
+      "revoke_apikeys"      -> Json.obj(
         "type"  -> "bool",
         "label" -> "Revoke apikeys"
       ),
@@ -73,7 +74,7 @@ object BlockHttpTrafficConfig {
         "type"  -> "bool",
         "label" -> "Revoke user sessions"
       ),
-      "message"   -> Json.obj(
+      "message"             -> Json.obj(
         "type"  -> "string",
         "label" -> "Message"
       )
@@ -95,7 +96,7 @@ class BlockHttpTraffic extends NgAccessValidator {
       |Also, this plugin will revoke any apikey or user session passed in clear text if there is one.
       |In that case, make sure this plugins comes after Apikey and Authentication plugins.""".stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = BlockHttpTrafficConfig.default.some
-  override def noJsForm: Boolean = true
+  override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = BlockHttpTrafficConfig.configFlow
   override def configSchema: Option[JsObject]              = BlockHttpTrafficConfig.configSchema
 
@@ -103,7 +104,8 @@ class BlockHttpTraffic extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (!ctx.request.theSecured) {
-      val config = ctx.cachedConfig(internalName)(BlockHttpTrafficConfig.format).getOrElse(BlockHttpTrafficConfig.default)
+      val config =
+        ctx.cachedConfig(internalName)(BlockHttpTrafficConfig.format).getOrElse(BlockHttpTrafficConfig.default)
       ctx.user.filter(_ => config.revokeUserSession).foreach { user =>
         user.delete()
         if (env.clusterConfig.mode.isWorker) {
@@ -116,7 +118,9 @@ class BlockHttpTraffic extends NgAccessValidator {
           env.clusterAgent.disableApikey(apikey.clientId)
         }
       }
-      NgAccess.NgDenied(Results.Status(426)(Json.obj("message" -> config.message.getOrElse(defaultMessage).json))).vfuture
+      NgAccess
+        .NgDenied(Results.Status(426)(Json.obj("message" -> config.message.getOrElse(defaultMessage).json)))
+        .vfuture
     } else {
       NgAccess.NgAllowed.vfuture
     }

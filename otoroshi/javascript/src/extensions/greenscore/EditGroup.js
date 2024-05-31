@@ -153,10 +153,10 @@ export default function EditGroup({}) {
       paths: {
         type: 'string',
         label: 'Excluded Paths',
-        help: "Hits on the following paths will not be taken into account in the efficiency calculation",
+        help: 'Hits on the following paths will not be taken into account in the efficiency calculation',
         array: true,
-      }
-    }
+      },
+    },
   };
 
   if (!group || !routes || !rulesBySection) return null;

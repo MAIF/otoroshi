@@ -4,38 +4,36 @@ import { NgSelectRenderer } from '../../components/nginputs';
 import { EfficiencyChart } from './EfficiencyChart';
 import Section from './Section';
 
-
-
 export const EfficiencyScore = (props) => {
   const { groups, routes } = props;
   const nbElementPerPage = 5;
 
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState("");
-  const [filteredRoutes, setfilteredRoutes] = useState(routes)
-  const [selectedGroup, setSelectedGroup] = useState()
+  const [filter, setFilter] = useState('');
+  const [filteredRoutes, setfilteredRoutes] = useState(routes);
+  const [selectedGroup, setSelectedGroup] = useState();
 
-  const getFilteredGRoutes = () => groups
-    .find(g => selectedGroup === g.id)
-    .routes
-    .filter(r => filteredRoutes.some(fr => fr.id === r.routeId))
+  const getFilteredGRoutes = () =>
+    groups
+      .find((g) => selectedGroup === g.id)
+      .routes.filter((r) => filteredRoutes.some((fr) => fr.id === r.routeId));
 
   useEffect(() => {
     if (filter) {
       const delayDebounceFn = setTimeout(() => {
-        setfilteredRoutes(routes.filter(r => r.name.includes(filter)))
+        setfilteredRoutes(routes.filter((r) => r.name.includes(filter)));
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     } else {
-      setfilteredRoutes(routes)
+      setfilteredRoutes(routes);
     }
   }, [filter]);
 
   const totalPageSize = useMemo(() => {
     if (!selectedGroup) {
-      return 0
+      return 0;
     }
-    return Math.ceil(getFilteredGRoutes().length / nbElementPerPage)
+    return Math.ceil(getFilteredGRoutes().length / nbElementPerPage);
   }, [selectedGroup]);
 
   if (!selectedGroup) {
@@ -57,16 +55,15 @@ export const EfficiencyScore = (props) => {
           </div>
         </div>
       </Section>
-    )
+    );
   }
 
-  const group = groups
-    .find(g => selectedGroup === g.id);
+  const group = groups.find((g) => selectedGroup === g.id);
 
   return (
-    <div className='col-12'>
-      <div className='d-flex flex-row'>
-        <div className='col-2'>
+    <div className="col-12">
+      <div className="d-flex flex-row">
+        <div className="col-2">
           <NgSelectRenderer
             value={selectedGroup}
             ngOptions={{
@@ -77,15 +74,24 @@ export const EfficiencyScore = (props) => {
             optionsTransformer={(groups) => groups.map((g) => ({ label: g.name, value: g.id }))}
           />
         </div>
-        <input className='mx-3 form-control flex-grow-1' type="text" onChange={e => setFilter(e.target.value)} />
+        <input
+          className="mx-3 form-control flex-grow-1"
+          type="text"
+          onChange={(e) => setFilter(e.target.value)}
+        />
       </div>
       {getFilteredGRoutes()
         .slice(page * nbElementPerPage, (page + 1) * nbElementPerPage)
-        .map((route => {
+        .map((route) => {
           return (
-            <EfficiencyChart key={route.routeId} route={route.routeId} group={group.id} configuration={group.efficiency} />
-          )
-        }))}
+            <EfficiencyChart
+              key={route.routeId}
+              route={route.routeId}
+              group={group.id}
+              configuration={group.efficiency}
+            />
+          );
+        })}
       <div className="ReactTable">
         <div className="pagination-bottom">
           <div className="-pagination">
@@ -118,5 +124,5 @@ export const EfficiencyScore = (props) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

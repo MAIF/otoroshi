@@ -111,17 +111,17 @@ case class NgPluginInstance(
     config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
     pluginIndex: Option[PluginIndex] = None,
     instanceId: Int = -1,
-    boundListeners: Seq[String] = Seq.empty,
+    boundListeners: Seq[String] = Seq.empty
 ) {
   def json: JsValue = Json
     .obj(
-      "enabled" -> enabled,
-      "debug"   -> debug,
-      "plugin"  -> plugin,
-      "include" -> include,
-      "exclude" -> exclude,
-      "config"  -> config.json,
-      "bound_listeners" -> boundListeners,
+      "enabled"         -> enabled,
+      "debug"           -> debug,
+      "plugin"          -> plugin,
+      "include"         -> include,
+      "exclude"         -> exclude,
+      "config"          -> config.json,
+      "bound_listeners" -> boundListeners
     )
     .applyOnWithOpt(pluginIndex)((o, v) => o ++ Json.obj("plugin_index" -> v.json))
   def matches(request: RequestHeader): Boolean = {
@@ -336,7 +336,7 @@ case class NgContextualPlugins(
 
   lazy val currentListenerPLugin = whitelistedPlugins.filter {
     case plugin if plugin.boundListeners.isEmpty => true
-    case plugin => plugin.boundListeners.contains(currentListener)
+    case plugin                                  => plugin.boundListeners.contains(currentListener)
   }
 
   lazy val (allPlugins, filteredPlugins) = currentListenerPLugin

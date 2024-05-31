@@ -5,13 +5,13 @@ sealed trait HeaderKind {
 }
 
 object HeaderKind {
-  case object HeaderKindRequest extends HeaderKind {
+  case object HeaderKindRequest          extends HeaderKind {
     def value: Int = 0
   }
-  case object HeaderKindResponse extends HeaderKind {
+  case object HeaderKindResponse         extends HeaderKind {
     def value: Int = 1
   }
-  case object HeaderKindRequestTrailers extends HeaderKind {
+  case object HeaderKindRequestTrailers  extends HeaderKind {
     def value: Int = 2
   }
   case object HeaderKindResponseTrailers extends HeaderKind {
@@ -51,9 +51,9 @@ object BodyKind {
 
   def toString(value: BodyKind): String = {
     value match {
-      case BodyKindRequest => "BodyKindRequest"
+      case BodyKindRequest  => "BodyKindRequest"
       case BodyKindResponse => "BodyKindResponse"
-      case _ => throw new Exception("invalid body kind")
+      case _                => throw new Exception("invalid body kind")
     }
   }
 }
@@ -86,15 +86,14 @@ object LogLevel {
   def fromValue(value: Int): LogLevel = {
     value match {
       case -1 => LogLevelDebug
-      case 0 => LogLevelInfo
-      case 1 => LogLevelWarn
-      case 2 => LogLevelError
-      case 3 => LogLevelNone
-      case _ => throw new Exception("invalid log level")
+      case 0  => LogLevelInfo
+      case 1  => LogLevelWarn
+      case 2  => LogLevelError
+      case 3  => LogLevelNone
+      case _  => throw new Exception("invalid log level")
     }
   }
 }
-
 
 sealed trait Feature {
   def value: Int
@@ -115,17 +114,17 @@ object Feature {
 
   def toString(feature: Feature): String = {
     feature match {
-      case FeatureBufferRequest => "FeatureBufferRequest"
+      case FeatureBufferRequest  => "FeatureBufferRequest"
       case FeatureBufferResponse => "FeatureBufferResponse"
-      case FeatureTrailers => "FeatureTrailers"
-      case _ => throw new Exception("invalid feature")
+      case FeatureTrailers       => "FeatureTrailers"
+      case _                     => throw new Exception("invalid feature")
     }
   }
 }
 
 case class Features(f: Int) {
   def withEnabled(feature: Int): Features = {
-      Features(f | feature)
+    Features(f | feature)
   }
 
   // returns true if the feature (or group of features) is enabled.

@@ -256,7 +256,8 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       session: Option[SSLSession]
   ): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq = new ReactorNettyRequestHeader(listenerId, req, version, secure, session, sessionCookieBaker, flashCookieBaker)
+      val otoReq =
+        new ReactorNettyRequestHeader(listenerId, req, version, secure, session, sessionCookieBaker, flashCookieBaker)
       engine.handleWsWithListener(otoReq, engine.badDefaultRoutingWs, config.exclusive).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow)  => {
@@ -299,7 +300,8 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       handleWebsocket(listenerId, req, res, version, secure, sessionOpt)
     } else {
       ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-        val otoReq = new ReactorNettyRequest(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+        val otoReq =
+          new ReactorNettyRequest(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
         engine.handleWithListener(otoReq, engine.badDefaultRoutingHttp, config.exclusive).map { result =>
           sendResultAsHttpResponse(result, res)
         }
@@ -329,7 +331,16 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
       val version            =
         sslHandler.map { h => if (h.useH2) "HTTP/2.0" else req.version().toString }.getOrElse(req.version().toString)
-      val otoReq             = new ReactorNettyRequest(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, config.exclusive.some)
+      val otoReq             = new ReactorNettyRequest(
+        listenerId,
+        req,
+        version,
+        secure,
+        sessionOpt,
+        sessionCookieBaker,
+        flashCookieBaker,
+        config.exclusive.some
+      )
       val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
       reqHandler match {
         case a: EssentialAction          => {
@@ -478,74 +489,85 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         }
       }
 
-      val protocols = Seq.empty[HttpProtocol]
+      val protocols = Seq
+        .empty[HttpProtocol]
         .applyOnIf(config.http1.enabled)(_ :+ HttpProtocol.HTTP11)
         .applyOnIf(config.http2.enabled || config.http2.h2cEnabled)(_ :+ HttpProtocol.H2C)
 
-      val serverHttps = if (config.httpsPort == -1) None else Some(HttpServer
-        .create()
-        .host(config.host)
-        .accessLog(config.accessLog, logCustom)
-        .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
-        .port(config.httpsPort)
-        .protocol(protocols: _*)
-        //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
-        .runOn(groupHttps)
-        .httpRequestDecoder(spec =>
-          spec
-            .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
-            .h2cMaxContentLength(config.parser.h2cMaxContentLength)
-            .initialBufferSize(config.parser.initialBufferSize)
-            .maxHeaderSize(config.parser.maxHeaderSize)
-            .maxInitialLineLength(config.parser.maxInitialLineLength)
-            .maxChunkSize(config.parser.maxChunkSize)
-            .validateHeaders(config.parser.validateHeaders)
-        )
-        .idleTimeout(config.idleTimeout)
-        .doOnChannelInit { (observer, channel, socket) =>
-          val engine              = setupSslContext().createSSLEngine()
-          val applicationProtocol = new AtomicReference[String]("http/1.1")
-          engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
-            val chosen = protocols match {
-              case ps if ps.contains("h2") && config.http2.enabled => "h2"
-              case ps if ps.contains("spdy/3")                     => "spdy/3"
-              case _                                               => "http/1.1"
-            }
-            applicationProtocol.set(chosen)
-            chosen
-          })
-          // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
-          channel.pipeline().addFirst(new OtoroshiSslHandler(engine, applicationProtocol))
-          channel.pipeline().addLast(new OtoroshiErrorHandler(logger))
-        }
-        .handle(handleFunction(true))
-        .bindNow())
-      val serverHttp  = if (config.httpPort == -1) None else Some(HttpServer
-        .create()
-        .host(config.host)
-        .noSSL()
-        .accessLog(config.accessLog, logCustom)
-        .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
-        .port(config.httpPort)
-        .protocol(protocols: _*)
-        //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
-        //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
-        .handle(handleFunction(false))
-        .runOn(groupHttp)
-        .httpRequestDecoder(spec =>
-          spec
-            .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
-            .h2cMaxContentLength(config.parser.h2cMaxContentLength)
-            .initialBufferSize(config.parser.initialBufferSize)
-            .maxHeaderSize(config.parser.maxHeaderSize)
-            .maxInitialLineLength(config.parser.maxInitialLineLength)
-            .maxChunkSize(config.parser.maxChunkSize)
-            .validateHeaders(config.parser.validateHeaders)
-        )
-        .idleTimeout(config.idleTimeout)
-        .bindNow())
-      val http3Server = new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
+      val serverHttps      =
+        if (config.httpsPort == -1) None
+        else
+          Some(
+            HttpServer
+              .create()
+              .host(config.host)
+              .accessLog(config.accessLog, logCustom)
+              .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
+              .port(config.httpsPort)
+              .protocol(protocols: _*)
+              //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+              //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
+              .runOn(groupHttps)
+              .httpRequestDecoder(spec =>
+                spec
+                  .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+                  .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+                  .initialBufferSize(config.parser.initialBufferSize)
+                  .maxHeaderSize(config.parser.maxHeaderSize)
+                  .maxInitialLineLength(config.parser.maxInitialLineLength)
+                  .maxChunkSize(config.parser.maxChunkSize)
+                  .validateHeaders(config.parser.validateHeaders)
+              )
+              .idleTimeout(config.idleTimeout)
+              .doOnChannelInit { (observer, channel, socket) =>
+                val engine              = setupSslContext().createSSLEngine()
+                val applicationProtocol = new AtomicReference[String]("http/1.1")
+                engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
+                  val chosen = protocols match {
+                    case ps if ps.contains("h2") && config.http2.enabled => "h2"
+                    case ps if ps.contains("spdy/3")                     => "spdy/3"
+                    case _                                               => "http/1.1"
+                  }
+                  applicationProtocol.set(chosen)
+                  chosen
+                })
+                // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
+                channel.pipeline().addFirst(new OtoroshiSslHandler(engine, applicationProtocol))
+                channel.pipeline().addLast(new OtoroshiErrorHandler(logger))
+              }
+              .handle(handleFunction(true))
+              .bindNow()
+          )
+      val serverHttp       =
+        if (config.httpPort == -1) None
+        else
+          Some(
+            HttpServer
+              .create()
+              .host(config.host)
+              .noSSL()
+              .accessLog(config.accessLog, logCustom)
+              .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
+              .port(config.httpPort)
+              .protocol(protocols: _*)
+              //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+              //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
+              .handle(handleFunction(false))
+              .runOn(groupHttp)
+              .httpRequestDecoder(spec =>
+                spec
+                  .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+                  .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+                  .initialBufferSize(config.parser.initialBufferSize)
+                  .maxHeaderSize(config.parser.maxHeaderSize)
+                  .maxInitialLineLength(config.parser.maxInitialLineLength)
+                  .maxChunkSize(config.parser.maxChunkSize)
+                  .validateHeaders(config.parser.validateHeaders)
+              )
+              .idleTimeout(config.idleTimeout)
+              .bindNow()
+          )
+      val http3Server      = new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
       val disposableServer = DisposableReactorNettyServer(config.id, serverHttp, serverHttps, http3Server.some)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         disposableServer.stop()
@@ -557,9 +579,16 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   }
 }
 
-case class DisposableReactorNettyServer(name: String, serverHttp: Option[DisposableServer], serverHttps: Option[DisposableServer], http3Server: Option[DisposableNettyHttp3Server]) {
+case class DisposableReactorNettyServer(
+    name: String,
+    serverHttp: Option[DisposableServer],
+    serverHttps: Option[DisposableServer],
+    http3Server: Option[DisposableNettyHttp3Server]
+) {
   def stop(): Unit = {
-    if (name != HttpListenerNames.Experimental && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)) {
+    if (
+      name != HttpListenerNames.Experimental && (serverHttp.isDefined || serverHttps.isDefined || http3Server.isDefined)
+    ) {
       HttpListener.logger.info(s"stopping http listener '${name}'")
     }
     serverHttp.foreach(_.disposeNow())

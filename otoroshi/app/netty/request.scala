@@ -26,10 +26,10 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object NettyRequestKeys {
-  val TlsSessionKey       = TypedKey[Option[SSLSession]]("Tls-Session")
-  val TlsVersionKey       = TypedKey[Option[TlsVersion]]("Tls-Version")
-  val TrailerHeadersIdKey = TypedKey[String]("Trailer-Headers-Id")
-  val ListenerIdKey = TypedKey[String]("Listener-Id")
+  val TlsSessionKey        = TypedKey[Option[SSLSession]]("Tls-Session")
+  val TlsVersionKey        = TypedKey[Option[TlsVersion]]("Tls-Version")
+  val TrailerHeadersIdKey  = TypedKey[String]("Trailer-Headers-Id")
+  val ListenerIdKey        = TypedKey[String]("Listener-Id")
   val ListenerExclusiveKey = TypedKey[Boolean]("Listener-Exclusive")
 }
 
@@ -118,8 +118,17 @@ class ReactorNettyRequest(
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
     flashCookieBaker: FlashCookieBaker,
-    exclusive: Option[Boolean] = None,
-) extends ReactorNettyRequestHeader(listenerId, req, version, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, exclusive)
+    exclusive: Option[Boolean] = None
+) extends ReactorNettyRequestHeader(
+      listenerId,
+      req,
+      version,
+      secure,
+      sessionOpt,
+      sessionCookieBaker,
+      flashCookieBaker,
+      exclusive
+    )
     with Request[Source[ByteString, _]] {
   lazy val body: Source[ByteString, _] = {
     val flux: Publisher[ByteString] = req.receive().map { bb =>
@@ -139,7 +148,7 @@ class ReactorNettyRequestHeader(
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
     flashCookieBaker: FlashCookieBaker,
-    exclusive: Option[Boolean] = None,
+    exclusive: Option[Boolean] = None
 ) extends RequestHeader {
 
   lazy val zeSession: Session = {
@@ -159,54 +168,56 @@ class ReactorNettyRequestHeader(
       .getOrElse(Flash())
   }
   val count                             = ReactorNettyRequest.counter.incrementAndGet()
-  lazy val attrs                        = TypedMap.apply(
-    RequestAttrKey.Id                    -> count,
-    RequestAttrKey.Session               -> Cell(zeSession),
-    RequestAttrKey.Flash                 -> Cell(zeFlash),
-    RequestAttrKey.Server                -> "netty-experimental",
-    NettyRequestKeys.ListenerIdKey       -> listenerId,
-    NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
-    NettyRequestKeys.TlsSessionKey       -> sessionOpt,
-    NettyRequestKeys.TlsVersionKey       -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
-    RequestAttrKey.Cookies               -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap { case (_, cookies) =>
-      cookies.asScala.map {
-        case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
-          play.api.mvc.Cookie(
-            name = cookie.name(),
-            value = cookie.value(),
-            maxAge = Option(cookie.maxAge()).map(_.toInt),
-            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
-            domain = Option(cookie.domain()).filter(_.nonEmpty),
-            secure = cookie.isSecure,
-            httpOnly = cookie.isHttpOnly,
-            sameSite = Option(cookie.sameSite()).map {
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None   =>
-                play.api.mvc.Cookie.SameSite.None
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict =>
-                play.api.mvc.Cookie.SameSite.Strict
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax    =>
-                play.api.mvc.Cookie.SameSite.Lax
-              case _                                                                              => play.api.mvc.Cookie.SameSite.None
-            }
-          )
+  lazy val attrs                        = TypedMap
+    .apply(
+      RequestAttrKey.Id                    -> count,
+      RequestAttrKey.Session               -> Cell(zeSession),
+      RequestAttrKey.Flash                 -> Cell(zeFlash),
+      RequestAttrKey.Server                -> "netty-experimental",
+      NettyRequestKeys.ListenerIdKey       -> listenerId,
+      NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
+      NettyRequestKeys.TlsSessionKey       -> sessionOpt,
+      NettyRequestKeys.TlsVersionKey       -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
+      RequestAttrKey.Cookies               -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap { case (_, cookies) =>
+        cookies.asScala.map {
+          case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
+            play.api.mvc.Cookie(
+              name = cookie.name(),
+              value = cookie.value(),
+              maxAge = Option(cookie.maxAge()).map(_.toInt),
+              path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+              domain = Option(cookie.domain()).filter(_.nonEmpty),
+              secure = cookie.isSecure,
+              httpOnly = cookie.isHttpOnly,
+              sameSite = Option(cookie.sameSite()).map {
+                case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None   =>
+                  play.api.mvc.Cookie.SameSite.None
+                case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict =>
+                  play.api.mvc.Cookie.SameSite.Strict
+                case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax    =>
+                  play.api.mvc.Cookie.SameSite.Lax
+                case _                                                                              => play.api.mvc.Cookie.SameSite.None
+              }
+            )
+          }
+          case cookie                                                   => {
+            play.api.mvc.Cookie(
+              name = cookie.name(),
+              value = cookie.value(),
+              maxAge = Option(cookie.maxAge()).map(_.toInt),
+              path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+              domain = Option(cookie.domain()).filter(_.nonEmpty),
+              secure = cookie.isSecure,
+              httpOnly = cookie.isHttpOnly,
+              sameSite = None
+            )
+          }
         }
-        case cookie                                                   => {
-          play.api.mvc.Cookie(
-            name = cookie.name(),
-            value = cookie.value(),
-            maxAge = Option(cookie.maxAge()).map(_.toInt),
-            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
-            domain = Option(cookie.domain()).filter(_.nonEmpty),
-            secure = cookie.isSecure,
-            httpOnly = cookie.isHttpOnly,
-            sameSite = None
-          )
-        }
-      }
-    }))
-  ).applyOnWithOpt(exclusive) {
-    case (attrs, exclusive) => attrs + (NettyRequestKeys.ListenerExclusiveKey -> exclusive)
-  }
+      }))
+    )
+    .applyOnWithOpt(exclusive) { case (attrs, exclusive) =>
+      attrs + (NettyRequestKeys.ListenerExclusiveKey -> exclusive)
+    }
   lazy val method: String               = req.method().toString
   lazy val version: String              = httpVersion
   lazy val headers: Headers             = Headers(
@@ -303,7 +314,17 @@ class NettyRequest(
     Source.fromPublisher(rawBody)
   }
   def withBody(newBody: Flux[ByteString]): NettyRequest =
-    new NettyRequest(listenerId, req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
+    new NettyRequest(
+      listenerId,
+      req,
+      ctx,
+      newBody,
+      secure,
+      sessionOpt,
+      sessionCookieBaker,
+      flashCookieBaker,
+      addressGet
+    )
 }
 
 class NettyRequestHeader(

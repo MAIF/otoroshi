@@ -32,58 +32,58 @@ export function setupHttpListenersExtension(registerExtension) {
         },
         'config.enabled': {
           type: 'bool',
-          props: { label: 'enabled' }
+          props: { label: 'enabled' },
         },
         'config.exclusive': {
           type: 'bool',
-          props: { label: 'exclusive' }
+          props: { label: 'exclusive' },
         },
         'config.tls': {
           type: 'bool',
-          props: { label: 'TLS' }
+          props: { label: 'TLS' },
         },
         'config.http1': {
           type: 'bool',
-          props: { label: 'HTTP/1.1' }
+          props: { label: 'HTTP/1.1' },
         },
         'config.http2': {
           type: 'bool',
-          props: { label: 'H2' }
+          props: { label: 'H2' },
         },
         'config.h2c': {
           type: 'bool',
-          props: { label: 'H2C' }
+          props: { label: 'H2C' },
         },
         'config.http3': {
           type: 'bool',
-          props: { label: 'H3' }
+          props: { label: 'H3' },
         },
         'config.port': {
           type: 'number',
-          props: { label: 'port' }
+          props: { label: 'port' },
         },
         'config.exposedPort': {
           type: 'number',
-          props: { label: 'exposed port' }
+          props: { label: 'exposed port' },
         },
         'config.host': {
           type: 'string',
-          props: { label: 'host' }
+          props: { label: 'host' },
         },
         'config.accessLog': {
           type: 'bool',
-          props: { label: 'access logs' }
+          props: { label: 'access logs' },
         },
         'config.clientAuth': {
           type: 'select',
-          props: { 
+          props: {
             label: 'client auth.',
             possibleValues: [
               { label: 'None', value: 'none' },
               { label: 'Want', value: 'want' },
               { label: 'Need', value: 'need' },
-            ]
-          }
+            ],
+          },
         },
       };
 
@@ -95,12 +95,48 @@ export function setupHttpListenersExtension(registerExtension) {
         },
         { title: 'Host', filterId: 'host', content: (item) => item.config.host },
         { title: 'Port', filterId: 'port', content: (item) => item.config.port },
-        { title: 'Enabled', filterId: 'enabled', content: (item) => item.config.enabled, cell: (v, item) => item.config.enabled ? <span className="badge bg-success">yes</span> : null },
-        { title: 'TLS', filterId: 'tls', content: (item) => item.config.tls, cell: (v, item) => item.config.tls ? <span className="badge bg-success">yes</span> : null },
-        { title: 'HTTP1', filterId: 'http1', content: (item) => item.config.http1, cell: (v, item) => item.config.http1 ? <span className="badge bg-success">yes</span> : null },
-        { title: 'HTTP2', filterId: 'http2', content: (item) => item.config.http2, cell: (v, item) => item.config.http2 ? <span className="badge bg-success">yes</span> : null },
-        { title: 'H2C', filterId: 'h2c', content: (item) => item.config.h2c, cell: (v, item) => item.config.h2c ? <span className="badge bg-success">yes</span> : null },
-        { title: 'HTTP3', filterId: 'http3', content: (item) => item.config.http3, cell: (v, item) => item.config.http3 ? <span className="badge bg-success">yes</span> : null },
+        {
+          title: 'Enabled',
+          filterId: 'enabled',
+          content: (item) => item.config.enabled,
+          cell: (v, item) =>
+            item.config.enabled ? <span className="badge bg-success">yes</span> : null,
+        },
+        {
+          title: 'TLS',
+          filterId: 'tls',
+          content: (item) => item.config.tls,
+          cell: (v, item) =>
+            item.config.tls ? <span className="badge bg-success">yes</span> : null,
+        },
+        {
+          title: 'HTTP1',
+          filterId: 'http1',
+          content: (item) => item.config.http1,
+          cell: (v, item) =>
+            item.config.http1 ? <span className="badge bg-success">yes</span> : null,
+        },
+        {
+          title: 'HTTP2',
+          filterId: 'http2',
+          content: (item) => item.config.http2,
+          cell: (v, item) =>
+            item.config.http2 ? <span className="badge bg-success">yes</span> : null,
+        },
+        {
+          title: 'H2C',
+          filterId: 'h2c',
+          content: (item) => item.config.h2c,
+          cell: (v, item) =>
+            item.config.h2c ? <span className="badge bg-success">yes</span> : null,
+        },
+        {
+          title: 'HTTP3',
+          filterId: 'http3',
+          content: (item) => item.config.http3,
+          cell: (v, item) =>
+            item.config.http3 ? <span className="badge bg-success">yes</span> : null,
+        },
       ];
 
       formFlow = [

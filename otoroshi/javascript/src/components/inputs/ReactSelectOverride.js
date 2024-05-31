@@ -68,9 +68,7 @@ export class ReactSelectOverride extends React.Component {
     );
 
     if (this.props.isMulti) {
-      return (
-        this.props.options.filter(o => this.props.value.some(v => v.value === o.value))
-      )
+      return this.props.options.filter((o) => this.props.value.some((v) => v.value === o.value));
     }
     if (!opt) return undefined;
 

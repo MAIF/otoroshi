@@ -20,22 +20,22 @@ import scala.util.{Failure, Success, Try}
 
 object HttpListenerNames {
   val Experimental = "experimental-listener"
-  val Standard = "standard-listener"
+  val Standard     = "standard-listener"
 }
 
 case class HttpListenerConfig(
-  enabled: Boolean,
-  exclusive: Boolean = false,
-  tls: Boolean = true,
-  http1: Boolean = true,
-  http2: Boolean = true,
-  h2c: Boolean = false,
-  http3: Boolean = false,
-  port: Int,
-  exposedPort: Int,
-  host: String = "0.0.0.0",
-  accessLog: Boolean = false,
-  clientAuth: ClientAuth = ClientAuth.None,
+    enabled: Boolean,
+    exclusive: Boolean = false,
+    tls: Boolean = true,
+    http1: Boolean = true,
+    http2: Boolean = true,
+    h2c: Boolean = false,
+    http3: Boolean = false,
+    port: Int,
+    exposedPort: Int,
+    host: String = "0.0.0.0",
+    accessLog: Boolean = false,
+    clientAuth: ClientAuth = ClientAuth.None
 ) {
   def json: JsValue = HttpListenerConfig.format.writes(this)
 }
@@ -44,9 +44,9 @@ object HttpListenerConfig {
   val default = HttpListenerConfig(
     enabled = true,
     port = 7890,
-    exposedPort = 7890,
+    exposedPort = 7890
   )
-  val format = new Format[HttpListenerConfig] {
+  val format  = new Format[HttpListenerConfig] {
     override def reads(json: JsValue): JsResult[HttpListenerConfig] = Try {
       HttpListenerConfig(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -60,38 +60,38 @@ object HttpListenerConfig {
         exposedPort = json.select("exposedPort").asOpt[Int].orElse(json.select("port").asOpt[Int]).getOrElse(7890),
         host = json.select("host").asOpt[String].getOrElse("0.0.0.0"),
         accessLog = json.select("accessLog").asOpt[Boolean].getOrElse(false),
-        clientAuth = json.select("clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
+        clientAuth = json.select("clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: HttpListenerConfig): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "exclusive" -> o.exclusive,
-      "tls" -> o.tls,
-      "http1" -> o.http1,
-      "http2" -> o.http2,
-      "h2c" -> o.h2c,
-      "http3" -> o.http3,
-      "port" -> o.port,
+    override def writes(o: HttpListenerConfig): JsValue             = Json.obj(
+      "enabled"     -> o.enabled,
+      "exclusive"   -> o.exclusive,
+      "tls"         -> o.tls,
+      "http1"       -> o.http1,
+      "http2"       -> o.http2,
+      "h2c"         -> o.h2c,
+      "http3"       -> o.http3,
+      "port"        -> o.port,
       "exposedPort" -> o.exposedPort,
-      "host" -> o.host,
-      "accessLog" -> o.accessLog,
-      "clientAuth" -> o.clientAuth.name,
+      "host"        -> o.host,
+      "accessLog"   -> o.accessLog,
+      "clientAuth"  -> o.clientAuth.name
     )
   }
 }
 
 case class HttpListener(
-                location: EntityLocation,
-                id: String,
-                name: String,
-                description: String,
-                tags: Seq[String],
-                config: HttpListenerConfig,
-                metadata: Map[String, String]
-              ) extends EntityLocationSupport {
+    location: EntityLocation,
+    id: String,
+    name: String,
+    description: String,
+    tags: Seq[String],
+    config: HttpListenerConfig,
+    metadata: Map[String, String]
+) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = HttpListener.format.writes(this)
   override def theName: String                  = name
@@ -126,28 +126,30 @@ case class HttpListener(
       http3 = Http3Settings.default.copy(
         enabled = config.tls && config.http3,
         port = config.port,
-        exposedPort = config.exposedPort,
+        exposedPort = config.exposedPort
       ),
       native = NativeSettings.default
     )
   }
   def start(kind: String, env: Env, cache: (DisposableReactorNettyServer) => Unit): Unit = {
     if (config.enabled) {
-      val protocols = Seq.empty[String]
+      val protocols   = Seq
+        .empty[String]
         .applyOnIf(config.http1)(seq => seq :+ "h1")
         .applyOnIf(config.http2)(seq => seq :+ "h2")
         .applyOnIf(config.h2c)(seq => seq :+ "h2c")
         .applyOnIf(config.http3)(seq => seq :+ "h3")
-      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}")
+      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https"
+      else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}")
       val nettyConfig = toNettyConfig(env)
-      val server = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
+      val server      = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
       cache(server)
     }
   }
 }
 
 object HttpListener {
-  val logger = Logger("otoroshi-http-listeners")
+  val logger  = Logger("otoroshi-http-listeners")
   val default = HttpListener(
     location = EntityLocation.default,
     id = "http-listener_" + UUID.randomUUID().toString,
@@ -155,14 +157,14 @@ object HttpListener {
     description = "A new http listener",
     tags = Seq.empty,
     config = HttpListenerConfig.default,
-    metadata = Map.empty,
+    metadata = Map.empty
   )
-  val format = new Format[HttpListener] {
+  val format  = new Format[HttpListener] {
     override def writes(o: HttpListener): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
       "description" -> o.description,
-      "config" -> o.config.json,
+      "config"      -> o.config.json,
       "metadata"    -> o.metadata,
       "tags"        -> JsArray(o.tags.map(JsString.apply))
     )
@@ -186,12 +188,12 @@ object HttpListener {
 trait HttpListenerDataStore extends BasicStore[HttpListener]
 
 class KvHttpListenerDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
-  extends HttpListenerDataStore
+    extends HttpListenerDataStore
     with RedisLikeStore[HttpListener] {
-  override def fmt: Format[HttpListener]                        = HttpListener.format
+  override def fmt: Format[HttpListener]               = HttpListener.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:httplisteners:$id"
-  override def extractId(value: HttpListener): String           = value.id
+  override def extractId(value: HttpListener): String  = value.id
 }
 
 class HttpListenerAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
@@ -215,7 +217,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
   private lazy val datastores = new HttpListenerAdminExtensionDatastores(env, id)
   private lazy val states     = new HttpListenerAdminExtensionState(env)
 
-  private val staticListeners = new UnboundedTrieMap[String, DisposableReactorNettyServer]()
+  private val staticListeners  = new UnboundedTrieMap[String, DisposableReactorNettyServer]()
   private val dynamicListeners = new UnboundedTrieMap[String, (HttpListener, DisposableReactorNettyServer)]()
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.HttpListeners")
@@ -227,25 +229,35 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
   override def enabled: Boolean = env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
 
   override def start(): Unit = {
-    val root = env.configurationJson.select("otoroshi").select("admin-extensions").select("configurations").select("otoroshi_extensions_httplisteners").asObject
-    val listenerConfigsJson1 = root.select("listeners_json").asOpt[String].flatMap(str => Json.parse(str).asOpt[Seq[JsObject]]).getOrElse(Seq.empty)
+    val root                 = env.configurationJson
+      .select("otoroshi")
+      .select("admin-extensions")
+      .select("configurations")
+      .select("otoroshi_extensions_httplisteners")
+      .asObject
+    val listenerConfigsJson1 = root
+      .select("listeners_json")
+      .asOpt[String]
+      .flatMap(str => Json.parse(str).asOpt[Seq[JsObject]])
+      .getOrElse(Seq.empty)
     val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-    val listenerConfigs = (listenerConfigsJson1 ++ listenerConfigsJson2).flatMap(obj => HttpListenerConfig.format.reads(obj).asOpt.map(r => (obj, r)))
+    val listenerConfigs      = (listenerConfigsJson1 ++ listenerConfigsJson2).flatMap(obj =>
+      HttpListenerConfig.format.reads(obj).asOpt.map(r => (obj, r))
+    )
     listenerConfigs
       .filter(_._2.enabled)
-      .foreach {
-        case (obj, config) =>
-          val cid = obj.select("id").asString
-          val listener = HttpListener(
-            location = EntityLocation.default,
-            id = cid,
-            name = cid,
-            description = cid,
-            config = config,
-            tags = Seq.empty,
-            metadata = Map.empty,
-          )
-          listener.start("static", env, server => staticListeners.put(cid, server))
+      .foreach { case (obj, config) =>
+        val cid      = obj.select("id").asString
+        val listener = HttpListener(
+          location = EntityLocation.default,
+          id = cid,
+          name = cid,
+          description = cid,
+          config = config,
+          tags = Seq.empty,
+          metadata = Map.empty
+        )
+        listener.start("static", env, server => staticListeners.put(cid, server))
       }
   }
 
@@ -255,12 +267,13 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
   }
 
   private def allListeners(
-    ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
-    req: RequestHeader,
-    user: Option[BackOfficeUser],
-    body: Option[Source[ByteString, _]]
+      ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
+      req: RequestHeader,
+      user: Option[BackOfficeUser],
+      body: Option[Source[ByteString, _]]
   ): Future[Result] = {
-    val all: Seq[(String, String)] = staticListeners.keySet.toSeq.map(v => (v, v)) ++ dynamicListeners.values.toSeq.map(l => (l._1.id, l._1.name))
+    val all: Seq[(String, String)] =
+      staticListeners.keySet.toSeq.map(v => (v, v)) ++ dynamicListeners.values.toSeq.map(l => (l._1.id, l._1.name))
     Results.Ok(JsArray(all.map(t => Json.obj("label" -> t._2, "value" -> t._1)))).vfuture
   }
 
@@ -297,7 +310,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       dynamicListeners.values.map {
         case (listener, server) => {
           newOnes.get(listener.id) match {
-            case None =>
+            case None    =>
               server.stop()
               dynamicListeners.remove(listener.id)
             case Some(_) => ()

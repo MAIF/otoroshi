@@ -2134,7 +2134,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     }
   }
 
-  override def fetchRouteEfficiency(route: NgRoute, from: Option[DateTime], to: Option[DateTime], excludedPaths: Seq[String] = Seq.empty, interval: Option[String])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  override def fetchRouteEfficiency(
+      route: NgRoute,
+      from: Option[DateTime],
+      to: Option[DateTime],
+      excludedPaths: Seq[String] = Seq.empty,
+      interval: Option[String]
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     val extendedBounds = from
       .map { from =>
         Json.obj(
@@ -2161,38 +2167,53 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         )
       }
 
-    val excludedPathsCriteria = if (excludedPaths.isEmpty) Json.obj() else Json.obj(
-      "filter" -> Json.arr(
-        Json.obj("bool" -> Json.obj(
-          "must_not" -> JsArray(excludedPaths.map(path => Json.obj("match" -> Json.obj(
-            "target.uri" -> path
-          ))))
-        ))
-      )
-    )
+    val excludedPathsCriteria =
+      if (excludedPaths.isEmpty) Json.obj()
+      else
+        Json.obj(
+          "filter" -> Json.arr(
+            Json.obj(
+              "bool" -> Json.obj(
+                "must_not" -> JsArray(
+                  excludedPaths.map(path =>
+                    Json.obj(
+                      "match" -> Json.obj(
+                        "target.uri" -> path
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
 
     val queryJson = Json.obj(
-      "size" -> 0,
+      "size"  -> 0,
       "query" -> Json.obj(
-        "bool" -> Json.obj(
-          "must" -> Json.arr(
-            Json.obj("match" -> Json.obj("@type" -> "GatewayEvent")),
-            Json.obj("match" -> Json.obj("@serviceId" -> route.id)),
-            Json.obj("range" -> Json.obj(
-              "@timestamp" -> rangeCriteria
-            ))
+        "bool" -> Json
+          .obj(
+            "must" -> Json.arr(
+              Json.obj("match" -> Json.obj("@type" -> "GatewayEvent")),
+              Json.obj("match" -> Json.obj("@serviceId" -> route.id)),
+              Json.obj(
+                "range"        -> Json.obj(
+                  "@timestamp" -> rangeCriteria
+                )
+              )
+            )
           )
-        ).++(excludedPathsCriteria)
+          .++(excludedPathsCriteria)
       ),
-      "aggs" -> Json.obj(
+      "aggs"  -> Json.obj(
         "dates" -> Json.obj(
           "date_histogram" -> Json
             .obj(
-              "field" -> "@callAt",
-              "fixed_interval" -> JsString(interval.getOrElse("1h")),
+              "field"           -> "@callAt",
+              "fixed_interval"  -> JsString(interval.getOrElse("1h")),
               "extended_bounds" -> extendedBounds
             ),
-          "aggs" -> Json.obj(
+          "aggs"           -> Json.obj(
             "avgDuration" -> Json.obj(
               "avg" -> Json.obj(
                 "field" -> "backendDuration"
@@ -2211,14 +2232,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         .asOpt[JsArray]
         .map { date =>
           JsArray(date.value.map(d => {
-            val timestamp = (d \ "key").as[Long]
-            val hits = (d \ "doc_count").as[Long]
+            val timestamp   = (d \ "key").as[Long]
+            val hits        = (d \ "doc_count").as[Long]
             val avgDuration = (d \ "avgDuration" \ "value").asOpt[Float]
 
-            val fl = avgDuration.getOrElse(0F)
+            val fl = avgDuration.getOrElse(0f)
             Json.obj(
-              "date" -> timestamp,
-              "hits" -> hits,
+              "date"        -> timestamp,
+              "hits"        -> hits,
               "avgDuration" -> fl
             )
           }))

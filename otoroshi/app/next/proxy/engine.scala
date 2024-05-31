@@ -294,15 +294,15 @@ class ProxyEngine() extends RequestHandler {
 
   override def handleWs(
       request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     handleWsWithListener(request, defaultRouting, false)
   }
 
   def handleWithListener(
-     request: Request[Source[ByteString, _]],
-     defaultRouting: Request[Source[ByteString, _]] => Future[Result],
-     forCurrentListenerOnly: Boolean,
+      request: Request[Source[ByteString, _]],
+      defaultRouting: Request[Source[ByteString, _]] => Future[Result],
+      forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
@@ -317,9 +317,9 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def handleWsWithListener(
-   request: RequestHeader,
-   defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
-   forCurrentListenerOnly: Boolean,
+      request: RequestHeader,
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
+      forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
@@ -334,7 +334,11 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
+  def handleRequest(
+      request: Request[Source[ByteString, _]],
+      _config: ProxyEngineConfig,
+      forCurrentListenerOnly: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -356,19 +360,19 @@ class ProxyEngine() extends RequestHandler {
     val counterIn          = new AtomicLong(0L)
     val counterOut         = new AtomicLong(0L)
     val responseEndPromise = Promise[Done]()
-    val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
+    val currentListener    = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
     implicit val attrs     = TypedMap.empty.put(
-      otoroshi.next.plugins.Keys.ReportKey        -> report,
-      otoroshi.plugins.Keys.RequestNumberKey      -> reqNumber,
-      otoroshi.plugins.Keys.SnowFlakeKey          -> snowflake,
-      otoroshi.plugins.Keys.RequestTimestampKey   -> callDate,
-      otoroshi.plugins.Keys.RequestStartKey       -> start,
-      otoroshi.plugins.Keys.RequestWebsocketKey   -> false,
-      otoroshi.plugins.Keys.RequestCounterInKey   -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey  -> counterOut,
-      otoroshi.plugins.Keys.ResponseEndPromiseKey -> responseEndPromise,
+      otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey           -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey       -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey       -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey      -> counterOut,
+      otoroshi.plugins.Keys.ResponseEndPromiseKey     -> responseEndPromise,
       otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
-      otoroshi.plugins.Keys.CurrentListenerKey -> currentListener,
+      otoroshi.plugins.Keys.CurrentListenerKey        -> currentListener
     )
 
     val elCtx: Map[String, String] = Map(
@@ -568,15 +572,15 @@ class ProxyEngine() extends RequestHandler {
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
     implicit val attrs   = TypedMap.empty.put(
-      otoroshi.next.plugins.Keys.ReportKey       -> report,
-      otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
-      otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
-      otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
-      otoroshi.plugins.Keys.RequestStartKey      -> start,
-      otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
-      otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut,
-      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly,
+      otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey           -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey       -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey       -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey      -> counterOut,
+      otoroshi.plugins.Keys.ForCurrentListenerOnlyKey -> forCurrentListenerOnly
     )
 
     val elCtx: Map[String, String] = Map(

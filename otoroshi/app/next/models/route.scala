@@ -64,7 +64,7 @@ case class NgRoute(
     "export_reporting" -> exportReporting,
     "capture"          -> capture,
     "groups"           -> groups,
-    "bound_listeners"           -> boundListeners,
+    "bound_listeners"  -> boundListeners,
     "frontend"         -> frontend.json,
     "backend"          -> backend.json,
     "backend_ref"      -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],

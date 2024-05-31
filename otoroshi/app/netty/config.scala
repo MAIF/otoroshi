@@ -26,29 +26,35 @@ case class HttpRequestParserConfig(
 
 object HttpRequestParserConfig {
   lazy val default = format.reads(Json.obj()).get
-  val format = new Format[HttpRequestParserConfig] {
+  val format       = new Format[HttpRequestParserConfig] {
     override def reads(json: JsValue): JsResult[HttpRequestParserConfig] = Try {
       HttpRequestParserConfig(
-        allowDuplicateContentLengths = json.select("allowDuplicateContentLengths").asOpt[Boolean].getOrElse(HttpDecoderSpec.DEFAULT_ALLOW_DUPLICATE_CONTENT_LENGTHS),
-        validateHeaders = json.select("validateHeaders").asOpt[Boolean].getOrElse(HttpDecoderSpec.DEFAULT_VALIDATE_HEADERS),
+        allowDuplicateContentLengths = json
+          .select("allowDuplicateContentLengths")
+          .asOpt[Boolean]
+          .getOrElse(HttpDecoderSpec.DEFAULT_ALLOW_DUPLICATE_CONTENT_LENGTHS),
+        validateHeaders =
+          json.select("validateHeaders").asOpt[Boolean].getOrElse(HttpDecoderSpec.DEFAULT_VALIDATE_HEADERS),
         h2cMaxContentLength = json.select("h2cMaxContentLength").asOpt[Int].getOrElse(65536),
-        initialBufferSize = json.select("initialBufferSize").asOpt[Int].getOrElse(HttpDecoderSpec.DEFAULT_INITIAL_BUFFER_SIZE),
+        initialBufferSize =
+          json.select("initialBufferSize").asOpt[Int].getOrElse(HttpDecoderSpec.DEFAULT_INITIAL_BUFFER_SIZE),
         maxHeaderSize = json.select("maxHeaderSize").asOpt[Int].getOrElse(HttpDecoderSpec.DEFAULT_MAX_HEADER_SIZE),
-        maxInitialLineLength = json.select("maxInitialLineLength").asOpt[Int].getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
-        maxChunkSize = json.select("maxChunkSize").asOpt[Int].getOrElse(8192),
+        maxInitialLineLength =
+          json.select("maxInitialLineLength").asOpt[Int].getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
+        maxChunkSize = json.select("maxChunkSize").asOpt[Int].getOrElse(8192)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
     }
-    override def writes(o: HttpRequestParserConfig): JsValue = Json.obj(
+    override def writes(o: HttpRequestParserConfig): JsValue             = Json.obj(
       "allowDuplicateContentLengths" -> o.allowDuplicateContentLengths,
-      "validateHeaders" -> o.validateHeaders,
-      "h2cMaxContentLength" -> o.h2cMaxContentLength,
-      "initialBufferSize" -> o.initialBufferSize,
-      "maxHeaderSize" -> o.maxHeaderSize,
-      "maxInitialLineLength" -> o.maxInitialLineLength,
-      "maxChunkSize" -> o.maxChunkSize,
+      "validateHeaders"              -> o.validateHeaders,
+      "h2cMaxContentLength"          -> o.h2cMaxContentLength,
+      "initialBufferSize"            -> o.initialBufferSize,
+      "maxHeaderSize"                -> o.maxHeaderSize,
+      "maxInitialLineLength"         -> o.maxInitialLineLength,
+      "maxChunkSize"                 -> o.maxChunkSize
     )
   }
 }
@@ -57,21 +63,21 @@ sealed trait NativeDriver {
   def name: String
   def json: JsValue = name.json
 }
-object NativeDriver {
-  case object Auto    extends NativeDriver { def name: String = "Auto" }
-  case object Epoll   extends NativeDriver { def name: String = "Epoll" }
-  case object KQueue  extends NativeDriver { def name: String = "KQueue" }
+object NativeDriver       {
+  case object Auto    extends NativeDriver { def name: String = "Auto"    }
+  case object Epoll   extends NativeDriver { def name: String = "Epoll"   }
+  case object KQueue  extends NativeDriver { def name: String = "KQueue"  }
   case object IOUring extends NativeDriver { def name: String = "IOUring" }
   val format = new Format[NativeDriver] {
 
     override def reads(json: JsValue): JsResult[NativeDriver] = json.asOpt[String].map(_.toLowerCase()) match {
-      case Some("auto") => JsSuccess(Auto)
-      case Some("epoll") => JsSuccess(Epoll)
-      case Some("kqueue") => JsSuccess(KQueue)
+      case Some("auto")    => JsSuccess(Auto)
+      case Some("epoll")   => JsSuccess(Epoll)
+      case Some("kqueue")  => JsSuccess(KQueue)
       case Some("iouring") => JsSuccess(IOUring)
-      case v => JsError(s"unsupported value: ${v}")
+      case v               => JsError(s"unsupported value: ${v}")
     }
-    override def writes(o: NativeDriver): JsValue = o.json
+    override def writes(o: NativeDriver): JsValue             = o.json
   }
 }
 
@@ -86,12 +92,12 @@ case class Http3Settings(
     initialMaxStreamDataBidirectionalRemote: Long,
     initialMaxStreamsBidirectional: Long,
     disableQpackDynamicTable: Boolean
-) {
+)                                                                 {
   def json: JsValue = Http3Settings.format.writes(this)
 }
-object Http3Settings {
+object Http3Settings                                              {
   lazy val default = format.reads(Json.obj()).get
-  val format = new Format[Http3Settings] {
+  val format       = new Format[Http3Settings] {
     override def reads(json: JsValue): JsResult[Http3Settings] = Try {
       Http3Settings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -100,54 +106,56 @@ object Http3Settings {
         maxSendUdpPayloadSize = json.select("maxSendUdpPayloadSize").asOpt[Long].getOrElse(1500),
         maxRecvUdpPayloadSize = json.select("maxRecvUdpPayloadSize").asOpt[Long].getOrElse(1500),
         initialMaxData = json.select("initialMaxData").asOpt[Long].getOrElse(10000000),
-        initialMaxStreamDataBidirectionalLocal = json.select("initialMaxStreamDataBidirectionalLocal").asOpt[Long].getOrElse(10000000),
-        initialMaxStreamDataBidirectionalRemote = json.select("initialMaxStreamDataBidirectionalRemote").asOpt[Long].getOrElse(10000000),
+        initialMaxStreamDataBidirectionalLocal =
+          json.select("initialMaxStreamDataBidirectionalLocal").asOpt[Long].getOrElse(10000000),
+        initialMaxStreamDataBidirectionalRemote =
+          json.select("initialMaxStreamDataBidirectionalRemote").asOpt[Long].getOrElse(10000000),
         initialMaxStreamsBidirectional = json.select("initialMaxStreamsBidirectional").asOpt[Long].getOrElse(10000000),
-        disableQpackDynamicTable = json.select("disableQpackDynamicTable").asOpt[Boolean].getOrElse(true),
+        disableQpackDynamicTable = json.select("disableQpackDynamicTable").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
     }
-    override def writes(o: Http3Settings): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "port" -> o.port,
-      "exposedPort" -> o.exposedPort,
-      "maxSendUdpPayloadSize" -> o.maxSendUdpPayloadSize,
-      "maxRecvUdpPayloadSize" -> o.maxRecvUdpPayloadSize,
-      "initialMaxData" -> o.initialMaxData,
-      "initialMaxStreamDataBidirectionalLocal" -> o.initialMaxStreamDataBidirectionalLocal,
+    override def writes(o: Http3Settings): JsValue             = Json.obj(
+      "enabled"                                 -> o.enabled,
+      "port"                                    -> o.port,
+      "exposedPort"                             -> o.exposedPort,
+      "maxSendUdpPayloadSize"                   -> o.maxSendUdpPayloadSize,
+      "maxRecvUdpPayloadSize"                   -> o.maxRecvUdpPayloadSize,
+      "initialMaxData"                          -> o.initialMaxData,
+      "initialMaxStreamDataBidirectionalLocal"  -> o.initialMaxStreamDataBidirectionalLocal,
       "initialMaxStreamDataBidirectionalRemote" -> o.initialMaxStreamDataBidirectionalRemote,
-      "initialMaxStreamsBidirectional" -> o.initialMaxStreamsBidirectional,
-      "disableQpackDynamicTable" -> o.disableQpackDynamicTable,
+      "initialMaxStreamsBidirectional"          -> o.initialMaxStreamsBidirectional,
+      "disableQpackDynamicTable"                -> o.disableQpackDynamicTable
     )
   }
 }
-case class Http1Settings(enabled: Boolean) {
+case class Http1Settings(enabled: Boolean)                        {
   def json: JsValue = Http1Settings.format.writes(this)
 }
-object Http1Settings {
+object Http1Settings                                              {
   lazy val default = format.reads(Json.obj()).get
-  val format = new Format[Http1Settings] {
+  val format       = new Format[Http1Settings] {
     override def reads(json: JsValue): JsResult[Http1Settings] = Try {
       Http1Settings(
-        enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
     }
-    override def writes(o: Http1Settings): JsValue = Json.obj(
-      "enabled" -> o.enabled,
+    override def writes(o: Http1Settings): JsValue             = Json.obj(
+      "enabled" -> o.enabled
     )
   }
 }
-case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean) {
+case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)   {
   def json: JsValue = Http2Settings.format.writes(this)
 }
-object Http2Settings {
+object Http2Settings                                              {
   lazy val default = format.reads(Json.obj()).get
-  val format = new Format[Http2Settings] {
+  val format       = new Format[Http2Settings] {
     override def reads(json: JsValue): JsResult[Http2Settings] = Try {
       Http2Settings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
@@ -155,11 +163,11 @@ object Http2Settings {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
     }
-    override def writes(o: Http2Settings): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "h2cEnabled" -> o.h2cEnabled,
+    override def writes(o: Http2Settings): JsValue             = Json.obj(
+      "enabled"    -> o.enabled,
+      "h2cEnabled" -> o.h2cEnabled
     )
   }
 }
@@ -167,11 +175,11 @@ case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
   def isEpoll: Boolean   = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.Epoll)
   def isKQueue: Boolean  = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.KQueue)
   def isIOUring: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.IOUring)
-  def json: JsValue = NativeSettings.format.writes(this)
+  def json: JsValue      = NativeSettings.format.writes(this)
 }
-object NativeSettings {
+object NativeSettings                                             {
   lazy val default = format.reads(Json.obj()).get
-  val format = new Format[NativeSettings] {
+  val format       = new Format[NativeSettings] {
     override def reads(json: JsValue): JsResult[NativeSettings] = Try {
       NativeSettings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
@@ -179,11 +187,11 @@ object NativeSettings {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
     }
-    override def writes(o: NativeSettings): JsValue = Json.obj(
+    override def writes(o: NativeSettings): JsValue             = Json.obj(
       "enabled" -> o.enabled,
-      "driver" -> o.driver.json,
+      "driver"  -> o.driver.json
     )
   }
 }
@@ -285,7 +293,7 @@ object ReactorNettyServerConfig {
           .getOrElse(8192)
       ),
       http1 = Http1Settings(
-        enabled = config.getOptionalWithFileSupport[Boolean]("http1.enabled").getOrElse(true),
+        enabled = config.getOptionalWithFileSupport[Boolean]("http1.enabled").getOrElse(true)
       ),
       http2 = Http2Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http2.enabled").getOrElse(true),
@@ -347,42 +355,47 @@ object ReactorNettyServerConfig {
           accessLog = json.select("access_log").asOpt[Boolean].getOrElse(false),
           cipherSuites = json.select("cipher_suites").asOpt[Seq[String]],
           protocols = json.select("protocols").asOpt[Seq[String]],
-          idleTimeout = json.select("idle_timeout").asOpt[Long].map(v => java.time.Duration.ofMillis(v)).getOrElse(java.time.Duration.ofMillis(60000)),
+          idleTimeout = json
+            .select("idle_timeout")
+            .asOpt[Long]
+            .map(v => java.time.Duration.ofMillis(v))
+            .getOrElse(java.time.Duration.ofMillis(60000)),
           clientAuth = json.select("client_auth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-          parser = json.select("parser").asOpt(HttpRequestParserConfig.format).getOrElse(HttpRequestParserConfig.default),
+          parser =
+            json.select("parser").asOpt(HttpRequestParserConfig.format).getOrElse(HttpRequestParserConfig.default),
           http1 = json.select("http_1").asOpt(Http1Settings.format).getOrElse(Http1Settings.default),
           http2 = json.select("http_2").asOpt(Http2Settings.format).getOrElse(Http2Settings.default),
           http3 = json.select("http_3").asOpt(Http3Settings.format).getOrElse(Http3Settings.default),
-          native = json.select("native").asOpt(NativeSettings.format).getOrElse(NativeSettings.default),
+          native = json.select("native").asOpt(NativeSettings.format).getOrElse(NativeSettings.default)
         )
       } match {
         case Failure(exception) => JsError(exception.getMessage)
-        case Success(config) => JsSuccess(config)
+        case Success(config)    => JsSuccess(config)
       }
     }
 
     override def writes(o: ReactorNettyServerConfig): JsValue = {
       Json.obj(
-        "id" -> o.id,
-        "enabled" -> o.enabled,
-        "exclusive" -> o.exclusive,
-        "new_engine_only" -> o.newEngineOnly,
-        "host" -> o.host,
-        "http_port" -> o.httpPort,
-        "exposed_http_port" -> o.exposedHttpPort,
-        "https_port" -> o.httpsPort,
+        "id"                 -> o.id,
+        "enabled"            -> o.enabled,
+        "exclusive"          -> o.exclusive,
+        "new_engine_only"    -> o.newEngineOnly,
+        "host"               -> o.host,
+        "http_port"          -> o.httpPort,
+        "exposed_http_port"  -> o.exposedHttpPort,
+        "https_port"         -> o.httpsPort,
         "exposed_https_port" -> o.exposedHttpsPort,
-        "n_thread" -> o.nThread,
-        "wiretap" -> o.wiretap,
-        "access_log" -> o.accessLog,
-        "cipher_suites" -> o.cipherSuites,
-        "protocols" -> o.protocols,
-        "idle_timeout" -> o.idleTimeout,
-        "client_auth" -> o.clientAuth.name,
-        "parser" -> o.parser.json,
-        "http_2" -> o.http2.json,
-        "http_3" -> o.http3.json,
-        "native" -> o.native.json,
+        "n_thread"           -> o.nThread,
+        "wiretap"            -> o.wiretap,
+        "access_log"         -> o.accessLog,
+        "cipher_suites"      -> o.cipherSuites,
+        "protocols"          -> o.protocols,
+        "idle_timeout"       -> o.idleTimeout,
+        "client_auth"        -> o.clientAuth.name,
+        "parser"             -> o.parser.json,
+        "http_2"             -> o.http2.json,
+        "http_3"             -> o.http3.json,
+        "native"             -> o.native.json
       )
     }
   }

@@ -1171,7 +1171,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
                   Results.InternalServerError(
                     Json.obj(
                       "error"             -> "internal_server_error",
-                      "error_description" -> "an error happened during pre-routing plugins phase",
+                      "error_description" -> "an error happened during pre-routing plugins phase"
                       // "error_stack"       -> JsonHelpers.errToJson(exception)
                     )
                   )
@@ -1251,7 +1251,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
                   Results.InternalServerError(
                     Json.obj(
                       "error"             -> "internal_server_error",
-                      "error_description" -> "an error happened during access plugins phase",
+                      "error_description" -> "an error happened during access plugins phase"
                       // "error_stack"       -> JsonHelpers.errToJson(exception)
                     )
                   )
