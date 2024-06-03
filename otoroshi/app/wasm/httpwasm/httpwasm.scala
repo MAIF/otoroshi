@@ -77,7 +77,7 @@ class NgHttpWasm extends NgRequestTransformer {
       ctx: NgBeforeRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
-    new HttpWasmPlugin(config, "http-wasm", env).start(ctx.attrs)
+    new HttpWasmPlugin(config.copy(wasi = true), "http-wasm", env).start(ctx.attrs)
   }
 
   private def handleResponse(vm: WasmVm, vmData: HttpWasmVmData, reqCtx: Int, isError: Int)(implicit
