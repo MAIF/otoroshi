@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
 import otoroshi.env.Env
@@ -13,6 +14,9 @@ import play.api.libs.json._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{Result, Results}
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -275,13 +279,18 @@ class MultiAuthModule extends NgAccessValidator {
             ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
             NgAccess.NgAllowed.vfuture
           case None        => {
-            val redirect   = ctx.request
-              .getQueryString("redirect")
-              .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
+            // val redirect   = ctx.request
+            //   .getQueryString("redirect")
+            //   .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
+            val req = ctx.request
+            val redirect = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+            val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
+            val descriptorId = ctx.route.legacy.id
+            val hash = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
             val redirectTo =
               env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                 .confidentialAppLoginPage()
-                .url + s"?desc=${ctx.route.legacy.id}&redirect=${redirect}"
+                .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"
             if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
             NgAccess
               .NgDenied(
@@ -367,13 +376,17 @@ class AuthModule extends NgAccessValidator {
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
                     NgAccess.NgAllowed.vfuture
                   case None        => {
-                    val redirect   = req
-                      .getQueryString("redirect")
-                      .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                    // val redirect   = req
+                    //   .getQueryString("redirect")
+                    //   .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                    val redirect = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+                    val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
+                    val descriptorId = descriptor.id
+                    val hash = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
                     val redirectTo =
                       env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                         .confidentialAppLoginPage()
-                        .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+                        .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"
                     if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                     NgAccess
                       .NgDenied(

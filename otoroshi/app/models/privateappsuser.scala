@@ -19,6 +19,8 @@ import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -297,13 +299,17 @@ object PrivateAppsUserHelper {
       case Some(paUsr) =>
         callDownstream(config, None, Some(paUsr))
       case None        => {
-        val redirect   = req
-          .getQueryString("redirect")
-          .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+        // val redirect   = req
+        //   .getQueryString("redirect")
+        //   .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+        val redirect = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+        val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
+        val descriptorId = descriptor.id
+        val hash = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
         val redirectTo =
           env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
             .confidentialAppLoginPage()
-            .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+            .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"
         if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
           case None      =>

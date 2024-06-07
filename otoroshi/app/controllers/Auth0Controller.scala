@@ -20,6 +20,8 @@ import play.api.libs.json._
 import play.api.mvc._
 
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -245,7 +247,10 @@ class AuthController(
                             )
                           )
                         }
-                      f(auths, route, ctx.request.getQueryString("redirect"))
+                      val redirect = ctx.request.getQueryString("redirect")
+                        .filter(redirect => ctx.request.getQueryString("hash").contains(env.sign(s"desc=${routeId}&redirect=${redirect}")))
+                        .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+                      f(auths, route, redirect)
                     case JsError(errors)      =>
                       logger.error(s"Failed to parse multi auth configuration, $errors")
                       NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
@@ -287,6 +292,8 @@ class AuthController(
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             req
                               .getQueryString("redirect")
+                              .filter(redirect => req.getQueryString("hash").contains(env.sign(s"desc=${route.id}&redirect=${redirect}")))
+                              .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
@@ -317,13 +324,14 @@ class AuthController(
                               }
                               case redirectTo                  => {
                                 // TODO - check if ref is needed
+                                val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
                                   case -1   =>
                                     val redirection =
-                                      s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                      s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
@@ -334,7 +342,7 @@ class AuthController(
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
-                                      s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                      s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
                                         .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
@@ -394,6 +402,8 @@ class AuthController(
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             req
                               .getQueryString("redirect")
+                              .filter(redirect => req.getQueryString("hash").contains(env.sign(s"desc=${serviceId}&redirect=${redirect}")))
+                              .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
@@ -423,13 +433,14 @@ class AuthController(
                                 )
                               }
                               case redirectTo                  => {
+                                val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
                                   case -1   =>
                                     val redirection =
-                                      s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                      s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
@@ -440,7 +451,7 @@ class AuthController(
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
-                                      s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                      s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
                                         .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
@@ -578,14 +589,15 @@ class AuthController(
                         env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
                       )
                   case redirectTo                  =>
+                    val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                     val url                = new java.net.URL(redirectTo)
                     val host               = url.getHost
                     val scheme             = url.getProtocol
                     val setCookiesRedirect = url.getPort match {
                       case -1   =>
                         val redirection =
-                          s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                          s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${}"
                         val hash        = env.sign(redirection)
                         if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
                           otoroshi.controllers.AuthController.logger
@@ -594,7 +606,7 @@ class AuthController(
                         s"$redirection&hash=$hash"
                       case port =>
                         val redirection =
-                          s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                          s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {

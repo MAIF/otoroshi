@@ -1,7 +1,7 @@
 package otoroshi.auth
 
 import java.security.SecureRandom
-import java.util.Optional
+import java.util.{Base64, Optional}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
@@ -10,7 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import otoroshi.controllers.{routes, LocalCredentialRepository}
+import otoroshi.controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
@@ -23,6 +23,7 @@ import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -306,6 +307,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
+      .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
+      .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {

@@ -16,6 +16,7 @@ import play.api.mvc.Results.{Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -331,6 +332,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
           if (parameters("oauth_callback_confirmed") == "true") {
             val redirect    = request.getQueryString("redirect")
+              .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
+              .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
             val hash        = env.sign(s"${authConfig.id}:::${descriptor.id}")
             val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")

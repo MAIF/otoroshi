@@ -19,6 +19,8 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import otoroshi.utils.syntax.implicits._
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import javax.naming.ldap.{Control, InitialLdapContext}
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
@@ -768,6 +770,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   ): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
+      .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
+      .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {

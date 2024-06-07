@@ -281,6 +281,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     implicit val req = request
 
     val redirect     = request.getQueryString("redirect")
+      .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
+      .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
