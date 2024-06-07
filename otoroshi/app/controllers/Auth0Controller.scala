@@ -613,7 +613,7 @@ class AuthController(
                       case -1   =>
                         val redirection =
                           s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
                           otoroshi.controllers.AuthController.logger
