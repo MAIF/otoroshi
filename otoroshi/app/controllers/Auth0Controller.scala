@@ -236,7 +236,7 @@ class AuthController(
                 case Some(auth) =>
                   NgMultiAuthModuleConfig.format.reads(auth.config.raw) match {
                     case JsSuccess(config, _) =>
-                      val auths = config.modules
+                      val auths    = config.modules
                         .flatMap(module => env.proxyState.authModule(module))
                         .foldLeft(Json.obj("types" -> Json.obj())) { case (acc, auth) =>
                           (acc ++ Json.obj(auth.id -> auth.name)).deepMerge(
@@ -247,9 +247,14 @@ class AuthController(
                             )
                           )
                         }
-                      val redirect = ctx.request.getQueryString("redirect")
-                        .filter(redirect => ctx.request.getQueryString("hash").contains(env.sign(s"desc=${routeId}&redirect=${redirect}")))
-                        .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+                      val redirect = ctx.request
+                        .getQueryString("redirect")
+                        .filter(redirect =>
+                          ctx.request.getQueryString("hash").contains(env.sign(s"desc=${routeId}&redirect=${redirect}"))
+                        )
+                        .map(redirectBase64Encoded =>
+                          new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+                        )
                       f(auths, route, redirect)
                     case JsError(errors)      =>
                       logger.error(s"Failed to parse multi auth configuration, $errors")
@@ -292,8 +297,12 @@ class AuthController(
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             req
                               .getQueryString("redirect")
-                              .filter(redirect => req.getQueryString("hash").contains(env.sign(s"desc=${route.id}&redirect=${redirect}")))
-                              .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+                              .filter(redirect =>
+                                req.getQueryString("hash").contains(env.sign(s"desc=${route.id}&redirect=${redirect}"))
+                              )
+                              .map(redirectBase64Encoded =>
+                                new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+                              )
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
@@ -324,7 +333,8 @@ class AuthController(
                               }
                               case redirectTo                  => {
                                 // TODO - check if ref is needed
-                                val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
+                                val encodedRedirectTo  =
+                                  Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
@@ -402,8 +412,12 @@ class AuthController(
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             req
                               .getQueryString("redirect")
-                              .filter(redirect => req.getQueryString("hash").contains(env.sign(s"desc=${serviceId}&redirect=${redirect}")))
-                              .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+                              .filter(redirect =>
+                                req.getQueryString("hash").contains(env.sign(s"desc=${serviceId}&redirect=${redirect}"))
+                              )
+                              .map(redirectBase64Encoded =>
+                                new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+                              )
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
@@ -433,7 +447,8 @@ class AuthController(
                                 )
                               }
                               case redirectTo                  => {
-                                val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
+                                val encodedRedirectTo  =
+                                  Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url                = new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
@@ -589,7 +604,8 @@ class AuthController(
                         env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
                       )
                   case redirectTo                  =>
-                    val encodedRedirectTo = Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
+                    val encodedRedirectTo  =
+                      Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                     val url                = new java.net.URL(redirectTo)
                     val host               = url.getHost
                     val scheme             = url.getProtocol

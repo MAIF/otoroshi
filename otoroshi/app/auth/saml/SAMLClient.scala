@@ -79,9 +79,14 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
   ): Future[Result] = {
     implicit val req: RequestHeader = request
 
-    val redirect   = request.getQueryString("redirect")
-      .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
-      .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+    val redirect   = request
+      .getQueryString("redirect")
+      .filter(redirect =>
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}"))
+      )
+      .map(redirectBase64Encoded =>
+        new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+      )
     val redirectTo = redirect.getOrElse(
       routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
     )

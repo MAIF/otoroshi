@@ -742,7 +742,10 @@ class GatewayRequestHandler(
 
   def setPrivateAppsCookies() =
     actionBuilder.async { req =>
-      val redirectToOpt: Option[String]   = req.queryString.get("redirectTo").map(_.last).map(v => new String(Base64.getUrlDecoder.decode(v), StandardCharsets.UTF_8))
+      val redirectToOpt: Option[String]   = req.queryString
+        .get("redirectTo")
+        .map(_.last)
+        .map(v => new String(Base64.getUrlDecoder.decode(v), StandardCharsets.UTF_8))
       val sessionIdOpt: Option[String]    = req.queryString.get("sessionId").map(_.last)
       val hostOpt: Option[String]         = req.queryString.get("host").map(_.last)
       val cookiePrefOpt: Option[String]   = req.queryString.get("cp").map(_.last)

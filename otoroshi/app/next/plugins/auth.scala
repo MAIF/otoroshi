@@ -282,12 +282,12 @@ class MultiAuthModule extends NgAccessValidator {
             // val redirect   = ctx.request
             //   .getQueryString("redirect")
             //   .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
-            val req = ctx.request
-            val redirect = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+            val req             = ctx.request
+            val redirect        = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
             val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
-            val descriptorId = ctx.route.legacy.id
-            val hash = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
-            val redirectTo =
+            val descriptorId    = ctx.route.legacy.id
+            val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
+            val redirectTo      =
               env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                 .confidentialAppLoginPage()
                 .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"
@@ -379,11 +379,11 @@ class AuthModule extends NgAccessValidator {
                     // val redirect   = req
                     //   .getQueryString("redirect")
                     //   .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-                    val redirect = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+                    val redirect        = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
                     val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
-                    val descriptorId = descriptor.id
-                    val hash = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
-                    val redirectTo =
+                    val descriptorId    = descriptor.id
+                    val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
+                    val redirectTo      =
                       env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                         .confidentialAppLoginPage()
                         .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"

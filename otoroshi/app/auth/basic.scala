@@ -10,7 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import otoroshi.controllers.{LocalCredentialRepository, routes}
+import otoroshi.controllers.{routes, LocalCredentialRepository}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
@@ -306,9 +306,14 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       env: Env
   ): Future[Result] = {
     implicit val req = request
-    val redirect     = request.getQueryString("redirect")
-      .filter(redirect => request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")))
-      .map(redirectBase64Encoded => new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8))
+    val redirect     = request
+      .getQueryString("redirect")
+      .filter(redirect =>
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}"))
+      )
+      .map(redirectBase64Encoded =>
+        new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+      )
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
