@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.2] - 2024-06-07
+
+
+https://github.com/MAIF/otoroshi/milestone/97?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.1...v16.18.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.2
+
+
+
+
+### Fixed 
+
+- bad code cleanup generates bad login urls (#1925)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.18.1] - 2024-06-07
 
 
