@@ -302,7 +302,8 @@ object PrivateAppsUserHelper {
         // val redirect   = req
         //   .getQueryString("redirect")
         //   .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-        val redirect        = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+        val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+        val redirect        = if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect) else baseRedirect
         val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
         val descriptorId    = descriptor.id
         val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")

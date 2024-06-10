@@ -279,11 +279,9 @@ class MultiAuthModule extends NgAccessValidator {
             ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
             NgAccess.NgAllowed.vfuture
           case None        => {
-            // val redirect   = ctx.request
-            //   .getQueryString("redirect")
-            //   .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
             val req             = ctx.request
-            val redirect        = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+            val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+            val redirect        = if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect) else baseRedirect
             val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
             val descriptorId    = ctx.route.legacy.id
             val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
@@ -376,10 +374,8 @@ class AuthModule extends NgAccessValidator {
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
                     NgAccess.NgAllowed.vfuture
                   case None        => {
-                    // val redirect   = req
-                    //   .getQueryString("redirect")
-                    //   .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-                    val redirect        = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+                    val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+                    val redirect        = if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect) else baseRedirect
                     val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
                     val descriptorId    = descriptor.id
                     val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
