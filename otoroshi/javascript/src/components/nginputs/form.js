@@ -205,8 +205,6 @@ export class NgStep extends Component {
 
     const version = this.props.schema.props?.v2 || 'v1';
 
-    console.log(this.props)
-
     if (version === 'v1') {
       return (
         <ValidationRenderer key={this.props.path.join('/')} validation={validation} >
