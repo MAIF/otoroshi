@@ -549,7 +549,7 @@ object NgCustomThrottlingConfig {
 
 object NgCustomThrottling {
 
-  private def throttlingKey(name: String, group: String)(implicit env: Env): String =
+  def throttlingKey(name: String, group: String)(implicit env: Env): String =
     s"${env.storageRoot}:plugins:custom-throttling:${group}:second:$name"
 
   def updateQuotas(expr: String, group: String, increment: Long = 1L)(implicit
