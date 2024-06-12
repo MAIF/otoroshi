@@ -1914,6 +1914,17 @@ class BackOfficeController(
     }
   }
 
+  def ports(routeId: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.routeDataStore.findById(routeId) flatMap {
+      case None        => NotFound(Json.obj("error" -> "route not found")).future
+      case Some(route) =>
+        Ok(Json.obj(
+          "https" -> env.exposedHttpsPortInt,
+          "http" -> env.exposedHttpPortInt
+          )).future
+    }
+  }
+
   def graphQLToJson() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
 

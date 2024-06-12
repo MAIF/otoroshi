@@ -13,7 +13,7 @@ import {
   getCategories,
   getOldPlugins,
   getPlugins,
-  routeEntries,
+  routePorts
 } from '../../services/BackOfficeServices';
 
 import { Backend, Frontend, Plugins } from '../../forms/ng_plugins';
@@ -41,6 +41,7 @@ import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
+import { BackendForm } from './BackendNode';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -498,6 +499,7 @@ class Designer extends React.Component {
     categories: [],
     nodes: [],
     plugins: [],
+    ports: [],
     selectedNode: undefined,
     route: null,
     originalRoute: null,
@@ -736,37 +738,41 @@ class Designer extends React.Component {
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
 
-      this.setState(
-        {
-          backends,
-          loading: false,
-          categories: categories.filter((category) => !['Job'].includes(category)),
-          route: { ...routeWithNodeId },
-          originalRoute: { ...routeWithNodeId },
-          plugins: formattedPlugins.map((p) => ({
-            ...p,
-            selected: p.plugin_multi_inst
-              ? false
-              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-          })),
-          nodes,
-          frontend: {
-            ...Frontend,
-            config_schema: toUpperCaseLabels(Frontend.schema),
-            config_flow: Frontend.flow,
-            nodeId: 'Frontend',
-          },
-          backend: {
-            ...Backend,
-            config_schema: toUpperCaseLabels(Backend.schema),
-            config_flow: Backend.flow,
-            nodeId: 'Backend',
-          },
-          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-        },
-        this.injectNavbarMenu
-      );
-    });
+      routePorts(route.id)
+        .then(ports => {
+          this.setState(
+            {
+              ports,
+              backends,
+              loading: false,
+              categories: categories.filter((category) => !['Job'].includes(category)),
+              route: { ...routeWithNodeId },
+              originalRoute: { ...routeWithNodeId },
+              plugins: formattedPlugins.map((p) => ({
+                ...p,
+                selected: p.plugin_multi_inst
+                  ? false
+                  : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+              })),
+              nodes,
+              frontend: {
+                ...Frontend,
+                config_schema: toUpperCaseLabels(Frontend.schema),
+                config_flow: Frontend.flow,
+                nodeId: 'Frontend',
+              },
+              backend: {
+                ...Backend,
+                config_schema: toUpperCaseLabels(Backend.schema),
+                config_flow: Backend.flow,
+                nodeId: 'Backend',
+              },
+              selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+            },
+            this.injectNavbarMenu
+          );
+        })
+    })
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
@@ -1514,6 +1520,7 @@ class Designer extends React.Component {
       route,
       plugins,
       backends,
+      ports,
       selectedNode,
       originalRoute,
       frontend,
@@ -1749,6 +1756,7 @@ class Designer extends React.Component {
                   onRemove={this.removeNode}
                   plugins={plugins}
                   backends={backends}
+                  ports={ports}
                   preview={preview}
                   showPreview={(element) =>
                     this.setState({
@@ -1892,9 +1900,8 @@ const UnselectedNode = ({
   deleteRoute,
   selectFrontend,
   selectBackend,
+  ports
 }) => {
-  const [copyIconName, setCopyIconName] = useState("fas fa-copy")
-
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
@@ -1914,11 +1921,25 @@ const UnselectedNode = ({
         ))
         : [<span className="badge bg-success">ALL</span>];
 
-    const copy = value => {
+    const unsecuredCopyToClipboard = text => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
       try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.error('Unable to copy to clipboard', err);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    const copy = (value, setCopyIconName) => {
+      if (window.isSecureContext && navigator.clipboard) {
         navigator.clipboard.writeText(value);
-      } catch (e) {
-        console.log(e);
+      } else {
+        unsecuredCopyToClipboard(value);
       }
       setCopyIconName('fas fa-check')
 
@@ -1927,15 +1948,18 @@ const UnselectedNode = ({
       }, 2000)
     }
 
-    const goTo = idx => {
-      routeEntries(route.id)
-        .then((data) => {
-          if (data.entries && data.entries[idx]) {
-            window.open(data.entries[idx], '_blank');
-          }
-        });
+    const routeEntries = idx => {
+      const isSecured = route.plugins.find(p => p.plugin.includes("ForceHttpsTraffic"))
 
+      const domain = route.frontend.domains[idx]
+
+      if (isSecured)
+        return `https://${domain}:${ports.https}`
+
+      return `http://${domain}:${ports.http}`
     }
+
+    const goTo = idx => window.open(routeEntries(idx), '_blank');
 
     return (
       <>
@@ -1960,8 +1984,6 @@ const UnselectedNode = ({
           <span>this route is exposed on</span>
           <div
             className="dark-background"
-            // onDoubleClick={selectFrontend}
-            // onClick={selectFrontend}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -1973,6 +1995,7 @@ const UnselectedNode = ({
             }}
           >
             {frontend.domains.map((domain, idx) => {
+              const [copyIconName, setCopyIconName] = useState("fas fa-copy")
               const exact = frontend.exact;
               const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
               const start = 'http://';
@@ -1984,17 +2007,14 @@ const UnselectedNode = ({
                   >
                     <div style={{ width: 60 }}>{method}</div>
                     <span style={{ fontFamily: 'monospace' }}>
-                      {start}
-                      {domain}
+                      {routeEntries(idx)}
                       {end}
                     </span>
                     <div className='d-flex align-items-center ms-auto'>
-                      {/* {navigator.clipboard && window.isSecureContext && ( */}
                       <button className='btn btn-sm btn-quiet' title="Copy URL"
-                        onClick={copy}>
+                        onClick={() => copy(routeEntries(idx), setCopyIconName)}>
                         <i className={copyIconName} />
                       </button>
-                      {/* )} */}
                       <button className='btn btn-sm btn-quiet ms-1'
                         title={`Go to ${start}${domain}`}
                         onClick={() => goTo(idx)}>
@@ -2069,6 +2089,7 @@ const UnselectedNode = ({
             {backend.targets
               .filter((f) => f)
               .map((target, i) => {
+                const [copyIconName, setCopyIconName] = useState("fas fa-copy")
                 const path = backend.root;
                 const rewrite = backend.rewrite;
                 const hostname = target.ip_address
@@ -2081,28 +2102,47 @@ const UnselectedNode = ({
                     target.tls_config.enabled &&
                     [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
                       .length > 0 ? (
-                    <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
+                    <span className="badge bg-warning text-dark" style={{
+                      marginRight: 10,
+                      fontSize: '.75rem'
+                    }}>
                       mTLS
                     </span>
                   ) : (
                     <span></span>
                   );
+                const backendURL = `${start}${hostname}:${target.port}`;
                 return (
-                  <div
+                  <div className='d-flex align-items-center mx-3 mb-1'
                     style={{
-                      paddingLeft: 10,
-                      paddingRight: 10,
-                      display: 'flex',
-                      flexDirection: 'row',
+                      gap: 6
                     }}
                     key={`backend-targets${i}`}
                   >
-                    <span style={{ fontFamily: 'monospace' }}>
+                    <span style={{ fontFamily: 'monospace' }} className='d-flex align-items-center'>
+                      <div style={{ width: 60 }}>
+                        <span className="badge bg-success" style={{ fontSize: '.75rem' }}>ALL</span>
+                      </div>
                       {mtls}
                       {start}
                       {hostname}:{target.port}
                       {end}
                     </span>
+
+                    <div className='d-flex align-items-center ms-auto'>
+                      {/* {navigator.clipboard && window.isSecureContext && ( */}
+                      <button className='btn btn-sm btn-quiet'
+                        title="Copy URL"
+                        onClick={() => copy(backendURL, setCopyIconName)}>
+                        <i className={copyIconName} />
+                      </button>
+                      {/* )} */}
+                      <button className='btn btn-sm btn-quiet ms-1'
+                        title={`Go to ${backendURL}`}
+                        onClick={() => window.open(backendURL, '_blank')}>
+                        <i className="fas fa-arrow-right" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -2289,7 +2329,7 @@ class EditView extends React.Component {
           collapsable: isPluginWithConfiguration ? true : false,
           collapsed: false,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA,
+          schema: PLUGIN_INFORMATIONS_SCHEMA
         },
       };
       if (isPluginWithConfiguration)
@@ -2499,14 +2539,16 @@ class EditView extends React.Component {
               )}
               {!asJsonFormat && (
                 <>
-                  <NgForm
-                    ref={this.formRef}
-                    value={form.value}
-                    schema={form.schema}
-                    flow={hasCustomPluginForm ? ['status'] : form.flow}
-                    onChange={this.onValidate}
-                    useBreadcrumb={true}
-                  />
+                  {selectedNode.id === "Backend" ?
+                    <BackendForm state={this.state} onChange={this.onValidate} /> :
+                    <NgForm
+                      ref={this.formRef}
+                      value={form.value}
+                      schema={form.schema}
+                      flow={hasCustomPluginForm ? ['status'] : form.flow}
+                      onChange={this.onValidate}
+                      useBreadcrumb={true}
+                    />}
                   {!['Frontend', 'Backend'].includes(id) && (
                     <div className="d-flex">
                       <button className="btn btn-sm btn-danger ms-auto mt-3" onClick={onRemove}>
@@ -2580,7 +2622,7 @@ const BackendSelector = ({
       <div className="dark-background backend-selector">
         <PillButton
           pillButtonStyle={{ width: 'auto', flex: 1 }}
-          style={{ display: 'flex', width: '100%' }}
+          style={{ display: 'flex', width: '100%', minHeight: 36, maxWidth: 420 }}
           rightEnabled={usingExistingBackend}
           leftText="Select an existing backend"
           rightText="Create a new backend"

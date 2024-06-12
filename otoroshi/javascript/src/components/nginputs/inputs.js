@@ -13,13 +13,13 @@ const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput'
 const ReadOnlyField = ({ value, pre }) => {
   if (pre) {
     return (
-      <pre className="d-flex align-items-center" style={{ height: '100%' }}>
+      <pre className="d-flex align-items-center ms-2" style={{ height: '100%' }}>
         {value}
       </pre>
     );
   } else {
     return (
-      <span className="d-flex align-items-center" style={{ height: '100%' }}>
+      <span className="d-flex align-items-center ms-2" style={{ height: '100%' }}>
         {value}
       </span>
     );
@@ -141,9 +141,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -587,10 +586,10 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <div className="col-sm-10 ms-auto">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -600,7 +599,8 @@ export class NgBoxBooleanRenderer extends Component {
           }}
           className="d-flex"
           style={{
-            outline: 'var(--bg-color_level2) solid 1px',
+            border: 'var(--bg-color_level2) solid 1px',
+            borderRadius: 6,
             padding: '5px',
             margin: '5px 0px',
             width: this.props.width || '100%',
@@ -670,8 +670,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -695,6 +695,10 @@ export class NgArrayRenderer extends Component {
 
     if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0) return null;
 
+    const customTemplate = this.props.rawSchema?.props?.v2?.template || this.generateDefaultValue(schema);
+
+    const canDeleteFirstItem = this.props.rawSchema?.props?.shouldKeepFirstItem !== true
+
     return (
       <LabelAndInput {...this.props}>
         <div
@@ -715,8 +719,9 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    outline: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
-                    padding: showItem ? '6px' : 0,
+                    border: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
+                    borderRadius: 6,
+                    padding: showItem ? '12px' : 0,
                     marginBottom: showItem ? '6px' : 0,
                   }}
                   key={path}
@@ -773,7 +778,7 @@ export class NgArrayRenderer extends Component {
                       {...props}
                     />
                   )}
-                  {showActions && !readOnly && (
+                  {showActions && !readOnly && (idx === 0 ? canDeleteFirstItem : true) && (
                     <button
                       type="button"
                       className="btn btn-sm btn-danger"
@@ -798,12 +803,12 @@ export class NgArrayRenderer extends Component {
               onClick={() => {
                 let newArr = [...(this.props.value || [])];
 
-                if (schema.of) return this.props.onChange([...newArr, '']);
-                else if (schema.itemRenderer) {
+                if (schema.of) {
+                  return this.props.onChange([...newArr, '']);
+                } else if (schema.itemRenderer) {
                   this.props.onChange([...newArr, this.defaultValues({})[schema.type]()]);
                 } else {
-                  const newArray = [...newArr, this.generateDefaultValue(schema)];
-                  this.props.onChange(newArray);
+                  this.props.onChange([...newArr, customTemplate]);
                 }
               }}
             >
@@ -858,21 +863,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />

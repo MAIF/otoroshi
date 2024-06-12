@@ -36,6 +36,8 @@ import {
 } from './components';
 import { Forms } from '../../forms';
 import { camelCase } from 'lodash';
+import { Button } from '../Button';
+import { LocalChangesRenderer } from './LocalChangesRenderer';
 
 const isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -201,20 +203,36 @@ export class NgStep extends Component {
     const validation = this.state.validation;
     const ValidationRenderer = this.props.components.ValidationRenderer;
 
-    return (
-      <ValidationRenderer key={this.props.path.join('/')} validation={validation}>
-        <Renderer
-          validation={validation}
-          {...this.props}
-          embedded
-          onChange={this.onChange}
-          schema={this.props.schema.schema || this.props.schema}
-          flow={this.props.schema.flow || this.props.flow}
-          rawSchema={this.props.schema}
-          rawFlow={this.props.flow}
-        />
-      </ValidationRenderer>
-    );
+    const version = this.props.schema.props?.v2 || 'v1';
+
+    console.log(this.props)
+
+    if (version === 'v1') {
+      return (
+        <ValidationRenderer key={this.props.path.join('/')} validation={validation} >
+          <Renderer
+            validation={validation}
+            {...this.props}
+            embedded
+            onChange={this.onChange}
+            schema={this.props.schema.schema || this.props.schema}
+            flow={this.props.schema.flow || this.props.flow}
+            rawSchema={this.props.schema}
+            rawFlow={this.props.flow}
+          />
+        </ValidationRenderer>
+      );
+    } else {
+      return (
+        <ValidationRenderer key={this.props.path.join('/')} validation={validation}>
+          <LocalChangesRenderer
+            renderer={Renderer}
+            validation={validation}
+            onChange={this.onChange}
+            itemProps={this.props} />
+        </ValidationRenderer>
+      );
+    }
   }
 }
 
@@ -570,8 +588,8 @@ export class NgForm extends Component {
             !config.setBreadcrumb
               ? null
               : () => {
-                  config.setBreadcrumb(fullPath);
-                }
+                config.setBreadcrumb(fullPath);
+              }
           }
           useBreadcrumb={config.useBreadcrumb}
           path={fullPath}
@@ -829,10 +847,10 @@ export class NgForm extends Component {
             toHome={
               root
                 ? () => {
-                    this.setState({
-                      breadcrumb: [],
-                    });
-                  }
+                  this.setState({
+                    breadcrumb: [],
+                  });
+                }
                 : null
             }
             setBreadcrumb={(i) => {

@@ -2050,6 +2050,10 @@ export function routeEntries(routeId) {
   return fetch(`/bo/api/routes/${routeId}/entries`).then((r) => r.json());
 }
 
+export function routePorts(routeId) {
+  return fetch(`/bo/api/routes/${routeId}/ports`).then((r) => r.json());
+}
+
 export function graphQLTryIt(url) {
   return fetch(`/bo/api/graphqlproxy?url=${url}`).then((r) => r.json());
 }

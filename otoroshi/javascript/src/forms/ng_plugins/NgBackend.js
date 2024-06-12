@@ -253,11 +253,7 @@ export default {
       array: true,
       format: 'form',
       type: 'object',
-      props: {
-        ngOptions: {
-          spread: true,
-        },
-      },
+      label: 'Targets',
       schema: {
         predicate: {
           label: 'Predicate',
@@ -451,18 +447,33 @@ export default {
           help: 'The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client',
         },
       },
-      flow: [
-        {
-          type: 'group',
-          collapsed: true,
-          name: (props) => {
-            const port = props.value?.port;
-            const hostname = props.value?.hostname || '';
-            const isSecured = props.value?.tls;
-
-            return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`;
+      props: {
+        shouldKeepFirstItem: true,
+        v2: {
+          template: {
+            hostname: "mirror.otoroshi.io",
+            protocol: "HTTP/1.1",
+            port: 443,
+            weight: 0,
+            tls: true,
+            tls_config: {
+              enabled: false,
+              loose: false,
+              trust_all: false,
+              certs: [],
+              trusted_certs: []
+            },
+            ip_address: null,
+            predicate: {
+              type: "AlwaysMatch"
+            }
           },
-          full_fields: [
+          folded: [
+            'hostname',
+            'port',
+            'protocol'
+          ],
+          flow: [
             'hostname',
             'port',
             'protocol',
@@ -471,10 +482,33 @@ export default {
             'tls',
             'predicate',
             'tls_config',
-          ],
-          fields: ['hostname', 'port', 'protocol', 'tls'],
-        },
-      ],
+          ]
+        }
+      }
+      // flow: [
+      //   {
+      //     type: 'group',
+      //     collapsed: true,
+      //     name: (props) => {
+      //       const port = props.value?.port;
+      //       const hostname = props.value?.hostname || '';
+      //       const isSecured = props.value?.tls;
+
+      //       return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`;
+      //     },
+      //     full_fields: [
+      //       'hostname',
+      //       'port',
+      //       'protocol',
+      //       'weight',
+      //       'ip_address',
+      //       'tls',
+      //       'predicate',
+      //       'tls_config',
+      //     ],
+      //     fields: ['hostname', 'port', 'protocol', 'tls'],
+      //   },
+      // ],
     },
     rewrite: {
       label: 'Full path rewrite',
@@ -510,28 +544,12 @@ export default {
       flow: ['type', 'ratio'],
     },
   },
-  flow: {
-    otoroshi_full_flow: [
-      'root',
-      'rewrite',
-      {
-        type: 'group',
-        name: 'Targets',
-        fields: ['targets'],
-        summaryFields: ['targets.hostname'],
-      },
-      'health_check',
-      'client',
-      'load_balancing',
-    ],
-    otoroshi_flow: [
-      'root',
-      {
-        type: 'group',
-        name: 'Targets',
-        fields: ['targets', 'health_check'],
-        summaryFields: ['targets.hostname', 'health_check.url', 'health_check.enabled'],
-      },
-    ],
-  },
+  flow: [
+    'root',
+    'rewrite',
+    'targets',
+    'health_check',
+    'client',
+    'load_balancing',
+  ]
 };
