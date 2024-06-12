@@ -13,6 +13,7 @@ import {
   getCategories,
   getOldPlugins,
   getPlugins,
+  routeEntries,
 } from '../../services/BackOfficeServices';
 
 import { Backend, Frontend, Plugins } from '../../forms/ng_plugins';
@@ -611,7 +612,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -627,7 +628,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -644,9 +645,9 @@ class Designer extends React.Component {
       this.props.value
         ? Promise.resolve(this.props.value)
         : nextClient.fetch(
-            this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-            this.props.routeId
-          ),
+          this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+          this.props.routeId
+        ),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -654,10 +655,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                  showAdvancedDesignerView: (pluginName) => {
-                    this.setState({ advancedDesignerView: pluginName });
-                  },
-                })
+                showAdvancedDesignerView: (pluginName) => {
+                  this.setState({ advancedDesignerView: pluginName });
+                },
+              })
               : plugin.config_schema,
           };
         })
@@ -668,11 +669,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -978,14 +979,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                      plugin: newNode.id,
-                      // [newNode.configRoot]: {
-                      ...newNode.config,
-                      // },
-                    }
+                    plugin: newNode.id,
+                    // [newNode.configRoot]: {
+                    ...newNode.config,
+                    // },
+                  }
                   : {
-                      ...newNode.config,
-                    },
+                    ...newNode.config,
+                  },
               },
             ],
           },
@@ -1248,8 +1249,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1531,17 +1532,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1892,6 +1893,8 @@ const UnselectedNode = ({
   selectFrontend,
   selectBackend,
 }) => {
+  const [copyIconName, setCopyIconName] = useState("fas fa-copy")
+
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
@@ -1901,15 +1904,38 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}
-            >
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
+
+    const copy = value => {
+      try {
+        navigator.clipboard.writeText(value);
+      } catch (e) {
+        console.log(e);
+      }
+      setCopyIconName('fas fa-check')
+
+      setTimeout(() => {
+        setCopyIconName('fas fa-copy')
+      }, 2000)
+    }
+
+    const goTo = idx => {
+      routeEntries(route.id)
+        .then((data) => {
+          if (data.entries && data.entries[idx]) {
+            window.open(data.entries[idx], '_blank');
+          }
+        });
+
+    }
 
     return (
       <>
@@ -1934,8 +1960,8 @@ const UnselectedNode = ({
           <span>this route is exposed on</span>
           <div
             className="dark-background"
-            onDoubleClick={selectFrontend}
-            onClick={selectFrontend}
+            // onDoubleClick={selectFrontend}
+            // onClick={selectFrontend}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -1946,27 +1972,35 @@ const UnselectedNode = ({
               borderRadius: 3,
             }}
           >
-            {frontend.domains.map((domain) => {
+            {frontend.domains.map((domain, idx) => {
               const exact = frontend.exact;
               const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
               const start = 'http://';
               return allMethods.map((method, i) => {
                 return (
                   <div
-                    style={{
-                      paddingLeft: 10,
-                      paddingRight: 10,
-                      display: 'flex',
-                      flexDirection: 'row',
-                    }}
+                    className='d-flex align-items-center mx-3 mb-1'
                     key={`allmethods-${i}`}
                   >
-                    <div style={{ width: 80 }}>{method}</div>
+                    <div style={{ width: 60 }}>{method}</div>
                     <span style={{ fontFamily: 'monospace' }}>
                       {start}
                       {domain}
                       {end}
                     </span>
+                    <div className='d-flex align-items-center ms-auto'>
+                      {/* {navigator.clipboard && window.isSecureContext && ( */}
+                      <button className='btn btn-sm btn-quiet' title="Copy URL"
+                        onClick={copy}>
+                        <i className={copyIconName} />
+                      </button>
+                      {/* )} */}
+                      <button className='btn btn-sm btn-quiet ms-1'
+                        title={`Go to ${start}${domain}`}
+                        onClick={() => goTo(idx)}>
+                        <i className="fas fa-arrow-right" />
+                      </button>
+                    </div>
                   </div>
                 );
               });
@@ -1977,7 +2011,7 @@ const UnselectedNode = ({
               <span>this route will match only if the following query params are present</span>
               <pre
                 className="dark-background"
-                onDoubleClick={selectFrontend}
+                // onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
                   marginTop: 10,
@@ -1998,7 +2032,7 @@ const UnselectedNode = ({
             <div className="">
               <span>this route will match only if the following headers are present</span>
               <pre
-                onDoubleClick={selectFrontend}
+                // onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
                   marginTop: 10,
@@ -2044,9 +2078,9 @@ const UnselectedNode = ({
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                    .length > 0 ? (
+                    target.tls_config.enabled &&
+                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                      .length > 0 ? (
                     <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                       mTLS
                     </span>
@@ -2100,9 +2134,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
