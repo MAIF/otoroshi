@@ -3268,7 +3268,7 @@ object ClusterLeaderUpdateMessage       {
           expr = item.select("e").asString,
           group = item.select("g").asString,
           calls = item.select("c").asOpt[Long].getOrElse(0L).atomic,
-          ttl = item.select("t").asOpt[Long].getOrElse(0L),
+          ttl = item.select("t").asOpt[Long].getOrElse(0L)
         ).some
       case _                 => None
     }
@@ -3369,7 +3369,8 @@ object ClusterLeaderUpdateMessage       {
     }
   }
 
-  case class CustomThrottlingIncr(expr: String, group: String, calls: AtomicLong, ttl: Long) extends ClusterLeaderUpdateMessage {
+  case class CustomThrottlingIncr(expr: String, group: String, calls: AtomicLong, ttl: Long)
+      extends ClusterLeaderUpdateMessage {
 
     override def json: JsValue = Json.obj(
       "typ" -> "custthrot",
