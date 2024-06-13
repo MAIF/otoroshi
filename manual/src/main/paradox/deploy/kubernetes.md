@@ -135,6 +135,10 @@ We don't recommand running Otoroshi behind an existing ingress controller (or so
 
 the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it's just an example. You can use your own existing setup.
 
+@@@ warning
+When updating an existing otoroshi cluster, new kubernetes entities can be expected to be available by the kubernetes plugins. So it could be helpful to check if that's the case before deploying the new version. If you want to automate this process, you can check the [following section](#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl)
+@@@
+
 rbac.yaml
 :   @@snip [rbac.yaml](../snippets/kubernetes/kustomize/base/rbac.yaml) 
 
@@ -144,6 +148,44 @@ crds.yaml
 redis.yaml
 :   @@snip [redis.yaml](../snippets/kubernetes/kustomize/base/redis.yaml) 
 
+
+
+### Updating rbac and crds when upgrading Otoroshi using otoroshictl
+
+Updating rbac and crds definition for an Otoroshi upgrade can be tedious and is quite a manual process. But it can be largely simplified by using [otoroshictl](https://cloud-apim.github.io/otoroshictl/) from our friends at [Cloud APIM](https://www.cloud-apim.com/). 
+
+`otoroshictl` has some commands to automate the creation for `rbac.yaml` and `crds.yaml` for your otoroshi deployments. Using it is quite handy as it will also generate the descriptor for any custom extension your using on your Otoroshi instance. 
+
+First add your otoroshi instance to `otoroshictl` (it may be already done, in that case, just use it with `otoroshictl config use new-cluster`). 
+
+```sh
+$ otoroshictl config add new-cluster \
+    --current \
+    --hostname otoroshi.foo.bar \
+    --port 8443 \
+    --tls \
+    --client-id xxx \
+    --client-secret xxxxx
+```
+
+then you can generate the `crds.yaml` file using the command
+
+```sh
+$ otoroshictl resources crds > crds.yaml
+```
+
+and you can generate the `rbac.yaml` file using the command
+
+```sh
+$ otoroshictl resources rbac --namespace mynamespace > rbac.yaml
+```
+
+you can also directly apply it on your kubernetes cluster
+
+```sh
+$ otoroshictl resources rbac --namespace mynamespace | kubectl apply -f -
+$ otoroshictl resources crds | kubectl apply -f -
+```
 
 ### Deploy a simple otoroshi instanciation on a cloud provider managed kubernetes cluster
 
