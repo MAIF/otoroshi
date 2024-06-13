@@ -17,12 +17,84 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.Implicits._
+
+import java.nio.charset.StandardCharsets
+import scala.collection.concurrent.TrieMap
+
+object KubernetesClientNotifications {
+
+  private val logger = Logger("otoroshi-plugins-kubernetes-client")
+  private val started = new AtomicBoolean(false)
+  private val forbiddenEntities = new TrieMap[String, Unit]()
+  private val missingCustomResourceDefinition = new TrieMap[String, Unit]()
+
+  private def printErrors(): Unit = {
+    if (forbiddenEntities.nonEmpty) {
+      val forbiddenEntities1 = forbiddenEntities.keySet.toSeq
+      forbiddenEntities.clear()
+      logger.warn(
+        s"""
+           |it seems that you cannot access the following Kubernetes entities:
+           |
+           |${forbiddenEntities1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
+           |
+           |You have to create/update the rbac definition for you otoroshi cluster.
+           |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
+           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |Basically something like `$$ otoroshictl resources rbac --namespace mynamespace | kubectl apply -f -` should be enough.
+           |
+           |""".stripMargin)
+    }
+    if (missingCustomResourceDefinition.nonEmpty) {
+      val missingCustomResourceDefinition1 = missingCustomResourceDefinition.keySet.toSeq
+      missingCustomResourceDefinition.clear()
+      logger.warn(
+        s"""
+           |it seems that you did not deploy the following Kubernetes Custom Resource Defintitions:
+           |
+           |${missingCustomResourceDefinition1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
+           |
+           |You have to create/update the CRDs definition for you otoroshi cluster.
+           |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
+           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |Basically something like `$$ otoroshictl resources crds | kubectl apply -f -` should be enough.
+           |
+           |""".stripMargin)
+    }
+  }
+
+  def registerMissionCustomResourceDefinition(name: String): Unit = {
+    if (name.startsWith("proxy.otoroshi.io")) {
+      missingCustomResourceDefinition.putIfAbsent(
+        name
+          .replace("proxy.otoroshi.io/v1", "proxy.otoroshi.io")
+          .replace("v1/", "")
+        , ())
+    }
+  }
+
+  def registerForbiddenEntities(name: String): Unit = {
+    forbiddenEntities.putIfAbsent(
+      name
+          .replace("proxy.otoroshi.io/v1", "proxy.otoroshi.io")
+          .replace("v1/", "")
+    , ())
+  }
+
+  def startIfNeeded(env: Env): Unit = {
+    if (started.compareAndSet(false, true)) {
+      env.otoroshiScheduler.scheduleWithFixedDelay(1.seconds, 10.seconds) { () =>
+        printErrors()
+      }(env.otoroshiExecutionContext)
+    }
+  }
+}
 
 // TODO: watch res to trigger sync
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
@@ -32,14 +104,35 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  KubernetesClientNotifications.startIfNeeded(env)
+
   config.caCert.foreach { cert =>
-    val caCert = Cert.apply("kubernetes-ca-cert", cert, "").copy(id = "kubernetes-ca-cert")
-    DynamicSSLEngineProvider.certificates.find { case (k, c) =>
-      c.id == "kubernetes-ca-cert"
-    } match {
-      case None                                                => caCert.enrich().save()(ec, env)
-      case Some((k, c)) if c.contentHash == caCert.contentHash => ()
-      case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
+    try {
+      val decoded = new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)
+      val caCert = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
+      DynamicSSLEngineProvider.certificates.find { case (k, c) =>
+        c.id == "kubernetes-ca-cert"
+      } match {
+        case None => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash == caCert.contentHash => ()
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
+      }
+    } catch {
+      case e: Throwable => logger.error("error while reading ca-cert", e)
+    }
+  }
+  config.clientCert.foreach { cert =>
+    try {
+      val caCert = Cert.apply("kubernetes-client-cert", cert, config.clientCertKey.get).copy(id = "kubernetes-client-cert")
+      DynamicSSLEngineProvider.certificates.find { case (k, c) =>
+        c.id == "kubernetes-client-cert"
+      } match {
+        case None => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash == caCert.contentHash => ()
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
+      }
+    } catch {
+      case e: Throwable => logger.error("error while reading kubernetes-client-cert", e)
     }
   }
 
@@ -68,6 +161,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             mtls = true,
             loose = config.trust,
             trustAll = config.trust,
+            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty),
             trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
           )
         ),
@@ -126,6 +220,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
             KubernetesNamespace(item)
           })
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("namespaces")
+          resp.ignore()
+          Seq.empty
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("namespaces")
+          resp.ignore()
+          Seq.empty
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchNamespacesAndFilterLabels: bad status ${resp.status}")
@@ -147,6 +249,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesService(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("services")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("services")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchServices: bad status ${resp.status}")
@@ -165,6 +275,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesService(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("services")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("services")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchService: bad status ${resp.status}")
@@ -182,6 +300,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesSecret(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("secrets")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("secrets")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchSecret: bad status ${resp.status}")
@@ -203,6 +329,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesEndpoint(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("endpoints")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("endpoints")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchEndpoints: bad status ${resp.status}")
@@ -221,6 +355,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesEndpoint(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("endpoints")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("endpoints")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchEndpoint: bad status ${resp.status}")
@@ -242,6 +384,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesIngress(item)
               })
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               logger.error(s"bad http status while fetching ingresses: ${resp.status}")
@@ -264,6 +414,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesIngress(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               logger.error(s"bad http status while fetching ingresses: ${resp.status}")
@@ -286,6 +444,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesIngressClass(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingressClasses")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingressClasses")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
@@ -308,6 +474,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesDeployment(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("apps/deployments")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("apps/deployments")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchDeployments: bad status ${resp.status}")
@@ -330,6 +504,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesPod(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("pods")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("pods")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchPods: bad status ${resp.status}")
@@ -358,6 +540,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               (resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesSecret(item)
               }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("secrets")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("secrets")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchSecrets: bad status ${resp.status}")
@@ -380,6 +570,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
                 KubernetesSecret(item)
               })
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("secrets")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition("secrets")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchSecretsAndFilterLabels: bad status ${resp.status}")
@@ -399,6 +597,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesDeployment(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("apps/deployments")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("apps/deployments")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchDeployment: bad status ${resp.status}")
@@ -417,6 +623,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesConfigMap(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("configmaps")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("configmaps")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchConfigMap: bad status ${resp.status}")
@@ -526,6 +740,15 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 .collect { case Success((JsSuccess(item, _), raw)) =>
                   OtoResHolder(raw, item)
                 }
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities(s"proxy.otoroshi.io/${pluralName}")
+              resp.ignore()
+              Seq.empty
+            }
+            else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"proxy.otoroshi.io/${pluralName}")
+              resp.ignore()
+              Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled)
@@ -709,6 +932,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesOpenshiftDnsOperator(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("operator.openshift.io/dnses")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("operator.openshift.io/dnses")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchOpenshiftDnsOperator: bad status ${resp.status}")
@@ -756,6 +987,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesMutatingWebhookConfiguration(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("admissionregistration.k8s.io/mutatingwebhookconfigurations")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("admissionregistration.k8s.io/mutatingwebhookconfigurations")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchMutatingWebhookConfiguration: bad status ${resp.status}")
@@ -807,6 +1046,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .map { resp =>
         if (resp.status == 200) {
           KubernetesValidatingWebhookConfiguration(resp.json).some
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("admissionregistration.k8s.io/validatingwebhookconfigurations")
+          resp.ignore()
+          None
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition("admissionregistration.k8s.io/validatingwebhookconfigurations")
+          resp.ignore()
+          None
         } else {
           resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchValidatingWebhookConfiguration: bad status ${resp.status}")
@@ -855,7 +1102,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None
   ): Source[Seq[ByteString], _] = {
-    watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
+    watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector)
     // Source.combine(
     //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
     //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
@@ -981,8 +1228,16 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                     Source.empty
                   }
               } else if (list.status == 404) {
+                if (api.startsWith("proxy.otoroshi.io/")) {
+                  KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"$api/$resource")
+                } else {
+                  logger.error(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
+                }
                 list.ignore()
-                logger.error(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
+                Source.empty.future
+              } else if (list.status == 403) {
+                KubernetesClientNotifications.registerForbiddenEntities(s"$api/$resource")
+                list.ignore()
                 Source.empty.future
               } else {
                 list.ignore()

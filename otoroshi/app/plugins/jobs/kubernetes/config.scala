@@ -11,6 +11,8 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -19,6 +21,8 @@ case class KubernetesConfig(
     token: Option[String],
     userPassword: Option[String],
     caCert: Option[String],
+    clientCert: Option[String],
+    clientCertKey: Option[String],
     kubeLeader: Boolean,
     trust: Boolean,
     watch: Boolean,
@@ -171,12 +175,19 @@ object KubernetesConfig {
               }
             ),
           token = None,
+          clientCert = (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap { defaultUser =>
+            defaultUser.select("user").select("client-certificate-data").asOpt[String].map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
+          },
+          clientCertKey = (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap { defaultUser =>
+            defaultUser.select("user").select("client-key-data").asOpt[String].map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
+          },
           userPassword =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).map {
+            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
-                val username = (defaultUser \ "user" \ "username").as[String]
-                val password = (defaultUser \ "user" \ "password").as[String]
-                s"$username:$password"
+                for {
+                  username <- (defaultUser \ "user" \ "username").asOpt[String]
+                  password <- (defaultUser \ "user" \ "password").asOpt[String]
+                } yield s"$username:$password"
             },
           caCert =
             (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map {
@@ -267,6 +278,8 @@ object KubernetesConfig {
               ).toOption
             ),
           userPassword = (conf \ "userPassword").asOpt[String],
+          clientCert = (conf \ "clientCert").asOpt[String],
+          clientCertKey = (conf \ "clientCertKey").asOpt[String],
           caCert = (conf \ "cert")
             .asOpt[String]
             .orElse((conf \ "certPath").asOpt[String].map { path =>

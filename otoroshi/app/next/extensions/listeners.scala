@@ -339,7 +339,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
           "HttpListener",
           "http-listeners",
           "http-listener",
-          "http-listeners.extensions.otoroshi.io",
+          "http-listeners.proxy.otoroshi.io",
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[HttpListener](
             HttpListener.format,
