@@ -552,14 +552,14 @@ object NgCustomThrottling {
   def throttlingKey(name: String, group: String)(implicit env: Env): String =
     s"${env.storageRoot}:plugins:custom-throttling:${group}:second:$name"
 
-  def updateQuotas(expr: String, group: String, increment: Long = 1L)(implicit
+  def updateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
     for {
       secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(expr, group), increment)
       secTtl   <- env.datastores.rawDataStore.pttl(throttlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), env.throttlingWindow * 1000)
+                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), ttl) // env.throttlingWindow * 1000)
                   }
     } yield ()
   }
@@ -583,8 +583,8 @@ class NgCustomThrottling extends NgAccessValidator {
   ): Future[Unit] = {
     val group = qconf.computeGroup(ctx, env)
     val expr  = qconf.computeExpression(ctx, env)
-    env.clusterAgent.incrementCustomThrottling(expr, group, increment)
-    NgCustomThrottling.updateQuotas(expr, group, increment)
+    env.clusterAgent.incrementCustomThrottling(expr, group, increment, env.throttlingWindow * 1000)
+    NgCustomThrottling.updateQuotas(expr, group, increment, env.throttlingWindow * 1000)
   }
 
   private def withingQuotas(

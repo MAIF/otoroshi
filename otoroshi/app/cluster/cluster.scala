@@ -1942,10 +1942,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def incrementCustomThrottling(expr: String, group: String, increment: Long): Unit = {
+  def incrementCustomThrottling(expr: String, group: String, increment: Long, ttl: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       val key = s"custom-throttling:$group:$expr"
-      putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.CustomThrottlingIncr(expr, group, 0L.atomic))
+      putQuotaIfAbsent(key, ClusterLeaderUpdateMessage.CustomThrottlingIncr(expr, group, 0L.atomic, ttl))
       getQuotaIncr[ClusterLeaderUpdateMessage.CustomThrottlingIncr](key).foreach(_.increment(increment))
     }
   }
@@ -3267,7 +3267,8 @@ object ClusterLeaderUpdateMessage       {
         CustomThrottlingIncr(
           expr = item.select("e").asString,
           group = item.select("g").asString,
-          calls = item.select("c").asOpt[Long].getOrElse(0L).atomic
+          calls = item.select("c").asOpt[Long].getOrElse(0L).atomic,
+          ttl = item.select("t").asOpt[Long].getOrElse(0L),
         ).some
       case _                 => None
     }
@@ -3368,19 +3369,20 @@ object ClusterLeaderUpdateMessage       {
     }
   }
 
-  case class CustomThrottlingIncr(expr: String, group: String, calls: AtomicLong) extends ClusterLeaderUpdateMessage {
+  case class CustomThrottlingIncr(expr: String, group: String, calls: AtomicLong, ttl: Long) extends ClusterLeaderUpdateMessage {
 
     override def json: JsValue = Json.obj(
       "typ" -> "custthrot",
       "e"   -> expr,
       "g"   -> group,
-      "c"   -> calls.get()
+      "c"   -> calls.get(),
+      "t"   -> ttl
     )
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomThrottling.updateQuotas(expr, group, calls.get())
+      NgCustomThrottling.updateQuotas(expr, group, calls.get(), ttl)
     }
 
     override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
