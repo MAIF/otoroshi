@@ -1922,6 +1922,8 @@ otoroshi {
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
     dynamicBodySizeCompute = true
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
+    allowRedirectQueryParamOnLogin = false
+    allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
   }
   wasm {
   	cache {
@@ -2468,16 +2470,7 @@ otoroshi {
       }
   	}
   }
-  http-listeners = [
-    {
-      id = &quot;static&quot;
-      exclusive = false
-      enabled = true
-      port = 7890
-      http2 = true
-      http3 = false
-    }
-  ]
+  http-listeners = []
   http-listeners-json = ${?OTOROSHI_HTTP_LISTENERS}
 }
 
@@ -3276,6 +3269,7 @@ otoroshi {
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
+    allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
   }
   wasm {
   	cache {
@@ -3640,8 +3634,6 @@ otoroshi {
       }
   	}
   }
-    {
-    }
   http-listeners-json = ${?OTOROSHI_HTTP_LISTENERS}
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server

@@ -402,7 +402,8 @@ spec:
 <p>Bare metal kubernetes clusters don&rsquo;t come with support for external loadbalancers (service of type <code>LoadBalancer</code>). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide software <code>LoadBalancer</code> services to bare metal clusters or you can use and customize examples below.</p></div><div class="callout warning "><div class="callout-title">Warning</div>
 <p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h3><a href="#common-manifests" name="common-manifests" class="anchor"><span class="anchor-link"></span></a>Common manifests</h3>
-<p>the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it&rsquo;s just an example. You can use your own existing setup.</p>
+<p>the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it&rsquo;s just an example. You can use your own existing setup.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>When updating an existing otoroshi cluster, new kubernetes entities can be expected to be available by the kubernetes plugins. So it could be helpful to check if that&rsquo;s the case before deploying the new version. If you want to automate this process, you can check the <a href="#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl">following section</a></p></div>
 <dl>
   <dt>rbac.yaml
   </dt>
@@ -512,6 +513,7 @@ rules:
       - global-configs
       - green-scores
       - coraza-configs
+      - http-listeners
     verbs:
       - get
       - list
@@ -1186,7 +1188,48 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: &quot;object&quot;
-</code></pre></dd>
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;http-listeners.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;HttpListener&quot;
+    plural: &quot;http-listeners&quot;
+    singular: &quot;http-listener&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;simple-admin-users.proxy.otoroshi.io&quot;
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;SimpleAdminUsers&quot;
+    plural: &quot;simple-admin-users&quot;
+    singular: &quot;simple-admin-user&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;</code></pre></dd>
   <dt>redis.yaml
   </dt>
   <dd>
@@ -1324,6 +1367,28 @@ spec:
         requests:
           storage: 100Mi</code></pre></dd>
 </dl>
+<h3><a href="#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl" name="updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl" class="anchor"><span class="anchor-link"></span></a>Updating rbac and crds when upgrading Otoroshi using otoroshictl</h3>
+<p>Updating rbac and crds definition for an Otoroshi upgrade can be tedious and is quite a manual process. But it can be largely simplified by using <a href="https://cloud-apim.github.io/otoroshictl/">otoroshictl</a> from our friends at <a href="https://www.cloud-apim.com/">Cloud APIM</a>. </p>
+<p><code>otoroshictl</code> has some commands to automate the creation for <code>rbac.yaml</code> and <code>crds.yaml</code> for your otoroshi deployments. Using it is quite handy as it will also generate the descriptor for any custom extension your using on your Otoroshi instance. </p>
+<p>First add your otoroshi instance to <code>otoroshictl</code> (it may be already done, in that case, just use it with <code>otoroshictl config use new-cluster</code>). </p>
+<pre class="prettyprint"><code class="language-sh">$ otoroshictl config add new-cluster \
+    --current \
+    --hostname otoroshi.foo.bar \
+    --port 8443 \
+    --tls \
+    --client-id xxx \
+    --client-secret xxxxx
+</code></pre>
+<p>then you can generate the <code>crds.yaml</code> file using the command</p>
+<pre class="prettyprint"><code class="language-sh">$ otoroshictl resources crds &gt; crds.yaml
+</code></pre>
+<p>and you can generate the <code>rbac.yaml</code> file using the command</p>
+<pre class="prettyprint"><code class="language-sh">$ otoroshictl resources rbac --namespace mynamespace &gt; rbac.yaml
+</code></pre>
+<p>you can also directly apply it on your kubernetes cluster</p>
+<pre class="prettyprint"><code class="language-sh">$ otoroshictl resources rbac --namespace mynamespace | kubectl apply -f -
+$ otoroshictl resources crds | kubectl apply -f -
+</code></pre>
 <h3><a href="#deploy-a-simple-otoroshi-instanciation-on-a-cloud-provider-managed-kubernetes-cluster" name="deploy-a-simple-otoroshi-instanciation-on-a-cloud-provider-managed-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy a simple otoroshi instanciation on a cloud provider managed kubernetes cluster</h3>
 <p>Here we have 2 replicas connected to the same redis instance. Nothing fancy. We use a service of type <code>LoadBalancer</code> to expose otoroshi to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the <code>LoadBalancer</code> external <code>CNAME</code> (see the example below)</p>
 <dl>
@@ -2770,7 +2835,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.18.0-dev-dev
+      - image: maif/otoroshi:16.18.2-dev-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -3226,7 +3291,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.18.0-dev-dev
+      - image: maif/otoroshi:16.18.2-dev-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
