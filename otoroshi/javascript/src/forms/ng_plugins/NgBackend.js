@@ -12,7 +12,7 @@ export default {
       help: 'The root URL of the target service',
     },
     client: {
-      label: 'client',
+      label: 'Http client settings',
       type: 'form',
       collapsable: true,
       collapsed: true,
@@ -548,8 +548,8 @@ export default {
     'root',
     'rewrite',
     'targets',
-    'health_check',
     'client',
     'load_balancing',
+    'health_check',
   ]
 };
