@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.3] - 2024-06-13
+
+
+https://github.com/MAIF/otoroshi/milestone/98?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.2...v16.18.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.3
+
+
+### Added 
+
+- make an option to be able to use the redirect on login pattern (#1926)
+- Improve the frontend summary and the backend form in the designer. (#1927)       
+      
+### Changed 
+
+- update documentation about updating rbac and crds (#1929)
+- detect missing entities on kubernetes and print helpful message (#1930)       
+      
+### Fixed 
+
+- update kubernetes entities (#1928)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [16.18.2] - 2024-06-07
 
 
