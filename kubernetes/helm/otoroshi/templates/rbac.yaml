@@ -116,6 +116,7 @@ rules:
       - global-configs
       - green-scores
       - coraza-configs
+      - http-listeners
     verbs:
       - get
       - list
