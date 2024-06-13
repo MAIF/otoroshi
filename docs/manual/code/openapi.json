@@ -4053,8 +4053,8 @@
     "/apis/events.otoroshi.io/v1/data-exporters/_bulk" : {
       "post" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Create multiple DateExporter at the same time",
-        "operationId" : "events.otoroshi.io.DateExporter.bulk_create",
+        "summary" : "Create multiple DataExporter at the same time",
+        "operationId" : "events.otoroshi.io.DataExporter.bulk_create",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4109,7 +4109,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -4118,8 +4118,8 @@
       },
       "put" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Update multiple DateExporter at the same time",
-        "operationId" : "events.otoroshi.io.DateExporter.bulk_update",
+        "summary" : "Update multiple DataExporter at the same time",
+        "operationId" : "events.otoroshi.io.DataExporter.bulk_update",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4174,7 +4174,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -4183,8 +4183,8 @@
       },
       "patch" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Update (using json-patch) multiple DateExporter at the same time",
-        "operationId" : "events.otoroshi.io.DateExporter.bulk_patch",
+        "summary" : "Update (using json-patch) multiple DataExporter at the same time",
+        "operationId" : "events.otoroshi.io.DataExporter.bulk_patch",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4245,8 +4245,8 @@
       },
       "delete" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Delete multiple DateExporter at the same time",
-        "operationId" : "events.otoroshi.io.DateExporter.bulk_delete",
+        "summary" : "Delete multiple DataExporter at the same time",
+        "operationId" : "events.otoroshi.io.DataExporter.bulk_delete",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9292,8 +9292,8 @@
     "/apis/events.otoroshi.io/v1/data-exporters" : {
       "get" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Find all possible DateExporter entities",
-        "operationId" : "events.otoroshi.io.DateExporter.findAll",
+        "summary" : "Find all possible DataExporter entities",
+        "operationId" : "events.otoroshi.io.DataExporter.findAll",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9336,7 +9336,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                    "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                   }
                 }
               }
@@ -9346,8 +9346,8 @@
       },
       "post" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Creates a DateExporter",
-        "operationId" : "events.otoroshi.io.DateExporter.create",
+        "summary" : "Creates a DataExporter",
+        "operationId" : "events.otoroshi.io.DataExporter.create",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9388,7 +9388,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -9400,7 +9400,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
               }
             }
           }
@@ -10879,8 +10879,8 @@
     "/apis/events.otoroshi.io/v1/data-exporters/{id}" : {
       "get" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Find resource of kind DateExporter by its id",
-        "operationId" : "events.otoroshi.io.DateExporter.findById",
+        "summary" : "Find resource of kind DataExporter by its id",
+        "operationId" : "events.otoroshi.io.DataExporter.findById",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -10929,8 +10929,8 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "description" : "Resource of kind DateExporter",
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "description" : "Resource of kind DataExporter",
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -10939,8 +10939,8 @@
       },
       "put" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Updates a specific DateExporter using its id",
-        "operationId" : "events.otoroshi.io.DateExporter.updateById",
+        "summary" : "Updates a specific DataExporter using its id",
+        "operationId" : "events.otoroshi.io.DataExporter.updateById",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -10989,7 +10989,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -11001,7 +11001,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
               }
             }
           }
@@ -11009,8 +11009,8 @@
       },
       "patch" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Updates (using json-patch) a specific DateExporter using its id",
-        "operationId" : "events.otoroshi.io.DateExporter.pathById",
+        "summary" : "Updates (using json-patch) a specific DataExporter using its id",
+        "operationId" : "events.otoroshi.io.DataExporter.pathById",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -11059,7 +11059,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -11071,7 +11071,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
               }
             }
           }
@@ -11079,8 +11079,8 @@
       },
       "delete" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Deletes a specific DateExporter using its id",
-        "operationId" : "events.otoroshi.io.DateExporter.deleteById",
+        "summary" : "Deletes a specific DataExporter using its id",
+        "operationId" : "events.otoroshi.io.DataExporter.deleteById",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -11129,7 +11129,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -15528,8 +15528,8 @@
     "/apis/events.otoroshi.io/v1/data-exporters/_template" : {
       "get" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Return a template of a resource of kind DateExporter",
-        "operationId" : "events.otoroshi.io.DateExporter.template",
+        "summary" : "Return a template of a resource of kind DataExporter",
+        "operationId" : "events.otoroshi.io.DataExporter.template",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -15570,8 +15570,8 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "description" : "Resource of kind DateExporter",
-                  "$ref" : "#/components/schemas/events.otoroshi.io.DateExporter"
+                  "description" : "Resource of kind DataExporter",
+                  "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
               }
             }
@@ -16277,8 +16277,8 @@
     "/apis/events.otoroshi.io/v1/data-exporters/_count" : {
       "get" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
-        "summary" : "Get number of entity of kind DateExporter",
-        "operationId" : "events.otoroshi.io.DateExporter.count",
+        "summary" : "Get number of entity of kind DataExporter",
+        "operationId" : "events.otoroshi.io.DataExporter.count",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -19722,7 +19722,7 @@
         "title" : "R s a k p algo settings",
         "required" : [ "size", "certId" ]
       },
-      "events.otoroshi.io.DateExporter" : {
+      "events.otoroshi.io.DataExporter" : {
         "type" : "object",
         "properties" : {
           "enabled" : {
