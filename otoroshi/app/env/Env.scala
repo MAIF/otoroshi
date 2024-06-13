@@ -480,7 +480,7 @@ class Env(
   lazy val validateRequests: Boolean         =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.requests.validate").getOrElse(true)
   lazy val maxUrlLength: Long                =
-    Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
+    Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(16 * 1024L)
   lazy val maxCookieLength: Long             =
     Option(configuration.underlying.getBytes("otoroshi.requests.maxCookieLength")).map(_.toLong).getOrElse(16 * 1024L)
   lazy val maxHeaderValueLength: Long        = Option(
