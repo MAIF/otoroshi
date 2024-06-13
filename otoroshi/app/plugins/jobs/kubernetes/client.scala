@@ -29,17 +29,16 @@ import scala.collection.concurrent.TrieMap
 
 object KubernetesClientNotifications {
 
-  private val logger = Logger("otoroshi-plugins-kubernetes-client")
-  private val started = new AtomicBoolean(false)
-  private val forbiddenEntities = new TrieMap[String, Unit]()
+  private val logger                          = Logger("otoroshi-plugins-kubernetes-client")
+  private val started                         = new AtomicBoolean(false)
+  private val forbiddenEntities               = new TrieMap[String, Unit]()
   private val missingCustomResourceDefinition = new TrieMap[String, Unit]()
 
   private def printErrors(): Unit = {
     if (forbiddenEntities.nonEmpty) {
       val forbiddenEntities1 = forbiddenEntities.keySet.toSeq
       forbiddenEntities.clear()
-      logger.warn(
-        s"""
+      logger.warn(s"""
            |it seems that you cannot access the following Kubernetes entities:
            |
            |${forbiddenEntities1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
@@ -54,8 +53,7 @@ object KubernetesClientNotifications {
     if (missingCustomResourceDefinition.nonEmpty) {
       val missingCustomResourceDefinition1 = missingCustomResourceDefinition.keySet.toSeq
       missingCustomResourceDefinition.clear()
-      logger.warn(
-        s"""
+      logger.warn(s"""
            |it seems that you did not deploy the following Kubernetes Custom Resource Defintitions:
            |
            |${missingCustomResourceDefinition1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
@@ -74,17 +72,19 @@ object KubernetesClientNotifications {
       missingCustomResourceDefinition.putIfAbsent(
         name
           .replace("proxy.otoroshi.io/v1", "proxy.otoroshi.io")
-          .replace("v1/", "")
-        , ())
+          .replace("v1/", ""),
+        ()
+      )
     }
   }
 
   def registerForbiddenEntities(name: String): Unit = {
     forbiddenEntities.putIfAbsent(
       name
-          .replace("proxy.otoroshi.io/v1", "proxy.otoroshi.io")
-          .replace("v1/", "")
-    , ())
+        .replace("proxy.otoroshi.io/v1", "proxy.otoroshi.io")
+        .replace("v1/", ""),
+      ()
+    )
   }
 
   def startIfNeeded(env: Env): Unit = {
@@ -109,11 +109,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   config.caCert.foreach { cert =>
     try {
       val decoded = new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)
-      val caCert = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
+      val caCert  = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-ca-cert"
       } match {
-        case None => caCert.enrich().save()(ec, env)
+        case None                                                => caCert.enrich().save()(ec, env)
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
         case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
       }
@@ -123,11 +123,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
   config.clientCert.foreach { cert =>
     try {
-      val caCert = Cert.apply("kubernetes-client-cert", cert, config.clientCertKey.get).copy(id = "kubernetes-client-cert")
+      val caCert =
+        Cert.apply("kubernetes-client-cert", cert, config.clientCertKey.get).copy(id = "kubernetes-client-cert")
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-client-cert"
       } match {
-        case None => caCert.enrich().save()(ec, env)
+        case None                                                => caCert.enrich().save()(ec, env)
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
         case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
       }
@@ -744,8 +745,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               KubernetesClientNotifications.registerForbiddenEntities(s"proxy.otoroshi.io/${pluralName}")
               resp.ignore()
               Seq.empty
-            }
-            else if (resp.status == 404) {
+            } else if (resp.status == 404) {
               KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"proxy.otoroshi.io/${pluralName}")
               resp.ignore()
               Seq.empty
@@ -988,11 +988,15 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesMutatingWebhookConfiguration(resp.json).some
         } else if (resp.status == 403) {
-          KubernetesClientNotifications.registerForbiddenEntities("admissionregistration.k8s.io/mutatingwebhookconfigurations")
+          KubernetesClientNotifications.registerForbiddenEntities(
+            "admissionregistration.k8s.io/mutatingwebhookconfigurations"
+          )
           resp.ignore()
           None
         } else if (resp.status == 404) {
-          KubernetesClientNotifications.registerMissionCustomResourceDefinition("admissionregistration.k8s.io/mutatingwebhookconfigurations")
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+            "admissionregistration.k8s.io/mutatingwebhookconfigurations"
+          )
           resp.ignore()
           None
         } else {
@@ -1047,11 +1051,15 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesValidatingWebhookConfiguration(resp.json).some
         } else if (resp.status == 403) {
-          KubernetesClientNotifications.registerForbiddenEntities("admissionregistration.k8s.io/validatingwebhookconfigurations")
+          KubernetesClientNotifications.registerForbiddenEntities(
+            "admissionregistration.k8s.io/validatingwebhookconfigurations"
+          )
           resp.ignore()
           None
         } else if (resp.status == 404) {
-          KubernetesClientNotifications.registerMissionCustomResourceDefinition("admissionregistration.k8s.io/validatingwebhookconfigurations")
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+            "admissionregistration.k8s.io/validatingwebhookconfigurations"
+          )
           resp.ignore()
           None
         } else {

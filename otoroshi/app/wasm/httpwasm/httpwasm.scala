@@ -119,11 +119,10 @@ class NgHttpWasm extends NgRequestTransformer {
           if (res.results.getLength > 0) {
             val ctxNext = res.results.getValue(0).v.i64
 
-
             val data = vmData.get
 
             val reqCtx = ctxNext >> 32
-            val next = ctxNext & 0x1
+            val next   = ctxNext & 0x1
 
             println(s"reqCtx $reqCtx next $next")
 

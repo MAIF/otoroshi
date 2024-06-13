@@ -281,7 +281,9 @@ class MultiAuthModule extends NgAccessValidator {
           case None        => {
             val req             = ctx.request
             val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-            val redirect        = if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect) else baseRedirect
+            val redirect        =
+              if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
+              else baseRedirect
             val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
             val descriptorId    = ctx.route.legacy.id
             val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
@@ -375,7 +377,9 @@ class AuthModule extends NgAccessValidator {
                     NgAccess.NgAllowed.vfuture
                   case None        => {
                     val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-                    val redirect        = if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect) else baseRedirect
+                    val redirect        =
+                      if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
+                      else baseRedirect
                     val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
                     val descriptorId    = descriptor.id
                     val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")

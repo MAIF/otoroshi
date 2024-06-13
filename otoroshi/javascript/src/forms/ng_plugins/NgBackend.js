@@ -451,8 +451,8 @@ export default {
         shouldKeepFirstItem: true,
         v2: {
           template: {
-            hostname: "mirror.otoroshi.io",
-            protocol: "HTTP/1.1",
+            hostname: 'mirror.otoroshi.io',
+            protocol: 'HTTP/1.1',
             port: 443,
             weight: 0,
             tls: true,
@@ -461,18 +461,14 @@ export default {
               loose: false,
               trust_all: false,
               certs: [],
-              trusted_certs: []
+              trusted_certs: [],
             },
             ip_address: null,
             predicate: {
-              type: "AlwaysMatch"
-            }
+              type: 'AlwaysMatch',
+            },
           },
-          folded: [
-            'hostname',
-            'port',
-            'protocol'
-          ],
+          folded: ['hostname', 'port', 'protocol'],
           flow: [
             'hostname',
             'port',
@@ -482,9 +478,9 @@ export default {
             'tls',
             'predicate',
             'tls_config',
-          ]
-        }
-      }
+          ],
+        },
+      },
       // flow: [
       //   {
       //     type: 'group',
@@ -544,12 +540,5 @@ export default {
       flow: ['type', 'ratio'],
     },
   },
-  flow: [
-    'root',
-    'rewrite',
-    'targets',
-    'client',
-    'load_balancing',
-    'health_check',
-  ]
+  flow: ['root', 'rewrite', 'targets', 'client', 'load_balancing', 'health_check'],
 };

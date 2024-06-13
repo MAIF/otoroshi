@@ -207,7 +207,7 @@ export class NgStep extends Component {
 
     if (version === 'v1') {
       return (
-        <ValidationRenderer key={this.props.path.join('/')} validation={validation} >
+        <ValidationRenderer key={this.props.path.join('/')} validation={validation}>
           <Renderer
             validation={validation}
             {...this.props}
@@ -227,7 +227,8 @@ export class NgStep extends Component {
             renderer={Renderer}
             validation={validation}
             onChange={this.onChange}
-            itemProps={this.props} />
+            itemProps={this.props}
+          />
         </ValidationRenderer>
       );
     }
@@ -586,8 +587,8 @@ export class NgForm extends Component {
             !config.setBreadcrumb
               ? null
               : () => {
-                config.setBreadcrumb(fullPath);
-              }
+                  config.setBreadcrumb(fullPath);
+                }
           }
           useBreadcrumb={config.useBreadcrumb}
           path={fullPath}
@@ -845,10 +846,10 @@ export class NgForm extends Component {
             toHome={
               root
                 ? () => {
-                  this.setState({
-                    breadcrumb: [],
-                  });
-                }
+                    this.setState({
+                      breadcrumb: [],
+                    });
+                  }
                 : null
             }
             setBreadcrumb={(i) => {

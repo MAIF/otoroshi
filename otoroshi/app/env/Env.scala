@@ -205,7 +205,9 @@ class Env(
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
 
   lazy val allowRedirectQueryParamOnLogin: Boolean =
-    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.allowRedirectQueryParamOnLogin").getOrElse(false)
+    configuration
+      .getOptionalWithFileSupport[Boolean]("otoroshi.options.allowRedirectQueryParamOnLogin")
+      .getOrElse(false)
 
   lazy val customLogo: Option[String] = configuration.getOptionalWithFileSupport[String]("app.instance.logo")
 

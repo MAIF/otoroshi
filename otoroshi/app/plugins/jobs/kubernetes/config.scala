@@ -175,12 +175,24 @@ object KubernetesConfig {
               }
             ),
           token = None,
-          clientCert = (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap { defaultUser =>
-            defaultUser.select("user").select("client-certificate-data").asOpt[String].map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
-          },
-          clientCertKey = (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap { defaultUser =>
-            defaultUser.select("user").select("client-key-data").asOpt[String].map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
-          },
+          clientCert =
+            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+              defaultUser =>
+                defaultUser
+                  .select("user")
+                  .select("client-certificate-data")
+                  .asOpt[String]
+                  .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
+            },
+          clientCertKey =
+            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+              defaultUser =>
+                defaultUser
+                  .select("user")
+                  .select("client-key-data")
+                  .asOpt[String]
+                  .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
+            },
           userPassword =
             (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>

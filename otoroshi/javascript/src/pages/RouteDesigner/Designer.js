@@ -13,7 +13,7 @@ import {
   getCategories,
   getOldPlugins,
   getPlugins,
-  routePorts
+  routePorts,
 } from '../../services/BackOfficeServices';
 
 import { Backend, Frontend, Plugins } from '../../forms/ng_plugins';
@@ -614,7 +614,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -630,7 +630,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -647,9 +647,9 @@ class Designer extends React.Component {
       this.props.value
         ? Promise.resolve(this.props.value)
         : nextClient.fetch(
-          this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-          this.props.routeId
-        ),
+            this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+            this.props.routeId
+          ),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -657,10 +657,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                showAdvancedDesignerView: (pluginName) => {
-                  this.setState({ advancedDesignerView: pluginName });
-                },
-              })
+                  showAdvancedDesignerView: (pluginName) => {
+                    this.setState({ advancedDesignerView: pluginName });
+                  },
+                })
               : plugin.config_schema,
           };
         })
@@ -671,11 +671,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-            ...r,
-            overridePlugins: true,
-            plugins: [],
-            ...r.routes[~~this.props.viewPlugins],
-          }
+              ...r,
+              overridePlugins: true,
+              plugins: [],
+              ...r.routes[~~this.props.viewPlugins],
+            }
           : r;
 
       if (route.error) {
@@ -738,41 +738,43 @@ class Designer extends React.Component {
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
 
-      routePorts(route.id)
-        .then(ports => {
-          this.setState(
-            {
-              ports,
-              backends,
-              loading: false,
-              categories: categories.filter((category) => !['Job'].includes(category)),
-              route: { ...routeWithNodeId },
-              originalRoute: { ...routeWithNodeId },
-              plugins: formattedPlugins.map((p) => ({
-                ...p,
-                selected: p.plugin_multi_inst
-                  ? false
-                  : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-              })),
-              nodes,
-              frontend: {
-                ...Frontend,
-                config_schema: toUpperCaseLabels(Frontend.schema),
-                config_flow: Frontend.flow,
-                nodeId: 'Frontend',
-              },
-              backend: {
-                ...Backend,
-                config_schema: toUpperCaseLabels(Backend.schema),
-                config_flow: Backend.flow,
-                nodeId: 'Backend',
-              },
-              selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+      routePorts(route.id).then((ports) => {
+        this.setState(
+          {
+            ports,
+            backends,
+            loading: false,
+            categories: categories.filter((category) => !['Job'].includes(category)),
+            route: { ...routeWithNodeId },
+            originalRoute: { ...routeWithNodeId },
+            plugins: formattedPlugins.map((p) => ({
+              ...p,
+              selected: p.plugin_multi_inst
+                ? false
+                : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+            })),
+            nodes,
+            frontend: {
+              ...Frontend,
+              config_schema: toUpperCaseLabels(Frontend.schema),
+              config_flow: Frontend.flow,
+              nodeId: 'Frontend',
             },
-            this.injectNavbarMenu
-          );
-        })
-    })
+            backend: {
+              ...Backend,
+              config_schema: toUpperCaseLabels(Backend.schema),
+              config_flow: Backend.flow,
+              nodeId: 'Backend',
+            },
+            selectedNode: this.getSelectedNodeFromLocation(
+              routeWithNodeId.plugins,
+              formattedPlugins
+            ),
+          },
+          this.injectNavbarMenu
+        );
+      });
+    });
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
@@ -985,14 +987,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                    plugin: newNode.id,
-                    // [newNode.configRoot]: {
-                    ...newNode.config,
-                    // },
-                  }
+                      plugin: newNode.id,
+                      // [newNode.configRoot]: {
+                      ...newNode.config,
+                      // },
+                    }
                   : {
-                    ...newNode.config,
-                  },
+                      ...newNode.config,
+                    },
               },
             ],
           },
@@ -1255,8 +1257,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-              {}
+                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+                {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1539,17 +1541,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1900,7 +1902,7 @@ const UnselectedNode = ({
   deleteRoute,
   selectFrontend,
   selectBackend,
-  ports
+  ports,
 }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
@@ -1911,18 +1913,18 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
+              {m}
+            </span>
+          ))
         : [<span className="badge bg-success">ALL</span>];
 
-    const unsecuredCopyToClipboard = text => {
-      const textArea = document.createElement("textarea");
+    const unsecuredCopyToClipboard = (text) => {
+      const textArea = document.createElement('textarea');
       textArea.value = text;
       document.body.appendChild(textArea);
       textArea.focus();
@@ -1933,7 +1935,7 @@ const UnselectedNode = ({
         console.error('Unable to copy to clipboard', err);
       }
       document.body.removeChild(textArea);
-    }
+    };
 
     const copy = (value, setCopyIconName) => {
       if (window.isSecureContext && navigator.clipboard) {
@@ -1941,25 +1943,24 @@ const UnselectedNode = ({
       } else {
         unsecuredCopyToClipboard(value);
       }
-      setCopyIconName('fas fa-check')
+      setCopyIconName('fas fa-check');
 
       setTimeout(() => {
-        setCopyIconName('fas fa-copy')
-      }, 2000)
-    }
+        setCopyIconName('fas fa-copy');
+      }, 2000);
+    };
 
-    const routeEntries = idx => {
-      const isSecured = route.plugins.find(p => p.plugin.includes("ForceHttpsTraffic"))
+    const routeEntries = (idx) => {
+      const isSecured = route.plugins.find((p) => p.plugin.includes('ForceHttpsTraffic'));
 
-      const domain = route.frontend.domains[idx]
+      const domain = route.frontend.domains[idx];
 
-      if (isSecured)
-        return `https://${domain}:${ports.https}`
+      if (isSecured) return `https://${domain}:${ports.https}`;
 
-      return `http://${domain}:${ports.http}`
-    }
+      return `http://${domain}:${ports.http}`;
+    };
 
-    const goTo = idx => window.open(routeEntries(idx), '_blank');
+    const goTo = (idx) => window.open(routeEntries(idx), '_blank');
 
     return (
       <>
@@ -1995,29 +1996,31 @@ const UnselectedNode = ({
             }}
           >
             {frontend.domains.map((domain, idx) => {
-              const [copyIconName, setCopyIconName] = useState("fas fa-copy")
+              const [copyIconName, setCopyIconName] = useState('fas fa-copy');
               const exact = frontend.exact;
               const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
               const start = 'http://';
               return allMethods.map((method, i) => {
                 return (
-                  <div
-                    className='d-flex align-items-center mx-3 mb-1'
-                    key={`allmethods-${i}`}
-                  >
+                  <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
                     <div style={{ width: 60 }}>{method}</div>
                     <span style={{ fontFamily: 'monospace' }}>
                       {routeEntries(idx)}
                       {end}
                     </span>
-                    <div className='d-flex align-items-center ms-auto'>
-                      <button className='btn btn-sm btn-quiet' title="Copy URL"
-                        onClick={() => copy(routeEntries(idx), setCopyIconName)}>
+                    <div className="d-flex align-items-center ms-auto">
+                      <button
+                        className="btn btn-sm btn-quiet"
+                        title="Copy URL"
+                        onClick={() => copy(routeEntries(idx), setCopyIconName)}
+                      >
                         <i className={copyIconName} />
                       </button>
-                      <button className='btn btn-sm btn-quiet ms-1'
+                      <button
+                        className="btn btn-sm btn-quiet ms-1"
                         title={`Go to ${start}${domain}`}
-                        onClick={() => goTo(idx)}>
+                        onClick={() => goTo(idx)}
+                      >
                         <i className="fas fa-arrow-right" />
                       </button>
                     </div>
@@ -2089,7 +2092,7 @@ const UnselectedNode = ({
             {backend.targets
               .filter((f) => f)
               .map((target, i) => {
-                const [copyIconName, setCopyIconName] = useState("fas fa-copy")
+                const [copyIconName, setCopyIconName] = useState('fas fa-copy');
                 const path = backend.root;
                 const rewrite = backend.rewrite;
                 const hostname = target.ip_address
@@ -2099,13 +2102,16 @@ const UnselectedNode = ({
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                    target.tls_config.enabled &&
-                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                      .length > 0 ? (
-                    <span className="badge bg-warning text-dark" style={{
-                      marginRight: 10,
-                      fontSize: '.75rem'
-                    }}>
+                  target.tls_config.enabled &&
+                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                    .length > 0 ? (
+                    <span
+                      className="badge bg-warning text-dark"
+                      style={{
+                        marginRight: 10,
+                        fontSize: '.75rem',
+                      }}
+                    >
                       mTLS
                     </span>
                   ) : (
@@ -2113,15 +2119,18 @@ const UnselectedNode = ({
                   );
                 const backendURL = `${start}${hostname}:${target.port}`;
                 return (
-                  <div className='d-flex align-items-center mx-3 mb-1'
+                  <div
+                    className="d-flex align-items-center mx-3 mb-1"
                     style={{
-                      gap: 6
+                      gap: 6,
                     }}
                     key={`backend-targets${i}`}
                   >
-                    <span style={{ fontFamily: 'monospace' }} className='d-flex align-items-center'>
+                    <span style={{ fontFamily: 'monospace' }} className="d-flex align-items-center">
                       <div style={{ width: 60 }}>
-                        <span className="badge bg-success" style={{ fontSize: '.75rem' }}>ALL</span>
+                        <span className="badge bg-success" style={{ fontSize: '.75rem' }}>
+                          ALL
+                        </span>
                       </div>
                       {mtls}
                       {start}
@@ -2129,17 +2138,21 @@ const UnselectedNode = ({
                       {end}
                     </span>
 
-                    <div className='d-flex align-items-center ms-auto'>
+                    <div className="d-flex align-items-center ms-auto">
                       {/* {navigator.clipboard && window.isSecureContext && ( */}
-                      <button className='btn btn-sm btn-quiet'
+                      <button
+                        className="btn btn-sm btn-quiet"
                         title="Copy URL"
-                        onClick={() => copy(backendURL, setCopyIconName)}>
+                        onClick={() => copy(backendURL, setCopyIconName)}
+                      >
                         <i className={copyIconName} />
                       </button>
                       {/* )} */}
-                      <button className='btn btn-sm btn-quiet ms-1'
+                      <button
+                        className="btn btn-sm btn-quiet ms-1"
                         title={`Go to ${backendURL}`}
-                        onClick={() => window.open(backendURL, '_blank')}>
+                        onClick={() => window.open(backendURL, '_blank')}
+                      >
                         <i className="fas fa-arrow-right" />
                       </button>
                     </div>
@@ -2174,8 +2187,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -2329,7 +2343,7 @@ class EditView extends React.Component {
           collapsable: isPluginWithConfiguration ? true : false,
           collapsed: false,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA
+          schema: PLUGIN_INFORMATIONS_SCHEMA,
         },
       };
       if (isPluginWithConfiguration)
@@ -2539,8 +2553,9 @@ class EditView extends React.Component {
               )}
               {!asJsonFormat && (
                 <>
-                  {selectedNode.id === "Backend" ?
-                    <BackendForm state={this.state} onChange={this.onValidate} /> :
+                  {selectedNode.id === 'Backend' ? (
+                    <BackendForm state={this.state} onChange={this.onValidate} />
+                  ) : (
                     <NgForm
                       ref={this.formRef}
                       value={form.value}
@@ -2548,7 +2563,8 @@ class EditView extends React.Component {
                       flow={hasCustomPluginForm ? ['status'] : form.flow}
                       onChange={this.onValidate}
                       useBreadcrumb={true}
-                    />}
+                    />
+                  )}
                   {!['Frontend', 'Backend'].includes(id) && (
                     <div className="d-flex">
                       <button className="btn btn-sm btn-danger ms-auto mt-3" onClick={onRemove}>

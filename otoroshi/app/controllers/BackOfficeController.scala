@@ -1918,10 +1918,12 @@ class BackOfficeController(
     env.datastores.routeDataStore.findById(routeId) flatMap {
       case None        => NotFound(Json.obj("error" -> "route not found")).future
       case Some(route) =>
-        Ok(Json.obj(
-          "https" -> env.exposedHttpsPortInt,
-          "http" -> env.exposedHttpPortInt
-          )).future
+        Ok(
+          Json.obj(
+            "https" -> env.exposedHttpsPortInt,
+            "http"  -> env.exposedHttpPortInt
+          )
+        ).future
     }
   }
 
