@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.4] - 2024-06-13
+
+
+https://github.com/MAIF/otoroshi/milestone/99?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.3...v16.18.4
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.4
+
+
+
+### Changed 
+
+- make throttling windows configurable (#1931)       
+      
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.18.3] - 2024-06-13
 
 
