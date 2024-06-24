@@ -346,7 +346,7 @@ type: Opaque
 stringData:
   oto.conf: &gt;
     include &quot;application.conf&quot;
-    app {
+    otoroshi {
       storage = &quot;redis&quot;
       domain = &quot;apis.my.domain&quot;
     }
@@ -2835,7 +2835,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.18.3-dev-dev
+      - image: maif/otoroshi:16.18.4-dev-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -3291,7 +3291,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.18.3-dev-dev
+      - image: maif/otoroshi:16.18.4-dev-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

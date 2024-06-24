@@ -529,7 +529,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     durableWrites = true
     durableWrites = ${?CASSANDRA_DURABLE_WRITES}
     durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
-    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
+    basic.contact-points = [ ${otoroshi.cassandra.host}&quot;:&quot;${otoroshi.cassandra.port} ]
     basic.session-name = &quot;otoroshi&quot;
     basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
     basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
@@ -881,7 +881,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 http.port = 8080
 
-app {
+otoroshi {
   storage = &quot;inmemory&quot;
   importFrom = &quot;./my-state.json&quot;
   env = &quot;prod&quot;
