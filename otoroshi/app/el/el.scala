@@ -177,6 +177,7 @@ object GlobalExpressionLanguage {
 
             case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
             case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
+            case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
             case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
               apiKey.get.metadata.get(field).getOrElse(dv)
             case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>

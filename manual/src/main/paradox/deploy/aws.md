@@ -169,7 +169,7 @@ For the second option your otoroshi.conf would look like this :
 ``` 
    include "application.conf"
    http.port = 8080
-   app {
+   otoroshi {
      env = "prod"
      domain = "mysubdomain.oto.tools"
      rootScheme = "https"

@@ -155,7 +155,7 @@ include "application.conf"
 
 http.port = 8080
 
-app {
+otoroshi {
   storage = "inmemory"
   importFrom = "./my-state.json"
   env = "prod"

@@ -61,7 +61,7 @@ type: Opaque
 stringData:
   oto.conf: >
     include "application.conf"
-    app {
+    otoroshi {
       storage = "redis"
       domain = "apis.my.domain"
     }

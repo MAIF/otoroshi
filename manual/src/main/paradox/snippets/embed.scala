@@ -47,7 +47,7 @@ object MyApp extends App {
       rootDir = rootDir
     ),
     ConfigFactory.parseString(s"""
-      |app {
+      |otoroshi {
       |  storage = "file"
       |  importFrom = "./my-state.json"
       |  env = "prod"
