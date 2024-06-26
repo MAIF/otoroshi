@@ -2,19 +2,31 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.nimbusds.jose.crypto.{AESEncrypter, RSADecrypter, RSAEncrypter}
+import com.nimbusds.jose.jwk.RSAKey
+import com.nimbusds.jose.{EncryptionMethod, JWEAlgorithm, JWEHeader, JWEObject, Payload}
+import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import otoroshi.env.Env
 import otoroshi.models.{DefaultToken, InCookie, InHeader, InQueryParam, OutputMode, RefJwtVerifier}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{Result, Results}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
+import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.pki.models.GenKeyPairQuery
 
 import java.nio.charset.StandardCharsets
+import java.security.KeyPair
+import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
+import java.util.{Date, UUID}
+import javax.crypto.{Cipher, KeyGenerator}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -403,6 +415,197 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
               }
             }
         }
+    }
+  }
+}
+
+
+case class NgJweSignerConfig(
+  keyManagementAlgorithm: JWEAlgorithm = JWEAlgorithm.RSA_OAEP_256,
+  contentEncryptionAlgorithm: EncryptionMethod = EncryptionMethod.A128CBC_HS256,
+  certId: Option[String] = None
+) extends NgPluginConfig {
+  def json: JsValue = NgJweSignerConfig.format.writes(this)
+}
+
+object NgJweSignerConfig {
+  val format = new Format[NgJweSignerConfig] {
+    override def reads(json: JsValue): JsResult[NgJweSignerConfig] = Try {
+      NgJweSignerConfig(
+        keyManagementAlgorithm = json.select("key_management_algorithm").asOpt[String]
+          .map(keyManagementAlgorithmFromString).getOrElse(JWEAlgorithm.RSA_OAEP_256),
+        contentEncryptionAlgorithm = json.select("content_encryption_algorithm").asOpt[String]
+        .map(contentEncryptionAlgorithmFromString).getOrElse(EncryptionMethod.A128CBC_HS256),
+        certId = json.select("certId").asOpt[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: NgJweSignerConfig): JsValue             = Json.obj(
+
+    )
+  }
+
+  private def keyManagementAlgorithmFromString(value: String) = value match {
+    case "RSA_OAEP_256" => JWEAlgorithm.RSA_OAEP_256
+    case "RSA_OAEP_384" => JWEAlgorithm.RSA_OAEP_384
+    case "RSA_OAEP_512" => JWEAlgorithm.RSA_OAEP_512
+  }
+
+  private def contentEncryptionAlgorithmFromString(value: String) = value match {
+    case "A128CBC_HS256" => EncryptionMethod.A128CBC_HS256
+    case "A192CBC_HS384" => EncryptionMethod.A192CBC_HS384
+    case "A256CBC_HS512" => EncryptionMethod.A256CBC_HS512
+    case "A128GCM" => EncryptionMethod.A128GCM
+    case "A192GCM" => EncryptionMethod.A192GCM
+    case "A256GCM" => EncryptionMethod.A256GCM
+  }
+}
+
+
+class JweSigner extends NgAccessValidator with NgRequestTransformer {
+
+  override def defaultConfigObject: Option[NgPluginConfig] = NgJweSignerConfig().some
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def usesCallbacks: Boolean      = false
+  override def transformsRequest: Boolean  = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean    = false
+
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = true
+  override def isTransformResponseAsync: Boolean = false
+  override def name: String                      = "JWE signer"
+  override def description: Option[String]       = "This plugin can only generate token".some
+
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
+
+    config.certId match {
+      case Some(certId) =>
+        val cert = DynamicSSLEngineProvider.certificates
+            .get(certId)
+            .orElse {
+              DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+            }
+
+        cert match {
+          case Some(cert) =>
+            val keyPair = cert.cryptoKeyPair
+            val jsonKeypair = new RSAKey.Builder(keyPair.getPublic.asInstanceOf[RSAPublicKey])
+              .keyID(cert.id)
+              .build()
+              .toJSONString
+              .parseJson
+
+            val alg = config.keyManagementAlgorithm
+            val enc = config.contentEncryptionAlgorithm
+            val kid = jsonKeypair.select("kid").asOpt[String].orNull
+
+            val header = new JWEHeader(alg, enc, null, null, null, null, null, null, null, null, null, kid,
+                null, null, null, null, null, 0, null, null, null, null, null)
+
+            val claimsSet = new JWTClaimsSet.Builder()
+            claimsSet.issuer(env.Headers.OtoroshiIssuer)
+            claimsSet.subject(env.Headers.OtoroshiIssuer)
+            claimsSet.audience(ctx.route.name)
+            claimsSet.expirationTime(DateTime.now().plus(30000).toDate)
+            claimsSet.notBeforeTime(DateTime.now().toDate)
+            claimsSet.jwtID(IdGenerator.uuid)
+
+            val jwe = new EncryptedJWT(header, claimsSet.build())
+
+            jwe.encrypt(new RSAEncrypter(keyPair.getPublic.asInstanceOf[RSAPublicKey]));
+
+            val jweToken = jwe.serialize()
+
+            Right(ctx.otoroshiRequest.copy(
+              headers = ctx.otoroshiRequest.headers ++ Map("Authorization" -> s"Bearer $jweToken")))
+              .future
+          case None =>  Results
+            .BadRequest(Json.obj("error" -> "invalid configuration"))
+            .left
+            .future
+        }
+
+      case None =>
+         Results
+            .BadRequest(Json.obj("error" -> "invalid configuration"))
+            .left
+            .future
+    }
+  }
+}
+
+class JweExtractor extends NgAccessValidator with NgRequestTransformer {
+
+  override def defaultConfigObject: Option[NgPluginConfig] = NgJweSignerConfig().some
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def usesCallbacks: Boolean      = false
+  override def transformsRequest: Boolean  = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean    = false
+
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = true
+  override def isTransformResponseAsync: Boolean = false
+  override def name: String                      = "JWE extractor"
+  override def description: Option[String]       = "This plugin validates and extracts the payload of JWE".some
+
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
+
+    config.certId match {
+      case Some(certId) =>
+        val cert = DynamicSSLEngineProvider.certificates
+            .get(certId)
+            .orElse {
+              DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+            }
+
+        cert match {
+          case Some(cert) =>
+            val keyPair = cert.cryptoKeyPair
+
+            val authorizationHeader = ctx.otoroshiRequest.headers.get("Authorization").map(_.replace("Bearer ", ""))
+
+            authorizationHeader match {
+              case Some(token) =>
+                Try {
+                  val test = JWEObject.parse(token)
+                  test.decrypt(new RSADecrypter(keyPair.getPrivate.asInstanceOf[RSAPrivateKey]))
+
+                Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map("Authorization" -> test.getPayload.toString)))
+                  .future
+                } recover  {
+                  case e: Throwable =>
+                    println(e)
+                    Left(Results.Unauthorized(Json.obj("error" -> "invalid token"))).future
+                } get
+              case None => Right(ctx.otoroshiRequest).future
+            }
+
+          case None =>  Right(ctx.otoroshiRequest).future
+        }
+
+      case None => Right(ctx.otoroshiRequest).future
     }
   }
 }

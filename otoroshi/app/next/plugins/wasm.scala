@@ -61,7 +61,13 @@ object AttrsHelper {
       val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
       val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
       if (clearAttrs) {
+        val context: Map[String, String]  = attrs.get(otoroshi.plugins.Keys.ElCtxKey).get
+        val counterIn                     = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+        val counterOut                    = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
         attrs.clear()
+        attrs.put(otoroshi.plugins.Keys.ElCtxKey -> context)
+        attrs.put(otoroshi.plugins.Keys.RequestCounterInKey -> counterIn)
+        attrs.put(otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut)
       } else {
         delAttrs.foreach { key =>
           attrs match {

@@ -73,10 +73,11 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def findAllOps(
       req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Cert]]] = {
+    val keypair = req.queryString.get("keypair").map(_.last).getOrElse("false").toBoolean
     env.datastores.certificatesDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
-          entity = seq,
+          entity = if (keypair) seq.filter(_.keypair) else seq,
           action = "ACCESS_ALL_CERTIFICATES",
           message = "User accessed all certificates",
           metadata = Json.obj(),
