@@ -114,7 +114,7 @@ object InHeader                                        extends FromJson[InHeader
       Right(
         InHeader(
           (json \ "name").as[String],
-          (json \ "remove").as[String]
+          (json \ "remove").asOpt[String].getOrElse("")
         )
       )
     } recover { case e =>
