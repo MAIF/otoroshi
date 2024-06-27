@@ -91,7 +91,11 @@ export default {
           fields: ['name'],
         },
       ],
+    },
+    payload: {
+      label: 'Claims',
+      type: 'object',
     }
   },
-  config_flow: ['key_management_algorithm', 'content_encryption_algorithm', 'certId', 'source'],
+  config_flow: ['key_management_algorithm', 'content_encryption_algorithm', 'payload', 'certId', 'source'],
 };

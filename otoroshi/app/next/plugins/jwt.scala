@@ -28,7 +28,9 @@ import java.security.KeyPair
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
+import scala.collection.parallel.immutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 import scala.util.{Failure, Success, Try}
 
 case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends NgPluginConfig {
@@ -427,7 +429,8 @@ case class NgJweSignerConfig(
   certId: Option[String] = None,
   source: JwtTokenLocation = InHeader("X-JWT-Token"),
   forwardLocation: JwtTokenLocation = InHeader("X-JWT-Token"),
-  strict: Boolean = false
+  strict: Boolean = false,
+  payload: Map[String, String] = Map.empty
 ) extends NgPluginConfig {
   def json: JsValue = NgJweSignerConfig.format.writes(this)
 }
@@ -443,7 +446,8 @@ object NgJweSignerConfig {
         certId = json.select("certId").asOpt[String],
         source = JwtTokenLocation.fromJson((json \ "source").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
         forwardLocation = JwtTokenLocation.fromJson((json \ "forward_location").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
-        strict = json.select("strict").asOpt[Boolean].getOrElse(false)
+        strict = json.select("strict").asOpt[Boolean].getOrElse(false),
+        payload = json.select("payload").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -455,7 +459,8 @@ object NgJweSignerConfig {
       "certId" -> o.certId,
       "source" -> o.source.asJson,
       "forward_location" -> o.forwardLocation.asJson,
-      "strict" -> o.strict
+      "strict" -> o.strict,
+      "metadata" -> o.payload
     )
   }
 
@@ -548,6 +553,32 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             claimsSet.expirationTime(DateTime.now().plus(30000).toDate)
             claimsSet.notBeforeTime(DateTime.now().toDate)
             claimsSet.jwtID(IdGenerator.uuid)
+
+            val interpolatedToken = JwtExpressionLanguage
+                  .fromJson(
+                    config.payload.foldLeft(Json.obj()) { case (acc, item) => acc.deepMerge(Json.obj(item._1 -> item._2)) },
+                    Some(ctx.request),
+                    ctx.route.serviceDescriptor.some,
+                    None,
+                    ctx.apikey,
+                    ctx.user,
+                    Map.empty[String, String],
+                    attrs = ctx.attrs,
+                    env
+                  )
+                  .as[JsObject]
+
+            interpolatedToken.value.foreach { case (key, value) =>
+              val newValue = value match {
+                case JsNull => ""
+                case boolean: JsBoolean => boolean
+                case JsNumber(value) => value
+                case JsString(value) => value
+                case JsArray(value) => value
+                case o @ JsObject(_) => Json.stringify(o)
+              }
+              claimsSet.claim(key, newValue)
+            }
 
             val jwe = new EncryptedJWT(header, claimsSet.build())
             jwe.encrypt(new RSAEncrypter(keyPair.getPublic.asInstanceOf[RSAPublicKey]));
