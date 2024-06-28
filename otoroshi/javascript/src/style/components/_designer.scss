@@ -601,6 +601,11 @@
     right: 0;
     z-index: 1050;
     background-color: #494948a6;
+    transition: all .2s ease-in-out;
+}
+
+.wizard--hidden {
+    margin-left: 100vw;
 }
 
 .wizard-container {

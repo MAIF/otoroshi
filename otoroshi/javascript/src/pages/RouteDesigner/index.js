@@ -16,7 +16,6 @@ import { RouteWizard } from './RouteWizard';
 import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
-import { HelpWrapper } from '../../components/inputs';
 import { FeedbackButton } from './FeedbackButton';
 import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
@@ -37,7 +36,8 @@ function DuplicateButton({ value, history }) {
         window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
           if (ok) {
             nextClient
-              .create(kind, {
+              .forEntityNext(kind)
+              .create({
                 ...value,
                 name: value.name + ' (duplicated)',
                 id: newId,
@@ -283,9 +283,12 @@ class Manager extends React.Component {
   }
 
   loadRoute = () => {
-    nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
-      this.setState({ value, loading: false, template: value });
-    });
+    nextClient
+      .forEntityNext(nextClient.ENTITIES[this.props.entity.fetchName])
+      .template()
+      .then((value) => {
+        this.setState({ value, loading: false, template: value });
+      });
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -554,7 +557,8 @@ class RouteDesigner extends React.Component {
       this.setState({ loading: false });
     } else if (routeId) {
       nextClient
-        .fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId)
+        .forEntityNext(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName])
+        .findById(routeId)
         .then((res) => {
           if (!res.error) {
             this.setState({ value: res, loading: false });

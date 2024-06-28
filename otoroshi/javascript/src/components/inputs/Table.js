@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Form } from '.';
 import { NgForm } from '../nginputs/form';
@@ -7,6 +7,7 @@ import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
 import { NgSelectRenderer } from '../nginputs';
 import _, { conforms } from 'lodash';
+import { Button } from '../Button';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -26,6 +27,39 @@ function LoadingComponent(props) {
       {props.loadingText}
     </div>
   );
+}
+
+function ColumnsSelector({ fields }) {
+  const [open, setOpen] = useState(false)
+
+
+  return <>
+    <div className={`wizard ${!open ? 'wizard--hidden' : ''}`}>
+      <div className={`wizard-container ${!open ? 'wizard--hidden' : ''}`} style={{
+        maxWidth: '50vw'
+      }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
+          <label style={{ fontSize: '1.15rem' }}>
+            <i
+              className="fas fa-times me-3"
+              onClick={() => setOpen(false)}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Columns selector</span>
+          </label>
+
+          <div className="wizard-content">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <Button type="info" className='ms-auto btn-sm d-flex align-items-center mb-1'
+      onClick={() => setOpen(true)}>
+      <i className='fas fa-filter me-1' />
+      Filter columns
+    </Button>
+  </>
 }
 
 export class Table extends Component {
@@ -607,7 +641,8 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow" style={{ position: 'relative', marginTop: 20 }}>
+            <div className="rrow me-1" style={{ position: 'relative' }}>
+              <ColumnsSelector fields={this.props.fields} />
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
@@ -631,7 +666,6 @@ export class Table extends Component {
                     : []
                 }
                 onFetchData={(state, instance) => {
-                  // console.log(state, instance)
                   // console.log('onFetchData')
                   this.update(state);
                 }}

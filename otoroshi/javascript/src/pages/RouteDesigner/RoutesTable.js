@@ -151,6 +151,8 @@ export function RoutesTable(props) {
         formFlow={null}
         columns={columns}
         deleteItem={(item) => deleteItem(item)}
+        defaultSort="metadata.updated_at"
+        defaultSortDesc="true"
         fetchItems={(paginationState) =>
           nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
             .findAllWithPagination({
