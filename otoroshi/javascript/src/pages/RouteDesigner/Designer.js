@@ -643,11 +643,11 @@ class Designer extends React.Component {
 
   loadData = () => {
     Promise.all([
-      nextClient.find(nextClient.ENTITIES.BACKENDS),
+      nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
+        .findAll(),
       this.props.value
         ? Promise.resolve(this.props.value)
-        : nextClient.fetch(
-          this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+        : nextClient.forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES).findById(
           this.props.routeId
         ),
       getCategories(),
@@ -1029,13 +1029,16 @@ class Designer extends React.Component {
   deleteRoute = () => {
     window.newConfirm('are you sure you want to delete this route ?', (ok) => {
       if (ok) {
-        nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
-          if (history) {
-            history.push('/routes');
-          } else {
-            window.location = '/bo/dashboard/routes';
-          }
-        });
+        nextClient
+          .forEntityNext(nextClient.ENTITIES.ROUTES)
+          .deleteById(this.state.route.id)
+          .then(() => {
+            if (history) {
+              history.push('/routes');
+            } else {
+              window.location = '/bo/dashboard/routes';
+            }
+          });
       }
     });
   };
@@ -1268,10 +1271,8 @@ class Designer extends React.Component {
     if (this.props.setValue) this.props.setValue(newRoute);
 
     return nextClient
-      .update(
-        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-        newRoute
-      )
+      .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
+      .update(newRoute)
       .then((r) => {
         if (r.error) throw r.error;
         else {

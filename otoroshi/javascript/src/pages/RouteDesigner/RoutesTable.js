@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
@@ -56,7 +56,7 @@ export function RoutesTable(props) {
   const exposedColumn = {
     title: 'Enabled',
     id: 'enabled',
-    style: { textAlign: 'center', width: 70 },
+    style: { textAlign: 'center', width: 90 },
     notFilterable: true,
     cell: (_, item) =>
       item.enabled ? (
@@ -65,6 +65,28 @@ export function RoutesTable(props) {
         <span className="fas fa-times" style={{ color: 'var(--color-red)' }} />
       ),
   };
+
+  const updatedAtColumn = {
+    title: 'Updated',
+    filterId: 'metadata.updated_at',
+    id: 'metadata.updated_at',
+    style: { textAlign: 'center', width: 160 },
+    notFilterable: true,
+    cell: (_, item) => {
+      return <span>{item.metadata.updated_at ? `${new Date(item.metadata.updated_at).toLocaleDateString()} ${new Date(item.metadata.updated_at).toLocaleTimeString()}` : '-'}</span>
+    }
+  }
+
+  const createdAtColumn = {
+    title: 'Created',
+    filterId: 'metadata.created_at',
+    id: 'metadata.created_at',
+    style: { textAlign: 'center', width: 160 },
+    notFilterable: true,
+    cell: (_, item) => {
+      return <span>{item.metadata.created_at ? `${new Date(item.metadata.created_at).toLocaleDateString()} ${new Date(item.metadata.created_at).toLocaleTimeString()}` : '-'}</span>
+    }
+  }
 
   const columns = [
     {
@@ -88,6 +110,8 @@ export function RoutesTable(props) {
     entity.lowercase == 'route' ? domainColumn : undefined,
     entity.lowercase == 'route' ? targetColumn : undefined,
     exposedColumn,
+    updatedAtColumn,
+    createdAtColumn
   ].filter((c) => c);
 
   const deleteItem = (item, table) => {
@@ -128,10 +152,11 @@ export function RoutesTable(props) {
         columns={columns}
         deleteItem={(item) => deleteItem(item)}
         fetchItems={(paginationState) =>
-          nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], {
-            ...paginationState,
-            fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id'],
-          })
+          nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
+            .findAllWithPagination({
+              ...paginationState,
+              fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id', 'metadata'],
+            })
         }
         showActions={true}
         showLink={false}

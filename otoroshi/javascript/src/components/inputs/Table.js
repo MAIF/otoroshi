@@ -6,7 +6,7 @@ import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
 import { NgSelectRenderer } from '../nginputs';
-import _ from 'lodash';
+import _, { conforms } from 'lodash';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -147,14 +147,15 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
+    console.log(page)
     return (
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -165,13 +166,27 @@ export class Table extends Component {
       } else {
         this.setState({
           items: rawItems.data,
-          pages: rawItems.pages,
+          pages: this.calculateMaximumPages(rawItems),
           loading: false,
           page,
         });
       }
     });
   }, 200);
+
+  calculateMaximumPages = (response) => {
+    const { pages } = this.state;
+
+    if (!isNaN(response.pages)) {
+      return response.pages
+    }
+
+    console.log(response)
+    if (response.ngPages !== -1)
+      return response.ngPages
+
+    return pages
+  }
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -559,6 +574,8 @@ export class Table extends Component {
         ),
       });
     }
+
+    console.log("PAGE", this.state.page)
     return (
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
@@ -595,6 +612,7 @@ export class Table extends Component {
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 manual
+                page={this.state.page}
                 pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
@@ -650,7 +668,10 @@ export class Table extends Component {
                       value={this.state.rowsPerPage}
                       label={' '}
                       ngOptions={{ spread: true }}
-                      onChange={(rowsPerPage) => this.setState({ rowsPerPage }, this.update)}
+                      onChange={(rowsPerPage) => this.setState({
+                        rowsPerPage,
+                        page: 0
+                      }, this.update)}
                       options={[5, 15, 20, 50, 100]}
                     />
                   </div>

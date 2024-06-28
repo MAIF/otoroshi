@@ -40,12 +40,15 @@ export const Informations = forwardRef(
     function saveRoute() {
       if (isCreation || location.state?.routeFromService) {
         return nextClient
-          .create(nextClient.ENTITIES[fetchName], value)
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .create(value)
           .then(() => history.push(`/${link}/${value.id}?tab=flow`));
       } else {
-        return nextClient.update(nextClient.ENTITIES[fetchName], value).then((res) => {
-          if (!res.error) setValue(res);
-        });
+        return nextClient
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .update(value).then((res) => {
+            if (!res.error) setValue(res);
+          });
       }
     }
 
