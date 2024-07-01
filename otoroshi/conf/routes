@@ -611,6 +611,7 @@ PUT     /apis/:group/:version/:entity/_bulk                   otoroshi.api.Gener
 PATCH   /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkPatch(group, version, entity)
 DELETE  /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkDelete(group, version, entity)
 GET     /apis/:group/:version/:entity/_count                  otoroshi.api.GenericApiController.countAll(group, version, entity)
+GET     /apis/:group/:version/:entity/_schema                 otoroshi.api.GenericApiController.schema(group, version, entity)
 GET     /apis/:group/:version/:entity/_template               otoroshi.api.GenericApiController.template(group, version, entity)
 GET     /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.findOne(group, version, entity, id)
 POST    /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.upsert(group, version, entity, id)
