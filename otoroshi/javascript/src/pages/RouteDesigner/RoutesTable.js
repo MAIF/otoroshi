@@ -1,13 +1,33 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useEntityFromURI } from '../../util';
+import Loader from '../../components/Loader';
+
+const FIELDS_SELECTOR = "otoroshi-fields-selector";
 
 export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
   const entity = useEntityFromURI();
+
+  const [loading, setLoading] = useState(true)
+  const [fields, setFields] = useState({
+    'id': false,
+    'name': true,
+    'description': true,
+    'tags': false,
+    'metadata': false,
+    'enabled': true,
+    'groups': false,
+    'frontend': true,
+    'backend': true,
+    'plugins': false,
+    'created at': false,
+    'metadata.updated_at': true,
+    'metadata.created_at': false
+  })
 
   const domainColumn = {
     title: 'Frontend',
@@ -88,6 +108,44 @@ export function RoutesTable(props) {
     }
   }
 
+  const idColumn = {
+    title: 'Id',
+    content: item => item.id
+  }
+
+  const descriptionColumn = {
+    title: 'Description',
+    content: item => item.description
+  }
+
+  const tagsColumn = {
+    title: 'Tags',
+    content: item => (item.tags || []).join(','),
+    notSortable: true,
+    notFilterable: true
+  }
+
+  const metadataColumn = {
+    title: 'Metadata',
+    content: item => Object.entries(item.metadata || {}).map(([key, value]) => `${key}:${value}`).join(' - '),
+    notSortable: true,
+    notFilterable: true
+  }
+
+  const groupsColumn = {
+    title: 'Groups',
+    content: item => (item.groups || []).join(","),
+    notSortable: true,
+    notFilterable: true
+  }
+
+  const pluginsColumn = {
+    title: 'Plugins',
+    content: item => item.plugins?.length || 0,
+    notSortable: true,
+    notFilterable: true
+  }
+
   const columns = [
     {
       title: 'Name',
@@ -107,12 +165,19 @@ export function RoutesTable(props) {
         return item.name;
       },
     },
+    idColumn,
+    descriptionColumn,
+    tagsColumn,
+    metadataColumn,
+    groupsColumn,
+    pluginsColumn,
     entity.lowercase == 'route' ? domainColumn : undefined,
     entity.lowercase == 'route' ? targetColumn : undefined,
     exposedColumn,
     updatedAtColumn,
     createdAtColumn
-  ].filter((c) => c);
+  ]
+    .filter((c) => c && (fields[c.title.toLowerCase()] || fields[c.filterId?.toLowerCase()]))
 
   const deleteItem = (item, table) => {
     if (props.globalEnv.adminApiId === item.id) {
@@ -138,9 +203,71 @@ export function RoutesTable(props) {
     }
   };
 
-  return (
+  const fetchItems = (paginationState) =>
+    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
+      .findAllWithPagination({
+        ...paginationState,
+        fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id', 'metadata',
+          fields['id'] ? 'id' : undefined,
+          fields['description'] ? 'description' : undefined,
+          fields['tags'] ? 'tags' : undefined,
+          fields['metadata'] ? 'metadata' : undefined,
+          fields['groups'] ? 'groups' : undefined,
+          fields['plugins'] ? 'plugins' : undefined
+        ].filter(c => c),
+      })
+
+  const ref = useRef()
+
+  const onFieldsChange = fields => {
+    if (ref.current) {
+      ref.current.update()
+    }
+
+    saveFields(fields)
+  }
+
+  useEffect(() => {
+    loadFields()
+  }, [])
+
+  const loadFields = () => {
+    try {
+      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'));
+
+      console.log(values.routes)
+      if (values.routes)
+        setFields(values.routes)
+
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false)
+    }
+  };
+
+  const saveFields = fields => {
+    try {
+      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
+
+      console.log('save fields', fields)
+
+      localStorage.setItem(
+        FIELDS_SELECTOR,
+        JSON.stringify({
+          ...values,
+          routes: fields,
+        })
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  return <Loader loading={loading}>
     <div className="designer">
       <Table
+        ref={ref}
         parentProps={{ params }}
         navigateTo={(item) => history.push(`/${entity.link}/${item.id}?tab=flow`)}
         navigateOnEdit={(item) => history.push(`/${entity.link}/${item.id}?tab=informations`)}
@@ -150,16 +277,19 @@ export function RoutesTable(props) {
         formSchema={null}
         formFlow={null}
         columns={columns}
+        fields={fields}
+        onToggleField={(column, enabled) => {
+          const newFields = {
+            ...fields,
+            [column]: enabled
+          }
+          onFieldsChange(newFields)
+          setFields(newFields)
+        }}
         deleteItem={(item) => deleteItem(item)}
         defaultSort="metadata.updated_at"
         defaultSortDesc="true"
-        fetchItems={(paginationState) =>
-          nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
-            .findAllWithPagination({
-              ...paginationState,
-              fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id', 'metadata'],
-            })
-        }
+        fetchItems={fetchItems}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}
@@ -177,5 +307,5 @@ export function RoutesTable(props) {
         )}
       />
     </div>
-  );
+  </Loader>
 }

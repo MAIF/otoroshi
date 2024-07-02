@@ -1160,7 +1160,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
         val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
         PaginatedContent(
-          pages = arr.value.size / paginationPageSize,
+          pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
           content = JsArray(content)
         ).some
       }

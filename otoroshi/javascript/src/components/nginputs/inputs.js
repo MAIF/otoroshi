@@ -601,7 +601,6 @@ export class NgBoxBooleanRenderer extends Component {
           className="d-flex"
           style={{
             border: 'var(--bg-color_level2) solid 1px',
-            borderRadius: 6,
             padding: '5px',
             margin: '5px 0px',
             width: this.props.width || '100%',

@@ -1,13 +1,14 @@
 import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Form } from '.';
+import { Form, OffSwitch, OnSwitch } from '.';
 import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
-import { NgSelectRenderer } from '../nginputs';
-import _, { conforms } from 'lodash';
+import { LabelAndInput, NgSelectRenderer } from '../nginputs';
+import _ from 'lodash';
 import { Button } from '../Button';
+import { firstLetterUppercase } from '../../util'
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -29,28 +30,46 @@ function LoadingComponent(props) {
   );
 }
 
-function ColumnsSelector({ fields }) {
+function ColumnsSelector({ fields, onChange }) {
   const [open, setOpen] = useState(false)
 
-
   return <>
-    <div className={`wizard ${!open ? 'wizard--hidden' : ''}`}>
+    <div className={`wizard ${!open ? 'wizard--hidden' : ''}`} style={{
+      background: 'none'
+    }}>
       <div className={`wizard-container ${!open ? 'wizard--hidden' : ''}`} style={{
-        maxWidth: '50vw'
+        maxWidth: '30vw',
+        minWidth: '360px',
+        zIndex: 1000,
+        border: 'var(--bg-color_level2) solid 1px'
       }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
-          <label style={{ fontSize: '1.15rem' }}>
-            <i
-              className="fas fa-times me-3"
-              onClick={() => setOpen(false)}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Columns selector</span>
-          </label>
+          <h3 style={{ fontSize: '1.5rem' }} className='text-center'>Columns selector</h3>
 
           <div className="wizard-content">
-            
+            {Object.entries(fields)
+              .map(([column, enabled]) => {
+                const columnParts = column.split(".");
+
+                return <div className="mb-1 p-1 px-3 d-flex" style={{
+                  border: 'var(--bg-color_level2) solid 1px',
+                  width: '100%',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  justifyContent: 'space-between'
+                }} onClick={() => onChange(column, !enabled)} key={column}>
+                  <label className={`col-xs-12 col-form-label`}>
+                    {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
+                  </label>
+                  <div className="">
+                    {enabled && <OnSwitch onChange={() => onChange(column, false)} />}
+                    {!enabled && <OffSwitch onChange={() => onChange(column, true)} />}
+                  </div>
+                </div>
+              })}
           </div>
+
+          <Button text="Close" onClick={() => setOpen(false)} />
         </div>
       </div>
     </div>
@@ -181,7 +200,7 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
-    console.log(page)
+
     return (
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
@@ -215,7 +234,6 @@ export class Table extends Component {
       return response.pages
     }
 
-    console.log(response)
     if (response.ngPages !== -1)
       return response.ngPages
 
@@ -609,7 +627,6 @@ export class Table extends Component {
       });
     }
 
-    console.log("PAGE", this.state.page)
     return (
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
@@ -642,7 +659,12 @@ export class Table extends Component {
               </div>
             </div>
             <div className="rrow me-1" style={{ position: 'relative' }}>
-              <ColumnsSelector fields={this.props.fields} />
+              {this.props.fields && <ColumnsSelector
+                onChange={this.props.onToggleField}
+                fields={Object.keys(this.props.fields)
+                  .sort()
+                  .reduce((r, k) => (r[k] = this.props.fields[k], r), {})}
+              />}
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
