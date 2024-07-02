@@ -25,7 +25,6 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import play.core.parsers.FormUrlEncodedParser
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -63,7 +62,15 @@ case class ResourceVersion(
     "schema"     -> schema
   )
 
-  def finalSchema(kind: String, clazz: Class[_]): JsValue = {
+  def jsonWithSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = Json.obj(
+    "name"       -> name,
+    "served"     -> served,
+    "deprecated" -> deprecated,
+    "storage"    -> storage,
+    "schema"     -> finalSchema(kind, clazz)
+  )
+
+  def finalSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = {
     schema.getOrElse {
       Try(
         Json.parse(
@@ -71,7 +78,7 @@ case class ResourceVersion(
         )
       ) match {
         case Failure(e) => {
-          println(s"failing on '${kind}' because of: ${e.getMessage}")
+          env.logger.error(s"failing reflection on '${kind}'", e)
           Json.obj("type" -> "object", "description" -> s"A resource of kind ${kind}")
         }
         case Success(s) => s
@@ -93,6 +100,14 @@ case class Resource(
     "singular_name" -> singularName,
     "group"         -> group,
     "version"       -> version.json
+  )
+
+  def jsonWithSchema(implicit env: Env): JsValue = Json.obj(
+    "kind"          -> kind,
+    "plural_name"   -> pluralName,
+    "singular_name" -> singularName,
+    "group"         -> group,
+    "version"       -> version.jsonWithSchema(kind, access.clazz),
   )
 }
 trait ResourceAccessApi[T <: EntityLocationSupport] {
@@ -1332,12 +1347,21 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   // GET /apis/entities
   def entities() = ApiAction { ctx =>
-    Ok(
-      Json.obj(
-        "version"   -> env.otoroshiVersion,
-        "resources" -> JsArray(env.allResources.resources.map(_.json))
+    if (ctx.request.getQueryString("schema").contains("false")) {
+      Ok(
+        Json.obj(
+          "version" -> env.otoroshiVersion,
+          "resources" -> JsArray(env.allResources.resources.map(_.json))
+        )
       )
-    )
+    } else {
+      Ok(
+        Json.obj(
+          "version" -> env.otoroshiVersion,
+          "resources" -> JsArray(env.allResources.resources.map(_.jsonWithSchema))
+        )
+      )
+    }
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
@@ -1847,6 +1871,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         Ok(templ).vfuture
       }
+    }
+  }
+
+  // GET /apis/:group/:version/:entity/:id/_template
+  def schema(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+    withResource(group, version, entity, ctx.request) { resource =>
+      val schema = resource.version.finalSchema(resource.kind, resource.access.clazz)
+      Ok(schema).vfuture
     }
   }
 

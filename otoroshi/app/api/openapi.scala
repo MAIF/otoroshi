@@ -901,7 +901,7 @@ object OpenApi {
         "singleton", {
           val resources                      = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
           val _schemas: Map[String, JsValue] = resources
-            .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)))
+            .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)(env)))
             .toMap
           val schemas: Map[String, JsValue]  = cleanupSchemas(_schemas)
           val paths: Map[String, JsValue]    = resources.flatMap(buildPaths).toMap
