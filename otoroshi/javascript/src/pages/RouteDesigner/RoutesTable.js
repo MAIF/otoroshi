@@ -2,10 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
-import { useEntityFromURI } from '../../util';
+import { firstLetterUppercase, useEntityFromURI } from '../../util';
 import Loader from '../../components/Loader';
 
 const FIELDS_SELECTOR = "otoroshi-fields-selector";
+
+const CORE_FIELDS = [
+  'id',
+  'name',
+  'description',
+  'tags',
+  'metadata',
+  'enabled',
+  'groups',
+  'frontend',
+  'backend',
+  'plugins',
+  'created at',
+  'metadata.updated_at',
+  'metadata.created_at',
+]
 
 export function RoutesTable(props) {
   const params = useParams();
@@ -92,8 +108,16 @@ export function RoutesTable(props) {
     id: 'metadata.updated_at',
     style: { textAlign: 'center', width: 160 },
     notFilterable: true,
-    cell: (_, item) => {
-      return <span>{item.metadata.updated_at ? `${new Date(item.metadata.updated_at).toLocaleDateString()} ${new Date(item.metadata.updated_at).toLocaleTimeString()}` : '-'}</span>
+    cell: (_, item) => formatFieldDate(item.metadata.updated_at)
+  }
+
+  const formatFieldDate = value => {
+    const date = new Date(value)
+
+    if (date instanceof Date & !isNaN(date)) {
+      return <span>{date.toLocaleDateString()} - {date.toLocaleTimeString()}</span>
+    } else {
+      return "-"
     }
   }
 
@@ -103,9 +127,7 @@ export function RoutesTable(props) {
     id: 'metadata.created_at',
     style: { textAlign: 'center', width: 160 },
     notFilterable: true,
-    cell: (_, item) => {
-      return <span>{item.metadata.created_at ? `${new Date(item.metadata.created_at).toLocaleDateString()} ${new Date(item.metadata.created_at).toLocaleTimeString()}` : '-'}</span>
-    }
+    cell: (_, item) => formatFieldDate(item.metadata.created_at)
   }
 
   const idColumn = {
@@ -175,9 +197,29 @@ export function RoutesTable(props) {
     entity.lowercase == 'route' ? targetColumn : undefined,
     exposedColumn,
     updatedAtColumn,
-    createdAtColumn
+    createdAtColumn,
+    ...Object.keys(fields)
+      .filter(f => !CORE_FIELDS.includes(f))
+      .map(field => ({
+        title: firstLetterUppercase(field.split(".").slice(-1)[0]),
+        filterId: firstLetterUppercase(field),
+        content: item => {
+          const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
+          if (Array.isArray(value)) {
+            return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
+          } else if (isAnObject(value)) {
+            return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
+          } else {
+            return "" + value
+          }
+        },
+        notSortable: true,
+        notFilterable: true
+      }))
   ]
-    .filter((c) => c && (fields[c.title.toLowerCase()] || fields[c.filterId?.toLowerCase()]))
+    .filter((c) => c && (fields[c.title?.toLowerCase()] || fields[c.filterId?.toLowerCase()]))
+
+  const isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
 
   const deleteItem = (item, table) => {
     if (props.globalEnv.adminApiId === item.id) {
@@ -207,15 +249,19 @@ export function RoutesTable(props) {
     nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
       .findAllWithPagination({
         ...paginationState,
-        fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id', 'metadata',
-          fields['id'] ? 'id' : undefined,
-          fields['description'] ? 'description' : undefined,
-          fields['tags'] ? 'tags' : undefined,
-          fields['metadata'] ? 'metadata' : undefined,
-          fields['groups'] ? 'groups' : undefined,
-          fields['plugins'] ? 'plugins' : undefined
+        fields: [
+          'backend.targets',
+          'enabled',
+          'frontend.domains',
+          'id',
+          'name',
+          'metadata',
+          ...Object.keys(fields).map(field => fields[field] ? field : undefined)
         ].filter(c => c),
       })
+
+  const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
+    .template()
 
   const ref = useRef()
 
@@ -235,7 +281,6 @@ export function RoutesTable(props) {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'));
 
-      console.log(values.routes)
       if (values.routes)
         setFields(values.routes)
 
@@ -278,6 +323,24 @@ export function RoutesTable(props) {
         formFlow={null}
         columns={columns}
         fields={fields}
+        coreFields={CORE_FIELDS}
+        addField={fieldPath => {
+          const newFields = {
+            ...fields,
+            [fieldPath]: true
+          }
+          setFields(newFields)
+          onFieldsChange(newFields)
+        }}
+        removeField={fieldPath => {
+          console.log('remove', fieldPath)
+          const { [fieldPath]: _, ...newFields } = fields;
+
+          console.log(fields, fieldPath, newFields)
+
+          setFields(newFields)
+          onFieldsChange(newFields)
+        }}
         onToggleField={(column, enabled) => {
           const newFields = {
             ...fields,
@@ -290,6 +353,7 @@ export function RoutesTable(props) {
         defaultSort="metadata.updated_at"
         defaultSortDesc="true"
         fetchItems={fetchItems}
+        fetchTemplate={fetchTemplate}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}

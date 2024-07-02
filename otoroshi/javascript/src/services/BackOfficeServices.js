@@ -2210,6 +2210,7 @@ export const nextClient = {
       delete: (content) => fetchWrapperNext(`/${entity}/${content.id}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNext(`/${entity}/${id}`, 'DELETE'),
       template: () => fetchWrapperNext(`/${entity}/_template`),
+      schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
     };
   },
