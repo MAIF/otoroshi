@@ -1,12 +1,23 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, SimpleBooleanInput } from '../components/inputs';
+import { nextClient } from '../services/BackOfficeServices';
+import { Table, SimpleBooleanInput } from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
+import Loader from '../components/Loader';
+
+const FIELDS_SELECTOR = "otoroshi-fields-selector";
+
+const CORE_FIELDS = [
+  'id',
+  'enabled',
+  'clientId',
+  'clientName',
+  'clientSecret'
+]
 
 class ApikeyBearer extends Component {
   state = { bearer: null, cname: 'fas fa-copy' };
@@ -47,9 +58,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -246,11 +257,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -329,6 +338,40 @@ class ResetQuotas extends Component {
 }
 
 class CopyCredentials extends Component {
+  state = {
+    copyIconName: 'fas fa-copy'
+  }
+
+  unsecuredCopyToClipboard = (text) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('Unable to copy to clipboard', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
+  copy = (value) => {
+    if (window.isSecureContext && navigator.clipboard) {
+      navigator.clipboard.writeText(value);
+    } else {
+      this.unsecuredCopyToClipboard(value);
+    }
+    this.setState({
+      copyIconName: 'fas fa-check'
+    });
+
+    setTimeout(() => {
+      this.setState({
+        copyIconName: 'fas fa-copy'
+      });
+    }, 2000);
+  };
   render() {
     const props = this.props;
     return (
@@ -345,12 +388,11 @@ class CopyCredentials extends Component {
           <button
             type="button"
             className="btn btn-success btn-sm"
-            onClick={(e) => {
-              this.clipboard.select();
-              document.execCommand('Copy');
+            onClick={() => {
+              this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret)
             }}
           >
-            <i className="fas fa-copy" /> Copy credentials to clipboard
+            <i className={this.state.copyIconName} /> Copy credentials to clipboard
           </button>
         </div>
       </div>
@@ -358,29 +400,44 @@ class CopyCredentials extends Component {
   }
 }
 
-class CopyFromLineItem extends Component {
-  render() {
-    const item = this.props.item;
-    return (
-      <button
-        type="button"
-        className="btn btn-sm btn-primary"
-        onClick={() => {
-          this.clipboard.select();
-          document.execCommand('Copy');
-        }}
-      >
-        <i className="fas fa-copy" />
-        <input
-          type="text"
-          ref={(r) => (this.clipboard = r)}
-          style={{ position: 'fixed', left: 0, top: -250 }}
-          value={item.clientId + ':' + item.clientSecret}
-          alt="copy credentials"
-        />
-      </button>
-    );
-  }
+function CopyFromLineItem({ item }) {
+  const [copyIconName, setCopyIconName] = useState('fas fa-copy')
+
+  const unsecuredCopyToClipboard = (text) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('Unable to copy to clipboard', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const copy = (value) => {
+    if (window.isSecureContext && navigator.clipboard) {
+      navigator.clipboard.writeText(value);
+    } else {
+      unsecuredCopyToClipboard(value);
+    }
+
+    setCopyIconName('fas fa-check')
+
+    setTimeout(() => {
+      setCopyIconName('fas fa-copy')
+    }, 2000);
+  };
+
+  return <button
+    type="button"
+    className="btn btn-success btn-sm"
+    onClick={() => copy(item.clientId + ':' + item.clientSecret)}
+  >
+    <i className={copyIconName} />
+  </button>
 }
 
 class DailyRemainingQuotas extends Component {
@@ -772,10 +829,12 @@ const ApiKeysConstants = {
         <SimpleBooleanInput
           value={item.enabled}
           onChange={(value) => {
-            BackOfficeServices.updateStandaloneApiKey({
-              ...item,
-              enabled: value,
-            }).then(() => table.update());
+            nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+              .update({
+                ...item,
+                enabled: value,
+              }, 'clientId')
+              .then(() => table.update());
           }}
         />
       ),
@@ -796,9 +855,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -882,8 +940,12 @@ export class ServiceApiKeysPage extends Component {
 
   componentDidMount() {
     const fu = this.onRoutes
-      ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
-      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+      ? nextClient
+        .forEntityNext(nextClient.ENTITIES.ROUTES)
+        .findById(this.props.params.routeId)
+      : nextClient
+        .forEntityNext(nextClient.ENTITIES.SERVICES)
+        .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -940,16 +1002,18 @@ export class ServiceApiKeysPage extends Component {
         selfUrl={
           this.onRoutes
             ? // ? `services/${this.props.params.routeId}/apikeys`
-              `routes/${this.props.params.routeId}/apikeys`
+            `routes/${this.props.params.routeId}/apikeys`
             : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
         }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
         defaultValue={() =>
-          BackOfficeServices.createNewApikey().then((apk) => ({
-            ...apk,
-            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-            authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
-          }))
+          nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+            .template()
+            .then((apk) => ({
+              ...apk,
+              clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+              authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
+            }))
         }
         _defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
@@ -1008,47 +1072,115 @@ export class ApiKeysPage extends Component {
   state = {
     service: null,
     env: this.props.env,
+    loading: true,
+    fields: {
+      id: true,
+      enabled: true,
+      clientId: true,
+      clientName: true,
+      clientSecret: true
+    }
   };
+
+  ref = React.createRef()
 
   componentDidMount() {
     this.props.setTitle(`Apikeys`);
+
+    this.loadFields()
+  }
+
+  loadFields = () => {
+    try {
+      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'));
+
+      if (values.apikeys)
+        this.setState({
+          fields: values.apikeys
+        })
+
+    } catch (e) {
+      // console.log(e);
+    } finally {
+      this.setState({ loading: false })
+    }
+  }
+
+  saveFields = fields => {
+    try {
+      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
+
+      localStorage.setItem(
+        FIELDS_SELECTOR,
+        JSON.stringify({
+          ...values,
+          apikeys: fields,
+        })
+      );
+    } catch (e) {
+      // console.log(e);
+    }
+  }
+
+  onFieldsChange = fields => {
+    if (this.ref.current) {
+      this.ref.current.update()
+    }
+
+    this.setState({
+      fields
+    })
   }
 
   fetchAllApiKeys = (paginationState) => {
-    return BackOfficeServices.fetchAllApikeys({
-      ...paginationState,
-      fields: ['id', 'enabled', 'clientId', 'clientName', 'clientSecret'],
-    });
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+      .findAllWithPagination({
+        ...paginationState,
+        fields: [
+          ...Object.keys(this.state.fields).map(field => this.state.fields[field] ? field : undefined)
+        ].filter(c => c),
+      })
   };
+
+  fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+    .template()
 
   createItem = (ak) => {
     delete ak.authorizations;
     delete ak.authorizedGroup;
-    return BackOfficeServices.createStandaloneApiKey(ak);
+    // return BackOfficeServices.createStandaloneApiKey(ak);
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+      .create(ak)
   };
 
   updateItem = (ak) => {
     delete ak.authorizations;
     delete ak.authorizedGroup;
-    return BackOfficeServices.updateStandaloneApiKey(ak);
+    // return BackOfficeServices.updateStandaloneApiKey(ak);
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+      .update(ak, 'clientId')
   };
 
   deleteItem = (ak) => {
-    return BackOfficeServices.deleteStandaloneApiKey(ak);
+    // return BackOfficeServices.deleteStandaloneApiKey(ak);
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+      .delete(ak, 'clientId')
   };
 
   render() {
-    return (
+    return <Loader loading={this.state.loading}>
       <Table
         parentProps={this.props}
         selfUrl={`apikeys`}
         defaultTitle="All apikeys"
         defaultValue={() =>
-          BackOfficeServices.createNewApikey().then((apk) => ({
-            ...apk,
-            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-            authorizedEntities: [],
-          }))
+          nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
+            .template()
+            .then((apk) => ({
+              ...apk,
+              clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+              authorizedEntities: [],
+            }))
         }
         _defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
@@ -1064,7 +1196,52 @@ export class ApiKeysPage extends Component {
         itemName="Apikey"
         formSchema={ApiKeysConstants.formSchema(this)}
         formFlow={ApiKeysConstants.formFlow}
-        columns={ApiKeysConstants.columns(this)}
+        columns={[
+          ...ApiKeysConstants.columns(this),
+          ...Object.keys(this.state.fields)
+            .filter(f => !CORE_FIELDS.includes(f))
+            .map(field => ({
+              title: firstLetterUppercase(field.split(".").slice(-1)[0]),
+              filterId: firstLetterUppercase(field),
+              content: item => {
+                const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
+                if (Array.isArray(value)) {
+                  return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
+                } else if (isAnObject(value)) {
+                  return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
+                } else {
+                  return "" + value
+                }
+              },
+              notSortable: true,
+              notFilterable: true
+            }))
+        ]}
+        fields={this.state.fields}
+        coreFields={CORE_FIELDS}
+        addField={fieldPath => {
+          const newFields = {
+            ...fields,
+            [fieldPath]: true
+          }
+          setFields(newFields)
+          onFieldsChange(newFields)
+        }}
+        removeField={fieldPath => {
+          const { [fieldPath]: _, ...newFields } = fields;
+
+          setFields(newFields)
+          onFieldsChange(newFields)
+        }}
+        onToggleField={(column, enabled) => {
+          const newFields = {
+            ...fields,
+            [column]: enabled
+          }
+          onFieldsChange(newFields)
+          setFields(newFields)
+        }}
+        fetchTemplate={this.fetchTemplate}
         fetchItems={this.fetchAllApiKeys}
         updateItem={this.updateItem}
         deleteItem={this.deleteItem}
@@ -1085,6 +1262,6 @@ export class ApiKeysPage extends Component {
         itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
         extractKey={(item) => item.clientId}
       />
-    );
+    </Loader>
   }
 }
