@@ -644,6 +644,10 @@
     gap: 12px;
     max-height: 80px !important;
     min-height: 80px;
+
+    color: var(--color_level2);
+    background-color: var(--bg-color_level2);
+    border-color: var(--bg-color_level1);
 }
 
 .wizard-route-chooser h3 {
@@ -658,7 +662,7 @@
 
 .wizard-h3--small {
     font-size: 1.25em !important;
-    color: #eee;
+    color: var(--color_level3);
 }
 
 .designer-modal-dialog {

@@ -285,7 +285,7 @@ export function RoutesTable(props) {
         setFields(values.routes)
 
     } catch (e) {
-      console.log(e);
+      // console.log(e);
     } finally {
       setLoading(false)
     }
@@ -295,8 +295,6 @@ export function RoutesTable(props) {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
 
-      console.log('save fields', fields)
-
       localStorage.setItem(
         FIELDS_SELECTOR,
         JSON.stringify({
@@ -305,7 +303,7 @@ export function RoutesTable(props) {
         })
       );
     } catch (e) {
-      console.log(e);
+      // console.log(e);
     }
   };
 
@@ -333,10 +331,7 @@ export function RoutesTable(props) {
           onFieldsChange(newFields)
         }}
         removeField={fieldPath => {
-          console.log('remove', fieldPath)
           const { [fieldPath]: _, ...newFields } = fields;
-
-          console.log(fields, fieldPath, newFields)
 
           setFields(newFields)
           onFieldsChange(newFields)
