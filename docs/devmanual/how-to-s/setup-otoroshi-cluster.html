@@ -376,7 +376,7 @@ backend back_http_nodes
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-sh">docker run -p 8080:8080 -v $(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy</code></pre></dd>
 </dl>
 <p>The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.</p>
-<p>Create this route, exposed on <code>http://api.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
+<p>Create this route, exposed on <code>http://api.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://request.otoroshi.io</code>.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8091/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -389,7 +389,7 @@ backend back_http_nodes
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
