@@ -235,7 +235,7 @@ object Http extends AwaitCapable {
         {
           val context = Json.parse(Utils.contextParamsToString(plugin, params: _*))
 
-          val url          = (context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io")
+          val url          = (context \ "url").asOpt[String].getOrElse("https://request.otoroshi.io")
           val allowedHosts = hostData.config.allowedHosts
           val urlHost      = Uri(url).authority.host.toString()
           val allowed      = allowedHosts.isEmpty || allowedHosts.contains("*") || allowedHosts.exists(h =>

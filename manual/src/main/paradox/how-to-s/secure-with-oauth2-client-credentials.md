@@ -50,7 +50,7 @@ Once the global configuration saved, we can deployed a simple service to test it
 Let's navigate to the routes page, and create a new route with : 
 
 1. `foo.oto.tools` as `domain` in the frontend node
-2. `mirror.otoroshi.io` as hostname in the list of targets of the backend node, and `443` as `port`.
+2. `request.otoroshi.io` as hostname in the list of targets of the backend node, and `443` as `port`.
 3. Search in the list of plugins and add the `Apikeys` plugin to the flow
 4. In the extractors section of the `Apikeys` plugin, disabled the `Basic`, `Client id` and `Custom headers` option.
 5. Save your route

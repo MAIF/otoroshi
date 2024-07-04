@@ -302,7 +302,7 @@ class NgProxyState(env: Env) {
             targets = Seq(
               NgTarget(
                 id = "mirror-1",
-                hostname = "mirror.otoroshi.io",
+                hostname = "request.otoroshi.io",
                 port = 443,
                 tls = true
               )
@@ -370,7 +370,7 @@ class NgProxyState(env: Env) {
             targets = Seq(
               NgTarget(
                 id = "mirror-1",
-                hostname = "mirror.otoroshi.io",
+                hostname = "request.otoroshi.io",
                 port = 443,
                 tls = true
               )
@@ -432,7 +432,7 @@ class NgProxyState(env: Env) {
             targets = Seq(
               NgTarget(
                 id = "mirror-1",
-                hostname = "mirror.otoroshi.io",
+                hostname = "request.otoroshi.io",
                 port = 443,
                 tls = true
               )

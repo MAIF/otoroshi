@@ -67,7 +67,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }
@@ -103,7 +103,7 @@ This request will apply the following process:
 
 - names the route _demo-otoroshi_
 - creates a frontend exposed on the `demo-otoroshi.oto.tools`
-- forward requests on one target, reachable at `mirror.otoroshi.io` using TLS on port 443
+- forward requests on one target, reachable at `request.otoroshi.io` using TLS on port 443
 - adds the _WasmAccessValidator_ plugin to validate access based on the foo header to the route
 
 You can validate the route creation by navigating to the [dashboard](http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi?tab=flow)
@@ -174,7 +174,7 @@ curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }
