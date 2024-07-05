@@ -15,7 +15,9 @@ const FIELDS_SELECTOR = "otoroshi-fields-selector";
 const CORE_FIELDS = [
   'enabled',
   'clientId',
-  'clientName'
+  'clientName',
+  'stats',
+  'credentials'
 ]
 
 class ApikeyBearer extends Component {
@@ -598,6 +600,7 @@ const ApiKeysConstants = {
         label: 'ApiKey Id',
         placeholder: 'The ApiKey id',
         help: 'The id is a unique random key that will represent this API key',
+        disabled: !window.location.pathname?.endsWith("/add")
       },
     },
     clientSecret: {
@@ -912,6 +915,7 @@ export class ServiceApiKeysPage extends Component {
   state = {
     service: null,
     env: this.props.env,
+    loading: true
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
@@ -950,14 +954,17 @@ export class ServiceApiKeysPage extends Component {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
         : this.props.setTitle(`Service Apikeys`);
-      this.setState({ service }, () => {
+      this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
         if (this.table) {
           this.table.readRoute();
           this.table.update();
         }
       });
-    });
+    })
+      .catch(_ => {
+        this.setState({ loading: false })
+      });
   }
 
   fetchAllApiKeys = () => {
@@ -996,7 +1003,7 @@ export class ServiceApiKeysPage extends Component {
   };
 
   render() {
-    return (
+    return <Loader loading={this.state.loading}>
       <Table
         parentProps={this.props}
         selfUrl={
@@ -1064,7 +1071,7 @@ export class ServiceApiKeysPage extends Component {
         }}
         extractKey={(item) => item.clientId}
       />
-    );
+    </Loader>
   }
 }
 
@@ -1076,7 +1083,9 @@ export class ApiKeysPage extends Component {
     fields: {
       enabled: true,
       clientId: true,
-      clientName: true
+      clientName: true,
+      stats: true,
+      credentials: true
     }
   };
 

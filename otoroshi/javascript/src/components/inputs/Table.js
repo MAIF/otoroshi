@@ -416,10 +416,9 @@ export class Table extends Component {
       routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    // console.log(window.location.pathname, routeTo);
-    if (window.location.pathname !== routeTo) {
-      window.location.href = routeTo;
-    } else {
+    // if (window.location.pathname !== routeTo) {
+    //   window.location.href = routeTo;
+    // } else {
       if (this.props.parentProps.setTitle) {
         this.props.parentProps.setTitle(
           `Update a ${this.props.itemName}`,
@@ -428,7 +427,7 @@ export class Table extends Component {
         );
       }
       this.setState({ currentItem: item, showEditForm: true });
-    }
+    // }
   };
 
   deleteItem = (e, item) => {
@@ -678,11 +677,11 @@ export class Table extends Component {
                 type="button"
                 className="btn btn-sm btn-success me-2"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                onClick={(e) =>
+                onClick={(e) => {
                   this.props.navigateOnEdit
                     ? this.props.navigateOnEdit(item)
                     : this.showEditForm(e, item)
-                }
+                }}
               >
                 <i className="fas fa-pencil-alt" />
               </button>
