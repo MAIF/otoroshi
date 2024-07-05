@@ -8,15 +8,14 @@ import { Restrictions } from '../components/Restrictions';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
+import { firstLetterUppercase } from '../util';
 
 const FIELDS_SELECTOR = "otoroshi-fields-selector";
 
 const CORE_FIELDS = [
-  'id',
   'enabled',
   'clientId',
-  'clientName',
-  'clientSecret'
+  'clientName'
 ]
 
 class ApikeyBearer extends Component {
@@ -816,7 +815,8 @@ const ApiKeysConstants = {
       cell: (v, item, table) => <CopyFromLineItem item={item} table={table} />,
     },
     {
-      title: 'Active',
+      title: 'Enabled',
+      filterId: 'enabled',
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1074,11 +1074,9 @@ export class ApiKeysPage extends Component {
     env: this.props.env,
     loading: true,
     fields: {
-      id: true,
       enabled: true,
       clientId: true,
-      clientName: true,
-      clientSecret: true
+      clientName: true
     }
   };
 
@@ -1123,12 +1121,13 @@ export class ApiKeysPage extends Component {
   }
 
   onFieldsChange = fields => {
-    if (this.ref.current) {
-      this.ref.current.update()
-    }
-
     this.setState({
       fields
+    }, () => {
+      this.saveFields(fields)
+      if (this.ref.current) {
+        this.ref.current.update()
+      }
     })
   }
 
@@ -1167,9 +1166,59 @@ export class ApiKeysPage extends Component {
       .delete(ak, 'clientId')
   };
 
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+  buildColumn = field => {
+    return {
+      title: firstLetterUppercase(field.split(".").slice(-1)[0]),
+      filterId: firstLetterUppercase(field),
+      content: item => {
+        const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
+        if (Array.isArray(value)) {
+          return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
+        } else if (this.isAnObject(value)) {
+          return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
+        } else if (typeof value == "boolean") {
+          return value ? 'Active' : 'Disabled'
+        } else {
+          return "" + value
+        }
+      },
+      notSortable: true,
+      notFilterable: true
+    }
+  }
+
   render() {
+    const { fields } = this.state;
+
+    const lowercaseFields = Object.entries(fields)
+      .map(([key, value]) => [key.toLowerCase(), value])
+
+    const columns = [
+      ...ApiKeysConstants.columns(this),
+      ...Object.keys(this.state.fields)
+        .filter(f => !CORE_FIELDS.includes(f))
+        .map(this.buildColumn)
+    ]
+      .filter((c) => {
+        if (!c)
+          return false
+
+        return lowercaseFields
+          .find(([key, value]) => {
+            if (key === c.title?.toLowerCase() ||
+              key === c.filterId?.toLowerCase())
+              return value
+            return false
+          })
+      })
+
+    console.log(columns, fields)
+
     return <Loader loading={this.state.loading}>
       <Table
+        ref={this.ref}
         parentProps={this.props}
         selfUrl={`apikeys`}
         defaultTitle="All apikeys"
@@ -1196,50 +1245,39 @@ export class ApiKeysPage extends Component {
         itemName="Apikey"
         formSchema={ApiKeysConstants.formSchema(this)}
         formFlow={ApiKeysConstants.formFlow}
-        columns={[
-          ...ApiKeysConstants.columns(this),
-          ...Object.keys(this.state.fields)
-            .filter(f => !CORE_FIELDS.includes(f))
-            .map(field => ({
-              title: firstLetterUppercase(field.split(".").slice(-1)[0]),
-              filterId: firstLetterUppercase(field),
-              content: item => {
-                const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
-                if (Array.isArray(value)) {
-                  return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
-                } else if (isAnObject(value)) {
-                  return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
-                } else {
-                  return "" + value
-                }
-              },
-              notSortable: true,
-              notFilterable: true
-            }))
-        ]}
-        fields={this.state.fields}
+        columns={columns}
+        fields={fields}
         coreFields={CORE_FIELDS}
         addField={fieldPath => {
           const newFields = {
             ...fields,
             [fieldPath]: true
           }
-          setFields(newFields)
-          onFieldsChange(newFields)
+          this.setState({
+            fields: newFields
+          }, () => {
+            this.onFieldsChange(newFields)
+          })
         }}
         removeField={fieldPath => {
           const { [fieldPath]: _, ...newFields } = fields;
 
-          setFields(newFields)
-          onFieldsChange(newFields)
+          this.setState({
+            fields: newFields
+          }, () => {
+            this.onFieldsChange(newFields)
+          })
         }}
         onToggleField={(column, enabled) => {
           const newFields = {
             ...fields,
             [column]: enabled
           }
-          onFieldsChange(newFields)
-          setFields(newFields)
+          this.setState({
+            fields: newFields
+          }, () => {
+            this.onFieldsChange(newFields)
+          })
         }}
         fetchTemplate={this.fetchTemplate}
         fetchItems={this.fetchAllApiKeys}
@@ -1262,6 +1300,6 @@ export class ApiKeysPage extends Component {
         itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
         extractKey={(item) => item.clientId}
       />
-    </Loader>
+    </Loader >
   }
 }

@@ -787,13 +787,13 @@ export class Table extends Component {
                 filterAll={true}
                 defaultSorted={[
                   {
-                    id: this.props.defaultSort || this.props.columns[0].title,
+                    id: this.props.defaultSort || this.props.columns[0]?.title,
                     desc: this.props.defaultSortDesc || false,
                   },
                 ]}
                 defaultFiltered={
                   this.props.search
-                    ? [{ id: this.props.columns[0].title, value: this.props.search }]
+                    ? [{ id: this.props.columns[0]?.title, value: this.props.search }]
                     : []
                 }
                 onFetchData={(state, instance) => {
