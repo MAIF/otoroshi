@@ -155,7 +155,9 @@ export class NgFormRenderer extends Component {
 
     if (!this.props.embedded) {
       return (
-        <form style={this.props.style} className={this.props.className}>
+        <form style={this.props.style} className={this.props.className} onSubmit={e => {
+          e.preventDefault()
+        }}>
           {this.props.children}
         </form>
       );
