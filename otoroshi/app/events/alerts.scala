@@ -573,6 +573,29 @@ case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
     )
 }
 
+case class CertAlmostExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id"         -> `@id`,
+      "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"       -> `@type`,
+      "@product"    -> _env.eventsName,
+      "@serviceId"  -> `@serviceId`,
+      "@service"    -> `@service`,
+      "@env"        -> `@env`,
+      "audit"       -> "CertAlmostExpiredAlert",
+      "certificate" -> cert.toJson
+    )
+}
+
 case class SnowMonkeyOutageRegisteredAlert(
     `@id`: String,
     `@env`: String,
