@@ -321,7 +321,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://request.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -334,7 +334,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }

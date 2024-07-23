@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
@@ -62,7 +63,7 @@ class OverrideHost extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true
@@ -95,6 +96,69 @@ class OverrideHost extends NgRequestTransformer {
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
         Right(request)
+    }
+  }
+}
+
+class OverrideLocationHeader extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Override Location header"
+  override def description: Option[String]                 =
+    "This plugin override the current Location header with the Host of the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def noJsForm: Boolean = true
+
+  override def transformResponseSync(
+    ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    ctx.attrs.get(Keys.BackendKey) match {
+      case None          => ctx.otoroshiResponse.right
+      case Some(backend) => {
+        val status = ctx.otoroshiResponse.status
+        if ((status > 299 && status < 400) || status == 201) {
+          ctx.otoroshiResponse.header("Location") match {
+            case None => ctx.otoroshiResponse.right
+            case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) => ctx.otoroshiResponse.right
+            case Some(location) => {
+              val backendHost = TargetExpressionLanguage(
+                backend.hostname,
+                Some(ctx.request),
+                ctx.route.serviceDescriptor.some,
+                ctx.route.some,
+                ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+                ctx.attrs.get(otoroshi.plugins.Keys.UserKey),
+                ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+                ctx.attrs,
+                env
+              )
+              val oldLocation = Uri(location)
+              val oldLocationHost = oldLocation.authority.host.toString()
+              if (oldLocationHost.equalsIgnoreCase(backendHost)) {
+                val frontendHost = Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domain)
+                val newLocation = oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
+                val headers = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
+                ctx.otoroshiResponse.copy(headers = headers).right
+              } else {
+                ctx.otoroshiResponse.right
+              }
+            }
+          }
+        } else {
+          ctx.otoroshiResponse.right
+        }
+      }
     }
   }
 }

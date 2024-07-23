@@ -451,7 +451,7 @@ export default {
         shouldKeepFirstItem: true,
         v2: {
           template: {
-            hostname: 'mirror.otoroshi.io',
+            hostname: 'request.otoroshi.io',
             protocol: 'HTTP/1.1',
             port: 443,
             weight: 0,

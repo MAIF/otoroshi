@@ -724,8 +724,8 @@ object NgRoute {
     backend = NgBackend(
       targets = Seq(
         NgTarget(
-          id = "tls://mirror.otoroshi.io:443",
-          hostname = "mirror.otoroshi.io",
+          id = "tls://request.otoroshi.io:443",
+          hostname = "request.otoroshi.io",
           port = 443,
           tls = true
         )

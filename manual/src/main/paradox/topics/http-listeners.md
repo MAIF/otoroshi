@@ -128,8 +128,8 @@ for instance, the following route in only accessible from the http listener with
   "backend": {
     "targets": [
       {
-        "id": "mirror.otoroshi.io",
-        "hostname": "mirror.otoroshi.io",
+        "id": "request.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true,
         "weight": 1,
@@ -192,8 +192,8 @@ if you need something more subtle, it is also possible to apply plugins only on 
   "backend": {
     "targets": [
       {
-        "id": "mirror.otoroshi.io",
-        "hostname": "mirror.otoroshi.io",
+        "id": "request.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true,
         "weight": 1,

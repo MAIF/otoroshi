@@ -46,6 +46,9 @@ For each event, a list of information will be displayed and an additional button
 * `ApiKeyCreatedAlert`: send when an user admin has crated a new apikey
 * `ApiKeyUpdatedAlert`: send when an user admin has updated a new apikey
 * `ApiKeyDeletedAlert`: send when an user admin has deleted a new apikey
+* `CertRenewalAlert`: sent when a certificate has been automatically renewed
+* `CertExpiredAlert`: sent when a certificate has expired
+* `CertAlmostExpiredAlert`: sent when a certificate is almost expired
 
 ## Audit
 
