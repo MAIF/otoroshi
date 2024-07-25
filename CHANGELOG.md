@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.6] - 2024-07-25
+
+
+https://github.com/MAIF/otoroshi/milestone/101?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.5...v16.18.6
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.6
+
+
+
+
+### Fixed 
+
+- kubernetes cacert decoding fails when not read from kubeconfig file (#1953)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.18.5] - 2024-07-25
 
 
