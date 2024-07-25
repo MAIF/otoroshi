@@ -108,7 +108,17 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   config.caCert.foreach { cert =>
     try {
-      val decoded = new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)
+      val decoded = {
+        val trimmed = cert.trim
+        if (trimmed.startsWith("-----BEGIN CERTIFICATE-----")) {
+          cert
+        } else {
+          Try(new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)) match {
+            case Failure(e) => cert
+            case Success(decodedCert) => decodedCert
+          }
+        }
+      }
       val caCert  = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-ca-cert"
