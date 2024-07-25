@@ -203,11 +203,12 @@ object KubernetesConfig {
             },
           caCert =
             (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map {
-              defaultUser => {
-                val base64Cert = (defaultUser \ "cluster" \ "certificate-authority-data").as[String]
-                val cert = new String(Base64.getDecoder.decode(base64Cert), StandardCharsets.UTF_8)
-                cert
-              }
+              defaultUser =>
+                {
+                  val base64Cert = (defaultUser \ "cluster" \ "certificate-authority-data").as[String]
+                  val cert       = new String(Base64.getDecoder.decode(base64Cert), StandardCharsets.UTF_8)
+                  cert
+                }
             },
           namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
           namespacesLabels = (conf \ "namespacesLabels").asOpt[Map[String, String]].getOrElse(Map.empty),

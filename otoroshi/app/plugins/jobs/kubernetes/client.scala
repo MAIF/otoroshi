@@ -114,12 +114,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           cert
         } else {
           Try(new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)) match {
-            case Failure(e) => cert
+            case Failure(e)           => cert
             case Success(decodedCert) => decodedCert
           }
         }
       }
-      val caCert  = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
+      val caCert = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-ca-cert"
       } match {
