@@ -12,17 +12,13 @@ https://maif.github.io/otoroshi/manual/code/openapi.json
 
 Every Otoroshi instance provides its own embedded OpenAPI descriptor at :
 
-http://otoroshi.oto.tools:8080/api/openapi.json
+http://otoroshi.oto.tools:8080/apis/openapi.json
 
 ## Swagger documentation
 
 You can read the OpenAPI descriptor in a more human friendly fashion using `Swagger UI`. The swagger UI documentation of the Otoroshi admin API is available at :
 
 https://maif.github.io/otoroshi/swagger-ui/index.html
-
-Every Otoroshi instance provides its own embedded OpenAPI descriptor at :
-
-http://otoroshi.oto.tools:8080/api/swagger/ui
 
 You can also read the swagger UI documentation of the Otoroshi admin API below :
 
