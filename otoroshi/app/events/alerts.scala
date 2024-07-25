@@ -574,7 +574,7 @@ case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
 }
 
 case class CertAlmostExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+    extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"

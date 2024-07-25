@@ -118,10 +118,10 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def description: Option[String]                 =
     "This plugin override the current Location header with the Host of the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
-  override def noJsForm: Boolean = true
+  override def noJsForm: Boolean                           = true
 
   override def transformResponseSync(
-    ctx: NgTransformerResponseContext
+      ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => ctx.otoroshiResponse.right
@@ -129,10 +129,11 @@ class OverrideLocationHeader extends NgRequestTransformer {
         val status = ctx.otoroshiResponse.status
         if ((status > 299 && status < 400) || status == 201) {
           ctx.otoroshiResponse.header("Location") match {
-            case None => ctx.otoroshiResponse.right
-            case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) => ctx.otoroshiResponse.right
-            case Some(location) => {
-              val backendHost = TargetExpressionLanguage(
+            case None                                                                                   => ctx.otoroshiResponse.right
+            case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
+              ctx.otoroshiResponse.right
+            case Some(location)                                                                         => {
+              val backendHost     = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
                 ctx.route.serviceDescriptor.some,
@@ -143,12 +144,14 @@ class OverrideLocationHeader extends NgRequestTransformer {
                 ctx.attrs,
                 env
               )
-              val oldLocation = Uri(location)
+              val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
               if (oldLocationHost.equalsIgnoreCase(backendHost)) {
-                val frontendHost = Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domain)
-                val newLocation = oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
-                val headers = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
+                val frontendHost =
+                  Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domain)
+                val newLocation  =
+                  oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
+                val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
                 ctx.otoroshiResponse.copy(headers = headers).right
               } else {
                 ctx.otoroshiResponse.right

@@ -317,7 +317,8 @@ class Env(
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
-  lazy val routeBaseDomain = configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
+  lazy val routeBaseDomain =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
 
   lazy val bypassUserRightsCheck: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)

@@ -36,7 +36,11 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.jcajce.{
+  JcaPEMKeyConverter,
+  JceOpenSSLPKCS8DecryptorProviderBuilder,
+  JcePEMDecryptorProviderBuilder
+}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -693,12 +697,12 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def renewCertificates()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     def willBeInvalidSoon(cert: Cert): Boolean = {
-      val enriched         = cert.enrich()
-      val globalInterval   = new Interval(enriched.from, enriched.to)
+      val enriched       = cert.enrich()
+      val globalInterval = new Interval(enriched.from, enriched.to)
       if (enriched.to.isBefore(DateTime.now())) {
         false
       } else {
-        val nowInterval = new Interval(DateTime.now(), enriched.to)
+        val nowInterval      = new Interval(DateTime.now(), enriched.to)
         val percentage: Long = (nowInterval.toDurationMillis * 100) / globalInterval.toDurationMillis
         percentage < 20
       }
@@ -852,8 +856,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
       _              <- renewNonCaCertificates(ncertificates)
       nncertificates <- findAll()
       _              <- alertAlmostExpiredCerts(nncertificates)
-    } yield ()).andThen {
-      case Failure(e) => DynamicSSLEngineProvider.logger.error("error during the certificate renew job", e)
+    } yield ()).andThen { case Failure(e) =>
+      DynamicSSLEngineProvider.logger.error("error during the certificate renew job", e)
     }
   }
 
