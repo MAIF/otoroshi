@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.5] - 2024-07-25
+
+
+https://github.com/MAIF/otoroshi/milestone/100?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.4...v16.18.5
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.5
+
+
+### Added 
+
+- add endpoints to know the schema of entities from the admin apis (#1938)
+- polyfill.io mitigation plugin (#1939)
+- identity endpoint plugin (#1940)
+- consumer endpoint plugin (#1941)
+- polyfill.io detector plugin (#1942)
+- make the default route domain customizable (#1943)
+- Location header rewrite plugin (#1944)
+- alert when certifcates are almost expired (#1947)       
+      
+### Changed 
+
+- enable vaults by default (#1937)       
+      
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.18.4] - 2024-06-13
 
 
