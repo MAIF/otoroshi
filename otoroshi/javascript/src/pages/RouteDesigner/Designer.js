@@ -1958,10 +1958,7 @@ const UnselectedNode = ({
       const domainParts = domain.split('/');
       const hasPath = domainParts.length > 1;
 
-      console.log(hasPath, domainParts);
-
-      if (isSecured)
-        return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+      if (isSecured) return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
 
       return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
     };
