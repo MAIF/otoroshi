@@ -182,16 +182,15 @@ export default {
           },
         },
         certId: {
-          type: 'array-select',
-          help: 'The keypair used to sign/verify token',
+          type: 'select',
+          label: 'Cert. id',
           props: {
-            label: 'Certificates',
             optionsFrom: '/bo/api/proxy/api/certificates',
             optionsTransformer: {
               label: 'name',
               value: 'id',
             },
-          },
+          }
         },
         onlyExposedCerts: {
           type: 'boolean',
