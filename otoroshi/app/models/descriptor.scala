@@ -1293,7 +1293,7 @@ object ApiKeyConstraints {
           ApiKeyConstraints(
             basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
             customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
-            otoBearerAuth = (json \ "otoBearerAuth").as(OtoBearerConstraints.format),
+            otoBearerAuth = (json \ "otoBearerAuth").asOpt(OtoBearerConstraints.format).getOrElse(OtoBearerConstraints()),
             clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
             jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
             routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
