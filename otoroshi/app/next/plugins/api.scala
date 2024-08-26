@@ -1,7 +1,7 @@
 package otoroshi.next.plugins.api
 
 import akka.Done
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentType, StatusCodes, Uri}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
@@ -19,14 +19,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -67,6 +60,7 @@ case class NgPluginHttpRequest(
     backend: Option[NgTarget]
 ) {
   lazy val contentType: Option[String]              = header("Content-Type")
+  lazy val typedContentType: Option[ContentType]    = contentType.flatMap(ct => ContentType.parse(ct).toOption)
   lazy val contentLengthStr: Option[String]         = header("Content-Length")
   lazy val transferEncoding: Option[String]         = header("Transfer-Encoding")
   lazy val host: String                             = header("Host").getOrElse("")
@@ -138,9 +132,16 @@ case class NgPluginHttpRequest(
 
 object NgPluginHttpResponse {
   def fromResult(result: Result): NgPluginHttpResponse = {
+    val headers = result.header.headers
+      .applyOnWithOpt(result.body.contentType) {
+        case (headers, ctype) => headers + ("Content-Type" -> ctype)
+      }
+      .applyOnWithOpt(result.body.contentLength) {
+        case (headers, clength) => headers + ("Content-Length" -> clength.toString)
+      }
     NgPluginHttpResponse(
       status = result.header.status,
-      headers = result.header.headers,
+      headers = headers,
       cookies = result.newCookies.map(c =>
         DefaultWSCookie(
           name = c.name,

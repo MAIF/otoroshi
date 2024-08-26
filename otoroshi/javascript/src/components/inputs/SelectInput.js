@@ -110,6 +110,7 @@ export class SelectInput extends Component {
           <div className="col-sm-10">
             <div style={{ width: '100%' }}>
               <ReactSelectOverride
+                isClearable={this.props.isClearable}
                 value={this.state.value}
                 onChange={this.onChangeClassic}
                 options={this.state.values}
@@ -125,6 +126,7 @@ export class SelectInput extends Component {
           <ReactSelectOverride
             style={{ width: '100%' }}
             name={`${this.props.label}-search`}
+            isClearable={this.props.isClearable}
             isLoading={this.state.loading}
             value={this.state.value}
             placeholder={this.props.placeholder}
@@ -150,6 +152,7 @@ export class SelectInput extends Component {
               <ReactSelectOverride
                 style={{ width: this.props.more ? '100%' : '100%' }}
                 name={`${this.props.label}-search`}
+                isClearable={this.props.isClearable}
                 isLoading={this.state.loading}
                 value={this.state.value}
                 placeholder={this.props.placeholder}

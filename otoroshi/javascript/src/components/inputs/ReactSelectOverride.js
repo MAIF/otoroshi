@@ -85,6 +85,7 @@ export class ReactSelectOverride extends React.Component {
         {...this.props}
         value={this.getValue()}
         onChange={this.onChange}
+        isClearable={this.props.isClearable}
         components={{
           IndicatorSeparator: () => null,
         }}
