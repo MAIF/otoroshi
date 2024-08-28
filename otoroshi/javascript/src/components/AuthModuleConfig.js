@@ -1885,6 +1885,7 @@ export class SamlModuleConfig extends Component {
     'validatingCertificates',
     'userValidators',
     'adminEntityValidatorsOverride',
+    'extraMetadata'
   ];
 
   changeTheValue = (name, value) => {
@@ -1912,7 +1913,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({}) => {
+      type: ({ }) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1990,7 +1991,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({}) => {
+      type: ({ }) => {
         const { signingKey, encryptionKey, signedDocuments, encryptedAssertions } =
           this.props.value.credentials;
 
@@ -2036,9 +2037,8 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
-                    config.element
-                  } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
+                    } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -2112,7 +2112,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({}) => {
+      type: ({ }) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2161,7 +2161,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     adminEntityValidatorsOverride: {
-      type: ({}) => (
+      type: ({ }) => (
         <JsonObjectAsCodeInput
           label="Admin entity validators override"
           mode="json"
@@ -2186,6 +2186,31 @@ export class SamlModuleConfig extends Component {
         label: 'Admin entity validators override',
       },
     },
+    extraMetadata: {
+      type: ({ }) => (
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Extra metadata"
+            mode="json"
+            value={JSON.stringify(this.props.value.extraMetadata, null, 2)}
+            onChange={(e) => {
+              if (e.trim() === '') {
+                this.changeTheValue('.extraMetadata', {});
+              } else {
+                this.changeTheValue('.extraMetadata', JSON.parse(e));
+              }
+            }}
+            example={{
+              provider: 'Keycloak',
+              foo: 'bar',
+            }}
+          />
+        </Suspense>
+      ),
+      props: {
+        label: 'Extra metadata',
+      },
+    }
   };
 
   fetchFromURL = () => {
@@ -2409,7 +2434,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({}) => (
+      type: ({ }) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
@@ -2430,7 +2455,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     adminEntityValidatorsOverride: {
-      type: ({}) => (
+      type: ({ }) => (
         <JsonObjectAsCodeInput
           label="Admin entity validators override"
           mode="json"

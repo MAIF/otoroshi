@@ -205,13 +205,13 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
                 profile = Json.obj(
                   "name"  -> name,
                   "email" -> email
-                ),
+                ).deepMerge(authConfig.extraMetadata),
                 token = Json.obj(),
                 authConfigId = authConfig.id,
                 realm = authConfig.cookieSuffix(descriptor),
                 tags = Seq.empty,
                 metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
-                otoroshiData = None,
+                otoroshiData = Some(authConfig.extraMetadata),
                 location = authConfig.location
               ).validate(authConfig.userValidators)
             )
@@ -318,7 +318,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
                 profile = Json.obj(
                   "name"  -> name,
                   "email" -> email
-                ),
+                ).deepMerge(authConfig.extraMetadata),
                 email = email,
                 authConfigId = authConfig.id,
                 simpleLogin = false,
@@ -370,6 +370,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           issuer = (json \ "issuer").as[String],
           ssoProtocolBinding = (json \ "ssoProtocolBinding")
             .asOpt[String]
@@ -755,6 +756,7 @@ case class SamlAuthModuleConfig(
     nameIDFormat: NameIDFormat = NameIDFormat.Unspecified,
     tags: Seq[String],
     metadata: Map[String, String],
+    extraMetadata: JsObject = Json.obj(),
     issuer: String,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     validatingCertificates: List[String] = List.empty,
@@ -790,6 +792,7 @@ case class SamlAuthModuleConfig(
     "credentials"                   -> SAMLCredentials.fmt.writes(this.credentials),
     "tags"                          -> JsArray(tags.map(JsString.apply)),
     "metadata"                      -> this.metadata,
+    "extraMetadata"                 -> this.extraMetadata,
     "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
     "issuer"                        -> this.issuer,
     "validatingCertificates"        -> this.validatingCertificates,

@@ -746,10 +746,55 @@ class AuthController(
 
       def processRoute(routeId: String) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to route : $routeId")
+
         env.proxyState.route(routeId).vfuture.flatMap {
           case None                                                                                               => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
-          case Some(route) if !route.plugins.hasPlugin[MultiAuthModule]                                           =>
-            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+          case Some(route) if route.plugins.hasPlugin[otoroshi.next.plugins.AuthModule] && route.id != env.backOfficeDescriptor.id => {
+            withAuthConfig(route.serviceDescriptor, ctx.request) { _auth =>
+              verifyHash(route.id, _auth, ctx.request) {
+                case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                  val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
+                  req.headers.get("WebAuthn-Login-Step") match {
+                    case Some("start")  => {
+                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy).map {
+                        case Left(error) => BadRequest(Json.obj("error" -> error))
+                        case Right(reg)  => Ok(reg)
+                      }
+                    }
+                    case Some("finish") => {
+                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                      }
+                    }
+                    case _              =>
+                      BadRequest(
+                        otoroshi.views.html.oto
+                          .error(message = s"Missing step", _env = env, title = "Authorization error")
+                      ).vfuture
+                  }
+                }
+                case auth                                                                                => {
+                  auth
+                    .authModule(ctx.globalConfig)
+                    .paCallback(ctx.request, ctx.globalConfig, route.legacy)
+                    .flatMap {
+                      case Left(error) => {
+                        BadRequest(
+                          otoroshi.views.html.oto
+                            .error(
+                              message = s"You're not authorized here: ${error}",
+                              _env = env,
+                              title = "Authorization error"
+                            )
+                        ).vfuture
+                      }
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                    }
+                }
+              }
+            }
+          }
           case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
             withMultiAuthConfig(route, ctx.request, refFromRelayState) { _auth =>
               verifyHash(route.id, _auth, ctx.request) {
