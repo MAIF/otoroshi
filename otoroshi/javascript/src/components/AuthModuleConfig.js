@@ -483,6 +483,17 @@ export class Oauth2ModuleConfig extends Component {
             value: true,
           }}
         />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
+          }}
+        />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
@@ -1105,6 +1116,17 @@ export class BasicModuleConfig extends Component {
             value: true,
           }}
         />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
+          }}
+        />
       </div>
     );
   }
@@ -1184,6 +1206,17 @@ export class WasmAuthModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
       </div>
@@ -1529,6 +1562,17 @@ export class LdapModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
         <Suspense fallback={<div>loading ...</div>}>
@@ -1884,6 +1928,7 @@ export class SamlModuleConfig extends Component {
     'validateAssertions',
     'validatingCertificates',
     'userValidators',
+    'remoteValidators',
     'adminEntityValidatorsOverride',
     'extraMetadata'
   ];
@@ -1909,6 +1954,18 @@ export class SamlModuleConfig extends Component {
         defaultValue: {
           path: '$.profile.admin',
           value: true,
+        },
+      },
+    },
+    remoteValidators: {
+      type: 'array',
+      props: {
+        label: 'Remote validators',
+        component: RemoteValidator,
+        defaultValue: {
+          url: 'https://validator.oto.tools:3005/user_validation',
+          headers: {},
+          timeout: 3000,
         },
       },
     },
@@ -2334,6 +2391,7 @@ export class OAuth1ModuleConfig extends Component {
     'profileURL',
     'callbackURL',
     'userValidators',
+    'remoteValidators',
     'rightsOverride',
     'adminEntityValidatorsOverride',
   ];
@@ -2394,6 +2452,18 @@ export class OAuth1ModuleConfig extends Component {
         defaultValue: {
           path: '$.profile.admin',
           value: true,
+        },
+      },
+    },
+    remoteValidators: {
+      type: 'array',
+      props: {
+        label: 'Remote validators',
+        component: RemoteValidator,
+        defaultValue: {
+          url: 'https://validator.oto.tools:3005/user_validation',
+          headers: {},
+          timeout: 3000,
         },
       },
     },
@@ -2538,6 +2608,7 @@ const SessionCookieConfig = (props) => {
 };
 
 const UserValidator = (props) => {
+
   const validator = props.itemValue;
 
   function changeTheValue(field, value) {
@@ -2567,6 +2638,41 @@ const UserValidator = (props) => {
             changeTheValue('value', v);
           }
         }}
+      />
+    </>
+  );
+};
+
+const RemoteValidator = (props) => {
+
+  const validator = props.itemValue;
+
+  function changeTheValue(field, value) {
+    const arr = props.value;
+    arr[props.idx][field] = value;
+    props.onChange(arr);
+  }
+
+  return (
+    <>
+      <TextInput
+        label="URL"
+        value={validator.url}
+        help="The remote validator url"
+        onChange={(v) => changeTheValue('url', v)}
+      />
+      <ObjectInput
+        label="Headers"
+        value={validator.headers}
+        help="The remote validator headers"
+        onChange={(v) => changeTheValue('headers', v)}
+      />
+      <NumberInput
+        label="Timeout"
+        value={validator.timeout}
+        help="The remote validator timeout"
+        suffix="millis."
+        onChange={(v) => changeTheValue('timeout', v)}
       />
     </>
   );

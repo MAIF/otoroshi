@@ -708,7 +708,10 @@ class AuthController(
                     }
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
-                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Left(error) => {
+                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          BadRequest(Json.obj("error" -> error.display)).vfuture
+                        }
                         case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
                       }
                     }
@@ -763,7 +766,10 @@ class AuthController(
                     }
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
-                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Left(error) => {
+                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          BadRequest(Json.obj("error" -> error.display)).vfuture
+                        }
                         case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
                       }
                     }
@@ -809,7 +815,10 @@ class AuthController(
                     }
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
-                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Left(error) => {
+                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          BadRequest(Json.obj("error" -> error.display)).vfuture
+                        }
                         case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
                       }
                     }
@@ -1072,7 +1081,10 @@ class AuthController(
                             }
                             case Some("finish") => {
                               authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
-                                case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                                case Left(error) => {
+                                  logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                                  BadRequest(Json.obj("error" -> error.display)).future
+                                }
                                 case Right(user) => saveUser(user, auth, true)(ctx.request)
                               }
                             }

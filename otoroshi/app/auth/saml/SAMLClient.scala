@@ -157,7 +157,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]] = {
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
     request.body.asFormUrlEncoded match {
       case Some(body) =>
@@ -166,7 +166,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
         decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
           case Left(value)       =>
             env.logger.error(value)
-            FastFuture.successful(Left(value))
+            FastFuture.successful(Left(ErrorReason(value)))
           case Right(assertions) =>
             val assertion = assertions.get(0)
 
@@ -197,26 +197,24 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
-            FastFuture.successful(
-              PrivateAppsUser(
-                randomId = IdGenerator.token(64),
-                name = name,
-                email = email,
-                profile = Json.obj(
-                  "name"  -> name,
-                  "email" -> email
-                ).deepMerge(authConfig.extraMetadata),
-                token = Json.obj(),
-                authConfigId = authConfig.id,
-                realm = authConfig.cookieSuffix(descriptor),
-                tags = Seq.empty,
-                metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
-                otoroshiData = Some(authConfig.extraMetadata),
-                location = authConfig.location
-              ).validate(authConfig.userValidators)
-            )
+            PrivateAppsUser(
+              randomId = IdGenerator.token(64),
+              name = name,
+              email = email,
+              profile = Json.obj(
+                "name"  -> name,
+                "email" -> email
+              ).deepMerge(authConfig.extraMetadata),
+              token = Json.obj(),
+              authConfigId = authConfig.id,
+              realm = authConfig.cookieSuffix(descriptor),
+              tags = Seq.empty,
+              metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
+              otoroshiData = Some(authConfig.extraMetadata),
+              location = authConfig.location
+            ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
         }
-      case None       => FastFuture.successful(Left(""))
+      case None       => FastFuture.successful(Left(ErrorReason("error")))
     }
   }
 
@@ -271,7 +269,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
   override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, BackOfficeUser]] = {
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
 
     request.body.asFormUrlEncoded match {
       case Some(body) =>
@@ -280,7 +278,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
         decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
           case Left(value)       =>
             env.logger.error(value)
-            FastFuture.successful(Left(value))
+            FastFuture.successful(Left(ErrorReason(value)))
           case Right(assertions) =>
             val assertion = assertions.get(0)
 
@@ -311,33 +309,31 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
-            FastFuture.successful(
-              BackOfficeUser(
-                randomId = IdGenerator.token(64),
-                name = name,
-                profile = Json.obj(
-                  "name"  -> name,
-                  "email" -> email
-                ).deepMerge(authConfig.extraMetadata),
-                email = email,
-                authConfigId = authConfig.id,
-                simpleLogin = false,
-                tags = Seq.empty,
-                metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
-                adminEntityValidators = authConfig.adminEntityValidatorsOverride.getOrElse(email, Map.empty),
-                rights = UserRights(
-                  Seq(
-                    UserRight(
-                      TenantAccess(authConfig.location.tenant.value),
-                      authConfig.location.teams.map(t => TeamAccess(t.value))
-                    )
+            BackOfficeUser(
+              randomId = IdGenerator.token(64),
+              name = name,
+              profile = Json.obj(
+                "name"  -> name,
+                "email" -> email
+              ).deepMerge(authConfig.extraMetadata),
+              email = email,
+              authConfigId = authConfig.id,
+              simpleLogin = false,
+              tags = Seq.empty,
+              metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
+              adminEntityValidators = authConfig.adminEntityValidatorsOverride.getOrElse(email, Map.empty),
+              rights = UserRights(
+                Seq(
+                  UserRight(
+                    TenantAccess(authConfig.location.tenant.value),
+                    authConfig.location.teams.map(t => TeamAccess(t.value))
                   )
-                ),
-                location = authConfig.location
-              ).validate(authConfig.userValidators)
-            )
+                )
+              ),
+              location = authConfig.location
+            ).validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = true, authConfig)
         }
-      case None       => FastFuture.successful(Left(""))
+      case None       => FastFuture.successful(Left(ErrorReason("error")))
     }
   }
 }
@@ -398,6 +394,10 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty),
+          remoteValidators = (json \ "remoteValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
@@ -744,6 +744,7 @@ case class SamlAuthModuleConfig(
     clientSideSessionEnabled: Boolean,
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
+    remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     singleSignOnUrl: String,
     singleLogoutUrl: Option[String],
     ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
@@ -787,6 +788,7 @@ case class SamlAuthModuleConfig(
     "sessionMaxAge"                 -> this.sessionMaxAge,
     "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
     "userValidators"                -> JsArray(userValidators.map(_.json)),
+    "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
     "singleSignOnUrl"               -> this.singleSignOnUrl,
     "singleLogoutUrl"               -> this.singleLogoutUrl.map(JsString.apply).getOrElse(JsNull).asValue,
     "credentials"                   -> SAMLCredentials.fmt.writes(this.credentials),
