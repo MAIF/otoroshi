@@ -14,7 +14,7 @@ serviceAccount:
 
 image:
   name: maif/otoroshi
-  tag: 16.19.0-dev
+  tag: 16.18.7
   pullPolicy: IfNotPresent
   https: 8443
   http: 8080
