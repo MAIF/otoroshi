@@ -19,7 +19,14 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  Message,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -133,11 +140,11 @@ case class NgPluginHttpRequest(
 object NgPluginHttpResponse {
   def fromResult(result: Result): NgPluginHttpResponse = {
     val headers = result.header.headers
-      .applyOnWithOpt(result.body.contentType) {
-        case (headers, ctype) => headers + ("Content-Type" -> ctype)
+      .applyOnWithOpt(result.body.contentType) { case (headers, ctype) =>
+        headers + ("Content-Type" -> ctype)
       }
-      .applyOnWithOpt(result.body.contentLength) {
-        case (headers, clength) => headers + ("Content-Length" -> clength.toString)
+      .applyOnWithOpt(result.body.contentLength) { case (headers, clength) =>
+        headers + ("Content-Length" -> clength.toString)
       }
     NgPluginHttpResponse(
       status = result.header.status,

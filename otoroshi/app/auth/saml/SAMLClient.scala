@@ -201,10 +201,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               randomId = IdGenerator.token(64),
               name = name,
               email = email,
-              profile = Json.obj(
-                "name"  -> name,
-                "email" -> email
-              ).deepMerge(authConfig.extraMetadata),
+              profile = Json
+                .obj(
+                  "name"  -> name,
+                  "email" -> email
+                )
+                .deepMerge(authConfig.extraMetadata),
               token = Json.obj(),
               authConfigId = authConfig.id,
               realm = authConfig.cookieSuffix(descriptor),
@@ -312,10 +314,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
             BackOfficeUser(
               randomId = IdGenerator.token(64),
               name = name,
-              profile = Json.obj(
-                "name"  -> name,
-                "email" -> email
-              ).deepMerge(authConfig.extraMetadata),
+              profile = Json
+                .obj(
+                  "name"  -> name,
+                  "email" -> email
+                )
+                .deepMerge(authConfig.extraMetadata),
               email = email,
               authConfigId = authConfig.id,
               simpleLogin = false,
@@ -331,7 +335,13 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
                 )
               ),
               location = authConfig.location
-            ).validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = true, authConfig)
+            ).validate(
+              authConfig.userValidators,
+              authConfig.remoteValidators,
+              env.backOfficeServiceDescriptor,
+              isRoute = true,
+              authConfig
+            )
         }
       case None       => FastFuture.successful(Left(ErrorReason("error")))
     }

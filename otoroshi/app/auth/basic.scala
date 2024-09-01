@@ -207,7 +207,7 @@ case class BasicAuthModuleConfig(
       "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "userValidators"           -> JsArray(userValidators.map(_.json)),
-      "remoteValidators"           -> JsArray(remoteValidators.map(_.json))
+      "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"basic-auth-$id"
@@ -276,7 +276,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
+  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
@@ -404,7 +407,14 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
             .flatMap {
-              case Some(user) => user.validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+              case Some(user) =>
+                user.validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
               case None       => Left(ErrorReason("No user found")).vfuture
             }
         case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))
@@ -438,7 +448,13 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                         tags = Seq.empty,
                         metadata = Map.empty,
                         location = authConfig.location
-                      ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+                      ).validate(
+                        authConfig.userValidators,
+                        authConfig.remoteValidators,
+                        descriptor,
+                        isRoute = true,
+                        authConfig
+                      )
                     case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
                   }
               }

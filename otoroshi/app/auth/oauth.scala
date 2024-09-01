@@ -711,7 +711,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   tags = authConfig.theTags,
                   metadata = authConfig.metadata,
                   location = authConfig.location
-                ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+                ).validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
               }
           }
         }
@@ -795,7 +801,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       )
                     },
                   location = authConfig.location
-                ).validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = false, authConfig)
+                ).validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  env.backOfficeServiceDescriptor,
+                  isRoute = false,
+                  authConfig
+                )
               }
           }
         }

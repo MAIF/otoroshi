@@ -18,8 +18,8 @@ case class EchoBackendConfig(limit: Long = 512L * 1024L) extends NgPluginConfig 
 }
 
 object EchoBackendConfig {
-  val default = EchoBackendConfig()
-  val format = new Format[EchoBackendConfig] {
+  val default                        = EchoBackendConfig()
+  val format                         = new Format[EchoBackendConfig] {
     override def reads(json: JsValue): JsResult[EchoBackendConfig] = Try {
       EchoBackendConfig(
         limit = json.select("limit").asOptLong.getOrElse(512L * 1024L)
@@ -28,20 +28,22 @@ object EchoBackendConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: EchoBackendConfig): JsValue = Json.obj(
+    override def writes(o: EchoBackendConfig): JsValue             = Json.obj(
       "limit" -> o.limit
     )
   }
-  val configFlow: Seq[String] = Seq("limit")
-  val configSchema: Option[JsObject] = Some(Json.obj(
-    "limit" -> Json.obj(
-      "type" -> "number",
-      "label" -> s"Request body limit",
-      "props" -> Json.obj(
-        "suffix" -> "bytes"
+  val configFlow: Seq[String]        = Seq("limit")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "limit" -> Json.obj(
+        "type"  -> "number",
+        "label" -> s"Request body limit",
+        "props" -> Json.obj(
+          "suffix" -> "bytes"
+        )
       )
     )
-  ))
+  )
 }
 
 class EchoBackend extends NgBackendCall {
@@ -59,32 +61,47 @@ class EchoBackend extends NgBackendCall {
   override def configFlow: Seq[String]                     = EchoBackendConfig.configFlow
   override def configSchema: Option[JsObject]              = EchoBackendConfig.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config  = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
     val cookies = JsObject(ctx.request.cookies.map(c => (c.name, c.json)).toMap)
     val payload = Json.obj(
-      "method" -> ctx.request.method.toUpperCase,
-      "path" -> ctx.request.path,
+      "method"   -> ctx.request.method.toUpperCase,
+      "path"     -> ctx.request.path,
       "raw_path" -> ctx.request.relativeUri,
-      "query" -> ctx.request.queryParams,
-      "headers" -> ctx.request.headers,
-      "cookies" -> cookies,
+      "query"    -> ctx.request.queryParams,
+      "headers"  -> ctx.request.headers,
+      "cookies"  -> cookies
     )
     if (ctx.request.hasBody) {
       ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val body: JsValue = ctx.request.typedContentType match {
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` => bodyRaw.utf8String.json
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/json` => Try(Json.parse(bodyRaw.utf8String)) match {
-            case Success(value) => value
-            case Failure(_) => JsString(bodyRaw.utf8String)
-          }
-          case Some(ctype) if ctype.mediaType.isText => JsString(bodyRaw.utf8String)
-          case _ => JsString(bodyRaw.encodeBase64.utf8String)
+          case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
+            bodyRaw.utf8String.json
+          case Some(ctype) if ctype.mediaType == MediaTypes.`application/json`                  =>
+            Try(Json.parse(bodyRaw.utf8String)) match {
+              case Success(value) => value
+              case Failure(_)     => JsString(bodyRaw.utf8String)
+            }
+          case Some(ctype) if ctype.mediaType.isText                                            => JsString(bodyRaw.utf8String)
+          case _                                                                                => JsString(bodyRaw.encodeBase64.utf8String)
         }
-        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))), None).right
+        BackendCallResponse(
+          NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))),
+          None
+        ).right
       }
     } else {
-      BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> JsNull))), None).rightf
+      BackendCallResponse(
+        NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> JsNull))),
+        None
+      ).rightf
     }
   }
 }
@@ -104,7 +121,14 @@ class RequestBodyEchoBackend extends NgBackendCall {
   override def configFlow: Seq[String]                     = EchoBackendConfig.configFlow
   override def configSchema: Option[JsObject]              = EchoBackendConfig.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
     if (ctx.request.hasBody) {
       ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>

@@ -545,7 +545,13 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                       )
                     ),
                     location = authConfig.location
-                  ).validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = false, authConfig)
+                  ).validate(
+                    authConfig.userValidators,
+                    authConfig.remoteValidators,
+                    env.backOfficeServiceDescriptor,
+                    isRoute = false,
+                    authConfig
+                  )
                 } else {
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
@@ -558,7 +564,13 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                     location = authConfig.location,
                     realm = authConfig.cookieSuffix(descriptor.get),
                     otoroshiData = None
-                  ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor.getOrElse(env.backOfficeServiceDescriptor), isRoute = true, authConfig)
+                  ).validate(
+                    authConfig.userValidators,
+                    authConfig.remoteValidators,
+                    descriptor.getOrElse(env.backOfficeServiceDescriptor),
+                    isRoute = true,
+                    authConfig
+                  )
                 }
               }
               .getOrElse(FastFuture.successful(Left(ErrorReason("Missing content type from provider"))))

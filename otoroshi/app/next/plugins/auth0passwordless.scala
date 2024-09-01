@@ -317,9 +317,17 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
               metadata = oauthConfig.metadata,
               location = oauthConfig.location
             )
-              .validate(oauthConfig.userValidators, oauthConfig.remoteValidators, ctx.route.legacy, isRoute = true, oauthConfig) flatMap {
+              .validate(
+                oauthConfig.userValidators,
+                oauthConfig.remoteValidators,
+                ctx.route.legacy,
+                isRoute = true,
+                oauthConfig
+              ) flatMap {
               case Left(err)   =>
-                logger.error(s"login remote validation failed: ${err.display} - ${err.internal.map(_.stringify).getOrElse("")}")
+                logger.error(
+                  s"login remote validation failed: ${err.display} - ${err.internal.map(_.stringify).getOrElse("")}"
+                )
                 BackendCallResponse(
                   NgPluginHttpResponse.fromResult(
                     Results.Unauthorized(

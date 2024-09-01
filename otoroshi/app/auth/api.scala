@@ -18,29 +18,48 @@ import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class RemoteUserValidatorSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, tlsSettings: NgTlsConfig) {
+case class RemoteUserValidatorSettings(
+    url: String,
+    headers: Map[String, String],
+    timeout: FiniteDuration,
+    tlsSettings: NgTlsConfig
+) {
 
   def json: JsValue = RemoteUserValidatorSettings.format.writes(this)
 
-  def validate(jsonuser: JsValue, desc: ServiceDescriptor, isRoute: Boolean, authModuleConfig: AuthModuleConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, JsValue]] = {
-    env.MtlsWs.url(url, tlsSettings.legacy)
+  def validate(jsonuser: JsValue, desc: ServiceDescriptor, isRoute: Boolean, authModuleConfig: AuthModuleConfig)(
+      implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, JsValue]] = {
+    env.MtlsWs
+      .url(url, tlsSettings.legacy)
       .withRequestTimeout(timeout)
       .withHttpHeaders(headers.toSeq: _*)
-      .post(Json.obj(
-        "user" -> jsonuser,
-        "auth_module" -> authModuleConfig.json,
-      ).applyOnIf(isRoute) { payload =>
-        payload ++ Json.obj("route" -> NgRoute.fromServiceDescriptor(desc, false).json)
-      }.applyOnIf(!isRoute) { payload =>
-        payload ++ Json.obj("service_descriptor" -> desc.json)
-      })
+      .post(
+        Json
+          .obj(
+            "user"        -> jsonuser,
+            "auth_module" -> authModuleConfig.json
+          )
+          .applyOnIf(isRoute) { payload =>
+            payload ++ Json.obj("route" -> NgRoute.fromServiceDescriptor(desc, false).json)
+          }
+          .applyOnIf(!isRoute) { payload =>
+            payload ++ Json.obj("service_descriptor" -> desc.json)
+          }
+      )
       .map { response =>
         if (response.status == 200) {
           val valid = response.json.select("valid").asOpt[Boolean].getOrElse(false)
           if (valid) {
             Right(response.json)
           } else {
-            val reason = response.json.select("reason").asOpt[JsObject].flatMap(o => ErrorReason.format.reads(o).asOpt).getOrElse(ErrorReason("invalid user"))
+            val reason = response.json
+              .select("reason")
+              .asOpt[JsObject]
+              .flatMap(o => ErrorReason.format.reads(o).asOpt)
+              .getOrElse(ErrorReason("invalid user"))
             Left(reason)
           }
         } else {
@@ -57,17 +76,21 @@ object RemoteUserValidatorSettings {
         url = json.select("url").asString,
         headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         timeout = json.select("timeout").asOpt[Long].map(_.millis).getOrElse(10.seconds),
-        tlsSettings = json.select("tls_settings").asOpt[JsObject].flatMap(js => NgTlsConfig.format.reads(js).asOpt).getOrElse(NgTlsConfig()),
+        tlsSettings = json
+          .select("tls_settings")
+          .asOpt[JsObject]
+          .flatMap(js => NgTlsConfig.format.reads(js).asOpt)
+          .getOrElse(NgTlsConfig())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: RemoteUserValidatorSettings): JsValue = Json.obj(
-      "url" -> o.url,
-      "headers" -> o.headers,
-      "timeout" -> o.timeout.toMillis,
-      "tls_settings" -> o.tlsSettings.json,
+    override def writes(o: RemoteUserValidatorSettings): JsValue             = Json.obj(
+      "url"          -> o.url,
+      "headers"      -> o.headers,
+      "timeout"      -> o.timeout.toMillis,
+      "tls_settings" -> o.tlsSettings.json
     )
   }
 }
@@ -76,7 +99,13 @@ trait ValidableUser { self =>
 
   def json: JsValue
 
-  def validate(validators: Seq[JsonPathValidator], remoteValidators: Seq[RemoteUserValidatorSettings], desc: ServiceDescriptor, isRoute: Boolean, authModuleConfig: AuthModuleConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
+  def validate(
+      validators: Seq[JsonPathValidator],
+      remoteValidators: Seq[RemoteUserValidatorSettings],
+      desc: ServiceDescriptor,
+      isRoute: Boolean,
+      authModuleConfig: AuthModuleConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     val jsonuser = json
     jsonPathValidate(jsonuser, validators) match {
       case Left(err) => Left(err).vfuture
@@ -85,7 +114,13 @@ trait ValidableUser { self =>
     }
   }
 
-  def remoteValidation(jsonuser: JsValue, remoteValidators: Seq[RemoteUserValidatorSettings], desc: ServiceDescriptor, isRoute: Boolean, authModuleConfig: AuthModuleConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
+  def remoteValidation(
+      jsonuser: JsValue,
+      remoteValidators: Seq[RemoteUserValidatorSettings],
+      desc: ServiceDescriptor,
+      isRoute: Boolean,
+      authModuleConfig: AuthModuleConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     Source(remoteValidators.toList)
       .mapAsync(1) { remoteValidator =>
         remoteValidator.validate(jsonuser, desc, isRoute, authModuleConfig)
@@ -94,13 +129,15 @@ trait ValidableUser { self =>
       .take(1)
       .runWith(Sink.headOption)(env.otoroshiMaterializer)
       .map {
-        case None => Right(this)
+        case None            => Right(this)
         case Some(Left(err)) => Left(err)
-        case Some(Right(_)) => Right(this)
+        case Some(Right(_))  => Right(this)
       }
   }
 
-  def jsonPathValidate(jsonuser: JsValue, validators: Seq[JsonPathValidator])(implicit env: Env): Either[ErrorReason, self.type] = {
+  def jsonPathValidate(jsonuser: JsValue, validators: Seq[JsonPathValidator])(implicit
+      env: Env
+  ): Either[ErrorReason, self.type] = {
     if (validators.forall(validator => validator.validate(jsonuser))) {
       Right(this)
     } else {
@@ -127,12 +164,11 @@ object ErrorReason {
     }
 
     override def writes(o: ErrorReason): JsValue = Json.obj(
-      "display" -> o.display,
+      "display"  -> o.display,
       "internal" -> o.internal
     )
   }
 }
-
 
 trait AuthModule {
   def authConfig: AuthModuleConfig

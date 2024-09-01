@@ -276,7 +276,14 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 }
                 PrivateAppsUser.fmt.reads(response) match {
                   case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
-                  case JsSuccess(user, _) => user.validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      authConfig.userValidators,
+                      authConfig.remoteValidators,
+                      descriptor,
+                      isRoute = true,
+                      authConfig
+                    )
                 }
               }
             }
@@ -433,7 +440,14 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 }
                 BackOfficeUser.fmt.reads(response) match {
                   case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
-                  case JsSuccess(user, _) => user.validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = false, authConfig)
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      authConfig.userValidators,
+                      authConfig.remoteValidators,
+                      env.backOfficeServiceDescriptor,
+                      isRoute = false,
+                      authConfig
+                    )
                 }
               }
             }

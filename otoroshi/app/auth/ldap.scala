@@ -714,7 +714,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
-  def bindAdminUser(username: String, password: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
+  def bindAdminUser(username: String, password: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         BackOfficeUser(
@@ -761,7 +764,13 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             },
           location = authConfig.location,
           adminEntityValidators = user.adminEntityValidators
-        ).validate(authConfig.userValidators, authConfig.remoteValidators, env.backOfficeServiceDescriptor, isRoute = false, authConfig)
+        ).validate(
+          authConfig.userValidators,
+          authConfig.remoteValidators,
+          env.backOfficeServiceDescriptor,
+          isRoute = false,
+          authConfig
+        )
       case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
@@ -860,7 +869,14 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
             .flatMap {
-              case Some(user) => user.validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+              case Some(user) =>
+                user.validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
               case None       => Left(ErrorReason("No user found")).vfuture
             }
         case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))

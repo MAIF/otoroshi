@@ -709,7 +709,9 @@ class AuthController(
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
                         case Left(error) => {
-                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          logger.error(
+                            s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
+                          )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
                         case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
@@ -752,7 +754,9 @@ class AuthController(
 
         env.proxyState.route(routeId).vfuture.flatMap {
           case None                                                                                               => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
-          case Some(route) if route.plugins.hasPlugin[otoroshi.next.plugins.AuthModule] && route.id != env.backOfficeDescriptor.id => {
+          case Some(route)
+              if route.plugins
+                .hasPlugin[otoroshi.next.plugins.AuthModule] && route.id != env.backOfficeDescriptor.id => {
             withAuthConfig(route.serviceDescriptor, ctx.request) { _auth =>
               verifyHash(route.id, _auth, ctx.request) {
                 case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
@@ -767,7 +771,9 @@ class AuthController(
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
                         case Left(error) => {
-                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          logger.error(
+                            s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
+                          )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
                         case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
@@ -816,7 +822,9 @@ class AuthController(
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
                         case Left(error) => {
-                          logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                          logger.error(
+                            s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
+                          )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
                         case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
@@ -1082,7 +1090,9 @@ class AuthController(
                             case Some("finish") => {
                               authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
                                 case Left(error) => {
-                                  logger.error(s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}")
+                                  logger.error(
+                                    s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
+                                  )
                                   BadRequest(Json.obj("error" -> error.display)).future
                                 }
                                 case Right(user) => saveUser(user, auth, true)(ctx.request)

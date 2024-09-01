@@ -190,7 +190,7 @@ export default {
               label: 'name',
               value: 'id',
             },
-          }
+          },
         },
         onlyExposedCerts: {
           type: 'boolean',
