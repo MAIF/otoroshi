@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.18.7] - 2024-09-01
+
+
+https://github.com/MAIF/otoroshi/milestone/102?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.6...v16.18.7
+https://github.com/MAIF/otoroshi/releases/tag/v16.18.7
+
+
+### Added 
+
+- documentation of the admin API leads to deprecated resources (#1954)
+- Support remote validation hooks after auth. module login (#1955)
+- new plugin that returns request content (#1960)
+- new plugin that return request body content (#1961)       
+      
+### Changed 
+
+- Update Authentication Module SAML with Extra metadata (#1959)       
+      
+### Fixed 
+
+- Fix release process to make maven central artifact publishing work again (#1956)
+- ApiKeyConstraints formatter failed when otoBearerAuth is undefined (#1957)
+- Fix the Otoroshi Info plugin form to select only one certId instead of an array. (#1958)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @jva-altima
+
 ## [16.18.6] - 2024-07-25
 
 
