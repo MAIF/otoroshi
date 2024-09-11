@@ -24,6 +24,10 @@ export default {
       type: 'object',
       label: 'add fields',
     },
+    remove_daikoku_metadata: {
+      type: 'bool',
+      label: 'Remove daikoku metadata',
+    },
     algo: {
       type: 'form',
       collapsable: true,
@@ -219,5 +223,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'remove_daikoku_metadata', 'algo'],
 };

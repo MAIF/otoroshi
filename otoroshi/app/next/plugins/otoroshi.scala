@@ -87,6 +87,7 @@ case class NgOtoroshiInfoConfig(
     secComTtl: FiniteDuration,
     headerName: Option[String],
     addFields: Option[AddFieldsSettings],
+    removeDaikokuMetadata: Boolean = false,
     algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
@@ -101,6 +102,7 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
+      lazy val removeDaikokuMetadata: Boolean        = raw.select("remove_daikoku_metadata").asOpt[Boolean].getOrElse(false)
       lazy val addFields: Option[AddFieldsSettings]  =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
       lazy val algo: AlgoSettings                    = AlgoSettings
@@ -111,7 +113,8 @@ object NgOtoroshiInfoConfig {
         secComTtl = secComTtl,
         headerName = headerName,
         addFields = addFields,
-        algo = algo
+        algo = algo,
+        removeDaikokuMetadata = removeDaikokuMetadata
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -122,6 +125,7 @@ object NgOtoroshiInfoConfig {
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
       "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
+      "remove_daikoku_metadata" -> o.removeDaikokuMetadata,
       "algo"        -> o.algo.asJson
     )
   }
@@ -427,7 +431,13 @@ class OtoroshiInfos extends NgRequestTransformer {
       ctx.route.name,
       config.secComVersion,
       config.secComTtl,
-      ctx.apikey,
+      ctx.apikey.map(apikey => {
+        if (config.removeDaikokuMetadata) {
+          apikey.copy(metadata = apikey.metadata.filter { case (key, _) => key.startsWith("daikoku_") })
+        } else {
+          apikey
+        }
+      }),
       ctx.user,
       ctx.request.some,
       None,
