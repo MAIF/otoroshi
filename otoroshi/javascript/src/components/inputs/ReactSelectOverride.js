@@ -56,7 +56,7 @@ export class ReactSelectOverride extends React.Component {
         value: newItem,
       },
       () => {
-        this.props.onChange(this.props.creatable || this.props.isMulti ? newItem : newItem.value);
+        this.props.onChange(this.props.creatable || this.props.isMulti ? newItem : newItem?.value);
       }
     );
   };
@@ -80,6 +80,7 @@ export class ReactSelectOverride extends React.Component {
 
   render() {
     const Component = this.props.creatable ? Creatable : Select;
+
     return (
       <Component
         {...this.props}

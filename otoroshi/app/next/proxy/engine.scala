@@ -27,7 +27,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
-import play.api.Logger
+import play.api.{Logger, mvc}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -537,13 +537,22 @@ class ProxyEngine() extends RequestHandler {
       })
       .map { result =>
         result.copy(body = result.body match {
-          case HttpEntity.NoEntity                      => HttpEntity.NoEntity
-          case b @ HttpEntity.Strict(_, _)              => b
+          case HttpEntity.NoEntity                      =>
+            responseEndPromise.trySuccess(Done)
+            HttpEntity.NoEntity
+          case b @ HttpEntity.Strict(_, _)              =>
+            responseEndPromise.trySuccess(Done)
+            b
           case HttpEntity.Streamed(source, length, typ) =>
-            HttpEntity
-              .Streamed(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), length, typ)
+
+            if (length.contains(0)) {
+              responseEndPromise.trySuccess(Done)
+              HttpEntity.NoEntity
+            } else {
+              HttpEntity.Streamed(source.alsoTo(Sink.onComplete(_ => responseEndPromise.trySuccess(Done))), length, typ)
+            }
           case HttpEntity.Chunked(source, typ)          =>
-            HttpEntity.Chunked(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), typ)
+            HttpEntity.Chunked(source.alsoTo(Sink.onComplete(_ => responseEndPromise.trySuccess(Done))), typ)
         })
       }
   }
@@ -2837,6 +2846,7 @@ class ProxyEngine() extends RequestHandler {
         )
       )
     } else {
+
       val finalTarget: Target = request.backend.getOrElse(backend).toTarget
       attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
       val contentLengthIn: Option[Long]                  = request.contentLengthStr
@@ -2941,6 +2951,7 @@ class ProxyEngine() extends RequestHandler {
 
       report.markOverheadIn()
       val start                           = System.currentTimeMillis()
+
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>
@@ -3290,7 +3301,7 @@ class ProxyEngine() extends RequestHandler {
       .orElse(response.headers.get("Transfer-Encoding"))
       .exists(h => h.toLowerCase().contains("chunked"))*/
 
-    val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
+    val isChunked: Boolean = rawResponse.isChunked() match { // don't know if actualy legit ...
       case _ if isContentLengthZero                                                              => false
 //      case Some(true)                                                                                   => true
 //      case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
@@ -3306,9 +3317,9 @@ class ProxyEngine() extends RequestHandler {
         true
       case _                                                                                     => false
     }
-    val status                         = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
-    val isHttp10                       = rawRequest.version == "HTTP/1.0"
-    val willStream                     = if (isHttp10) false else (!isChunked)
+    val status             = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
+    val isHttp10           = rawRequest.version == "HTTP/1.0"
+    val willStream         = if (isHttp10) false else (!isChunked)
     val headersOutFiltered             = Seq(
       env.Headers.OtoroshiStateResp
     ).++(headersOutStatic).map(_.toLowerCase)
@@ -3729,6 +3740,7 @@ class ProxyEngine() extends RequestHandler {
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
         )
+
         evt.toAnalytics()
       }(env.analyticsExecutionContext))
     FEither.right(Done)

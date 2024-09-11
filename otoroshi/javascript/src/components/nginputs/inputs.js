@@ -141,9 +141,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -587,10 +586,10 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <div className="col-sm-10 ms-auto">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -671,8 +670,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -865,21 +864,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
