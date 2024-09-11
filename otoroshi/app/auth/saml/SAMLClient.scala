@@ -204,9 +204,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               profile = Json
                 .obj(
                   "name"  -> name,
-                  "email" -> email
+                  "email" -> email,
                 )
-                .deepMerge(authConfig.extraMetadata),
+                .deepMerge(authConfig.extraMetadata)
+                .deepMerge(attributes.foldLeft(Json.obj()) { case (acc, item) =>
+                  acc ++ Json.obj(item._1 -> item._2.mkString(" - "))
+                }),
               token = Json.obj(),
               authConfigId = authConfig.id,
               realm = authConfig.cookieSuffix(descriptor),
@@ -319,7 +322,10 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
                   "name"  -> name,
                   "email" -> email
                 )
-                .deepMerge(authConfig.extraMetadata),
+                .deepMerge(authConfig.extraMetadata)
+                .deepMerge(attributes.foldLeft(Json.obj()) { case (acc, item) =>
+                  acc ++ Json.obj(item._1 -> item._2.mkString(" - "))
+                }),
               email = email,
               authConfigId = authConfig.id,
               simpleLogin = false,
@@ -1072,6 +1078,7 @@ object SAMLModule {
 
   def parseResponse(encodedResponse: String, method: String): XMLObject = {
     val responseDocument = createDOMParser().parse(decodeAndInflate(encodedResponse, method))
+
     XMLObjectProviderRegistrySupport.getUnmarshallerFactory
       .getUnmarshaller(responseDocument.getDocumentElement)
       .unmarshall(responseDocument.getDocumentElement)
