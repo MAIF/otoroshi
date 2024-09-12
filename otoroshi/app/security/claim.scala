@@ -83,7 +83,6 @@ object OtoroshiClaim {
       logger.debug(s"signing following header: ${headerJson.prettify}")
       logger.debug(s"signing following payload: ${payloadJson.prettify}")
     }
-    println(s"signing following payload: ${payloadJson.prettify}")
     val header: String              = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
     val payload: String             = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
     val signatureBytes: Array[Byte] =
