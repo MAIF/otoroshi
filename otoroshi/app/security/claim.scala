@@ -29,6 +29,7 @@ case class OtoroshiClaim(
       case None    => this
     }
   def withClaim(name: String, value: String): OtoroshiClaim                   = copy(metadata = metadata ++ Json.obj(name -> value))
+  def withRootClaim(name: String, value: String): OtoroshiClaim               = this // copy(metadata = metadata ++ Json.obj(name -> value))
   def withClaim(name: String, value: Option[String]): OtoroshiClaim           =
     value match {
       case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
@@ -78,6 +79,10 @@ object OtoroshiClaim {
   }
 
   private def sign(algorithm: Algorithm, headerJson: JsObject, payloadJson: JsObject): String = {
+    if (logger.isDebugEnabled) {
+      logger.debug(s"signing following header: ${headerJson.prettify}")
+      logger.debug(s"signing following payload: ${payloadJson.prettify}")
+    }
     val header: String              = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
     val payload: String             = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
     val signatureBytes: Array[Byte] =
