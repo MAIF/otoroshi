@@ -24,9 +24,13 @@ export default {
       type: 'object',
       label: 'add fields',
     },
-    remove_daikoku_metadata: {
-      type: 'bool',
-      label: 'Remove daikoku metadata',
+    filtering: {
+      type: 'json',
+      label: 'Filtering metadata',
+    },
+    projection: {
+      type: 'json',
+      label: 'Projection metadata',
     },
     algo: {
       type: 'form',
@@ -223,5 +227,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'remove_daikoku_metadata', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'filtering', 'projection', 'algo'],
 };

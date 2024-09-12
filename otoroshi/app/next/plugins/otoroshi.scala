@@ -7,7 +7,8 @@ import org.joda.time.DateTime
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
-import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
+import otoroshi.models.ApiKey.toJson
+import otoroshi.models.{AlgoSettings, ApiKey, DataExporterConfigFiltering, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
@@ -87,7 +88,8 @@ case class NgOtoroshiInfoConfig(
     secComTtl: FiniteDuration,
     headerName: Option[String],
     addFields: Option[AddFieldsSettings],
-    removeDaikokuMetadata: Boolean = false,
+    filtering: DataExporterConfigFiltering = DataExporterConfigFiltering(),
+    projection: JsObject = Json.obj(),
     algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
@@ -102,7 +104,13 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
-      lazy val removeDaikokuMetadata: Boolean        = raw.select("remove_daikoku_metadata").asOpt[Boolean].getOrElse(false)
+
+      lazy val projection = (raw \ "projection").asOpt[JsObject].getOrElse(Json.obj())
+      lazy val filtering = DataExporterConfigFiltering(
+        include = (raw \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+        exclude = (raw \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      )
+
       lazy val addFields: Option[AddFieldsSettings]  =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
       lazy val algo: AlgoSettings                    = AlgoSettings
@@ -114,7 +122,8 @@ object NgOtoroshiInfoConfig {
         headerName = headerName,
         addFields = addFields,
         algo = algo,
-        removeDaikokuMetadata = removeDaikokuMetadata
+        projection = projection,
+        filtering = filtering
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -125,7 +134,11 @@ object NgOtoroshiInfoConfig {
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
       "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
-      "remove_daikoku_metadata" -> o.removeDaikokuMetadata,
+      "filtering"   -> Json.obj(
+        "include" -> JsArray(o.filtering.include),
+        "exclude" -> JsArray(o.filtering.exclude)
+      ),
+      "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
   }
@@ -427,17 +440,11 @@ class OtoroshiInfos extends NgRequestTransformer {
     val config = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
-    val claim  = InfoTokenHelper.generateInfoToken(
+    var claim  = InfoTokenHelper.generateInfoToken(
       ctx.route.name,
       config.secComVersion,
       config.secComTtl,
-      ctx.apikey.map(apikey => {
-        if (config.removeDaikokuMetadata) {
-          apikey.copy(metadata = apikey.metadata.filter { case (key, _) => key.startsWith("daikoku_") })
-        } else {
-          apikey
-        }
-      }),
+      ctx.apikey,
       ctx.user,
       ctx.request.some,
       None,
@@ -460,6 +467,26 @@ class OtoroshiInfos extends NgRequestTransformer {
         )
       )
     )
+
+    val acceptMetadata = (config.filtering.include.isEmpty || config.filtering.include.exists(i =>
+      otoroshi.utils.Match.matches(claim.metadata, i)
+    )) &&
+      (config.filtering.exclude.isEmpty || !config.filtering.exclude.exists(i =>
+        otoroshi.utils.Match.matches(claim.metadata, i)
+      ))
+
+    if (!acceptMetadata)
+      claim = claim.copy(metadata = Json.obj())
+    else {
+      try {
+        if (config.projection.value.nonEmpty) {
+          claim = claim.copy(metadata = otoroshi.utils.Projection.project(claim.metadata, config.projection, identity))
+        }
+      } catch {
+        case t: Throwable =>
+          logger.error("error while projecting apikey", t)
+      }
+    }
 
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)
