@@ -2768,7 +2768,7 @@ class ProxyEngine() extends RequestHandler {
               request.headers.toSeq,
               route.serviceDescriptor,
               target = finalTarget,
-              rawRequest = rawRequest,
+              rawRequest = rawRequest, // TODO: custom header size
               route = route.some
             )
             .right
@@ -2782,7 +2782,7 @@ class ProxyEngine() extends RequestHandler {
                 UrlSanitizer.sanitize(request.url),
                 out,
                 request.headers.toSeq,
-                rawRequest,
+                rawRequest, // TODO: custom header size
                 route.serviceDescriptor,
                 route.some,
                 ctxPlugins.some,
@@ -2907,6 +2907,17 @@ class ProxyEngine() extends RequestHandler {
         }
         .applyOnIf(isTargetHttp2 && isRequestAboveHttp2) { s =>
           s.filterNot(_._1.toLowerCase().startsWith("x-http3"))
+        }
+        .applyOnWithOpt(env.maxHeaderSizeToBackend) {
+          case (hdrs, max) => {
+            hdrs.filter {
+              case (key, value) if key.length > max => {
+                logger.error(s"removing header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
+                false
+              }
+              case _ => true
+            }
+          }
         }
       val builder                                        = clientReq
         .withRequestTimeout(extractedTimeout)
@@ -3328,6 +3339,17 @@ class ProxyEngine() extends RequestHandler {
         headersOutFiltered.contains(key.toLowerCase())
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
+      .applyOnWithOpt(env.maxHeaderSizeToClient) {
+        case (hdrs, max) => {
+          hdrs.filter {
+            case (key, value) if key.length > max => {
+              logger.error(s"removing header '${key}' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
+              false
+            }
+            case _ => true
+          }
+        }
+      }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
     val theBody = response.body

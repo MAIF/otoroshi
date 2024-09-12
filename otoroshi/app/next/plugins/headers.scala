@@ -9,6 +9,7 @@ import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
@@ -683,5 +684,123 @@ class ForwardedHeader extends NgRequestTransformer {
       )
     }
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
+  }
+}
+
+case class RejectHeaderConfig(value: Long = 8 * 1024) extends NgPluginConfig {
+  def json: JsValue = RejectHeaderConfig.format.writes(this)
+}
+
+object RejectHeaderConfig {
+  val default = RejectHeaderConfig()
+  val configFlow: Seq[String] = Seq("value")
+  val configSchema: Option[JsObject] = Some(Json.obj(
+    "value" -> Json.obj(
+      "type" -> "number",
+      "label" -> "Max length",
+      "props" -> Json.obj(
+        "label" -> "Max Length",
+        "suffix" -> "bytes"
+      )
+    )
+  ))
+  val format = new Format[RejectHeaderConfig] {
+
+    override def reads(json: JsValue): JsResult[RejectHeaderConfig] = Try {
+      RejectHeaderConfig(
+        value = json.select("value").asOpt[Long].getOrElse(8 * 1024)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: RejectHeaderConfig): JsValue = Json.obj(
+      "value" -> o.value
+    )
+  }
+}
+
+class RejectHeaderInTooLong extends NgRequestTransformer {
+
+  private val logger = Logger("otoroshi-plugin-reject-headers-in-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Reject headers in too long"
+  override def description: Option[String]                 =
+    "This plugin remove all headers to backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformRequestSync(
+                                     ctx: NgTransformerRequestContext
+                                   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(ctx.otoroshiRequest.copy(
+      headers = ctx.otoroshiRequest.headers.filter {
+        case (key, value) if key.length > config.value => {
+          logger.error(s"removing header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'")
+          false
+        }
+        case _ => true
+      }
+    ))
+  }
+}
+
+class RejectHeaderOutTooLong extends NgRequestTransformer {
+
+  private val logger = Logger("otoroshi-plugin-reject-headers-out-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Reject headers out too long"
+  override def description: Option[String]                 =
+    "This plugin remove all headers from backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformResponseSync(
+                                     ctx: NgTransformerResponseContext
+                                   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(ctx.otoroshiResponse.copy(
+      headers = ctx.otoroshiResponse.headers.filter {
+        case (key, value) if key.length > config.value => {
+          logger.error(s"removing header '${key}' from response to client because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'")
+          false
+        }
+        case _ => true
+      }
+    ))
   }
 }
