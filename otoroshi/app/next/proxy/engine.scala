@@ -2920,6 +2920,19 @@ class ProxyEngine() extends RequestHandler {
             }
           }
         }
+        .applyOnWithOpt(env.limitHeaderSizeToBackend) {
+          case (hdrs, max) => {
+            hdrs.map {
+              case (key, value) if key.length > max => {
+                val newValue = value.substring(0, max.toInt - 1)
+                HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env).toAnalytics()
+                logger.error(s"limiting header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'")
+                (key, newValue)
+              }
+              case (key, value) => (key, value)
+            }
+          }
+        }
       val builder                                        = clientReq
         .withRequestTimeout(extractedTimeout)
         .withFailureIndicator(fakeFailureIndicator)
@@ -3349,6 +3362,19 @@ class ProxyEngine() extends RequestHandler {
               false
             }
             case _ => true
+          }
+        }
+      }
+      .applyOnWithOpt(env.limitHeaderSizeToClient) {
+        case (hdrs, max) => {
+          hdrs.map {
+            case (key, value) if key.length > max => {
+              val newValue = value.substring(0, max.toInt - 1)
+              HeaderTooLongAlert(key, value, newValue, "limit", "client", "plugin", request, route, env).toAnalytics()
+              logger.error(s"limiting header '${key}' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'")
+              (key, newValue)
+            }
+            case (key, value) => (key, value)
           }
         }
       }

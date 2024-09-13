@@ -199,6 +199,11 @@ class Env(
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToBackend")
   lazy val maxHeaderSizeToClient =
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToClient")
+  lazy val limitHeaderSizeToBackend =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToBackend")
+  lazy val limitHeaderSizeToClient =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToClient")
+
   lazy val jsonPathNullReadIsJsNull =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.jsonPathNullReadIsJsNull").getOrElse(false)
 
