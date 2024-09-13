@@ -227,5 +227,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'filtering', 'projection', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo', 'projection'],
 };

@@ -88,7 +88,6 @@ case class NgOtoroshiInfoConfig(
     secComTtl: FiniteDuration,
     headerName: Option[String],
     addFields: Option[AddFieldsSettings],
-    filtering: DataExporterConfigFiltering = DataExporterConfigFiltering(),
     projection: JsObject = Json.obj(),
     algo: AlgoSettings
 ) extends NgPluginConfig {
@@ -106,10 +105,6 @@ object NgOtoroshiInfoConfig {
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
 
       lazy val projection = (raw \ "projection").asOpt[JsObject].getOrElse(Json.obj())
-      lazy val filtering = DataExporterConfigFiltering(
-        include = (raw \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
-        exclude = (raw \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-      )
 
       lazy val addFields: Option[AddFieldsSettings]  =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
@@ -123,7 +118,6 @@ object NgOtoroshiInfoConfig {
         addFields = addFields,
         algo = algo,
         projection = projection,
-        filtering = filtering
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -134,10 +128,6 @@ object NgOtoroshiInfoConfig {
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
       "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
-      "filtering"   -> Json.obj(
-        "include" -> JsArray(o.filtering.include),
-        "exclude" -> JsArray(o.filtering.exclude)
-      ),
       "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
@@ -468,24 +458,13 @@ class OtoroshiInfos extends NgRequestTransformer {
       )
     )
 
-    val acceptMetadata = (config.filtering.include.isEmpty || config.filtering.include.exists(i =>
-      otoroshi.utils.Match.matches(claim.metadata, i)
-    )) &&
-      (config.filtering.exclude.isEmpty || !config.filtering.exclude.exists(i =>
-        otoroshi.utils.Match.matches(claim.metadata, i)
-      ))
-
-    if (!acceptMetadata)
-      claim = claim.copy(metadata = Json.obj())
-    else {
-      try {
-        if (config.projection.value.nonEmpty) {
-          claim = claim.copy(metadata = otoroshi.utils.Projection.project(claim.metadata, config.projection, identity))
-        }
-      } catch {
-        case t: Throwable =>
-          logger.error("error while projecting apikey", t)
+    try {
+      if (config.projection.value.nonEmpty) {
+        claim = claim.copy(metadata = otoroshi.utils.Projection.project(claim.metadata, config.projection, identity))
       }
+    } catch {
+      case t: Throwable =>
+        logger.error("error while projecting apikey", t)
     }
 
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
