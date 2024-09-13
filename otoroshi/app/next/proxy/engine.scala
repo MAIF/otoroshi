@@ -15,7 +15,7 @@ import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models._
-import otoroshi.next.plugins.Keys
+import otoroshi.next.plugins.{HeaderTooLongAlert, Keys}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError._
 import otoroshi.next.utils.{FEither, JsonHelpers}
@@ -2912,6 +2912,7 @@ class ProxyEngine() extends RequestHandler {
           case (hdrs, max) => {
             hdrs.filter {
               case (key, value) if key.length > max => {
+                HeaderTooLongAlert(key, value, "", "remove", "backend", "engine", request, route, env).toAnalytics()
                 logger.error(s"removing header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
                 false
               }
@@ -3343,6 +3344,7 @@ class ProxyEngine() extends RequestHandler {
         case (hdrs, max) => {
           hdrs.filter {
             case (key, value) if key.length > max => {
+              HeaderTooLongAlert(key, value, "", "remove", "client", "engine", request, route, env).toAnalytics()
               logger.error(s"removing header '${key}' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
               false
             }
