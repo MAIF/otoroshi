@@ -146,6 +146,9 @@ object AnalyticsActorSupervizer {
 
 object AnalyticEvent {
   lazy val logger = Logger("otoroshi-analytics-event")
+  def generic(typ: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject)(implicit env: Env): GenericAnalytic = {
+    GenericAnalytic(typ, env, `@service`, `@serviceId`)(additionalPayload)
+  }
 }
 
 trait OtoroshiEvent {
@@ -234,6 +237,27 @@ trait AnalyticEvent extends OtoroshiEvent {
 
   def log()(implicit _env: Env, ec: ExecutionContext): Unit = {
     toEnrichedJson.map(e => AnalyticEvent.logger.info(Json.stringify(e)))
+  }
+}
+
+case class GenericAnalytic(typ: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject) extends AnalyticEvent {
+
+  val `@id`: String = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime = DateTime.now()
+  val fromOrigin: Option[String] = None
+  val fromUserAgent: Option[String] = None
+  val `@type`: String = typ
+
+  override def toJson(implicit _env: Env): JsValue = {
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> `@type`,
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "@env"       -> env.env,
+    ) ++ additionalPayload
   }
 }
 
