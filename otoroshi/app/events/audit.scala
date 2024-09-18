@@ -15,6 +15,33 @@ trait AuditEvent extends AnalyticEvent {
   override def `@type`: String = "AuditEvent"
 }
 
+object AuditEvent {
+  def generic(audit: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject)(implicit env: Env): GenericAudit = {
+    GenericAudit(audit, env, `@service`, `@serviceId`)(additionalPayload)
+  }
+}
+
+case class GenericAudit(audit: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject) extends AuditEvent {
+
+  val `@id`: String = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime = DateTime.now()
+  val fromOrigin: Option[String] = None
+  val fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = {
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> `@type`,
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "@env"       -> env.env,
+      "audit"      -> audit,
+    ) ++ additionalPayload
+  }
+}
+
 // TODO: include UA
 case class BackOfficeEvent(
     `@id`: String,
