@@ -195,13 +195,13 @@ class Env(
   private lazy val halloweenStop  =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
-  lazy val maxHeaderSizeToBackend =
+  lazy val maxHeaderSizeToBackend   =
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToBackend")
-  lazy val maxHeaderSizeToClient =
+  lazy val maxHeaderSizeToClient    =
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToClient")
   lazy val limitHeaderSizeToBackend =
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToBackend")
-  lazy val limitHeaderSizeToClient =
+  lazy val limitHeaderSizeToClient  =
     configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToClient")
 
   lazy val jsonPathNullReadIsJsNull =

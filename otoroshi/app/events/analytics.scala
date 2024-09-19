@@ -146,7 +146,9 @@ object AnalyticsActorSupervizer {
 
 object AnalyticEvent {
   lazy val logger = Logger("otoroshi-analytics-event")
-  def generic(typ: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject)(implicit env: Env): GenericAnalytic = {
+  def generic(typ: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+      additionalPayload: JsObject
+  )(implicit env: Env): GenericAnalytic = {
     GenericAnalytic(typ, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
@@ -240,13 +242,15 @@ trait AnalyticEvent extends OtoroshiEvent {
   }
 }
 
-case class GenericAnalytic(typ: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject) extends AnalyticEvent {
+case class GenericAnalytic(typ: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+    additionalPayload: JsObject
+) extends AnalyticEvent {
 
-  val `@id`: String = env.snowflakeGenerator.nextIdStr()
-  val `@timestamp`: DateTime = DateTime.now()
-  val fromOrigin: Option[String] = None
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
   val fromUserAgent: Option[String] = None
-  val `@type`: String = typ
+  val `@type`: String               = typ
 
   override def toJson(implicit _env: Env): JsValue = {
     Json.obj(
@@ -256,7 +260,7 @@ case class GenericAnalytic(typ: String, env: Env, `@service`: String = "Otoroshi
       "@product"   -> _env.eventsName,
       "@serviceId" -> `@serviceId`,
       "@service"   -> `@service`,
-      "@env"       -> env.env,
+      "@env"       -> env.env
     ) ++ additionalPayload
   }
 }

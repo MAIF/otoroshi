@@ -122,7 +122,7 @@ class BackOfficeRequest(
       requestHeader = request.some,
       issuer = None,
       sub = None,
-      addFields = None,
+      addFields = None
     )(env)
     .serialize(HSAlgoSettings(256, env.sharedKey))(env)
   private val addHeaders = Seq(

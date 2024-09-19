@@ -204,7 +204,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               profile = Json
                 .obj(
                   "name"  -> name,
-                  "email" -> email,
+                  "email" -> email
                 )
                 .deepMerge(authConfig.extraMetadata)
                 .deepMerge(attributes.foldLeft(Json.obj()) { case (acc, item) =>

@@ -16,16 +16,20 @@ trait AuditEvent extends AnalyticEvent {
 }
 
 object AuditEvent {
-  def generic(audit: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject)(implicit env: Env): GenericAudit = {
+  def generic(audit: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+      additionalPayload: JsObject
+  )(implicit env: Env): GenericAudit = {
     GenericAudit(audit, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
 
-case class GenericAudit(audit: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject) extends AuditEvent {
+case class GenericAudit(audit: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+    additionalPayload: JsObject
+) extends AuditEvent {
 
-  val `@id`: String = env.snowflakeGenerator.nextIdStr()
-  val `@timestamp`: DateTime = DateTime.now()
-  val fromOrigin: Option[String] = None
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
   val fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = {
@@ -37,7 +41,7 @@ case class GenericAudit(audit: String, env: Env, `@service`: String = "Otoroshi"
       "@serviceId" -> `@serviceId`,
       "@service"   -> `@service`,
       "@env"       -> env.env,
-      "audit"      -> audit,
+      "audit"      -> audit
     ) ++ additionalPayload
   }
 }

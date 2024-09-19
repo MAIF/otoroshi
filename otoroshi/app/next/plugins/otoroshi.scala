@@ -8,7 +8,14 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.ApiKey.toJson
-import otoroshi.models.{AlgoSettings, ApiKey, DataExporterConfigFiltering, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
+import otoroshi.models.{
+  AlgoSettings,
+  ApiKey,
+  DataExporterConfigFiltering,
+  HSAlgoSettings,
+  SecComInfoTokenVersion,
+  SecComVersion
+}
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
@@ -106,9 +113,9 @@ object NgOtoroshiInfoConfig {
 
       lazy val projection = (raw \ "projection").asOpt[JsObject].getOrElse(Json.obj())
 
-      lazy val addFields: Option[AddFieldsSettings]  =
+      lazy val addFields: Option[AddFieldsSettings] =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
-      lazy val algo: AlgoSettings                    = AlgoSettings
+      lazy val algo: AlgoSettings                   = AlgoSettings
         .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
       NgOtoroshiInfoConfig(
@@ -117,7 +124,7 @@ object NgOtoroshiInfoConfig {
         headerName = headerName,
         addFields = addFields,
         algo = algo,
-        projection = projection,
+        projection = projection
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())

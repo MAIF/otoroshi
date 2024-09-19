@@ -161,10 +161,10 @@ object Projection {
             //     }
             //   )
             // }
-            case ("$jq", value)                     => {
+            case ("$jq", value)                               => {
               dest = dest ++ Json.obj(key -> jqIt(source, value.asString))
             }
-            case ("$jqIf", spec: JsObject)          => {
+            case ("$jqIf", spec: JsObject)                    => {
               val path       = (spec \ "filter").as[String]
               val predPath   = (spec \ "predicate" \ "path").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
@@ -175,19 +175,19 @@ object Projection {
                 dest = dest ++ Json.obj(key -> JsNull)
               }
             }
-            case ("$compose", value)                => {
+            case ("$compose", value)                          => {
               dest = dest ++ Json.obj(key -> Composition.compose(source, value, applyEl))
             }
-            case ("$value", value)                  => {
+            case ("$value", value)                            => {
               dest = dest ++ Json.obj(key -> value)
             }
-            case ("$remove", JsBoolean(true))       => {
+            case ("$remove", JsBoolean(true))                 => {
               dest = dest - key
             }
-            case ("$at", JsString(searchPath))      => {
+            case ("$at", JsString(searchPath))                => {
               dest = dest ++ Json.obj(key -> source.at(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
             }
-            case ("$atIf", spec: JsObject)          => {
+            case ("$atIf", spec: JsObject)                    => {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "at").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
@@ -198,10 +198,10 @@ object Projection {
                 dest = dest ++ Json.obj(key -> JsNull)
               }
             }
-            case ("$pointer", JsString(searchPath)) => {
+            case ("$pointer", JsString(searchPath))           => {
               dest = dest ++ Json.obj(key -> source.atPointer(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
             }
-            case ("$pointerIf", spec: JsObject)     => {
+            case ("$pointerIf", spec: JsObject)               => {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "pointer").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
@@ -212,10 +212,10 @@ object Projection {
                 dest = dest ++ Json.obj(key -> JsNull)
               }
             }
-            case ("$path", JsString(searchPath))    => {
+            case ("$path", JsString(searchPath))              => {
               dest = dest ++ Json.obj(key -> source.atPath(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
             }
-            case ("$pathIf", spec: JsObject)        => {
+            case ("$pathIf", spec: JsObject)                  => {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "path").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
@@ -226,7 +226,7 @@ object Projection {
                 dest = dest ++ Json.obj(key -> JsNull)
               }
             }
-            case ("$header", spec: JsObject)        => {
+            case ("$header", spec: JsObject)                  => {
               val path       = (spec \ "path").as[String]
               val headerName = (spec \ "name").as[String].toLowerCase()
               val headers    = source.at(path).as[JsArray]
@@ -248,15 +248,15 @@ object Projection {
                       val searching = str.substring(11).init
                       k.startsWith(searching)
                     }
-                    case str if str.startsWith("Regex(") => {
+                    case str if str.startsWith("Regex(")      => {
                       val searching = str.substring(6).init
                       RegexPool.regex(searching).matches(k)
                     }
-                    case str if str.startsWith("Wildcard(") => {
+                    case str if str.startsWith("Wildcard(")   => {
                       val searching = str.substring(9).init
                       RegexPool(searching).matches(k)
                     }
-                    case str => str == k
+                    case str                                  => str == k
                   }
                 }
               })
@@ -270,20 +270,20 @@ object Projection {
                       val searching = str.substring(11).init
                       k.startsWith(searching)
                     }
-                    case str if str.startsWith("Regex(") => {
+                    case str if str.startsWith("Regex(")      => {
                       val searching = str.substring(6).init
                       RegexPool.regex(searching).matches(k)
                     }
-                    case str if str.startsWith("Wildcard(") => {
+                    case str if str.startsWith("Wildcard(")   => {
                       val searching = str.substring(9).init
                       RegexPool(searching).matches(k)
                     }
-                    case str => str == k
+                    case str                                  => str == k
                   }
                 }
               })
             }
-            case _                                  => ()
+            case _                                            => ()
           }
         }
         case (key, o @ JsObject(_))                           => {

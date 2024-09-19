@@ -12,7 +12,19 @@ import otoroshi.env.Env
 import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsResult, JsString, JsSuccess, JsValue, Json, Writes}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsError,
+  JsNull,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json,
+  Writes
+}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
 import otoroshi.ssl.Cert
@@ -30,16 +42,20 @@ trait AlertEvent extends AnalyticEvent {
 }
 
 object AlertEvent {
-  def generic(alert: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject)(implicit env: Env): GenericAlert = {
+  def generic(alert: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+      additionalPayload: JsObject
+  )(implicit env: Env): GenericAlert = {
     GenericAlert(alert, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
 
-case class GenericAlert(alert: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(additionalPayload: JsObject) extends AlertEvent {
+case class GenericAlert(alert: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+    additionalPayload: JsObject
+) extends AlertEvent {
 
-  val `@id`: String = env.snowflakeGenerator.nextIdStr()
-  val `@timestamp`: DateTime = DateTime.now()
-  val fromOrigin: Option[String] = None
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
   val fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = {
@@ -51,7 +67,7 @@ case class GenericAlert(alert: String, env: Env, `@service`: String = "Otoroshi"
       "@serviceId" -> `@serviceId`,
       "@service"   -> `@service`,
       "@env"       -> env.env,
-      "alert"      -> alert,
+      "alert"      -> alert
     ) ++ additionalPayload
   }
 }

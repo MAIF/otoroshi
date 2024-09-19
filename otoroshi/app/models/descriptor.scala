@@ -1969,7 +1969,7 @@ case class ServiceDescriptor(
       requestHeader,
       issuer,
       sub,
-      None,
+      None
     )(env)
   }
 

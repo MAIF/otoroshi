@@ -20,10 +20,10 @@ case class NgHtmlPatcherConfig(
     prependBody: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "append_head" -> appendHead,
-    "append_body" -> appendBody,
+    "append_head"  -> appendHead,
+    "append_body"  -> appendBody,
     "prepend_head" -> prependHead,
-    "prepend_body" -> prependBody,
+    "prepend_body" -> prependBody
   )
 }
 
@@ -56,7 +56,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
       user = ctx.user,
       context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
       attrs = ctx.attrs,
-      env = env,
+      env = env
     )
   }
 
@@ -73,32 +73,32 @@ class NgHtmlPatcher extends NgRequestTransformer {
             .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
             .runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>
-              val body          = bodyRaw.utf8String
-              val appendHead    = ctx.config
+              val body                = bodyRaw.utf8String
+              val appendHead          = ctx.config
                 .select("appendHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
-              val prependHead    = ctx.config
+              val prependHead         = ctx.config
                 .select("prependHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_head").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
-              val appendBody    = ctx.config
+              val appendBody          = ctx.config
                 .select("appendBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
-              val prependBody    = ctx.config
+              val prependBody         = ctx.config
                 .select("prependBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_body").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
               val beforeHeadInjection = applyEl(prependHead.mkString(""), ctx)
-              val afterHeadInjection = applyEl(appendHead.mkString(""), ctx)
+              val afterHeadInjection  = applyEl(appendHead.mkString(""), ctx)
               val beforeBodyInjection = applyEl(prependBody.mkString(""), ctx)
-              val afterBodyInjection = applyEl(appendBody.mkString(""), ctx)
-              val newBody       = body
+              val afterBodyInjection  = applyEl(appendBody.mkString(""), ctx)
+              val newBody             = body
                 .replace("<head>", s"<head>${beforeHeadInjection}")
                 .replace("</head>", s"${afterHeadInjection}</head>")
                 .replace("<body>", s"<body>${beforeBodyInjection}")

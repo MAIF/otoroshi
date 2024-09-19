@@ -27,7 +27,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
-import play.api.{Logger, mvc}
+import play.api.{mvc, Logger}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -544,7 +544,6 @@ class ProxyEngine() extends RequestHandler {
             responseEndPromise.trySuccess(Done)
             b
           case HttpEntity.Streamed(source, length, typ) =>
-
             if (length.contains(0)) {
               responseEndPromise.trySuccess(Done)
               HttpEntity.NoEntity
@@ -2913,10 +2912,12 @@ class ProxyEngine() extends RequestHandler {
             hdrs.filter {
               case (key, value) if key.length > max => {
                 HeaderTooLongAlert(key, value, "", "remove", "backend", "engine", request, route, env).toAnalytics()
-                logger.error(s"removing header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
+                logger.error(
+                  s"removing header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'"
+                )
                 false
               }
-              case _ => true
+              case _                                => true
             }
           }
         }
@@ -2925,11 +2926,14 @@ class ProxyEngine() extends RequestHandler {
             hdrs.map {
               case (key, value) if key.length > max => {
                 val newValue = value.substring(0, max.toInt - 1)
-                HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env).toAnalytics()
-                logger.error(s"limiting header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'")
+                HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env)
+                  .toAnalytics()
+                logger.error(
+                  s"limiting header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+                )
                 (key, newValue)
               }
-              case (key, value) => (key, value)
+              case (key, value)                     => (key, value)
             }
           }
         }
@@ -2975,7 +2979,7 @@ class ProxyEngine() extends RequestHandler {
       }
 
       report.markOverheadIn()
-      val start                           = System.currentTimeMillis()
+      val start = System.currentTimeMillis()
 
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
@@ -3326,7 +3330,7 @@ class ProxyEngine() extends RequestHandler {
       .orElse(response.headers.get("Transfer-Encoding"))
       .exists(h => h.toLowerCase().contains("chunked"))*/
 
-    val isChunked: Boolean = rawResponse.isChunked() match { // don't know if actualy legit ...
+    val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
       case _ if isContentLengthZero                                                              => false
 //      case Some(true)                                                                                   => true
 //      case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
@@ -3342,9 +3346,9 @@ class ProxyEngine() extends RequestHandler {
         true
       case _                                                                                     => false
     }
-    val status             = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
-    val isHttp10           = rawRequest.version == "HTTP/1.0"
-    val willStream         = if (isHttp10) false else (!isChunked)
+    val status                         = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
+    val isHttp10                       = rawRequest.version == "HTTP/1.0"
+    val willStream                     = if (isHttp10) false else (!isChunked)
     val headersOutFiltered             = Seq(
       env.Headers.OtoroshiStateResp
     ).++(headersOutStatic).map(_.toLowerCase)
@@ -3358,10 +3362,12 @@ class ProxyEngine() extends RequestHandler {
           hdrs.filter {
             case (key, value) if key.length > max => {
               HeaderTooLongAlert(key, value, "", "remove", "client", "engine", request, route, env).toAnalytics()
-              logger.error(s"removing header '${key}' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'")
+              logger.error(
+                s"removing header '${key}' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'"
+              )
               false
             }
-            case _ => true
+            case _                                => true
           }
         }
       }
@@ -3371,10 +3377,12 @@ class ProxyEngine() extends RequestHandler {
             case (key, value) if key.length > max => {
               val newValue = value.substring(0, max.toInt - 1)
               HeaderTooLongAlert(key, value, newValue, "limit", "client", "plugin", request, route, env).toAnalytics()
-              logger.error(s"limiting header '${key}' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'")
+              logger.error(
+                s"limiting header '${key}' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+              )
               (key, newValue)
             }
-            case (key, value) => (key, value)
+            case (key, value)                     => (key, value)
           }
         }
       }
