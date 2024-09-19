@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.19.0] - 2024-09-19
+
+
+https://github.com/MAIF/otoroshi/milestone/103?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.18.7...v16.19.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.19.0
+
+
+### Added 
+
+- customize headers size in/out (#1971)
+- add operators in projection utils to include/exclude wildcard names (#1972)
+- add custom fields in the info token directly at the root (#1973)
+- new plugin to remove headers with long value going to backend (#1974)
+- new plugin to remove headers with long value going back to client (#1975)
+- new plugin to limit headers with long value going to backend (#1976)
+- new plugin to limit headers with long value going back to client (#1977)
+- alert when proxy engine removes/limits headers (#1978)
+- proxy engine can globally limit headers size in and out (#1979)
+- add api for developers to facilitate alerts events sending (#1981)
+- add api for developers to facilitate audit events sending (#1982)
+- add api for developers to facilitate analytics events sending (#1983)       
+      
+### Changed 
+
+- Saml Auth Module - Get all attributes in otoroshi-claim header (#1962)
+- Allow info token payload customization (#1966)
+- Add capabilities to the html patcher plugin (#1980)       
+      
+### Fixed 
+
+- Otoroshi 16.18.4 - Unable to reset quotas consumption (#1967)
+- Analytics Issue with Empty Body and Content-Length Header Set to 0 (#1969)       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @quentinproust
+* @ptitFicus
+* @sadmin91
+* @mathieuancelin
+
 ## [16.18.7] - 2024-09-01
 
 
