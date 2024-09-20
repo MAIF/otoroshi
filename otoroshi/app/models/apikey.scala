@@ -981,8 +981,9 @@ object ApiKeyHelper {
       } getOrElse FastFuture.successful(None)
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val id     = auth.split(":").headOption.map(_.trim)
-      val secret = auth.split(":").lastOption.map(_.trim)
+      val parts = auth.split(":")
+      val id     = parts.headOption.map(_.trim)
+      val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
         case (Some(apiKeyClientId), Some(apiKeySecret)) => {
           env.datastores.apiKeyDataStore
@@ -1574,8 +1575,9 @@ object ApiKeyHelper {
       } getOrElse errorResult(Unauthorized, s"Invalid ApiKey provided", "errors.invalid.api.key")
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val id     = auth.split(":").headOption.map(_.trim)
-      val secret = auth.split(":").lastOption.map(_.trim)
+      val parts = auth.split(":")
+      val id     = parts.headOption.map(_.trim)
+      val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
         case (Some(apiKeyClientId), Some(apiKeySecret)) => {
           env.datastores.apiKeyDataStore
@@ -1739,7 +1741,10 @@ object ApiKeyHelper {
               )
           )
           .map(_.split(":"))
-          .filter(_.size == 2)
+          .collect {
+            case arr if arr.length == 2 => arr
+            case arr if arr.length > 2 => Array(arr.head, arr.tail.mkString(":"))
+          }
           .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some, otoBearer = None))
         val authByCustomHeaders: Option[ApikeyTuple]        = req.headers
           .get(

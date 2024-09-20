@@ -133,7 +133,7 @@ class NgClientCredentials extends NgRequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -151,7 +151,7 @@ class NgClientCredentials extends NgRequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -433,7 +433,7 @@ class NgClientCredentials extends NgRequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => (v.head, v.last))
+            .map(v => (v.head, v.tail.mkString(":")))
             .map { case (clientId, clientSecret) =>
               handleTokenRequest(
                 ClientCredentialFlowBody(
@@ -544,7 +544,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -562,7 +562,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -692,7 +692,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => (v.head, v.last))
+            .map(v => (v.head, v.tail.mkString(":")))
             .map { case (clientId, clientSecret) =>
               handleTokenRequest(
                 NgClientCredentialTokenEndpointBody(
