@@ -1534,3 +1534,30 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
     }
   }
 }
+
+trait NgIncomingRequestValidator extends NgPlugin {
+  def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = NgAccess.NgAllowed.vfuture
+}
+
+case class NgIncomingRequestValidatorContext(
+  snowflake: String,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue,
+  report: NgExecutionReport,
+  sequence: NgReportPluginSequence,
+  markPluginItem: Function4[NgReportPluginSequenceItem, NgIncomingRequestValidatorContext, Boolean, JsValue, Unit],
+  idx: Int = 0
+) {
+  def json: JsValue = Json.obj(
+    "snowflake"     -> snowflake,
+    // "route" -> route.json,
+    "request"       -> JsonHelpers.requestToJson(request),
+    "config"        -> config,
+    "global_config" -> globalConfig,
+    "attrs"         -> attrs.json
+  )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = json.asObject
+}

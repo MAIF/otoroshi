@@ -386,6 +386,8 @@ class ProxyEngine() extends RequestHandler {
     report.markDoneAndStart("check-concurrent-requests")
     (for {
       _         <- handleConcurrentRequest(request)
+      _          = report.markDoneAndStart("validate-incoming-request")
+      _         <- applyIncomingRequestValidation(request, snowflake)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
       _         <- handleRelayTraffic(route, request, request.body)
@@ -605,6 +607,8 @@ class ProxyEngine() extends RequestHandler {
     report.markDoneAndStart("check-concurrent-requests")
     (for {
       _         <- handleConcurrentRequest(request)
+      _          = report.markDoneAndStart("validate-incoming-request")
+      _         <- applyIncomingRequestValidation(request, snowflake)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, fakeBody, global_plugins__, tryIt)
       config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
@@ -773,6 +777,179 @@ class ProxyEngine() extends RequestHandler {
       ).toAnalytics()
     }
     FEither.right(Done)
+  }
+
+  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(implicit
+    ec: ExecutionContext,
+    env: Env,
+    report: NgExecutionReport,
+    globalConfig: GlobalConfig,
+    attrs: TypedMap,
+    mat: Materializer
+  ): FEither[NgProxyEngineError, Done] = {
+    if (globalConfig.incomingRequestValidators.nonEmpty) {
+      val all_plugins = globalConfig.incomingRequestValidators.incomingRequestValidatorPlugins(request)
+      var sequence = NgReportPluginSequence(
+        size = all_plugins.size,
+        kind = "incoming-request-validator-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty
+      )
+      def markPluginItem(
+                          item: NgReportPluginSequenceItem,
+                          ctx: NgIncomingRequestValidatorContext,
+                          debug: Boolean,
+                          result: JsValue
+                        ): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json
+              .obj(
+                "result" -> result
+              )
+              .applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
+      val _ctx = NgIncomingRequestValidatorContext(
+        snowflake = snowflake,
+        request = request,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem
+      )
+      if (all_plugins.size == 1) {
+        val wrapper               = all_plugins.head
+        val pluginConfig: JsValue = wrapper.plugin.defaultConfig
+          .map(dc => dc ++ wrapper.instance.config.raw)
+          .getOrElse(wrapper.instance.config.raw)
+        val ctx                   = _ctx.copy(config = pluginConfig)
+        val debug                 = wrapper.instance.debug
+        val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+        val item                  = NgReportPluginSequenceItem(
+          wrapper.instance.plugin,
+          wrapper.plugin.name,
+          System.currentTimeMillis(),
+          System.nanoTime(),
+          -1L,
+          -1L,
+          in,
+          JsNull
+        )
+        FEither(wrapper.plugin.access(ctx).transform {
+          case Failure(exception)                 =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+            report.setContext(sequence.stopSequence().json)
+            Success(
+              Left(
+                NgResultProxyEngineError(
+                  otoroshiJsonError(
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during access plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Results.InternalServerError,
+                    attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+                    attrs,
+                    request
+                  )
+                )
+              )
+            )
+          case Success(NgAccess.NgDenied(result)) =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
+            report.setContext(sequence.stopSequence().json)
+            Success(Left(NgResultProxyEngineError(result)))
+          case Success(NgAccess.NgAllowed)        =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+            report.setContext(sequence.stopSequence().json)
+            Success(Right(Done))
+        })
+      } else {
+        val promise = Promise[Either[NgProxyEngineError, Done]]()
+        def next(plugins: Seq[NgPluginWrapper[NgIncomingRequestValidator]]): Unit = {
+          plugins.headOption match {
+            case None          => promise.trySuccess(Right(Done))
+            case Some(wrapper) => {
+              val pluginConfig: JsValue = wrapper.plugin.defaultConfig
+                .map(dc => dc ++ wrapper.instance.config.raw)
+                .getOrElse(wrapper.instance.config.raw)
+              val ctx                   = _ctx.copy(
+                config = pluginConfig,
+                idx = wrapper.instance.instanceId
+              )
+              val debug                 = wrapper.instance.debug
+              val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+              val item                  = NgReportPluginSequenceItem(
+                wrapper.instance.plugin,
+                wrapper.plugin.name,
+                System.currentTimeMillis(),
+                System.nanoTime(),
+                -1L,
+                -1L,
+                in,
+                JsNull
+              )
+              wrapper.plugin.access(ctx).andThen {
+                case Failure(exception)                               =>
+                  markPluginItem(
+                    item,
+                    ctx,
+                    debug,
+                    Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
+                  )
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(
+                    Left(
+                      NgResultProxyEngineError(
+                        otoroshiJsonError(
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during access plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
+                          Results.InternalServerError,
+                          attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+                          attrs,
+                          request
+                        )
+                      )
+                    )
+                  )
+                case Success(NgAccess.NgDenied(result))               =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Left(NgResultProxyEngineError(result)))
+                case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Right(Done))
+                case Success(NgAccess.NgAllowed)                      =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+                  next(plugins.tail)
+              }
+            }
+          }
+        }
+        next(all_plugins)
+        FEither.apply(promise.future)
+      }
+    } else {
+      FEither.right(Done)
+    }
   }
 
   def handleConcurrentRequest(request: RequestHeader)(implicit
