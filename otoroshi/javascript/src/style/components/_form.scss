@@ -22,3 +22,8 @@ label {
 .has-error .form-control {
   border-color: var(--color-red);
 }
+
+.form-control::placeholder{
+  color: var(--color_level2);
+  opacity: 0.7; 
+}
