@@ -44,8 +44,8 @@ export const graph = (env) => {
       ],
     },
     {
-      title: 'Create',
-      description: 'Create otoroshi resources',
+      title: 'Manage resources',
+      description: 'Manage otoroshi resources',
       features: [
         {
           title: 'Services',
