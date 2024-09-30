@@ -363,6 +363,7 @@ class ProxyEngine() extends RequestHandler {
     val currentListener    = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
     implicit val attrs     = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestKey                -> request,
       otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
@@ -583,6 +584,7 @@ class ProxyEngine() extends RequestHandler {
     val counterOut       = new AtomicLong(0L)
     implicit val attrs   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestKey                -> request,
       otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
