@@ -759,7 +759,7 @@ class RejectHeaderInTooLong extends NgRequestTransformer {
     Right(
       ctx.otoroshiRequest.copy(
         headers = ctx.otoroshiRequest.headers.filter {
-          case (key, value) if key.length > config.value => {
+          case (key, value) if value.length > config.value => {
             HeaderTooLongAlert(key, value, "", "remove", "client", "plugin", ctx.otoroshiRequest, ctx.route, env)
               .toAnalytics()
             logger.error(
@@ -807,7 +807,7 @@ class RejectHeaderOutTooLong extends NgRequestTransformer {
     Right(
       ctx.otoroshiResponse.copy(
         headers = ctx.otoroshiResponse.headers.filter {
-          case (key, value) if key.length > config.value => {
+          case (key, value) if value.length > config.value => {
             HeaderTooLongAlert(
               key,
               value,
@@ -906,7 +906,7 @@ class LimitHeaderInTooLong extends NgRequestTransformer {
     Right(
       ctx.otoroshiRequest.copy(
         headers = ctx.otoroshiRequest.headers.map {
-          case (key, value) if key.length > config.value => {
+          case (key, value) if value.length > config.value => {
             val newValue = value.substring(0, config.value.toInt - 1)
             HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", ctx.otoroshiRequest, ctx.route, env)
               .toAnalytics()
@@ -955,7 +955,7 @@ class LimitHeaderOutTooLong extends NgRequestTransformer {
     Right(
       ctx.otoroshiResponse.copy(
         headers = ctx.otoroshiResponse.headers.map {
-          case (key, value) if key.length > config.value => {
+          case (key, value) if value.length > config.value => {
             val newValue = value.substring(0, config.value.toInt - 1)
             HeaderTooLongAlert(
               key,
