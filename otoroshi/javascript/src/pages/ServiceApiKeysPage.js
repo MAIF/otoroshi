@@ -980,7 +980,6 @@ export class ServiceApiKeysPage extends Component {
         kubernetesKind="ApiKey"
         navigateTo={(item) => {
           if (this.onRoutes) {
-            console.log(item);
             this.props.history.push(
               `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
               // `/apikeys/edit/${item.clientId}`
