@@ -139,7 +139,7 @@ export default class CodeInput extends Component {
         mode={mode}
         theme={this.state.theme}
         onChange={this.onChange}
-        value={code || ''}
+        defaultValue={code || ''}
         name="scriptParam"
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}

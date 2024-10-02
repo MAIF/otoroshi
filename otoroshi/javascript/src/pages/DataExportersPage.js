@@ -542,6 +542,7 @@ export class NewExporterForm extends Component {
     if (ns.config && ns.config.clusterUri) {
       delete ns.config.clusterUri;
     }
+    
     this.props.onChange(ns);
   };
 
