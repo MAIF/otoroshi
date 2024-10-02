@@ -5,6 +5,12 @@ export class NumberInput extends Component {
   onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
+
+    if (("" + value).length === 0) {
+      this.props.onChange(0);
+      return
+    }
+
     let oldValue = this.props.value;
     try {
       if (value.indexOf('.') > -1) {
@@ -49,7 +55,7 @@ export class NumberInput extends Component {
                 className="form-control"
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholder}
-                value={this.props.value}
+                defaultValue={this.props.value}
                 onChange={this.onChange}
               />
               {this.props.prefix && (
