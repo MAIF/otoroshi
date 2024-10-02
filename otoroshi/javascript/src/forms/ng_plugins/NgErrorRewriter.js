@@ -8,6 +8,18 @@ export default {
     ranges: {
       label: 'ranges',
       type: 'array',
+      array: true,
+      format: 'form',
+      schema: {
+        from: {
+          label: 'From',
+          type: 'number',
+        },
+        to: {
+          label: 'To',
+          type: 'number',
+        },
+      }
     },
     export: {
       label: 'Export error',
