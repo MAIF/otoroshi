@@ -2,6 +2,7 @@ package otoroshi.models
 
 import otoroshi.env.Env
 import otoroshi.storage.BasicStore
+import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -21,15 +22,19 @@ case class ErrorTemplate(
     template50x: String,
     templateBuild: String,
     templateMaintenance: String,
+    genericTemplates: Map[String, String],
     messages: Map[String, String] = Map.empty[String, String]
 ) extends EntityLocationSupport {
   def renderHtml(status: Int, causeId: String, otoroshiMessage: String, errorId: String): String = {
-    val template   = (status, causeId) match {
-      case (_, "errors.service.in.maintenance")     => templateMaintenance
-      case (_, "errors.service.under.construction") => templateBuild
-      case (s, _) if s > 399 && s < 500             => template40x
-      case (s, _) if s > 499 && s < 600             => template50x
-      case _                                        => template50x
+    val template = genericTemplates.get(causeId).orElse(genericTemplates.keys.find(k => RegexPool.apply(k).matches(causeId)).flatMap(k => genericTemplates.get(k))) match {
+      case Some(tmpl) => tmpl
+      case None => (status, causeId) match {
+        case (_, "errors.service.in.maintenance")     => templateMaintenance
+        case (_, "errors.service.under.construction") => templateBuild
+        case (s, _) if s > 399 && s < 500             => template40x
+        case (s, _) if s > 499 && s < 600             => template50x
+        case _                                        => template50x
+      }
     }
     val messageKey = s"message-$status"
     val message    = messages.getOrElse(messageKey, otoroshiMessage)
@@ -77,6 +82,7 @@ object ErrorTemplate {
       "template50x"         -> o.template50x,
       "templateBuild"       -> o.templateBuild,
       "templateMaintenance" -> o.templateMaintenance,
+      "genericTemplates"    -> o.genericTemplates,
       "messages"            -> o.messages
     )
     override def reads(json: JsValue): JsResult[ErrorTemplate] = Try {
@@ -93,6 +99,7 @@ object ErrorTemplate {
           template50x = json.select("template50x").asString,
           templateBuild = json.select("templateBuild").asString,
           templateMaintenance = json.select("templateMaintenance").asString,
+          genericTemplates = json.select("genericTemplates").asOpt[Map[String, String]].getOrElse(Map.empty),
           messages = json.select("messages").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )

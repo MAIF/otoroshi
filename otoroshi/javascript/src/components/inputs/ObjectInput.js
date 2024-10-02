@@ -139,7 +139,7 @@ export class ObjectInput extends React.Component {
             )}
             <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
               <div className="input-group justify-content-between">
-                {props.itemRenderer && props.itemRenderer(key, value, idx)}
+                {props.itemRenderer && props.itemRenderer(key, value, idx, e => this.changeKey(idx, key, e), e => this.changeValue(idx, key, e))}
                 {!props.itemRenderer && (
                   <>
                     <input
@@ -150,14 +150,15 @@ export class ObjectInput extends React.Component {
                       value={key}
                       onChange={(e) => this.changeKey(idx, key, e)}
                     />
-                    <input
+                    {props.valueRenderer && props.valueRenderer(key, value, idx, e => this.changeValue(idx, key, e))}
+                    {!props.valueRenderer && <input
                       disabled={props.disabled}
                       type="text"
                       className="form-control"
                       placeholder={props.placeholderValue}
                       value={value}
                       onChange={(e) => this.changeValue(idx, key, e)}
-                    />
+                    />}
                   </>
                 )}
                 <span className="input-group-btn">

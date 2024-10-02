@@ -1643,7 +1643,7 @@ export function createErrorTemplate(ak) {
 }
 
 export function updateErrorTemplate(ak) {
-  return fetch(`/bo/api/proxy/api/error-templates/${ak.id}`, {
+  return fetch(`/bo/api/proxy/api/error-templates/${ak.serviceId}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
