@@ -4,6 +4,8 @@ import isFunction from 'lodash/isFunction';
 
 import AceEditor from 'react-ace';
 
+import 'ace-builds/webpack-resolver';
+
 import 'ace-builds/src-noconflict/mode-scala';
 import 'ace-builds/src-noconflict/mode-javascript';
 import 'ace-builds/src-noconflict/mode-json';
@@ -28,7 +30,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -96,6 +98,12 @@ export default class CodeInput extends Component {
     let clean_source = e;
     if (this.props.mode === 'json') {
       clean_source = e.replace('}{}', '}');
+
+      if (clean_source.length === 0) {
+        this.props.onChange("{}");
+        return
+      }
+
       try {
         const parsed = JSON.parse(clean_source);
         this.setState({ value: clean_source }, () => {
