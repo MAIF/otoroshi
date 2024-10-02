@@ -388,7 +388,7 @@ ENTRYPOINT [ &quot;sh&quot;, &quot;-c&quot;, &quot;java $JAVA_OPTS -Djava.securi
 <p>For the second option your otoroshi.conf would look like this :</p>
 <pre><code>   include &quot;application.conf&quot;
    http.port = 8080
-   app {
+   otoroshi {
      env = &quot;prod&quot;
      domain = &quot;mysubdomain.oto.tools&quot;
      rootScheme = &quot;https&quot;

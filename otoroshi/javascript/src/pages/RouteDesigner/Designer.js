@@ -42,6 +42,7 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
+import { Button } from '../../components/Button';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -720,7 +721,7 @@ class Designer extends React.Component {
         }));
       const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
-      const routeWithNodeId = {
+      let routeWithNodeId = {
         ...route,
         plugins: route.plugins
           .filter((ref) =>
@@ -737,6 +738,16 @@ class Designer extends React.Component {
       const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
+
+      if (
+        routeWithNodeId.backend_ref &&
+        !backends.find((back) => back.id === routeWithNodeId.backend_ref)
+      ) {
+        routeWithNodeId = {
+          ...routeWithNodeId,
+          backend_ref: undefined,
+        };
+      }
 
       routePorts(route.id).then((ports) => {
         this.setState(
@@ -1956,12 +1967,13 @@ const UnselectedNode = ({
 
       const domain = route.frontend.domains[idx];
 
-      const domainParts = domain.split('/')
-      const hasPath = domainParts.length > 1
+      const domainParts = domain.split('/');
+      const hasPath = domainParts.length > 1;
 
-      if (isSecured) return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+      if (isSecured)
+        return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
 
-      return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`
+      return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
     };
 
     const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -2596,13 +2608,11 @@ class EditView extends React.Component {
           )}
           {!notOnBackendNode && (
             <div className="d-flex justify-content-end p-3">
-              <FeedbackButton
-                text="Save"
-                icon={() => <i className="fas fa-paper-plane" />}
-                onPress={saveRoute}
-              />
               {route.backend_ref && (
-                <Link className="btn btn-primary ms-2" to={`/backends/edit/${route.backend_ref}/`}>
+                <Link
+                  className="btn btn-sm btn-primary ms-2"
+                  to={`/backends/edit/${route.backend_ref}/`}
+                >
                   <i className="fas fa-microchip me-1" />
                   Edit this backend
                 </Link>
@@ -2657,6 +2667,7 @@ const BackendSelector = ({
               ngOptions={{
                 spread: true,
               }}
+              isClearable
               onChange={(backend_ref) =>
                 setRoute({
                   ...route,

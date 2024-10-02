@@ -107,7 +107,7 @@ case class Resource(
     "plural_name"   -> pluralName,
     "singular_name" -> singularName,
     "group"         -> group,
-    "version"       -> version.jsonWithSchema(kind, access.clazz),
+    "version"       -> version.jsonWithSchema(kind, access.clazz)
   )
 }
 trait ResourceAccessApi[T <: EntityLocationSupport] {
@@ -1350,14 +1350,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     if (ctx.request.getQueryString("schema").contains("false")) {
       Ok(
         Json.obj(
-          "version" -> env.otoroshiVersion,
+          "version"   -> env.otoroshiVersion,
           "resources" -> JsArray(env.allResources.resources.map(_.json))
         )
       )
     } else {
       Ok(
         Json.obj(
-          "version" -> env.otoroshiVersion,
+          "version"   -> env.otoroshiVersion,
           "resources" -> JsArray(env.allResources.resources.map(_.jsonWithSchema))
         )
       )

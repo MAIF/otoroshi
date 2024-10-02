@@ -324,7 +324,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#test-the-expression-language" name="test-the-expression-language" class="anchor"><span class="anchor-link"></span></a>Test the expression language</h2>
 <p>You can test to get the same values than the right part by creating these following services. </p>
 <pre class="prettyprint"><code class="language-sh"># Let&#39;s start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.18.4/otoroshi.jar&#39;
+curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.19.0/otoroshi.jar&#39;
 
 # Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
@@ -339,7 +339,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
 EOF
 
 
-# Create a proxy of the mirror.otoroshi.io on http://api.oto.tools:8080
+# Create a proxy of the request.otoroshi.io on http://api.oto.tools:8080
 curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -H &#39;Content-Type: application/json; charset=utf-8&#39; \
@@ -356,7 +356,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
     &quot;backend&quot;: {
         &quot;targets&quot;: [
             {
-                &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+                &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
                 &quot;port&quot;: 443,
                 &quot;tls&quot;: true
             }

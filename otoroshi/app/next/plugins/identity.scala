@@ -23,16 +23,26 @@ class UserProfileEndpoint extends NgBackendCall {
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     ctx.user match {
-      case None => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))), None).rightf
+      case None       =>
+        BackendCallResponse(
+          NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))),
+          None
+        ).rightf
       case Some(user) => {
         BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson)), None).rightf
       }
     }
   }
 }
-
 
 class ConsumerEndpoint extends NgBackendCall {
 
@@ -47,16 +57,36 @@ class ConsumerEndpoint extends NgBackendCall {
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     ctx.user match {
-      case None => ctx.apikey match {
-        case None => BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("access_type" -> "public"))), None).rightf
-        case Some(apikey) => {
-          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(apikey.lightJson.asObject ++ Json.obj("access_type" -> "apikey"))), None).rightf
+      case None       =>
+        ctx.apikey match {
+          case None         =>
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("access_type" -> "public"))),
+              None
+            ).rightf
+          case Some(apikey) => {
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Ok(apikey.lightJson.asObject ++ Json.obj("access_type" -> "apikey"))
+              ),
+              None
+            ).rightf
+          }
         }
-      }
       case Some(user) => {
-        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson.asObject ++ Json.obj("access_type" -> "session"))), None).rightf
+        BackendCallResponse(
+          NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson.asObject ++ Json.obj("access_type" -> "session"))),
+          None
+        ).rightf
       }
     }
   }

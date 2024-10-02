@@ -380,6 +380,41 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-profile-$field")
+            case "consumer.id" if user.isDefined                                => user.get.email
+            case "consumer.id" if apiKey.isDefined                              => apiKey.get.clientId
+            case "consumer.long_id" if user.isDefined                           => s"${user.get.realm}-${user.get.email}"
+            case "consumer.long_id" if apiKey.isDefined                         => apiKey.get.clientId
+            case "consumer.name" if user.isDefined                              => user.get.name
+            case "consumer.name" if apiKey.isDefined                            => apiKey.get.clientName
+            case "consumer.kind" if user.isDefined                              => "user"
+            case "consumer.kind" if apiKey.isDefined                            => "apikey"
+            case "consumer.kind" if apiKey.isEmpty && user.isEmpty              => "public"
+            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined   =>
+              user
+                .flatMap(_.otoroshiData)
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .map(json =>
+                  (json \ field).asOpt[JsValue] match {
+                    case Some(JsNumber(number)) => number.toString()
+                    case Some(JsString(str))    => str
+                    case Some(JsBoolean(b))     => b.toString
+                    case _                      => dv
+                  }
+                )
+                .getOrElse(dv)
+            case r"consumer.metadata.$field@(.*)" if user.isDefined || apiKey.isDefined  =>
+              user
+                .flatMap(_.otoroshiData)
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .map(json =>
+                  (json \ field).asOpt[JsValue] match {
+                    case Some(JsNumber(number)) => number.toString()
+                    case Some(JsString(str))    => str
+                    case Some(JsBoolean(b))     => b.toString
+                    case _                      => s"no-meta-$field"
+                  }
+                )
+                .getOrElse(s"no-meta-$field")
             case r"nbf"                                                     => "{nbf}"
             case r"iat"                                                     => "{iat}"
             case r"exp"                                                     => "{exp}"

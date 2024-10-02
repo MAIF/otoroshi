@@ -33,7 +33,7 @@ function DuplicateButton({ value, history }) {
         const prefix = (id.split('_')[0] || what) + '_';
         const newId = `${prefix}${v4()}`;
         const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-        window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
+        window.newConfirm('Are you sure you want to duplicate this entity ?').then((ok) => {
           if (ok) {
             nextClient
               .forEntityNext(kind)

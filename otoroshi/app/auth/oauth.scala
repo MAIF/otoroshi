@@ -52,6 +52,10 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
+          remoteValidators = (json \ "remoteValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
+            .getOrElse(Seq.empty),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
@@ -149,6 +153,7 @@ case class GenericOauth2ModuleConfig(
     clientSideSessionEnabled: Boolean,
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
+    remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     clientId: String = "client",
     clientSecret: String = "secret",
     tokenUrl: String = "http://localhost:8082/oauth/token",
@@ -206,6 +211,7 @@ case class GenericOauth2ModuleConfig(
       "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
       "sessionMaxAge"                 -> this.sessionMaxAge,
       "userValidators"                -> JsArray(userValidators.map(_.json)),
+      "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
       "clientId"                      -> this.clientId,
       "clientSecret"                  -> this.clientSecret,
       "authorizeUrl"                  -> this.authorizeUrl,
@@ -644,7 +650,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]] = {
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val redirectUri  =
@@ -654,10 +660,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         authConfig.callbackUrl + (if (authConfig.useCookie) "" else s"?desc=${descriptor.id}")
 
     request.getQueryString("error") match {
-      case Some(error) => Left(error).asFuture
+      case Some(error) => Left(ErrorReason(error)).asFuture
       case None        => {
         request.getQueryString("code") match {
-          case None       => Left("No code :(").asFuture
+          case None       => Left(ErrorReason("No code :(")).asFuture
           case Some(code) => {
             getToken(
               code,
@@ -676,7 +682,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 }
                 f.map(r => (r, rawToken))
               }
-              .map { tuple =>
+              .flatMap { tuple =>
                 val (user, rawToken)       = tuple
                 val meta: Option[JsObject] = PrivateAppsUser
                   .select(user, authConfig.otoroshiDataField)
@@ -705,7 +711,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   tags = authConfig.theTags,
                   metadata = authConfig.metadata,
                   location = authConfig.location
-                ).validate(authConfig.userValidators)
+                ).validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
               }
           }
         }
@@ -716,7 +728,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
@@ -731,10 +743,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         }
 
     request.getQueryString("error") match {
-      case Some(error) => Left(error).asFuture
+      case Some(error) => Left(ErrorReason(error)).asFuture
       case None        => {
         request.getQueryString("code") match {
-          case None       => Left("No code :(").asFuture
+          case None       => Left(ErrorReason("No code :(")).asFuture
           case Some(code) => {
             getToken(
               code,
@@ -753,7 +765,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 }
                 f.map(r => (r, rawToken))
               }
-              .map { tuple =>
+              .flatMap { tuple =>
                 val (user, rawToken) = tuple
                 val email            = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
 
@@ -789,7 +801,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       )
                     },
                   location = authConfig.location
-                ).validate(authConfig.userValidators)
+                ).validate(
+                  authConfig.userValidators,
+                  authConfig.remoteValidators,
+                  env.backOfficeServiceDescriptor,
+                  isRoute = false,
+                  authConfig
+                )
               }
           }
         }

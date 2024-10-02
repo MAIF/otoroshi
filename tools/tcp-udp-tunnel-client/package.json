@@ -22,7 +22,7 @@
     "node-fetch": "2.6.7",
     "open": "7.2.1",
     "readline-sync": "1.4.10",
-    "ws": "7.4.6"
+    "ws": "7.5.10"
   },
   "devDependencies": {
     "nodemon": "2.0.4",

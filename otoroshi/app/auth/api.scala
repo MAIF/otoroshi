@@ -1,8 +1,9 @@
 package otoroshi.auth
 
+import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.{NgRoute, NgTlsConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
@@ -13,18 +14,159 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
+import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+case class RemoteUserValidatorSettings(
+    url: String,
+    headers: Map[String, String],
+    timeout: FiniteDuration,
+    tlsSettings: NgTlsConfig
+) {
+
+  def json: JsValue = RemoteUserValidatorSettings.format.writes(this)
+
+  def validate(jsonuser: JsValue, desc: ServiceDescriptor, isRoute: Boolean, authModuleConfig: AuthModuleConfig)(
+      implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, JsValue]] = {
+    env.MtlsWs
+      .url(url, tlsSettings.legacy)
+      .withRequestTimeout(timeout)
+      .withHttpHeaders(headers.toSeq: _*)
+      .post(
+        Json
+          .obj(
+            "user"        -> jsonuser,
+            "auth_module" -> authModuleConfig.json
+          )
+          .applyOnIf(isRoute) { payload =>
+            payload ++ Json.obj("route" -> NgRoute.fromServiceDescriptor(desc, false).json)
+          }
+          .applyOnIf(!isRoute) { payload =>
+            payload ++ Json.obj("service_descriptor" -> desc.json)
+          }
+      )
+      .map { response =>
+        if (response.status == 200) {
+          val valid = response.json.select("valid").asOpt[Boolean].getOrElse(false)
+          if (valid) {
+            Right(response.json)
+          } else {
+            val reason = response.json
+              .select("reason")
+              .asOpt[JsObject]
+              .flatMap(o => ErrorReason.format.reads(o).asOpt)
+              .getOrElse(ErrorReason("invalid user"))
+            Left(reason)
+          }
+        } else {
+          Left(ErrorReason(s"bad status code: ${response.status}"))
+        }
+      }
+  }
+}
+
+object RemoteUserValidatorSettings {
+  val format = new Format[RemoteUserValidatorSettings] {
+    override def reads(json: JsValue): JsResult[RemoteUserValidatorSettings] = Try {
+      RemoteUserValidatorSettings(
+        url = json.select("url").asString,
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOpt[Long].map(_.millis).getOrElse(10.seconds),
+        tlsSettings = json
+          .select("tls_settings")
+          .asOpt[JsObject]
+          .flatMap(js => NgTlsConfig.format.reads(js).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: RemoteUserValidatorSettings): JsValue             = Json.obj(
+      "url"          -> o.url,
+      "headers"      -> o.headers,
+      "timeout"      -> o.timeout.toMillis,
+      "tls_settings" -> o.tlsSettings.json
+    )
+  }
+}
+
 trait ValidableUser { self =>
+
   def json: JsValue
-  def validate(validators: Seq[JsonPathValidator])(implicit env: Env): Either[String, self.type] = {
+
+  def validate(
+      validators: Seq[JsonPathValidator],
+      remoteValidators: Seq[RemoteUserValidatorSettings],
+      desc: ServiceDescriptor,
+      isRoute: Boolean,
+      authModuleConfig: AuthModuleConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     val jsonuser = json
+    jsonPathValidate(jsonuser, validators) match {
+      case Left(err) => Left(err).vfuture
+      case Right(_)  =>
+        remoteValidation(jsonuser, remoteValidators, desc, isRoute, authModuleConfig)
+    }
+  }
+
+  def remoteValidation(
+      jsonuser: JsValue,
+      remoteValidators: Seq[RemoteUserValidatorSettings],
+      desc: ServiceDescriptor,
+      isRoute: Boolean,
+      authModuleConfig: AuthModuleConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
+    Source(remoteValidators.toList)
+      .mapAsync(1) { remoteValidator =>
+        remoteValidator.validate(jsonuser, desc, isRoute, authModuleConfig)
+      }
+      .filter(_.isLeft)
+      .take(1)
+      .runWith(Sink.headOption)(env.otoroshiMaterializer)
+      .map {
+        case None            => Right(this)
+        case Some(Left(err)) => Left(err)
+        case Some(Right(_))  => Right(this)
+      }
+  }
+
+  def jsonPathValidate(jsonuser: JsValue, validators: Seq[JsonPathValidator])(implicit
+      env: Env
+  ): Either[ErrorReason, self.type] = {
     if (validators.forall(validator => validator.validate(jsonuser))) {
       Right(this)
     } else {
-      Left("user is not valid")
+      Left(ErrorReason("user is not valid"))
     }
+  }
+}
+
+case class ErrorReason(display: String, internal: Option[JsObject] = None) {
+  def json: JsValue = ErrorReason.format.writes(this)
+}
+
+object ErrorReason {
+  val format = new Format[ErrorReason] {
+
+    override def reads(json: JsValue): JsResult[ErrorReason] = Try {
+      ErrorReason(
+        display = json.select("display").asString,
+        internal = json.select("internal").asOpt[JsObject]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: ErrorReason): JsValue = Json.obj(
+      "display"  -> o.display,
+      "internal" -> o.internal
+    )
   }
 }
 
@@ -48,7 +190,7 @@ trait AuthModule {
   def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]]
+  ): Future[Either[ErrorReason, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
   def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
@@ -58,7 +200,7 @@ trait AuthModule {
   def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, BackOfficeUser]]
+  ): Future[Either[ErrorReason, BackOfficeUser]]
 }
 
 object SessionCookieValues {
@@ -148,6 +290,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def sessionCookieValues: SessionCookieValues
   def clientSideSessionEnabled: Boolean
   def userValidators: Seq[JsonPathValidator]
+  def remoteValidators: Seq[RemoteUserValidatorSettings]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def withLocation(location: EntityLocation): AuthModuleConfig
   override def internalId: String               = id

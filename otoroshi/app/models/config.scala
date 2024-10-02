@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -678,22 +678,32 @@ case class GlobalConfig(
     extensions: Map[String, JsValue] = Map.empty
 ) extends Entity {
 
-  def internalId: String               = "global"
-  def json: play.api.libs.json.JsValue = toJson
-  def theMetadata: Map[String, String] = metadata
-  def theTags: Seq[String]             = tags
-  def theDescription: String           = "The global config for otoroshi"
-  def theName: String                  = "otoroshi-global-config"
+  def internalId: String = "global"
 
-  def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.globalConfigDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.exists(this)
-  def toJson                                                                            = GlobalConfig.toJson(this)
+  def json: play.api.libs.json.JsValue = toJson
+
+  def theMetadata: Map[String, String] = metadata
+
+  def theTags: Seq[String] = tags
+
+  def theDescription: String = "The global config for otoroshi"
+
+  def theName: String = "otoroshi-global-config"
+
+  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.set(this)
+
+  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
+
+  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
+
+  def toJson = GlobalConfig.toJson(this)
+
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
-  def cleverClient(implicit env: Env): Option[CleverCloudClient]                        =
+
+  def cleverClient(implicit env: Env): Option[CleverCloudClient] =
     cleverSettings match {
-      case None           => None
+      case None => None
       case Some(settings) => {
         val cleverSetting = CleverSettings(
           apiConsumerKey = settings.consumerKey,
@@ -706,6 +716,7 @@ case class GlobalConfig(
         Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
       }
     }
+
   def matchesEndlessIpAddresses(ipAddress: String): Boolean = {
     if (endlessIpAddresses.nonEmpty) {
       endlessIpAddresses.exists { ip =>
@@ -719,6 +730,8 @@ case class GlobalConfig(
       false
     }
   }
+
+  lazy val incomingRequestValidators = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
 }
 
 object GlobalConfig {

@@ -437,28 +437,11 @@ object NgCorazaWAFConfig {
   }
 }
 
-class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
-
-  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Coraza WAF"
-  override def description: Option[String]                 = "Coraza WAF plugin".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
-
-  override def isAccessAsync: Boolean            = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
-  override def usesCallbacks: Boolean            = true
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
+object NgCorazaWAF {
 
   private val plugins = new UnboundedTrieMap[String, CorazaPlugin]()
 
-  private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
+  def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
     val config     = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash = config.json.stringify.sha512
     val key        = s"ref=${ref}&hash=${configHash}"
@@ -501,12 +484,32 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     }
     plugin
   }
+}
+
+class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Coraza WAF"
+  override def description: Option[String]                 = "Coraza WAF plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = true
+  override def isTransformResponseAsync: Boolean = true
+  override def usesCallbacks: Boolean            = true
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = false
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin = getPlugin(config.ref, ctx.attrs)
+    val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.start(ctx.attrs)
   }
 
@@ -519,7 +522,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin = getPlugin(config.ref, ctx.attrs)
+    val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.runRequestPath(ctx.request, ctx.attrs)
   }
 
@@ -527,7 +530,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
     val config                             = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin                             = getPlugin(config.ref, ctx.attrs)
+    val plugin                             = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val hasBody                            = ctx.request.theHasBody
     val bytesf: Future[Option[ByteString]] =
       if (!plugin.config.inspectBody) None.vfuture
@@ -557,7 +560,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
     val config                             = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin                             = getPlugin(config.ref, ctx.attrs)
+    val plugin                             = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val bytesf: Future[Option[ByteString]] =
       if (!plugin.config.inspectBody) None.vfuture
       else ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
@@ -575,6 +578,32 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           case Left(result) => Left(result)
           case Right(_)     => Right(res)
         }
+    }
+  }
+}
+
+class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Coraza WAF - Incoming Request Validtor"
+  override def description: Option[String]                 = "Coraza WAF - Incoming Request Validtor plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+
+  override def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    ctx.config.select("ref").asOpt[String] match {
+      case None => NgAccess.NgAllowed.vfuture
+      case Some(ref) => {
+        val plugin = NgCorazaWAF.getPlugin(ref, ctx.attrs)
+        plugin.start(ctx.attrs).flatMap { _ =>
+          val res = plugin.runRequestPath(ctx.request, ctx.attrs)
+          ctx.attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).foreach(_.release())
+          res
+        }
+      }
     }
   }
 }

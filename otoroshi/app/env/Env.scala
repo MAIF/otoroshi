@@ -195,6 +195,15 @@ class Env(
   private lazy val halloweenStop  =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
+  lazy val maxHeaderSizeToBackend   =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToBackend")
+  lazy val maxHeaderSizeToClient    =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToClient")
+  lazy val limitHeaderSizeToBackend =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToBackend")
+  lazy val limitHeaderSizeToClient  =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToClient")
+
   lazy val jsonPathNullReadIsJsNull =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.jsonPathNullReadIsJsNull").getOrElse(false)
 
@@ -317,7 +326,8 @@ class Env(
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
-  lazy val routeBaseDomain = configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
+  lazy val routeBaseDomain =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
 
   lazy val bypassUserRightsCheck: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
@@ -1242,7 +1252,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.19.0-dev"
+  lazy val otoroshiVersion    = "16.20.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

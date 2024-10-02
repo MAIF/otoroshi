@@ -145,6 +145,10 @@ case class NgPluginInstance(
 
 case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
+  def isEmpty: Boolean = slots.isEmpty
+
+  def nonEmpty: Boolean = slots.nonEmpty
+
   def add(plugin: NgPluginInstance): NgPlugins = copy(slots = slots :+ plugin)
 
   def json: JsValue = JsArray(slots.map(_.json))
@@ -238,6 +242,22 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     transformerPlugins(request).filter(_.plugin.transformsError)
+  }
+
+  def incomingRequestValidatorPlugins(
+    request: RequestHeader
+  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
+    val pls                             = slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgIncomingRequestValidator]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.validateAccess.isDefined))
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.validateAccess.get.compareTo(b.instance.pluginIndex.get.validateAccess.get) < 0
+    ) ++ plsWithoutIndex
   }
 
   // def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgNamedPlugin]] = {

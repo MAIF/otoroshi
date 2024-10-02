@@ -7,7 +7,15 @@ import org.joda.time.DateTime
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
-import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
+import otoroshi.models.ApiKey.toJson
+import otoroshi.models.{
+  AlgoSettings,
+  ApiKey,
+  DataExporterConfigFiltering,
+  HSAlgoSettings,
+  SecComInfoTokenVersion,
+  SecComVersion
+}
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
@@ -87,6 +95,7 @@ case class NgOtoroshiInfoConfig(
     secComTtl: FiniteDuration,
     headerName: Option[String],
     addFields: Option[AddFieldsSettings],
+    projection: JsObject = Json.obj(),
     algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
@@ -101,9 +110,12 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
-      lazy val addFields: Option[AddFieldsSettings]  =
+
+      lazy val projection = (raw \ "projection").asOpt[JsObject].getOrElse(Json.obj())
+
+      lazy val addFields: Option[AddFieldsSettings] =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
-      lazy val algo: AlgoSettings                    = AlgoSettings
+      lazy val algo: AlgoSettings                   = AlgoSettings
         .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
       NgOtoroshiInfoConfig(
@@ -111,7 +123,8 @@ object NgOtoroshiInfoConfig {
         secComTtl = secComTtl,
         headerName = headerName,
         addFields = addFields,
-        algo = algo
+        algo = algo,
+        projection = projection
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -122,6 +135,7 @@ object NgOtoroshiInfoConfig {
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
       "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
+      "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
   }
@@ -451,6 +465,15 @@ class OtoroshiInfos extends NgRequestTransformer {
         )
       )
     )
+
+    try {
+      if (config.projection.value.nonEmpty) {
+        claim = claim.copy(metadata = otoroshi.utils.Projection.project(claim.metadata, config.projection, identity))
+      }
+    } catch {
+      case t: Throwable =>
+        logger.error("error while projecting apikey", t)
+    }
 
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)

@@ -24,6 +24,14 @@ export default {
       type: 'object',
       label: 'add fields',
     },
+    filtering: {
+      type: 'json',
+      label: 'Filtering metadata',
+    },
+    projection: {
+      type: 'json',
+      label: 'Projection metadata',
+    },
     algo: {
       type: 'form',
       collapsable: true,
@@ -182,16 +190,6 @@ export default {
           },
         },
         certId: {
-          // type: 'array-select',
-          // help: 'The keypair used to sign/verify token',
-          // props: {
-          //   label: 'Certificates',
-          //   optionsFrom: '/bo/api/proxy/api/certificates',
-          //   optionsTransformer: {
-          //     label: 'name',
-          //     value: 'id',
-          //   },
-          // },
           type: 'select',
           label: 'Cert. id',
           props: {
@@ -229,5 +227,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo', 'projection'],
 };

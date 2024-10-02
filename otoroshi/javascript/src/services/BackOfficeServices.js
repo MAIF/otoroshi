@@ -209,7 +209,7 @@ export function fetchRemainingApikeyQuotas(clientId) {
   }).then((r) => r.json());
 }
 
-export function resetRemainingApikeyQuotas(groupId, clientId) {
+export function resetRemainingApikeyQuotas(clientId) {
   return fetch(`/bo/api/proxy/api/apikeys/${clientId}/quotas`, {
     method: 'DELETE',
     credentials: 'include',

@@ -2,13 +2,17 @@ package otoroshi.next.plugins
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
+import org.joda.time.DateTime
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
+import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
-import otoroshi.models.RemainingQuotas
+import otoroshi.models.{ApiKey, RemainingQuotas}
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
@@ -118,10 +122,10 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def description: Option[String]                 =
     "This plugin override the current Location header with the Host of the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
-  override def noJsForm: Boolean = true
+  override def noJsForm: Boolean                           = true
 
   override def transformResponseSync(
-    ctx: NgTransformerResponseContext
+      ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => ctx.otoroshiResponse.right
@@ -129,10 +133,11 @@ class OverrideLocationHeader extends NgRequestTransformer {
         val status = ctx.otoroshiResponse.status
         if ((status > 299 && status < 400) || status == 201) {
           ctx.otoroshiResponse.header("Location") match {
-            case None => ctx.otoroshiResponse.right
-            case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) => ctx.otoroshiResponse.right
-            case Some(location) => {
-              val backendHost = TargetExpressionLanguage(
+            case None                                                                                   => ctx.otoroshiResponse.right
+            case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
+              ctx.otoroshiResponse.right
+            case Some(location)                                                                         => {
+              val backendHost     = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
                 ctx.route.serviceDescriptor.some,
@@ -143,12 +148,14 @@ class OverrideLocationHeader extends NgRequestTransformer {
                 ctx.attrs,
                 env
               )
-              val oldLocation = Uri(location)
+              val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
               if (oldLocationHost.equalsIgnoreCase(backendHost)) {
-                val frontendHost = Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domain)
-                val newLocation = oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
-                val headers = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
+                val frontendHost =
+                  Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domain)
+                val newLocation  =
+                  oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
+                val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
                 ctx.otoroshiResponse.copy(headers = headers).right
               } else {
                 ctx.otoroshiResponse.right
@@ -680,5 +687,295 @@ class ForwardedHeader extends NgRequestTransformer {
       )
     }
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
+  }
+}
+
+case class RejectHeaderConfig(value: Long = 8 * 1024) extends NgPluginConfig {
+  def json: JsValue = RejectHeaderConfig.format.writes(this)
+}
+
+object RejectHeaderConfig {
+  val default                        = RejectHeaderConfig()
+  val configFlow: Seq[String]        = Seq("value")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "value" -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Max length",
+        "props" -> Json.obj(
+          "label"  -> "Max Length",
+          "suffix" -> "bytes"
+        )
+      )
+    )
+  )
+  val format                         = new Format[RejectHeaderConfig] {
+
+    override def reads(json: JsValue): JsResult[RejectHeaderConfig] = Try {
+      RejectHeaderConfig(
+        value = json.select("value").asOpt[Long].getOrElse(8 * 1024)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: RejectHeaderConfig): JsValue = Json.obj(
+      "value" -> o.value
+    )
+  }
+}
+
+class RejectHeaderInTooLong extends NgRequestTransformer {
+
+  private val logger                             = Logger("otoroshi-plugin-reject-headers-in-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Reject headers in too long"
+  override def description: Option[String]                 =
+    "This plugin remove all headers to backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformRequestSync(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(
+      ctx.otoroshiRequest.copy(
+        headers = ctx.otoroshiRequest.headers.filter {
+          case (key, value) if value.length > config.value => {
+            HeaderTooLongAlert(key, value, "", "remove", "client", "plugin", ctx.otoroshiRequest, ctx.route, env)
+              .toAnalytics()
+            logger.error(
+              s"removing header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'"
+            )
+            false
+          }
+          case _                                         => true
+        }
+      )
+    )
+  }
+}
+
+class RejectHeaderOutTooLong extends NgRequestTransformer {
+
+  private val logger                             = Logger("otoroshi-plugin-reject-headers-out-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Reject headers out too long"
+  override def description: Option[String]                 =
+    "This plugin remove all headers from backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformResponseSync(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(
+      ctx.otoroshiResponse.copy(
+        headers = ctx.otoroshiResponse.headers.filter {
+          case (key, value) if value.length > config.value => {
+            HeaderTooLongAlert(
+              key,
+              value,
+              "",
+              "remove",
+              "client",
+              "plugin",
+              NgPluginHttpRequest.fromRequest(ctx.request),
+              ctx.route,
+              env
+            ).toAnalytics()
+            logger.error(
+              s"removing header '${key}' from response to client because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}'"
+            )
+            false
+          }
+          case _                                         => true
+        }
+      )
+    )
+  }
+}
+
+case class HeaderTooLongAlert(
+    headerName: String,
+    headerValue: String,
+    newHeaderValue: String,
+    action: String,
+    to: String,
+    from: String,
+    request: NgPluginHttpRequest,
+    route: NgRoute,
+    env: Env
+) extends AlertEvent {
+
+  val `@id`: String          = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime = DateTime.now()
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id"                 -> `@id`,
+      "@timestamp"          -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"               -> `@type`,
+      "@product"            -> _env.eventsName,
+      "@serviceId"          -> `@serviceId`,
+      "@service"            -> `@service`,
+      "@env"                -> env.env,
+      "alert"               -> "HeaderTooLongAlert",
+      "action"              -> action,
+      "to"                  -> to,
+      "from"                -> from,
+      "header_name"         -> headerName,
+      "header_value"        -> headerValue,
+      "header_value_length" -> headerValue,
+      "new_header_value"    -> headerValue,
+      "request"             -> request.json
+    )
+}
+
+class LimitHeaderInTooLong extends NgRequestTransformer {
+
+  private val logger                             = Logger("otoroshi-plugin-limit-headers-in-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Limit headers in too long"
+  override def description: Option[String]                 =
+    "This plugin limit all headers to backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformRequestSync(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(
+      ctx.otoroshiRequest.copy(
+        headers = ctx.otoroshiRequest.headers.map {
+          case (key, value) if value.length > config.value => {
+            val newValue = value.substring(0, config.value.toInt - 1)
+            HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", ctx.otoroshiRequest, ctx.route, env)
+              .toAnalytics()
+            logger.error(
+              s"limiting header '${key}' from request to backend because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+            )
+            (key, newValue)
+          }
+          case (key, value)                              => (key, value)
+        }
+      )
+    )
+  }
+}
+
+class LimitHeaderOutTooLong extends NgRequestTransformer {
+
+  private val logger                             = Logger("otoroshi-plugin-limit-headers-out-too-long")
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Limit headers out too long"
+  override def description: Option[String]                 =
+    "This plugin limit all headers from backend with a length above a max".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(RejectHeaderConfig())
+
+  override def noJsForm: Boolean = true
+
+  override def configFlow: Seq[String] = RejectHeaderConfig.configFlow
+
+  override def configSchema: Option[JsObject] = RejectHeaderConfig.configSchema
+
+  override def transformResponseSync(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    val config = ctx.cachedConfig(internalName)(RejectHeaderConfig.format).getOrElse(RejectHeaderConfig())
+    Right(
+      ctx.otoroshiResponse.copy(
+        headers = ctx.otoroshiResponse.headers.map {
+          case (key, value) if value.length > config.value => {
+            val newValue = value.substring(0, config.value.toInt - 1)
+            HeaderTooLongAlert(
+              key,
+              value,
+              newValue,
+              "limit",
+              "client",
+              "plugin",
+              NgPluginHttpRequest.fromRequest(ctx.request),
+              ctx.route,
+              env
+            ).toAnalytics()
+            logger.error(
+              s"limiting header '${key}' from response to client because it's too long. route is ${ctx.route.name} / ${ctx.route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+            )
+            (key, newValue)
+          }
+          case (key, value)                              => (key, value)
+        }
+      )
+    )
   }
 }

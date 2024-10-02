@@ -529,7 +529,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     durableWrites = true
     durableWrites = ${?CASSANDRA_DURABLE_WRITES}
     durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
-    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
+    basic.contact-points = [ ${otoroshi.cassandra.host}&quot;:&quot;${otoroshi.cassandra.port} ]
     basic.session-name = &quot;otoroshi&quot;
     basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
     basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
@@ -881,7 +881,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 http.port = 8080
 
-app {
+otoroshi {
   storage = &quot;inmemory&quot;
   importFrom = &quot;./my-state.json&quot;
   env = &quot;prod&quot;
@@ -953,6 +953,8 @@ play.http {
   domain = &quot;oto.tools&quot; # default domain for basic otoroshi services
   domain = ${?APP_DOMAIN} # default domain for basic otoroshi services
   domain = ${?OTOROSHI_DOMAIN} # default domain for basic otoroshi services
+  routeBaseDomain = &quot;new-route.oto.tools&quot; # default domain for new otoroshi routes
+  routeBaseDomain = ${?OTOROSHI_ROUTE_BASE_DOMAIN} # default domain for new otoroshi routes
   commitId = &quot;HEAD&quot;
   commitId = ${?COMMIT_ID}
   commitId = ${?OTOROSHI_COMMIT_ID}
@@ -1924,6 +1926,10 @@ otoroshi {
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
     allowRedirectQueryParamOnLogin = false
     allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
+    maxHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_BACKEND}
+    maxHeaderSizeToClient = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_CLIENT}
+    limitHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_BACKEND}
+    limitHeaderSizeToClient = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_CLIENT}
   }
   wasm {
   	cache {
@@ -2378,7 +2384,7 @@ otoroshi {
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
   }
   vaults {
-    enabled = false
+    enabled = true
     enabled = ${?OTOROSHI_VAULTS_ENABLED}
     secrets-ttl = 300000 # 5 minutes between each secret read
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
@@ -2682,6 +2688,7 @@ akka { # akka specific configuration
   env = ${?OTOROSHI_ENV} # env name, should always be prod except in dev mode
   domain = ${?APP_DOMAIN} # default domain for basic otoroshi services
   domain = ${?OTOROSHI_DOMAIN} # default domain for basic otoroshi services
+  routeBaseDomain = ${?OTOROSHI_ROUTE_BASE_DOMAIN} # default domain for new otoroshi routes
   commitId = ${?COMMIT_ID}
   commitId = ${?OTOROSHI_COMMIT_ID}
   rootScheme = ${?APP_ROOT_SCHEME} # default root scheme when composing urls
@@ -3270,6 +3277,10 @@ otoroshi {
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
     allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
+    maxHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_BACKEND}
+    maxHeaderSizeToClient = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_CLIENT}
+    limitHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_BACKEND}
+    limitHeaderSizeToClient = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_CLIENT}
   }
   wasm {
   	cache {

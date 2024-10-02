@@ -10,6 +10,7 @@ import otoroshi.gateway.GwError
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.Promise
 
@@ -29,6 +30,7 @@ object Keys {
 
   val CaptureRequestBodyKey         = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
   val RequestTimestampKey           = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
+  val RequestKey                    = TypedKey[RequestHeader]("otoroshi.core.Request")
   val RequestStartKey               = TypedKey[Long]("otoroshi.core.RequestStart")
   val RequestWebsocketKey           = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")
   val RequestCounterInKey           = TypedKey[AtomicLong]("otoroshi.core.RequestCounterIn")

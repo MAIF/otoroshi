@@ -15,7 +15,7 @@ import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models._
-import otoroshi.next.plugins.Keys
+import otoroshi.next.plugins.{HeaderTooLongAlert, Keys}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError._
 import otoroshi.next.utils.{FEither, JsonHelpers}
@@ -27,7 +27,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
-import play.api.Logger
+import play.api.{mvc, Logger}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -363,6 +363,7 @@ class ProxyEngine() extends RequestHandler {
     val currentListener    = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
     implicit val attrs     = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestKey                -> request,
       otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
@@ -386,6 +387,8 @@ class ProxyEngine() extends RequestHandler {
     report.markDoneAndStart("check-concurrent-requests")
     (for {
       _         <- handleConcurrentRequest(request)
+      _          = report.markDoneAndStart("validate-incoming-request")
+      _         <- applyIncomingRequestValidation(request, snowflake)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
       _         <- handleRelayTraffic(route, request, request.body)
@@ -537,13 +540,21 @@ class ProxyEngine() extends RequestHandler {
       })
       .map { result =>
         result.copy(body = result.body match {
-          case HttpEntity.NoEntity                      => HttpEntity.NoEntity
-          case b @ HttpEntity.Strict(_, _)              => b
+          case HttpEntity.NoEntity                      =>
+            responseEndPromise.trySuccess(Done)
+            HttpEntity.NoEntity
+          case b @ HttpEntity.Strict(_, _)              =>
+            responseEndPromise.trySuccess(Done)
+            b
           case HttpEntity.Streamed(source, length, typ) =>
-            HttpEntity
-              .Streamed(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), length, typ)
+            if (length.contains(0)) {
+              responseEndPromise.trySuccess(Done)
+              HttpEntity.NoEntity
+            } else {
+              HttpEntity.Streamed(source.alsoTo(Sink.onComplete(_ => responseEndPromise.trySuccess(Done))), length, typ)
+            }
           case HttpEntity.Chunked(source, typ)          =>
-            HttpEntity.Chunked(source.alsoTo(Sink.onComplete { case _ => responseEndPromise.trySuccess(Done) }), typ)
+            HttpEntity.Chunked(source.alsoTo(Sink.onComplete(_ => responseEndPromise.trySuccess(Done))), typ)
         })
       }
   }
@@ -573,6 +584,7 @@ class ProxyEngine() extends RequestHandler {
     val counterOut       = new AtomicLong(0L)
     implicit val attrs   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
+      otoroshi.plugins.Keys.RequestKey                -> request,
       otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey              -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey       -> callDate,
@@ -597,6 +609,8 @@ class ProxyEngine() extends RequestHandler {
     report.markDoneAndStart("check-concurrent-requests")
     (for {
       _         <- handleConcurrentRequest(request)
+      _          = report.markDoneAndStart("validate-incoming-request")
+      _         <- applyIncomingRequestValidation(request, snowflake)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, fakeBody, global_plugins__, tryIt)
       config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
@@ -765,6 +779,179 @@ class ProxyEngine() extends RequestHandler {
       ).toAnalytics()
     }
     FEither.right(Done)
+  }
+
+  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(implicit
+    ec: ExecutionContext,
+    env: Env,
+    report: NgExecutionReport,
+    globalConfig: GlobalConfig,
+    attrs: TypedMap,
+    mat: Materializer
+  ): FEither[NgProxyEngineError, Done] = {
+    if (globalConfig.incomingRequestValidators.nonEmpty) {
+      val all_plugins = globalConfig.incomingRequestValidators.incomingRequestValidatorPlugins(request)
+      var sequence = NgReportPluginSequence(
+        size = all_plugins.size,
+        kind = "incoming-request-validator-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty
+      )
+      def markPluginItem(
+                          item: NgReportPluginSequenceItem,
+                          ctx: NgIncomingRequestValidatorContext,
+                          debug: Boolean,
+                          result: JsValue
+                        ): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json
+              .obj(
+                "result" -> result
+              )
+              .applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
+      val _ctx = NgIncomingRequestValidatorContext(
+        snowflake = snowflake,
+        request = request,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem
+      )
+      if (all_plugins.size == 1) {
+        val wrapper               = all_plugins.head
+        val pluginConfig: JsValue = wrapper.plugin.defaultConfig
+          .map(dc => dc ++ wrapper.instance.config.raw)
+          .getOrElse(wrapper.instance.config.raw)
+        val ctx                   = _ctx.copy(config = pluginConfig)
+        val debug                 = wrapper.instance.debug
+        val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+        val item                  = NgReportPluginSequenceItem(
+          wrapper.instance.plugin,
+          wrapper.plugin.name,
+          System.currentTimeMillis(),
+          System.nanoTime(),
+          -1L,
+          -1L,
+          in,
+          JsNull
+        )
+        FEither(wrapper.plugin.access(ctx).transform {
+          case Failure(exception)                 =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+            report.setContext(sequence.stopSequence().json)
+            Success(
+              Left(
+                NgResultProxyEngineError(
+                  otoroshiJsonError(
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during access plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Results.InternalServerError,
+                    attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+                    attrs,
+                    request
+                  )
+                )
+              )
+            )
+          case Success(NgAccess.NgDenied(result)) =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
+            report.setContext(sequence.stopSequence().json)
+            Success(Left(NgResultProxyEngineError(result)))
+          case Success(NgAccess.NgAllowed)        =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+            report.setContext(sequence.stopSequence().json)
+            Success(Right(Done))
+        })
+      } else {
+        val promise = Promise[Either[NgProxyEngineError, Done]]()
+        def next(plugins: Seq[NgPluginWrapper[NgIncomingRequestValidator]]): Unit = {
+          plugins.headOption match {
+            case None          => promise.trySuccess(Right(Done))
+            case Some(wrapper) => {
+              val pluginConfig: JsValue = wrapper.plugin.defaultConfig
+                .map(dc => dc ++ wrapper.instance.config.raw)
+                .getOrElse(wrapper.instance.config.raw)
+              val ctx                   = _ctx.copy(
+                config = pluginConfig,
+                idx = wrapper.instance.instanceId
+              )
+              val debug                 = wrapper.instance.debug
+              val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+              val item                  = NgReportPluginSequenceItem(
+                wrapper.instance.plugin,
+                wrapper.plugin.name,
+                System.currentTimeMillis(),
+                System.nanoTime(),
+                -1L,
+                -1L,
+                in,
+                JsNull
+              )
+              wrapper.plugin.access(ctx).andThen {
+                case Failure(exception)                               =>
+                  markPluginItem(
+                    item,
+                    ctx,
+                    debug,
+                    Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception))
+                  )
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(
+                    Left(
+                      NgResultProxyEngineError(
+                        otoroshiJsonError(
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during access plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
+                          Results.InternalServerError,
+                          attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+                          attrs,
+                          request
+                        )
+                      )
+                    )
+                  )
+                case Success(NgAccess.NgDenied(result))               =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Left(NgResultProxyEngineError(result)))
+                case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Right(Done))
+                case Success(NgAccess.NgAllowed)                      =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+                  next(plugins.tail)
+              }
+            }
+          }
+        }
+        next(all_plugins)
+        FEither.apply(promise.future)
+      }
+    } else {
+      FEither.right(Done)
+    }
   }
 
   def handleConcurrentRequest(request: RequestHeader)(implicit
@@ -2759,7 +2946,7 @@ class ProxyEngine() extends RequestHandler {
               request.headers.toSeq,
               route.serviceDescriptor,
               target = finalTarget,
-              rawRequest = rawRequest,
+              rawRequest = rawRequest, // TODO: custom header size
               route = route.some
             )
             .right
@@ -2773,7 +2960,7 @@ class ProxyEngine() extends RequestHandler {
                 UrlSanitizer.sanitize(request.url),
                 out,
                 request.headers.toSeq,
-                rawRequest,
+                rawRequest, // TODO: custom header size
                 route.serviceDescriptor,
                 route.some,
                 ctxPlugins.some,
@@ -2837,6 +3024,7 @@ class ProxyEngine() extends RequestHandler {
         )
       )
     } else {
+
       val finalTarget: Target = request.backend.getOrElse(backend).toTarget
       attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
       val contentLengthIn: Option[Long]                  = request.contentLengthStr
@@ -2898,6 +3086,36 @@ class ProxyEngine() extends RequestHandler {
         .applyOnIf(isTargetHttp2 && isRequestAboveHttp2) { s =>
           s.filterNot(_._1.toLowerCase().startsWith("x-http3"))
         }
+        .applyOnWithOpt(env.maxHeaderSizeToBackend) {
+          case (hdrs, max) => {
+            hdrs.filter {
+              case (key, value) if key.length > max => {
+                HeaderTooLongAlert(key, value, "", "remove", "backend", "engine", request, route, env).toAnalytics()
+                logger.error(
+                  s"removing header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'"
+                )
+                false
+              }
+              case _                                => true
+            }
+          }
+        }
+        .applyOnWithOpt(env.limitHeaderSizeToBackend) {
+          case (hdrs, max) => {
+            hdrs.map {
+              case (key, value) if key.length > max => {
+                val newValue = value.substring(0, max.toInt - 1)
+                HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env)
+                  .toAnalytics()
+                logger.error(
+                  s"limiting header '${key}' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+                )
+                (key, newValue)
+              }
+              case (key, value)                     => (key, value)
+            }
+          }
+        }
       val builder                                        = clientReq
         .withRequestTimeout(extractedTimeout)
         .withFailureIndicator(fakeFailureIndicator)
@@ -2940,7 +3158,8 @@ class ProxyEngine() extends RequestHandler {
       }
 
       report.markOverheadIn()
-      val start                           = System.currentTimeMillis()
+      val start = System.currentTimeMillis()
+
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>
@@ -3317,6 +3536,35 @@ class ProxyEngine() extends RequestHandler {
         headersOutFiltered.contains(key.toLowerCase())
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
+      .applyOnWithOpt(env.maxHeaderSizeToClient) {
+        case (hdrs, max) => {
+          hdrs.filter {
+            case (key, value) if key.length > max => {
+              HeaderTooLongAlert(key, value, "", "remove", "client", "engine", request, route, env).toAnalytics()
+              logger.error(
+                s"removing header '${key}' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}'"
+              )
+              false
+            }
+            case _                                => true
+          }
+        }
+      }
+      .applyOnWithOpt(env.limitHeaderSizeToClient) {
+        case (hdrs, max) => {
+          hdrs.map {
+            case (key, value) if key.length > max => {
+              val newValue = value.substring(0, max.toInt - 1)
+              HeaderTooLongAlert(key, value, newValue, "limit", "client", "plugin", request, route, env).toAnalytics()
+              logger.error(
+                s"limiting header '${key}' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '${value}', new value is '${newValue}'"
+              )
+              (key, newValue)
+            }
+            case (key, value)                     => (key, value)
+          }
+        }
+      }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
     val theBody = response.body
@@ -3729,6 +3977,7 @@ class ProxyEngine() extends RequestHandler {
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
         )
+
         evt.toAnalytics()
       }(env.analyticsExecutionContext))
     FEither.right(Done)
