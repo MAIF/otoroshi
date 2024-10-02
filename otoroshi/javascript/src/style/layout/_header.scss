@@ -7,9 +7,11 @@
     padding-left: 0;
     padding-right: 0;
   }
+
   .navbar-header {
     height: 52px;
     background-color: var(--color-primary);
+
     a {
       color: var(--color-white);
     }
@@ -25,8 +27,10 @@
 
   .navbar-right {
     height: 52px;
+
     .fa-cog {
       font-size: 1.5em;
+
       &:hover {
         cursor: pointer;
       }
@@ -54,39 +58,49 @@
   right: 0;
   transition: max-width 0.5s, right 0.5s;
   max-width: 270px;
-  background-color: var(--bg-color_level1);
+  background-color: var(--bg-color_level2);
   list-style-type: none;
   padding-inline-start: 12px;
   padding-right: 12px;
 
-  > li {
-    margin: 6px 0;
+  >li:nth-child(1) {
+    margin-top: .5rem;
   }
 
-  li > a > *:first-child {
+  >li:nth-child(2) {
+    margin-top: 1rem;
+  }
+
+  li>a>*:first-child {
     margin-right: 6px;
   }
 
-  > li > a {
+  >li>a {
+    padding: .5rem;
     color: var(--color_level1);
+
     .otoroshi_logo .st0 {
       fill: var(--color_level3);
     }
+
     &:focus,
     &:hover {
       background-image: none;
       background-color: var(--bg-color_level3);
       color: var(--color_level3);
+
       .otoroshi_logo {
         .st0 {
           fill: var(--color_level3);
         }
       }
+
       .monkeyMenu {
         margin-left: -8px;
       }
     }
   }
+
   overflow-y: scroll;
   -ms-overflow-style: none;
   scrollbar-width: none;
