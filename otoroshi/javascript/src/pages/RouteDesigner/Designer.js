@@ -1650,7 +1650,7 @@ class Designer extends React.Component {
               })
             }
           />
-          <div className="relative-container" style={{ flex: 9 }}>
+          <div className="relative-container" style={{ flex: 9, marginLeft: preview.enabled ? '1rem' : '.5rem' }}>
             {preview.enabled ? (
               <EditView
                 addNode={this.addNode}

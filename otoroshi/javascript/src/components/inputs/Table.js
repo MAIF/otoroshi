@@ -260,12 +260,14 @@ export class Table extends Component {
   };
 
   readRoute = () => {
-    if (this.props.parentProps.params.taction) {
-      const action = this.props.parentProps.params.taction;
+    const { parentProps } = this.props;
+    const action = parentProps.params?.taction || parentProps.match?.params.taction
+    const item = parentProps.params?.titem || parentProps.match?.params.titem
+
+    if (action) {
       if (action === 'add') {
         this.showAddForm();
       } else if (action === 'edit') {
-        const item = this.props.parentProps.params.titem;
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
@@ -347,7 +349,7 @@ export class Table extends Component {
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props.navigateTo(item);
+    this.props.navigateTo(item)
   };
 
   closeAddForm = (e) => {

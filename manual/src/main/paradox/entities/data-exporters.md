@@ -60,82 +60,9 @@ The rules apply with the previous example as event.
 
 **Projection** is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, **only** the listed fields will be exported.
 
-Let's say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events
-```json
-{
- "@type": true,
- "@timestamp": true,
- "@id": true
-}
-```
-
-An other possibility is to **rename** the exported field. This value will be the same but the exported field will have a different name.
-
-Let's say we want to rename all `@id` field with `unique-id` as key
-
-```json
-{ "@id": "unique-id" }
-```
-
-The last possiblity is to retrieve a sub-object of an event. Let's say we want to get the name of each exported user of events.
-
-```json
-{ "user": { "name": true } }
-```
-
-You can also expand the entire source object with 
-
-```json
-{
-  "$spread": true
-}
-```
-
-and the remove fields you don't want with 
-
-```json
-{
-  "fieldthatidontwant": false
-}
-```
-
-Projections allows object modification using jspath, for instance, this example will create a new `otoroshiHeaderKeys` field to exported events. This field will contains a string array containing every request header name.
-
-```json
-{
-  "otoroshiHeaderKeys": {
-     "$path": "$.otoroshiHeadersIn.*.key"
-  }
-}
-```
-
-Alternativerly, projections also allow to use JQ to transform exported events
-
-```json
-{
-  "headerKeys": {
-     "$jq": "[.headers[].key]"
-  }
-}
-```
-
-JQ filter also allows conditionnal filtering : transformation is applied only if given predicate is match. In the following example, `headerKeys` field will be valued only if `target.scheme` is `https`.
-
-```json
-{
-  "headerKeys": {
-    "$jqIf": {
-      "filter": "[.headers[].key]",
-      "predicate": {
-        "path": "target.scheme",
-        "value": "https"
-      }
-    }
-  }
-}
-```
-
-See [JQ manual](https://jqlang.github.io/jq/manual/) for complete syntax reference.
+@@@div { #projection }
+&nbsp;
+@@@
 
 ## Elastic
 

@@ -1210,7 +1210,7 @@ class ProxyEngine() extends RequestHandler {
         FEither.left(
           NgResultProxyEngineError(
             otoroshiJsonError(
-              Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode"),
+              Json.obj("error" -> "errors.service.in.maintenance", "error_description" -> "Service in maintenance mode"),
               Results.ServiceUnavailable,
               attrs.get(otoroshi.next.plugins.Keys.RouteKey),
               attrs,
@@ -1540,7 +1540,7 @@ class ProxyEngine() extends RequestHandler {
                           Json
                             .obj(
                               "error"             -> "internal_server_error",
-                              "error_description" -> "an error happened during before-request plugins phase"
+                              "error_description" -> "an error happened during after-request plugins phase"
                             )
                             .applyOnIf(env.isDev) { obj =>
                               obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))

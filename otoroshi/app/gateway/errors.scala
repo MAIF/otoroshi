@@ -34,8 +34,6 @@ object Errors {
     404 -> ("The page you're looking for does not exist", "notFound.gif")
   )
 
-  private val cache = Scaffeine().expireAfterWrite(60.seconds).maximumSize(100).build[String, Option[ErrorTemplate]]()
-
   private def sendAnalytics(
       headers: Seq[Header],
       errorId: String,
@@ -371,7 +369,10 @@ object Errors {
       emptyBody: Boolean,
       errorId: String
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    env.datastores.errorTemplateDataStore.findById(descriptorId).map {
+    env.datastores.errorTemplateDataStore.findById(descriptorId).flatMap {
+      case Some(tmpl) => tmpl.some.vfuture
+      case None => env.datastores.errorTemplateDataStore.findById("global")
+    }.map {
       case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
       case Some(errorTemplate) => {
         val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
@@ -403,18 +404,7 @@ object Errors {
   }
 
   private def errorTemplate(descriptorId: String)(implicit env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
-    cache.getIfPresent(descriptorId) match {
-      case Some(opt) => opt
-      case None      =>
-        env.proxyState.errorTemplate(descriptorId) match {
-          case None                =>
-            cache.put(descriptorId, None)
-            None
-          case Some(errorTemplate) =>
-            cache.put(descriptorId, errorTemplate.some)
-            errorTemplate.some
-        }
-    }
+    env.proxyState.errorTemplate(descriptorId).orElse(env.proxyState.errorTemplate("global"))
   }
 
   private def customResultSync(
@@ -549,7 +539,12 @@ object Errors {
           route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
       }
-      case _                => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
+      case _                =>
+        env.proxyState.errorTemplate("global") match {
+          case None => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
+          case Some(_) => customResult("global", req, status, message, maybeCauseId, emptyBody, errorId)
+        }
+
     }) andThen {
       case scala.util.Success(resp) if sendEvent =>
         sendAnalytics(

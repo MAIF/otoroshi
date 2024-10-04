@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "3.5.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "3.6.0" classifier "bundle",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
