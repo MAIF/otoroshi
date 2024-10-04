@@ -21,6 +21,7 @@ import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
+import { DraftEditorContainer } from '../../components/DraftEditor';
 
 function DuplicateButton({ value, history }) {
   return (
@@ -171,6 +172,7 @@ function MoreActionsButton({ value, menu, history }) {
 
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
+      <DraftEditorContainer entityId={value.id} />
       <DuplicateButton value={value} history={history} />
       <select
         className="form-select selectSkin btn-primary"

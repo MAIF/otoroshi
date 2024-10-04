@@ -389,6 +389,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       case "tcp-service"        => env.datastores.tcpServiceDataStore.template(env).json.asObject
       case "script"             => env.datastores.scriptDataStore.template(env).json.asObject
       case "wasm-plugin"        => env.datastores.wasmPluginsDataStore.template(env).json.asObject
+      case "draft"              => env.datastores.draftsDataStore.template(env).json.asObject
       case "team"               =>
         env.datastores.teamDataStore
           .template(

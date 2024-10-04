@@ -1,16 +1,14 @@
 package otoroshi.models
 
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm._
 import play.api.libs.json._
+import play.api.mvc.{AbstractController, ControllerComponents}
 
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 case class Draft(
@@ -56,14 +54,16 @@ object Draft {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
-        content = (json \ "content").as[JsValue],
-        entityId = (json \ "entityId").as[String],
-        kind = (json \ "kind").as[String],
+        content = (json \ "content").asOpt[JsValue].getOrElse(Json.obj()),
+        entityId = (json \ "entityId").asOpt[String].getOrElse(""),
+        kind = (json \ "kind").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
       )
     } match {
-      case Failure(ex)    => JsError(ex.getMessage)
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -84,7 +84,7 @@ trait DraftDataStore extends BasicStore[Draft] {
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
-      .script
+      .draft
       .map { template =>
         Draft.format.reads(defaultDraft.json.asObject.deepMerge(template)).get
       }
@@ -99,6 +99,30 @@ class KvDraftDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[Draft] {
   override def fmt: Format[Draft]                 = Draft.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): String                 = s"${_env.storageRoot}:wasm-plugins:$id"
+  override def key(id: String): String                 = s"${_env.storageRoot}:drafts:$id"
   override def extractId(value: Draft): String    = value.id
+}
+
+class DraftsApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
+
+  def findByEntityId(group: String, version: String, id: String) = ApiAction.async { ctx =>
+    implicit val ec  = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+
+    env.datastores.draftsDataStore
+      .findAll(true)
+      .map(drafts => {
+        println(drafts)
+        Ok(Json.obj())
+      })
+
+//    env.datastores.draftsDataStore
+//      .streamedFindAndMat(_.entityId == id, 1, 1, 2)
+//      .map(drafts => {
+//        drafts.headOption
+//          .map(draft => Ok(draft.json))
+//          .getOrElse(NotFound(JsNull))
+//      })
+  }
 }

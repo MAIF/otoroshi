@@ -579,7 +579,7 @@ class NgProxyState(env: Env) {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       wasmPlugins         <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
-      drafts              <- env.datastores.draftsDataStore.findAllAndFillSecrets()
+      drafts              <- env.datastores.draftsDataStore.findAll()
       croutes             <- if (dev) {
                                NgRouteComposition
                                  .fromOpenApi(

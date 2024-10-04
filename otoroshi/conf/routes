@@ -624,6 +624,8 @@ DELETE  /apis/:group/:version/:entity                         otoroshi.api.Gener
 GET     /apis/entities                                        otoroshi.api.GenericApiController.entities()
 GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapi()
 
+GET     /apis/:group/:version/drafts/entities/:id             otoroshi.models.DraftsApiController.findByEntityId(group, version, id)
+
 ########################################################################################################################
 
 GET     /assets/*file                                         controllers.Assets.versioned(path="/public", file: Asset)

@@ -2168,6 +2168,7 @@ export const nextClient = {
     FRONTENDS: 'frontends',
     SERVICES: 'route-compositions',
     APIKEYS: 'apikeys',
+    DRAFTS: 'drafts'
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -2213,6 +2214,7 @@ export const nextClient = {
       template: () => fetchWrapperNext(`/${entity}/_template`),
       schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
+      fetch: path => fetchWrapperNext(`/${entity}${path}`)
     };
   },
 };

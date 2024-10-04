@@ -25,6 +25,7 @@ import otoroshi.env._
 import otoroshi.gateway._
 import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
+import otoroshi.models.DraftsApiController
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
@@ -529,6 +530,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val entitiesController            = wire[EntitiesController]
   lazy val errorTemplatesController      = wire[ErrorTemplatesController]
   lazy val genericApiController          = wire[GenericApiController]
+  lazy val draftsApiController           = wire[DraftsApiController]
   lazy val infosApiController            = wire[InfosApiController]
 
   override lazy val assets: Assets = wire[Assets]
