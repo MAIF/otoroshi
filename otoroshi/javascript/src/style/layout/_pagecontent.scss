@@ -30,6 +30,15 @@
   scrollbar-width: none;
 }
 
+.hidden-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .page-container::-webkit-scrollbar {
   display: none;
 }
@@ -76,10 +85,7 @@
   .Select-value,
   .Select,
   .Select-control,
-  .Select.has-value.Select--single
-    > .Select-control
-    .Select-value
-    .Select-value-label {
+  .Select.has-value.Select--single>.Select-control .Select-value .Select-value-label {
     background: none;
   }
 }
@@ -88,9 +94,11 @@
 .monkey {
   width: 200px;
   margin-top: 50px;
+
   .st0 {
     fill: var(--bg-color_level1);
   }
+
   .st1 {
     fill: var(--color_level1);
   }
@@ -104,6 +112,7 @@
 }
 
 @keyframes shake {
+
   from,
   50% {
     -webkit-transform: translate3d(0, 0, 0);
@@ -140,6 +149,7 @@
   animation: blink 1s infinite;
   content: "_";
 }
+
 @keyframes blink {
   50% {
     opacity: 0;

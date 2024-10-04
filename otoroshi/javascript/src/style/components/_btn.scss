@@ -52,7 +52,7 @@
   height: 22px;
   border-radius: 20px;
   display: flex;
-  margin-top: 10px;
+  margin-top: 8px;
 
   &-on {
     @extend .content-switch-button;
@@ -236,4 +236,8 @@
   flex: 1;
   line-height: 0.9rem;
   word-wrap: anywhere;
+}
+
+.items-center {
+  align-items: center;
 }
