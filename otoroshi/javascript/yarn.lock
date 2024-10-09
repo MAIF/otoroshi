@@ -12459,7 +12459,7 @@ signal-exit@^3.0.2, signal-exit@^3.0.3:
 
 signals-react-safe@^1.1.2:
   version "1.1.2"
-  resolved "https://registry.npmjs.org/signals-react-safe/-/signals-react-safe-1.1.2.tgz#13e1e08c00772e9c9bd93ab7dce937ee8617e454"
+  resolved "https://registry.yarnpkg.com/signals-react-safe/-/signals-react-safe-1.1.2.tgz#13e1e08c00772e9c9bd93ab7dce937ee8617e454"
   integrity sha512-SjMrxubsFFGW3g+ZBGtGkiE8N6h0srWm1znFs3KVG73sZPfQ6Gn6sHi/xy7lZMaGuoMjrBBEndO6YZwRs85n2Q==
   dependencies:
     "@preact/signals-core" "^1.5.0"

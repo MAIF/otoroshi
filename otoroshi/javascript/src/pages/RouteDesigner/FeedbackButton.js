@@ -58,9 +58,11 @@ export function FeedbackButton({
     }
   };
 
+  const isTextComponent = React.isValidElement(text)
+
   return (
     <button
-      id={text}
+      id={isTextComponent ? "" + text : text}
       type="button"
       disabled={disabled}
       className={`btn btn-sm ${color} ${className || ''}`}

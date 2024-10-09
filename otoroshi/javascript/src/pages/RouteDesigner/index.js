@@ -17,14 +17,25 @@ import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
 import { FeedbackButton } from './FeedbackButton';
-import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
 import { DraftEditorContainer } from '../../components/Drafts/DraftEditor';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
-import { draftSignal, resetDraftSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftSignal, draftVersionSignal, resetDraftSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
+import PageTitle from '../../components/PageTitle';
+import { Dropdown } from '../../components/Dropdown';
+import { YAMLExportButton } from '../../components/exporters/YAMLButton';
+import { JsonExportButton } from '../../components/exporters/JSONButton';
+
+function DuplicateModalContent({ value }) {
+  return <pre style={{ height: 'inherit' }}>
+    Frontend: {value.frontend.domains[0]}<br />
+    Backend: {value.backend.targets[0].hostname}<br />
+    Plugins: {value.plugins.length}
+  </pre>
+}
 
 function DuplicateButton({ value, history }) {
   return (
@@ -37,7 +48,10 @@ function DuplicateButton({ value, history }) {
         const prefix = (id.split('_')[0] || what) + '_';
         const newId = `${prefix}${v4()}`;
         const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-        window.newConfirm('Are you sure you want to duplicate this entity ?').then((ok) => {
+        window.newConfirm(<DuplicateModalContent value={value} />, {
+          title: `Duplicate ${value.name}`,
+          yesText: 'I want to duplicate this route'
+        }).then((ok) => {
           if (ok) {
             nextClient
               .forEntityNext(kind)
@@ -108,78 +122,77 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  const handleSelect = (e) => {
-    const kind = e.target.value;
+  // const handleSelect = (e) => {
+  //   const kind = e.target.value;
 
-    if (kind === 'json') {
-      const what = window.location.pathname.split('/')[3];
-      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const itemName = entityKind
-        ? entityKind.toLowerCase()
-        : what === 'routes'
-          ? 'route'
-          : 'route-composition';
-      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-      const json = JSON.stringify({ ...value, kind }, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.id = String(Date.now());
-      a.style.display = 'none';
-      a.download = `${itemName}-${name}-${Date.now()}.json`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    } else {
-      const what = window.location.pathname.split('/')[3];
-      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const itemName = entityKind
-        ? entityKind.toLowerCase()
-        : what === 'routes'
-          ? 'route'
-          : 'route-composition';
-      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+  //   if (kind === 'json') {
+  //     const what = window.location.pathname.split('/')[3];
+  //     const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
+  //     const itemName = entityKind
+  //       ? entityKind.toLowerCase()
+  //       : what === 'routes'
+  //         ? 'route'
+  //         : 'route-composition';
+  //     const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+  //     const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+  //     const json = JSON.stringify({ ...value, kind }, null, 2);
+  //     const blob = new Blob([json], { type: 'application/json' });
+  //     const url = URL.createObjectURL(blob);
+  //     const a = document.createElement('a');
+  //     a.id = String(Date.now());
+  //     a.style.display = 'none';
+  //     a.download = `${itemName}-${name}-${Date.now()}.json`;
+  //     a.href = url;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     setTimeout(() => document.body.removeChild(a), 300);
+  //   } else {
+  //     const what = window.location.pathname.split('/')[3];
+  //     const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
+  //     const itemName = entityKind
+  //       ? entityKind.toLowerCase()
+  //       : what === 'routes'
+  //         ? 'route'
+  //         : 'route-composition';
+  //     const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+  //     const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
 
-      fetch('/bo/api/json_to_yaml', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiVersion: 'proxy.otoroshi.io/v1',
-          kind,
-          metadata: {
-            name,
-          },
-          spec: value,
-        }),
-      })
-        .then((r) => r.text())
-        .then((yaml) => {
-          const blob = new Blob([yaml], { type: 'application/yaml' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.id = String(Date.now());
-          a.style.display = 'none';
-          a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-          a.href = url;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => document.body.removeChild(a), 300);
-        });
-    }
-  };
+  //     fetch('/bo/api/json_to_yaml', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         apiVersion: 'proxy.otoroshi.io/v1',
+  //         kind,
+  //         metadata: {
+  //           name,
+  //         },
+  //         spec: value,
+  //       }),
+  //     })
+  //       .then((r) => r.text())
+  //       .then((yaml) => {
+  //         const blob = new Blob([yaml], { type: 'application/yaml' });
+  //         const url = URL.createObjectURL(blob);
+  //         const a = document.createElement('a');
+  //         a.id = String(Date.now());
+  //         a.style.display = 'none';
+  //         a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+  //         a.href = url;
+  //         document.body.appendChild(a);
+  //         a.click();
+  //         setTimeout(() => document.body.removeChild(a), 300);
+  //       });
+  //   }
+  // };
 
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
-      <DraftEditorContainer
-        entityId={value.id}
-        value={value} />
       <DuplicateButton value={value} history={history} />
-      <select
+      <YAMLExportButton value={value} entityKind="JwtVerifier" />
+      <JsonExportButton value={value} entityKind="JwtVerifier" />
+      {/* <select
         className="form-select selectSkin btn-primary"
         aria-label="Choose export"
         onChange={handleSelect}
@@ -187,20 +200,47 @@ function MoreActionsButton({ value, menu, history }) {
         <option value="export">Export</option>
         <option value="json">JSON</option>
         <option value="yaml">YAML</option>
-      </select>
+      </select> */}
       {menu}
     </div>
   );
 }
 
-function PublisDraftButton() {
+function PublisDraftModalContent({ draft, value }) {
+  return <pre style={{ height: 'inherit' }}>
+    {JSON.stringify(difference(draft, value), null, 4)}
+  </pre>
+}
 
-  const publish = useSignalValue(draftSignal)
+function PublisDraftButton({ value }) {
+  const publish = useSignalValue(draftVersionSignal)
 
-  if (publish.version === 'latest')
-    return <div style={{ minWidth: 100 }}></div>
+  if (publish.version === 'published')
+    return null
 
-  return <Button text="Publish draft" className='btn-sm' type="primary" />
+  return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
+    borderColor: 'var(--color-primary)'
+  }} onClick={() => {
+    window.newConfirm(<PublisDraftModalContent value={value} draft={value} />, {
+      title: `Publish this draft`,
+      yesText: 'I want to publish this route'
+    }).then((ok) => {
+      if (ok) {
+        // nextClient
+        //   .forEntityNext(kind)
+        //   .create({
+        //     ...value,
+        //     name: value.name + ' (duplicated)',
+        //     id: newId,
+        //     enabled: false,
+        //   })
+        //   .then(() => {
+        //     // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+        //     history.push('/' + what + '/' + newId + '?tab=informations');
+        //   });
+      }
+    });
+  }} />
 }
 
 function ManagerTitle({
@@ -251,6 +291,7 @@ function ManagerTitle({
     .flatMap((ext) => ext.routeDesignerTabs || [])
     .find((item) => item.id === query);
   const maybeExtensionTabLabel = maybeExtensionTab ? maybeExtensionTab.label : '';
+
   return (
     <PageTitle
       style={{
@@ -266,16 +307,30 @@ function ManagerTitle({
       }
       {...props}
     >
-      {!isCreation &&
-        tabs
-          .filter((tab) => !tab.visible || tab.visible())
-          .filter((tab) => (location.state?.routeFromService ? tab.tab === 'Informations' : true))
-          .map(({ component }, i) => {
-            const Tab = component;
-            return <Tab key={`tab-${i}`} />;
-          })}
-      <PublisDraftButton />
+      {!isOnViewPlugins && <div style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        margin: 'auto',
+        bottom: '1.25rem',
+        width: 'fit-content'
+      }}>
+        <DraftEditorContainer
+          entityId={value.id}
+          value={value} />
+      </div>}
+      <Dropdown className='mb-1'>
+        {!isCreation &&
+          tabs
+            .filter((tab) => !tab.visible || tab.visible())
+            .filter((tab) => (location.state?.routeFromService ? tab.tab === 'Informations' : true))
+            .map(({ component }, i) => {
+              const Tab = component;
+              return <Tab key={`tab-${i}`} />;
+            })}
+      </Dropdown>
       {saveButton}
+      <PublisDraftButton value={value} />
     </PageTitle>
   );
 }

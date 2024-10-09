@@ -1,12 +1,47 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { LabelAndInput, NgBoxBooleanRenderer, NgForm } from '../../components/nginputs';
-import { nextClient } from '../../services/BackOfficeServices';
+import { compileScript, nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+
+class ManageDraft extends React.Component {
+  componentDidMount() {
+    this.unsubscribe = draftVersionSignal.subscribe(() => {
+      const draft = draftSignal.value.draft;
+
+      if (draft && this.props.value) {
+        if (draftVersionSignal.value.version === 'draft') {
+          draftSignal.value = {
+            ...draftSignal.value,
+            entityContent: this.props.value
+          }
+
+          this.props.setValue(draftSignal.value.draft)
+        } else { // published state
+          draftSignal.value = {
+            ...draftSignal.value,
+            draft: this.props.value
+          }
+
+          this.props.setValue(draftSignal.value.entityContent ? draftSignal.value.entityContent : this.props.value)
+        }
+      }
+    })
+  }
+  componentWillUnmount() {
+    if (this.unsubscribe)
+      this.unsubscribe()
+  }
+
+  render() {
+    return null
+  }
+}
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
@@ -36,6 +71,10 @@ export const Informations = forwardRef(
         />
       );
     }, [value]);
+
+
+    if (!value)
+      return null
 
     function saveRoute() {
       if (isCreation || location.state?.routeFromService) {
@@ -325,40 +364,41 @@ export const Informations = forwardRef(
       },
     ];
 
-    return (
-      <>
-        {showAdvancedForm ? (
-          <RouteForm
-            routeId={routeId}
-            setValue={setValue}
-            value={value}
-            history={history}
-            location={location}
-            isCreation={isCreation}
-          />
-        ) : (
-          <NgForm
-            schema={schema}
-            flow={flow}
-            value={value}
-            onChange={(v) => {
-              setValue(v);
-            }}
-          />
-        )}
+    return (<>
+      <ManageDraft value={value} setValue={setValue} />
 
-        <div className="d-flex align-items-center justify-content-end mt-3 p-0">
-          {!isOnRouteCompositions && (
-            <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
-          )}
-          <Button
-            type="danger"
-            className="btn-sm"
-            onClick={() => history.push(`/${link}`)}
-            text="Cancel"
-          />
-        </div>
-      </>
+      {showAdvancedForm ? (
+        <RouteForm
+          routeId={routeId}
+          setValue={setValue}
+          value={value}
+          history={history}
+          location={location}
+          isCreation={isCreation}
+        />
+      ) : (
+        <NgForm
+          schema={schema}
+          flow={flow}
+          value={value}
+          onChange={(v) => {
+            setValue(v);
+          }}
+        />
+      )}
+
+      <div className="d-flex align-items-center justify-content-end mt-3 p-0">
+        {!isOnRouteCompositions && (
+          <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
+        )}
+        <Button
+          type="danger"
+          className="btn-sm"
+          onClick={() => history.push(`/${link}`)}
+          text="Cancel"
+        />
+      </div>
+    </>
     );
   }
 );

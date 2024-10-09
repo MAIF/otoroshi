@@ -7,7 +7,7 @@ import {
 } from 'react-query'
 import { nextClient } from '../../services/BackOfficeServices'
 import { Button } from '../Button'
-import { draftSignal } from './DraftEditorSignal'
+import { draftSignal, draftVersionSignal } from './DraftEditorSignal'
 import { useSignalValue } from 'signals-react-safe'
 import { PillButton } from '../PillButton'
 
@@ -32,31 +32,39 @@ function createDraft(newDraft) {
 }
 
 function updateSignalFromQuery(response) {
-    if (!response.error)
+    
+    if (!response.error) {
         draftSignal.value = {
-            version: 'latest',
-            content: response.content,
-            rawDraft: response
+            draft: response.content,
+            rawDraft: response,
         }
+        draftVersionSignal.value = {
+            version: 'published',
+        }
+    }
     else {
         draftSignal.value = {
-            version: 'latest',
-            content: undefined,
+            draft: undefined,
             rawDraft: undefined
+        }
+        draftVersionSignal.value = {
+            version: 'published',
+            notFound: true,
         }
     }
 }
 
 function DraftEditor({ entityId, value }) {
+    const versionContext = useSignalValue(draftVersionSignal)
     const context = useSignalValue(draftSignal)
 
     const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
         retry: 0,
-        enabled: !context.content,
+        enabled: !context.draft && !versionContext.notFound,
         onSuccess: updateSignalFromQuery
     })
 
-    const hasDraft = context.content
+    const hasDraft = context.draft
 
     const templateQuery = useQuery(['getTemplate', hasDraft], getTemplate, {
         retry: 0,
@@ -65,48 +73,41 @@ function DraftEditor({ entityId, value }) {
 
     const mutation = useMutation(createDraft, {
         onSuccess: (data) => {
-            draftSignal.value = {
+            draftVersionSignal.value = {
                 version: 'draft',
-                content: data.content,
+            }
+            draftSignal.value = {
+                draft: data.content,
                 rawDraft: data
             }
         },
     })
 
     const onVersionChange = newVersion => {
-        if (newVersion !== context.version)
-            draftSignal.value = {
-                ...draftSignal.value,
-                version: newVersion,
-            };
+        if (!hasDraft) {
+            mutation.mutate({
+                ...templateQuery.data,
+                kind: entityId.split("_")[1],
+                id: entityId,
+                name: entityId,
+                content: value
+            })
+        } else {
+            if (newVersion !== versionContext.version) {
+                draftVersionSignal.value = {
+                    ...draftVersionSignal.value,
+                    version: newVersion,
+                };
+            }
+        }
     }
 
-    if (hasDraft) {
-        return <>
-            <PillButton
-                className='me-3'
-                rightEnabled={context.version !== 'draft'}
-                leftText="Latest"
-                rightText="Draft"
-                onChange={isLatest => onVersionChange(isLatest ? 'latest' : 'draft')} />
-        </>
-    }
-    else {
-        return <Button
-            type="primary"
-            className="btn-sm ms-1"
-            onClick={() => {
-                mutation.mutate({
-                    ...templateQuery.data,
-                    kind: entityId.split("_")[1],
-                    id: entityId,
-                    name: entityId,
-                    content: value
-                })
-            }}>
-            <i className='fas fa-hammer me-1' />Create draft version
-        </Button>
-    }
+    return <PillButton
+        className='mx-auto'
+        rightEnabled={versionContext.version !== 'draft'}
+        leftText="Published"
+        rightText="Draft"
+        onChange={isPublished => onVersionChange(isPublished ? 'published' : 'draft')} />
 }
 
 export function DraftEditorContainer(props) {

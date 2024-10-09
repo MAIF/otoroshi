@@ -42,7 +42,8 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
-import { draftSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { useSignalValue } from 'signals-react-safe';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -70,6 +71,12 @@ const Legacy = ({ value }) => (
     style={{ display: !!value ? 'block' : 'none' }}
   />
 );
+
+const SaveButtonText = () => {
+  const draftContext = useSignalValue(draftVersionSignal)
+
+  return draftContext.version === 'published' ? 'Save' : 'Save draft'
+}
 
 const Dot = ({
   className,
@@ -534,23 +541,29 @@ class Designer extends React.Component {
     this.injectNavbarMenu();
     this.mountShortcuts();
 
-    this.unsubscribe = draftSignal.subscribe(() => {
-      const draft = draftSignal.value.content;
+    this.unsubscribe = draftVersionSignal.subscribe(() => {
+      if (draftSignal.value.draft && this.state.route) {
+        
+        if (draftVersionSignal.value.version === 'draft') {
+          draftSignal.value = {
+            ...draftSignal.value,
+            entityContent: this.state.route
+          }
 
-      if (draftSignal.value.version === 'draft') {
-        const draftRoute = this.state.draftRoute ? this.state.draftRoute : draft;
-        this.setState({
-          route: draftRoute,
-          latestRoute: this.state.route,
-          draftRoute,
-          selectedNode: undefined
-        }, () => this.loadData(this.state.route))
-      } else {
-        this.setState({
-          route: this.state.latestRoute,
-          draftRoute: this.state.route,
-          selectedNode: undefined
-        }, () => this.loadData(this.state.route))
+          this.setState({
+            route: draftSignal.value.draft,
+            selectedNode: undefined
+          }, () => this.loadData(this.state.route))
+        } else {
+          draftSignal.value = {
+            ...draftSignal.value,
+            draft: this.state.route
+          }
+          this.setState({
+            route: draftSignal.value.entityContent ? draftSignal.value.entityContent : this.state.route,
+            selectedNode: undefined
+          }, () => this.loadData(this.state.route))
+        }
       }
     })
   }
@@ -591,7 +604,7 @@ class Designer extends React.Component {
         type="success"
         className="ms-2 mb-1"
         onPress={this.saveRoute}
-        text="Save"
+        text={<SaveButtonText />}
         _disabled={isEqual(this.state.route, this.state.originalRoute)}
       />
     );
@@ -1308,7 +1321,7 @@ class Designer extends React.Component {
 
     let promise;
 
-    if (draftSignal.value.version === 'draft') {
+    if (draftVersionSignal.value.version === 'draft') {
       promise = nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS)
         .update({
@@ -1321,7 +1334,7 @@ class Designer extends React.Component {
         .update(newRoute)
     }
 
-    promise
+    return promise
       .then((r) => {
         if (r.error) throw r.error;
         else {
@@ -1346,8 +1359,9 @@ class Designer extends React.Component {
       });
     });
 
-  isPluginEnabled = (value) =>
-    this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  isPluginEnabled = (value) => {
+    return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  }
 
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
@@ -2057,8 +2071,8 @@ const UnselectedNode = ({
               return allMethods.map((method, i) => {
                 return (
                   <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ width: 60 }}>{method}</div>
-                    <span style={{ fontFamily: 'monospace' }}>
+                    <div style={{ minWidth: 60 }}>{method}</div>
+                    <span style={{ fontSize: 15 }}>
                       {routeEntries(idx)}
                       {end}
                     </span>
@@ -2070,13 +2084,13 @@ const UnselectedNode = ({
                       >
                         <i className={copyIconName} />
                       </button>
-                      <button
+                      {draftVersionSignal.value.version === 'published' && <button
                         className="btn btn-sm btn-quiet ms-1"
                         title={`Go to ${start}${domain}`}
                         onClick={() => goTo(idx)}
                       >
                         <i className="fas fa-arrow-right" />
-                      </button>
+                      </button>}
                     </div>
                   </div>
                 );
@@ -2093,7 +2107,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2114,7 +2128,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2180,8 +2194,8 @@ const UnselectedNode = ({
                     }}
                     key={`backend-targets${i}`}
                   >
-                    <span style={{ fontFamily: 'monospace' }} className="d-flex align-items-center">
-                      <div style={{ width: 60 }}>
+                    <span style={{ fontSize: 15 }} className="d-flex align-items-center">
+                      <div style={{ minWidth: 60 }}>
                         <span className="badge bg-success" style={{ fontSize: '.75rem' }}>
                           ALL
                         </span>
@@ -2666,13 +2680,13 @@ class EditView extends React.Component {
 const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
   <div className="d-flex mt-4 justify-content-end">
     {!['Frontend', 'Backend'].includes(selectedNode.id) && <RemoveComponent onRemove={onRemove} />}
-    <FeedbackButton
+    {/* <FeedbackButton
       text="Save"
       className="ms-2"
       // disabled={disabledSaveButton}
       icon={() => <i className="far fa-paper-plane" />}
       onPress={valid}
-    />
+    /> */}
   </div>
 );
 
@@ -2737,17 +2751,9 @@ export const Description = ({ text, steps, legacy }) => {
 
   return (
     <>
-      {content && content.toLowerCase() !== '...' && (
-        <MarkdownInput
-          className="form-description"
-          readOnly={true}
-          preview={true}
-          value={content}
-        />
-      )}
       {steps.length > 0 && (
-        <div className="steps" style={{ paddingLeft: 12 }}>
-          active on{' '}
+        <div className="steps py-2" style={{ paddingLeft: 12 }}>
+          Active on steps {' '}
           {steps.map((step, i) => (
             <span
               className="badge bg-warning text-dark"
@@ -2761,11 +2767,19 @@ export const Description = ({ text, steps, legacy }) => {
       )}
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-          this plugin is a{' '}
+          This plugin is a{' '}
           <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>
+      )}
+      {content && content.toLowerCase() !== '...' && (
+        <MarkdownInput
+          className="form-description"
+          readOnly={true}
+          preview={true}
+          value={content}
+        />
       )}
       {overflows && (
         <button

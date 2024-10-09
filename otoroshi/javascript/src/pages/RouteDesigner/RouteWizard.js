@@ -472,8 +472,6 @@ export class RouteWizard extends React.Component {
                   <button
                     className="btn btn-primaryColor"
                     style={{
-                      backgroundColor: 'var(--color-primary)',
-                      borderColor: 'var(--color-primary)',
                       padding: '12px 48px',
                     }}
                     disabled={error}

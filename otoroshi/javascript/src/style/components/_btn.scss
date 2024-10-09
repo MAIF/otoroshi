@@ -114,11 +114,11 @@
   color: var(--color-white);
   border: 1px solid;
   border-color: var(--color-primary);
-  background-color: var(--color-primary);
+  background-color: transparent;
   &:hover,
   &.active,
   &.active:hover {
-    color: var(--color-white);
+    color: var(--color-dark);
     border: 1px solid;
     border-color: var(--color-primary-lighter);
     background-color: var(--color-primary-lighter);
