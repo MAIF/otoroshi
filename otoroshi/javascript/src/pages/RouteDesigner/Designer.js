@@ -2036,7 +2036,7 @@ const UnselectedNode = ({
                         title={`Go to ${start}${domain}`}
                         onClick={() => goTo(idx)}
                       >
-                        <i className="fas fa-arrow-right" />
+                        <i className="fas fa-external-link-alt"/>
                       </button>
                     </div>
                   </div>
@@ -2168,7 +2168,7 @@ const UnselectedNode = ({
                         title={`Go to ${backendURL}`}
                         onClick={() => window.open(backendURL, '_blank')}
                       >
-                        <i className="fas fa-arrow-right" />
+                        <i className="fas fa-external-link-alt" />
                       </button>
                     </div>
                   </div>
