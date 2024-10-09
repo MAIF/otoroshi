@@ -2486,6 +2486,11 @@
   resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.21.tgz#5de5a2385a35309427f6011992b544514d559aa1"
   integrity sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==
 
+"@preact/signals-core@^1.5.0":
+  version "1.8.0"
+  resolved "https://registry.npmjs.org/@preact/signals-core/-/signals-core-1.8.0.tgz#45ffadb81b48a298a4accd26b3f6c0140cd6dacc"
+  integrity sha512-OBvUsRZqNmjzCZXWLxkZfhcgT+Fk8DDcT/8vD6a1xhDemodyy87UJRJfASMuSD8FaAIeGgGm85ydXhm7lr4fyA==
+
 "@rainbow-modules/hooks@^0.12.0":
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/@rainbow-modules/hooks/-/hooks-0.12.0.tgz#d1293691aff4d94202b694d5004254fb25900824"
@@ -7119,7 +7124,7 @@ graphql-language-service@^5.0.5:
 
 graphql-playground-react@^1.7.28:
   version "1.7.28"
-  resolved "https://registry.yarnpkg.com/graphql-playground-react/-/graphql-playground-react-1.7.28.tgz#59020043b5018b713c03f5b5091f6978c8fe5543"
+  resolved "https://registry.npmjs.org/graphql-playground-react/-/graphql-playground-react-1.7.28.tgz#59020043b5018b713c03f5b5091f6978c8fe5543"
   integrity sha512-YPR33Ph9kuKlFOMpc8mKGsL/fOiX0ltgzV1BokXYNsBLtTVQnhdCSKQuZg80CcxWKD8syNuWXDkGZSAdFkwmRg==
   dependencies:
     "@types/lru-cache" "^4.1.1"
@@ -9357,7 +9362,7 @@ oauth-sign@~0.9.0:
 
 object-assign@^4.1.0, object-assign@^4.1.1:
   version "4.1.1"
-  resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
+  resolved "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
   integrity sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==
 
 object-copy@^0.1.0:
@@ -11287,7 +11292,7 @@ react-display-name@^0.2.3:
 
 react-dom@16.13.1:
   version "16.13.1"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.13.1.tgz#c1bd37331a0486c078ee54c4740720993b2e0e7f"
+  resolved "https://registry.npmjs.org/react-dom/-/react-dom-16.13.1.tgz#c1bd37331a0486c078ee54c4740720993b2e0e7f"
   integrity sha512-81PIMmVLnCNLO/fFOQxdQkvEq/+Hfpv24XNJfpyZhTRfO0QcmQIF/PgCa1zCOj2w1hrn12MFLyaJ/G0+Mxtfag==
   dependencies:
     loose-envify "^1.1.0"
@@ -11601,7 +11606,7 @@ react-virtualized@^9.12.0:
 
 react@16.13.1:
   version "16.13.1"
-  resolved "https://registry.yarnpkg.com/react/-/react-16.13.1.tgz#2e818822f1a9743122c063d6410d85c1e3afe48e"
+  resolved "https://registry.npmjs.org/react/-/react-16.13.1.tgz#2e818822f1a9743122c063d6410d85c1e3afe48e"
   integrity sha512-YMZQQq32xHLX0bz5Mnibv1/LHb3Sqzngu7xstSM+vrkE5Kzr9xE0yMByK5kMoTK30YVJE61WfbxIFFvfeDKT1w==
   dependencies:
     loose-envify "^1.1.0"
@@ -12184,7 +12189,7 @@ saxes@^3.1.9:
 
 scheduler@^0.19.1:
   version "0.19.1"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.19.1.tgz#4f3e2ed2c1a7d65681f4c854fa8c5a1ccb40f196"
+  resolved "https://registry.npmjs.org/scheduler/-/scheduler-0.19.1.tgz#4f3e2ed2c1a7d65681f4c854fa8c5a1ccb40f196"
   integrity sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==
   dependencies:
     loose-envify "^1.1.0"
@@ -12451,6 +12456,13 @@ signal-exit@^3.0.2, signal-exit@^3.0.3:
   version "3.0.7"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.7.tgz#a9a1767f8af84155114eaabd73f99273c8f59ad9"
   integrity sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==
+
+signals-react-safe@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.npmjs.org/signals-react-safe/-/signals-react-safe-1.1.2.tgz#13e1e08c00772e9c9bd93ab7dce937ee8617e454"
+  integrity sha512-SjMrxubsFFGW3g+ZBGtGkiE8N6h0srWm1znFs3KVG73sZPfQ6Gn6sHi/xy7lZMaGuoMjrBBEndO6YZwRs85n2Q==
+  dependencies:
+    "@preact/signals-core" "^1.5.0"
 
 simple-swizzle@^0.2.2:
   version "0.2.2"

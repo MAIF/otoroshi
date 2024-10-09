@@ -14,7 +14,6 @@ import scala.util.{Failure, Success, Try}
 case class Draft(
     id: String,
     kind: String,
-    entityId: String,
     content: JsValue,
     name: String,
     description: String,
@@ -40,11 +39,11 @@ object Draft {
     }
   val format                                = new Format[Draft] {
     override def writes(o: Draft): JsValue             = o.location.jsonWithKey ++ Json.obj(
+      "id"          -> o.id,
       "name"        -> o.name,
-      "id"          -> o.kind,
       "description" -> o.description,
       "content"     -> o.content,
-      "entityId"    -> o.entityId,
+      "kind"        -> o.kind,
       "metadata"    -> o.metadata,
       "tags"        -> JsArray(o.tags.map(JsString.apply))
     )
@@ -55,7 +54,6 @@ object Draft {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         content = (json \ "content").asOpt[JsValue].getOrElse(Json.obj()),
-        entityId = (json \ "entityId").asOpt[String].getOrElse(""),
         kind = (json \ "kind").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
@@ -73,7 +71,6 @@ trait DraftDataStore extends BasicStore[Draft] {
   def template(env: Env): Draft = {
     val defaultDraft = Draft(
       id = IdGenerator.namedId("draft", env),
-      entityId = "entityId",
       kind = "kind",
       name = "New draft",
       description = "New draft",
@@ -101,28 +98,4 @@ class KvDraftDataStore(redisCli: RedisLike, _env: Env)
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:drafts:$id"
   override def extractId(value: Draft): String    = value.id
-}
-
-class DraftsApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
-
-  def findByEntityId(group: String, version: String, id: String) = ApiAction.async { ctx =>
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-
-    env.datastores.draftsDataStore
-      .findAll(true)
-      .map(drafts => {
-        println(drafts)
-        Ok(Json.obj())
-      })
-
-//    env.datastores.draftsDataStore
-//      .streamedFindAndMat(_.entityId == id, 1, 1, 2)
-//      .map(drafts => {
-//        drafts.headOption
-//          .map(draft => Ok(draft.json))
-//          .getOrElse(NotFound(JsNull))
-//      })
-  }
 }

@@ -7,7 +7,6 @@ import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
-import otoroshi.models.DraftsApiController
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
@@ -141,7 +140,6 @@ package object modules {
     lazy val entitiesController            = wire[EntitiesController]
     lazy val errorTemplatesController      = wire[ErrorTemplatesController]
     lazy val genericApiController          = wire[GenericApiController]
-    lazy val draftsApiController           = wire[DraftsApiController]
     lazy val infosApiController            = wire[InfosApiController]
 
     override lazy val assets: Assets = wire[Assets]

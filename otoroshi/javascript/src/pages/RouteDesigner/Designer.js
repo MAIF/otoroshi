@@ -42,7 +42,7 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
-import { Button } from '../../components/Button';
+import { draftSignal } from '../../components/Drafts/DraftEditorSignal';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -533,10 +533,33 @@ class Designer extends React.Component {
     this.injectSaveButton();
     this.injectNavbarMenu();
     this.mountShortcuts();
+
+    this.unsubscribe = draftSignal.subscribe(() => {
+      const draft = draftSignal.value.content;
+
+      if (draftSignal.value.version === 'draft') {
+        const draftRoute = this.state.draftRoute ? this.state.draftRoute : draft;
+        this.setState({
+          route: draftRoute,
+          latestRoute: this.state.route,
+          draftRoute,
+          selectedNode: undefined
+        }, () => this.loadData(this.state.route))
+      } else {
+        this.setState({
+          route: this.state.latestRoute,
+          draftRoute: this.state.route,
+          selectedNode: undefined
+        }, () => this.loadData(this.state.route))
+      }
+    })
   }
 
   componentWillUnmount() {
     this.unmountShortcuts();
+
+    if (this.unsubscribe)
+      this.unsubscribe()
   }
 
   saveShortcut = (e) => {
@@ -563,8 +586,6 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
-    const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
-
     this.props.setSaveButton(
       <FeedbackButton
         type="success"
@@ -642,15 +663,16 @@ class Designer extends React.Component {
     }
   };
 
-  loadData = () => {
+  loadData = incomingRoute => {
     Promise.all([
       nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
         .findAll(),
-      this.props.value
+      incomingRoute ? Promise.resolve(incomingRoute) : (this.props.value
         ? Promise.resolve(this.props.value)
-        : nextClient.forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES).findById(
-          this.props.routeId
-        ),
+        : nextClient
+          .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
+          .findById(this.props.routeId)
+      ),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -1279,11 +1301,27 @@ class Designer extends React.Component {
       };
     }
 
-    if (this.props.setValue) this.props.setValue(newRoute);
+    if (this.props.setValue) {
+      this.props.setValue(newRoute);
+    }
 
-    return nextClient
-      .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
-      .update(newRoute)
+
+    let promise;
+
+    if (draftSignal.value.version === 'draft') {
+      promise = nextClient
+        .forEntityNext(nextClient.ENTITIES.DRAFTS)
+        .update({
+          ...draftSignal.value.rawDraft,
+          content: newRoute
+        })
+    } else {
+      promise = nextClient
+        .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
+        .update(newRoute)
+    }
+
+    promise
       .then((r) => {
         if (r.error) throw r.error;
         else {
@@ -2328,7 +2366,7 @@ class EditView extends React.Component {
 
   onScroll = () => {
     this.setState({
-      offset: window.pageYOffset,
+      offset: window.scrollY,
     });
   };
 

@@ -21,7 +21,10 @@ import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
-import { DraftEditorContainer } from '../../components/DraftEditor';
+import { DraftEditorContainer } from '../../components/Drafts/DraftEditor';
+import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
+import { draftSignal, resetDraftSignal } from '../../components/Drafts/DraftEditorSignal';
+import { useSignalValue } from 'signals-react-safe';
 
 function DuplicateButton({ value, history }) {
   return (
@@ -172,7 +175,9 @@ function MoreActionsButton({ value, menu, history }) {
 
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
-      <DraftEditorContainer entityId={value.id} />
+      <DraftEditorContainer
+        entityId={value.id}
+        value={value} />
       <DuplicateButton value={value} history={history} />
       <select
         className="form-select selectSkin btn-primary"
@@ -186,6 +191,16 @@ function MoreActionsButton({ value, menu, history }) {
       {menu}
     </div>
   );
+}
+
+function PublisDraftButton() {
+
+  const publish = useSignalValue(draftSignal)
+
+  if (publish.version === 'latest')
+    return <div style={{ minWidth: 100 }}></div>
+
+  return <Button text="Publish draft" className='btn-sm' type="primary" />
 }
 
 function ManagerTitle({
@@ -259,6 +274,7 @@ function ManagerTitle({
             const Tab = component;
             return <Tab key={`tab-${i}`} />;
           })}
+      <PublisDraftButton />
       {saveButton}
     </PageTitle>
   );
@@ -330,27 +346,27 @@ class Manager extends React.Component {
     const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
     const url = p.url;
 
-    this.props.setTitle(() => (
-      <ManagerTitle
-        pathname={location.pathname}
-        menu={this.state.menu}
-        routeId={p.routeId}
-        url={url}
-        query={query}
-        isCreation={isCreation}
-        isOnViewPlugins={isOnViewPlugins}
-        entity={entity}
-        value={this.state.value}
-        viewPlugins={viewPlugins}
-        location={location}
-        history={history}
-        saveButton={this.state.saveButton}
-        globalEnv={this.props.globalEnv}
-        env={this.props.globalEnv}
-        reloadEnv={this.props.reloadEnv}
-        getTitle={this.props.getTitle}
-      />
-    ));
+    // this.props.setTitle(
+    dynamicTitleContent.value = <ManagerTitle
+      pathname={location.pathname}
+      menu={this.state.menu}
+      routeId={p.routeId}
+      url={url}
+      query={query}
+      isCreation={isCreation}
+      isOnViewPlugins={isOnViewPlugins}
+      entity={entity}
+      value={this.state.value}
+      viewPlugins={viewPlugins}
+      location={location}
+      history={history}
+      saveButton={this.state.saveButton}
+      globalEnv={this.props.globalEnv}
+      env={this.props.globalEnv}
+      reloadEnv={this.props.reloadEnv}
+      getTitle={this.props.getTitle}
+    />
+    // );
   };
 
   updateSidebar = () => {
@@ -396,7 +412,9 @@ class Manager extends React.Component {
             tab={query}
             history={history}
             value={this.state.value}
-            setValue={(v) => this.setState({ value: v }, this.setTitle)}
+            setValue={(v) => {
+              this.setState({ value: v }, this.setTitle)
+            }}
             setSaveButton={(n) => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
             setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })}
@@ -546,7 +564,14 @@ class RouteDesigner extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.match.params.routeId !== prevProps.match.params.routeId) this.loadRoute();
+    if (this.props.match.params.routeId !== prevProps.match.params.routeId) {
+      this.loadRoute();
+      resetDraftSignal()
+    }
+  }
+
+  componentWillUnmount() {
+    resetDraftSignal()
   }
 
   loadRoute = () => {

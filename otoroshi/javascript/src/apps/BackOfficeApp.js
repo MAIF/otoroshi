@@ -53,7 +53,8 @@ import { ReloadNewVersion } from '../components/ReloadNewVersion';
 import { UpdateOtoroshiVersion } from '../components/UpdateOtoroshiVersion';
 import { DefaultSidebar } from '../components/DefaultSidebar';
 import { DynamicSidebar } from '../components/DynamicSidebar';
-import { DynamicTitle } from '../components/DynamicTitle';
+// import { DynamicTitle } from '../components/DynamicTitle';
+import { dynamicTitleContent, DynamicTitleSignal } from '../components/DynamicTitleSignal';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
@@ -218,8 +219,10 @@ class BackOfficeAppContainer extends Component {
         // Pass env to the child to avoid to fetch it again
         env={this.state.env}
         reloadEnv={this.reloadEnv}
-        setTitle={(t) => DynamicTitle.setContent(t)}
-        getTitle={() => DynamicTitle.getContent()}
+        // setTitle={(t) => DynamicTitle.setContent(t)}
+        // getTitle={() => DynamicTitle.getContent()}
+        setTitle={(t) => dynamicTitleContent.value = t}
+        getTitle={() => dynamicTitleContent.value}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
         {...newProps}
       />
@@ -278,8 +281,10 @@ class BackOfficeAppContainer extends Component {
               <TopBar
                 reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
-                setTitle={(t) => DynamicTitle.setContent(t)}
-                getTitle={() => DynamicTitle.getContent()}
+                // setTitle={(t) => DynamicTitle.setContent(t)}
+                // getTitle={() => DynamicTitle.getContent()}
+                setTitle={(t) => dynamicTitleContent.value = t}
+                getTitle={() => dynamicTitleContent.value}
                 {...this.props}
                 changePassword={this.state.env.changePassword}
                 env={this.state.env}
@@ -294,9 +299,8 @@ class BackOfficeAppContainer extends Component {
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -374,548 +378,553 @@ class BackOfficeAppContainer extends Component {
               </div>
               <div className="flex-fill px-3" style={{ overflowX: 'auto' }}>
                 <div className={classes.join(' ')} id="content-scroll-container">
-                  <DynamicTitle env={this.state.env} reloadEnv={this.reloadEnv}>
-                    {!this.state.catchedError && (
-                      <Switch>
-                        <Route
-                          exact
-                          path="/"
-                          component={(props) =>
-                            this.decorate(HomePage, {
-                              ...props,
-                              env: this.state.env,
-                              usedNewEngine: this.state.usedNewEngine,
-                            })
-                          }
-                        />
-                        {Otoroshi.extensions()
-                          .flatMap((ext) => ext.routes || [])
-                          .map((item) => {
-                            return (
-                              <Route
-                                key={item.path}
-                                path={item.path}
-                                component={(props) => this.decorate(item.component, props)}
-                              />
-                            );
-                          })}
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/stats"
-                          component={(props) => this.decorate(ServiceLiveStatsPage, props)}
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/events"
-                          component={(props) => this.decorate(ServiceEventsPage, props)}
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/analytics"
-                          component={(props) => this.decorate(ServiceAnalyticsPage, props)}
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/health"
-                          component={(props) => this.decorate(ServiceHealthPage, props)}
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/doc"
-                          component={(props) => this.decorate(DocumentationPage, props)}
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem/stats"
-                          component={(props) =>
-                            this.decorate(ApiKeyStatsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(ServiceApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys/:taction"
-                          component={(props) =>
-                            this.decorate(ServiceApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys"
-                          component={(props) =>
-                            this.decorate(ServiceApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path={[
-                            '/routes/:routeId',
-                            '/routes',
-                            '/route-compositions/:routeId',
-                            '/route-compositions',
-                          ]}
-                          component={(props) => (
-                            <RouteDesignerPage
-                              globalEnv={this.state.env}
-                              reloadEnv={this.reloadEnv}
-                              setTitle={(t) => DynamicTitle.setContent(t)}
-                              getTitle={() => DynamicTitle.getContent()}
-                              setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-                              {...props}
+                  <DynamicTitleSignal env={this.state.env} reloadEnv={this.reloadEnv} />
+                  {!this.state.catchedError && (
+                    <Switch>
+                      <Route
+                        exact
+                        path="/"
+                        component={(props) =>
+                          this.decorate(HomePage, {
+                            ...props,
+                            env: this.state.env,
+                            usedNewEngine: this.state.usedNewEngine,
+                          })
+                        }
+                      />
+                      {Otoroshi.extensions()
+                        .flatMap((ext) => ext.routes || [])
+                        .map((item) => {
+                          return (
+                            <Route
+                              key={item.path}
+                              path={item.path}
+                              component={(props) => this.decorate(item.component, props)}
                             />
-                          )}
-                        />
-                        <Route
-                          path="/ngforms"
-                          component={(props) => (
-                            <NgFormPlayground
-                              globalEnv={this.state.env}
-                              setTitle={(t) => DynamicTitle.setContent(t)}
-                              getTitle={() => DynamicTitle.getContent()}
-                              {...props}
-                            />
-                          )}
-                        />
-                        <Route
-                          path="/metrics"
-                          component={(props) => (
-                            <MetricsPage
-                              globalEnv={this.state.env}
-                              setTitle={(t) => DynamicTitle.setContent(t)}
-                              getTitle={() => DynamicTitle.getContent()}
-                              {...props}
-                            />
-                          )}
-                        />
-                        <Route
-                          path="/apikeys/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(ApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/apikeys/:taction"
-                          component={(props) =>
-                            this.decorate(ApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/apikeys"
-                          component={(props) =>
-                            this.decorate(ApiKeysPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/backends/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(BackendsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/backends/:taction"
-                          component={(props) =>
-                            this.decorate(BackendsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/backends"
-                          component={(props) =>
-                            this.decorate(BackendsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/organizations/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(TenantsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/organizations/:taction"
-                          component={(props) =>
-                            this.decorate(TenantsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/organizations"
-                          component={(props) =>
-                            this.decorate(TenantsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/teams/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(TeamsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/teams/:taction"
-                          component={(props) =>
-                            this.decorate(TeamsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/teams"
-                          component={(props) =>
-                            this.decorate(TeamsPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/error-templates/:taction/:titem"
-                          component={(props) =>
-                            this.decorate(ErrorTemplatesPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/error-templates/:taction"
-                          component={(props) =>
-                            this.decorate(ErrorTemplatesPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/error-templates"
-                          component={(props) =>
-                            this.decorate(ErrorTemplatesPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/lines/:lineId/services/:serviceId"
-                          component={(props) =>
-                            this.decorate(ServicePage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route
-                          path="/services/:taction/:titem"
-                          component={(props) => this.decorate(ServicesPage, props)}
-                        />
-                        <Route
-                          path="/services/:taction"
-                          component={(props) => this.decorate(ServicesPage, props)}
-                        />
-                        <Route
-                          path="/services"
-                          component={(props) => this.decorate(ServicesPage, props)}
-                        />
-                        <Route
-                          path="/tcp/services/:taction/:titem"
-                          component={(props) => this.decorate(TcpServicesPage, props)}
-                        />
-                        <Route
-                          path="/tcp/services/:taction"
-                          component={(props) => this.decorate(TcpServicesPage, props)}
-                        />
-                        <Route
-                          path="/tcp/services"
-                          component={(props) => this.decorate(TcpServicesPage, props)}
-                        />
+                          );
+                        })}
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/stats"
+                        component={(props) => this.decorate(ServiceLiveStatsPage, props)}
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/events"
+                        component={(props) => this.decorate(ServiceEventsPage, props)}
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/analytics"
+                        component={(props) => this.decorate(ServiceAnalyticsPage, props)}
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/health"
+                        component={(props) => this.decorate(ServiceHealthPage, props)}
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/doc"
+                        component={(props) => this.decorate(DocumentationPage, props)}
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem/stats"
+                        component={(props) =>
+                          this.decorate(ApiKeyStatsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(ServiceApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/apikeys/:taction"
+                        component={(props) =>
+                          this.decorate(ServiceApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId/apikeys"
+                        component={(props) =>
+                          this.decorate(ServiceApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path={[
+                          '/routes/:routeId',
+                          '/routes',
+                          '/route-compositions/:routeId',
+                          '/route-compositions',
+                        ]}
+                        component={(props) => (
+                          <RouteDesignerPage
+                            globalEnv={this.state.env}
+                            reloadEnv={this.reloadEnv}
+                            // setTitle={(t) => DynamicTitle.setContent(t)}
+                            // getTitle={() => DynamicTitle.getContent()}
+                            setTitle={(t) => dynamicTitleContent.value = t}
+                            getTitle={() => dynamicTitleContent.value}
+                            setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            {...props}
+                          />
+                        )}
+                      />
+                      <Route
+                        path="/ngforms"
+                        component={(props) => (
+                          <NgFormPlayground
+                            globalEnv={this.state.env}
+                            // setTitle={(t) => DynamicTitle.setContent(t)}
+                            // getTitle={() => DynamicTitle.getContent()}
+                            setTitle={(t) => dynamicTitleContent.value = t}
+                            getTitle={() => dynamicTitleContent.value}
+                            {...props}
+                          />
+                        )}
+                      />
+                      <Route
+                        path="/metrics"
+                        component={(props) => (
+                          <MetricsPage
+                            globalEnv={this.state.env}
+                            // setTitle={(t) => DynamicTitle.setContent(t)}
+                            // getTitle={() => DynamicTitle.getContent()}
+                            setTitle={(t) => dynamicTitleContent.value = t}
+                            getTitle={() => dynamicTitleContent.value}
+                            {...props}
+                          />
+                        )}
+                      />
+                      <Route
+                        path="/apikeys/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(ApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/apikeys/:taction"
+                        component={(props) =>
+                          this.decorate(ApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/apikeys"
+                        component={(props) =>
+                          this.decorate(ApiKeysPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/backends/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(BackendsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/backends/:taction"
+                        component={(props) =>
+                          this.decorate(BackendsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/backends"
+                        component={(props) =>
+                          this.decorate(BackendsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/organizations/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(TenantsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/organizations/:taction"
+                        component={(props) =>
+                          this.decorate(TenantsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/organizations"
+                        component={(props) =>
+                          this.decorate(TenantsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/teams/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(TeamsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/teams/:taction"
+                        component={(props) =>
+                          this.decorate(TeamsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/teams"
+                        component={(props) =>
+                          this.decorate(TeamsPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/error-templates/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(ErrorTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/error-templates/:taction"
+                        component={(props) =>
+                          this.decorate(ErrorTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/error-templates"
+                        component={(props) =>
+                          this.decorate(ErrorTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/lines/:lineId/services/:serviceId"
+                        component={(props) =>
+                          this.decorate(ServicePage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/services/:taction/:titem"
+                        component={(props) => this.decorate(ServicesPage, props)}
+                      />
+                      <Route
+                        path="/services/:taction"
+                        component={(props) => this.decorate(ServicesPage, props)}
+                      />
+                      <Route
+                        path="/services"
+                        component={(props) => this.decorate(ServicesPage, props)}
+                      />
+                      <Route
+                        path="/tcp/services/:taction/:titem"
+                        component={(props) => this.decorate(TcpServicesPage, props)}
+                      />
+                      <Route
+                        path="/tcp/services/:taction"
+                        component={(props) => this.decorate(TcpServicesPage, props)}
+                      />
+                      <Route
+                        path="/tcp/services"
+                        component={(props) => this.decorate(TcpServicesPage, props)}
+                      />
 
-                        <Route
-                          path="/groups/:taction/:titem/stats"
-                          component={(props) => this.decorate(GroupStatsPage, props)}
-                        />
-                        <Route
-                          path="/groups/:taction/:titem"
-                          component={(props) => this.decorate(GroupsPage, props)}
-                        />
-                        <Route
-                          path="/groups/:taction"
-                          component={(props) => this.decorate(GroupsPage, props)}
-                        />
-                        <Route
-                          path="/groups"
-                          component={(props) => this.decorate(GroupsPage, props)}
-                        />
-                        <Route
-                          path="/features"
-                          component={(props) =>
-                            this.decorate(FeaturesPage, {
-                              ...props,
-                              shortMenu: this.state.shortMenu,
-                              toggleShortMenu: this.toggleShortMenu,
-                            })
-                          }
-                        />
+                      <Route
+                        path="/groups/:taction/:titem/stats"
+                        component={(props) => this.decorate(GroupStatsPage, props)}
+                      />
+                      <Route
+                        path="/groups/:taction/:titem"
+                        component={(props) => this.decorate(GroupsPage, props)}
+                      />
+                      <Route
+                        path="/groups/:taction"
+                        component={(props) => this.decorate(GroupsPage, props)}
+                      />
+                      <Route
+                        path="/groups"
+                        component={(props) => this.decorate(GroupsPage, props)}
+                      />
+                      <Route
+                        path="/features"
+                        component={(props) =>
+                          this.decorate(FeaturesPage, {
+                            ...props,
+                            shortMenu: this.state.shortMenu,
+                            toggleShortMenu: this.toggleShortMenu,
+                          })
+                        }
+                      />
 
-                        <Route
-                          path="/certificates/:taction/:titem"
-                          component={(props) => this.decorate(CertificatesPage, props)}
-                        />
-                        <Route
-                          path="/certificates/:taction"
-                          component={(props) => this.decorate(CertificatesPage, props)}
-                        />
-                        <Route
-                          path="/certificates"
-                          component={(props) => this.decorate(CertificatesPage, props)}
-                        />
+                      <Route
+                        path="/certificates/:taction/:titem"
+                        component={(props) => this.decorate(CertificatesPage, props)}
+                      />
+                      <Route
+                        path="/certificates/:taction"
+                        component={(props) => this.decorate(CertificatesPage, props)}
+                      />
+                      <Route
+                        path="/certificates"
+                        component={(props) => this.decorate(CertificatesPage, props)}
+                      />
 
-                        <Route
-                          path="/cluster"
-                          component={(props) => this.decorate(ClusterPage, props)}
-                        />
-                        <Route
-                          path="/tunnels/:id"
-                          component={(props) => this.decorate(TunnelPage, props)}
-                        />
-                        <Route
-                          path="/tunnels"
-                          component={(props) => this.decorate(TunnelsPage, props)}
-                        />
+                      <Route
+                        path="/cluster"
+                        component={(props) => this.decorate(ClusterPage, props)}
+                      />
+                      <Route
+                        path="/tunnels/:id"
+                        component={(props) => this.decorate(TunnelPage, props)}
+                      />
+                      <Route
+                        path="/tunnels"
+                        component={(props) => this.decorate(TunnelsPage, props)}
+                      />
 
-                        <Route
-                          path="/exporters/:taction/:titem"
-                          component={(props) => this.decorate(DataExportersPage, props)}
-                        />
-                        <Route
-                          path="/exporters/:taction"
-                          component={(props) => this.decorate(DataExportersPage, props)}
-                        />
-                        <Route
-                          path="/exporters"
-                          component={(props) => this.decorate(DataExportersPage, props)}
-                        />
-                        <Route
-                          path="/dangerzone"
-                          component={(props) => this.decorate(DangerZonePage, props)}
-                        />
-                        <Route
-                          path="/sessions/admin"
-                          component={(props) => this.decorate(SessionsPage, props)}
-                        />
-                        <Route
-                          path="/sessions/private"
-                          component={(props) => this.decorate(PrivateAppsSessionsPage, props)}
-                        />
-                        <Route
-                          path="/clever"
-                          component={(props) => this.decorate(CleverPage, props)}
-                        />
-                        <Route
-                          path="/eureka-servers/edit/:eurekaServerId"
-                          component={(props) => this.decorate(EurekaServerPage, props)}
-                        />
-                        <Route
-                          path="/eureka-servers"
-                          component={(props) => this.decorate(EurekaServersPage, props)}
-                        />
-                        <Route
-                          path="/audit"
-                          component={(props) => this.decorate(AuditPage, props)}
-                        />
-                        <Route
-                          path="/alerts"
-                          component={(props) => this.decorate(AlertPage, props)}
-                        />
-                        <Route
-                          path="/loggers"
-                          component={(props) => this.decorate(LoggersPage, props)}
-                        />
-                        <Route
-                          path="/stats"
-                          component={(props) => this.decorate(GlobalAnalyticsPage, props)}
-                        />
-                        <Route
-                          path="/status"
-                          component={(props) => this.decorate(GlobalStatusPage, props)}
-                        />
-                        <Route
-                          path="/events"
-                          component={(props) => this.decorate(GlobalEventsPage, props)}
-                        />
-                        <Route
-                          path="/snowmonkey"
-                          component={(props) => this.decorate(SnowMonkeyPage, props)}
-                        />
-                        <Route
-                          path="/jwt-verifiers/:taction/:titem"
-                          component={(props) => this.decorate(JwtVerifiersPage, props)}
-                        />
-                        <Route
-                          path="/jwt-verifiers/:taction"
-                          component={(props) => this.decorate(JwtVerifiersPage, props)}
-                        />
-                        <Route
-                          path="/jwt-verifiers"
-                          component={(props) => this.decorate(JwtVerifiersPage, props)}
-                        />
-                        <Route
-                          path="/resources-loader"
-                          component={(props) => this.decorate(ResourceLoaderPage, props)}
-                        />
-                        <Route
-                          path="/validation-authorities/:taction/:titem"
-                          component={(props) => this.decorate(ClientValidatorsPage, props)}
-                        />
-                        <Route
-                          path="/validation-authorities/:taction"
-                          component={(props) => this.decorate(ClientValidatorsPage, props)}
-                        />
-                        <Route
-                          path="/validation-authorities"
-                          component={(props) => this.decorate(ClientValidatorsPage, props)}
-                        />
-                        <Route
-                          path="/auth-configs/:taction/:titem"
-                          component={(props) => this.decorate(AuthModuleConfigsPage, props)}
-                        />
-                        <Route
-                          path="/auth-configs/:taction"
-                          component={(props) => this.decorate(AuthModuleConfigsPage, props)}
-                        />
-                        <Route
-                          path="/auth-configs"
-                          component={(props) => this.decorate(AuthModuleConfigsPage, props)}
-                        />
-                        <Route
-                          path="/plugins/:taction/:titem"
-                          component={(props) => this.decorate(ScriptsPage, props)}
-                        />
-                        <Route
-                          path="/plugins/:taction"
-                          component={(props) => this.decorate(ScriptsPage, props)}
-                        />
-                        <Route
-                          path="/plugins"
-                          component={(props) => this.decorate(ScriptsPage, props)}
-                        />
-                        <Route
-                          path="/wasm-plugins/:taction/:titem"
-                          component={(props) => this.decorate(WasmPluginsPage, props)}
-                        />
-                        <Route
-                          path="/wasm-plugins/:taction"
-                          component={(props) => this.decorate(WasmPluginsPage, props)}
-                        />
-                        <Route
-                          path="/wasm-plugins"
-                          component={(props) => this.decorate(WasmPluginsPage, props)}
-                        />
-                        <Route
-                          path="/design"
-                          component={(props) => this.decorate(AtomicDesignPage, props)}
-                        />
-                        <Route
-                          path="/provider"
-                          component={(props) => this.decorate(ProvidersDashboardPage, props)}
-                        />
-                        <Route
-                          path="/admins"
-                          component={(props) =>
-                            this.decorate(U2FRegisterPage, {
-                              ...props,
-                              env: this.state.env,
-                            })
-                          }
-                        />
-                        <Route component={(props) => this.decorate(NotFoundPage, props)} />
-                      </Switch>
-                    )}
-                    {this.state.catchedError && (
+                      <Route
+                        path="/exporters/:taction/:titem"
+                        component={(props) => this.decorate(DataExportersPage, props)}
+                      />
+                      <Route
+                        path="/exporters/:taction"
+                        component={(props) => this.decorate(DataExportersPage, props)}
+                      />
+                      <Route
+                        path="/exporters"
+                        component={(props) => this.decorate(DataExportersPage, props)}
+                      />
+                      <Route
+                        path="/dangerzone"
+                        component={(props) => this.decorate(DangerZonePage, props)}
+                      />
+                      <Route
+                        path="/sessions/admin"
+                        component={(props) => this.decorate(SessionsPage, props)}
+                      />
+                      <Route
+                        path="/sessions/private"
+                        component={(props) => this.decorate(PrivateAppsSessionsPage, props)}
+                      />
+                      <Route
+                        path="/clever"
+                        component={(props) => this.decorate(CleverPage, props)}
+                      />
+                      <Route
+                        path="/eureka-servers/edit/:eurekaServerId"
+                        component={(props) => this.decorate(EurekaServerPage, props)}
+                      />
+                      <Route
+                        path="/eureka-servers"
+                        component={(props) => this.decorate(EurekaServersPage, props)}
+                      />
+                      <Route
+                        path="/audit"
+                        component={(props) => this.decorate(AuditPage, props)}
+                      />
+                      <Route
+                        path="/alerts"
+                        component={(props) => this.decorate(AlertPage, props)}
+                      />
+                      <Route
+                        path="/loggers"
+                        component={(props) => this.decorate(LoggersPage, props)}
+                      />
+                      <Route
+                        path="/stats"
+                        component={(props) => this.decorate(GlobalAnalyticsPage, props)}
+                      />
+                      <Route
+                        path="/status"
+                        component={(props) => this.decorate(GlobalStatusPage, props)}
+                      />
+                      <Route
+                        path="/events"
+                        component={(props) => this.decorate(GlobalEventsPage, props)}
+                      />
+                      <Route
+                        path="/snowmonkey"
+                        component={(props) => this.decorate(SnowMonkeyPage, props)}
+                      />
+                      <Route
+                        path="/jwt-verifiers/:taction/:titem"
+                        component={(props) => this.decorate(JwtVerifiersPage, props)}
+                      />
+                      <Route
+                        path="/jwt-verifiers/:taction"
+                        component={(props) => this.decorate(JwtVerifiersPage, props)}
+                      />
+                      <Route
+                        path="/jwt-verifiers"
+                        component={(props) => this.decorate(JwtVerifiersPage, props)}
+                      />
+                      <Route
+                        path="/resources-loader"
+                        component={(props) => this.decorate(ResourceLoaderPage, props)}
+                      />
+                      <Route
+                        path="/validation-authorities/:taction/:titem"
+                        component={(props) => this.decorate(ClientValidatorsPage, props)}
+                      />
+                      <Route
+                        path="/validation-authorities/:taction"
+                        component={(props) => this.decorate(ClientValidatorsPage, props)}
+                      />
+                      <Route
+                        path="/validation-authorities"
+                        component={(props) => this.decorate(ClientValidatorsPage, props)}
+                      />
+                      <Route
+                        path="/auth-configs/:taction/:titem"
+                        component={(props) => this.decorate(AuthModuleConfigsPage, props)}
+                      />
+                      <Route
+                        path="/auth-configs/:taction"
+                        component={(props) => this.decorate(AuthModuleConfigsPage, props)}
+                      />
+                      <Route
+                        path="/auth-configs"
+                        component={(props) => this.decorate(AuthModuleConfigsPage, props)}
+                      />
+                      <Route
+                        path="/plugins/:taction/:titem"
+                        component={(props) => this.decorate(ScriptsPage, props)}
+                      />
+                      <Route
+                        path="/plugins/:taction"
+                        component={(props) => this.decorate(ScriptsPage, props)}
+                      />
+                      <Route
+                        path="/plugins"
+                        component={(props) => this.decorate(ScriptsPage, props)}
+                      />
+                      <Route
+                        path="/wasm-plugins/:taction/:titem"
+                        component={(props) => this.decorate(WasmPluginsPage, props)}
+                      />
+                      <Route
+                        path="/wasm-plugins/:taction"
+                        component={(props) => this.decorate(WasmPluginsPage, props)}
+                      />
+                      <Route
+                        path="/wasm-plugins"
+                        component={(props) => this.decorate(WasmPluginsPage, props)}
+                      />
+                      <Route
+                        path="/design"
+                        component={(props) => this.decorate(AtomicDesignPage, props)}
+                      />
+                      <Route
+                        path="/provider"
+                        component={(props) => this.decorate(ProvidersDashboardPage, props)}
+                      />
+                      <Route
+                        path="/admins"
+                        component={(props) =>
+                          this.decorate(U2FRegisterPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route component={(props) => this.decorate(NotFoundPage, props)} />
+                    </Switch>
+                  )}
+                  {this.state.catchedError && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%',
+                        height: '70vh',
+                      }}
+                    >
+                      <img
+                        src={this.state.env ? this.state.env.otoroshiLogo : ''}
+                        className="logoOtoroshi"
+                      />
                       <div
                         style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          width: '100%',
-                          height: '70vh',
+                          fontSize: 20,
+                          marginBottom: 20,
+                          marginTop: 20,
                         }}
                       >
-                        <img
-                          src={this.state.env ? this.state.env.otoroshiLogo : ''}
-                          className="logoOtoroshi"
-                        />
-                        <div
-                          style={{
-                            fontSize: 20,
-                            marginBottom: 20,
-                            marginTop: 20,
+                        Ooops, an error occured
+                      </div>
+                      <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
+                      <div style={{ marginTop: 20 }}>
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={(e) => {
+                            this.setState(
+                              {
+                                catchedError: undefined,
+                              },
+                              window.history.back
+                            );
                           }}
                         >
-                          Ooops, an error occured
-                        </div>
-                        <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
-                        <div style={{ marginTop: 20 }}>
-                          <button
-                            type="button"
-                            className="btn btn-success"
-                            onClick={(e) => {
-                              this.setState(
-                                {
-                                  catchedError: undefined,
-                                },
-                                window.history.back
-                              );
-                            }}
-                          >
-                            <i className="fas fa-arrow-left" /> back
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-danger ms-2"
-                            onClick={(e) => window.location.reload()}
-                          >
-                            <i className="fas fa-redo" /> reload
-                          </button>
-                        </div>
+                          <i className="fas fa-arrow-left" /> back
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger ms-2"
+                          onClick={(e) => window.location.reload()}
+                        >
+                          <i className="fas fa-redo" /> reload
+                        </button>
                       </div>
-                    )}
-                  </DynamicTitle>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
