@@ -7,7 +7,20 @@
   z-index: 1050;
   margin: 0 auto;
   // width: 50%;
-  background-color: rgba(.25,.25,.25,.75)
+  background-color: rgba(.25, .25, .25, .75)
+}
+
+.modal-dialog--lg {
+  .modal-dialog {
+    min-width: 100%;
+    margin: 0;
+    padding: 2rem 5rem;
+    display: flex;
+
+    .modal-content {
+      flex: 1;
+    }
+  }
 }
 
 .modal-dialog {
@@ -19,7 +32,7 @@
   position: relative;
   background-color: var(--bg-color_level1);
   background-clip: padding-box;
-  border: 1px solid rgba(0,0,0,.2);
+  border: 1px solid rgba(0, 0, 0, .2);
   border-radius: 6px;
   outline: 0;
 }
@@ -58,6 +71,6 @@ pre {
   height: 600px;
 }
 
-[data-theme="dark"] .btn-close{
+[data-theme="dark"] .btn-close {
   filter: brightness(0) invert(1);
 }

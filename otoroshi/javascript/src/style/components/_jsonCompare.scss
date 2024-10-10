@@ -1,0 +1,159 @@
+.json-compare-view {
+    padding: 1rem;
+    padding-left: 3rem;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: hidden;
+    overflow-y: scroll;
+  }
+  
+  .json-compare-line,
+  .json-compare-p,
+  .json-compare-feet {
+    position: relative;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+    padding: .1rem 0;
+  }
+  
+  .json-compare-line {
+    padding: 0;
+  }
+  
+  .json-compare-line-del {
+    background-color: rgba($colorRouge, .5);
+  }
+  
+  .json-compare-line-add {
+    background-color: rgba($savecolor, .5);
+  }
+  
+  .json-compare-of-del:after {
+    content: '-';
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    width: 10px;
+    height: 15px;
+    z-index: 5;
+    text-indent: 0;
+    color: $colorRouge;
+  }
+  
+  .json-compare-of-add:after {
+    content: '+';
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    width: 10px;
+    height: 15px;
+    z-index: 5;
+    color: $savecolor;
+    text-indent: 0;
+  }
+  
+  .json-compare-p {
+    cursor: pointer;
+  }
+  
+  .json-compare-outter {
+    transform: translateX(-35px);
+  }
+  
+  .json-compare-mark {
+    position: absolute;
+    left: -30px;
+    top: 2px;
+    text-indent: 0;
+    font-size: 12px;
+    color: $color-dark-6;
+    z-index: 5;
+    user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  .json-compare-content {
+    font-size: 14px;
+  }
+  
+  .json-compare-content .json-compare-key {
+    font-size: 15px;
+    color: var(--text);
+  }
+  
+  .json-compare-items {
+    color: #b1b1b1;
+  }
+  
+  .json-compare-comma {
+    color: #5cadff;
+  }
+  
+  .json-compare-pt {
+    color: #5cadff;
+  }
+  
+  .json-compare-number {
+    color: #ae81ff;
+  }
+  
+  .json-compare-string {
+    color: #a6e22e;
+  }
+  
+  .json-compare-null,
+  .json-compare-boolean,
+  .json-compare-undefined,
+  .json-compare-regexp,
+  .json-compare-date,
+  .json-compare-set,
+  .json-compare-map,
+  .json-compare-error,
+  .json-compare-symbol,
+  .json-compare-function {
+    background-color: #f7f7f7;
+    border-radius: 3px;
+    padding: 0px 2px;
+    border: 1px solid #dedede;
+  }
+  
+  .json-compare-boolean {
+    color: #6f73ff;
+  }
+  
+  .json-compare-null {
+    color: #66d9ef;
+  }
+  
+  .json-compare-undefined {
+    color: #f92672;
+  }
+  
+  .json-compare-date {
+    color: #09d3ac;
+  }
+  
+  .json-compare-regexp {
+    color: #2ea021;
+  }
+  
+  .json-compare-function {
+    color: #a2af3d;
+  }
+  
+  .json-compare-symbol {
+    color: #fd3db8;
+  }
+  
+  .json-compare-error {
+    color: #afafaf;
+  }
+  
+  .json-compare-set,
+  .json-compare-map {
+    color: #f56847;
+  }

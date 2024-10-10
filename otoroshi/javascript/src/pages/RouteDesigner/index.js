@@ -28,6 +28,7 @@ import PageTitle from '../../components/PageTitle';
 import { Dropdown } from '../../components/Dropdown';
 import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
+import JsonViewCompare from '../../components/Drafts/Compare';
 
 function DuplicateModalContent({ value }) {
   return <pre style={{ height: 'inherit' }}>
@@ -206,14 +207,15 @@ function MoreActionsButton({ value, menu, history }) {
   );
 }
 
-function PublisDraftModalContent({ draft, value }) {
-  return <pre style={{ height: 'inherit' }}>
-    {JSON.stringify(difference(draft, value), null, 4)}
-  </pre>
+function PublisDraftModalContent() {
+  const context = useSignalValue(draftSignal)
+
+  return <JsonViewCompare oldData={context.entityContent} newData={context.draft} />
 }
 
-function PublisDraftButton({ value }) {
+function PublisDraftButton() {
   const publish = useSignalValue(draftVersionSignal)
+  const context = useSignalValue(draftSignal)
 
   if (publish.version === 'published')
     return null
@@ -221,23 +223,18 @@ function PublisDraftButton({ value }) {
   return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
     borderColor: 'var(--color-primary)'
   }} onClick={() => {
-    window.newConfirm(<PublisDraftModalContent value={value} draft={value} />, {
+    window.newConfirm(<PublisDraftModalContent />, {
       title: `Publish this draft`,
-      yesText: 'I want to publish this route'
+      yesText: 'I want to publish this route',
+      className: 'modal-dialog--lg'
     }).then((ok) => {
       if (ok) {
-        // nextClient
-        //   .forEntityNext(kind)
-        //   .create({
-        //     ...value,
-        //     name: value.name + ' (duplicated)',
-        //     id: newId,
-        //     enabled: false,
-        //   })
-        //   .then(() => {
-        //     // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
-        //     history.push('/' + what + '/' + newId + '?tab=informations');
-        //   });
+        nextClient
+          .forEntityNext(kind)
+          .update(context.draft)
+          .then(() => {
+            window.location.reload()
+          });
       }
     });
   }} />
@@ -330,7 +327,7 @@ function ManagerTitle({
             })}
       </Dropdown>
       {saveButton}
-      <PublisDraftButton value={value} />
+      <PublisDraftButton />
     </PageTitle>
   );
 }
