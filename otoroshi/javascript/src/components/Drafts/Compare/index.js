@@ -98,7 +98,7 @@ export default function JsonViewCompare({ oldData, newData }) {
     }, [oldData, newData]);
 
     return (
-        <pre className="json-compare-view">
+        <pre className="json-compare-view hidden-scrollbar">
             <p className="json-compare-outter">{isArray(newData) ? '[' : '{'}</p>
             {data.map((item, index) => (
                 <Tree key={index} {...item} />

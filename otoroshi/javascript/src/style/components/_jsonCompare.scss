@@ -6,31 +6,34 @@
     word-wrap: break-word;
     overflow: hidden;
     overflow-y: scroll;
-  }
-  
-  .json-compare-line,
-  .json-compare-p,
-  .json-compare-feet {
+    flex: 1;
+
+    background: var(--bg-color_level2_opa80);
+}
+
+.json-compare-line,
+.json-compare-p,
+.json-compare-feet {
     position: relative;
     text-align: left;
     padding: 0;
     margin: 0;
     padding: .1rem 0;
-  }
-  
-  .json-compare-line {
+}
+
+.json-compare-line {
     padding: 0;
-  }
-  
-  .json-compare-line-del {
+}
+
+.json-compare-line-del {
     background-color: rgba($colorRouge, .5);
-  }
-  
-  .json-compare-line-add {
+}
+
+.json-compare-line-add {
     background-color: rgba($savecolor, .5);
-  }
-  
-  .json-compare-of-del:after {
+}
+
+.json-compare-of-del:after {
     content: '-';
     position: absolute;
     left: 5px;
@@ -40,9 +43,9 @@
     z-index: 5;
     text-indent: 0;
     color: $colorRouge;
-  }
-  
-  .json-compare-of-add:after {
+}
+
+.json-compare-of-add:after {
     content: '+';
     position: absolute;
     left: 5px;
@@ -52,108 +55,108 @@
     z-index: 5;
     color: $savecolor;
     text-indent: 0;
-  }
-  
-  .json-compare-p {
+}
+
+.json-compare-p {
     cursor: pointer;
-  }
-  
-  .json-compare-outter {
+}
+
+.json-compare-outter {
     transform: translateX(-35px);
-  }
-  
-  .json-compare-mark {
+}
+
+.json-compare-mark {
     position: absolute;
     left: -30px;
     top: 2px;
     text-indent: 0;
     font-size: 12px;
-    color: $color-dark-6;
     z-index: 5;
     user-select: none;
+    color: var(--text);
     -moz-user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
-  }
-  
-  .json-compare-content {
+}
+
+.json-compare-content {
     font-size: 14px;
-  }
-  
-  .json-compare-content .json-compare-key {
+}
+
+.json-compare-content .json-compare-key {
     font-size: 15px;
     color: var(--text);
-  }
-  
-  .json-compare-items {
+}
+
+.json-compare-items {
     color: #b1b1b1;
-  }
-  
-  .json-compare-comma {
+}
+
+.json-compare-comma {
     color: #5cadff;
-  }
-  
-  .json-compare-pt {
+}
+
+.json-compare-pt {
     color: #5cadff;
-  }
-  
-  .json-compare-number {
+}
+
+.json-compare-number {
     color: #ae81ff;
-  }
-  
-  .json-compare-string {
+}
+
+.json-compare-string {
     color: #a6e22e;
-  }
-  
-  .json-compare-null,
-  .json-compare-boolean,
-  .json-compare-undefined,
-  .json-compare-regexp,
-  .json-compare-date,
-  .json-compare-set,
-  .json-compare-map,
-  .json-compare-error,
-  .json-compare-symbol,
-  .json-compare-function {
+}
+
+.json-compare-null,
+.json-compare-boolean,
+.json-compare-undefined,
+.json-compare-regexp,
+.json-compare-date,
+.json-compare-set,
+.json-compare-map,
+.json-compare-error,
+.json-compare-symbol,
+.json-compare-function {
     background-color: #f7f7f7;
     border-radius: 3px;
     padding: 0px 2px;
     border: 1px solid #dedede;
-  }
-  
-  .json-compare-boolean {
+}
+
+.json-compare-boolean {
     color: #6f73ff;
-  }
-  
-  .json-compare-null {
+}
+
+.json-compare-null {
     color: #66d9ef;
-  }
-  
-  .json-compare-undefined {
+}
+
+.json-compare-undefined {
     color: #f92672;
-  }
-  
-  .json-compare-date {
+}
+
+.json-compare-date {
     color: #09d3ac;
-  }
-  
-  .json-compare-regexp {
+}
+
+.json-compare-regexp {
     color: #2ea021;
-  }
-  
-  .json-compare-function {
+}
+
+.json-compare-function {
     color: #a2af3d;
-  }
-  
-  .json-compare-symbol {
+}
+
+.json-compare-symbol {
     color: #fd3db8;
-  }
-  
-  .json-compare-error {
+}
+
+.json-compare-error {
     color: #afafaf;
-  }
-  
-  .json-compare-set,
-  .json-compare-map {
+}
+
+.json-compare-set,
+.json-compare-map {
     color: #f56847;
-  }
+}

@@ -1,47 +1,14 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { LabelAndInput, NgBoxBooleanRenderer, NgForm } from '../../components/nginputs';
-import { compileScript, nextClient } from '../../services/BackOfficeServices';
+import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
-
-class ManageDraft extends React.Component {
-  componentDidMount() {
-    this.unsubscribe = draftVersionSignal.subscribe(() => {
-      const draft = draftSignal.value.draft;
-
-      if (draft && this.props.value) {
-        if (draftVersionSignal.value.version === 'draft') {
-          draftSignal.value = {
-            ...draftSignal.value,
-            entityContent: this.props.value
-          }
-
-          this.props.setValue(draftSignal.value.draft)
-        } else { // published state
-          draftSignal.value = {
-            ...draftSignal.value,
-            draft: this.props.value
-          }
-
-          this.props.setValue(draftSignal.value.entityContent ? draftSignal.value.entityContent : this.props.value)
-        }
-      }
-    })
-  }
-  componentWillUnmount() {
-    if (this.unsubscribe)
-      this.unsubscribe()
-  }
-
-  render() {
-    return null
-  }
-}
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
@@ -83,11 +50,21 @@ export const Informations = forwardRef(
           .create(value)
           .then(() => history.push(`/${link}/${value.id}?tab=flow`));
       } else {
-        return nextClient
-          .forEntityNext(nextClient.ENTITIES[fetchName])
-          .update(value).then((res) => {
-            if (!res.error) setValue(res);
-          });
+        if (draftVersionSignal.value.version === 'draft') {
+          return nextClient
+            .forEntityNext(nextClient.ENTITIES.DRAFTS)
+            .update({
+              ...draftSignal.value.rawDraft,
+              content: value
+            })
+        } else {
+          return nextClient
+            .forEntityNext(nextClient.ENTITIES[fetchName])
+            .update(value)
+            .then((res) => {
+              if (!res.error) setValue(res);
+            });
+        }
       }
     }
 
@@ -365,7 +342,9 @@ export const Informations = forwardRef(
     ];
 
     return (<>
-      <ManageDraft value={value} setValue={setValue} />
+      <DraftStateDaemon
+        value={value}
+        setValue={setValue} />
 
       {showAdvancedForm ? (
         <RouteForm

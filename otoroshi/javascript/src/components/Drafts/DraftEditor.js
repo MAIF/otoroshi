@@ -32,7 +32,7 @@ function createDraft(newDraft) {
 }
 
 function updateSignalFromQuery(response) {
-    
+
     if (!response.error) {
         draftSignal.value = {
             draft: response.content,
@@ -114,4 +114,64 @@ export function DraftEditorContainer(props) {
     return <QueryClientProvider client={queryClient}>
         <DraftEditor {...props} />
     </QueryClientProvider>
+}
+
+
+export class DraftStateDaemon extends React.Component {
+
+    state = {
+        initialized: false
+    }
+
+    componentDidMount() {
+        this.unsubscribe = draftVersionSignal.subscribe(() => {
+            const { value, setValue } = this.props
+
+            if (draftSignal.value.draft && value) {
+                if (draftVersionSignal.value.version === 'draft') {
+                    draftSignal.value = {
+                        ...draftSignal.value,
+                        entityContent: value
+                    }
+
+                    setValue(draftSignal.value.draft)
+                } else {
+                    if (this.state.initialized) {
+                        draftSignal.value = {
+                            ...draftSignal.value,
+                            draft: value
+                        }
+                        setValue(draftSignal.value.entityContent ? draftSignal.value.entityContent : value)
+                    } else {
+                        this.setState({ initialized: true })
+                    }
+                }
+            }
+        })
+    }
+
+    componentDidUpdate(prevProps) {
+        if (prevProps.value !== this.props.value) {
+            if (draftVersionSignal.value.version === 'published') {
+                draftSignal.value = {
+                    ...draftSignal.value,
+                    entityContent: this.props.value
+                }
+            } else {
+                draftSignal.value = {
+                    ...draftSignal.value,
+                    draft: this.props.value
+                }
+            }
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribe)
+            this.unsubscribe()
+    }
+
+    render() {
+        return null
+    }
 }

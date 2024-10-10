@@ -44,6 +44,7 @@ import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
 import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -540,39 +541,10 @@ class Designer extends React.Component {
     this.injectSaveButton();
     this.injectNavbarMenu();
     this.mountShortcuts();
-
-    this.unsubscribe = draftVersionSignal.subscribe(() => {
-      if (draftSignal.value.draft && this.state.route) {
-        
-        if (draftVersionSignal.value.version === 'draft') {
-          draftSignal.value = {
-            ...draftSignal.value,
-            entityContent: this.state.route
-          }
-
-          this.setState({
-            route: draftSignal.value.draft,
-            selectedNode: undefined
-          }, () => this.loadData(this.state.route))
-        } else {
-          draftSignal.value = {
-            ...draftSignal.value,
-            draft: this.state.route
-          }
-          this.setState({
-            route: draftSignal.value.entityContent ? draftSignal.value.entityContent : this.state.route,
-            selectedNode: undefined
-          }, () => this.loadData(this.state.route))
-        }
-      }
-    })
   }
 
   componentWillUnmount() {
     this.unmountShortcuts();
-
-    if (this.unsubscribe)
-      this.unsubscribe()
   }
 
   saveShortcut = (e) => {
@@ -1318,7 +1290,6 @@ class Designer extends React.Component {
       this.props.setValue(newRoute);
     }
 
-
     let promise;
 
     if (draftVersionSignal.value.version === 'draft') {
@@ -1635,6 +1606,11 @@ class Designer extends React.Component {
 
     return (
       <Loader loading={loading}>
+        <DraftStateDaemon
+          value={this.state.route}
+          setValue={route => {
+            this.setState({ route, selectedNode: undefined }, () => this.loadData(this.state.route))
+          }} />
         <Container
           showTryIt={showTryIt}
           onClick={() => {

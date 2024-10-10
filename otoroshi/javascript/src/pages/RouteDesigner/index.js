@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Switch, useLocation, withRouter } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
@@ -207,10 +207,12 @@ function MoreActionsButton({ value, menu, history }) {
   );
 }
 
-function PublisDraftModalContent() {
+function PublisDraftModalContent({ ok }) {
   const context = useSignalValue(draftSignal)
 
-  return <JsonViewCompare oldData={context.entityContent} newData={context.draft} />
+  return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
+    <JsonViewCompare oldData={context.entityContent} newData={context.draft} />
+  </div>
 }
 
 function PublisDraftButton() {
@@ -223,20 +225,43 @@ function PublisDraftButton() {
   return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
     borderColor: 'var(--color-primary)'
   }} onClick={() => {
-    window.newConfirm(<PublisDraftModalContent />, {
-      title: `Publish this draft`,
-      yesText: 'I want to publish this route',
-      className: 'modal-dialog--lg'
-    }).then((ok) => {
-      if (ok) {
-        nextClient
-          .forEntityNext(kind)
-          .update(context.draft)
-          .then(() => {
-            window.location.reload()
-          });
+    window.wizard(
+      'Publish this draft',
+      () => <PublisDraftModalContent />,
+      {
+        style: { width: '100%' },
+        noCancel: false,
+        okClassName: "ms-2",
+        okLabel: 'I want to publish this route'
       }
-    });
+    )
+      .then((ok) => {
+        if (ok) {
+          const what = window.location.pathname.split('/')[3];
+          const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+
+          nextClient
+            .forEntityNext(kind)
+            .update(context.draft)
+            .then(() => {
+              window.location.reload()
+            });
+        }
+      });
+    // window.newConfirm(<PublisDraftModalContent />, {
+    //   title: `Publish this draft`,
+    //   yesText: 'I want to publish this route',
+    //   className: 'modal-dialog--lg'
+    // }).then((ok) => {
+    //   if (ok) {
+    //     nextClient
+    //       .forEntityNext(kind)
+    //       .update(context.draft)
+    //       .then(() => {
+    //         window.location.reload()
+    //       });
+    //   }
+    // });
   }} />
 }
 
