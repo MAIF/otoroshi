@@ -6,7 +6,7 @@ import {
     QueryClientProvider,
 } from 'react-query'
 import { nextClient } from '../../services/BackOfficeServices'
-import { draftSignal, draftVersionSignal, resetDraftSignal } from './DraftEditorSignal'
+import { draftSignal, draftVersionSignal, entityContentSignal, resetDraftSignal } from './DraftEditorSignal'
 import { useSignalValue } from 'signals-react-safe'
 import { PillButton } from '../PillButton'
 import { withRouter } from 'react-router-dom'
@@ -31,7 +31,7 @@ function createDraft(newDraft) {
         .create(newDraft)
 }
 
-function updateSignalFromQuery(response) {
+function updateSignalFromQuery(response, entityId) {
 
     if (!response.error) {
         draftSignal.value = {
@@ -40,6 +40,7 @@ function updateSignalFromQuery(response) {
         }
         draftVersionSignal.value = {
             version: 'published',
+            entityId
         }
     }
     else {
@@ -50,21 +51,22 @@ function updateSignalFromQuery(response) {
         draftVersionSignal.value = {
             version: 'published',
             notFound: true,
+            entityId
         }
     }
 }
 
-function DraftEditor({ entityId, value }) {
+function DraftEditor({ entityId, value, className = "" }) {
     const versionContext = useSignalValue(draftVersionSignal)
-    const context = useSignalValue(draftSignal)
+    const draftContext = useSignalValue(draftSignal)
 
     const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
         retry: 0,
-        enabled: !context.draft && !versionContext.notFound,
-        onSuccess: updateSignalFromQuery
+        enabled: !draftContext.draft && !versionContext.notFound,
+        onSuccess: data => updateSignalFromQuery(data, entityId)
     })
 
-    const hasDraft = context.draft
+    const hasDraft = draftContext.draft
 
     const templateQuery = useQuery(['getTemplate', hasDraft], getTemplate, {
         retry: 0,
@@ -103,7 +105,7 @@ function DraftEditor({ entityId, value }) {
     }
 
     return <PillButton
-        className='mx-auto'
+        className={`mx-auto ${className}`}
         rightEnabled={versionContext.version !== 'draft'}
         leftText="Published"
         rightText="Draft"
@@ -124,17 +126,14 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
     }
 
     componentDidMount() {
-        resetDraftSignal()
-        
+        resetDraftSignal(this.props)
+
         this.unsubscribe = draftVersionSignal.subscribe(() => {
             const { value, setValue } = this.props
 
             if (draftSignal.value.draft && value) {
                 if (draftVersionSignal.value.version === 'draft') {
-                    draftSignal.value = {
-                        ...draftSignal.value,
-                        entityContent: value
-                    }
+                    entityContentSignal.value = value
 
                     setValue(draftSignal.value.draft)
                 } else {
@@ -143,7 +142,7 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
                             ...draftSignal.value,
                             draft: value
                         }
-                        setValue(draftSignal.value.entityContent ? draftSignal.value.entityContent : value)
+                        setValue(entityContentSignal.value ? entityContentSignal.value : value)
                     } else {
                         this.setState({ initialized: true })
                     }
@@ -155,10 +154,7 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
     componentDidUpdate(prevProps) {
         if (prevProps.value !== this.props.value) {
             if (draftVersionSignal.value.version === 'published') {
-                draftSignal.value = {
-                    ...draftSignal.value,
-                    entityContent: this.props.value
-                }
+                entityContentSignal.value = this.props.value
             } else {
                 draftSignal.value = {
                     ...draftSignal.value,
@@ -166,8 +162,8 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
                 }
             }
         }
-        if(prevProps.history.location.pathname !== this.props.history.location.pathname) {
-            resetDraftSignal()
+        if (prevProps.history.location.pathname !== this.props.history.location.pathname) {
+            resetDraftSignal(this.props)
         }
     }
 

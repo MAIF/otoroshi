@@ -50,21 +50,12 @@ export const Informations = forwardRef(
           .create(value)
           .then(() => history.push(`/${link}/${value.id}?tab=flow`));
       } else {
-        if (draftVersionSignal.value.version === 'draft') {
-          return nextClient
-            .forEntityNext(nextClient.ENTITIES.DRAFTS)
-            .update({
-              ...draftSignal.value.rawDraft,
-              content: value
-            })
-        } else {
-          return nextClient
-            .forEntityNext(nextClient.ENTITIES[fetchName])
-            .update(value)
-            .then((res) => {
-              if (!res.error) setValue(res);
-            });
-        }
+        return nextClient
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .update(value)
+          .then((res) => {
+            if (!res.error) setValue(res);
+          });
       }
     }
 

@@ -38,10 +38,10 @@ const isTheSametype = (a, b) => {
 };
 
 const mergeData = (_old, _new) => {
-    // finally result
     let result = [];
-    // each line No.
     let start = 1;
+
+    let changed = false
 
     // convert array or object to Array<object> [{}]
     const convertObject = (param, lineType) => {
@@ -115,6 +115,7 @@ const mergeData = (_old, _new) => {
             if (_stl.length === 0 && _add.length === 0 && index === _del.length - 1) {
                 needComma = false;
             }
+            changed = true
             target.push(parseValue(key, a[key], showIndex, needComma, 'del'));
         });
         // The core function: compare
@@ -142,16 +143,19 @@ const mergeData = (_old, _new) => {
                     // rewrite lastline
                     _target.lastLine = start++;
                 } else {
+                    changed = true
                     target.push(parseValue(key, a[key], showIndex, true, 'del'));
                     target.push(parseValue(key, b[key], showIndex, needComma, 'add'));
                 }
             } else {
+                changed = true
                 target.push(parseValue(key, a[key], showIndex, true, 'del'));
                 target.push(parseValue(key, b[key], showIndex, needComma, 'add'));
             }
         });
         // push new keys
         _add.forEach((key, index) => {
+            changed = true
             target.push(
                 parseValue(key, b[key], showIndex, _add.length !== index + 1, 'add')
             );
@@ -164,11 +168,12 @@ const mergeData = (_old, _new) => {
         if (_old === _new) {
             result.push(parseValue(0, _new, false, false, 'none'));
         } else {
+            changed = true
             result.push(parseValue(0, _old, false, true, 'del'));
             result.push(parseValue(1, _new, false, false, 'add'));
         }
     }
-    return result;
+    return { result, changed };
 };
 
 export {

@@ -94,7 +94,7 @@ export default function JsonViewCompare({ oldData, newData }) {
     const [data, setMergeData] = useState([]);
 
     useEffect(() => {
-        setMergeData(mergeData(oldData, newData));
+        setMergeData(mergeData(oldData, newData).result);
     }, [oldData, newData]);
 
     return (

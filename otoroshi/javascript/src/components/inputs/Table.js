@@ -9,6 +9,7 @@ import { LabelAndInput, NgCodeRenderer, NgSelectRenderer, NgStringRenderer, NgTe
 import _ from 'lodash';
 import { Button } from '../Button';
 import { firstLetterUppercase } from '../../util'
+import { DraftEditorContainer, DraftStateDaemon } from '../Drafts/DraftEditor';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -421,14 +422,14 @@ export class Table extends Component {
     // if (window.location.pathname !== routeTo) {
     //   window.location.href = routeTo;
     // } else {
-      if (this.props.parentProps.setTitle) {
-        this.props.parentProps.setTitle(
-          `Update a ${this.props.itemName}`,
-          this.updateItemAndStay,
-          item
-        );
-      }
-      this.setState({ currentItem: item, showEditForm: true });
+    if (this.props.parentProps.setTitle) {
+      this.props.parentProps.setTitle(
+        `Update a ${this.props.itemName}`,
+        this.updateItemAndStay,
+        item
+      );
+    }
+    this.setState({ currentItem: item, showEditForm: true });
     // }
   };
 
@@ -733,8 +734,21 @@ export class Table extends Component {
       });
     }
 
+    console.log(this.state.currentItem)
+
     return (
       <div>
+        {this.state.currentItem && <>
+          <DraftEditorContainer
+            className="mb-3"
+            entityId={this.props.extractKey(this.state.currentItem)}
+            value={this.state.currentItem} />
+
+          <DraftStateDaemon 
+          value={this.state.currentItem} 
+          setValue={currentItem => this.setState({ currentItem })} />
+        </>}
+
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
             <div className="row">

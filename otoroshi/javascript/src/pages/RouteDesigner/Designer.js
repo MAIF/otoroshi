@@ -73,11 +73,6 @@ const Legacy = ({ value }) => (
   />
 );
 
-const SaveButtonText = () => {
-  const draftContext = useSignalValue(draftVersionSignal)
-
-  return draftContext.version === 'published' ? 'Save' : 'Save draft'
-}
 
 const Dot = ({
   className,
@@ -502,6 +497,21 @@ const PluginsContainer = ({
   </div>
 );
 
+
+function SaveButton({ saveRoute, state }) {
+  const draftContext = useSignalValue(draftVersionSignal)
+
+  if (draftContext.version === 'draft')
+    return null
+
+  return <FeedbackButton
+    type="success"
+    className="ms-2 mb-1"
+    onPress={saveRoute}
+    text="Save"
+  />
+}
+
 class Designer extends React.Component {
   state = {
     backends: [],
@@ -537,6 +547,7 @@ class Designer extends React.Component {
   };
 
   componentDidMount() {
+    console.log("componentDidMount")
     this.loadData();
     this.injectSaveButton();
     this.injectNavbarMenu();
@@ -571,15 +582,7 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
-    this.props.setSaveButton(
-      <FeedbackButton
-        type="success"
-        className="ms-2 mb-1"
-        onPress={this.saveRoute}
-        text={<SaveButtonText />}
-        _disabled={isEqual(this.state.route, this.state.originalRoute)}
-      />
-    );
+    this.props.setSaveButton(<SaveButton saveRoute={this.saveRoute} state={this.state} />);
   };
 
   injectOverrideRoutePluginsForm = () => (
@@ -675,7 +678,8 @@ class Designer extends React.Component {
       ),
       getOldPlugins(),
       getPlugins(),
-    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins]) => {
+      routePorts(this.props.routeId)
+    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
@@ -756,42 +760,40 @@ class Designer extends React.Component {
         };
       }
 
-      routePorts(route.id).then((ports) => {
-        this.setState(
-          {
-            ports,
-            backends,
-            loading: false,
-            categories: categories.filter((category) => !['Job'].includes(category)),
-            route: { ...routeWithNodeId },
-            originalRoute: { ...routeWithNodeId },
-            plugins: formattedPlugins.map((p) => ({
-              ...p,
-              selected: p.plugin_multi_inst
-                ? false
-                : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-            })),
-            nodes,
-            frontend: {
-              ...Frontend,
-              config_schema: toUpperCaseLabels(Frontend.schema),
-              config_flow: Frontend.flow,
-              nodeId: 'Frontend',
-            },
-            backend: {
-              ...Backend,
-              config_schema: toUpperCaseLabels(Backend.schema),
-              config_flow: Backend.flow,
-              nodeId: 'Backend',
-            },
-            selectedNode: this.getSelectedNodeFromLocation(
-              routeWithNodeId.plugins,
-              formattedPlugins
-            ),
+      this.setState(
+        {
+          ports,
+          backends,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...Frontend,
+            config_schema: toUpperCaseLabels(Frontend.schema),
+            config_flow: Frontend.flow,
+            nodeId: 'Frontend',
           },
-          this.injectNavbarMenu
-        );
-      });
+          backend: {
+            ...Backend,
+            config_schema: toUpperCaseLabels(Backend.schema),
+            config_flow: Backend.flow,
+            nodeId: 'Backend',
+          },
+          selectedNode: this.getSelectedNodeFromLocation(
+            routeWithNodeId.plugins,
+            formattedPlugins
+          ),
+        },
+        this.injectNavbarMenu
+      );
     });
   };
 
@@ -1252,8 +1254,8 @@ class Designer extends React.Component {
     });
   };
 
-  saveRoute = () => {
-    const { route, originalRoute } = this.state;
+  processRouteBeforeUpdate = route => {
+    const { originalRoute } = this.state;
 
     let newRoute;
 
@@ -1286,26 +1288,21 @@ class Designer extends React.Component {
       };
     }
 
+    return newRoute
+  }
+
+  saveRoute = () => {
+    const { route } = this.state;
+
+    const newRoute = this.processRouteBeforeUpdate(route)
+
     if (this.props.setValue) {
       this.props.setValue(newRoute);
     }
 
-    let promise;
-
-    if (draftVersionSignal.value.version === 'draft') {
-      promise = nextClient
-        .forEntityNext(nextClient.ENTITIES.DRAFTS)
-        .update({
-          ...draftSignal.value.rawDraft,
-          content: newRoute
-        })
-    } else {
-      promise = nextClient
-        .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
-        .update(newRoute)
-    }
-
-    return promise
+    return nextClient
+      .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
+      .update(newRoute)
       .then((r) => {
         if (r.error) throw r.error;
         else {
@@ -1607,6 +1604,7 @@ class Designer extends React.Component {
     return (
       <Loader loading={loading}>
         <DraftStateDaemon
+          processDraft={this.processRouteBeforeUpdate}
           value={this.state.route}
           setValue={route => {
             this.props.setValue(route)
@@ -1814,7 +1812,6 @@ class Designer extends React.Component {
                   }
                   originalRoute={originalRoute}
                   alertModal={alertModal}
-                  disabledSaveButton={isEqual(route, originalRoute)}
                 />
               </div>
             )}
@@ -2496,8 +2493,6 @@ class EditView extends React.Component {
       readOnly,
       addNode,
       hidePreview,
-      disabledSaveButton,
-      saveRoute,
     } = this.props;
 
     const { id, name, icon } = selectedNode;
@@ -2590,8 +2585,6 @@ class EditView extends React.Component {
                     />
                   ) : (
                     <Actions
-                      disabledSaveButton={disabledSaveButton}
-                      valid={saveRoute}
                       selectedNode={selectedNode}
                       onRemove={onRemove}
                     />
@@ -2657,16 +2650,9 @@ class EditView extends React.Component {
   }
 }
 
-const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
+const Actions = ({ selectedNode, onRemove }) => (
   <div className="d-flex mt-4 justify-content-end">
     {!['Frontend', 'Backend'].includes(selectedNode.id) && <RemoveComponent onRemove={onRemove} />}
-    {/* <FeedbackButton
-      text="Save"
-      className="ms-2"
-      // disabled={disabledSaveButton}
-      icon={() => <i className="far fa-paper-plane" />}
-      onPress={valid}
-    /> */}
   </div>
 );
 

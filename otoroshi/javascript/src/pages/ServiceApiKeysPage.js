@@ -9,6 +9,7 @@ import { Restrictions } from '../components/Restrictions';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase } from '../util';
+import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 const FIELDS_SELECTOR = "otoroshi-fields-selector";
 
@@ -1200,6 +1201,8 @@ export class ApiKeysPage extends Component {
   render() {
     const { fields } = this.state;
 
+    console.log("ApiKeysPage")
+
     const lowercaseFields = Object.entries(fields)
       .map(([key, value]) => [key.toLowerCase(), value])
 
@@ -1221,8 +1224,6 @@ export class ApiKeysPage extends Component {
             return false
           })
       })
-
-    console.log(columns, fields)
 
     return <Loader loading={this.state.loading}>
       <Table

@@ -22,7 +22,7 @@ import _ from 'lodash';
 import { Button } from '../../components/Button';
 import { DraftEditorContainer } from '../../components/Drafts/DraftEditor';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
-import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftSignal, draftVersionSignal, entityContentSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 import PageTitle from '../../components/PageTitle';
 import { Dropdown } from '../../components/Dropdown';
@@ -207,11 +207,12 @@ function MoreActionsButton({ value, menu, history }) {
   );
 }
 
-function PublisDraftModalContent({ ok }) {
-  const context = useSignalValue(draftSignal)
+function PublisDraftModalContent() {
+  const draftContext = useSignalValue(draftSignal)
+  const entityContent = useSignalValue(entityContentSignal)
 
   return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
-    <JsonViewCompare oldData={context.entityContent} newData={context.draft} />
+    <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
   </div>
 }
 
@@ -465,7 +466,7 @@ class Manager extends React.Component {
   };
 
   render() {
-    const { entity, history, location } = this.props;
+    const { history, location } = this.props;
 
     let query = new URLSearchParams(location.search).get('tab');
 
@@ -648,7 +649,6 @@ class RouteDesigner extends React.Component {
 
   loadRoute = () => {
     const { routeId } = this.props.match.params || { routeId: undefined };
-
     if (
       routeId === 'new' ||
       (this.props.location.state && this.props.location.state.routeFromService)
@@ -671,7 +671,8 @@ class RouteDesigner extends React.Component {
 
     const entity = entityFromURI(location);
 
-    // console.log(this.props, this.state, location.state)
+    if (!this.state.value)
+      return null
 
     if (Object.keys(match.params).length === 0)
       return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />;
