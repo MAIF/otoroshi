@@ -1609,7 +1609,11 @@ class Designer extends React.Component {
         <DraftStateDaemon
           value={this.state.route}
           setValue={route => {
-            this.setState({ route, selectedNode: undefined }, () => this.loadData(this.state.route))
+            this.props.setValue(route)
+            this.setState({
+              route,
+              selectedNode: undefined
+            }, () => this.loadData(this.state.route))
           }} />
         <Container
           showTryIt={showTryIt}

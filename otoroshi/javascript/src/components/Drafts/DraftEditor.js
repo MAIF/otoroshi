@@ -6,10 +6,10 @@ import {
     QueryClientProvider,
 } from 'react-query'
 import { nextClient } from '../../services/BackOfficeServices'
-import { Button } from '../Button'
-import { draftSignal, draftVersionSignal } from './DraftEditorSignal'
+import { draftSignal, draftVersionSignal, resetDraftSignal } from './DraftEditorSignal'
 import { useSignalValue } from 'signals-react-safe'
 import { PillButton } from '../PillButton'
+import { withRouter } from 'react-router-dom'
 
 const queryClient = new QueryClient()
 
@@ -117,13 +117,15 @@ export function DraftEditorContainer(props) {
 }
 
 
-export class DraftStateDaemon extends React.Component {
+export const DraftStateDaemon = withRouter(class _ extends React.Component {
 
     state = {
         initialized: false
     }
 
     componentDidMount() {
+        resetDraftSignal()
+        
         this.unsubscribe = draftVersionSignal.subscribe(() => {
             const { value, setValue } = this.props
 
@@ -164,6 +166,9 @@ export class DraftStateDaemon extends React.Component {
                 }
             }
         }
+        if(prevProps.history.location.pathname !== this.props.history.location.pathname) {
+            resetDraftSignal()
+        }
     }
 
     componentWillUnmount() {
@@ -174,4 +179,4 @@ export class DraftStateDaemon extends React.Component {
     render() {
         return null
     }
-}
+})

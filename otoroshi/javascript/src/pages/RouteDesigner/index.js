@@ -22,7 +22,7 @@ import _ from 'lodash';
 import { Button } from '../../components/Button';
 import { DraftEditorContainer } from '../../components/Drafts/DraftEditor';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
-import { draftSignal, draftVersionSignal, resetDraftSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 import PageTitle from '../../components/PageTitle';
 import { Dropdown } from '../../components/Dropdown';
@@ -643,12 +643,7 @@ class RouteDesigner extends React.Component {
   componentDidUpdate(prevProps) {
     if (this.props.match.params.routeId !== prevProps.match.params.routeId) {
       this.loadRoute();
-      resetDraftSignal()
     }
-  }
-
-  componentWillUnmount() {
-    resetDraftSignal()
   }
 
   loadRoute = () => {

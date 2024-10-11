@@ -16,6 +16,7 @@ export const draftVersionSignal = signal(DRAFT_VERSION_SIGNAL_TEMPLATE)
 export const draftSignal = signal(DRAFT_SIGNAL_TEMPLATE)
 
 export const resetDraftSignal = () => {
+  console.log('reset')
   draftSignal.value = DRAFT_SIGNAL_TEMPLATE
   draftVersionSignal.value = DRAFT_VERSION_SIGNAL_TEMPLATE
 }
