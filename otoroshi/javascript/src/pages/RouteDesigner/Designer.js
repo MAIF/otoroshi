@@ -547,7 +547,6 @@ class Designer extends React.Component {
   };
 
   componentDidMount() {
-    console.log("componentDidMount")
     this.loadData();
     this.injectSaveButton();
     this.injectNavbarMenu();

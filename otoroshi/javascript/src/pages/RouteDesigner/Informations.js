@@ -34,7 +34,6 @@ export const Informations = forwardRef(
           className="ms-2 mb-1"
           onPress={saveRoute}
           text={isCreation ? `Create ${entityName}` : `Save`}
-          icon={() => <i className="fas fa-paper-plane" />}
         />
       );
     }, [value]);
