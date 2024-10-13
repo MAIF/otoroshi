@@ -671,8 +671,8 @@ class RouteDesigner extends React.Component {
 
     const entity = entityFromURI(location);
 
-    if (!this.state.value)
-      return null
+    // if (!this.state.value)
+    //   return null
 
     if (Object.keys(match.params).length === 0)
       return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />;

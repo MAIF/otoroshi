@@ -744,9 +744,9 @@ export class Table extends Component {
             entityId={this.props.extractKey(this.state.currentItem)}
             value={this.state.currentItem} />
 
-          <DraftStateDaemon 
-          value={this.state.currentItem} 
-          setValue={currentItem => this.setState({ currentItem })} />
+          <DraftStateDaemon
+            value={this.state.currentItem}
+            setValue={currentItem => this.setState({ currentItem })} />
         </>}
 
         {!this.state.showEditForm && !this.state.showAddForm && (
