@@ -559,7 +559,6 @@ case class JWKSAlgoSettings(
   }
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.getIfPresent(url) match {

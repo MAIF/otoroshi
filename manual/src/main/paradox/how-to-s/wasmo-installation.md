@@ -261,6 +261,8 @@ Let's edit the fake input context by adding the exepected foo Header.
         },
         "cookies"
         ...
+    }
+}
 ```
 
 Resubmit the command. It should pass.

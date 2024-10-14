@@ -2119,12 +2119,10 @@ const fetchWrapperNext = (url, method = 'GET', body) => {
 
 export const findAllWithPagination = (
   route,
-  { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
+  { page, pageSize, fields, filtered, sorted } = { page: 1 },
   prefix = ''
 ) => {
   let url = route;
-
-  // console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;
@@ -2152,10 +2150,13 @@ export const findAllWithPagination = (
     const xOffset = ~~headers.get('X-Offset');
     const xCount = ~~headers.get('X-Count');
     const xPageSize = ~~headers.get('X-Page-Size');
+    const pages = ~~headers.get('X-Pages');
+
     return res.json().then((rows) => ({
       data: rows,
       pages: Math.ceil(xCount / xPageSize),
       offset: xOffset,
+      ngPages: pages
     }));
   });
 };
@@ -2166,6 +2167,7 @@ export const nextClient = {
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
     SERVICES: 'route-compositions',
+    APIKEYS: 'apikeys',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -2200,13 +2202,16 @@ export const nextClient = {
   },
   forEntityNext: (entity) => {
     return {
+      findAllWithPagination: (paginationState) =>
+        findAllWithPagination(entity, paginationState, '/bo/api/proxy/apis/any/v1/'),
       findAll: () => fetchWrapperNext(`/${entity}`),
       create: (content) => fetchWrapperNext(`/${entity}`, 'POST', content),
-      update: (content) => fetchWrapperNext(`/${entity}/${content.id}`, 'PUT', content),
+      update: (content, fieldId = "id") => fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'PUT', content),
       findById: (entityId) => fetchWrapperNext(`/${entity}/${entityId}`),
-      delete: (content) => fetchWrapperNext(`/${entity}/${content.id}`, 'DELETE'),
+      delete: (content, fieldId = "id") => fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNext(`/${entity}/${id}`, 'DELETE'),
       template: () => fetchWrapperNext(`/${entity}/_template`),
+      schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
     };
   },

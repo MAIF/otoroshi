@@ -421,6 +421,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val template           =
       if (useDefaultTemplate) getDefaultTemplate(templateName, _spec)
       else (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
+
     val spec               = if (client.config.crdsOverride) {
       template.deepMerge(_spec.as[JsObject])
     } else {
