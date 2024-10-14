@@ -54,7 +54,7 @@ object ApiPage {
   case class ApiPageLeaf(path: String, name: String, content: ByteString)
 }
 
-case class ApiDocumentation(specification: ApiSpecification, home: ApiPage, pages: Seq[ApiPage], metadata: Map[String, String])
+case class ApiDocumentation(specification: ApiSpecification, home: ApiPage, pages: Seq[ApiPage], metadata: Map[String, String], logos: Seq[ByteString])
 
 trait ApiBlueprint {
   def name: String
