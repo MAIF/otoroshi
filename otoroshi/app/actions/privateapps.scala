@@ -16,10 +16,10 @@ import otoroshi.utils.http.RequestImplicits._
 
 case class PrivateAppsActionContext[A](
     request: Request[A],
-    user: Option[PrivateAppsUser],
+    users: Seq[PrivateAppsUser],
     globalConfig: otoroshi.models.GlobalConfig
 ) {
-  def connected: Boolean              = user.isDefined
+  def connected: Boolean              = users.nonEmpty
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 }
@@ -47,24 +47,24 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
           env.datastores.privateAppsUserDataStore.findById(id).flatMap {
             case Some(user)                                           =>
               user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
-              block(PrivateAppsActionContext(request, Some(user), globalConfig))
+              block(PrivateAppsActionContext(request, Seq(user), globalConfig))
             case None if env.clusterConfig.mode == ClusterMode.Worker => {
               if (Cluster.logger.isDebugEnabled)
                 Cluster.logger.debug(s"private apps session $id not found locally - from action")
               env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
                 case Some(user) =>
                   user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
-                  block(PrivateAppsActionContext(request, Some(user), globalConfig))
-                case None       => block(PrivateAppsActionContext(request, None, globalConfig))
+                  block(PrivateAppsActionContext(request, Seq(user), globalConfig))
+                case None       => block(PrivateAppsActionContext(request, Seq.empty, globalConfig))
               }
             }
-            case None                                                 => block(PrivateAppsActionContext(request, None, globalConfig))
+            case None                                                 => block(PrivateAppsActionContext(request, Seq.empty, globalConfig))
           }
         } getOrElse {
           cookieOpt match {
-            case None         => block(PrivateAppsActionContext(request, None, globalConfig))
+            case None         => block(PrivateAppsActionContext(request, Seq.empty, globalConfig))
             case Some(cookie) =>
-              block(PrivateAppsActionContext(request, None, globalConfig)).fast
+              block(PrivateAppsActionContext(request, Seq.empty, globalConfig)).fast
                 .map(
                   _.discardingCookies(
                     env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", "")): _*
