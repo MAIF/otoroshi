@@ -20,7 +20,7 @@ case class ApiPlugins(name: String, predicate: ApiPredicate, plugins: NgPlugins)
 
 case class ApiDeploymentRef(ref: String, at: DateTime)
 
-case class ApiDeployment(location: EntityLocation, id: String, apiRef: String, owner: String, at: DateTime) extends EntityLocationSupport {
+case class ApiDeployment(location: EntityLocation, id: String, apiRef: String, owner: String, at: DateTime, apiDefinition: JsValue) extends EntityLocationSupport {
   override def internalId: String = id
   override def json: JsValue = ApiDeployment.format.writes(this)
   override def theName: String = id
