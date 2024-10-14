@@ -1201,8 +1201,6 @@ export class ApiKeysPage extends Component {
   render() {
     const { fields } = this.state;
 
-    console.log("ApiKeysPage")
-
     const lowercaseFields = Object.entries(fields)
       .map(([key, value]) => [key.toLowerCase(), value])
 

@@ -20,10 +20,10 @@ import { FeedbackButton } from './FeedbackButton';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
-import { DraftEditorContainer } from '../../components/Drafts/DraftEditor';
+import { DraftEditorContainer, PublisDraftButton } from '../../components/Drafts/DraftEditor';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
-import { draftSignal, draftVersionSignal, entityContentSignal } from '../../components/Drafts/DraftEditorSignal';
-import { useSignalValue } from 'signals-react-safe';
+// import { draftSignal, draftVersionSignal, entityContentSignal } from '../../components/Drafts/DraftEditorSignal';
+// import { useSignalValue } from 'signals-react-safe';
 import PageTitle from '../../components/PageTitle';
 import { Dropdown } from '../../components/Dropdown';
 import { YAMLExportButton } from '../../components/exporters/YAMLButton';
@@ -207,64 +207,50 @@ function MoreActionsButton({ value, menu, history }) {
   );
 }
 
-function PublisDraftModalContent() {
-  const draftContext = useSignalValue(draftSignal)
-  const entityContent = useSignalValue(entityContentSignal)
+// function PublisDraftModalContent() {
+//   const draftContext = useSignalValue(draftSignal)
+//   const entityContent = useSignalValue(entityContentSignal)
 
-  return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
-    <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
-  </div>
-}
+//   return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
+//     <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
+//   </div>
+// }
 
-function PublisDraftButton() {
-  const publish = useSignalValue(draftVersionSignal)
-  const context = useSignalValue(draftSignal)
+// function PublisDraftButton() {
+//   const publish = useSignalValue(draftVersionSignal)
+//   const context = useSignalValue(draftSignal)
 
-  if (publish.version === 'published')
-    return null
+//   if (publish.version === 'published')
+//     return null
 
-  return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
-    borderColor: 'var(--color-primary)'
-  }} onClick={() => {
-    window.wizard(
-      'Publish this draft',
-      () => <PublisDraftModalContent />,
-      {
-        style: { width: '100%' },
-        noCancel: false,
-        okClassName: "ms-2",
-        okLabel: 'I want to publish this route'
-      }
-    )
-      .then((ok) => {
-        if (ok) {
-          const what = window.location.pathname.split('/')[3];
-          const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+//   return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
+//     borderColor: 'var(--color-primary)'
+//   }} onClick={() => {
+//     window.wizard(
+//       'Publish this draft',
+//       () => <PublisDraftModalContent />,
+//       {
+//         style: { width: '100%' },
+//         noCancel: false,
+//         okClassName: "ms-2",
+//         okLabel: 'I want to publish this route'
+//       }
+//     )
+//       .then((ok) => {
+//         if (ok) {
+//           const what = window.location.pathname.split('/')[3];
+//           const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
 
-          nextClient
-            .forEntityNext(kind)
-            .update(context.draft)
-            .then(() => {
-              window.location.reload()
-            });
-        }
-      });
-    // window.newConfirm(<PublisDraftModalContent />, {
-    //   title: `Publish this draft`,
-    //   yesText: 'I want to publish this route',
-    //   className: 'modal-dialog--lg'
-    // }).then((ok) => {
-    //   if (ok) {
-    //     nextClient
-    //       .forEntityNext(kind)
-    //       .update(context.draft)
-    //       .then(() => {
-    //         window.location.reload()
-    //       });
-    //   }
-    // });
-  }} />
-}
+//           nextClient
+//             .forEntityNext(kind)
+//             .update(context.draft)
+//             .then(() => {
+//               window.location.reload()
+//             });
+//         }
+//       });
+//   }} />
+// }
 
 function ManagerTitle({
   query,
@@ -353,7 +339,7 @@ function ManagerTitle({
             })}
       </Dropdown>
       {saveButton}
-      <PublisDraftButton />
+      <PublisDraftButton className="ms-2 mb-1" />
     </PageTitle>
   );
 }

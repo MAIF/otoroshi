@@ -22,13 +22,19 @@ export const draftSignal = signal(DRAFT_SIGNAL_TEMPLATE)
 
 export const entityContentSignal = signal(undefined)
 
+export const updateEntityURLSignal = signal(undefined)
+
 export const resetDraftSignal = (props = {}) => {
+
+  console.log('reset draft signal')
+
   draftSignal.value = {
     ...DRAFT_SIGNAL_TEMPLATE,
     processCallback: props.processCallback
   }
   draftVersionSignal.value = DRAFT_VERSION_SIGNAL_TEMPLATE
   entityContentSignal.value = undefined
+  updateEntityURLSignal.value = undefined
 }
 
 const saveDraft = debounce(() => {

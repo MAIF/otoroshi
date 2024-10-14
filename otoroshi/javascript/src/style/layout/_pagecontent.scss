@@ -60,6 +60,9 @@
   padding-bottom: 9px;
   border-bottom: 1px solid var(--color-primary);
   color: var(--color-primary);
+
+  display: flex;
+  align-items: center;
 }
 
 .sub-container {

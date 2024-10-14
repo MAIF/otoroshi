@@ -1,12 +1,19 @@
 import React from 'react';
 import Thumbtack from './Thumbtack';
 import { signal, useSignalValue } from 'signals-react-safe';
+import { draftVersionSignal } from './Drafts/DraftEditorSignal';
+import { PublisDraftButton } from './Drafts/DraftEditor';
 
 export const dynamicTitleContent = signal();
+
+const EXCLUDED_DRAFT_PAGES = [
+  '/routes'
+]
 
 export function DynamicTitleSignal(props) {
 
   const content = useSignalValue(dynamicTitleContent)
+  const draftVersion = useSignalValue(draftVersionSignal);
 
   if (!content) {
     return null;
@@ -16,6 +23,10 @@ export function DynamicTitleSignal(props) {
     return (
       <div style={{ position: 'relative' }}>
         {content}
+
+        {draftVersion.version === 'draft' &&
+          !EXCLUDED_DRAFT_PAGES.find(path => window.location.pathname.includes(path)) &&
+          <PublisDraftButton />}
       </div>
     );
   }
@@ -26,6 +37,9 @@ export function DynamicTitleSignal(props) {
         <h3 className="page-header_title">
           {content}
           <Thumbtack {...props} getTitle={() => content} />
+          {draftVersion.version === 'draft' &&
+            !EXCLUDED_DRAFT_PAGES.find(path => window.location.pathname.includes(path)) &&
+            <PublisDraftButton />}
         </h3>
       </div>
     </div>

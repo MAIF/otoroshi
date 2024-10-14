@@ -10,6 +10,7 @@ import _ from 'lodash';
 import { Button } from '../Button';
 import { firstLetterUppercase } from '../../util'
 import { DraftEditorContainer, DraftStateDaemon } from '../Drafts/DraftEditor';
+import { updateEntityURLSignal } from '../Drafts/DraftEditorSignal';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -233,6 +234,7 @@ export class Table extends Component {
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
+
     this.readRoute();
   }
 
@@ -734,8 +736,6 @@ export class Table extends Component {
       });
     }
 
-    console.log(this.state.currentItem)
-
     return (
       <div>
         {this.state.currentItem && <>
@@ -746,7 +746,11 @@ export class Table extends Component {
 
           <DraftStateDaemon
             value={this.state.currentItem}
-            setValue={currentItem => this.setState({ currentItem })} />
+            setValue={currentItem => this.setState({ currentItem })}
+            updateEntityURL={() => {
+              updateEntityURLSignal.value = this.updateItemAndStay
+            }}
+          />
         </>}
 
         {!this.state.showEditForm && !this.state.showAddForm && (

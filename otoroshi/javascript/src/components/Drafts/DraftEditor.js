@@ -6,10 +6,13 @@ import {
     QueryClientProvider,
 } from 'react-query'
 import { nextClient } from '../../services/BackOfficeServices'
-import { draftSignal, draftVersionSignal, entityContentSignal, resetDraftSignal } from './DraftEditorSignal'
+import { draftSignal, draftVersionSignal, entityContentSignal, resetDraftSignal, updateEntityURLSignal } from './DraftEditorSignal'
 import { useSignalValue } from 'signals-react-safe'
 import { PillButton } from '../PillButton'
 import { withRouter } from 'react-router-dom'
+import JsonViewCompare from './Compare'
+import { dynamicTitleContent } from '../DynamicTitleSignal'
+import { Button } from '../Button'
 
 const queryClient = new QueryClient()
 
@@ -128,6 +131,9 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
     componentDidMount() {
         resetDraftSignal(this.props)
 
+        if (this.props.updateEntityURL)
+            this.props.updateEntityURL()
+
         this.unsubscribe = draftVersionSignal.subscribe(() => {
             const { value, setValue } = this.props
 
@@ -163,6 +169,7 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
             }
         }
         if (prevProps.history.location.pathname !== this.props.history.location.pathname) {
+            console.log('[DraftStateDaemon] : componentDidUpdate')
             resetDraftSignal(this.props)
         }
     }
@@ -176,3 +183,49 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
         return null
     }
 })
+
+
+
+function PublisDraftModalContent() {
+    const draftContext = useSignalValue(draftSignal)
+    const entityContent = useSignalValue(entityContentSignal)
+
+    return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
+        <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
+    </div>
+}
+
+export function PublisDraftButton(props) {
+    const publish = useSignalValue(draftVersionSignal)
+
+    if (publish.version === 'published')
+        return null
+
+    return <Button text="Publish draft" className={`btn-sm ${props.className ? props.className : 'ms-auto'}`} type="primaryColor" style={{
+        borderColor: 'var(--color-primary)'
+    }} onClick={() => {
+        window.wizard(
+            'Publish this draft',
+            () => <PublisDraftModalContent />,
+            {
+                style: { width: '100%' },
+                noCancel: false,
+                okClassName: "ms-2",
+                okLabel: 'I want to publish this route'
+            }
+        )
+            .then((ok) => {
+                if (ok) {
+                    if (updateEntityURLSignal && typeof updateEntityURLSignal.value === 'function') {
+                        try {
+                            updateEntityURLSignal.value()
+                                .then(() => window.location.reload())
+                        } catch (err) {
+                            console.log(err)
+                            alert("Something bad happened.")
+                        }
+                    }
+                }
+            });
+    }} />
+}
