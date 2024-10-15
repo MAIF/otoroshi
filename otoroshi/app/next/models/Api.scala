@@ -4,6 +4,7 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing}
 import otoroshi.next.models.{NgClientConfig, NgDomainAndPath, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.plugins.NgApikeyCallsConfig
 import play.api.libs.json.{Format, JsResult, JsValue}
 
 case class ApiState(started: Boolean, published: Boolean, public: Boolean, deprecated: Boolean)
@@ -68,7 +69,15 @@ object ApiBlueprint {
   case class Websocket() extends ApiBlueprint { def name: String = "Websocket" }
 }
 
-case class ApiConsumer(name: String, description: String, autoValidation: Boolean, kind: ApiConsumerKind, status: ApiConsumerStatus, subscriptions: Seq[ApiConsumerSubscriptionRef])
+case class ApiConsumer(
+  name: String,
+  description: String,
+  autoValidation: Boolean,
+  kind: ApiConsumerKind,
+  settings: ApiConsumerSettings,
+  status: ApiConsumerStatus,
+  subscriptions: Seq[ApiConsumerSubscriptionRef]
+)
 
 case class ApiConsumerSubscriptionDates(
   created_at: DateTime,
@@ -116,6 +125,15 @@ object ApiConsumerKind {
   case object Keyless extends ApiConsumerKind
   case object OAuth2 extends ApiConsumerKind
   case object JWT extends ApiConsumerKind
+}
+
+trait ApiConsumerSettings
+object ApiConsumerSettings {
+  case class Apikey(config: NgApikeyCallsConfig) extends ApiConsumerSettings
+  case class Mtls(caRefs: Seq[String], certRefs: Seq[String]) extends ApiConsumerSettings
+  case class Keyless() extends ApiConsumerSettings
+  case class OAuth2(config: NgApikeyCallsConfig) extends ApiConsumerSettings // using client credential stuff
+  case class JWT(jwtVerifierRefs: Seq[String]) extends ApiConsumerSettings
 }
 
 trait ApiConsumerStatus
