@@ -25,7 +25,6 @@ export const entityContentSignal = signal(undefined)
 export const updateEntityURLSignal = signal(undefined)
 
 export const resetDraftSignal = (props = {}) => {
-
   console.log('reset draft signal')
 
   draftSignal.value = {

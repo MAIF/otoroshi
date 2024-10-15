@@ -1,17 +1,17 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
     useQuery,
     useMutation,
     QueryClient,
     QueryClientProvider,
 } from 'react-query'
+import { withRouter, useLocation } from 'react-router-dom'
+import { useSignalValue } from 'signals-react-safe'
+
 import { nextClient } from '../../services/BackOfficeServices'
 import { draftSignal, draftVersionSignal, entityContentSignal, resetDraftSignal, updateEntityURLSignal } from './DraftEditorSignal'
-import { useSignalValue } from 'signals-react-safe'
 import { PillButton } from '../PillButton'
-import { withRouter } from 'react-router-dom'
 import JsonViewCompare from './Compare'
-import { dynamicTitleContent } from '../DynamicTitleSignal'
 import { Button } from '../Button'
 
 const queryClient = new QueryClient()
@@ -168,6 +168,7 @@ export const DraftStateDaemon = withRouter(class _ extends React.Component {
                 }
             }
         }
+
         if (prevProps.history.location.pathname !== this.props.history.location.pathname) {
             console.log('[DraftStateDaemon] : componentDidUpdate')
             resetDraftSignal(this.props)
@@ -197,6 +198,12 @@ function PublisDraftModalContent() {
 
 export function PublisDraftButton(props) {
     const publish = useSignalValue(draftVersionSignal)
+    
+    const { pathname } = useLocation()
+
+    useEffect(() => {
+        resetDraftSignal()
+    }, [pathname])
 
     if (publish.version === 'published')
         return null
