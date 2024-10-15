@@ -283,6 +283,10 @@ a.navbar-brand:hover {
   border-color: #f9b000;
   background-color: #f9b000;
 }
+.btn-primaryColor:hover {
+  background-color:#ffbe21 ;
+  color: #FFF;
+}
 
 .login-card img{
   transform: translateY(-30px);
