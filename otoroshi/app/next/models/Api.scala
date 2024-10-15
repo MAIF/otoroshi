@@ -175,7 +175,6 @@ case class Api(
   override def theDescription: String = description
   override def theTags: Seq[String] = tags
   override def theMetadata: Map[String, String] = metadata
-
   def toRoutes: Seq[NgRoute] = ???
 }
 
