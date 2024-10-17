@@ -4,17 +4,45 @@ import isFunction from 'lodash/isFunction';
 import isString from 'lodash/isString';
 import { WizardFrame } from './wizardframe';
 
+const KEY_NAME_ESC = 'Escape';
+const KEY_EVENT_TYPE = 'keyup';
+
+const handleEscKey = (event, onClose) => {
+  if (event.key === KEY_NAME_ESC) {
+    onClose();
+  }
+};
+
+const handleClickOutside = (event, ref, onClose) => {
+  if (ref.current && !ref.current.contains(event.target)) {
+    onClose();
+  }
+};
+
 class Alert extends Component {
+  constructor(props) {
+    super(props);
+    this.modalRef = React.createRef();     
+  }
+
   componentDidMount() {
+    document.addEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.close), false);
+    document.addEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.close));
     this.okRef.focus();
   }
+
+  componentWillUnmount() {
+    document.removeEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.close), false);
+    document.removeEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.close));
+  }
+
   render() {
     const res = isFunction(this.props.message)
-      ? this.props.message(this.props.close)
+      ? this.props.message(this.props.close)  
       : this.props.message;
     return (
       <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
-        <div className="modal-dialog" role="document" style={this.props.modalStyleOverride || {}}>
+        <div className="modal-dialog" role="document" style={this.props.modalStyleOverride || {}} ref={this.modalRef}>
           <div className="modal-content" style={this.props.contentStyleOverride || {}}>
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
@@ -59,14 +87,28 @@ class Alert extends Component {
 }
 
 class Confirm extends Component {
-  componentDidMount() {
-    document.body.addEventListener('keydown', this.defaultButton);
-    this.okRef.focus();
+  constructor(props) {
+    super(props);
+    this.modalRef = React.createRef();     
   }
+
+  componentDidMount() {
+      document.addEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.cancel), false);
+      document.addEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
+      document.body.addEventListener('keydown', this.defaultButton);
+      this.okRef.focus();
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.close), false);
+    document.removeEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
+
+  }
+  
   render() {
     return (
       <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog" role="document" ref={this.modalRef}>
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h4>
@@ -107,19 +149,33 @@ class Confirm extends Component {
 }
 
 class Prompt extends Component {
+  constructor(props) {
+    super(props);
+    this.modalRef = React.createRef();
+  }
+  
   state = {
     text: this.props.value || '',
   };
+
   componentDidMount() {
+    document.addEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.cancel), false);
+    document.addEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
     this.okRef.focus();
     if (this.ref) {
       this.ref.focus();
     }
   }
+  
+  componentWillUnmount() {
+    document.removeEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.close), false);
+    document.removeEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
+  }
+  
   render() {
     return (
       <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog" role="document" ref={this.modalRef}>
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h4>
@@ -173,6 +229,21 @@ class Prompt extends Component {
 }
 
 class Popup extends Component {
+  constructor(props) {
+    super(props);
+    this.modalRef = React.createRef();
+  }
+
+  componentDidMount() {
+    document.addEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.cancel), false);
+    document.addEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, this.props.close), false);
+    document.removeEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.cancel));
+  }
+
   render() {
     return (
       <div
@@ -186,6 +257,7 @@ class Popup extends Component {
             'modal-dialog' + (this.props.additionalClass ? ' ' + this.props.additionalClass : '')
           }
           role="document"
+          ref={this.modalRef}
         >
           <div className="modal-content">
             <div className="modal-header">
