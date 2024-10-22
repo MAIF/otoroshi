@@ -140,8 +140,8 @@ export const Informations = forwardRef(
             },
             {
               key: 'otoroshi-core-issue-lets-encrypt-certificate',
-              label: 'Issue a Lets Encrypt Certificate',
-              description: 'Flag to automatically issue a lets encrypt cert for this service',
+              label: `Issue a Let's Encrypt Certificate`,
+              description: `Flag to automatically issue a Let's Encrypt cert for this service`,
             },
             {
               key: 'otoroshi-core-issue-certificate',
