@@ -176,7 +176,24 @@ function GoBackSelection({ goBack }) {
   );
 }
 
+const handleEscKey = (event, onClose) => {
+  if (event.key === 'Escape') {
+    onClose();
+  }
+};
+
+const handleClickOutside = (event, ref, onClose) => {
+  if (ref.current && !ref.current.contains(event.target)) {
+    onClose();
+  }
+};
+
 export class AuthenticationWizard extends React.Component {
+  constructor(props) {
+    super(props);
+    this.modalRef = React.createRef();     
+  }
+
   state = {
     step: 1,
     mode: this.props.mode || 'selector',
@@ -223,13 +240,22 @@ export class AuthenticationWizard extends React.Component {
     }
   };
 
+  componentDidMount() {
+    document.addEventListener('keyup', (event) => handleEscKey(event, this.props.hide), false);
+    document.addEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.hide));
+  }
+  componentWillUnmount() {
+    document.removeEventListener('keyup', (event) => handleEscKey(event, this.props.hide), false);
+    document.removeEventListener('mousedown', (event) => handleClickOutside(event, this.modalRef, this.props.hide));
+  }
+
   render() {
     const { step, authenticationConfig, mode } = this.state;
-
+  
     if (mode === 'update_in_wizard') {
       return (
         <div className="wizard">
-          <div className="wizard-container">
+          <div className="wizard-container" ref={this.modalRef}>
             <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
               <Header onClose={this.props.hide} mode={mode} />
               <div className="wizard-content">
@@ -389,7 +415,7 @@ export class AuthenticationWizard extends React.Component {
 
       return (
         <div className="wizard">
-          <div className="wizard-container">
+          <div className="wizard-container" ref={this.modalRef}>
             <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
               <Header onClose={this.props.hide} mode={mode} />
 
