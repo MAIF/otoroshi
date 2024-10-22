@@ -267,7 +267,7 @@ export const Informations = forwardRef(
                     type="danger"
                     onClick={() => {
                       window
-                        .newConfirm('are you sure you want to delete this entity ?')
+                        .newConfirm('Are you sure you want to delete this entity ?')
                         .then((ok) => {
                           if (ok) {
                             nextClient.deleteById(kind, id).then(() => {
