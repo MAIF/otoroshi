@@ -1273,13 +1273,15 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
       case _                                                                                               =>
+        val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
         val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
         val pretty = prettyQuery match {
           case Some("true") => true
           case Some("false") => false
           case _ => env.defaultPrettyAdminApi
         }
-        val entityStr = if (pretty) entity.prettify else entity.stringify
+        val finalEntity = if (envelope) Json.obj("data" -> entity) else entity
+        val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
           .applyOnIf(addHeaders.nonEmpty) { r =>
