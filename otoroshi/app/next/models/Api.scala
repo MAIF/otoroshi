@@ -3,7 +3,7 @@ package next.models
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing}
-import otoroshi.next.models.{NgClientConfig, NgDomainAndPath, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.models._
 import otoroshi.next.plugins.NgApikeyCallsConfig
 import play.api.libs.json.{Format, JsResult, JsValue}
 
