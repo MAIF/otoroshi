@@ -393,6 +393,7 @@ object implicits {
     def asOptLong: Option[Long]       = obj.asOpt[Long]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
+    def block(atMost: Duration): A             = Await.result(obj, atMost)
     def awaitf(atMost: Duration)(implicit ec: ExecutionContext): A            = Await.result(obj, atMost)
     def awaitfsafe(atMost: Duration)(implicit ec: ExecutionContext): Try[A]   = Try(Await.result(obj, atMost))
     def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
