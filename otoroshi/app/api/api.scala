@@ -16,6 +16,7 @@ import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
 import otoroshi.utils.JsonValidator
 import otoroshi.utils.controllers.GenericAlert
+import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
@@ -1201,7 +1202,13 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       request: RequestHeader,
       resEntity: Option[Resource],
       addHeaders: Map[String, String] = Map.empty
-  ): Result = {
+  ): Future[Result] = {
+    val gzipConfig = GzipConfig(
+      enabled = true,
+      whiteList = Seq("application/json", "application/yaml", "application/yml", "application/yaml+k8s", "application/yml+k8s"),
+      blackList = Seq("application/x-ndjson"),
+      compressionLevel = 5,
+    )
     val entity = if (request.method == "GET") {
       (for {
         filtered  <- filterEntity(_entity, request)
@@ -1228,6 +1235,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
       }
       case _
           if !request.accepts("application/json") && (request
@@ -1240,6 +1248,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
       case _
           if !request.accepts("application/json") && (request
             .accepts("application/yaml+k8s") || request.accepts("application/yml+k8s")) =>
@@ -1262,14 +1271,24 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
       case _                                                                                               =>
-        res(entity)
+        val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
+        val pretty = prettyQuery match {
+          case Some("true") => true
+          case Some("false") => false
+          case _ => env.defaultPrettyAdminApi
+        }
+        val entityStr = if (pretty) entity.prettify else entity.stringify
+        res(entityStr)
+          .as("application/json")
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
     }
   }
 
@@ -1285,14 +1304,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       .find(r =>
         (group == "any" || group == "all" || r.group == group) && (version == "any" || version == "all" || r.version.name == version) && r.pluralName == entity
       ) match {
-      case None                                               => result(Results.NotFound, notFoundBody, request, None).vfuture
+      case None                                               => result(Results.NotFound, notFoundBody, request, None)
       case Some(resource) if !resource.access.canBulk && bulk =>
         result(
           Results.Unauthorized,
           Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
           request,
           resource.some
-        ).vfuture
+        )
       case Some(resource)                                     => {
         val read   = request.method == "GET"
         val create = request.method == "POST"
@@ -1304,28 +1323,28 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
             request,
             resource.some
-          ).vfuture
+          )
         } else if (create && !resource.access.canCreate) {
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
             request,
             resource.some
-          ).vfuture
+          )
         } else if (update && !resource.access.canUpdate) {
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
             request,
             resource.some
-          ).vfuture
+          )
         } else if (delete && !resource.access.canDelete) {
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
             request,
             resource.some
-          ).vfuture
+          )
         } else {
           f(resource)
         }
@@ -1443,7 +1462,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
           ctx.request,
           None
-        ).vfuture
+        )
     }
   }
 
@@ -1546,7 +1565,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
             ctx.request,
             None
-          ).vfuture
+          )
       }
     }
 
@@ -1662,7 +1681,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
             ctx.request,
             None
-          ).vfuture
+          )
       }
     }
 
@@ -1730,7 +1749,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
             ctx.request,
             None
-          ).vfuture
+          )
       }
     }
 
@@ -1742,7 +1761,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         resource.access.findAll(version)
       }
-      fuEntities.map { entities =>
+      fuEntities.flatMap { entities =>
         adminApiEvent(
           ctx,
           s"COUNT_ALL_${resource.pluralName.toUpperCase()}",
@@ -1763,7 +1782,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         resource.access.findAll(version)
       }
-      fuEntities.map { entities =>
+      fuEntities.flatMap { entities =>
         adminApiEvent(
           ctx,
           s"READ_ALL_${resource.pluralName.toUpperCase()}",
@@ -1780,14 +1799,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
+        case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
         case Right(body) if !ctx.canUserWriteJson(body) =>
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
             ctx.request,
             resource.some
-          ).vfuture
+          )
         case Right(_body)                               => {
           val dev  = if (env.isDev) "_dev" else ""
           val id   = Try(resource.access.extractIdJson(_body))
@@ -1800,7 +1819,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 Json.obj("error" -> "unauthorized", "error_description" -> "resource already exists"),
                 ctx.request,
                 resource.some
-              ).vfuture
+              )
             case None            => {
               resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
                 case JsError(errs)   =>
@@ -1812,9 +1831,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     ),
                     ctx.request,
                     resource.some
-                  ).vfuture
+                  )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, None, body).map {
+                  resource.access.create(version, resource.singularName, None, body).flatMap {
                     case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -1878,7 +1897,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         resource.access.findOne(version, id)
       }
-      fuOptEntity.map {
+      fuOptEntity.flatMap {
         case None                                         => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
         case Some(entity) if !ctx.canUserReadJson(entity) =>
           result(
@@ -1904,14 +1923,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def delete(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(version, id).flatMap {
-        case None                                          => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
+        case None                                          => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
         case Some(entity) if !ctx.canUserWriteJson(entity) =>
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
             ctx.request,
             resource.some
-          ).vfuture
+          )
         case Some(entity)                                  =>
           adminApiEvent(
             ctx,
@@ -1920,7 +1939,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("id" -> id),
             s"${resource.singularName}Deleted".some
           )
-          resource.access.deleteOne(version, id).map { _ =>
+          resource.access.deleteOne(version, id).flatMap { _ =>
             result(Results.Ok, entity, ctx.request, resource.some)
           }
       }
@@ -1931,7 +1950,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
+        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
         case Right(__body) => {
           val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
           //resource.access.findOne(version, id).flatMap {
@@ -1952,18 +1971,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           //  case Some(oldEntity)                                     => {
           resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
             case err @ JsError(_)                                =>
-              result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
+              result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
             case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
               result(
                 Results.Unauthorized,
                 Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
                 ctx.request,
                 resource.some
-              ).vfuture
+              )
             case JsSuccess(body, _)                              => {
               resource.access.findOne(version, id).flatMap {
                 case None      =>
-                  resource.access.create(version, resource.singularName, None, body).map {
+                  resource.access.create(version, resource.singularName, None, body).flatMap {
                     case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -1979,7 +1998,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   val oldEntity  = resource.access.format.reads(old).get
                   val newEntity  = resource.access.format.reads(body).get
                   val hasChanged = oldEntity == newEntity
-                  resource.access.create(version, resource.singularName, id.some, body).map {
+                  resource.access.create(version, resource.singularName, id.some, body).flatMap {
                     case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -2011,7 +2030,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
+        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
         case Right(__body) => {
           val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
           resource.access.findOne(version, id).flatMap {
@@ -2021,30 +2040,30 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
                 ctx.request,
                 resource.some
-              ).vfuture
+              )
             case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
               result(
                 Results.Unauthorized,
                 Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
                 ctx.request,
                 resource.some
-              ).vfuture
+              )
             case Some(oldEntity)                                     => {
               resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
                 case err @ JsError(_)                                =>
-                  result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some).vfuture
+                  result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
                 case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
                   result(
                     Results.Unauthorized,
                     Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
                     ctx.request,
                     resource.some
-                  ).vfuture
+                  )
                 case JsSuccess(body, _)                              => {
                   resource.access.findOne(version, id).flatMap {
-                    case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
+                    case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
                     case Some(_) =>
-                      resource.access.create(version, resource.singularName, id.some, body).map {
+                      resource.access.create(version, resource.singularName, id.some, body).flatMap {
                         case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                         case Right(res) =>
                           adminApiEvent(
@@ -2071,21 +2090,21 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     import otoroshi.utils.json.JsonPatchHelpers.patchJson
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(version, id).flatMap {
-        case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some).vfuture
+        case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
         case Some(current) if !ctx.canUserWriteJson(current) =>
           result(
             Results.Unauthorized,
             Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
             ctx.request,
             resource.some
-          ).vfuture
+          )
         case Some(current)                                   => {
           val isFormDataBody                  = ctx.request.contentType.contains(
             "application/x-www-form-urlencoded"
           ) || ctx.request.contentType.contains("application/json+oto-patch")
           val defaultEntity: Option[JsObject] = if (isFormDataBody) Some(current.asObject) else None
           bodyIn(ctx.request, resource, version, defaultEntity) flatMap {
-            case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some).vfuture
+            case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some)
             case Right(body) => {
               val _patchedBody = if (isFormDataBody) body else patchJson(body, current)
               val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
@@ -2099,9 +2118,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     ),
                     ctx.request,
                     resource.some
-                  ).vfuture
+                  )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, id.some, patchedBody).map {
+                  resource.access.create(version, resource.singularName, id.some, patchedBody).flatMap {
                     case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
