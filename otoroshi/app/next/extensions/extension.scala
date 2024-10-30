@@ -116,7 +116,7 @@ case class AdminExtensionPrivateAppAuthRoute(
     handle: (
         AdminExtensionRouterContext[AdminExtensionPrivateAppAuthRoute],
         RequestHeader,
-        Option[PrivateAppsUser],
+        Seq[PrivateAppsUser],
         Option[Source[ByteString, _]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
@@ -494,10 +494,10 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       privateAppAuthOverridesRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(PrivateAppsAction.async(sourceBodyParser) { ctx =>
-            route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
+            route.adminRoute.handle(route, ctx.request, ctx.users, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
-          Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+          Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.users, None) })
         case None                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
@@ -517,10 +517,10 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       privateAppAuthRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(PrivateAppsAction.async(sourceBodyParser) { ctx =>
-            route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some)
+            route.adminRoute.handle(route, ctx.request, ctx.users, ctx.request.body.some)
           })
         case Some(route) if !route.adminRoute.wantsBody =>
-          Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+          Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.users, None) })
         case None                                       => f
       }
     } else f

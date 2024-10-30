@@ -14,5 +14,6 @@
   &:hover {
     cursor: pointer;
     @include backgroundSelect("%23FFF");
+    background-color: var(--color-blue);
   }
 }

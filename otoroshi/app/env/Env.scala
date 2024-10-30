@@ -329,6 +329,9 @@ class Env(
   lazy val routeBaseDomain =
     configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
 
+  lazy val defaultPrettyAdminApi: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.defaultPrettyAdminApi").getOrElse(true)
+
   lazy val bypassUserRightsCheck: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
 

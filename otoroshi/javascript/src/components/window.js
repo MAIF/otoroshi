@@ -279,6 +279,7 @@ export function registerPrompt() {
       ReactDOM.render(
         <Prompt
           message={message}
+          title={opts.title}
           value={opts.value}
           type={opts.type}
           textarea={opts.textarea}
