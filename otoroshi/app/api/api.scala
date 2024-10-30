@@ -1283,7 +1283,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
-      case _          
+      case _          =>
         val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
         val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
         val pretty = prettyQuery match {
@@ -1291,7 +1291,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           case Some("false") => false
           case _ => env.defaultPrettyAdminApi
         }
-        val finalEntity = if (envelope) Json.obj("data" -> entity) else entity
+        val finalEntity = if (envelope) Json.obj("data" -> entity.content) else entity.content
         val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
