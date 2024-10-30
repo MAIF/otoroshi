@@ -173,7 +173,7 @@ object GatewayRequestHandler {
       val u: Future[Option[PrivateAppsUser]] = auth match {
         case _: SamlAuthModuleConfig =>
           request.cookies
-            .find(c => c.name.startsWith("oto-papps-"))
+            .find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
             .flatMap(env.extractPrivateSessionId)
             .map {
               env.datastores.privateAppsUserDataStore.findById(_)
@@ -190,9 +190,11 @@ object GatewayRequestHandler {
           case Right(value) =>
             value match {
               case None            => {
-                val cookieOpt     = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt     = request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-                  env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                  env.datastores.privateAppsUserDataStore.findById(id).map { user =>
+                    user.foreach(_.delete())
+                  }
                 }
                 val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
@@ -205,7 +207,7 @@ object GatewayRequestHandler {
                   .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
               case Some(logoutUrl) => {
-                val cookieOpt         = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt         = request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }

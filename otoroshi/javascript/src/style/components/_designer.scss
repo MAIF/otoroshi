@@ -662,7 +662,10 @@
 
 .wizard-h3--small {
     font-size: 1.25em !important;
-    color: var(--color_level3);
+    color: #eee;
+    +label {
+        color: #eee;
+    }
 }
 
 .designer-modal-dialog {

@@ -36,7 +36,7 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
         }
       }
     });
-    window.newPrompt('Shortcut title ?', { value: title }).then((newTitle) => {
+    window.newPrompt('Shortcut title ?', { value: title, title : 'Add a shortcut' }).then((newTitle) => {
       if (newTitle) {
         fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
           method: 'GET',

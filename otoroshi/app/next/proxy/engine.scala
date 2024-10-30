@@ -2601,6 +2601,7 @@ class ProxyEngine() extends RequestHandler {
     val root        = route.backend.root
     val rawUri      = request.relativeUri.substring(1)
     val uri         = maybeStrippedUri(request, rawUri, route, attrs)
+    // TODO: Not sure it's the right place for that here
     val lazySource  = Source.single(ByteString.empty).flatMapConcat { _ =>
       attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
       body

@@ -1026,7 +1026,7 @@ function LoaderItem({ text, timeout, started }) {
       {!started && <i className="fas fa-square fa-lg" />}
       <div
         style={{
-          fontWeight: loading ? 'normal' : 'bold',
+          fontWeight: loading ? 'normal' : 'bold', color:'var(--color_level2)'
         }}
       >
         <div>{text}</div>

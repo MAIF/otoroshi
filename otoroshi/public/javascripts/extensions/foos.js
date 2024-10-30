@@ -26,7 +26,7 @@
 
       render() {
         return (
-          React.createElement('div', null, React.createElement('h1', { style: { color: 'white' }}, 'Tab extension !'))
+          React.createElement('div', null, React.createElement('h1', { style: { color: 'var(--color_level1)' }}, 'Tab extension !'))
         );
       }
     }

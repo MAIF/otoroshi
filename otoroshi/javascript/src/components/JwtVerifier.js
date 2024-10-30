@@ -881,7 +881,7 @@ export class LegacyJwtVerifier extends Component {
             { label: 'Verify and re-sign JWT token', value: 'Sign' },
             { label: 'Verify, re-sign and transform JWT token', value: 'Transform' },
           ]}
-          help="What kind of strategy is used for JWT token verification. DefaultToken will add a token if no present. PassThrough will only verifiy token signing and fields values if provided. Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings. Transform will do the same as Sign plus will be able to transform the token."
+          help="<p>What kind of strategy is used for JWT token verification.</p><p>DefaultToken will add a token if no present.</p><p>PassThrough will only verifiy token signing and fields values if provided. </p><p>Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.</p><p>Transform will do the same as Sign plus will be able to transform the token.</p>"
         />
         {verifier.strategy.type === 'DefaultToken' && [
           <BooleanInput
