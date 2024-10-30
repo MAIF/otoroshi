@@ -1032,89 +1032,87 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           )
           .getOrElse(Seq.empty[(String, String)])
         val hasFilters = filters.nonEmpty
-        if (hasFilters) {
-          val reducedItems  = if (hasFilters) {
-            val items: Seq[JsValue] = arr.value.filter { elem =>
-              filters.forall {
-                case (key, value) if key.startsWith("$") && key.contains(".") => {
-                  elem.atPath(key).as[JsValue] match {
-                    case JsString(v)     => v == value
-                    case JsBoolean(v)    => v == value.toBoolean
-                    case JsNumber(v)     => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _               => false
-                  }
+
+        val reducedItems  = if (hasFilters) {
+          val items: Seq[JsValue] = arr.value.filter { elem =>
+            filters.forall {
+              case (key, value) if key.startsWith("$") && key.contains(".") => {
+                elem.atPath(key).as[JsValue] match {
+                  case JsString(v)     => v == value
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _               => false
                 }
-                case (key, value) if key.contains(".")                        => {
-                  elem.at(key).as[JsValue] match {
-                    case JsString(v)     => v == value
-                    case JsBoolean(v)    => v == value.toBoolean
-                    case JsNumber(v)     => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _               => false
-                  }
+              }
+              case (key, value) if key.contains(".")                        => {
+                elem.at(key).as[JsValue] match {
+                  case JsString(v)     => v == value
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _               => false
                 }
-                case (key, value) if key.contains("/")                        => {
-                  elem.atPointer(key).as[JsValue] match {
-                    case JsString(v)     => v == value
-                    case JsBoolean(v)    => v == value.toBoolean
-                    case JsNumber(v)     => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _               => false
-                  }
+              }
+              case (key, value) if key.contains("/")                        => {
+                elem.atPointer(key).as[JsValue] match {
+                  case JsString(v)     => v == value
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _               => false
                 }
-                case (key, value)                                             => {
-                  (elem \ key).as[JsValue] match {
-                    case JsString(v)     => v == value
-                    case JsBoolean(v)    => v == value.toBoolean
-                    case JsNumber(v)     => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _               => false
-                  }
+              }
+              case (key, value)                                             => {
+                (elem \ key).as[JsValue] match {
+                  case JsString(v)     => v == value
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _               => false
                 }
               }
             }
-            items
-          } else {
-            arr.value
           }
-          val filteredItems = if (filtered.nonEmpty) {
-            val items: Seq[JsValue] = reducedItems.filter { elem =>
-              filtered.forall { case (key, value) =>
-                JsonOperationsHelper.getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
-                  case Some(v) =>
-                    v match {
-                      case JsString(v)              => v.toLowerCase().indexOf(value) != -1
-                      case JsBoolean(v)             => v == value.toBoolean
-                      case JsNumber(v)              => v.toDouble == value.toDouble
-                      case JsArray(values)          => values.contains(JsString(value))
-                      case JsObject(v) if v.isEmpty =>
-                        JsonOperationsHelper.getValueAtPath(key, elem)._2.asOpt[JsValue] match {
-                          case Some(v) =>
-                            v match {
-                              case JsString(v)     => v.toLowerCase().indexOf(value) != -1
-                              case JsBoolean(v)    => v == value.toBoolean
-                              case JsNumber(v)     => v.toDouble == value.toDouble
-                              case JsArray(values) => values.contains(JsString(value))
-                              case _               => false
-                            }
-                          case _       => false
-                        }
-                      case _                        => false
-                    }
-                  case _       =>
-                    false
-                }
-              }
-            }
-            items
-          } else {
-            reducedItems
-          }
-          JsArray(filteredItems).some
+          items
         } else {
-          arr.some
+          arr.value
         }
+
+        val filteredItems = if (filtered.nonEmpty) {
+          val items: Seq[JsValue] = reducedItems.filter { elem =>
+            filtered.forall { case (key, value) =>
+              JsonOperationsHelper.getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
+                case Some(v) =>
+                  v match {
+                    case JsString(v)              => v.toLowerCase().indexOf(value) != -1
+                    case JsBoolean(v)             => v == value.toBoolean
+                    case JsNumber(v)              => v.toDouble == value.toDouble
+                    case JsArray(values)          => values.contains(JsString(value))
+                    case JsObject(v) if v.isEmpty =>
+                      JsonOperationsHelper.getValueAtPath(key, elem)._2.asOpt[JsValue] match {
+                        case Some(v) =>
+                          v match {
+                            case JsString(v)     => v.toLowerCase().indexOf(value) != -1
+                            case JsBoolean(v)    => v == value.toBoolean
+                            case JsNumber(v)     => v.toDouble == value.toDouble
+                            case JsArray(values) => values.contains(JsString(value))
+                            case _               => false
+                          }
+                        case _       => false
+                      }
+                    case _                        => false
+                  }
+                case _       =>
+                  false
+              }
+            }
+          }
+          items
+        } else {
+          reducedItems
+        }
+        JsArray(filteredItems).some
       }
       case _                => _entity.some
     }
@@ -1139,9 +1137,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           JsArray(sorted.foldLeft(arr.value) {
             case (sortedArray, sort) => {
               val out = sortedArray
-                .sortBy { r =>
-                  String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2)
+                .sortBy { r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2)
                 }(Ordering[String].reverse)
+
               if (sort._2) {
                 out.reverse
               } else {
@@ -1157,7 +1155,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
-  private def paginateEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+  case class PaginatedContent(pages: Int = -1, content: JsValue)
+
+  private def paginateEntity(_entity: JsValue, request: RequestHeader): Option[PaginatedContent] = {
     _entity match {
       case arr @ JsArray(_) => {
         val paginationPage: Int     =
@@ -1173,24 +1173,32 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             .map(_.toInt)
             .getOrElse(Int.MaxValue)
         val paginationPosition      = (paginationPage - 1) * paginationPageSize
-        JsArray(arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)).some
+
+        val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
+        PaginatedContent(
+          pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
+          content = JsArray(content)
+        ).some
       }
-      case _                => _entity.some
+      case _                => PaginatedContent(
+        content = _entity
+      ).some
     }
   }
 
-  private def projectedEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+  private def projectedEntity(_entity: PaginatedContent, request: RequestHeader): Option[PaginatedContent] = {
     val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields = fields.nonEmpty
     if (hasFields) {
-      _entity match {
+      val content = _entity.content match {
         case arr @ JsArray(_)  =>
           JsArray(arr.value.map { item =>
             JsonOperationsHelper.filterJson(item.asObject, fields)
-          }).some
-        case obj @ JsObject(_) => JsonOperationsHelper.filterJson(obj, fields).some
-        case _                 => _entity.some
+          })
+        case obj @ JsObject(_) => JsonOperationsHelper.filterJson(obj, fields)
+        case _                 => return _entity.some
       }
+      _entity.copy(content = content).some
     } else {
       _entity.some
     }
@@ -1217,9 +1225,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         projected <- projectedEntity(paginated, request)
       } yield projected).get
     } else {
-      _entity
+      PaginatedContent(content = _entity)
     }
-    entity match {
+    entity.content match {
       case JsArray(seq) if !request.accepts("application/json") && request.accepts("application/x-ndjson") => {
         res
           .sendEntity(
@@ -1229,6 +1237,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               contentType = "application/x-ndjson".some
             )
           )
+          .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }
@@ -1240,8 +1249,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case _
           if !request.accepts("application/json") && (request
             .accepts("application/yaml") || request.accepts("application/yml")) =>
-        res(Yaml.write(entity))
+        res(Yaml.write(entity.content))
           .as("application/yaml")
+          .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }
@@ -1258,13 +1268,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               "apiVersion" -> "proxy.otoroshi.io/v1",
               "kind"       -> resEntity.get.kind,
               "metadata"   -> Json.obj(
-                "name" -> entity.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
+                "name" -> entity.content.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
               ),
-              "spec"       -> entity
+              "spec"       -> entity.content
             )
           )
         )
           .as("application/yaml")
+          .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }
@@ -1272,7 +1283,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
-      case _                                                                                               =>
+      case _          =>
         val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
         val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
         val pretty = prettyQuery match {
@@ -1280,10 +1291,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           case Some("false") => false
           case _ => env.defaultPrettyAdminApi
         }
-        val finalEntity = if (envelope) Json.obj("data" -> entity) else entity
+        val finalEntity = if (envelope) Json.obj("data" -> entity.content) else entity.content
         val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
+          .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }

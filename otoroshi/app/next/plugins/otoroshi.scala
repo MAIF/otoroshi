@@ -437,6 +437,7 @@ class OtoroshiInfos extends NgRequestTransformer {
     val config = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
+
     var claim  = InfoTokenHelper.generateInfoToken(
       ctx.route.name,
       config.secComVersion,
