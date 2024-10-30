@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
     useQuery,
     useMutation,
@@ -78,12 +78,12 @@ function DraftEditor({ entityId, value, className = "" }) {
 
     const mutation = useMutation(createDraft, {
         onSuccess: (data) => {
-            draftVersionSignal.value = {
-                version: 'draft',
-            }
             draftSignal.value = {
                 draft: data.content,
                 rawDraft: data
+            }
+            draftVersionSignal.value = {
+                version: 'draft',
             }
         },
     })
@@ -198,11 +198,17 @@ function PublisDraftModalContent() {
 
 export function PublisDraftButton(props) {
     const publish = useSignalValue(draftVersionSignal)
-    
     const { pathname } = useLocation()
 
+    const isFirstRender = useRef(true)
+
     useEffect(() => {
-        resetDraftSignal()
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+        } else {
+            console.log('reset after pathname changed', pathname)
+            resetDraftSignal()
+        }
     }, [pathname])
 
     if (publish.version === 'published')

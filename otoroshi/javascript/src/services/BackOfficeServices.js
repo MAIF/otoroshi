@@ -2211,6 +2211,7 @@ export const nextClient = {
       findById: (entityId) => fetchWrapperNext(`/${entity}/${entityId}`),
       delete: (content, fieldId = "id") => fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNext(`/${entity}/${id}`, 'DELETE'),
+      deleteAll: () => fetchWrapperNext(`/${entity}`, 'DELETE'),
       template: () => fetchWrapperNext(`/${entity}/_template`),
       schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),

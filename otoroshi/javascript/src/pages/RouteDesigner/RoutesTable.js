@@ -18,7 +18,7 @@ const CORE_FIELDS = [
   'frontend',
   'backend',
   'plugins',
-  'created at',
+  // 'created at',
   'metadata.updated_at',
   'metadata.created_at',
 ]

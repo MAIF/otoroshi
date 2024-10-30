@@ -67,7 +67,7 @@ export class BackendsPage extends Component {
         updateItem={(item) => client.update(item)}
         createItem={(item) => client.create(item)}
         navigateTo={(item) => {
-          window.location = `/bo/dashboard/backends/edit/${item.id}`;
+          this.props.history.push(`/backends/edit/${item.id}`)
         }}
         itemUrl={(item) => `/bo/dashboard/backends/edit/${item.id}`}
         showActions={true}

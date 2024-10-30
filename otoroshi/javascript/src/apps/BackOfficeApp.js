@@ -16,6 +16,7 @@ import { GroupsPage } from '../pages/GroupsPage';
 import { HomePage } from '../pages/HomePage';
 import { ServicesPage } from '../pages/ServicesPage';
 import { SessionsPage } from '../pages/SessionsPage';
+import { DraftsPage } from '../pages/DraftsPage';
 import { U2FRegisterPage } from '../pages/U2FRegisterPage';
 import { CleverPage } from '../pages/CleverPage';
 import { EurekaServersPage } from '../pages/EurekaServersPage';
@@ -871,6 +872,10 @@ class BackOfficeAppContainer extends Component {
                             env: this.state.env,
                           })
                         }
+                      />
+                      <Route
+                        path="/drafts"
+                        component={(props) => this.decorate(DraftsPage, props)}
                       />
                       <Route component={(props) => this.decorate(NotFoundPage, props)} />
                     </Switch>
