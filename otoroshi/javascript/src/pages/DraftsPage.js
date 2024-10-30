@@ -33,6 +33,7 @@ export class DraftsPage extends Component {
             .deleteById(item.id)}
           showActions
           hideEditButton
+          hideAddItemAction
           showLink={false}
           extractKey={(item) => item.id}
           injectTopBar={() => {
