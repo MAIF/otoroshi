@@ -344,7 +344,7 @@ export class ErrorTemplatesPage extends Component {
           }}
           itemUrl={(i) => `/bo/dashboard/error-templates/edit/${i.serviceId || i.id}`}
           export={true}
-          kubernetesKind="ErrorTemplate"
+          kubernetesKind="proxy.otoroshi.io/ErrorTemplate"
         />
       </div>
     );
