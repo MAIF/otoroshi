@@ -10,6 +10,8 @@ import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase } from '../util';
 
+import { Tooltip as ReactTooltip } from 'react-tooltip'
+
 const FIELDS_SELECTOR = "otoroshi-fields-selector";
 
 const CORE_FIELDS = [
@@ -93,14 +95,11 @@ class ApikeyBearer extends Component {
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label">
           Apikey Bearer{' '}
-          <i
-            className="far fa-question-circle"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title=""
-            data-bs-original-title="Your apikey as a bearer to pass in the Authorization header"
-            aria-label="Your apikey as a bearer to pass in the Authorization header"
-          ></i>
+          <span>
+            <i className="far fa-question-circle" data-tooltip-content="Your apikey as a bearer to pass in the Authorization header"
+              data-tooltip-id="apikey-bearer" />
+            <ReactTooltip id="apikey-bearer" />
+          </span>
         </label>
         <div className="col-sm-10">
           <div className="input-group">
@@ -142,7 +141,7 @@ class ApikeyBearer extends Component {
             )}
           </div>
         </div>
-      </div>
+      </div >
     );
   }
 }
@@ -176,14 +175,11 @@ class ApikeySecret extends Component {
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label">
           Apikey Secret{' '}
-          <i
-            className="far fa-question-circle"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title=""
-            data-bs-original-title="The secret is a random key used to validate the API key"
-            aria-label="The secret is a random key used to validate the API key"
-          ></i>
+          <span>
+            <i className="far fa-question-circle" data-tooltip-content="The secret is a random key used to validate the API key"
+              data-tooltip-id="apikey-secret" />
+            <ReactTooltip id="apikey-secret" />
+          </span>
         </label>
         <div className="col-sm-10">
           <div className="input-group">
