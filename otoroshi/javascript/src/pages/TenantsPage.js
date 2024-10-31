@@ -96,7 +96,7 @@ export class TenantsPage extends Component {
           }}
           itemUrl={(i) => `/bo/dashboard/organizations/edit/${i.id}`}
           export={true}
-          kubernetesKind="Organization"
+          kubernetesKind="organize.otoroshi.io/Organization"
         />
       </div>
     );
