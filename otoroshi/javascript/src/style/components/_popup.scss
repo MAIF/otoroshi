@@ -11,8 +11,10 @@
   padding-left: 10px;
   border-bottom-left-radius: 4px;
   justify-content: space-around;
-  a,a:hover{
-    color : #856404;
+
+  a,
+  a:hover {
+    color: #856404;
   }
 }
 
@@ -23,5 +25,9 @@
   position: fixed;
   top: 0px;
   right: 0px;
+  z-index: 99999;
+}
+
+.react-tooltip {
   z-index: 99999;
 }

@@ -5,8 +5,10 @@ import { Location } from '../Location';
 import { ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
-import ReactTooltip from 'react-tooltip';
 import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
+
+import { Tooltip as ReactTooltip } from 'react-tooltip'
+import { v4 as uuid } from 'uuid';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -255,6 +257,8 @@ export function LabelAndInput(_props) {
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
+  const helpId = uuid()
+
   return (
     <div className={`row ${margin}`} style={style}>
       <label
@@ -264,10 +268,10 @@ export function LabelAndInput(_props) {
         }}
       >
         {label.replace(/_/g, ' ')}{' '}
-        {_props.help && (
+        {help && (
           <span>
-            <i className="far fa-question-circle" data-tip={_props.help} />
-            <ReactTooltip />
+            <i className="far fa-question-circle" data-tooltip-id={helpId} data-tooltip-content={help} />
+            <ReactTooltip id={helpId} />
           </span>
         )}
       </label>
