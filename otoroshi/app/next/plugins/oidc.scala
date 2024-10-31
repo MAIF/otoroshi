@@ -627,7 +627,7 @@ class OIDCAuthToken extends NgAccessValidator {
       .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
       .getOrElse(OIDCAuthTokenConfig.default)
     env.proxyState.authModule(config.ref) match {
-      case None                                     => {
+      case None => {
         Errors
           .craftResponseResult(
             "bad auth. module",
@@ -642,18 +642,7 @@ class OIDCAuthToken extends NgAccessValidator {
       case Some(authModuleConfig) if config.opaque  => {
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
         getSession(ctx, oauth2Config, config).flatMap {
-          case Left(err) => {
-            Errors
-              .craftResponseResult(
-                "unauthorized",
-                Results.Unauthorized,
-                ctx.request,
-                None,
-                None,
-                attrs = ctx.attrs
-              )
-              .map(NgAccess.NgDenied)
-          }
+          case Left(err) => NgAccess.NgDenied.apply(err).vfuture
           case Right(v)  => v.vfuture
         }
       }
