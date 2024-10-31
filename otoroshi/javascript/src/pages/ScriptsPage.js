@@ -537,7 +537,7 @@ export class ScriptsPage extends Component {
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
-        kubernetesKind="Script"
+        kubernetesKind="plugins.otoroshi.io/Script"
       />
     );
   }

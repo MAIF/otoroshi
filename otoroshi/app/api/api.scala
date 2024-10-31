@@ -95,6 +95,7 @@ case class Resource(
     version: ResourceVersion,
     access: ResourceAccessApi[_]
 )                                                   {
+  lazy val groupKing = s"${group}/${kind}"
   def json: JsValue = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
@@ -1252,7 +1253,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         res
           .sendEntity(
             HttpEntity.Streamed(
-              data = Source(seq.toList.map(_.stringify.byteString)),
+              data = Source(seq.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)).toList.map(_.stringify.byteString)),
               contentLength = None,
               contentType = "application/x-ndjson".some
             )
@@ -1266,10 +1267,45 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
       }
+      case JsArray(arr)
+        if !request.accepts("application/json") && (request
+          .accepts("application/yaml") || request.accepts("application/yml")) =>
+        res(Yaml.write(JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))))
+          .as("application/yaml")
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
+          .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
+            r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
+          }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
       case _
           if !request.accepts("application/json") && (request
             .accepts("application/yaml") || request.accepts("application/yml")) =>
-        res(Yaml.write(entity.content))
+        res(Yaml.write(entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))
+          .as("application/yaml")
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
+          .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
+            r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
+          }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
+      case JsArray(arr)
+        if !request.accepts("application/json") && (request
+          .accepts("application/yaml+k8s") || request.accepts("application/yml+k8s")) =>
+          res(
+            Yaml.write(
+              JsArray(arr.map(o => Json.obj(
+                "apiVersion" -> "proxy.otoroshi.io/v1",
+                "kind"       -> resEntity.get.kind,
+                "metadata"   -> Json.obj(
+                  "name" -> o.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
+                ),
+                "spec"       -> (o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+              )))
+            )
+          )
           .as("application/yaml")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
@@ -1290,11 +1326,32 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               "metadata"   -> Json.obj(
                 "name" -> entity.content.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
               ),
-              "spec"       -> entity.content
+              "spec"       -> (entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
             )
           )
         )
           .as("application/yaml")
+          .withHeaders("X-Pages" -> entity.pages.toString)
+          .applyOnIf(addHeaders.nonEmpty) { r =>
+            r.withHeaders(addHeaders.toSeq: _*)
+          }
+          .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
+            r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
+          }
+          .applyOn(rez => gzipConfig.handleResult(request, rez))
+      case JsArray(arr)                                                                                  =>
+        val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
+        val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
+        val pretty = prettyQuery match {
+          case Some("true") => true
+          case Some("false") => false
+          case _ => env.defaultPrettyAdminApi
+        }
+        val entityWithKind = JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))
+        val finalEntity = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
+        val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
+        res(entityStr)
+          .as("application/json")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
@@ -1311,7 +1368,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           case Some("false") => false
           case _ => env.defaultPrettyAdminApi
         }
-        val finalEntity = if (envelope) Json.obj("data" -> entity.content) else entity.content
+        val entityWithKind = entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)
+        val finalEntity = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
         val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
@@ -1336,7 +1394,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     env.allResources.resources
       .filter(_.version.served)
       .find(r =>
-        (group == "any" || group == "all" || r.group == group) && (version == "any" || version == "all" || r.version.name == version) && r.pluralName == entity
+        (group == "any" || group == "all" || r.group == group) && (version == "any" || version == "all" || r.version.name == version) && (r.pluralName == entity || r.kind == entity)
       ) match {
       case None                                               => result(Results.NotFound, notFoundBody, request, None)
       case Some(resource) if !resource.access.canBulk && bulk =>

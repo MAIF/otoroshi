@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Route, Switch, useLocation, withRouter } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
@@ -22,13 +22,11 @@ import _ from 'lodash';
 import { Button } from '../../components/Button';
 import { DraftEditorContainer, PublisDraftButton } from '../../components/Drafts/DraftEditor';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
-// import { draftSignal, draftVersionSignal, entityContentSignal } from '../../components/Drafts/DraftEditorSignal';
-// import { useSignalValue } from 'signals-react-safe';
+
 import PageTitle from '../../components/PageTitle';
 import { Dropdown } from '../../components/Dropdown';
 import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
-import JsonViewCompare from '../../components/Drafts/Compare';
 
 function DuplicateModalContent({ value }) {
   return <pre style={{ height: 'inherit' }}>
@@ -123,134 +121,15 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  // const handleSelect = (e) => {
-  //   const kind = e.target.value;
-
-  //   if (kind === 'json') {
-  //     const what = window.location.pathname.split('/')[3];
-  //     const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-  //     const itemName = entityKind
-  //       ? entityKind.toLowerCase()
-  //       : what === 'routes'
-  //         ? 'route'
-  //         : 'route-composition';
-  //     const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-  //     const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-  //     const json = JSON.stringify({ ...value, kind }, null, 2);
-  //     const blob = new Blob([json], { type: 'application/json' });
-  //     const url = URL.createObjectURL(blob);
-  //     const a = document.createElement('a');
-  //     a.id = String(Date.now());
-  //     a.style.display = 'none';
-  //     a.download = `${itemName}-${name}-${Date.now()}.json`;
-  //     a.href = url;
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     setTimeout(() => document.body.removeChild(a), 300);
-  //   } else {
-  //     const what = window.location.pathname.split('/')[3];
-  //     const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-  //     const itemName = entityKind
-  //       ? entityKind.toLowerCase()
-  //       : what === 'routes'
-  //         ? 'route'
-  //         : 'route-composition';
-  //     const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-  //     const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-
-  //     fetch('/bo/api/json_to_yaml', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         apiVersion: 'proxy.otoroshi.io/v1',
-  //         kind,
-  //         metadata: {
-  //           name,
-  //         },
-  //         spec: value,
-  //       }),
-  //     })
-  //       .then((r) => r.text())
-  //       .then((yaml) => {
-  //         const blob = new Blob([yaml], { type: 'application/yaml' });
-  //         const url = URL.createObjectURL(blob);
-  //         const a = document.createElement('a');
-  //         a.id = String(Date.now());
-  //         a.style.display = 'none';
-  //         a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-  //         a.href = url;
-  //         document.body.appendChild(a);
-  //         a.click();
-  //         setTimeout(() => document.body.removeChild(a), 300);
-  //       });
-  //   }
-  // };
-
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
       <YAMLExportButton value={value} entityKind="JwtVerifier" />
       <JsonExportButton value={value} entityKind="JwtVerifier" />
-      {/* <select
-        className="form-select selectSkin btn-primary"
-        aria-label="Choose export"
-        onChange={handleSelect}
-      >
-        <option value="export">Export</option>
-        <option value="json">JSON</option>
-        <option value="yaml">YAML</option>
-      </select> */}
       {menu}
     </div>
   );
 }
-
-// function PublisDraftModalContent() {
-//   const draftContext = useSignalValue(draftSignal)
-//   const entityContent = useSignalValue(entityContentSignal)
-
-//   return <div className='mt-3 d-flex flex-column' style={{ flex: 1 }}>
-//     <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
-//   </div>
-// }
-
-// function PublisDraftButton() {
-//   const publish = useSignalValue(draftVersionSignal)
-//   const context = useSignalValue(draftSignal)
-
-//   if (publish.version === 'published')
-//     return null
-
-//   return <Button text="Publish draft" className='btn-sm ms-2 mb-1' type="primaryColor" style={{
-//     borderColor: 'var(--color-primary)'
-//   }} onClick={() => {
-//     window.wizard(
-//       'Publish this draft',
-//       () => <PublisDraftModalContent />,
-//       {
-//         style: { width: '100%' },
-//         noCancel: false,
-//         okClassName: "ms-2",
-//         okLabel: 'I want to publish this route'
-//       }
-//     )
-//       .then((ok) => {
-//         if (ok) {
-//           const what = window.location.pathname.split('/')[3];
-//           const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-
-//           nextClient
-//             .forEntityNext(kind)
-//             .update(context.draft)
-//             .then(() => {
-//               window.location.reload()
-//             });
-//         }
-//       });
-//   }} />
-// }
 
 function ManagerTitle({
   query,

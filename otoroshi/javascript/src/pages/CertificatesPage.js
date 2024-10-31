@@ -875,7 +875,7 @@ export class CertificatesPage extends Component {
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
-        kubernetesKind="Certificate"
+        kubernetesKind="pki.otoroshi.io/Certificate"
         injectTable={(table) => (this.table = table)}
         injectTopBar={() => (
           <>

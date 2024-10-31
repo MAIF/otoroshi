@@ -93,7 +93,7 @@ export class AuthModuleConfigsPage extends Component {
           extractKey={(item) => item.id}
           formComponent={AuthModuleConfig}
           export={true}
-          kubernetesKind="AuthModule"
+          kubernetesKind="security.otoroshi.io/AuthModule"
           injectToolbar={(s, ss) => {
             return (
               <div className="mb-3 btnsService">

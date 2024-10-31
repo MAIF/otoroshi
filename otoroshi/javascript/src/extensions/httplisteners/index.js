@@ -219,7 +219,7 @@ export function setupHttpListenersExtension(registerExtension) {
             rowNavigation: true,
             extractKey: (item) => item.id,
             export: true,
-            kubernetesKind: 'HttpListener',
+            kubernetesKind: 'http-listeners.proxy.otoroshi.io/HttpListener',
           },
           null
         );

@@ -627,6 +627,16 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     getUserInfoRaw(accessToken, config).map(_.json)
   }
 
+  def getUserInfoSafe(accessToken: String, config: GlobalConfig)(implicit
+                                                             env: Env,
+                                                             ec: ExecutionContext
+  ): Future[Either[String, JsValue]] = {
+    getUserInfoRaw(accessToken, config).map {
+      case resp if resp.status == 200 => Right(resp.json)
+      case resp => Left(s"bad status code: ${resp.status}")
+    }
+  }
+
   def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =

@@ -592,7 +592,7 @@ export class WasmPluginsPage extends Component {
           }}
           itemUrl={(i) => `/bo/dashboard/wasm-plugins/edit/${i.id}`}
           export={true}
-          kubernetesKind="WasmPlugin"
+          kubernetesKind="plugins.otoroshi.io/WasmPlugin"
         />
       </div>
     );

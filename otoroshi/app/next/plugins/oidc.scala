@@ -4,16 +4,21 @@ import akka.Done
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import otoroshi.auth.{AuthModuleConfig, ErrorReason, GenericOauth2Module, GenericOauth2ModuleConfig, OAuth2ModuleConfig}
+import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models._
 import otoroshi.next.plugins.api._
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -334,4 +339,255 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
     }
   }
 
+}
+
+case class OIDCAuthTokenConfig(ref: String, opaque: Boolean, headerName: String) extends NgPluginConfig {
+  def json: JsValue = OIDCAuthTokenConfig.format.writes(this)
+}
+
+object OIDCAuthTokenConfig {
+  val default = OIDCAuthTokenConfig("", true, "Authorization")
+  val configFlow: Seq[String]        = Seq("ref", "opaque", "header_name")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "header_name" -> Json.obj(
+        "type" -> "string",
+        "label" -> "access_token header name",
+      ),
+      "opaque" -> Json.obj(
+        "type" -> "bool",
+        "label" -> "Opaque access_token",
+      ),
+      "ref" -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom"        -> s"/bo/api/proxy/api/auths",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      )
+    )
+  )
+  val format = new Format[OIDCAuthTokenConfig] {
+    override def reads(json: JsValue): JsResult[OIDCAuthTokenConfig] = Try {
+      OIDCAuthTokenConfig(
+        ref = json.select("ref").asString,
+        opaque = json.select("opaque").asOpt[Boolean].getOrElse(false),
+        headerName = json.select("header_name").asOpt[String].getOrElse("Authorization"),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: OIDCAuthTokenConfig): JsValue = Json.obj(
+      "ref" -> o.ref,
+      "opaque" -> o.opaque,
+      "header_name" -> o.headerName,
+    )
+  }
+}
+
+class OIDCAuthToken extends NgAccessValidator {
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "OIDC access_token authentication"
+  override def defaultConfigObject: Option[NgPluginConfig] = OIDCAuthTokenConfig.default.some
+
+  override def description: Option[String] =
+    s"""This plugin will authenticate a user based on it's OIDC access_token""".stripMargin.some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = OIDCAuthTokenConfig.configFlow
+  override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
+
+  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(implicit env: Env, ec: ExecutionContext) = {
+    val authModule = oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
+    val token = ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption).getOrElse("")
+    val tokenHash = token.sha256
+    def createSession(): Future[Either[Result, NgAccess]] = {
+      authModule.getUserInfoSafe(token, env.datastores.globalConfigDataStore.latest()).flatMap {
+        case Left(err) =>
+          Errors
+            .craftResponseResult(
+              "unauthorized",
+              Results.Unauthorized,
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs
+            )
+            .map(v => Left(v))
+        case Right(profile) =>
+          val meta: Option[JsObject] = PrivateAppsUser
+            .select(profile, oauth2Config.otoroshiDataField)
+            .asOpt[String]
+            .map(s => Json.parse(s))
+            .orElse(
+              Option(PrivateAppsUser.select(profile, oauth2Config.otoroshiDataField))
+            )
+            .map(_.asOpt[JsObject].getOrElse(Json.obj()))
+          val email = (profile \ oauth2Config.emailField)
+            .asOpt[String]
+            .orElse((profile \ "sub").asOpt[String])
+            .getOrElse("No email")
+          PrivateAppsUser(
+            randomId = tokenHash,
+            name = (profile \ oauth2Config.nameField)
+              .asOpt[String]
+              .orElse((profile \ "sub").asOpt[String])
+              .getOrElse("No Name"),
+            email = email,
+            profile = profile,
+            token = Json.obj("access_token" -> token),
+            authConfigId = oauth2Config.id,
+            realm = oauth2Config.cookieSuffix(ctx.route.legacy),
+            otoroshiData = oauth2Config.dataOverride
+              .get(email)
+              .map(v => oauth2Config.extraMetadata.deepMerge(v))
+              .orElse(Some(oauth2Config.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
+            tags = oauth2Config.theTags,
+            metadata = oauth2Config.metadata,
+            location = oauth2Config.location
+          ).validate(
+            oauth2Config.userValidators,
+            oauth2Config.remoteValidators,
+            ctx.route.legacy,
+            isRoute = true,
+            oauth2Config
+          ).flatMap {
+            case Left(err) => Errors
+              .craftResponseResult(
+                err.display,
+                Results.InternalServerError,
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs
+              )
+              .map(v => Left(v))
+            case Right(user) =>
+              user.save(
+                Duration(oauth2Config.sessionMaxAge, TimeUnit.MILLISECONDS)
+              )
+              if (env.clusterConfig.mode == ClusterMode.Worker) {
+                env.clusterAgent.createSession(user)
+              }
+              ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+              Right(NgAccess.NgAllowed).vfuture
+          }
+      }
+    }
+
+    env.datastores.privateAppsUserDataStore.findById(tokenHash).flatMap {
+      case Some(user) =>
+        ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+        if (env.clusterConfig.mode == ClusterMode.Worker) {
+          env.clusterAgent.createSession(user)
+        }
+        Right(NgAccess.NgAllowed).vfuture
+      case None if env.clusterConfig.mode == ClusterMode.Worker => {
+        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session $tokenHash not found locally - from helper")
+        env.clusterAgent.isSessionValid(tokenHash, Some(ctx.request)).flatMap {
+          case Some(user) =>
+            user.save(
+              Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+            )
+            ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+            Right(NgAccess.NgAllowed).vfuture
+          case None => createSession()
+        }
+      }
+      case None => createSession()
+    }
+  }
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
+      .getOrElse(OIDCAuthTokenConfig.default)
+    env.proxyState.authModule(config.ref) match {
+      case None => {
+        Errors
+          .craftResponseResult(
+            "bad auth. module",
+            Results.InternalServerError,
+            ctx.request,
+            None,
+            None,
+            attrs = ctx.attrs
+          )
+          .map(NgAccess.NgDenied)
+      }
+      case Some(authModuleConfig) if config.opaque => {
+        val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
+        getSession(ctx, oauth2Config, config).flatMap {
+          case Left(err) => {
+            Errors
+              .craftResponseResult(
+                "unauthorized",
+                Results.Unauthorized,
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs
+              )
+              .map(NgAccess.NgDenied)
+          }
+          case Right(v) => v.vfuture
+        }
+      }
+      case Some(authModuleConfig) if !config.opaque => {
+        val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
+        oauth2Config.jwtVerifier match {
+          case None => Errors
+            .craftResponseResult(
+              "bad jwt settings",
+              Results.InternalServerError,
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs
+            )
+            .map(NgAccess.NgDenied)
+          case Some(algoSettings) => {
+            val jwtVerifier = LocalJwtVerifier(
+              enabled = true,
+              source = InHeader(config.headerName, "Bearer "),
+              algoSettings = algoSettings
+            )
+            jwtVerifier.verifyGen(
+              request = ctx.request,
+              desc = ctx.route.legacy,
+              apikey = ctx.apikey,
+              user = ctx.user,
+              elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+              attrs = ctx.attrs,
+            ) { _ =>
+              getSession(ctx, oauth2Config, config)
+            } .flatMap {
+              case Left(err) => {
+                Errors
+                  .craftResponseResult(
+                    "unauthorized",
+                    Results.Unauthorized,
+                    ctx.request,
+                    None,
+                    None,
+                    attrs = ctx.attrs
+                  )
+                  .map(NgAccess.NgDenied)
+              }
+              case Right(v) => v.vfuture
+            }
+          }
+        }
+      }
+    }
+  }
 }

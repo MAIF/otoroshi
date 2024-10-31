@@ -493,15 +493,15 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       ctx.request.body.select("content").asOpt[JsValue] match {
         case Some(JsArray(values))                              => {
           Source(values.toList)
-            .mapAsync(1) { v => createResource(v) }
+            .mapAsync(1) { v => createResource(v, ctx.request) }
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
-        case Some(content @ JsObject(_))                        => createResource(content).map(created => Ok(Json.obj("created" -> created)))
+        case Some(content @ JsObject(_))                        => createResource(content, ctx.request).map(created => Ok(Json.obj("created" -> created)))
         case Some(JsString(content)) if content.contains("---") => {
           Source(splitContent(content).toList)
             .flatMapConcat(s => Source(Yaml.parse(s).toList))
-            .mapAsync(1) { v => createResource(v) }
+            .mapAsync(1) { v => createResource(v, ctx.request) }
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
@@ -511,7 +511,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               e.printStackTrace()
               // Yaml.write(env.datastores.globalConfigDataStore.latest().json).debugPrintln
               BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
-            case Right(yaml) => createResource(yaml).map(created => Ok(Json.obj("created" -> created)))
+            case Right(yaml) => createResource(yaml, ctx.request).map(created => Ok(Json.obj("created" -> created)))
           }
         case _                                                  => BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
       }
@@ -536,15 +536,36 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     out
   }
 
-  private def createResource(content: JsValue): Future[JsValue] = {
+  private def createResource(content: JsValue, request: RequestHeader): Future[JsValue] = {
     scala.util.Try {
       val resource = (content \ "spec").asOpt[JsObject] match {
         case None       => content.as[JsObject] - "kind"
         case Some(spec) => spec - "kind"
       }
 
-      val kind = (content \ "kind").as[String]
+      val kind = (content \ "kind").asOpt[String].orElse(content.select("spec").select("kind").asOpt[String]).getOrElse("--")
       (kind match {
+        case groupKind if kind.contains("/") => {
+          val parts = groupKind.split("/")
+          val group = parts(0)
+          val kind = parts(1)
+          env.allResources.resources.find(r => r.kind == kind && r.group == group) match {
+            case None => {
+              Json.obj(
+                "error" -> s"resource kind '${kind}' unknown",
+                "name"  -> JsString((content \ "name").asOpt[String].getOrElse("Unknown"))
+              ).vfuture
+            }
+            case Some(res) => {
+              res
+                .access
+                .template("v1", request.queryString.mapValues(_.last))
+                .as[JsObject]
+                .deepMerge(resource)
+                .vfuture
+            }
+          }
+        }
         case "DataExporter"      =>
           FastFuture.successful(
             DataExporterConfig
