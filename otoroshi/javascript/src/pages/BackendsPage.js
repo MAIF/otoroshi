@@ -74,7 +74,7 @@ export class BackendsPage extends Component {
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
-        kubernetesKind="Backend"
+        kubernetesKind="proxy.otoroshi.io/Backend"
         formFunction={(opts) => {
           const { value, onChange, flow, schema } = opts;
           return (
