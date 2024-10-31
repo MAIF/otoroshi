@@ -67,8 +67,9 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
-            } py-3 wizard-route-chooser`}
+          className={`btn ${
+            state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
+          } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}
         >
@@ -191,10 +192,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-          pahtname: '/',
-          hostname: '',
-          protocol: 'https://',
-        }
+            pahtname: '/',
+            hostname: '',
+            protocol: 'https://',
+          }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -235,7 +236,7 @@ const ProcessStep = ({ state, history }) => {
               {
                 ...template.backend.targets[0],
                 hostname: url.hostname,
-                port: url.port === 0 ? 0 : (~~url.port || (secured ? 443 : 80)),
+                port: url.port === 0 ? 0 : ~~url.port || (secured ? 443 : 80),
                 tls: secured,
                 tls_config: {
                   ...template.backend.targets[0].tls_config,

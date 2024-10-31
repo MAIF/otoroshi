@@ -767,7 +767,7 @@ class RejectHeaderInTooLong extends NgRequestTransformer {
             )
             false
           }
-          case _                                         => true
+          case _                                           => true
         }
       )
     )
@@ -824,7 +824,7 @@ class RejectHeaderOutTooLong extends NgRequestTransformer {
             )
             false
           }
-          case _                                         => true
+          case _                                           => true
         }
       )
     )
@@ -915,7 +915,7 @@ class LimitHeaderInTooLong extends NgRequestTransformer {
             )
             (key, newValue)
           }
-          case (key, value)                              => (key, value)
+          case (key, value)                                => (key, value)
         }
       )
     )
@@ -973,7 +973,7 @@ class LimitHeaderOutTooLong extends NgRequestTransformer {
             )
             (key, newValue)
           }
-          case (key, value)                              => (key, value)
+          case (key, value)                                => (key, value)
         }
       )
     )

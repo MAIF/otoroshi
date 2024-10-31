@@ -46,7 +46,8 @@ export const Informations = forwardRef(
       } else {
         return nextClient
           .forEntityNext(nextClient.ENTITIES[fetchName])
-          .update(value).then((res) => {
+          .update(value)
+          .then((res) => {
             if (!res.error) setValue(res);
           });
       }

@@ -1466,7 +1466,11 @@ export class DangerZonePage extends Component {
 
   exportJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = JSON.stringify({ ...this.state.value, kind: 'config.otoroshi.io/GlobalConfig' }, null, 2);
+    const json = JSON.stringify(
+      { ...this.state.value, kind: 'config.otoroshi.io/GlobalConfig' },
+      null,
+      2
+    );
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

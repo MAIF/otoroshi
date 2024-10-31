@@ -246,7 +246,7 @@ class BasicAuthApikeyExtractor extends PreRouting {
           )
         if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
           val auth   = authBasic.get
-          val parts = auth.split(":")
+          val parts  = auth.split(":")
           val id     = parts.headOption.map(_.trim)
           val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
           (id, secret) match {

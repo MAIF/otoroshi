@@ -190,7 +190,8 @@ object GatewayRequestHandler {
           case Right(value) =>
             value match {
               case None            => {
-                val cookieOpt     = request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
+                val cookieOpt     =
+                  request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map { user =>
                     user.foreach(_.delete())
@@ -207,7 +208,8 @@ object GatewayRequestHandler {
                   .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
               case Some(logoutUrl) => {
-                val cookieOpt         = request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
+                val cookieOpt         =
+                  request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }

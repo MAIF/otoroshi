@@ -19,7 +19,7 @@ export default {
           label: 'To',
           type: 'number',
         },
-      }
+      },
     },
     export: {
       label: 'Export error',

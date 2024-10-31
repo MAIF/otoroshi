@@ -96,7 +96,7 @@ case class Resource(
     access: ResourceAccessApi[_]
 )                                                   {
   lazy val groupKing = s"${group}/${kind}"
-  def json: JsValue = Json.obj(
+  def json: JsValue  = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
     "singular_name" -> singularName,
@@ -1034,7 +1034,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .getOrElse(Seq.empty[(String, String)])
         val hasFilters = filters.nonEmpty
 
-        val reducedItems  = if (hasFilters) {
+        val reducedItems = if (hasFilters) {
           val items: Seq[JsValue] = arr.value.filter { elem =>
             filters.forall {
               case (key, value) if key.startsWith("$") && key.contains(".") => {
@@ -1138,8 +1138,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           JsArray(sorted.foldLeft(arr.value) {
             case (sortedArray, sort) => {
               val out = sortedArray
-                .sortBy { r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2)
-                }(Ordering[String].reverse)
+                .sortBy { r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2) }(
+                  Ordering[String].reverse
+                )
 
               if (sort._2) {
                 out.reverse
@@ -1181,9 +1182,10 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           content = JsArray(content)
         ).some
       }
-      case _                => PaginatedContent(
-        content = _entity
-      ).some
+      case _                =>
+        PaginatedContent(
+          content = _entity
+        ).some
     }
   }
 
@@ -1214,11 +1216,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   ): Future[Result] = {
     val gzipConfig = GzipConfig(
       enabled = true,
-      whiteList = Seq("application/json", "application/yaml", "application/yml", "application/yaml+k8s", "application/yml+k8s"),
+      whiteList =
+        Seq("application/json", "application/yaml", "application/yml", "application/yaml+k8s", "application/yml+k8s"),
       blackList = Seq("application/x-ndjson"),
-      compressionLevel = 5,
+      compressionLevel = 5
     )
-    val entity = if (request.method == "GET") {
+    val entity     = if (request.method == "GET") {
       (for {
         filtered  <- filterEntity(_entity, request)
         sorted    <- sortEntity(filtered, request)
@@ -1233,7 +1236,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         res
           .sendEntity(
             HttpEntity.Streamed(
-              data = Source(seq.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)).toList.map(_.stringify.byteString)),
+              data = Source(
+                seq
+                  .map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+                  .toList
+                  .map(_.stringify.byteString)
+              ),
               contentLength = None,
               contentType = "application/x-ndjson".some
             )
@@ -1248,8 +1256,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .applyOn(rez => gzipConfig.handleResult(request, rez))
       }
       case JsArray(arr)
-        if !request.accepts("application/json") && (request
-          .accepts("application/yaml") || request.accepts("application/yml")) =>
+          if !request.accepts("application/json") && (request
+            .accepts("application/yaml") || request.accepts("application/yml")) =>
         res(Yaml.write(JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
@@ -1272,20 +1280,24 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
       case JsArray(arr)
-        if !request.accepts("application/json") && (request
-          .accepts("application/yaml+k8s") || request.accepts("application/yml+k8s")) =>
-          res(
-            Yaml.write(
-              JsArray(arr.map(o => Json.obj(
-                "apiVersion" -> "proxy.otoroshi.io/v1",
-                "kind"       -> resEntity.get.kind,
-                "metadata"   -> Json.obj(
-                  "name" -> o.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
-                ),
-                "spec"       -> (o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
-              )))
+          if !request.accepts("application/json") && (request
+            .accepts("application/yaml+k8s") || request.accepts("application/yml+k8s")) =>
+        res(
+          Yaml.write(
+            JsArray(
+              arr.map(o =>
+                Json.obj(
+                  "apiVersion" -> "proxy.otoroshi.io/v1",
+                  "kind"       -> resEntity.get.kind,
+                  "metadata"   -> Json.obj(
+                    "name" -> o.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
+                  ),
+                  "spec"       -> (o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+                )
+              )
             )
           )
+        )
           .as("application/yaml")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
@@ -1319,17 +1331,17 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
-      case JsArray(arr)                                                                                  =>
-        val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
-        val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
-        val pretty = prettyQuery match {
-          case Some("true") => true
+      case JsArray(arr)                                                                                    =>
+        val envelope       = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
+        val prettyQuery    = request.getQueryString("pretty").map(_.toLowerCase())
+        val pretty         = prettyQuery match {
+          case Some("true")  => true
           case Some("false") => false
-          case _ => env.defaultPrettyAdminApi
+          case _             => env.defaultPrettyAdminApi
         }
         val entityWithKind = JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))
-        val finalEntity = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
-        val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
+        val finalEntity    = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
+        val entityStr      = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
           .applyOnIf(addHeaders.nonEmpty) { r =>
@@ -1340,16 +1352,16 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           }
           .applyOn(rez => gzipConfig.handleResult(request, rez))
       case _                                                                                               =>
-        val envelope = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
-        val prettyQuery = request.getQueryString("pretty").map(_.toLowerCase())
-        val pretty = prettyQuery match {
-          case Some("true") => true
+        val envelope       = request.getQueryString("envelope").map(_.toLowerCase()).contains("true")
+        val prettyQuery    = request.getQueryString("pretty").map(_.toLowerCase())
+        val pretty         = prettyQuery match {
+          case Some("true")  => true
           case Some("false") => false
-          case _ => env.defaultPrettyAdminApi
+          case _             => env.defaultPrettyAdminApi
         }
         val entityWithKind = entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)
-        val finalEntity = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
-        val entityStr = if (pretty) finalEntity.prettify else finalEntity.stringify
+        val finalEntity    = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
+        val entityStr      = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
           .withHeaders("X-Pages" -> entity.pages.toString)

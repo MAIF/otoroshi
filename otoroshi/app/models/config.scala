@@ -703,7 +703,7 @@ case class GlobalConfig(
 
   def cleverClient(implicit env: Env): Option[CleverCloudClient] =
     cleverSettings match {
-      case None => None
+      case None           => None
       case Some(settings) => {
         val cleverSetting = CleverSettings(
           apiConsumerKey = settings.consumerKey,

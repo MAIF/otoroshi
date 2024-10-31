@@ -10,17 +10,11 @@ import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase } from '../util';
 
-import { Tooltip as ReactTooltip } from 'react-tooltip'
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 
-const FIELDS_SELECTOR = "otoroshi-fields-selector";
+const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
-const CORE_FIELDS = [
-  'enabled',
-  'clientId',
-  'clientName',
-  'stats',
-  'credentials'
-]
+const CORE_FIELDS = ['enabled', 'clientId', 'clientName', 'stats', 'credentials'];
 
 class ApikeyBearer extends Component {
   state = { bearer: null, cname: 'fas fa-copy' };
@@ -61,9 +55,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-        this.props.rawValue.clientId +
-        '/bearer?newSecret=' +
-        this.props.rawValue.clientSecret,
+          this.props.rawValue.clientId +
+          '/bearer?newSecret=' +
+          this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -96,8 +90,11 @@ class ApikeyBearer extends Component {
         <label className="col-sm-2 col-form-label">
           Apikey Bearer{' '}
           <span>
-            <i className="far fa-question-circle" data-tooltip-content="Your apikey as a bearer to pass in the Authorization header"
-              data-tooltip-id="apikey-bearer" />
+            <i
+              className="far fa-question-circle"
+              data-tooltip-content="Your apikey as a bearer to pass in the Authorization header"
+              data-tooltip-id="apikey-bearer"
+            />
             <ReactTooltip id="apikey-bearer" />
           </span>
         </label>
@@ -141,7 +138,7 @@ class ApikeyBearer extends Component {
             )}
           </div>
         </div>
-      </div >
+      </div>
     );
   }
 }
@@ -176,8 +173,11 @@ class ApikeySecret extends Component {
         <label className="col-sm-2 col-form-label">
           Apikey Secret{' '}
           <span>
-            <i className="far fa-question-circle" data-tooltip-content="The secret is a random key used to validate the API key"
-              data-tooltip-id="apikey-secret" />
+            <i
+              className="far fa-question-circle"
+              data-tooltip-content="The secret is a random key used to validate the API key"
+              data-tooltip-id="apikey-secret"
+            />
             <ReactTooltip id="apikey-secret" />
           </span>
         </label>
@@ -254,9 +254,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -336,8 +338,8 @@ class ResetQuotas extends Component {
 
 class CopyCredentials extends Component {
   state = {
-    copyIconName: 'fas fa-copy'
-  }
+    copyIconName: 'fas fa-copy',
+  };
 
   unsecuredCopyToClipboard = (text) => {
     const textArea = document.createElement('textarea');
@@ -360,12 +362,12 @@ class CopyCredentials extends Component {
       this.unsecuredCopyToClipboard(value);
     }
     this.setState({
-      copyIconName: 'fas fa-check'
+      copyIconName: 'fas fa-check',
     });
 
     setTimeout(() => {
       this.setState({
-        copyIconName: 'fas fa-copy'
+        copyIconName: 'fas fa-copy',
       });
     }, 2000);
   };
@@ -386,7 +388,7 @@ class CopyCredentials extends Component {
             type="button"
             className="btn btn-success btn-sm"
             onClick={() => {
-              this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret)
+              this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret);
             }}
           >
             <i className={this.state.copyIconName} /> Copy credentials to clipboard
@@ -398,7 +400,7 @@ class CopyCredentials extends Component {
 }
 
 function CopyFromLineItem({ item }) {
-  const [copyIconName, setCopyIconName] = useState('fas fa-copy')
+  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
 
   const unsecuredCopyToClipboard = (text) => {
     const textArea = document.createElement('textarea');
@@ -421,20 +423,22 @@ function CopyFromLineItem({ item }) {
       unsecuredCopyToClipboard(value);
     }
 
-    setCopyIconName('fas fa-check')
+    setCopyIconName('fas fa-check');
 
     setTimeout(() => {
-      setCopyIconName('fas fa-copy')
+      setCopyIconName('fas fa-copy');
     }, 2000);
   };
 
-  return <button
-    type="button"
-    className="btn btn-success btn-sm"
-    onClick={() => copy(item.clientId + ':' + item.clientSecret)}
-  >
-    <i className={copyIconName} />
-  </button>
+  return (
+    <button
+      type="button"
+      className="btn btn-success btn-sm"
+      onClick={() => copy(item.clientId + ':' + item.clientSecret)}
+    >
+      <i className={copyIconName} />
+    </button>
+  );
 }
 
 class DailyRemainingQuotas extends Component {
@@ -596,7 +600,7 @@ const ApiKeysConstants = {
         label: 'ApiKey Id',
         placeholder: 'The ApiKey id',
         help: 'The id is a unique random key that will represent this API key',
-        disabled: !window.location.pathname?.endsWith("/add")
+        disabled: !window.location.pathname?.endsWith('/add'),
       },
     },
     clientSecret: {
@@ -828,11 +832,15 @@ const ApiKeysConstants = {
         <SimpleBooleanInput
           value={item.enabled}
           onChange={(value) => {
-            nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-              .update({
-                ...item,
-                enabled: value,
-              }, 'clientId')
+            nextClient
+              .forEntityNext(nextClient.ENTITIES.APIKEYS)
+              .update(
+                {
+                  ...item,
+                  enabled: value,
+                },
+                'clientId'
+              )
               .then(() => table.update());
           }}
         />
@@ -854,8 +862,9 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
-                }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -911,7 +920,7 @@ export class ServiceApiKeysPage extends Component {
   state = {
     service: null,
     env: this.props.env,
-    loading: true
+    loading: true,
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
@@ -940,12 +949,10 @@ export class ServiceApiKeysPage extends Component {
 
   componentDidMount() {
     const fu = this.onRoutes
-      ? nextClient
-        .forEntityNext(nextClient.ENTITIES.ROUTES)
-        .findById(this.props.params.routeId)
+      ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-        .forEntityNext(nextClient.ENTITIES.SERVICES)
-        .findById(this.props.params.serviceId);
+          .forEntityNext(nextClient.ENTITIES.SERVICES)
+          .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -957,10 +964,9 @@ export class ServiceApiKeysPage extends Component {
           this.table.update();
         }
       });
-    })
-      .catch(_ => {
-        this.setState({ loading: false })
-      });
+    }).catch((_) => {
+      this.setState({ loading: false });
+    });
   }
 
   fetchAllApiKeys = () => {
@@ -999,74 +1005,77 @@ export class ServiceApiKeysPage extends Component {
   };
 
   render() {
-    return <Loader loading={this.state.loading}>
-      <Table
-        parentProps={this.props}
-        selfUrl={
-          this.onRoutes
-            ? // ? `services/${this.props.params.routeId}/apikeys`
-            `routes/${this.props.params.routeId}/apikeys`
-            : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
-        }
-        defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
-        defaultValue={() =>
-          nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-            .template()
-            .then((apk) => ({
-              ...apk,
-              clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-              authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
-            }))
-        }
-        _defaultValue={() => ({
-          clientId: faker.random.alphaNumeric(16),
-          clientSecret: faker.random.alphaNumeric(64),
-          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-          description: '',
-          enabled: true,
-          throttlingQuota: 100,
-          dailyQuota: 1000000,
-          monthlyQuota: 1000000000000000000,
-          authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
-        })}
-        itemName="ApiKey"
-        formSchema={ApiKeysConstants.formSchema(this)}
-        formFlow={ApiKeysConstants.formFlow}
-        columns={ApiKeysConstants.columns(this)}
-        fetchItems={this.fetchAllApiKeys}
-        updateItem={this.updateItem}
-        deleteItem={this.deleteItem}
-        createItem={this.createItem}
-        stayAfterSave={true}
-        injectTable={(table) => (this.table = table)}
-        showActions={true}
-        displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
-        showLink={false}
-        rowNavigation={true}
-        export={true}
-        kubernetesKind="apim.otoroshi.io/ApiKey"
-        navigateTo={(item) => {
-          if (this.onRoutes) {
-            this.props.history.push(
-              `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
-              // `/apikeys/edit/${item.clientId}`
-            );
-          } else {
-            this.props.history.push(
-              `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
-            );
+    return (
+      <Loader loading={this.state.loading}>
+        <Table
+          parentProps={this.props}
+          selfUrl={
+            this.onRoutes
+              ? // ? `services/${this.props.params.routeId}/apikeys`
+                `routes/${this.props.params.routeId}/apikeys`
+              : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
-        }}
-        itemUrl={(i) => {
-          if (this.onRoutes) {
-            return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
-          } else {
-            return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
+          defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
+          defaultValue={() =>
+            nextClient
+              .forEntityNext(nextClient.ENTITIES.APIKEYS)
+              .template()
+              .then((apk) => ({
+                ...apk,
+                clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+                authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
+              }))
           }
-        }}
-        extractKey={(item) => item.clientId}
-      />
-    </Loader>
+          _defaultValue={() => ({
+            clientId: faker.random.alphaNumeric(16),
+            clientSecret: faker.random.alphaNumeric(64),
+            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            description: '',
+            enabled: true,
+            throttlingQuota: 100,
+            dailyQuota: 1000000,
+            monthlyQuota: 1000000000000000000,
+            authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
+          })}
+          itemName="ApiKey"
+          formSchema={ApiKeysConstants.formSchema(this)}
+          formFlow={ApiKeysConstants.formFlow}
+          columns={ApiKeysConstants.columns(this)}
+          fetchItems={this.fetchAllApiKeys}
+          updateItem={this.updateItem}
+          deleteItem={this.deleteItem}
+          createItem={this.createItem}
+          stayAfterSave={true}
+          injectTable={(table) => (this.table = table)}
+          showActions={true}
+          displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          showLink={false}
+          rowNavigation={true}
+          export={true}
+          kubernetesKind="apim.otoroshi.io/ApiKey"
+          navigateTo={(item) => {
+            if (this.onRoutes) {
+              this.props.history.push(
+                `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
+                // `/apikeys/edit/${item.clientId}`
+              );
+            } else {
+              this.props.history.push(
+                `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
+              );
+            }
+          }}
+          itemUrl={(i) => {
+            if (this.onRoutes) {
+              return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
+            } else {
+              return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
+            }
+          }}
+          extractKey={(item) => item.clientId}
+        />
+      </Loader>
+    );
   }
 }
 
@@ -1080,16 +1089,16 @@ export class ApiKeysPage extends Component {
       clientId: true,
       clientName: true,
       stats: true,
-      credentials: true
-    }
+      credentials: true,
+    },
   };
 
-  ref = React.createRef()
+  ref = React.createRef();
 
   componentDidMount() {
     this.props.setTitle(`Apikeys`);
 
-    this.loadFields()
+    this.loadFields();
   }
 
   loadFields = () => {
@@ -1098,17 +1107,16 @@ export class ApiKeysPage extends Component {
 
       if (values.apikeys)
         this.setState({
-          fields: values.apikeys
-        })
-
+          fields: values.apikeys,
+        });
     } catch (e) {
       // console.log(e);
     } finally {
-      this.setState({ loading: false })
+      this.setState({ loading: false });
     }
-  }
+  };
 
-  saveFields = fields => {
+  saveFields = (fields) => {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
 
@@ -1122,188 +1130,199 @@ export class ApiKeysPage extends Component {
     } catch (e) {
       // console.log(e);
     }
-  }
-
-  onFieldsChange = fields => {
-    this.setState({
-      fields
-    }, () => {
-      this.saveFields(fields)
-      if (this.ref.current) {
-        this.ref.current.update()
-      }
-    })
-  }
-
-  fetchAllApiKeys = (paginationState) => {
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-      .findAllWithPagination({
-        ...paginationState,
-        fields: [
-          ...Object.keys(this.state.fields).map(field => this.state.fields[field] ? field : undefined)
-        ].filter(c => c),
-      })
   };
 
-  fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-    .template()
+  onFieldsChange = (fields) => {
+    this.setState(
+      {
+        fields,
+      },
+      () => {
+        this.saveFields(fields);
+        if (this.ref.current) {
+          this.ref.current.update();
+        }
+      }
+    );
+  };
+
+  fetchAllApiKeys = (paginationState) => {
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
+      ...paginationState,
+      fields: [
+        ...Object.keys(this.state.fields).map((field) =>
+          this.state.fields[field] ? field : undefined
+        ),
+      ].filter((c) => c),
+    });
+  };
+
+  fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).template();
 
   createItem = (ak) => {
     delete ak.authorizations;
     delete ak.authorizedGroup;
     // return BackOfficeServices.createStandaloneApiKey(ak);
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-      .create(ak)
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).create(ak);
   };
 
   updateItem = (ak) => {
     delete ak.authorizations;
     delete ak.authorizedGroup;
     // return BackOfficeServices.updateStandaloneApiKey(ak);
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-      .update(ak, 'clientId')
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).update(ak, 'clientId');
   };
 
   deleteItem = (ak) => {
     // return BackOfficeServices.deleteStandaloneApiKey(ak);
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-      .delete(ak, 'clientId')
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).delete(ak, 'clientId');
   };
 
-  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-  buildColumn = field => {
+  buildColumn = (field) => {
     return {
-      title: firstLetterUppercase(field.split(".").slice(-1)[0]),
+      title: firstLetterUppercase(field.split('.').slice(-1)[0]),
       filterId: firstLetterUppercase(field),
-      content: item => {
-        const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
+      content: (item) => {
+        const value = field.split('.').reduce((r, k) => (r ? r[k] : {}), item);
         if (Array.isArray(value)) {
-          return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
+          return (value || []).map((r) => JSON.stringify(r, null, 2)).join(',');
         } else if (this.isAnObject(value)) {
-          return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
-        } else if (typeof value == "boolean") {
-          return value ? 'Active' : 'Disabled'
+          return Object.entries(value || {})
+            .map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`)
+            .join(' - ');
+        } else if (typeof value == 'boolean') {
+          return value ? 'Active' : 'Disabled';
         } else {
-          return "" + value
+          return '' + value;
         }
       },
       notSortable: true,
-      notFilterable: true
-    }
-  }
+      notFilterable: true,
+    };
+  };
 
   render() {
     const { fields } = this.state;
 
-    const lowercaseFields = Object.entries(fields)
-      .map(([key, value]) => [key.toLowerCase(), value])
+    const lowercaseFields = Object.entries(fields).map(([key, value]) => [
+      key.toLowerCase(),
+      value,
+    ]);
 
     const columns = [
       ...ApiKeysConstants.columns(this),
       ...Object.keys(this.state.fields)
-        .filter(f => !CORE_FIELDS.includes(f))
-        .map(this.buildColumn)
-    ]
-      .filter((c) => {
-        if (!c)
-          return false
+        .filter((f) => !CORE_FIELDS.includes(f))
+        .map(this.buildColumn),
+    ].filter((c) => {
+      if (!c) return false;
 
-        return lowercaseFields
-          .find(([key, value]) => {
-            if (key === c.title?.toLowerCase() ||
-              key === c.filterId?.toLowerCase())
-              return value
-            return false
-          })
-      })
+      return lowercaseFields.find(([key, value]) => {
+        if (key === c.title?.toLowerCase() || key === c.filterId?.toLowerCase()) return value;
+        return false;
+      });
+    });
 
-    console.log(columns, fields)
+    console.log(columns, fields);
 
-    return <Loader loading={this.state.loading}>
-      <Table
-        ref={this.ref}
-        parentProps={this.props}
-        selfUrl={`apikeys`}
-        defaultTitle="All apikeys"
-        defaultValue={() =>
-          nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-            .template()
-            .then((apk) => ({
-              ...apk,
-              clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-              authorizedEntities: [],
-            }))
-        }
-        _defaultValue={() => ({
-          clientId: faker.random.alphaNumeric(16),
-          clientSecret: faker.random.alphaNumeric(64),
-          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-          description: '',
-          enabled: true,
-          throttlingQuota: 100,
-          dailyQuota: 1000000,
-          monthlyQuota: 1000000000000000000,
-          authorizedEntities: [],
-        })}
-        itemName="Apikey"
-        formSchema={ApiKeysConstants.formSchema(this)}
-        formFlow={ApiKeysConstants.formFlow}
-        columns={columns}
-        fields={fields}
-        coreFields={CORE_FIELDS}
-        addField={fieldPath => {
-          const newFields = {
-            ...fields,
-            [fieldPath]: true
+    return (
+      <Loader loading={this.state.loading}>
+        <Table
+          ref={this.ref}
+          parentProps={this.props}
+          selfUrl={`apikeys`}
+          defaultTitle="All apikeys"
+          defaultValue={() =>
+            nextClient
+              .forEntityNext(nextClient.ENTITIES.APIKEYS)
+              .template()
+              .then((apk) => ({
+                ...apk,
+                clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+                authorizedEntities: [],
+              }))
           }
-          this.setState({
-            fields: newFields
-          }, () => {
-            this.onFieldsChange(newFields)
-          })
-        }}
-        removeField={fieldPath => {
-          const { [fieldPath]: _, ...newFields } = fields;
+          _defaultValue={() => ({
+            clientId: faker.random.alphaNumeric(16),
+            clientSecret: faker.random.alphaNumeric(64),
+            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            description: '',
+            enabled: true,
+            throttlingQuota: 100,
+            dailyQuota: 1000000,
+            monthlyQuota: 1000000000000000000,
+            authorizedEntities: [],
+          })}
+          itemName="Apikey"
+          formSchema={ApiKeysConstants.formSchema(this)}
+          formFlow={ApiKeysConstants.formFlow}
+          columns={columns}
+          fields={fields}
+          coreFields={CORE_FIELDS}
+          addField={(fieldPath) => {
+            const newFields = {
+              ...fields,
+              [fieldPath]: true,
+            };
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          removeField={(fieldPath) => {
+            const { [fieldPath]: _, ...newFields } = fields;
 
-          this.setState({
-            fields: newFields
-          }, () => {
-            this.onFieldsChange(newFields)
-          })
-        }}
-        onToggleField={(column, enabled) => {
-          const newFields = {
-            ...fields,
-            [column]: enabled
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          onToggleField={(column, enabled) => {
+            const newFields = {
+              ...fields,
+              [column]: enabled,
+            };
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          fetchTemplate={this.fetchTemplate}
+          fetchItems={this.fetchAllApiKeys}
+          updateItem={this.updateItem}
+          deleteItem={this.deleteItem}
+          createItem={this.createItem}
+          stayAfterSave={true}
+          showActions={true}
+          displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          showLink={false}
+          rowNavigation={true}
+          export={true}
+          kubernetesKind="apim.otoroshi.io/ApiKey"
+          navigateTo={(item) =>
+            this.props.history.push({
+              pathname: `/apikeys/edit/${item.clientId}`,
+              query: { group: item.id, groupName: item.name },
+            })
           }
-          this.setState({
-            fields: newFields
-          }, () => {
-            this.onFieldsChange(newFields)
-          })
-        }}
-        fetchTemplate={this.fetchTemplate}
-        fetchItems={this.fetchAllApiKeys}
-        updateItem={this.updateItem}
-        deleteItem={this.deleteItem}
-        createItem={this.createItem}
-        stayAfterSave={true}
-        showActions={true}
-        displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
-        showLink={false}
-        rowNavigation={true}
-        export={true}
-        kubernetesKind="apim.otoroshi.io/ApiKey"
-        navigateTo={(item) =>
-          this.props.history.push({
-            pathname: `/apikeys/edit/${item.clientId}`,
-            query: { group: item.id, groupName: item.name },
-          })
-        }
-        itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
-        extractKey={(item) => item.clientId}
-      />
-    </Loader >
+          itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
+          extractKey={(item) => item.clientId}
+        />
+      </Loader>
+    );
   }
 }

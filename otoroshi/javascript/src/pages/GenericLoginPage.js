@@ -168,7 +168,14 @@ export class GenericLoginPage extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'var(--color-red)', width: '100%', textAlign: 'center', fontSize:'18px' }}>
+              <p
+                style={{
+                  color: 'var(--color-red)',
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: '18px',
+                }}
+              >
                 {!!this.state.error && this.state.error}
               </p>
             </div>
@@ -296,66 +303,72 @@ export class GenericLoginPageWithWebAuthn extends Component {
   render() {
     return (
       <div className="login-card">
-      <img src={this.props.otoroshiLogo} />
-      <div className="login-card-title">
-        <h1>Login</h1>
-        <p>Log in to Otoroshi to continue</p>
-      </div>
-      <form
-        className="login-card-body form-horizontal"
-        onSubmit={this.webAuthnLogin}
-        _method={this.props.method}
-        _action={this.props.action}
-      >
-        <input type="hidden" name="token" className="form-control" value={this.props.token} />
-        
-        <div className="row">
-          <label className="col-12">Username</label>
-          <div className="col-12">
-            <input
-              type="text"
-              name="username"
-              className="form-control"
-              value={this.props.username}
-              onChange={this.onChange}
-            />
-          </div>
+        <img src={this.props.otoroshiLogo} />
+        <div className="login-card-title">
+          <h1>Login</h1>
+          <p>Log in to Otoroshi to continue</p>
         </div>
-        <div className="row">
-          <label className="col-12">Password</label>
-          <div className="col-12">
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              value={this.props.password}
-              onChange={this.onChange}
-            />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <label className="col-sm-2 col-form-label" />
-          <div className="col-sm-10">
-            <p>{!this.state.error && this.state.message}</p>
-            <p style={{ color: 'var(--color-red)', width: '100%', textAlign: 'left', fontSize:'18px' }}>
-              {!!this.state.error && this.state.error}
-            </p>
-          </div>
-        </div>
-        <div className="row">
-          <div className="d-flex justify-content-around">
-            <button
-              type="submit"
-              className="btn btn-primaryColor btn-lg"
-              onClick={this.webAuthnLogin}
-            >
-              Login
-            </button>
-          </div>
-        </div>
+        <form
+          className="login-card-body form-horizontal"
+          onSubmit={this.webAuthnLogin}
+          _method={this.props.method}
+          _action={this.props.action}
+        >
+          <input type="hidden" name="token" className="form-control" value={this.props.token} />
 
-      </form>
-    </div>
+          <div className="row">
+            <label className="col-12">Username</label>
+            <div className="col-12">
+              <input
+                type="text"
+                name="username"
+                className="form-control"
+                value={this.props.username}
+                onChange={this.onChange}
+              />
+            </div>
+          </div>
+          <div className="row">
+            <label className="col-12">Password</label>
+            <div className="col-12">
+              <input
+                type="password"
+                name="password"
+                className="form-control"
+                value={this.props.password}
+                onChange={this.onChange}
+              />
+            </div>
+          </div>
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
+            <div className="col-sm-10">
+              <p>{!this.state.error && this.state.message}</p>
+              <p
+                style={{
+                  color: 'var(--color-red)',
+                  width: '100%',
+                  textAlign: 'left',
+                  fontSize: '18px',
+                }}
+              >
+                {!!this.state.error && this.state.error}
+              </p>
+            </div>
+          </div>
+          <div className="row">
+            <div className="d-flex justify-content-around">
+              <button
+                type="submit"
+                className="btn btn-primaryColor btn-lg"
+                onClick={this.webAuthnLogin}
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     );
   }
 }

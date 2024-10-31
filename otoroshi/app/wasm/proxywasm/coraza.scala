@@ -593,9 +593,11 @@ class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
   override def description: Option[String]                 = "Coraza WAF - Incoming Request Validtor plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
 
-  override def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(
+      ctx: NgIncomingRequestValidatorContext
+  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("ref").asOpt[String] match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None      => NgAccess.NgAllowed.vfuture
       case Some(ref) => {
         val plugin = NgCorazaWAF.getPlugin(ref, ctx.attrs)
         plugin.start(ctx.attrs).flatMap { _ =>

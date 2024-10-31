@@ -58,8 +58,8 @@ const UPDATE_ENTITIES = {
   WasmPlugin: (content) =>
     BackOfficeServices.nextClient.forEntityNext('wasm-plugins').create(content),
   Generic: (content, group, kind) => {
-    BackOfficeServices.nextClient.forEntityNextWithGroup(group, kind).create(content)
-  }
+    BackOfficeServices.nextClient.forEntityNextWithGroup(group, kind).create(content);
+  },
 };
 
 export function ResourceLoaderPage({ setTitle }) {
@@ -236,7 +236,7 @@ export function ResourceLoaderPage({ setTitle }) {
                       const content = resource.resource;
                       const k = resource.kind || '';
                       if (k.indexOf('/') > -1) {
-                        const parts = k.split("/");
+                        const parts = k.split('/');
                         const group = parts[0];
                         const kind = parts[1]; // TODO: find in meta stuff
                         return UPDATE_ENTITIES.Generic(content, group, kind);

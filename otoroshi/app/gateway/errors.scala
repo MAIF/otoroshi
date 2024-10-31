@@ -369,38 +369,41 @@ object Errors {
       emptyBody: Boolean,
       errorId: String
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    env.datastores.errorTemplateDataStore.findById(descriptorId).flatMap {
-      case Some(tmpl) => tmpl.some.vfuture
-      case None => env.datastores.errorTemplateDataStore.findById("global")
-    }.map {
-      case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
-      case Some(errorTemplate) => {
-        val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
-        if (accept.contains("text/html")) { // in a browser
-          status
-            .apply(
-              errorTemplate
-                .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
-            )
-            .as("text/html")
-            .withHeaders(
-              env.Headers.OtoroshiGatewayError -> "true",
-              env.Headers.OtoroshiErrorMsg     -> message,
-              env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-            )
-        } else {
-          status
-            .apply(
-              errorTemplate
-                .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
-            )
-            .withHeaders(
-              env.Headers.OtoroshiGatewayError -> "true",
-              env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-            )
+    env.datastores.errorTemplateDataStore
+      .findById(descriptorId)
+      .flatMap {
+        case Some(tmpl) => tmpl.some.vfuture
+        case None       => env.datastores.errorTemplateDataStore.findById("global")
+      }
+      .map {
+        case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
+        case Some(errorTemplate) => {
+          val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
+          if (accept.contains("text/html")) { // in a browser
+            status
+              .apply(
+                errorTemplate
+                  .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
+              )
+              .as("text/html")
+              .withHeaders(
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+              )
+          } else {
+            status
+              .apply(
+                errorTemplate
+                  .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
+              )
+              .withHeaders(
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+              )
+          }
         }
       }
-    }
   }
 
   private def errorTemplate(descriptorId: String)(implicit env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
@@ -541,7 +544,7 @@ object Errors {
       }
       case _                =>
         env.proxyState.errorTemplate("global") match {
-          case None => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
+          case None    => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
           case Some(_) => customResult("global", req, status, message, maybeCauseId, emptyBody, errorId)
         }
 
