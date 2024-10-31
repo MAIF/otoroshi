@@ -124,7 +124,7 @@ export function setupCorazaExtension(registerExtension) {
             rowNavigation: true,
             extractKey: (item) => item.id,
             export: true,
-            kubernetesKind: 'CorazaConfig',
+            kubernetesKind: 'coraza-waf.extensions.otoroshi.io/CorazaConfig',
           },
           null
         );
