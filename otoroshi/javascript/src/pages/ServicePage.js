@@ -772,7 +772,7 @@ export class ServicePage extends Component {
 
   exportService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = JSON.stringify({ ...this.state.service, kind: 'ServiceDescriptor' }, null, 2);
+    const json = JSON.stringify({ ...this.state.service, kind: 'proxy.otoroshi.io/ServiceDescriptor' }, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
