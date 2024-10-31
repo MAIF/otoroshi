@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.20.0] - 2024-10-31
+
+
+https://github.com/MAIF/otoroshi/milestone/104?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.19.0...v16.20.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.20.0
+
+
+### Added 
+
+- Use generic APIs on routes and apikeys tables. (#1935)
+- add a new kind of plugin to validate request as soon as possible in the proxy engine (#1987)
+- add an incoming request validator plugin that apply Coraza on incoming requests (#1988)
+- add an incoming request validator plugin that validates domain name against valid domain names list (#1989)
+- add an incoming request validator plugin that validates domain name against denied domain names list (#1990)
+- add a new "consumer" concept in EL to handle user or apikey at the same time (#1993)
+- store initial request in attrs (#1994)
+- add the ability for generic admin api to produce/consumer kind with group/kind (#2015)
+- plugin to enforce authentication of an OIDC auth. module based the access_token passed in a header (#2016)       
+      
+### Changed 
+
+- Change "create" label in sidebar (#1992)
+- add a way to override change callback on the select widget (#1996)
+- Make generic api output pretty json format (#2011)
+- Make generic api support gzip output (#2012)
+- Make generic api capable of wrapping response in an envelope (#2013)       
+      
+### Fixed 
+
+- apikey secret can't have a value containing : when using basic auth (#1985)
+- Build, Global and Maintenance Mode plugins should provide a way to overwrite the default error template and status (#2002)
+- Prevents codeInput to update the editor view when typing json (#2003)
+- Prevents the number input from changing an empty value to 0 while the user is typing (#2004)
+- auth. module logout sometimes does not work as expected when using multiple modules in the same browser session (#2008)
+- PrivateApps action sometimes does not work as expected when using multiple modules in the same browser session (#2009)       
+      
+### Documentation 
+
+- Document projection operators (#1999)       
+      
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+* @ptitFicus
+
 ## [16.19.0] - 2024-09-19
 
 
