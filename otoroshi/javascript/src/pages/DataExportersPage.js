@@ -442,7 +442,7 @@ export class DataExportersPage extends Component {
           extractKey={(item) => item?.id}
           injectTable={(ref) => (this.table = ref)}
           export={true}
-          kubernetesKind="DataExporter"
+          kubernetesKind="events.otoroshi.io/DataExporter"
           navigateTo={(exporter) => {
             this.props.history.push({
               pathname: `/exporters/edit/${exporter.id}`,
