@@ -11,28 +11,28 @@ import { SimpleBooleanInput } from '../components/inputs';
 
 const EXAMPLE = `// a JSON object
 {
-    "kind": "DataExporter",
+    "kind": "events.otoroshi.io/DataExporter",
     ...
 }
 
 // a JsArray
 [
     {
-        "kind": "DataExporter",
+        "kind": "events.otoroshi.io/DataExporter",
         ...
     },
     {
-        "kind": "ServiceDescriptor",
+        "kind": "proxy.otoroshi.io/ServiceDescriptor",
         ...
     }
 ]
 
 // YAML resources
-kind: DataExporter
+kind: events.otoroshi.io/DataExporter
 ...
 
 ---
-kind: ServiceDescriptor
+kind: proxy.otoroshi.io/ServiceDescriptor
 ...
 `;
 
@@ -57,6 +57,9 @@ const UPDATE_ENTITIES = {
     BackOfficeServices.nextClient.create(BackOfficeServices.nextClient.ENTITIES.BACKENDS, content),
   WasmPlugin: (content) =>
     BackOfficeServices.nextClient.forEntityNext('wasm-plugins').create(content),
+  Generic: (content, group, kind) => {
+    BackOfficeServices.nextClient.forEntityNextWithGroup(group, kind).create(content)
+  }
 };
 
 export function ResourceLoaderPage({ setTitle }) {
@@ -231,8 +234,15 @@ export function ResourceLoaderPage({ setTitle }) {
                     .filter((r) => r.enabled)
                     .map((resource) => {
                       const content = resource.resource;
-                      const k = resource.kind;
-                      return UPDATE_ENTITIES[k](content);
+                      const k = resource.kind || '';
+                      if (k.indexOf('/') > -1) {
+                        const parts = k.split("/");
+                        const group = parts[0];
+                        const kind = parts[1]; // TODO: find in meta stuff
+                        return UPDATE_ENTITIES.Generic(content, group, kind);
+                      } else {
+                        return UPDATE_ENTITIES[k](content);
+                      }
                     })
                 ).then(() => {
                   setLoadedResources(
