@@ -6,23 +6,23 @@ All release can be bound on the releases page of the @link:[repository](https://
 
 ```sh
 # Download the latest version
-wget https://github.com/MAIF/otoroshi/releases/download/v16.21.0-dev/otoroshi-16.21.0-dev.zip
-unzip ./otoroshi-16.21.0-dev.zip
-cd otoroshi-16.21.0-dev
+wget https://github.com/MAIF/otoroshi/releases/download/v16.20.1/otoroshi-16.20.1.zip
+unzip ./otoroshi-16.20.1.zip
+cd otoroshi-16.20.1
 ```
 
 ## From jar file
 
 ```sh
 # Download the latest version
-wget https://github.com/MAIF/otoroshi/releases/download/v16.21.0-dev/otoroshi.jar
+wget https://github.com/MAIF/otoroshi/releases/download/v16.20.1/otoroshi.jar
 ```
 
 ## From Docker
 
 ```sh
 # Download the latest version
-docker pull maif/otoroshi:16.21.0-dev-jdk11
+docker pull maif/otoroshi:16.20.1-jdk11
 ```
 
 ## From Sources
