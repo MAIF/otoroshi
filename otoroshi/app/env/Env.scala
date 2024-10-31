@@ -327,7 +327,7 @@ class Env(
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
   lazy val routeBaseDomain =
-    configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("new-route.oto.tools")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("newroute.oto.tools")
 
   lazy val defaultPrettyAdminApi: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.defaultPrettyAdminApi").getOrElse(true)
