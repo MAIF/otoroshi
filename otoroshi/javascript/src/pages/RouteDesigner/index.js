@@ -117,7 +117,7 @@ function MoreActionsButton({ value, menu, history }) {
           : 'route-composition';
       const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
       const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-      const json = JSON.stringify({ ...value, kind }, null, 2);
+      const json = JSON.stringify({ ...value, kind: 'proxy.otoroshi.io/' + kind }, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
