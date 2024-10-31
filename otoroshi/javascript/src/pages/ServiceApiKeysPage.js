@@ -1048,7 +1048,7 @@ export class ServiceApiKeysPage extends Component {
         showLink={false}
         rowNavigation={true}
         export={true}
-        kubernetesKind="ApiKey"
+        kubernetesKind="apim.otoroshi.io/ApiKey"
         navigateTo={(item) => {
           if (this.onRoutes) {
             this.props.history.push(
@@ -1298,7 +1298,7 @@ export class ApiKeysPage extends Component {
         showLink={false}
         rowNavigation={true}
         export={true}
-        kubernetesKind="ApiKey"
+        kubernetesKind="apim.otoroshi.io/ApiKey"
         navigateTo={(item) =>
           this.props.history.push({
             pathname: `/apikeys/edit/${item.clientId}`,
