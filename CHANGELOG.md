@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.20.1] - 2024-10-31
+
+
+https://github.com/MAIF/otoroshi/milestone/106?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.20.0...v16.20.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.20.1
+
+
+
+
+### Fixed 
+
+- OIDCAuthToken plugin can fails to fetch user infos on M2M style calls (#2018)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.20.0] - 2024-10-31
 
 
