@@ -33,7 +33,7 @@
     "apollo-link-ws": "1.0.8",
     "bcryptjs": "2.4.3",
     "browser-update": "3.3.22",
-    "byte-converter": "0.1.4",
+    "byte-converter": "0.2.0",
     "es-symbol": "1.1.2",
     "es6-shim": "0.35.5",
     "faker": "5.1.0",

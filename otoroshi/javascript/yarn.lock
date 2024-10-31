@@ -4329,10 +4329,10 @@ busboy@^1.6.0:
   dependencies:
     streamsearch "^1.1.0"
 
-byte-converter@0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/byte-converter/-/byte-converter-0.1.4.tgz#98aa9e97cf584df281d11b5bd40cee8a2a73ffa9"
-  integrity sha512-6GKMP5jdGP0peeGsyZSSX8kmuxFbE6cj1yGXF+7GQwB4t8puNbocTEpmWuwn3B+Iq6YOew+nn/EBJQ1cbtXVNw==
+byte-converter@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/byte-converter/-/byte-converter-0.2.0.tgz#3db7d167b94f1bb31a8f7583734e9032cfc2c7a2"
+  integrity sha512-/4JDjRebCcJEPVDHw1JW5+EiRT3QhnnYmUaXeCIamEJ/87NjkdOdfzznyEcaKjC/5ZGPK/p/EQfJrfl8vbqr6w==
 
 bytes@3.0.0:
   version "3.0.0"
