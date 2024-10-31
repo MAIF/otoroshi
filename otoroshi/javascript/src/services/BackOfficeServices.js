@@ -2117,6 +2117,21 @@ const fetchWrapperNext = (url, method = 'GET', body) => {
   }).then((r) => r.json());
 };
 
+const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
+  const headers = {
+    Accept: 'application/json',
+  };
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return fetch(`/bo/api/proxy/apis/${group}/v1${url}`, {
+    method,
+    credentials: 'include',
+    headers: headers,
+    body: body ? JSON.stringify(body) : undefined,
+  }).then((r) => r.json());
+};
+
 export const findAllWithPagination = (
   route,
   { page, pageSize, fields, filtered, sorted } = { page: 1 },
@@ -2213,6 +2228,18 @@ export const nextClient = {
       template: () => fetchWrapperNext(`/${entity}/_template`),
       schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
+    };
+  },
+  forEntityNextWithGroup: (group, entity) => {
+    return {
+      findAll: () => fetchWrapperNextWithGroup(group, `/${entity}`),
+      create: (content) => fetchWrapperNextWithGroup(group, `/${entity}`, 'POST', content),
+      update: (content) => fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'PUT', content),
+      findById: (entityId) => fetchWrapperNextWithGroup(group, `/${entity}/${entityId}`),
+      delete: (content) => fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'DELETE'),
+      deleteById: (id) => fetchWrapperNextWithGroup(group, `/${entity}/${id}`, 'DELETE'),
+      template: () => fetchWrapperNextWithGroup(group, `/${entity}/_template`),
+      form: () => fetchWrapperNextWithGroup(group, `/${entity}/_form`),
     };
   },
 };

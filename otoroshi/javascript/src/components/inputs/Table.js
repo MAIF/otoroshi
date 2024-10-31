@@ -581,7 +581,7 @@ export class Table extends Component {
       },
       body: JSON.stringify({
         apiVersion: 'proxy.otoroshi.io/v1',
-        kind: this.props.kubernetesKind,
+        kind: this.props.kubernetesKind.indexOf('/') > -1 ? this.props.kubernetesKind.split('/')[1] : this.props.kubernetesKind,
         metadata: {
           name,
         },
