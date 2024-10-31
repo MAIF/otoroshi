@@ -107,7 +107,7 @@ export class TeamsPage extends Component {
           }}
           itemUrl={(i) => `/bo/dashboard/teams/edit/${i.id}`}
           export={true}
-          kubernetesKind="Team"
+          kubernetesKind="organize.otoroshi.io/Team"
         />
       </div>
     );
