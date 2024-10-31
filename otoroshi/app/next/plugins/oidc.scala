@@ -343,32 +343,38 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
 
 }
 
-case class OIDCAuthTokenConfig(ref: String, opaque: Boolean, fetchUserProfile: Boolean, validateAudience: Boolean, headerName: String) extends NgPluginConfig {
+case class OIDCAuthTokenConfig(
+    ref: String,
+    opaque: Boolean,
+    fetchUserProfile: Boolean,
+    validateAudience: Boolean,
+    headerName: String
+) extends NgPluginConfig {
   def json: JsValue = OIDCAuthTokenConfig.format.writes(this)
 }
 
 object OIDCAuthTokenConfig {
-  val default = OIDCAuthTokenConfig("", true, true, false, "Authorization")
+  val default                        = OIDCAuthTokenConfig("", true, true, false, "Authorization")
   val configFlow: Seq[String]        = Seq("ref", "header_name", "opaque", "fetch_user_profile", "validate_audience")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "header_name" -> Json.obj(
+      "header_name"        -> Json.obj(
         "type"  -> "string",
         "label" -> "access_token header name"
       ),
-      "opaque"      -> Json.obj(
+      "opaque"             -> Json.obj(
         "type"  -> "bool",
         "label" -> "Opaque access_token"
       ),
       "fetch_user_profile" -> Json.obj(
-        "type" -> "bool",
-        "label" -> "Fetch user profile",
+        "type"  -> "bool",
+        "label" -> "Fetch user profile"
       ),
-      "validate_audience" -> Json.obj(
-        "type" -> "bool",
-        "label" -> "Validate audience",
+      "validate_audience"  -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Validate audience"
       ),
-      "ref" -> Json.obj(
+      "ref"                -> Json.obj(
         "type"  -> "select",
         "label" -> s"Auth. module",
         "props" -> Json.obj(
@@ -388,18 +394,18 @@ object OIDCAuthTokenConfig {
         opaque = json.select("opaque").asOpt[Boolean].getOrElse(false),
         fetchUserProfile = json.select("fetch_user_profile").asOpt[Boolean].getOrElse(false),
         validateAudience = json.select("validate_audience").asOpt[Boolean].getOrElse(false),
-        headerName = json.select("header_name").asOpt[String].getOrElse("Authorization"),
+        headerName = json.select("header_name").asOpt[String].getOrElse("Authorization")
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: OIDCAuthTokenConfig): JsValue = Json.obj(
-      "ref" -> o.ref,
-      "opaque" -> o.opaque,
+    override def writes(o: OIDCAuthTokenConfig): JsValue             = Json.obj(
+      "ref"                -> o.ref,
+      "opaque"             -> o.opaque,
       "fetch_user_profile" -> o.fetchUserProfile,
-      "validate_audience" -> o.validateAudience,
-      "header_name" -> o.headerName,
+      "validate_audience"  -> o.validateAudience,
+      "header_name"        -> o.headerName
     )
   }
 }
@@ -421,16 +427,20 @@ class OIDCAuthToken extends NgAccessValidator {
   override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
 
-  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(implicit env: Env, ec: ExecutionContext) = {
+  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ) = {
 
-    val authModule = oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
-    val token = ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption).getOrElse("")
-    val tokenHash = token.sha256
+    val authModule =
+      oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
+    val token      = ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption).getOrElse("")
+    val tokenHash  = token.sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {
       if (config.fetchUserProfile) {
         authModule.getUserInfoSafe(token, env.datastores.globalConfigDataStore.latest()).flatMap {
-          case Left(err) =>
+          case Left(err)      =>
             Errors
               .craftResponseResult(
                 "unauthorized",
@@ -450,7 +460,7 @@ class OIDCAuthToken extends NgAccessValidator {
                 Option(PrivateAppsUser.select(profile, oauth2Config.otoroshiDataField))
               )
               .map(_.asOpt[JsObject].getOrElse(Json.obj()))
-            val email = (profile \ oauth2Config.emailField)
+            val email                  = (profile \ oauth2Config.emailField)
               .asOpt[String]
               .orElse((profile \ "sub").asOpt[String])
               .getOrElse("No email")
@@ -479,16 +489,17 @@ class OIDCAuthToken extends NgAccessValidator {
               isRoute = true,
               oauth2Config
             ).flatMap {
-              case Left(err) => Errors
-                .craftResponseResult(
-                  err.display,
-                  Results.InternalServerError,
-                  ctx.request,
-                  None,
-                  None,
-                  attrs = ctx.attrs
-                )
-                .map(v => Left(v))
+              case Left(err)   =>
+                Errors
+                  .craftResponseResult(
+                    err.display,
+                    Results.InternalServerError,
+                    ctx.request,
+                    None,
+                    None,
+                    attrs = ctx.attrs
+                  )
+                  .map(v => Left(v))
               case Right(user) =>
                 user.save(
                   Duration(oauth2Config.sessionMaxAge, TimeUnit.MILLISECONDS)
@@ -501,7 +512,7 @@ class OIDCAuthToken extends NgAccessValidator {
             }
         }
       } else {
-        val profile = token.split("\\.")(1).decodeBase64.parseJson
+        val profile                = token.split("\\.")(1).decodeBase64.parseJson
         val meta: Option[JsObject] = PrivateAppsUser
           .select(profile, oauth2Config.otoroshiDataField)
           .asOpt[String]
@@ -510,7 +521,7 @@ class OIDCAuthToken extends NgAccessValidator {
             Option(PrivateAppsUser.select(profile, oauth2Config.otoroshiDataField))
           )
           .map(_.asOpt[JsObject].getOrElse(Json.obj()))
-        val email = (profile \ oauth2Config.emailField)
+        val email                  = (profile \ oauth2Config.emailField)
           .asOpt[String]
           .orElse((profile \ "sub").asOpt[String])
           .getOrElse("No email")
@@ -539,16 +550,17 @@ class OIDCAuthToken extends NgAccessValidator {
           isRoute = true,
           oauth2Config
         ).flatMap {
-          case Left(err) => Errors
-            .craftResponseResult(
-              err.display,
-              Results.InternalServerError,
-              ctx.request,
-              None,
-              None,
-              attrs = ctx.attrs
-            )
-            .map(v => Left(v))
+          case Left(err)   =>
+            Errors
+              .craftResponseResult(
+                err.display,
+                Results.InternalServerError,
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs
+              )
+              .map(v => Left(v))
           case Right(user) =>
             user.save(
               Duration(oauth2Config.sessionMaxAge, TimeUnit.MILLISECONDS)
@@ -562,47 +574,36 @@ class OIDCAuthToken extends NgAccessValidator {
       }
     }
 
-    env.datastores.privateAppsUserDataStore.findById(tokenHash).flatMap {
-      case Some(user)                                           =>
-        ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-        if (env.clusterConfig.mode == ClusterMode.Worker) {
-          env.clusterAgent.createSession(user)
+    env.datastores.privateAppsUserDataStore
+      .findById(tokenHash)
+      .flatMap {
+        case Some(user)                                           =>
+          ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+          if (env.clusterConfig.mode == ClusterMode.Worker) {
+            env.clusterAgent.createSession(user)
+          }
+          Right(NgAccess.NgAllowed).vfuture
+        case None if env.clusterConfig.mode == ClusterMode.Worker => {
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"private apps session $tokenHash not found locally - from helper")
+          env.clusterAgent.isSessionValid(tokenHash, Some(ctx.request)).flatMap {
+            case Some(user) =>
+              user.save(
+                Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+              )
+              ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+              Right(NgAccess.NgAllowed).vfuture
+            case None       => createSession()
+          }
         }
-        Right(NgAccess.NgAllowed).vfuture
-      case None if env.clusterConfig.mode == ClusterMode.Worker => {
-        if (Cluster.logger.isDebugEnabled)
-          Cluster.logger.debug(s"private apps session $tokenHash not found locally - from helper")
-        env.clusterAgent.isSessionValid(tokenHash, Some(ctx.request)).flatMap {
-          case Some(user) =>
-            user.save(
-              Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-            )
-            ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-            Right(NgAccess.NgAllowed).vfuture
-          case None       => createSession()
-        }
+        case None                                                 => createSession()
       }
-      case None => createSession()
-    }.flatMap { r =>
-      if (config.validateAudience) {
-        val profile = token.split("\\.")(1).decodeBase64.parseJson
-        val aud = profile.select("aud").asOpt[String].getOrElse("--")
-        Try(Uri.apply(aud)) match {
-          case Failure(e) =>  Errors
-            .craftResponseResult(
-              "unauthorized",
-              Results.Unauthorized,
-              ctx.request,
-              None,
-              None,
-              attrs = ctx.attrs
-            )
-            .map(v => Left(v))
-          case Success(uri) => {
-            val currentUrl = s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
-            if (currentUrl.startsWith(uri.toString())) {
-              r.vfuture
-            } else {
+      .flatMap { r =>
+        if (config.validateAudience) {
+          val profile = token.split("\\.")(1).decodeBase64.parseJson
+          val aud     = profile.select("aud").asOpt[String].getOrElse("--")
+          Try(Uri.apply(aud)) match {
+            case Failure(e)   =>
               Errors
                 .craftResponseResult(
                   "unauthorized",
@@ -613,13 +614,28 @@ class OIDCAuthToken extends NgAccessValidator {
                   attrs = ctx.attrs
                 )
                 .map(v => Left(v))
+            case Success(uri) => {
+              val currentUrl = s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
+              if (currentUrl.startsWith(uri.toString())) {
+                r.vfuture
+              } else {
+                Errors
+                  .craftResponseResult(
+                    "unauthorized",
+                    Results.Unauthorized,
+                    ctx.request,
+                    None,
+                    None,
+                    attrs = ctx.attrs
+                  )
+                  .map(v => Left(v))
+              }
             }
           }
+        } else {
+          r.vfuture
         }
-      } else {
-        r.vfuture
       }
-    }
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -627,7 +643,7 @@ class OIDCAuthToken extends NgAccessValidator {
       .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
       .getOrElse(OIDCAuthTokenConfig.default)
     env.proxyState.authModule(config.ref) match {
-      case None => {
+      case None                                     => {
         Errors
           .craftResponseResult(
             "bad auth. module",
@@ -666,19 +682,21 @@ class OIDCAuthToken extends NgAccessValidator {
               source = InHeader(config.headerName, "Bearer "),
               algoSettings = algoSettings
             )
-            jwtVerifier.verifyGen(
-              request = ctx.request,
-              desc = ctx.route.legacy,
-              apikey = ctx.apikey,
-              user = ctx.user,
-              elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-              attrs = ctx.attrs,
-            ) { _ =>
-              getSession(ctx, oauth2Config, config)
-            } .flatMap {
-              case Left(err) => NgAccess.NgDenied.apply(err).vfuture
-              case Right(v) => v.vfuture
-            }
+            jwtVerifier
+              .verifyGen(
+                request = ctx.request,
+                desc = ctx.route.legacy,
+                apikey = ctx.apikey,
+                user = ctx.user,
+                elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                attrs = ctx.attrs
+              ) { _ =>
+                getSession(ctx, oauth2Config, config)
+              }
+              .flatMap {
+                case Left(err) => NgAccess.NgDenied.apply(err).vfuture
+                case Right(v)  => v.vfuture
+              }
           }
         }
       }
