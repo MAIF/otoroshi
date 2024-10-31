@@ -46,7 +46,7 @@ export class JwtVerifiersPage extends Component {
           {isEditPage && (
             <Dropdown>
               <YAMLExportButton value={verifier} entityKind="JwtVerifier" />
-              <JsonExportButton value={verifier} entityKind="JwtVerifier" />
+              <JsonExportButton value={verifier} entityKind="security.otoroshi.io/JwtVerifier" />
               <SquareButton
                 level="danger"
                 onClick={() => {
@@ -96,7 +96,7 @@ export class JwtVerifiersPage extends Component {
           selfUrl="jwt-verifiers"
           defaultTitle="Global Jwt Verifiers"
           itemName="Jwt verifier"
-          kubernetesKind="JwtVerifier"
+          kubernetesKind="security.otoroshi.io/JwtVerifier"
           export={false}
           displayTrash={false}
           newForm={true}
