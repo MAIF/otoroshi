@@ -4,15 +4,12 @@ import isFunction from 'lodash/isFunction';
 import isString from 'lodash/isString';
 import { WizardFrame } from './wizardframe';
 
-const KEY_NAME_ESC = 'Escape';
-const KEY_EVENT_TYPE = 'keyup';
-
 function EscapeModalListener({ close, children }) {
 
   const ref = useRef()
 
   const handleEscKey = (event, onClose) => {
-    if (event.key === KEY_NAME_ESC) {
+    if (event.key === 'Escape') {
       onClose();
     }
   };
@@ -24,11 +21,11 @@ function EscapeModalListener({ close, children }) {
   };
 
   useEffect(() => {
-    document.addEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, close), false);
+    document.addEventListener('keyup', (event) => handleEscKey(event, close), false);
     document.addEventListener('mousedown', (event) => handleClickOutside(event, ref, close));
 
     return () => {
-      document.removeEventListener(KEY_EVENT_TYPE, (event) => handleEscKey(event, close), false);
+      document.removeEventListener('keyup', (event) => handleEscKey(event, close), false);
       document.removeEventListener('mousedown', (event) => handleClickOutside(event, ref, close));
     }
   }, [])
