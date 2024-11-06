@@ -452,7 +452,6 @@ object NgCorazaWAF {
       plugins(key)
     } else {
       //val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
-      //val url = "wasm/coraza-proxy-wasm-v0.5.0.wasm"
       val url = "wasm/coraza-proxy-wasm-v6fb6b5f34ffef5b87039dfd3d2543e244bbf2a0b.wasm"
       val p   = new CorazaPlugin(
         WasmConfig(
