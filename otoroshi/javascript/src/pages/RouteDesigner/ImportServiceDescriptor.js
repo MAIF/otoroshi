@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect} from 'react';
 import { NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from './FeedbackButton';
 import { convertAsRoute } from '../../services/BackOfficeServices';
@@ -9,7 +9,31 @@ import moment from 'moment';
 export function ImportServiceDescriptor({ hide }) {
   const [service, setService] = useState();
   const history = useHistory();
+  const modalRef = useRef(null);
 
+  const handleEscKey = useCallback((event) => {
+    if (event.key === "Escape") {
+      hide();
+    }
+  }, [hide]);
+
+  const handleClickOutside = useCallback((event) => {
+    if (modalRef.current && !modalRef.current.contains(event.target)) {
+      hide();
+    }
+  }, [hide]);
+
+  useEffect(() => {
+    document.addEventListener('keyup', handleEscKey, false);
+    document.addEventListener('mousedown', handleClickOutside);
+
+
+    return () => {
+      document.removeEventListener('keyup', handleEscKey, false);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [handleEscKey, handleClickOutside]);
+  
   function conversion() {
     return convertAsRoute(service).then((res) => {
       return BackOfficeServices.fetchService('prod', service).then((fullService) => {
@@ -50,7 +74,7 @@ export function ImportServiceDescriptor({ hide }) {
 
   return (
     <div className="wizard">
-      <div className="wizard-container">
+      <div className="wizard-container" ref={modalRef}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
           <label style={{ fontSize: '1.15rem' }}>
             <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
