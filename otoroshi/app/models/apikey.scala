@@ -1821,8 +1821,6 @@ object ApiKeyHelper {
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.some.left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
-                val aud = jwt.getAudience.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
-                println(s"audience is: ${aud}")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
                   .filter(_ => constraints.jwtAuth.keyPairSigned)
@@ -1893,6 +1891,7 @@ object ApiKeyHelper {
                         .build
                     Try(verifier.verify(jwt))
                       .filter { token =>
+                        val aud = token.getAudience.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
                         if (aud.isDefined) {
                           val currentUrl = req.theUrl
                           val audience = aud.get
