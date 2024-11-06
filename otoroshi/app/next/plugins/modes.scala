@@ -56,7 +56,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Global Maintenance mode"
   override def description: Option[String]                 =

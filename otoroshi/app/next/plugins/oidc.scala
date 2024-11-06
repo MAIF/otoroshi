@@ -100,7 +100,7 @@ class OIDCHeaders extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def multiInstance: Boolean            = false
+  override def multiInstance: Boolean            = true
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
@@ -179,7 +179,7 @@ object OIDCAccessTokenConfig {
 
 class OIDCAccessTokenValidator extends NgAccessValidator {
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def name: String                                = "OIDC access_token validator"
   override def defaultConfigObject: Option[NgPluginConfig] = OIDCAccessTokenConfig(
     config = OIDCThirdPartyApiKeyConfig(
@@ -270,7 +270,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
 
   override def name: String = "OIDC access_token as apikey"
 
-  override def multiInstance: Boolean = false
+  override def multiInstance: Boolean = true
 
   override def defaultConfigObject: Option[NgPluginConfig] = OIDCAccessTokenConfig(
     config = OIDCThirdPartyApiKeyConfig(

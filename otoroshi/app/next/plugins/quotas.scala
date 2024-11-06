@@ -27,7 +27,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean            = false
+  override def multiInstance: Boolean            = true
   override def core: Boolean                     = true
 
   override def name: String                = "Global per ip address throttling "
@@ -91,7 +91,7 @@ class GlobalThrottling extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -152,7 +152,7 @@ class ApikeyQuotas extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
