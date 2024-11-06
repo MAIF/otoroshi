@@ -668,7 +668,7 @@ class ApikeyAuthModule extends NgPreRouting {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = ApikeyAuthModuleConfig().some
   override def description: Option[String]                 =
     "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
