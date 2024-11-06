@@ -41,8 +41,8 @@ object InfoTokenHelper {
         val rnd = IdGenerator.token(16)
         val token: String = JWT.create()
           .withClaim("k", kind)
-          .withClaim("i", id)
-          .withClaim("r", rnd)
+          .withClaim("i",  env.aesEncrypt(id))
+          .withClaim("r", env.aesEncrypt(rnd))
           .withIssuedAt(DateTime.now().toDate)
           .withExpiresAt(DateTime.now().plus(secComTtl.toMillis).toDate)
           .sign(env.sha256Alg)
@@ -53,7 +53,7 @@ object InfoTokenHelper {
           exp = DateTime.now().plus(secComTtl.toMillis).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
-        ).withClaim("url", s"${env.rootScheme}${env.adminApiExposedHost}/.well-known/otoroshi/consumers/${rnd}?t=${token}")
+        ).withClaim("url", s"${env.rootScheme}${env.adminApiExposedHost}${env.bestExposedPort}/.well-known/otoroshi/consumers/${rnd}?t=${token}")
       }
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(

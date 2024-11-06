@@ -1153,6 +1153,12 @@ class Env(
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
     .getOrElse(httpsPort)
 
+  lazy val bestExposedPort: String = if (exposedRootSchemeIsHttps) {
+    exposedHttpsPort
+  } else {
+    exposedHttpPort
+  }
+
   lazy val proxyState = new NgProxyState(this)
 
   lazy val http2ClientProxyEnabled = configuration

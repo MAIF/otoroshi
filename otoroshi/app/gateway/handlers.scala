@@ -857,8 +857,8 @@ class GatewayRequestHandler(
             Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
           }
           case Success(token) => {
-            if (rnd == Option(token.getClaim("r").asString()).getOrElse("--")) {
-              val id = Option(token.getClaim("i").asString()).getOrElse("--")
+            if (rnd == Option(token.getClaim("r").asString()).map(v => env.aesDecrypt(v)).getOrElse("--")) {
+              val id = Option(token.getClaim("i").asString()).map(v => env.aesDecrypt(v)).getOrElse("--")
               Option(token.getClaim("k").asString()).getOrElse("--") match {
                 case "apikey" => {
                   env.proxyState.apikey(id) match {
