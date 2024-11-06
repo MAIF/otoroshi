@@ -10,16 +10,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -31,16 +22,11 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -1835,6 +1821,8 @@ object ApiKeyHelper {
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.some.left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
+                val aud = jwt.getAudience.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
+                println(s"audience is: ${aud}")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
                   .filter(_ => constraints.jwtAuth.keyPairSigned)
@@ -1904,6 +1892,15 @@ object ApiKeyHelper {
                         .acceptLeeway(10)
                         .build
                     Try(verifier.verify(jwt))
+                      .filter { token =>
+                        if (aud.isDefined) {
+                          val currentUrl = req.theUrl
+                          val audience = aud.get
+                          currentUrl.startsWith(audience)
+                        } else {
+                          true
+                        }
+                      }
                       .filter { token =>
                         val xsrfToken       = token.getClaim("xsrfToken")
                         val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
