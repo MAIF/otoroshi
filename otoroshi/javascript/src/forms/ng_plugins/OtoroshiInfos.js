@@ -10,7 +10,7 @@ export default {
       type: 'select',
       label: 'Token Version',
       props: {
-        options: ['Legacy', 'Latest'],
+        options: ['Legacy', 'Latest', 'Url'],
       },
     },
     ttl: {

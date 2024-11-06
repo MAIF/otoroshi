@@ -7,6 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
+import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
@@ -41,7 +42,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NoStackTrace
 
 case class ProxyDone(
@@ -520,7 +521,6 @@ class GatewayRequestHandler(
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) {
               Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
             }
-
           case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) {
               Some(setPrivateAppsCookies())
@@ -531,6 +531,8 @@ class GatewayRequestHandler(
             }
           case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(myProfile()) }
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/consumers/")     =>
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(consumer()) }
           case _ if relativeUri.startsWith("/.well-known/acme-challenge/") =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(letsEncrypt()) }
 
@@ -841,6 +843,43 @@ class GatewayRequestHandler(
       case None                                => serviceNotFound(request, attrs)
       case Some(route) if !route.route.enabled => serviceNotFound(request, attrs)
       case Some(route)                         => f(route.route)
+    }
+  }
+
+  def consumer() =  actionBuilder.async { req =>
+    val rnd = req.thePath.replaceFirst("/.well-known/otoroshi/consumers/", "")
+    req.getQueryString("t") match {
+      case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+      case Some(tokenRaw) => {
+        Try(JWT.require(env.sha256Alg).acceptLeeway(10).build().verify(tokenRaw)) match {
+          case Failure(e) => {
+            logger.error("error validation token", e)
+            Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+          }
+          case Success(token) => {
+            if (rnd == Option(token.getClaim("r").asString()).getOrElse("--")) {
+              val id = Option(token.getClaim("i").asString()).getOrElse("--")
+              Option(token.getClaim("k").asString()).getOrElse("--") match {
+                case "apikey" => {
+                  env.proxyState.apikey(id) match {
+                    case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+                    case Some(apikey) => Results.Ok(apikey.lightJson).vfuture
+                  }
+                }
+                case "user" => {
+                  env.proxyState.privateAppsSession(id) match {
+                    case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+                    case Some(session) => Results.Ok(session.lightJson).vfuture
+                  }
+                }
+                case _ => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+              }
+            } else {
+              Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+            }
+          }
+        }
+      }
     }
   }
 
