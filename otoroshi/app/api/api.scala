@@ -1344,6 +1344,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         val entityStr      = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
           .as("application/json")
+          .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
           }
