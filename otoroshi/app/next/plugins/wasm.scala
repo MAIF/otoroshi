@@ -1038,7 +1038,7 @@ class WasmOPA extends NgAccessValidator {
     .map(r => NgAccess.NgDenied(r))
 
   private def execute(vm: WasmVm, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext) = {
-    vm.callOpa("execute", ctx.wasmJson.stringify)
+    vm.callOpa("execute", (ctx.wasmJson - "attrs").stringify)
       .flatMap {
         case Right((rawResult, _)) =>
           val response  = Json.parse(if (rawResult.isEmpty) "[{\"result\":false}]" else rawResult)
