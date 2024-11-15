@@ -37,12 +37,16 @@ export class DynamicTitle extends Component {
 
     return (
       <div style={{ position: 'relative' }}>
-        <div className="page-header">
-          <h3 className="page-header_title">
-            {this.state.content} <Thumbtack {...this.props} getTitle={DynamicTitle.getContent} />
-          </h3>
+        <div className="page-header_title d-flex">
+          <div className="d-flex ms-3">
+              <h3 className="m-0 align-self-center">
+                {this.state.content} <Thumbtack {...this.props} getTitle={DynamicTitle.getContent} />
+              </h3>
+            </div>
         </div>
-        {this.props.children}
+        <div className="dynamicChildren">
+          {this.props.children}
+        </div>
       </div>
     );
   }

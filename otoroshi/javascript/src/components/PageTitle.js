@@ -5,7 +5,7 @@ export default function PageTitle({
   title,
   children,
   style = {},
-  className = 'ms-0 mb-3',
+  className = 'mb-3',
   ...props
 }) {
   return (
@@ -13,12 +13,12 @@ export default function PageTitle({
       className={`page-header_title d-flex align-item-center justify-content-between ${className}`}
       style={style}
     >
-      <div className="d-flex">
+      <div className="d-flex ms-3">
         <h3 className="m-0 align-self-center">
           {title} <Thumbtack {...props} />
         </h3>
       </div>
-      <div className="d-flex align-item-center justify-content-between">{children}</div>
+      <div className="d-flex align-item-center justify-content-between me-3 py-1">{children}</div>
     </div>
   );
 }

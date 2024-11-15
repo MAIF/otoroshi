@@ -790,7 +790,7 @@ export class Table extends Component {
             <div className="row">
               <div
                 className=""
-                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}
+                style={{ position: 'fixed', right: 0, top: 62, width: 'fit-content', zIndex:1001 }}
               >
                 <button
                   type="button"

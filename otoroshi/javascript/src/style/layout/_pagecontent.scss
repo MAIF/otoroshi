@@ -55,11 +55,16 @@
 }
 
 .page-header_title {
-  margin-top: 32px;
-  // margin-left: 25px;
-  padding-bottom: 9px;
+  // margin-top: 32px;
+  margin-left: -15px;
+  // padding-bottom: 9px;
   border-bottom: 1px solid var(--color-primary);
   color: var(--color-primary);
+  height: 50px;
+  background-color: var(--bg-color_level1);
+  position: fixed;
+  width: calc(100% - var(--sidebar-width));
+  z-index: 1000;
 }
 
 .sub-container {
