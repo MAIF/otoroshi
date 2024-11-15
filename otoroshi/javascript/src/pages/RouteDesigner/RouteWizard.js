@@ -418,6 +418,24 @@ export class RouteWizard extends React.Component {
     });
   };
 
+  displaySteps = (step, steps) => {
+    return Array.from({ length: steps }, (_, i) => {
+      const index = i + 1;
+      return (
+        <span
+          key={index}
+          style={{
+            display: 'inline-block',
+            width: 100,
+            height: 5,
+            marginRight: 5,
+            backgroundColor: index === step ? 'var(--color-primary)' : 'var(--bg-color_level3)',
+          }}
+        />
+      );
+    });
+  }
+
   render() {
     const { steps, step, error } = this.state;
 
@@ -431,8 +449,9 @@ export class RouteWizard extends React.Component {
                 onClick={() => this.props.hide()}
                 style={{ cursor: 'pointer' }}
               />
-              <span>{`Create a new route(Step ${step <= steps ? step : steps} of ${steps})`}</span>
+              <span>Create a new route</span>
             </label>
+            <div className="steps-bar">{this.displaySteps(step, steps)}</div>
 
             <div className="wizard-content">
               {step === 1 && (
