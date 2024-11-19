@@ -367,23 +367,13 @@ const LoaderItem = ({ text, timeout }) => {
         alignItems: "center",
         justifyContent: "center",
         marginBottom: "6px",
+        animation: `routePlugin 1s ease-in-out forwards`,
+        animationDelay: `${timeout * 2}ms`,
+        opacity:0
       }}
+      className="anim_route_plugin"
     >
-      <Loader loading={loading} minLoaderTime={timeout}>
-        <button
-          className="btn btn-primaryColor mx-auto"
-          style={{
-            borderRadius: "50%",
-            width: "32px",
-            height: "32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <i className="fas fa-check" />
-        </button>
-      </Loader>
+
       <div
         style={{
           flex: 1,

@@ -891,3 +891,15 @@
         background-position: 0 0;
     }
 }
+
+  
+  @keyframes routePlugin {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  }
