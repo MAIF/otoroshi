@@ -294,7 +294,7 @@ export const Informations = forwardRef(
     const flow = [
       {
         type: 'group',
-        name: 'Expose your route',
+        name: 'Publish your route',
         fields: ['enabled'],
       },
       '_loc',
