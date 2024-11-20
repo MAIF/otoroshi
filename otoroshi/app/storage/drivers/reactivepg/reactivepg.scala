@@ -1019,30 +1019,6 @@ class ReactivePgRedis(
             }
           }
           case _ => Some(-1L)
-          // case (Some(expirationDate), Some(now), Some(ttlrow)) => {
-          //   if (ttlrow.getYears == 1000) {
-          //     Some(-1L) // here it's default ttl so nothing to do
-          //   } else {
-          //     if (expirationDate.isBefore(now)) {
-          //       hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
-          //       Some(-1L)
-          //     } else {
-          //       if (expirationDate.isEqual(now)) {
-          //         hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
-          //         Some(-1L)
-          //       } else {
-          //         val ttl = ChronoUnit.MILLIS.between(now, expirationDate)
-          //         if (ttl > 0) {
-          //           ttl.some
-          //         } else {
-          //           hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
-          //           Some(-1L)
-          //         }
-          //       }
-          //     }
-          //   }
-          // }
-          // case _ => Some(-1L)
         }
       }.map(_.filter(_ > -1).getOrElse(-1))
   }
