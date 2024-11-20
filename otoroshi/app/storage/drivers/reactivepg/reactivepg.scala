@@ -851,16 +851,16 @@ class ReactivePgRedis(
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] =
-    measure("pg.ops.del") {
-      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
-      queryRaw(
-        s"delete from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
-        keys
-      ) { _ =>
-        keys.size
-      }
-    }
+  override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
+    // measure("pg.ops.del") {
+    //   val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
+    //   queryRaw(
+    //     s"delete from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
+    //     keys
+    //   ) { _ =>
+    //     keys.size
+    //   }
+    // }
 
   def hardDelete(keys: String*): Future[Long] =
     measure("pg.ops.del") {
