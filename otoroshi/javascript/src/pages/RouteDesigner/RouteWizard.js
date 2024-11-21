@@ -75,9 +75,8 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn py-3 wizard-route-chooser  ${
-            state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
-          }`}
+          className={`btn py-3 wizard-route-chooser  ${state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
+            }`}
           onClick={() => onChange(kind)}
           key={kind}
         >
@@ -204,10 +203,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ["mock", "graphql"].includes(state.route.kind)
         ? {
-            pahtname: "/",
-            hostname: "",
-            protocol: "https://",
-          }
+          pahtname: "/",
+          hostname: "",
+          protocol: "https://",
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes("https");
 
@@ -269,9 +268,9 @@ const ProcessStep = ({ state, history }) => {
 
   const pluginsLength = PLUGINS[state.route.kind].length;
 
-  const timers = PLUGINS[state.route.kind].reduce((acc, _, i) => {
-    if (i === 0) return [100 + Math.floor(Math.random() * 300)];
-    return [...acc, acc[i - 1] + 100 + Math.floor(Math.random() * 300)];
+  const timers = [...PLUGINS[state.route.kind], {}, {}].reduce((acc, _, i) => {
+    if (i === 0) return [100 + Math.floor(Math.random() * 250)];
+    return [...acc, acc[i - 1] + 100 + Math.floor(Math.random() * 250)];
   }, []);
 
   return (
@@ -287,79 +286,50 @@ const ProcessStep = ({ state, history }) => {
           key={plugin}
         />
       ))}
-      <Loader
-        loading={loading}
-        minLoaderTime={
-          pluginsLength === 0 ? 1500 : 100 + timers[timers.length - 1]
-        }
-        loadingChildren={
-          <h3 style={{ textAlign: "center" }} className="mt-3">
-            Summary
-          </h3>
-        }
-      >
-        {pluginsLength === 0 && (
+
+      <div className="mt-3">
+        <LoaderItem
+          timeout={timers[timers.length - 2]}
+          text={<p style={{ color: 'var(--color_level3)' }}>Your route is now available</p>}
+        />
+      </div>
+
+      <LoaderItem timeout={timers[timers.length - 1]}>
+        <div className="d-flex">
           <button
-            className="btn btn-primaryColor mx-auto"
-            style={{ borderRadius: "50%", width: "42px", height: "42px" }}
+            className="btn btn-primaryColor"
+            onClick={() => {
+              if (["mock", "graphql"].includes(state.route.kind))
+                history.push(`/routes/${createdRoute.id}?tab=flow`, {
+                  plugin:
+                    state.route.kind === "mock"
+                      ? "cp:otoroshi.next.plugins.MockResponse"
+                      : "cp:otoroshi.next.plugins.GraphQLBackend",
+                });
+              else history.push(`/routes/${createdRoute.id}?tab=flow`);
+            }}
           >
-            <i className="fas fa-check" />
-          </button>
-        )}
-        <div
-          className="mt-3"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <h3>Your route is now available!</h3>
-          <div className="d-flex">
-            <button
-              className="btn btn-primaryColor"
-              onClick={() => {
-                if (["mock", "graphql"].includes(state.route.kind))
-                  history.push(`/routes/${createdRoute.id}?tab=flow`, {
-                    plugin:
-                      state.route.kind === "mock"
-                        ? "cp:otoroshi.next.plugins.MockResponse"
-                        : "cp:otoroshi.next.plugins.GraphQLBackend",
-                  });
-                else history.push(`/routes/${createdRoute.id}?tab=flow`);
-              }}
-            >
-              {state.route.kind === "mock"
-                ? "Start creating mocks"
-                : state.route.kind === "graphql"
+            {state.route.kind === "mock"
+              ? "Start creating mocks"
+              : state.route.kind === "graphql"
                 ? "Start creating schema"
                 : "Start editing plugins"}
-            </button>
-            <button
-              className="ms-2 btn btn-primaryColor"
-              onClick={() => {
-                history.push(`/routes/${createdRoute.id}?tab=informations`);
-              }}
-            >
-              Publish your route
-            </button>
-          </div>
+          </button>
+          <button
+            className="ms-2 btn btn-primaryColor"
+            onClick={() => {
+              history.push(`/routes/${createdRoute.id}?tab=informations`);
+            }}
+          >
+            Publish your route
+          </button>
         </div>
-      </Loader>
+      </LoaderItem>
     </>
   );
 };
 
-const LoaderItem = ({ text, timeout }) => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), timeout);
-
-    return () => timeout;
-  }, []);
-
+const LoaderItem = ({ text, timeout, children }) => {
   return (
     <div
       style={{
@@ -369,20 +339,19 @@ const LoaderItem = ({ text, timeout }) => {
         marginBottom: "6px",
         animation: `routePlugin 1s ease-in-out forwards`,
         animationDelay: `${timeout * 2}ms`,
-        opacity:0
+        opacity: 0
       }}
-      className="anim_route_plugin"
     >
-
       <div
         style={{
           flex: 1,
           marginLeft: "12px",
-          fontWeight: loading ? "normal" : "bold",
+          fontWeight: "bold",
         }}
       >
         {text}
       </div>
+      {children}
     </div>
   );
 };
@@ -517,11 +486,10 @@ export class RouteWizard extends React.Component {
 
               {step <= 4 && (
                 <div
-                  className={`mt-auto d-flex align-items-center ${
-                    step !== 1
-                      ? "justify-content-between"
-                      : "justify-content-end"
-                  }`}
+                  className={`mt-auto d-flex align-items-center ${step !== 1
+                    ? "justify-content-between"
+                    : "justify-content-end"
+                    }`}
                 >
                   {step !== 1 && (
                     <Button
