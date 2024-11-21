@@ -6,6 +6,7 @@ import io.otoroshi.wasm4s.scaladsl.WasmVmData
 import org.extism.sdk.{ExtismCurrentPlugin, HostUserData}
 import org.extism.sdk.wasmotoroshi._
 import otoroshi.env.Env
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgPluginHttpResponse
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._
@@ -23,10 +24,12 @@ object VmData {
     tickPeriod = -1,
     respRef = new AtomicReference[mvc.Result](null),
     bodyInRef = new AtomicReference[ByteString](null),
-    bodyOutRef = new AtomicReference[ByteString](null)
+    bodyOutRef = new AtomicReference[ByteString](null),
+    requestRef = None,
+    routeRef = None,
   )
   def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
-  def from(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
+  def from(request: RequestHeader, route: Option[NgRoute], attrs: TypedMap)(implicit env: Env): VmData = {
     val remote = request.headers
       .get("remote-address")
       .getOrElse(s"${request.connection.remoteAddress.toString.substring(1)}:${1234}")
@@ -35,6 +38,8 @@ object VmData {
       respRef = new AtomicReference[play.api.mvc.Result](null),
       bodyInRef = new AtomicReference[ByteString](null),
       bodyOutRef = new AtomicReference[ByteString](null),
+      requestRef = Some(request),
+      routeRef = route,
       tickPeriod = -1,
       properties = Map(
         "plugin_name"         -> "foo".bytes,
@@ -83,23 +88,25 @@ object VmData {
 }
 
 case class VmData(
-    configuration: String,
-    properties: Map[String, Array[Byte]],
-    tickPeriod: Int = -1,
-    respRef: AtomicReference[play.api.mvc.Result],
-    bodyInRef: AtomicReference[ByteString],
-    bodyOutRef: AtomicReference[ByteString]
+   configuration: String,
+   properties: Map[String, Array[Byte]],
+   tickPeriod: Int = -1,
+   respRef: AtomicReference[play.api.mvc.Result],
+   bodyInRef: AtomicReference[ByteString],
+   bodyOutRef: AtomicReference[ByteString],
+   requestRef: Option[RequestHeader],
+   routeRef: Option[NgRoute],
 ) extends HostUserData
     with WasmVmData {
-  def withRequest(request: RequestHeader, attrs: TypedMap)(implicit env: Env): VmData = {
+  def withRequest(request: RequestHeader, route: Option[NgRoute], attrs: TypedMap)(implicit env: Env): VmData = {
     VmData
-      .from(request, attrs)
+      .from(request, route, attrs)
       .copy(
         configuration = configuration,
         tickPeriod = tickPeriod,
         respRef = respRef,
         bodyInRef = bodyInRef,
-        bodyOutRef = bodyOutRef
+        bodyOutRef = bodyOutRef,
       )
   }
   def withResponse(response: NgPluginHttpResponse, attrs: TypedMap, body_bytes: Option[ByteString])(implicit
@@ -129,17 +136,21 @@ case class VmData(
       tickPeriod = tickPeriod,
       respRef = respRef,
       bodyInRef = bodyInRef,
-      bodyOutRef = bodyOutRef
+      bodyOutRef = bodyOutRef,
+      requestRef = requestRef,
+      routeRef = routeRef,
     )
   }
   def httpResponse: Option[play.api.mvc.Result] = Option(respRef.get())
   def bodyIn: Option[ByteString]                = Option(bodyInRef.get())
   def bodyOut: Option[ByteString]               = Option(bodyOutRef.get())
+  def request: Option[RequestHeader]            = requestRef
+  def route: Option[NgRoute]                    = routeRef
 }
 
 trait Api {
 
-  def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result
+  def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int, data: VmData): Result
 
   def proxyResumeStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result
 

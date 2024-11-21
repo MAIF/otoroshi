@@ -20,11 +20,13 @@ class NgIncomingRequestValidatorAllowedDomainNames extends NgIncomingRequestVali
   override def description: Option[String]                 = "Globally allowed domain names plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(
+      ctx: NgIncomingRequestValidatorContext
+  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) => {
-        val domain = ctx.request.theDomain
+        val domain                  = ctx.request.theDomain
         val (wildcard, no_wildcard) = domains.partition(_.contains("*"))
         if (no_wildcard.contains(domain) || wildcard.exists(str => RegexPool(str).matches(domain))) {
           NgAccess.NgAllowed.vfuture
@@ -47,11 +49,13 @@ class NgIncomingRequestValidatorDeniedDomainNames extends NgIncomingRequestValid
   override def description: Option[String]                 = "Globally denied domain names plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(
+      ctx: NgIncomingRequestValidatorContext
+  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) => {
-        val domain = ctx.request.theDomain
+        val domain                  = ctx.request.theDomain
         val (wildcard, no_wildcard) = domains.partition(_.contains("*"))
         if (no_wildcard.contains(domain) || wildcard.exists(str => RegexPool(str).matches(domain))) {
           NgAccess.NgDenied(Results.Forbidden("")).vfuture

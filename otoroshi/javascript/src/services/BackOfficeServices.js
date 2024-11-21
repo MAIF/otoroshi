@@ -2171,7 +2171,7 @@ export const findAllWithPagination = (
       data: rows,
       pages: Math.ceil(xCount / xPageSize),
       offset: xOffset,
-      ngPages: pages
+      ngPages: pages,
     }));
   });
 };
@@ -2222,9 +2222,11 @@ export const nextClient = {
         findAllWithPagination(entity, paginationState, '/bo/api/proxy/apis/any/v1/'),
       findAll: () => fetchWrapperNext(`/${entity}`),
       create: (content) => fetchWrapperNext(`/${entity}`, 'POST', content),
-      update: (content, fieldId = "id") => fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'PUT', content),
+      update: (content, fieldId = 'id') =>
+        fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'PUT', content),
       findById: (entityId) => fetchWrapperNext(`/${entity}/${entityId}`),
-      delete: (content, fieldId = "id") => fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'DELETE'),
+      delete: (content, fieldId = 'id') =>
+        fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNext(`/${entity}/${id}`, 'DELETE'),
       deleteAll: () => fetchWrapperNext(`/${entity}`, 'DELETE'),
       template: () => fetchWrapperNext(`/${entity}/_template`),
@@ -2237,7 +2239,8 @@ export const nextClient = {
     return {
       findAll: () => fetchWrapperNextWithGroup(group, `/${entity}`),
       create: (content) => fetchWrapperNextWithGroup(group, `/${entity}`, 'POST', content),
-      update: (content) => fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'PUT', content),
+      update: (content) =>
+        fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapperNextWithGroup(group, `/${entity}/${entityId}`),
       delete: (content) => fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNextWithGroup(group, `/${entity}/${id}`, 'DELETE'),

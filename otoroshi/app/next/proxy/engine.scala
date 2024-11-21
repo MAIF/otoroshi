@@ -782,16 +782,16 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(implicit
-    ec: ExecutionContext,
-    env: Env,
-    report: NgExecutionReport,
-    globalConfig: GlobalConfig,
-    attrs: TypedMap,
-    mat: Materializer
+      ec: ExecutionContext,
+      env: Env,
+      report: NgExecutionReport,
+      globalConfig: GlobalConfig,
+      attrs: TypedMap,
+      mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
     if (globalConfig.incomingRequestValidators.nonEmpty) {
       val all_plugins = globalConfig.incomingRequestValidators.incomingRequestValidatorPlugins(request)
-      var sequence = NgReportPluginSequence(
+      var sequence    = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "incoming-request-validator-plugins",
         start = System.currentTimeMillis(),
@@ -801,11 +801,11 @@ class ProxyEngine() extends RequestHandler {
         plugins = Seq.empty
       )
       def markPluginItem(
-                          item: NgReportPluginSequenceItem,
-                          ctx: NgIncomingRequestValidatorContext,
-                          debug: Boolean,
-                          result: JsValue
-                        ): Unit = {
+          item: NgReportPluginSequenceItem,
+          ctx: NgIncomingRequestValidatorContext,
+          debug: Boolean,
+          result: JsValue
+      ): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -818,7 +818,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      val _ctx = NgIncomingRequestValidatorContext(
+      val _ctx        = NgIncomingRequestValidatorContext(
         snowflake = snowflake,
         request = request,
         config = Json.obj(),
@@ -1210,7 +1210,8 @@ class ProxyEngine() extends RequestHandler {
         FEither.left(
           NgResultProxyEngineError(
             otoroshiJsonError(
-              Json.obj("error" -> "errors.service.in.maintenance", "error_description" -> "Service in maintenance mode"),
+              Json
+                .obj("error" -> "errors.service.in.maintenance", "error_description" -> "Service in maintenance mode"),
               Results.ServiceUnavailable,
               attrs.get(otoroshi.next.plugins.Keys.RouteKey),
               attrs,

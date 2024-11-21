@@ -8,6 +8,7 @@ import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
+import otoroshi.models.ApiKeyHelper
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
@@ -476,7 +477,8 @@ case class NgClientCredentialTokenEndpointBody(
     clientId: String,
     clientSecret: String,
     scope: Option[String],
-    bearerKind: String
+    bearerKind: String,
+    aud: Option[String],
 )
 case class NgClientCredentialTokenEndpointConfig(expiration: FiniteDuration, defaultKeyPair: String)
     extends NgPluginConfig                   {
@@ -508,7 +510,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
   override def name: String = "Client credential token endpoint"
 
   override def description: Option[String] =
-    "This plugin provide the endpoint for the client_credential flow token endpoint".some
+    "This plugin provide the endpoint for the client_credential flow".some
 
   override def useDelegates: Boolean = false
 
@@ -579,7 +581,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       ctx: NgbBackendCallContext
   )(implicit env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
-      case NgClientCredentialTokenEndpointBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
+      case NgClientCredentialTokenEndpointBody("client_credentials", clientId, clientSecret, scope, bearerKind, aud) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
           case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
@@ -604,7 +606,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
               .withClaim("cid", apiKey.clientId)
               .withIssuer(ctx.rawRequest.theProtocol + "://" + ctx.rawRequest.host)
               .withSubject(apiKey.clientId)
-              .withAudience("otoroshi")
+              .withAudience(aud.getOrElse("otoroshi"))
               .withKeyId(keyPairId)
               .sign(algo)
             // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
@@ -675,11 +677,12 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
         body.get("client_id"),
         body.get("client_secret"),
         body.get("scope"),
-        body.get("bearer_kind")
+        body.get("bearer_kind"),
+        body.get("aud"),
       ) match {
-        case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind) =>
+        case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind, aud) =>
           handleTokenRequest(
-            NgClientCredentialTokenEndpointBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt")),
+            NgClientCredentialTokenEndpointBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt"), aud),
             config,
             ctx
           )
@@ -700,7 +703,8 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
                   clientId,
                   clientSecret,
                   None,
-                  body.getOrElse("bearer_kind", "jwt")
+                  body.getOrElse("bearer_kind", "jwt"),
+                  body.get("aud")
                 ),
                 config,
                 ctx

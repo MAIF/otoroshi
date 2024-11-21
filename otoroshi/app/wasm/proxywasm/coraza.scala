@@ -12,7 +12,9 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
@@ -79,11 +81,11 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val pluginConfigurationSize = rules.stringify.byteString.length
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
-    new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
+    new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m, vmd) => logCallback(l, m, vmd)), env)
   private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
-  def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
-    CorazaTrailEvent(level, msg).toAnalytics()
+  def logCallback(level: org.slf4j.event.Level, msg: String, data: VmData): Unit = {
+    CorazaTrailEvent(level, msg, data.request, data.route).debug(evt => evt.toJson.prettify.debugPrintln).toAnalytics()
   }
 
   def isStarted(): Boolean = started.get()
@@ -217,7 +219,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs)(env)
+    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs         = new Parameters(3).pushInts(contextId, sizeHeaders, endOfStream)
@@ -249,7 +251,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs)(env)
+    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody    = body_bytes.size.bytes.length
@@ -449,8 +451,7 @@ object NgCorazaWAF {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      //val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
-      val url = "wasm/coraza-proxy-wasm-v0.5.0.wasm"
+      val url = "wasm/coraza-proxy-wasm-v6fb6b5f34ffef5b87039dfd3d2543e244bbf2a0b.wasm"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
@@ -593,9 +594,11 @@ class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
   override def description: Option[String]                 = "Coraza WAF - Incoming Request Validtor plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
 
-  override def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(
+      ctx: NgIncomingRequestValidatorContext
+  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("ref").asOpt[String] match {
-      case None => NgAccess.NgAllowed.vfuture
+      case None      => NgAccess.NgAllowed.vfuture
       case Some(ref) => {
         val plugin = NgCorazaWAF.getPlugin(ref, ctx.attrs)
         plugin.start(ctx.attrs).flatMap { _ =>
@@ -758,7 +761,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String) extends AnalyticEvent {
+case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String, request: Option[RequestHeader], route: Option[NgRoute]) extends AnalyticEvent {
 
   override def `@service`: String            = "--"
   override def `@serviceId`: String          = "--"
@@ -797,7 +800,9 @@ case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String) extends A
       "level"      -> level.name(),
       "raw"        -> msg,
       "msg"        -> txt,
-      "fields"     -> JsObject(fields.mapValues(JsString.apply))
+      "fields"     -> JsObject(fields.mapValues(JsString.apply)),
+      "route"      -> route.map(_.json).getOrElse(JsNull).asValue,
+      "request"    -> request.map(JsonHelpers.requestToJson).getOrElse(JsNull).asValue,
     )
   }
 }

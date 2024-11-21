@@ -229,6 +229,7 @@ export function PublisDraftButton(props) {
         )
             .then((ok) => {
                 if (ok) {
+                    console.log(updateEntityURLSignal)
                     if (updateEntityURLSignal && typeof updateEntityURLSignal.value === 'function') {
                         try {
                             updateEntityURLSignal.value()
@@ -239,6 +240,6 @@ export function PublisDraftButton(props) {
                         }
                     }
                 }
-            });
+            })
     }} />
 }

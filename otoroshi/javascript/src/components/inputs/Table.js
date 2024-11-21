@@ -5,7 +5,13 @@ import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
-import { LabelAndInput, NgCodeRenderer, NgSelectRenderer, NgStringRenderer, NgTextRenderer } from '../nginputs';
+import {
+  LabelAndInput,
+  NgCodeRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+  NgTextRenderer,
+} from '../nginputs';
 import _ from 'lodash';
 import { Button } from '../Button';
 import { firstLetterUppercase } from '../../util'
@@ -33,159 +39,201 @@ function LoadingComponent(props) {
 }
 
 function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeField, coreFields }) {
-  const [open, setOpen] = useState(false)
-  const [isCustomFieldView, showCustomField] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [isCustomFieldView, showCustomField] = useState(false);
 
-  const [template, setTemplate] = useState()
+  const [template, setTemplate] = useState();
 
-  const [fieldPath, setFieldPath] = useState("")
-  const [fieldExampleValue, setFieldExampleValue] = useState("")
+  const [fieldPath, setFieldPath] = useState('');
+  const [fieldExampleValue, setFieldExampleValue] = useState('');
 
   useEffect(() => {
-    if (!template)
-      fetchTemplate()
-        .then(setTemplate)
-  }, [])
+    if (!template) fetchTemplate().then(setTemplate);
+  }, []);
 
   useEffect(() => {
     if (template)
-      setFieldExampleValue(fieldPath.split('.').reduce((r, k) => r ? r[k] : {}, template))
-  }, [fieldPath])
+      setFieldExampleValue(fieldPath.split('.').reduce((r, k) => (r ? r[k] : {}), template));
+  }, [fieldPath]);
 
   const closeTab = () => {
-    setOpen(false)
-    showCustomField(false)
-  }
+    setOpen(false);
+    showCustomField(false);
+  };
 
-  const stringifiedExampleValue = JSON.stringify(fieldExampleValue !== undefined ? fieldExampleValue : {}, null, 2)
+  const stringifiedExampleValue = JSON.stringify(
+    fieldExampleValue !== undefined ? fieldExampleValue : {},
+    null,
+    2
+  );
 
-  return <>
-    <div className={`wizard ${!open ? 'wizard--hidden' : ''}`}
-      style={{
-        background: 'none'
-      }} onClick={closeTab}>
-      <div className={`wizard-container ${!open ? 'wizard--hidden' : ''}`} style={{
-        maxWidth: isCustomFieldView ? '50vw' : '30vw',
-        minWidth: '360px',
-        zIndex: 1000,
-        border: 'var(--bg-color_level2) solid 1px'
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
-          <div className='d-flex items-center'>
-            <i className='fa fa-chevron-left me-3'
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isCustomFieldView)
-                  showCustomField(false)
-                else
-                  closeTab()
-              }} />
-            <h3 style={{ fontSize: '1.5rem' }} className='text-center'>{isCustomFieldView ? 'New custom field' : 'Columns'}</h3>
-          </div>
-
-          <div className="wizard-content">
-            {isCustomFieldView && <>
-              <NgStringRenderer label="Field path" onChange={setFieldPath} value={fieldPath} />
-              <Button
-                type="save"
-                text="Add custom field"
-                onClick={() => addField(fieldPath)}
-                className='my-2'
-                disabled={stringifiedExampleValue.length <= 0} />
-
-              <div style={{
-                border: 'var(--bg-color_level2) solid 1px',
-                borderRadius: '4px',
-              }} className='p-2 mb-2'>
-                <NgCodeRenderer
-                  label="Field value (example)"
-                  value={stringifiedExampleValue}
-                  readOnly
-                  rawSchema={{
-                    props: {
-                      editorOnly: true,
-                      height: '100%',
-                      ace_config: {
-                        fontSize: 14
-                      }
-                    }
-                  }} />
-              </div>
-              <div style={{
-                border: 'var(--bg-color_level2) solid 1px',
-                borderRadius: '4px',
-              }} className='p-2'>
-                <NgCodeRenderer
-                  label="Content"
-                  readOnly
-                  rawSchema={{
-                    props: {
-                      editorOnly: true,
-                      height: '100%',
-                      ace_config: {
-                        fontSize: 14
-                      }
-                    }
-                  }}
-                  value={JSON.stringify(template, null, 2)}
-                />
-              </div>
-            </>}
-            {!isCustomFieldView && <>
-              <div className='d-flex flex-column hidden-scrollbar' style={{ overflowY: 'scroll' }}>
-                {Object.entries(fields)
-                  .map(([column, enabled]) => {
-                    const columnParts = column.split(".");
-
-                    return <div className="mb-1 p-1 px-3 d-flex" style={{
-                      border: 'var(--bg-color_level2) solid 1px',
-                      width: '100%',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      justifyContent: 'space-between'
-                    }} onClick={() => onChange(column, !enabled)} key={column}>
-                      <div className='d-flex items-center'>
-                        {coreFields && !coreFields.includes(column) &&
-                          <Button className='btn-sm me-2' type='danger' onClick={e => {
-                            e.stopPropagation()
-                            removeField(column)
-                          }}>
-                            <i className='fa fa-trash' />
-                          </Button>}
-                        <label className={`col-xs-12 col-form-label`}>
-                          {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
-                        </label>
-                      </div>
-                      <div className="">
-                        {enabled && <OnSwitch onChange={() => onChange(column, false)} />}
-                        {!enabled && <OffSwitch onChange={() => onChange(column, true)} />}
-                      </div>
-                    </div>
-                  })}
-              </div>
-              <Button
-                className='d-flex items-center mt-1 py-2'
-                style={{
-                  justifyContent: 'space-between'
+  return (
+    <>
+      <div
+        className={`wizard ${!open ? 'wizard--hidden' : ''}`}
+        style={{
+          background: 'none',
+        }}
+        onClick={closeTab}
+      >
+        <div
+          className={`wizard-container ${!open ? 'wizard--hidden' : ''}`}
+          style={{
+            maxWidth: isCustomFieldView ? '50vw' : '30vw',
+            minWidth: '360px',
+            zIndex: 1000,
+            border: 'var(--bg-color_level2) solid 1px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
+            <div className="d-flex items-center">
+              <i
+                className="fa fa-chevron-left me-3"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (isCustomFieldView) showCustomField(false);
+                  else closeTab();
                 }}
-                onClick={() => showCustomField(true)}>
-                Add custom field
-                <i className='fa fa-chevron-right ms-1' />
-              </Button>
-            </>}
+              />
+              <h3 style={{ fontSize: '1.5rem' }} className="text-center">
+                {isCustomFieldView ? 'New custom field' : 'Columns'}
+              </h3>
+            </div>
+
+            <div className="wizard-content">
+              {isCustomFieldView && (
+                <>
+                  <NgStringRenderer label="Field path" onChange={setFieldPath} value={fieldPath} />
+                  <Button
+                    type="save"
+                    text="Add custom field"
+                    onClick={() => addField(fieldPath)}
+                    className="my-2"
+                    disabled={stringifiedExampleValue.length <= 0}
+                  />
+
+                  <div
+                    style={{
+                      border: 'var(--bg-color_level2) solid 1px',
+                      borderRadius: '4px',
+                    }}
+                    className="p-2 mb-2"
+                  >
+                    <NgCodeRenderer
+                      label="Field value (example)"
+                      value={stringifiedExampleValue}
+                      readOnly
+                      rawSchema={{
+                        props: {
+                          editorOnly: true,
+                          height: '100%',
+                          ace_config: {
+                            fontSize: 14,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      border: 'var(--bg-color_level2) solid 1px',
+                      borderRadius: '4px',
+                    }}
+                    className="p-2"
+                  >
+                    <NgCodeRenderer
+                      label="Content"
+                      readOnly
+                      rawSchema={{
+                        props: {
+                          editorOnly: true,
+                          height: '100%',
+                          ace_config: {
+                            fontSize: 14,
+                          },
+                        },
+                      }}
+                      value={JSON.stringify(template, null, 2)}
+                    />
+                  </div>
+                </>
+              )}
+              {!isCustomFieldView && (
+                <>
+                  <div
+                    className="d-flex flex-column hidden-scrollbar"
+                    style={{ overflowY: 'scroll' }}
+                  >
+                    {Object.entries(fields).map(([column, enabled]) => {
+                      const columnParts = column.split('.');
+
+                      return (
+                        <div
+                          className="mb-1 p-1 px-3 d-flex"
+                          style={{
+                            border: 'var(--bg-color_level2) solid 1px',
+                            width: '100%',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            justifyContent: 'space-between',
+                          }}
+                          onClick={() => onChange(column, !enabled)}
+                          key={column}
+                        >
+                          <div className="d-flex items-center">
+                            {coreFields && !coreFields.includes(column) && (
+                              <Button
+                                className="btn-sm me-2"
+                                type="danger"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeField(column);
+                                }}
+                              >
+                                <i className="fa fa-trash" />
+                              </Button>
+                            )}
+                            <label className={`col-xs-12 col-form-label`}>
+                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
+                            </label>
+                          </div>
+                          <div className="">
+                            {enabled && <OnSwitch onChange={() => onChange(column, false)} />}
+                            {!enabled && <OffSwitch onChange={() => onChange(column, true)} />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    className="d-flex items-center mt-1 py-2"
+                    style={{
+                      justifyContent: 'space-between',
+                    }}
+                    onClick={() => showCustomField(true)}
+                  >
+                    Add custom field
+                    <i className="fa fa-chevron-right ms-1" />
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <Button text="Close" onClick={closeTab} className="mt-2" />
           </div>
-
-
-          <Button text="Close" onClick={closeTab} className='mt-2' />
         </div>
       </div>
-    </div>
-    <Button type="info" className='ms-auto btn-sm d-flex align-items-center mb-1'
-      onClick={() => setOpen(true)}>
-      <i className='fas fa-filter me-1' />
-      Filter columns
-    </Button>
-  </>
+      <Button
+        type="info"
+        className="ms-auto btn-sm d-flex align-items-center mb-1"
+        onClick={() => setOpen(true)}
+      >
+        <i className="fas fa-filter me-1" />
+        Filter columns
+      </Button>
+    </>
+  );
 }
 
 export class Table extends Component {
@@ -264,8 +312,8 @@ export class Table extends Component {
 
   readRoute = () => {
     const { parentProps } = this.props;
-    const action = parentProps.params?.taction || parentProps.match?.params.taction
-    const item = parentProps.params?.titem || parentProps.match?.params.titem
+    const action = parentProps.params?.taction || parentProps.match?.params.taction;
+    const item = parentProps.params?.titem || parentProps.match?.params.titem;
 
     if (action) {
       if (action === 'add') {
@@ -315,10 +363,10 @@ export class Table extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -341,18 +389,17 @@ export class Table extends Component {
     const { pages } = this.state;
 
     if (!isNaN(response.pages)) {
-      return response.pages
+      return response.pages;
     }
 
-    if (response.ngPages !== -1)
-      return response.ngPages
+    if (response.ngPages !== -1) return response.ngPages;
 
-    return pages
-  }
+    return pages;
+  };
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props.navigateTo(item)
+    this.props.navigateTo(item);
   };
 
   closeAddForm = (e) => {
@@ -584,7 +631,10 @@ export class Table extends Component {
       },
       body: JSON.stringify({
         apiVersion: 'proxy.otoroshi.io/v1',
-        kind: this.props.kubernetesKind.indexOf('/') > -1 ? this.props.kubernetesKind.split('/')[1] : this.props.kubernetesKind,
+        kind:
+          this.props.kubernetesKind.indexOf('/') > -1
+            ? this.props.kubernetesKind.split('/')[1]
+            : this.props.kubernetesKind,
         metadata: {
           name,
         },
@@ -685,7 +735,7 @@ export class Table extends Component {
                 onClick={(e) => {
                   this.props.navigateOnEdit
                     ? this.props.navigateOnEdit(item)
-                    : this.showEditForm(e, item)
+                    : this.showEditForm(e, item);
                 }}
               >
                 <i className="fas fa-pencil-alt" />
@@ -783,16 +833,18 @@ export class Table extends Component {
               </div>
             </div>
             <div className="rrow me-1" style={{ position: 'relative' }}>
-              {this.props.fields && <ColumnsSelector
-                fetchTemplate={this.props.fetchTemplate}
-                onChange={this.props.onToggleField}
-                addField={this.props.addField}
-                removeField={this.props.removeField}
-                coreFields={this.props.coreFields}
-                fields={Object.keys(this.props.fields)
-                  .sort()
-                  .reduce((r, k) => (r[k] = this.props.fields[k], r), {})}
-              />}
+              {this.props.fields && (
+                <ColumnsSelector
+                  fetchTemplate={this.props.fetchTemplate}
+                  onChange={this.props.onToggleField}
+                  addField={this.props.addField}
+                  removeField={this.props.removeField}
+                  coreFields={this.props.coreFields}
+                  fields={Object.keys(this.props.fields)
+                    .sort()
+                    .reduce((r, k) => ((r[k] = this.props.fields[k]), r), {})}
+                />
+              )}
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
@@ -852,10 +904,15 @@ export class Table extends Component {
                       value={this.state.rowsPerPage}
                       label={' '}
                       ngOptions={{ spread: true }}
-                      onChange={(rowsPerPage) => this.setState({
-                        rowsPerPage,
-                        page: 0
-                      }, this.update)}
+                      onChange={(rowsPerPage) =>
+                        this.setState(
+                          {
+                            rowsPerPage,
+                            page: 0,
+                          },
+                          this.update
+                        )
+                      }
                       options={[5, 15, 20, 50, 100]}
                     />
                   </div>

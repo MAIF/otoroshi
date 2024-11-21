@@ -22,7 +22,7 @@ class DisableHttp10 extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Disable HTTP/1.0"
   override def description: Option[String]                 = "This plugin forbids HTTP/1.0 requests".some

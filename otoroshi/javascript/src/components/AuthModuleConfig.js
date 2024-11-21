@@ -748,15 +748,22 @@ export class User extends Component {
             className="btn btn-sm btn-success"
             title="Set password"
             onClick={(e) => {
-              window.newPrompt('Type password', { type: 'password', title:'Set the password' }).then((value1) => {
-                window.newPrompt('Re-type password', { type: 'password', title:'Confirm the password' }).then((value2) => {
-                  if (value1 && value2 && value1 === value2) {
-                    this.props.hashPassword(this.props.user.email, value1);
-                  } else {
-                    window.newAlert('Passwords does not match !', 'Error');
-                  }
+              window
+                .newPrompt('Type password', { type: 'password', title: 'Set the password' })
+                .then((value1) => {
+                  window
+                    .newPrompt('Re-type password', {
+                      type: 'password',
+                      title: 'Confirm the password',
+                    })
+                    .then((value2) => {
+                      if (value1 && value2 && value1 === value2) {
+                        this.props.hashPassword(this.props.user.email, value1);
+                      } else {
+                        window.newAlert('Passwords does not match !', 'Error');
+                      }
+                    });
                 });
-              });
             }}
           >
             <i className="fas fa-edit" /> Set password

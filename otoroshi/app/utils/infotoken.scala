@@ -1,5 +1,6 @@
 package otoroshi.utils.infotoken
 
+import com.auth0.jwt.JWT
 import otoroshi.env._
 import otoroshi.models._
 
@@ -34,6 +35,26 @@ object InfoTokenHelper {
         )
       )
     secComInfoTokenVersion match {
+      case SecComInfoTokenVersion.Url => {
+        val kind: String = apiKey.map(_ => "apikey").orElse(paUsr.map(_ => "user")).getOrElse("public")
+        val id: String = apiKey.map(_.clientId).orElse(paUsr.map(_.randomId)).getOrElse("--")
+        val rnd = IdGenerator.token(16)
+        val token: String = JWT.create()
+          .withClaim("k", kind)
+          .withClaim("i",  env.aesEncrypt(id))
+          .withClaim("r", env.aesEncrypt(rnd))
+          .withIssuedAt(DateTime.now().toDate)
+          .withExpiresAt(DateTime.now().plus(secComTtl.toMillis).toDate)
+          .sign(env.sha256Alg)
+        OtoroshiClaim(
+          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
+          sub = "--",
+          aud = name,
+          exp = DateTime.now().plus(secComTtl.toMillis).toDate.getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = IdGenerator.uuid
+        ).withClaim("url", s"${env.rootScheme}${env.adminApiExposedHost}${env.bestExposedPort}/.well-known/otoroshi/consumers/${rnd}?t=${token}")
+      }
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
           iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),

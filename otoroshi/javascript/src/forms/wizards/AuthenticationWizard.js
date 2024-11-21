@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { TextInput } from '../../components/inputs';
 import {
@@ -176,7 +176,38 @@ function GoBackSelection({ goBack }) {
   );
 }
 
+
+function EscapeModalListener({ hide, children }) {
+
+  const ref = useRef()
+
+  const handleEscKey = (event, onHide) => {
+    if (event.key === 'Escape') {
+      onHide();
+    }
+  };
+
+  const handleClickOutside = (event, ref, onHide) => {
+    if (ref.current && !ref.current.contains(event.target)) {
+      onHide();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keyup', (event) => handleEscKey(event, hide), false);
+    document.addEventListener('mousedown', (event) => handleClickOutside(event, ref, hide));
+
+    return () => {
+      document.removeEventListener('keyup', (event) => handleEscKey(event, hide), false);
+      document.removeEventListener('mousedown', (event) => handleClickOutside(event, ref, hide));
+    }
+  }, [])
+
+  return React.cloneElement(children, { ref })
+}
+
 export class AuthenticationWizard extends React.Component {
+
   state = {
     step: 1,
     mode: this.props.mode || 'selector',
@@ -225,35 +256,37 @@ export class AuthenticationWizard extends React.Component {
 
   render() {
     const { step, authenticationConfig, mode } = this.state;
-
+  
     if (mode === 'update_in_wizard') {
       return (
         <div className="wizard">
-          <div className="wizard-container">
-            <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-              <Header onClose={this.props.hide} mode={mode} />
-              <div className="wizard-content">
-                <AuthModuleConfig
-                  value={authenticationConfig}
-                  onChange={(authenticationConfig) => this.setState({ authenticationConfig })}
-                />
-
-                <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
-                  <FeedbackButton
-                    style={{
-                      backgroundColor: 'var(--color-primary)',
-                      borderColor: 'var(--color-primary)',
-                      padding: '12px 48px',
-                    }}
-                    onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
-                    onSuccess={this.props.hide}
-                    icon={() => <i className="fas fa-paper-plane" />}
-                    text="Save the authentication configuration"
+          <EscapeModalListener hide={this.props.hide}>
+            <div className="wizard-container" ref={this.props.ref}>
+              <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+                <Header onClose={this.props.hide} mode={mode} />
+                <div className="wizard-content">
+                  <AuthModuleConfig
+                    value={authenticationConfig}
+                    onChange={(authenticationConfig) => this.setState({ authenticationConfig })}
                   />
+
+                  <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+                    <FeedbackButton
+                      style={{
+                        backgroundColor: 'var(--color-primary)',
+                        borderColor: 'var(--color-primary)',
+                        padding: '12px 48px',
+                      }}
+                      onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
+                      onSuccess={this.props.hide}
+                      icon={() => <i className="fas fa-paper-plane" />}
+                      text="Save the authentication configuration"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </EscapeModalListener>
         </div>
       );
     } else {
@@ -389,119 +422,121 @@ export class AuthenticationWizard extends React.Component {
 
       return (
         <div className="wizard">
-          <div className="wizard-container">
-            <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-              <Header onClose={this.props.hide} mode={mode} />
+          <EscapeModalListener hide={this.props.hide}>
+            <div className="wizard-container" ref={this.props.ref}>
+              <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+                <Header onClose={this.props.hide} mode={mode} />
 
-              {mode === 'selector' && (
-                <Selector
-                  setMode={(mode) => this.setState({ mode })}
-                  disableSelectMode={this.props.disableSelectMode}
-                />
-              )}
+                {mode === 'selector' && (
+                  <Selector
+                    setMode={(mode) => this.setState({ mode })}
+                    disableSelectMode={this.props.disableSelectMode}
+                  />
+                )}
 
-              {mode !== 'selector' && (
-                <>
-                  {['edition', 'clone'].includes(mode) ? (
-                    <AuthenticationSelector
-                      mode={mode}
-                      handleSelect={(authentication) => {
-                        if (this.props.onConfirm && mode === 'edition') {
-                          this.props.onConfirm(authentication.id);
-                        } else {
-                          this.setState({
-                            mode: 'continue',
-                            authenticationConfig: {
-                              ...authentication,
-                              id: `auth_mod_${uuid()}`,
-                            },
-                          });
-                        }
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <Breadcrumb
-                        value={this.state.breadcrumb}
-                        onClick={(i) => this.setState({ step: i + 1 })}
-                      />
-                      <div className="wizard-content">
-                        {STEPS.map(({ component, props, condition, onChange, index }, i) => {
-                          if (
-                            (step === i + 1 || step === index) &&
-                            (condition ? condition(authenticationConfig) : true)
-                          ) {
-                            const defaultProps = {
-                              value: authenticationConfig,
-                              onChange: (value) =>
-                                this.setState({ authenticationConfig: value }, onChange),
-                            };
-
-                            const allProps = props
-                              ? {
-                                  ...props,
-                                  onChange: (e) => props.onChange(e, i),
-                                }
-                              : defaultProps;
-
-                            return React.createElement(component, {
-                              key: component.name,
-                              ...allProps,
-                            });
+                {mode !== 'selector' && (
+                  <>
+                    {['edition', 'clone'].includes(mode) ? (
+                      <AuthenticationSelector
+                        mode={mode}
+                        handleSelect={(authentication) => {
+                          if (this.props.onConfirm && mode === 'edition') {
+                            this.props.onConfirm(authentication.id);
                           } else {
-                            return null;
-                          }
-                        })}
-                        {showSummary && (
-                          <WizardLastStep
-                            onConfirm={this.props.onConfirm}
-                            breadcrumb={this.state.breadcrumb}
-                            value={{
-                              ...authenticationConfig,
-                              strategy: {
-                                ...authenticationConfig.strategy,
-                                transformSettings:
-                                  authenticationConfig.strategy?.type === 'Transform'
-                                    ? {
-                                        location: authenticationConfig.strategy?.transformSettings
-                                          ?.location
-                                          ? authenticationConfig.source
-                                          : authenticationConfig.strategy?.transformSettings
-                                              ?.out_location?.source,
-                                      }
-                                    : undefined,
+                            this.setState({
+                              mode: 'continue',
+                              authenticationConfig: {
+                                ...authentication,
+                                id: `auth_mod_${uuid()}`,
                               },
-                            }}
-                          />
-                        )}
-                        {!showSummary && (
-                          <WizardActions
-                            nextStep={this.nextStep}
-                            prevStep={this.prevStep}
-                            step={step}
-                            goBack={() => {
-                              this.setState({
-                                mode: this.props.mode || 'selector',
+                            });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <Breadcrumb
+                          value={this.state.breadcrumb}
+                          onClick={(i) => this.setState({ step: i + 1 })}
+                        />
+                        <div className="wizard-content">
+                          {STEPS.map(({ component, props, condition, onChange, index }, i) => {
+                            if (
+                              (step === i + 1 || step === index) &&
+                              (condition ? condition(authenticationConfig) : true)
+                            ) {
+                              const defaultProps = {
+                                value: authenticationConfig,
+                                onChange: (value) =>
+                                  this.setState({ authenticationConfig: value }, onChange),
+                              };
+
+                              const allProps = props
+                                ? {
+                                    ...props,
+                                    onChange: (e) => props.onChange(e, i),
+                                  }
+                                : defaultProps;
+
+                              return React.createElement(component, {
+                                key: component.name,
+                                ...allProps,
                               });
-                            }}
-                          />
-                        )}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-              {['edition', 'clone'].includes(mode) && (
-                <GoBackSelection
-                  goBack={() => {
-                    this.setState({
-                      mode: this.props.mode || 'selector',
-                    });
-                  }}
-                />
-              )}
+                            } else {
+                              return null;
+                            }
+                          })}
+                          {showSummary && (
+                            <WizardLastStep
+                              onConfirm={this.props.onConfirm}
+                              breadcrumb={this.state.breadcrumb}
+                              value={{
+                                ...authenticationConfig,
+                                strategy: {
+                                  ...authenticationConfig.strategy,
+                                  transformSettings:
+                                    authenticationConfig.strategy?.type === 'Transform'
+                                      ? {
+                                          location: authenticationConfig.strategy?.transformSettings
+                                            ?.location
+                                            ? authenticationConfig.source
+                                            : authenticationConfig.strategy?.transformSettings
+                                                ?.out_location?.source,
+                                        }
+                                      : undefined,
+                                },
+                              }}
+                            />
+                          )}
+                          {!showSummary && (
+                            <WizardActions
+                              nextStep={this.nextStep}
+                              prevStep={this.prevStep}
+                              step={step}
+                              goBack={() => {
+                                this.setState({
+                                  mode: this.props.mode || 'selector',
+                                });
+                              }}
+                            />
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+                {['edition', 'clone'].includes(mode) && (
+                  <GoBackSelection
+                    goBack={() => {
+                      this.setState({
+                        mode: this.props.mode || 'selector',
+                      });
+                    }}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          </EscapeModalListener>
         </div>
       );
     }

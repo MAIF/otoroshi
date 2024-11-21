@@ -1153,6 +1153,12 @@ class Env(
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
     .getOrElse(httpsPort)
 
+  lazy val bestExposedPort: String = if (exposedRootSchemeIsHttps) {
+    exposedHttpsPort
+  } else {
+    exposedHttpPort
+  }
+
   lazy val proxyState = new NgProxyState(this)
 
   lazy val http2ClientProxyEnabled = configuration
@@ -1255,7 +1261,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.20.0-dev"
+  lazy val otoroshiVersion    = "16.21.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1640,6 +1646,8 @@ class Env(
   }
 
   lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
+  lazy val sha256Alg = Algorithm.HMAC256(otoroshiSecret)
+  lazy val sha512Alg = Algorithm.HMAC512(otoroshiSecret)
 
   def encryptedJwt(user: PrivateAppsUser): String = {
     val added   = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
@@ -1651,7 +1659,7 @@ class Env(
       .withExpiresAt(DateTime.now().plusSeconds(added).toDate)
       .withClaim("sessid", user.randomId)
       .withClaim("sess", session)
-      .sign(Algorithm.HMAC512(otoroshiSecret))
+      .sign(sha512Alg)
   }
 
   def aesEncrypt(content: String): String = {

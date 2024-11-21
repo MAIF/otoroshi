@@ -224,7 +224,9 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, props.defaultValue || '')}
               {...props}
-              onChange={(v) => props.overrideOnChange ? props.overrideOnChange(v, name) : this.changeValue(name, v)}
+              onChange={(v) =>
+                props.overrideOnChange ? props.overrideOnChange(v, name) : this.changeValue(name, v)
+              }
             />
           );
         } else if (type === 'string') {

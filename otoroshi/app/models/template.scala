@@ -26,15 +26,20 @@ case class ErrorTemplate(
     messages: Map[String, String] = Map.empty[String, String]
 ) extends EntityLocationSupport {
   def renderHtml(status: Int, causeId: String, otoroshiMessage: String, errorId: String): String = {
-    val template = genericTemplates.get(causeId).orElse(genericTemplates.keys.find(k => RegexPool.apply(k).matches(causeId)).flatMap(k => genericTemplates.get(k))) match {
+    val template   = genericTemplates
+      .get(causeId)
+      .orElse(
+        genericTemplates.keys.find(k => RegexPool.apply(k).matches(causeId)).flatMap(k => genericTemplates.get(k))
+      ) match {
       case Some(tmpl) => tmpl
-      case None => (status, causeId) match {
-        case (_, "errors.service.in.maintenance")     => templateMaintenance
-        case (_, "errors.service.under.construction") => templateBuild
-        case (s, _) if s > 399 && s < 500             => template40x
-        case (s, _) if s > 499 && s < 600             => template50x
-        case _                                        => template50x
-      }
+      case None       =>
+        (status, causeId) match {
+          case (_, "errors.service.in.maintenance")     => templateMaintenance
+          case (_, "errors.service.under.construction") => templateBuild
+          case (s, _) if s > 399 && s < 500             => template40x
+          case (s, _) if s > 499 && s < 600             => template50x
+          case _                                        => template50x
+        }
     }
     val messageKey = s"message-$status"
     val message    = messages.getOrElse(messageKey, otoroshiMessage)

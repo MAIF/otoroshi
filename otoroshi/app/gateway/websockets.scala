@@ -668,16 +668,16 @@ object WebSocketProxyActor {
   ): Flow[PlayWSMessage, PlayWSMessage, _] = {
     val avoid                                = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers                             = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
-      case (key, value) if key.toLowerCase == "cookie"     =>
-        Try(value.split(";").toSeq.map(_.trim).filterNot(_.isEmpty).map { cookie =>
-          val parts       = cookie.split("=")
-          val name        = parts(0)
-          val cookieValue = parts.tail.mkString("=")
-          akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
-        }) match {
-          case Success(seq) => seq
-          case Failure(e)   => List.empty
-        }
+      // case (key, value) if key.toLowerCase == "cookie"     =>
+      //   Try(value.split(";").toSeq.map(_.trim).filterNot(_.isEmpty).map { cookie =>
+      //     val parts       = cookie.split("=")
+      //     val name        = parts(0)
+      //     val cookieValue = parts.tail.mkString("=")
+      //     akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
+      //   }) match {
+      //     case Success(seq) => seq
+      //     case Failure(e)   => List.empty
+      //   }
       case (key, value) if key.toLowerCase == "host"       =>
         val part = value.split(":")
         Seq(akka.http.scaladsl.model.headers.Host(part.head))
@@ -815,16 +815,16 @@ class WebSocketProxyActor(
     try {
       if (logger.isTraceEnabled) logger.trace("[WEBSOCKET] initializing client call ...")
       val _headers                  = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
-        case (key, value) if key.toLowerCase == "cookie"     =>
-          Try(value.split(";").toSeq.map(_.trim).filterNot(_.isEmpty).map { cookie =>
-            val parts       = cookie.split("=")
-            val name        = parts(0)
-            val cookieValue = parts.tail.mkString("=")
-            akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
-          }) match {
-            case Success(seq) => seq
-            case Failure(e)   => List.empty
-          }
+        //case (key, value) if key.toLowerCase == "cookie"     =>
+        //  Try(value.split(";").toSeq.map(_.trim).filterNot(_.isEmpty).map { cookie =>
+        //    val parts       = cookie.split("=")
+        //    val name        = parts(0)
+        //    val cookieValue = parts.tail.mkString("=")
+        //    akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
+        //  }) match {
+        //    case Success(seq) => seq
+        //    case Failure(e)   => List.empty
+        //  }
         case (key, value) if key.toLowerCase == "host"       =>
           Seq(akka.http.scaladsl.model.headers.Host(value.split(":").head))
         case (key, value) if key.toLowerCase == "user-agent" =>

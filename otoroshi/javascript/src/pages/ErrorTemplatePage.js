@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { Table, Form } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import isFunction from "lodash/isFunction";
-import AceEditor from "react-ace";
+import isFunction from 'lodash/isFunction';
+import AceEditor from 'react-ace';
 
 export class ErrorTemplatesPage extends Component {
   state = { list: [], fetched: false };
@@ -156,12 +156,8 @@ export class ErrorTemplatesPage extends Component {
         }).then((routeCompositions) => {
           const list = [
             {
-              label: (
-                <div>
-                  All routes and services
-                </div>
-              ),
-              value: "global"
+              label: <div>All routes and services</div>,
+              value: 'global',
             },
             ...services.data.map((s) => ({
               label: (
@@ -270,7 +266,15 @@ export class ErrorTemplatesPage extends Component {
         label: 'Generic templates',
         placeholderKey: 'template causeId',
         itemRenderer: (key, value, idx, onKeyChange, onChange) => (
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' }}>
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+            }}
+          >
             <div style={{ width: '50%' }}>
               <input
                 type="text"
@@ -281,17 +285,17 @@ export class ErrorTemplatesPage extends Component {
                 style={{ marginRight: 2 }}
               />
             </div>
-            <div style={{width: '50%'}}>
+            <div style={{ width: '50%' }}>
               <AceEditor
                 theme={document.body.classList.contains('white-mode') ? 'xcode' : 'monokai'}
                 mode="html"
-                onChange={e => {
-                  console.log(e)
-                  onChange({ target: { value: e }})
+                onChange={(e) => {
+                  console.log(e);
+                  onChange({ target: { value: e } });
                 }}
                 value={value || ''}
                 name="scriptParam"
-                editorProps={{$blockScrolling: true }}
+                editorProps={{ $blockScrolling: true }}
                 height={'300px'}
                 width="100%"
                 showGutter={true}
@@ -302,10 +306,10 @@ export class ErrorTemplatesPage extends Component {
               />
             </div>
           </div>
-        )
-      }
+        ),
+      },
     },
-    messages: {type: 'object', props: {label: 'messages'}},
+    messages: { type: 'object', props: { label: 'messages' } },
   });
 
   render() {

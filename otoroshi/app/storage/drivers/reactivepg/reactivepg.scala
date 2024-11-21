@@ -31,6 +31,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -81,6 +82,10 @@ object pgimplicits {
       opt(name, "Long", (a, b) => a.getLong(b).longValue())
     def optOffsetDatetime(name: String)(implicit logger: Logger): Option[OffsetDateTime] =
       opt(name, "OffsetDateTime", (a, b) => a.getOffsetDateTime(b))
+
+    def optInterval(name: String)(implicit logger: Logger): Option[io.vertx.pgclient.data.Interval] =
+      opt(name, "Interval", (a, b) => a.get(classOf[io.vertx.pgclient.data.Interval], b))
+
     def optJsObject(name: String)(implicit logger: Logger): Option[JsObject]             =
       opt(
         name,
@@ -287,7 +292,16 @@ class ReactivePgDataStores(
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
     cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.second)(SchedulerHelper.runnable {
-      client.query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
+      try {
+        client
+          .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
+          .executeAsync()
+          .recover {
+            case e: Throwable => logger.error("cache scheduler exec error", e)
+          }
+      } catch {
+        case e: Throwable => logger.error("cache scheduler error", e)
+      }
     }))
   }
 
@@ -840,11 +854,13 @@ class ReactivePgRedis(
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] =
+  override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
+
+  def hardDelete(keys: String*): Future[Long] =
     measure("pg.ops.del") {
       val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
       queryRaw(
-        s"delete from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
+        s"delete from $schemaDotTable where key in ($inValues);",
         keys
       ) { _ =>
         keys.size
@@ -976,23 +992,30 @@ class ReactivePgRedis(
       }
     }
 
-  override def pttl(key: String): Future[Long] =
-    measure("pg.ops.pttl") {
+  override def pttl(key: String): Future[Long] = {
       queryOne(
-        s"select (ttl_starting_at + ttl) as expire_at from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
+        s"select (ttl_starting_at + ttl) as expire_at, NOW() as n, ttl, ttl_starting_at from $schemaDotTable where key = $$1 limit 1;",
         Seq(key)
       ) { row =>
-        val now = System.currentTimeMillis()
-        row.optOffsetDatetime("expire_at").map { ldate =>
-          val ttl = (ldate.toEpochSecond * 1000) - now
-          if (ttl > 31504464000000L && ttl < 31567536000000L) { // 999 and 1001
-            -1
-          } else {
-            ttl
+        (row.optOffsetDatetime("expire_at"), row.optOffsetDatetime("n"), row.optInterval("ttl")) match {
+          case (Some(_), Some(_), Some(ttlrow)) if ttlrow.getYears == 1000 => Some(-1L) // here it's default ttl so nothing to do
+          case (Some(expirationDate), Some(now), Some(_)) if expirationDate.isBefore(now) || expirationDate.isEqual(now) => {
+            hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
+            Some(-1L)
           }
+          case (Some(expirationDate), Some(now), Some(_)) => {
+            val ttl = ChronoUnit.MILLIS.between(now, expirationDate)
+            if (ttl > 0) {
+              ttl.some
+            } else {
+              hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
+              Some(-1L)
+            }
+          }
+          case _ => Some(-1L)
         }
       }.map(_.filter(_ > -1).getOrElse(-1))
-    }
+  }
 
   override def ttl(key: String): Future[Long] = pttl(key).map(v => v / 1000L)
 

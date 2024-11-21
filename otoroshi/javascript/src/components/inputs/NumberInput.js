@@ -6,9 +6,9 @@ export class NumberInput extends Component {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
 
-    if (("" + value).length === 0) {
+    if (('' + value).length === 0) {
       this.props.onChange(0);
-      return
+      return;
     }
 
     let oldValue = this.props.value;

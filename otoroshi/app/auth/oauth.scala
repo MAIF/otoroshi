@@ -628,12 +628,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def getUserInfoSafe(accessToken: String, config: GlobalConfig)(implicit
-                                                             env: Env,
-                                                             ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Either[String, JsValue]] = {
     getUserInfoRaw(accessToken, config).map {
       case resp if resp.status == 200 => Right(resp.json)
-      case resp => Left(s"bad status code: ${resp.status}")
+      case resp                       => Left(s"bad status code: ${resp.status}")
     }
   }
 

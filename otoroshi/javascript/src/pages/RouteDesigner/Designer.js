@@ -42,7 +42,7 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
-import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftSignal, draftVersionSignal, updateEntityURLSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 
@@ -1300,7 +1300,9 @@ class Designer extends React.Component {
     }
 
     return nextClient
-      .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
+      .forEntityNext(
+        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
+      )
       .update(newRoute)
       .then((r) => {
         if (r.error) throw r.error;
@@ -1611,6 +1613,9 @@ class Designer extends React.Component {
               route,
               selectedNode: undefined
             }, () => this.loadData(this.state.route))
+          }}
+          updateEntityURL={() => {
+            updateEntityURLSignal.value = this.saveRoute
           }} />
         <Container
           showTryIt={showTryIt}
@@ -1679,7 +1684,10 @@ class Designer extends React.Component {
               })
             }
           />
-          <div className="relative-container" style={{ flex: 9, marginLeft: preview.enabled ? '1rem' : '.5rem' }}>
+          <div
+            className="relative-container"
+            style={{ flex: 9, marginLeft: preview.enabled ? '1rem' : '.5rem' }}
+          >
             {preview.enabled ? (
               <EditView
                 addNode={this.addNode}

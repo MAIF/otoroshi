@@ -46,7 +46,7 @@ object ProxyWasmFunctions {
             params: Array[LibExtism.ExtismVal],
             returns: Array[LibExtism.ExtismVal],
             data: Optional[EnvUserData]
-        ) => state.proxyLog(plugin, params(0).v.i32, params(1).v.i32, params(2).v.i32),
+        ) => state.proxyLog(plugin, params(0).v.i32, params(1).v.i32, params(2).v.i32, getCurrentVmData()),
         Optional.empty[EnvUserData]()
       ).withNamespace("env"),
       new HostFunction[EnvUserData](

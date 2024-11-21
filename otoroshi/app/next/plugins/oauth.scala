@@ -89,7 +89,7 @@ class OAuth1Caller extends NgRequestTransformer {
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true

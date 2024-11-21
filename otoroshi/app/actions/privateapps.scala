@@ -40,7 +40,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     def perform() = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        val cookies = request.cookies.filter(c => c.name.startsWith("oto-papps-")).toSeq
+        val cookies      = request.cookies.filter(c => c.name.startsWith("oto-papps-")).toSeq
         val validCookies = cookies.flatMap(env.extractPrivateSessionId)
         if (validCookies.nonEmpty) {
           if (Cluster.logger.isDebugEnabled)
@@ -50,23 +50,28 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
               env.datastores.privateAppsUserDataStore.findById(id).map(opt => (id, opt))
             }
             .mapAsync(1) {
-              case (_, Some(user)) => {
+              case (_, Some(user))                                            => {
                 user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
                 user.some.vfuture
               }
               case (id, None) if env.clusterConfig.mode == ClusterMode.Worker => {
-                if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session $id not found locally - from action")
+                if (Cluster.logger.isDebugEnabled)
+                  Cluster.logger.debug(s"private apps session $id not found locally - from action")
                 env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
-                  case Some(user) => user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)).map(_.some)
-                  case None => None.vfuture
+                  case Some(user) =>
+                    user
+                      .save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                      .map(_.some)
+                  case None       => None.vfuture
                 }
               }
-              case (_, None) => None.vfuture
+              case (_, None)                                                  => None.vfuture
             }
-            .collect {
-              case Some(user) => user
+            .collect { case Some(user) =>
+              user
             }
-            .runWith(Sink.seq)(env.otoroshiMaterializer).flatMap { users =>
+            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .flatMap { users =>
               block(PrivateAppsActionContext(request, users, globalConfig))
             }
         } else {

@@ -245,7 +245,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
   }
 
   def incomingRequestValidatorPlugins(
-    request: RequestHeader
+      request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
     val pls                             = slots
       .filter(_.enabled)

@@ -1355,10 +1355,14 @@ object SecComInfoTokenVersionLegacy extends SecComInfoTokenVersion {
 object SecComInfoTokenVersionLatest extends SecComInfoTokenVersion {
   def version: String = "Latest"
 }
+object SecComInfoTokenVersionUrl extends SecComInfoTokenVersion {
+  def version: String = "Url"
+}
 object SecComInfoTokenVersion {
 
   val Legacy = SecComInfoTokenVersionLegacy
   val Latest = SecComInfoTokenVersionLatest
+  val Url = SecComInfoTokenVersionUrl
 
   def apply(version: String): Option[SecComInfoTokenVersion] =
     version match {
@@ -1366,6 +1370,8 @@ object SecComInfoTokenVersion {
       case "legacy" => Some(Legacy)
       case "Latest" => Some(Latest)
       case "latest" => Some(Latest)
+      case "Url"    => Some(Url)
+      case "url"    => Some(Url)
       case _        => None
     }
 }

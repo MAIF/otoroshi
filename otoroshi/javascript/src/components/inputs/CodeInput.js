@@ -30,7 +30,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) { }
+          } catch (ex) {}
         }}
       />
     );
@@ -100,8 +100,8 @@ export default class CodeInput extends Component {
       clean_source = e.replace('}{}', '}');
 
       if (clean_source.length === 0) {
-        this.props.onChange("{}");
-        return
+        this.props.onChange('{}');
+        return;
       }
 
       try {

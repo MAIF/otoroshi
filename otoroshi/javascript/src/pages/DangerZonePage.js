@@ -332,7 +332,7 @@ function WasmoTester(props) {
                   ...props.rawValue.wasmoSettings,
                 }),
               })
-                .catch((_) => {})
+                .catch((_) => { })
                 .then((r) => {
                   console.log(r.status);
                   if (r.status !== 200) {
@@ -347,7 +347,7 @@ function WasmoTester(props) {
                         height={window.innerHeight - 320}
                         label=""
                         help="..."
-                        onChange={() => {}}
+                        onChange={() => { }}
                         value={value}
                       />
                       <p className="text-center" style={{ fontWeight: 'bold' }}>
@@ -1466,7 +1466,11 @@ export class DangerZonePage extends Component {
 
   exportJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = JSON.stringify({ ...this.state.value, kind: 'config.otoroshi.io/GlobalConfig' }, null, 2);
+    const json = JSON.stringify(
+      { ...this.state.value, kind: 'config.otoroshi.io/GlobalConfig' },
+      null,
+      2
+    );
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1907,11 +1911,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
-      plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-    }`;
+      }`;
   };
 
   return (

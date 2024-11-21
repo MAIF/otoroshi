@@ -10,16 +10,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -31,16 +22,11 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -981,7 +967,7 @@ object ApiKeyHelper {
       } getOrElse FastFuture.successful(None)
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val parts = auth.split(":")
+      val parts  = auth.split(":")
       val id     = parts.headOption.map(_.trim)
       val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
@@ -1575,7 +1561,7 @@ object ApiKeyHelper {
       } getOrElse errorResult(Unauthorized, s"Invalid ApiKey provided", "errors.invalid.api.key")
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val parts = auth.split(":")
+      val parts  = auth.split(":")
       val id     = parts.headOption.map(_.trim)
       val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
@@ -1743,7 +1729,7 @@ object ApiKeyHelper {
           .map(_.split(":"))
           .collect {
             case arr if arr.length == 2 => arr
-            case arr if arr.length > 2 => Array(arr.head, arr.tail.mkString(":"))
+            case arr if arr.length > 2  => Array(arr.head, arr.tail.mkString(":"))
           }
           .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some, otoBearer = None))
         val authByCustomHeaders: Option[ApikeyTuple]        = req.headers
@@ -1904,6 +1890,16 @@ object ApiKeyHelper {
                         .acceptLeeway(10)
                         .build
                     Try(verifier.verify(jwt))
+                      .filter { token =>
+                        val aud = token.getAudience.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
+                        if (aud.isDefined) {
+                          val currentUrl = req.theUrl
+                          val audience = aud.get
+                          currentUrl.startsWith(audience)
+                        } else {
+                          true
+                        }
+                      }
                       .filter { token =>
                         val xsrfToken       = token.getClaim("xsrfToken")
                         val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")

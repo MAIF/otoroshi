@@ -29,7 +29,7 @@ export function FakeLoader({ text, timeout, started }) {
       {!started && <i className="fas fa-square fa-lg" />}
       <div
         style={{
-          color:'var(--color_level2)',
+          color: 'var(--color_level2)',
           fontWeight: loading ? 'normal' : 'bold',
         }}
       >

@@ -5,7 +5,7 @@ import { nextClient } from '../../services/BackOfficeServices';
 import { firstLetterUppercase, useEntityFromURI } from '../../util';
 import Loader from '../../components/Loader';
 
-const FIELDS_SELECTOR = "otoroshi-fields-selector";
+const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
 const CORE_FIELDS = [
   'id',
@@ -21,29 +21,29 @@ const CORE_FIELDS = [
   // 'created at',
   'metadata.updated_at',
   'metadata.created_at',
-]
+];
 
 export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
   const entity = useEntityFromURI();
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
-    'id': false,
-    'name': true,
-    'description': true,
-    'tags': false,
-    'metadata': false,
-    'enabled': true,
-    'groups': false,
-    'frontend': true,
-    'backend': true,
-    'plugins': false,
+    id: false,
+    name: true,
+    description: true,
+    tags: false,
+    metadata: false,
+    enabled: true,
+    groups: false,
+    frontend: true,
+    backend: true,
+    plugins: false,
     'created at': false,
     'metadata.updated_at': true,
-    'metadata.created_at': false
-  })
+    'metadata.created_at': false,
+  });
 
   const domainColumn = {
     title: 'Frontend',
@@ -108,18 +108,22 @@ export function RoutesTable(props) {
     id: 'metadata.updated_at',
     style: { textAlign: 'center', width: 160 },
     notFilterable: true,
-    cell: (_, item) => formatFieldDate(item.metadata.updated_at)
-  }
+    cell: (_, item) => formatFieldDate(item.metadata.updated_at),
+  };
 
-  const formatFieldDate = value => {
-    const date = new Date(value)
+  const formatFieldDate = (value) => {
+    const date = new Date(value);
 
-    if (date instanceof Date & !isNaN(date)) {
-      return <span>{date.toLocaleDateString()} - {date.toLocaleTimeString()}</span>
+    if ((date instanceof Date) & !isNaN(date)) {
+      return (
+        <span>
+          {date.toLocaleDateString()} - {date.toLocaleTimeString()}
+        </span>
+      );
     } else {
-      return "-"
+      return '-';
     }
-  }
+  };
 
   const createdAtColumn = {
     title: 'Created',
@@ -127,46 +131,49 @@ export function RoutesTable(props) {
     id: 'metadata.created_at',
     style: { textAlign: 'center', width: 160 },
     notFilterable: true,
-    cell: (_, item) => formatFieldDate(item.metadata.created_at)
-  }
+    cell: (_, item) => formatFieldDate(item.metadata.created_at),
+  };
 
   const idColumn = {
     title: 'Id',
-    content: item => item.id
-  }
+    content: (item) => item.id,
+  };
 
   const descriptionColumn = {
     title: 'Description',
-    content: item => item.description
-  }
+    content: (item) => item.description,
+  };
 
   const tagsColumn = {
     title: 'Tags',
-    content: item => (item.tags || []).join(','),
+    content: (item) => (item.tags || []).join(','),
     notSortable: true,
-    notFilterable: true
-  }
+    notFilterable: true,
+  };
 
   const metadataColumn = {
     title: 'Metadata',
-    content: item => Object.entries(item.metadata || {}).map(([key, value]) => `${key}:${value}`).join(' - '),
+    content: (item) =>
+      Object.entries(item.metadata || {})
+        .map(([key, value]) => `${key}:${value}`)
+        .join(' - '),
     notSortable: true,
-    notFilterable: true
-  }
+    notFilterable: true,
+  };
 
   const groupsColumn = {
     title: 'Groups',
-    content: item => (item.groups || []).join(","),
+    content: (item) => (item.groups || []).join(','),
     notSortable: true,
-    notFilterable: true
-  }
+    notFilterable: true,
+  };
 
   const pluginsColumn = {
     title: 'Plugins',
-    content: item => item.plugins?.length || 0,
+    content: (item) => item.plugins?.length || 0,
     notSortable: true,
-    notFilterable: true
-  }
+    notFilterable: true,
+  };
 
   const columns = [
     {
@@ -199,27 +206,28 @@ export function RoutesTable(props) {
     updatedAtColumn,
     createdAtColumn,
     ...Object.keys(fields)
-      .filter(f => !CORE_FIELDS.includes(f))
-      .map(field => ({
-        title: firstLetterUppercase(field.split(".").slice(-1)[0]),
+      .filter((f) => !CORE_FIELDS.includes(f))
+      .map((field) => ({
+        title: firstLetterUppercase(field.split('.').slice(-1)[0]),
         filterId: firstLetterUppercase(field),
-        content: item => {
-          const value = field.split('.').reduce((r, k) => r ? r[k] : {}, item)
+        content: (item) => {
+          const value = field.split('.').reduce((r, k) => (r ? r[k] : {}), item);
           if (Array.isArray(value)) {
-            return (value || []).map(r => JSON.stringify(r, null, 2)).join(',')
+            return (value || []).map((r) => JSON.stringify(r, null, 2)).join(',');
           } else if (isAnObject(value)) {
-            return Object.entries(value || {}).map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`).join(' - ')
+            return Object.entries(value || {})
+              .map(([key, value]) => `${key}:${JSON.stringify(value, null, 2)}`)
+              .join(' - ');
           } else {
-            return "" + value
+            return '' + value;
           }
         },
         notSortable: true,
-        notFilterable: true
-      }))
-  ]
-    .filter((c) => c && (fields[c.title?.toLowerCase()] || fields[c.filterId?.toLowerCase()]))
+        notFilterable: true,
+      })),
+  ].filter((c) => c && (fields[c.title?.toLowerCase()] || fields[c.filterId?.toLowerCase()]));
 
-  const isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
+  const isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   const deleteItem = (item, table) => {
     if (props.globalEnv.adminApiId === item.id) {
@@ -246,52 +254,49 @@ export function RoutesTable(props) {
   };
 
   const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
-      .findAllWithPagination({
-        ...paginationState,
-        fields: [
-          'backend.targets',
-          'enabled',
-          'frontend.domains',
-          'id',
-          'name',
-          'metadata',
-          ...Object.keys(fields).map(field => fields[field] ? field : undefined)
-        ].filter(c => c),
-      })
+    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).findAllWithPagination({
+      ...paginationState,
+      fields: [
+        'backend.targets',
+        'enabled',
+        'frontend.domains',
+        'id',
+        'name',
+        'metadata',
+        ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
+      ].filter((c) => c),
+    });
 
-  const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName])
-    .template()
+  const fetchTemplate = () =>
+    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).template();
 
-  const ref = useRef()
+  const ref = useRef();
 
-  const onFieldsChange = fields => {
+  const onFieldsChange = (fields) => {
     if (ref.current) {
-      ref.current.update()
+      ref.current.update();
     }
 
-    saveFields(fields)
-  }
+    saveFields(fields);
+  };
 
   useEffect(() => {
-    loadFields()
-  }, [])
+    loadFields();
+  }, []);
 
   const loadFields = () => {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'));
 
-      if (values.routes)
-        setFields(values.routes)
-
+      if (values.routes) setFields(values.routes);
     } catch (e) {
       // console.log(e);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   };
 
-  const saveFields = fields => {
+  const saveFields = (fields) => {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
 
@@ -307,64 +312,66 @@ export function RoutesTable(props) {
     }
   };
 
-  return <Loader loading={loading}>
-    <div className="designer">
-      <Table
-        ref={ref}
-        parentProps={{ params }}
-        navigateTo={(item) => history.push(`/${entity.link}/${item.id}?tab=flow`)}
-        navigateOnEdit={(item) => history.push(`/${entity.link}/${item.id}?tab=informations`)}
-        selfUrl={entity.link}
-        defaultTitle={entity.capitalizePlural}
-        itemName={entity.capitalize}
-        formSchema={null}
-        formFlow={null}
-        columns={columns}
-        fields={fields}
-        coreFields={CORE_FIELDS}
-        addField={fieldPath => {
-          const newFields = {
-            ...fields,
-            [fieldPath]: true
-          }
-          setFields(newFields)
-          onFieldsChange(newFields)
-        }}
-        removeField={fieldPath => {
-          const { [fieldPath]: _, ...newFields } = fields;
+  return (
+    <Loader loading={loading}>
+      <div className="designer">
+        <Table
+          ref={ref}
+          parentProps={{ params }}
+          navigateTo={(item) => history.push(`/${entity.link}/${item.id}?tab=flow`)}
+          navigateOnEdit={(item) => history.push(`/${entity.link}/${item.id}?tab=informations`)}
+          selfUrl={entity.link}
+          defaultTitle={entity.capitalizePlural}
+          itemName={entity.capitalize}
+          formSchema={null}
+          formFlow={null}
+          columns={columns}
+          fields={fields}
+          coreFields={CORE_FIELDS}
+          addField={(fieldPath) => {
+            const newFields = {
+              ...fields,
+              [fieldPath]: true,
+            };
+            setFields(newFields);
+            onFieldsChange(newFields);
+          }}
+          removeField={(fieldPath) => {
+            const { [fieldPath]: _, ...newFields } = fields;
 
-          setFields(newFields)
-          onFieldsChange(newFields)
-        }}
-        onToggleField={(column, enabled) => {
-          const newFields = {
-            ...fields,
-            [column]: enabled
-          }
-          onFieldsChange(newFields)
-          setFields(newFields)
-        }}
-        deleteItem={(item) => deleteItem(item)}
-        defaultSort="metadata.updated_at"
-        defaultSortDesc="true"
-        fetchItems={fetchItems}
-        fetchTemplate={fetchTemplate}
-        showActions={true}
-        showLink={false}
-        extractKey={(item) => item.id}
-        rowNavigation={true}
-        hideAddItemAction={true}
-        rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
-        injectTopBar={() => (
-          <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary btn-sm" to={`${entity.link}/new?tab=informations`}>
-              <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
-            </Link>
-            {props.injectTopBar}
-          </div>
-        )}
-      />
-    </div>
-  </Loader>
+            setFields(newFields);
+            onFieldsChange(newFields);
+          }}
+          onToggleField={(column, enabled) => {
+            const newFields = {
+              ...fields,
+              [column]: enabled,
+            };
+            onFieldsChange(newFields);
+            setFields(newFields);
+          }}
+          deleteItem={(item) => deleteItem(item)}
+          defaultSort="metadata.updated_at"
+          defaultSortDesc="true"
+          fetchItems={fetchItems}
+          fetchTemplate={fetchTemplate}
+          showActions={true}
+          showLink={false}
+          extractKey={(item) => item.id}
+          rowNavigation={true}
+          hideAddItemAction={true}
+          rawEditUrl={true}
+          displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+          injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+              <Link className="btn btn-primary btn-sm" to={`${entity.link}/new?tab=informations`}>
+                <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
+              </Link>
+              {props.injectTopBar}
+            </div>
+          )}
+        />
+      </div>
+    </Loader>
+  );
 }

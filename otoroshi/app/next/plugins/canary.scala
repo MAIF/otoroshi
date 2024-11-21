@@ -74,7 +74,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = false

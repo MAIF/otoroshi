@@ -156,7 +156,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true
@@ -418,7 +418,7 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true
@@ -438,7 +438,7 @@ class OtoroshiInfos extends NgRequestTransformer {
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
 
-    var claim  = InfoTokenHelper.generateInfoToken(
+    var claim = InfoTokenHelper.generateInfoToken(
       ctx.route.name,
       config.secComVersion,
       config.secComTtl,
