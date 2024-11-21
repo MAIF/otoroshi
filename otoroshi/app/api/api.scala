@@ -835,6 +835,26 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.globalConfig().map(TweakedGlobalConfig.apply),
         stateUpdate = seq => throw new UnsupportedOperationException("...")
       )
+    ),
+    //////
+    Resource(
+      "Draft",
+      "drafts",
+      "draft",
+      "proxy.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[Draft](
+        Draft.format,
+        classOf[Draft],
+        env.datastores.draftsDataStore.key,
+        env.datastores.draftsDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (_v, _p) => env.datastores.draftsDataStore.template(env).json,
+        stateAll = () => env.proxyState.allDrafts(),
+        stateOne = id => env.proxyState.draft(id),
+        stateUpdate = seq => env.proxyState.updateDrafts(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
 }

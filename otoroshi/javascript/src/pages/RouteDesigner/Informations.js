@@ -7,6 +7,8 @@ import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
@@ -32,10 +34,13 @@ export const Informations = forwardRef(
           className="ms-2 mb-1"
           onPress={saveRoute}
           text={isCreation ? `Create ${entityName}` : `Save`}
-          icon={() => <i className="fas fa-paper-plane" />}
         />
       );
     }, [value]);
+
+
+    if (!value)
+      return null
 
     function saveRoute() {
       if (isCreation || location.state?.routeFromService) {
@@ -326,40 +331,43 @@ export const Informations = forwardRef(
       },
     ];
 
-    return (
-      <>
-        {showAdvancedForm ? (
-          <RouteForm
-            routeId={routeId}
-            setValue={setValue}
-            value={value}
-            history={history}
-            location={location}
-            isCreation={isCreation}
-          />
-        ) : (
-          <NgForm
-            schema={schema}
-            flow={flow}
-            value={value}
-            onChange={(v) => {
-              setValue(v);
-            }}
-          />
-        )}
+    return (<>
+      <DraftStateDaemon
+        value={value}
+        setValue={setValue} />
 
-        <div className="d-flex align-items-center justify-content-end mt-3 p-0">
-          {!isOnRouteCompositions && (
-            <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
-          )}
-          <Button
-            type="danger"
-            className="btn-sm"
-            onClick={() => history.push(`/${link}`)}
-            text="Cancel"
-          />
-        </div>
-      </>
+      {showAdvancedForm ? (
+        <RouteForm
+          routeId={routeId}
+          setValue={setValue}
+          value={value}
+          history={history}
+          location={location}
+          isCreation={isCreation}
+        />
+      ) : (
+        <NgForm
+          schema={schema}
+          flow={flow}
+          value={value}
+          onChange={(v) => {
+            setValue(v);
+          }}
+        />
+      )}
+
+      <div className="d-flex align-items-center justify-content-end mt-3 p-0">
+        {!isOnRouteCompositions && (
+          <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
+        )}
+        <Button
+          type="danger"
+          className="btn-sm"
+          onClick={() => history.push(`/${link}`)}
+          text="Cancel"
+        />
+      </div>
+    </>
     );
   }
 );

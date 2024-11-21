@@ -10,7 +10,7 @@ function Header({ onClose, title }) {
   );
 }
 
-function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk }) {
+function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okClassName = "" }) {
   return (
     <div className="d-flex mt-auto justify-content-between align-items-center">
       {!noCancel && (
@@ -28,7 +28,7 @@ function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk }) {
       )}
       {!noOk && (
         <Button
-          className="ms-auto"
+          className={okClassName ? okClassName : 'ms-auto'}
           onClick={ok}
           text={okLabel || 'Ok'}
           type="save"

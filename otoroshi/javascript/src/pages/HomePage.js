@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import { LiveStatTiles } from '../components/LiveStatTiles';
 import { ClusterTiles } from '../components/ClusterTiles';
-import { DynamicTitle } from '../components/DynamicTitle';
+// import { DynamicTitle } from '../components/DynamicTitle';
+import { dynamicTitleContent, DynamicTitleSignal } from '../components/DynamicTitleSignal';
 
 export class HomePage extends Component {
   componentDidMount() {
-    DynamicTitle.setContent(undefined);
+    // DynamicTitle.setContent(undefined);
+    dynamicTitleContent.value = undefined
   }
 
   render() {

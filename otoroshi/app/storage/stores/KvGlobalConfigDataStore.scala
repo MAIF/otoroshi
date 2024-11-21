@@ -264,6 +264,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val routeCompositions  = (exportSource \ "routeCompositions").asOpt[JsArray].getOrElse(Json.arr())
     val backends           = (exportSource \ "backends").asOpt[JsArray].getOrElse(Json.arr())
     val wasmPlugins        = (exportSource \ "wasmPlugins").asOpt[JsArray].getOrElse(Json.arr())
+    val drafts             = (exportSource \ "drafts").asOpt[JsArray].getOrElse(Json.arr())
     val extensions         = (exportSource \ "extensions").asOpt[JsObject].getOrElse(Json.obj())
 
     for {
@@ -297,6 +298,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(routeCompositions.value.map(NgRouteComposition.fromJsons).map(_.save()))
       _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
       _ <- Future.sequence(wasmPlugins.value.map(WasmPlugin.fromJsons).map(_.save()))
+      _ <- Future.sequence(drafts.value.map(Draft.fromJsons).map(_.save()))
       _ <- env.adminExtensions.importAllEntities(extensions)
     } yield ()
   }
@@ -335,6 +337,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routeCompositions <- env.datastores.routeCompositionDataStore.findAll()
       backends          <- env.datastores.backendsDataStore.findAll()
       wasmPlugins       <- env.datastores.wasmPluginsDataStore.findAll()
+      drafts            <- env.datastores.draftsDataStore.findAll()
       extensions        <- env.adminExtensions.exportAllEntities()
     } yield OtoroshiExport(
       config,
@@ -360,7 +363,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routeCompositions,
       backends,
       wasmPlugins,
-      extensions
+      extensions,
+      drafts,
     ).json
   }
 

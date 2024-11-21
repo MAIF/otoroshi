@@ -208,7 +208,6 @@ class RouteForms extends React.Component {
         <div className="d-flex align-items-center justify-content-end me-3">
           <FeedbackButton
             text="Update the route"
-            icon={() => <i className="fas fa-paper-plane" />}
             onPress={this.props.saveRoute}
           />
         </div>
@@ -336,7 +335,6 @@ export default class RouteCompositions extends React.Component {
       <FeedbackButton
         className="ms-2"
         text="Save route composition"
-        icon={() => <i className="fas fa-paper-plane" />}
         onPress={this.saveRoute}
       />
     );

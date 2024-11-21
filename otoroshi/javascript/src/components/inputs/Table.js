@@ -14,7 +14,9 @@ import {
 } from '../nginputs';
 import _ from 'lodash';
 import { Button } from '../Button';
-import { firstLetterUppercase } from '../../util';
+import { firstLetterUppercase } from '../../util'
+import { DraftEditorContainer, DraftStateDaemon } from '../Drafts/DraftEditor';
+import { updateEntityURLSignal } from '../Drafts/DraftEditorSignal';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -280,6 +282,7 @@ export class Table extends Component {
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
+
     this.readRoute();
   }
 
@@ -725,7 +728,7 @@ export class Table extends Component {
         accessor: (item) => (
           <div style={{ textAlign: 'left' }}>
             <div>
-              <button
+              {!this.props.hideEditButton && <button
                 type="button"
                 className="btn btn-sm btn-success me-2"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
@@ -736,7 +739,7 @@ export class Table extends Component {
                 }}
               >
                 <i className="fas fa-pencil-alt" />
-              </button>
+              </button>}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -785,6 +788,21 @@ export class Table extends Component {
 
     return (
       <div>
+        {(this.state.currentItem && !this.state.showAddForm) && <>
+          <DraftEditorContainer
+            className="mb-3"
+            entityId={this.props.extractKey(this.state.currentItem)}
+            value={this.state.currentItem} />
+
+          <DraftStateDaemon
+            value={this.state.currentItem}
+            setValue={currentItem => this.setState({ currentItem })}
+            updateEntityURL={() => {
+              updateEntityURLSignal.value = this.updateItemAndStay
+            }}
+          />
+        </>}
+
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
             <div className="row">

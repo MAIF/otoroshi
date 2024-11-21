@@ -81,6 +81,7 @@ trait DataStores {
   def routeCompositionDataStore: NgRouteCompositionDataStore
   def backendsDataStore: StoredNgBackendDataStore
   def wasmPluginsDataStore: WasmPluginDataStore
+  def draftsDataStore: DraftDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
