@@ -18,26 +18,26 @@ case class StaticAssetEndpointConfiguration(url: Option[String] = None) extends 
 }
 
 object StaticAssetEndpointConfiguration {
-  val default = StaticAssetEndpointConfiguration()
-  val format = new Format[StaticAssetEndpointConfiguration] {
+  val default                        = StaticAssetEndpointConfiguration()
+  val format                         = new Format[StaticAssetEndpointConfiguration] {
     override def reads(json: JsValue): JsResult[StaticAssetEndpointConfiguration] = Try {
       StaticAssetEndpointConfiguration(
         url = json.select("url").asOpt[String].filter(_.nonEmpty)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(v) => JsSuccess(v)
+      case Success(v)         => JsSuccess(v)
     }
-    override def writes(o: StaticAssetEndpointConfiguration): JsValue = Json.obj(
+    override def writes(o: StaticAssetEndpointConfiguration): JsValue             = Json.obj(
       "url" -> o.url.map(_.json).getOrElse(JsNull).asValue
     )
   }
   val configFlow: Seq[String]        = Seq("url")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "url"        -> Json.obj(
+      "url" -> Json.obj(
         "type"  -> "string",
-        "label" -> s"Asset url",
+        "label" -> s"Asset url"
       )
     )
   )
@@ -63,22 +63,28 @@ class StaticAssetEndpoint extends NgRequestTransformer {
   override def isTransformRequestAsync: Boolean            = true
   override def isTransformResponseAsync: Boolean           = false
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config = ctx.cachedConfig(internalName)(StaticAssetEndpointConfiguration.format).getOrElse(StaticAssetEndpointConfiguration.default)
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx
+      .cachedConfig(internalName)(StaticAssetEndpointConfiguration.format)
+      .getOrElse(StaticAssetEndpointConfiguration.default)
     config.url match {
-      case None => ctx.otoroshiRequest.rightf
+      case None      => ctx.otoroshiRequest.rightf
       case Some(url) => {
-        val uri = Uri(url)
+        val uri    = Uri(url)
         val target = NgTarget(
           id = url,
           hostname = uri.authority.host.toString(),
           port = uri.effectivePort,
-          tls = url.startsWith("https://"),
+          tls = url.startsWith("https://")
         )
-        ctx.otoroshiRequest.copy(
-          backend = target.some,
-          url = url
-        ).rightf
+        ctx.otoroshiRequest
+          .copy(
+            backend = target.some,
+            url = url
+          )
+          .rightf
       }
     }
   }

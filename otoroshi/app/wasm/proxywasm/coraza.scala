@@ -81,7 +81,12 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val pluginConfigurationSize = rules.stringify.byteString.length
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
-    new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m, vmd) => logCallback(l, m, vmd)), env)
+    new ProxyWasmState(
+      CorazaPlugin.rootContextIds.incrementAndGet(),
+      contextId,
+      Some((l, m, vmd) => logCallback(l, m, vmd)),
+      env
+    )
   private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def logCallback(level: org.slf4j.event.Level, msg: String, data: VmData): Unit = {
@@ -761,7 +766,12 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String, request: Option[RequestHeader], route: Option[NgRoute]) extends AnalyticEvent {
+case class CorazaTrailEvent(
+    level: org.slf4j.event.Level,
+    msg: String,
+    request: Option[RequestHeader],
+    route: Option[NgRoute]
+) extends AnalyticEvent {
 
   override def `@service`: String            = "--"
   override def `@serviceId`: String          = "--"
@@ -802,7 +812,7 @@ case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String, request: 
       "msg"        -> txt,
       "fields"     -> JsObject(fields.mapValues(JsString.apply)),
       "route"      -> route.map(_.json).getOrElse(JsNull).asValue,
-      "request"    -> request.map(JsonHelpers.requestToJson).getOrElse(JsNull).asValue,
+      "request"    -> request.map(JsonHelpers.requestToJson).getOrElse(JsNull).asValue
     )
   }
 }

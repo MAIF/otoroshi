@@ -222,7 +222,7 @@ class BackOfficeAppContainer extends Component {
         reloadEnv={this.reloadEnv}
         // setTitle={(t) => DynamicTitle.setContent(t)}
         // getTitle={() => DynamicTitle.getContent()}
-        setTitle={(t) => dynamicTitleContent.value = t}
+        setTitle={(t) => (dynamicTitleContent.value = t)}
         getTitle={() => dynamicTitleContent.value}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
         {...newProps}
@@ -284,7 +284,7 @@ class BackOfficeAppContainer extends Component {
                 shortMenu={this.state.shortMenu}
                 // setTitle={(t) => DynamicTitle.setContent(t)}
                 // getTitle={() => DynamicTitle.getContent()}
-                setTitle={(t) => dynamicTitleContent.value = t}
+                setTitle={(t) => (dynamicTitleContent.value = t)}
                 getTitle={() => dynamicTitleContent.value}
                 {...this.props}
                 changePassword={this.state.env.changePassword}
@@ -300,8 +300,9 @@ class BackOfficeAppContainer extends Component {
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
-                    } sidebar-toggle`}
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -473,7 +474,7 @@ class BackOfficeAppContainer extends Component {
                             reloadEnv={this.reloadEnv}
                             // setTitle={(t) => DynamicTitle.setContent(t)}
                             // getTitle={() => DynamicTitle.getContent()}
-                            setTitle={(t) => dynamicTitleContent.value = t}
+                            setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
                             {...props}
@@ -487,7 +488,7 @@ class BackOfficeAppContainer extends Component {
                             globalEnv={this.state.env}
                             // setTitle={(t) => DynamicTitle.setContent(t)}
                             // getTitle={() => DynamicTitle.getContent()}
-                            setTitle={(t) => dynamicTitleContent.value = t}
+                            setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             {...props}
                           />
@@ -500,7 +501,7 @@ class BackOfficeAppContainer extends Component {
                             globalEnv={this.state.env}
                             // setTitle={(t) => DynamicTitle.setContent(t)}
                             // getTitle={() => DynamicTitle.getContent()}
-                            setTitle={(t) => dynamicTitleContent.value = t}
+                            setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             {...props}
                           />
@@ -764,10 +765,7 @@ class BackOfficeAppContainer extends Component {
                         path="/eureka-servers"
                         component={(props) => this.decorate(EurekaServersPage, props)}
                       />
-                      <Route
-                        path="/audit"
-                        component={(props) => this.decorate(AuditPage, props)}
-                      />
+                      <Route path="/audit" component={(props) => this.decorate(AuditPage, props)} />
                       <Route
                         path="/alerts"
                         component={(props) => this.decorate(AlertPage, props)}

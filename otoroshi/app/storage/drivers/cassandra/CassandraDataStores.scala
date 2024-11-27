@@ -140,7 +140,7 @@ class CassandraDataStores(
   private lazy val _wasmPluginDataStore                  = new KvWasmPluginDataStore(redis, env)
   override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
 
-  private lazy val _draftDataStore                  = new KvDraftDataStore(redis, env)
+  private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)

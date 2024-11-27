@@ -364,7 +364,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       backends,
       wasmPlugins,
       extensions,
-      drafts,
+      drafts
     ).json
   }
 

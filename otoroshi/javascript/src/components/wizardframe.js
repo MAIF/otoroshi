@@ -10,7 +10,7 @@ function Header({ onClose, title }) {
   );
 }
 
-function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okClassName = "" }) {
+function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okClassName = '' }) {
   return (
     <div className="d-flex mt-auto justify-content-between align-items-center">
       {!noCancel && (

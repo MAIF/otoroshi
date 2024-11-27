@@ -236,7 +236,11 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              border: clickable ? (showChildren ? '1px solid var(--color-primary)' : '1px solid var(--bg-color_level2)') : 'none',
+              border: clickable
+                ? showChildren
+                  ? '1px solid var(--color-primary)'
+                  : '1px solid var(--bg-color_level2)'
+                : 'none',
               borderRadius: 6,
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',

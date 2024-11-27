@@ -180,7 +180,8 @@ export const graph = (env) => {
           display: () => false,
           icon: () => 'fa-cubes',
           link: '/route-compositions',
-        },{
+        },
+        {
           title: 'Drafts',
           description: 'All drafts of your entities',
           img: 'drafts',

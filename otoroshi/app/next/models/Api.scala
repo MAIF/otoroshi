@@ -9,10 +9,10 @@ import play.api.libs.json.{Format, JsResult, JsValue}
 
 // the state on the dev portal
 case class ApiState(
-   started: Boolean,
-   published: Boolean,
-   public: Boolean,
-   deprecated: Boolean
+    started: Boolean,
+    published: Boolean,
+    public: Boolean,
+    deprecated: Boolean
 )
 
 case class ApiBackend(
@@ -200,7 +200,7 @@ case class Api(
     clients: Seq[ApiBackendClient],
     documentation: ApiDocumentation,
     consumers: Seq[ApiConsumer],
-    deployments: Seq[ApiDeploymentRef],
+    deployments: Seq[ApiDeploymentRef]
     // TODO: monitoring and heath ????
     //// ApiVersion
 ) extends EntityLocationSupport {

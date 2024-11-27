@@ -1068,7 +1068,7 @@ case class OtoroshiExport(
     backends: Seq[StoredNgBackend] = Seq.empty,
     wasmPlugins: Seq[WasmPlugin] = Seq.empty,
     extensions: Map[String, Map[String, Seq[JsValue]]],
-    drafts: Seq[Draft] = Seq.empty,
+    drafts: Seq[Draft] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._

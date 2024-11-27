@@ -86,7 +86,7 @@ object pgimplicits {
     def optInterval(name: String)(implicit logger: Logger): Option[io.vertx.pgclient.data.Interval] =
       opt(name, "Interval", (a, b) => a.get(classOf[io.vertx.pgclient.data.Interval], b))
 
-    def optJsObject(name: String)(implicit logger: Logger): Option[JsObject]             =
+    def optJsObject(name: String)(implicit logger: Logger): Option[JsObject] =
       opt(
         name,
         "JsObject",
@@ -99,7 +99,7 @@ object pgimplicits {
           }
         }
       )
-    def optJsArray(name: String)(implicit logger: Logger): Option[JsArray]               =
+    def optJsArray(name: String)(implicit logger: Logger): Option[JsArray]   =
       opt(
         name,
         "JsArray",
@@ -296,8 +296,8 @@ class ReactivePgDataStores(
         client
           .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
           .executeAsync()
-          .recover {
-            case e: Throwable => logger.error("cache scheduler exec error", e)
+          .recover { case e: Throwable =>
+            logger.error("cache scheduler exec error", e)
           }
       } catch {
         case e: Throwable => logger.error("cache scheduler error", e)
@@ -411,7 +411,7 @@ class ReactivePgDataStores(
   private lazy val _wasmPluginDataStore                  = new KvWasmPluginDataStore(redis, env)
   override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
 
-  private lazy val _draftDataStore                  = new KvDraftDataStore(redis, env)
+  private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
@@ -993,28 +993,34 @@ class ReactivePgRedis(
     }
 
   override def pttl(key: String): Future[Long] = {
-      queryOne(
-        s"select (ttl_starting_at + ttl) as expire_at, NOW() as n, ttl, ttl_starting_at from $schemaDotTable where key = $$1 limit 1;",
-        Seq(key)
-      ) { row =>
-        (row.optOffsetDatetime("expire_at"), row.optOffsetDatetime("n"), row.optInterval("ttl")) match {
-          case (Some(_), Some(_), Some(ttlrow)) if ttlrow.getYears == 1000 => Some(-1L) // here it's default ttl so nothing to do
-          case (Some(expirationDate), Some(now), Some(_)) if expirationDate.isBefore(now) || expirationDate.isEqual(now) => {
-            hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
+    queryOne(
+      s"select (ttl_starting_at + ttl) as expire_at, NOW() as n, ttl, ttl_starting_at from $schemaDotTable where key = $$1 limit 1;",
+      Seq(key)
+    ) { row =>
+      (row.optOffsetDatetime("expire_at"), row.optOffsetDatetime("n"), row.optInterval("ttl")) match {
+        case (Some(_), Some(_), Some(ttlrow)) if ttlrow.getYears == 1000 =>
+          Some(-1L) // here it's default ttl so nothing to do
+        case (Some(expirationDate), Some(now), Some(_))
+            if expirationDate.isBefore(now) || expirationDate.isEqual(now) => {
+          hardDelete(
+            key
+          ) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
+          Some(-1L)
+        }
+        case (Some(expirationDate), Some(now), Some(_))                  => {
+          val ttl = ChronoUnit.MILLIS.between(now, expirationDate)
+          if (ttl > 0) {
+            ttl.some
+          } else {
+            hardDelete(
+              key
+            ) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
             Some(-1L)
           }
-          case (Some(expirationDate), Some(now), Some(_)) => {
-            val ttl = ChronoUnit.MILLIS.between(now, expirationDate)
-            if (ttl > 0) {
-              ttl.some
-            } else {
-              hardDelete(key) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
-              Some(-1L)
-            }
-          }
-          case _ => Some(-1L)
         }
-      }.map(_.filter(_ > -1).getOrElse(-1))
+        case _                                                           => Some(-1L)
+      }
+    }.map(_.filter(_ > -1).getOrElse(-1))
   }
 
   override def ttl(key: String): Future[Long] = pttl(key).map(v => v / 1000L)

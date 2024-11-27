@@ -169,7 +169,7 @@ class GenericDataStores(
 
   override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
 
-  private lazy val _draftDataStore                  = new KvDraftDataStore(redis, env)
+  private lazy val _draftDataStore = new KvDraftDataStore(redis, env)
 
   override def draftsDataStore: DraftDataStore = _draftDataStore
 

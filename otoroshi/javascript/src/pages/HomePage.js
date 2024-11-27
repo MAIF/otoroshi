@@ -7,7 +7,7 @@ import { dynamicTitleContent, DynamicTitleSignal } from '../components/DynamicTi
 export class HomePage extends Component {
   componentDidMount() {
     // DynamicTitle.setContent(undefined);
-    dynamicTitleContent.value = undefined
+    dynamicTitleContent.value = undefined;
   }
 
   render() {

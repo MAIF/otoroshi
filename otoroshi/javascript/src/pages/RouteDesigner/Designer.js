@@ -42,7 +42,11 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
-import { draftSignal, draftVersionSignal, updateEntityURLSignal } from '../../components/Drafts/DraftEditorSignal';
+import {
+  draftSignal,
+  draftVersionSignal,
+  updateEntityURLSignal,
+} from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 
@@ -72,7 +76,6 @@ const Legacy = ({ value }) => (
     style={{ display: !!value ? 'block' : 'none' }}
   />
 );
-
 
 const Dot = ({
   className,
@@ -497,19 +500,12 @@ const PluginsContainer = ({
   </div>
 );
 
-
 function SaveButton({ saveRoute, state }) {
-  const draftContext = useSignalValue(draftVersionSignal)
+  const draftContext = useSignalValue(draftVersionSignal);
 
-  if (draftContext.version === 'draft')
-    return null
+  if (draftContext.version === 'draft') return null;
 
-  return <FeedbackButton
-    type="success"
-    className="ms-2 mb-1"
-    onPress={saveRoute}
-    text="Save"
-  />
+  return <FeedbackButton type="success" className="ms-2 mb-1" onPress={saveRoute} text="Save" />;
 }
 
 class Designer extends React.Component {
@@ -623,7 +619,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -639,7 +635,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -650,16 +646,18 @@ class Designer extends React.Component {
     }
   };
 
-  loadData = incomingRoute => {
+  loadData = (incomingRoute) => {
     Promise.all([
-      nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
-        .findAll(),
-      incomingRoute ? Promise.resolve(incomingRoute) : (this.props.value
-        ? Promise.resolve(this.props.value)
-        : nextClient
-          .forEntityNext(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES)
-          .findById(this.props.routeId)
-      ),
+      nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+      incomingRoute
+        ? Promise.resolve(incomingRoute)
+        : this.props.value
+          ? Promise.resolve(this.props.value)
+          : nextClient
+              .forEntityNext(
+                this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
+              )
+              .findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -667,26 +665,26 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                showAdvancedDesignerView: (pluginName) => {
-                  this.setState({ advancedDesignerView: pluginName });
-                },
-              })
+                  showAdvancedDesignerView: (pluginName) => {
+                    this.setState({ advancedDesignerView: pluginName });
+                  },
+                })
               : plugin.config_schema,
           };
         })
       ),
       getOldPlugins(),
       getPlugins(),
-      routePorts(this.props.routeId)
+      routePorts(this.props.routeId),
     ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-            ...r,
-            overridePlugins: true,
-            plugins: [],
-            ...r.routes[~~this.props.viewPlugins],
-          }
+              ...r,
+              overridePlugins: true,
+              plugins: [],
+              ...r.routes[~~this.props.viewPlugins],
+            }
           : r;
 
       if (route.error) {
@@ -786,10 +784,7 @@ class Designer extends React.Component {
             config_flow: Backend.flow,
             nodeId: 'Backend',
           },
-          selectedNode: this.getSelectedNodeFromLocation(
-            routeWithNodeId.plugins,
-            formattedPlugins
-          ),
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
         },
         this.injectNavbarMenu
       );
@@ -1006,14 +1001,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                    plugin: newNode.id,
-                    // [newNode.configRoot]: {
-                    ...newNode.config,
-                    // },
-                  }
+                      plugin: newNode.id,
+                      // [newNode.configRoot]: {
+                      ...newNode.config,
+                      // },
+                    }
                   : {
-                    ...newNode.config,
-                  },
+                      ...newNode.config,
+                    },
               },
             ],
           },
@@ -1253,7 +1248,7 @@ class Designer extends React.Component {
     });
   };
 
-  processRouteBeforeUpdate = route => {
+  processRouteBeforeUpdate = (route) => {
     const { originalRoute } = this.state;
 
     let newRoute;
@@ -1279,21 +1274,21 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-              {}
+                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+                {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
       };
     }
 
-    return newRoute
-  }
+    return newRoute;
+  };
 
   saveRoute = () => {
     const { route } = this.state;
 
-    const newRoute = this.processRouteBeforeUpdate(route)
+    const newRoute = this.processRouteBeforeUpdate(route);
 
     if (this.props.setValue) {
       this.props.setValue(newRoute);
@@ -1330,7 +1325,7 @@ class Designer extends React.Component {
 
   isPluginEnabled = (value) => {
     return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
-  }
+  };
 
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
@@ -1574,17 +1569,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1607,16 +1602,20 @@ class Designer extends React.Component {
         <DraftStateDaemon
           processDraft={this.processRouteBeforeUpdate}
           value={this.state.route}
-          setValue={route => {
-            this.props.setValue(route)
-            this.setState({
-              route,
-              selectedNode: undefined
-            }, () => this.loadData(this.state.route))
+          setValue={(route) => {
+            this.props.setValue(route);
+            this.setState(
+              {
+                route,
+                selectedNode: undefined,
+              },
+              () => this.loadData(this.state.route)
+            );
           }}
           updateEntityURL={() => {
-            updateEntityURLSignal.value = this.saveRoute
-          }} />
+            updateEntityURLSignal.value = this.saveRoute;
+          }}
+        />
         <Container
           showTryIt={showTryIt}
           onClick={() => {
@@ -1961,14 +1960,14 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
+              {m}
+            </span>
+          ))
         : [<span className="badge bg-success">ALL</span>];
 
     const unsecuredCopyToClipboard = (text) => {
@@ -2068,13 +2067,15 @@ const UnselectedNode = ({
                       >
                         <i className={copyIconName} />
                       </button>
-                      {draftVersionSignal.value.version === 'published' && <button
-                        className="btn btn-sm btn-quiet ms-1"
-                        title={`Go to ${start}${domain}`}
-                        onClick={() => goTo(idx)}
-                      >
-                        <i className="fas fa-external-link-alt" />
-                      </button>}
+                      {draftVersionSignal.value.version === 'published' && (
+                        <button
+                          className="btn btn-sm btn-quiet ms-1"
+                          title={`Go to ${start}${domain}`}
+                          onClick={() => goTo(idx)}
+                        >
+                          <i className="fas fa-external-link-alt" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -2154,9 +2155,9 @@ const UnselectedNode = ({
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                    target.tls_config.enabled &&
-                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                      .length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                    .length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2239,8 +2240,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -2591,10 +2593,7 @@ class EditView extends React.Component {
                       }}
                     />
                   ) : (
-                    <Actions
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
+                    <Actions selectedNode={selectedNode} onRemove={onRemove} />
                   )}
                 </>
               )}
@@ -2726,7 +2725,7 @@ export const Description = ({ text, steps, legacy }) => {
     <>
       {steps.length > 0 && (
         <div className="steps py-2" style={{ paddingLeft: 12 }}>
-          Active on steps {' '}
+          Active on steps{' '}
           {steps.map((step, i) => (
             <span
               className="badge bg-warning text-dark"

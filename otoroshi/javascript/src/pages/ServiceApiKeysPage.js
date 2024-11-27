@@ -56,9 +56,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-        this.props.rawValue.clientId +
-        '/bearer?newSecret=' +
-        this.props.rawValue.clientSecret,
+          this.props.rawValue.clientId +
+          '/bearer?newSecret=' +
+          this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,9 +255,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -861,8 +863,9 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
-                }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -949,8 +952,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-        .forEntityNext(nextClient.ENTITIES.SERVICES)
-        .findById(this.props.params.serviceId);
+          .forEntityNext(nextClient.ENTITIES.SERVICES)
+          .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -1010,7 +1013,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-              `routes/${this.props.params.routeId}/apikeys`
+                `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
@@ -1223,100 +1226,103 @@ export class ApiKeysPage extends Component {
       });
     });
 
-    return <Loader loading={this.state.loading}>
-      <Table
-        ref={this.ref}
-        parentProps={this.props}
-        selfUrl={`apikeys`}
-        defaultTitle="All apikeys"
-        defaultValue={() =>
-          nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS)
-            .template()
-            .then((apk) => ({
-              ...apk,
-              clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-              authorizedEntities: [],
-            }))
-        }
-        _defaultValue={() => ({
-          clientId: faker.random.alphaNumeric(16),
-          clientSecret: faker.random.alphaNumeric(64),
-          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-          description: '',
-          enabled: true,
-          throttlingQuota: 100,
-          dailyQuota: 1000000,
-          monthlyQuota: 1000000000000000000,
-          authorizedEntities: [],
-        })}
-        itemName="Apikey"
-        formSchema={ApiKeysConstants.formSchema(this)}
-        formFlow={ApiKeysConstants.formFlow}
-        columns={columns}
-        fields={fields}
-        coreFields={CORE_FIELDS}
-        addField={fieldPath => {
-          const newFields = {
-            ...fields,
-            [fieldPath]: true
+    return (
+      <Loader loading={this.state.loading}>
+        <Table
+          ref={this.ref}
+          parentProps={this.props}
+          selfUrl={`apikeys`}
+          defaultTitle="All apikeys"
+          defaultValue={() =>
+            nextClient
+              .forEntityNext(nextClient.ENTITIES.APIKEYS)
+              .template()
+              .then((apk) => ({
+                ...apk,
+                clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+                authorizedEntities: [],
+              }))
           }
+          _defaultValue={() => ({
+            clientId: faker.random.alphaNumeric(16),
+            clientSecret: faker.random.alphaNumeric(64),
+            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            description: '',
+            enabled: true,
+            throttlingQuota: 100,
+            dailyQuota: 1000000,
+            monthlyQuota: 1000000000000000000,
+            authorizedEntities: [],
+          })}
+          itemName="Apikey"
+          formSchema={ApiKeysConstants.formSchema(this)}
+          formFlow={ApiKeysConstants.formFlow}
+          columns={columns}
+          fields={fields}
+          coreFields={CORE_FIELDS}
+          addField={(fieldPath) => {
+            const newFields = {
+              ...fields,
+              [fieldPath]: true,
+            };
 
-          this.setState(
-            {
-              fields: newFields,
-            },
-            () => {
-              this.onFieldsChange(newFields);
-            }
-          );
-        }}
-        removeField={(fieldPath) => {
-          const { [fieldPath]: _, ...newFields } = fields;
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          removeField={(fieldPath) => {
+            const { [fieldPath]: _, ...newFields } = fields;
 
-          this.setState(
-            {
-              fields: newFields,
-            },
-            () => {
-              this.onFieldsChange(newFields);
-            }
-          );
-        }}
-        onToggleField={(column, enabled) => {
-          const newFields = {
-            ...fields,
-            [column]: enabled,
-          };
-          this.setState(
-            {
-              fields: newFields,
-            },
-            () => {
-              this.onFieldsChange(newFields);
-            }
-          );
-        }}
-        fetchTemplate={this.fetchTemplate}
-        fetchItems={this.fetchAllApiKeys}
-        updateItem={this.updateItem}
-        deleteItem={this.deleteItem}
-        createItem={this.createItem}
-        stayAfterSave={true}
-        showActions={true}
-        displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
-        showLink={false}
-        rowNavigation={true}
-        export={true}
-        kubernetesKind="apim.otoroshi.io/ApiKey"
-        navigateTo={(item) =>
-          this.props.history.push({
-            pathname: `/apikeys/edit/${item.clientId}`,
-            query: { group: item.id, groupName: item.name },
-          })
-        }
-        itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
-        extractKey={(item) => item.clientId}
-      />
-    </Loader>
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          onToggleField={(column, enabled) => {
+            const newFields = {
+              ...fields,
+              [column]: enabled,
+            };
+            this.setState(
+              {
+                fields: newFields,
+              },
+              () => {
+                this.onFieldsChange(newFields);
+              }
+            );
+          }}
+          fetchTemplate={this.fetchTemplate}
+          fetchItems={this.fetchAllApiKeys}
+          updateItem={this.updateItem}
+          deleteItem={this.deleteItem}
+          createItem={this.createItem}
+          stayAfterSave={true}
+          showActions={true}
+          displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          showLink={false}
+          rowNavigation={true}
+          export={true}
+          kubernetesKind="apim.otoroshi.io/ApiKey"
+          navigateTo={(item) =>
+            this.props.history.push({
+              pathname: `/apikeys/edit/${item.clientId}`,
+              query: { group: item.id, groupName: item.name },
+            })
+          }
+          itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
+          extractKey={(item) => item.clientId}
+        />
+      </Loader>
+    );
   }
 }

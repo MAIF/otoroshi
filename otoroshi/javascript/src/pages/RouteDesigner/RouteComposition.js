@@ -206,10 +206,7 @@ class RouteForms extends React.Component {
           )}
         </div>
         <div className="d-flex align-items-center justify-content-end me-3">
-          <FeedbackButton
-            text="Update the route"
-            onPress={this.props.saveRoute}
-          />
+          <FeedbackButton text="Update the route" onPress={this.props.saveRoute} />
         </div>
       </div>
     );
@@ -332,11 +329,7 @@ export default class RouteCompositions extends React.Component {
     });
 
     this.props.setSaveButton(
-      <FeedbackButton
-        className="ms-2"
-        text="Save route composition"
-        onPress={this.saveRoute}
-      />
+      <FeedbackButton className="ms-2" text="Save route composition" onPress={this.saveRoute} />
     );
   }
 

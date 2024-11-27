@@ -26,7 +26,7 @@ object VmData {
     bodyInRef = new AtomicReference[ByteString](null),
     bodyOutRef = new AtomicReference[ByteString](null),
     requestRef = None,
-    routeRef = None,
+    routeRef = None
   )
   def withRules(rules: JsValue): VmData = VmData.empty().copy(configuration = rules.stringify)
   def from(request: RequestHeader, route: Option[NgRoute], attrs: TypedMap)(implicit env: Env): VmData = {
@@ -88,14 +88,14 @@ object VmData {
 }
 
 case class VmData(
-   configuration: String,
-   properties: Map[String, Array[Byte]],
-   tickPeriod: Int = -1,
-   respRef: AtomicReference[play.api.mvc.Result],
-   bodyInRef: AtomicReference[ByteString],
-   bodyOutRef: AtomicReference[ByteString],
-   requestRef: Option[RequestHeader],
-   routeRef: Option[NgRoute],
+    configuration: String,
+    properties: Map[String, Array[Byte]],
+    tickPeriod: Int = -1,
+    respRef: AtomicReference[play.api.mvc.Result],
+    bodyInRef: AtomicReference[ByteString],
+    bodyOutRef: AtomicReference[ByteString],
+    requestRef: Option[RequestHeader],
+    routeRef: Option[NgRoute]
 ) extends HostUserData
     with WasmVmData {
   def withRequest(request: RequestHeader, route: Option[NgRoute], attrs: TypedMap)(implicit env: Env): VmData = {
@@ -106,7 +106,7 @@ case class VmData(
         tickPeriod = tickPeriod,
         respRef = respRef,
         bodyInRef = bodyInRef,
-        bodyOutRef = bodyOutRef,
+        bodyOutRef = bodyOutRef
       )
   }
   def withResponse(response: NgPluginHttpResponse, attrs: TypedMap, body_bytes: Option[ByteString])(implicit
@@ -138,7 +138,7 @@ case class VmData(
       bodyInRef = bodyInRef,
       bodyOutRef = bodyOutRef,
       requestRef = requestRef,
-      routeRef = routeRef,
+      routeRef = routeRef
     )
   }
   def httpResponse: Option[play.api.mvc.Result] = Option(respRef.get())

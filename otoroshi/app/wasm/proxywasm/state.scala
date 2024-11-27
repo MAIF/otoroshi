@@ -32,7 +32,13 @@ class ProxyWasmState(
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
   }
 
-  override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int, data: VmData): Result = {
+  override def proxyLog(
+      plugin: ExtismCurrentPlugin,
+      logLevel: Int,
+      messageData: Int,
+      messageSize: Int,
+      data: VmData
+  ): Result = {
     // println(s"proxyLog: $logLevel - $messageData - $messageSize")
     getMemory(plugin, messageData, messageSize)
       .fold(

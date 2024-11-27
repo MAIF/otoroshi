@@ -176,10 +176,8 @@ function GoBackSelection({ goBack }) {
   );
 }
 
-
 function EscapeModalListener({ hide, children }) {
-
-  const ref = useRef()
+  const ref = useRef();
 
   const handleEscKey = (event, onHide) => {
     if (event.key === 'Escape') {
@@ -200,14 +198,13 @@ function EscapeModalListener({ hide, children }) {
     return () => {
       document.removeEventListener('keyup', (event) => handleEscKey(event, hide), false);
       document.removeEventListener('mousedown', (event) => handleClickOutside(event, ref, hide));
-    }
-  }, [])
+    };
+  }, []);
 
-  return React.cloneElement(children, { ref })
+  return React.cloneElement(children, { ref });
 }
 
 export class AuthenticationWizard extends React.Component {
-
   state = {
     step: 1,
     mode: this.props.mode || 'selector',
@@ -256,13 +253,16 @@ export class AuthenticationWizard extends React.Component {
 
   render() {
     const { step, authenticationConfig, mode } = this.state;
-  
+
     if (mode === 'update_in_wizard') {
       return (
         <div className="wizard">
           <EscapeModalListener hide={this.props.hide}>
             <div className="wizard-container" ref={this.props.ref}>
-              <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+              <div
+                className="d-flex"
+                style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
+              >
                 <Header onClose={this.props.hide} mode={mode} />
                 <div className="wizard-content">
                   <AuthModuleConfig
@@ -424,7 +424,10 @@ export class AuthenticationWizard extends React.Component {
         <div className="wizard">
           <EscapeModalListener hide={this.props.hide}>
             <div className="wizard-container" ref={this.props.ref}>
-              <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+              <div
+                className="d-flex"
+                style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
+              >
                 <Header onClose={this.props.hide} mode={mode} />
 
                 {mode === 'selector' && (

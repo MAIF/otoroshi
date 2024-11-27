@@ -7,16 +7,13 @@ import { useLocation } from 'react-router-dom';
 
 export const dynamicTitleContent = signal();
 
-const EXCLUDED_DRAFT_PAGES = [
-  '/routes'
-]
+const EXCLUDED_DRAFT_PAGES = ['/routes'];
 
 export function DynamicTitleSignal(props) {
-
-  const content = useSignalValue(dynamicTitleContent)
+  const content = useSignalValue(dynamicTitleContent);
   const draftVersion = useSignalValue(draftVersionSignal);
 
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
 
   if (!content) {
     return null;
@@ -28,8 +25,7 @@ export function DynamicTitleSignal(props) {
         {content}
 
         {draftVersion.version === 'draft' &&
-          !EXCLUDED_DRAFT_PAGES.find(path => pathname.includes(path)) &&
-          <PublisDraftButton />}
+          !EXCLUDED_DRAFT_PAGES.find((path) => pathname.includes(path)) && <PublisDraftButton />}
       </div>
     );
   }
@@ -41,8 +37,7 @@ export function DynamicTitleSignal(props) {
           {content}
           <Thumbtack {...props} getTitle={() => content} />
           {draftVersion.version === 'draft' &&
-            !EXCLUDED_DRAFT_PAGES.find(path => pathname.includes(path)) &&
-            <PublisDraftButton />}
+            !EXCLUDED_DRAFT_PAGES.find((path) => pathname.includes(path)) && <PublisDraftButton />}
         </h3>
       </div>
     </div>

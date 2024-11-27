@@ -38,9 +38,7 @@ export const Informations = forwardRef(
       );
     }, [value]);
 
-
-    if (!value)
-      return null
+    if (!value) return null;
 
     function saveRoute() {
       if (isCreation || location.state?.routeFromService) {
@@ -331,43 +329,42 @@ export const Informations = forwardRef(
       },
     ];
 
-    return (<>
-      <DraftStateDaemon
-        value={value}
-        setValue={setValue} />
+    return (
+      <>
+        <DraftStateDaemon value={value} setValue={setValue} />
 
-      {showAdvancedForm ? (
-        <RouteForm
-          routeId={routeId}
-          setValue={setValue}
-          value={value}
-          history={history}
-          location={location}
-          isCreation={isCreation}
-        />
-      ) : (
-        <NgForm
-          schema={schema}
-          flow={flow}
-          value={value}
-          onChange={(v) => {
-            setValue(v);
-          }}
-        />
-      )}
-
-      <div className="d-flex align-items-center justify-content-end mt-3 p-0">
-        {!isOnRouteCompositions && (
-          <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
+        {showAdvancedForm ? (
+          <RouteForm
+            routeId={routeId}
+            setValue={setValue}
+            value={value}
+            history={history}
+            location={location}
+            isCreation={isCreation}
+          />
+        ) : (
+          <NgForm
+            schema={schema}
+            flow={flow}
+            value={value}
+            onChange={(v) => {
+              setValue(v);
+            }}
+          />
         )}
-        <Button
-          type="danger"
-          className="btn-sm"
-          onClick={() => history.push(`/${link}`)}
-          text="Cancel"
-        />
-      </div>
-    </>
+
+        <div className="d-flex align-items-center justify-content-end mt-3 p-0">
+          {!isOnRouteCompositions && (
+            <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
+          )}
+          <Button
+            type="danger"
+            className="btn-sm"
+            onClick={() => history.push(`/${link}`)}
+            text="Cancel"
+          />
+        </div>
+      </>
     );
   }
 );

@@ -29,11 +29,15 @@ import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
 
 function DuplicateModalContent({ value }) {
-  return <pre style={{ height: 'inherit' }}>
-    Frontend: {value.frontend.domains[0]}<br />
-    Backend: {value.backend.targets[0].hostname}<br />
-    Plugins: {value.plugins.length}
-  </pre>
+  return (
+    <pre style={{ height: 'inherit' }}>
+      Frontend: {value.frontend.domains[0]}
+      <br />
+      Backend: {value.backend.targets[0].hostname}
+      <br />
+      Plugins: {value.plugins.length}
+    </pre>
+  );
 }
 
 function DuplicateButton({ value, history }) {
@@ -47,25 +51,27 @@ function DuplicateButton({ value, history }) {
         const prefix = (id.split('_')[0] || what) + '_';
         const newId = `${prefix}${v4()}`;
         const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-        window.newConfirm(<DuplicateModalContent value={value} />, {
-          title: `Duplicate ${value.name}`,
-          yesText: 'I want to duplicate this route'
-        }).then((ok) => {
-          if (ok) {
-            nextClient
-              .forEntityNext(kind)
-              .create({
-                ...value,
-                name: value.name + ' (duplicated)',
-                id: newId,
-                enabled: false,
-              })
-              .then(() => {
-                // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
-                history.push('/' + what + '/' + newId + '?tab=informations');
-              });
-          }
-        });
+        window
+          .newConfirm(<DuplicateModalContent value={value} />, {
+            title: `Duplicate ${value.name}`,
+            yesText: 'I want to duplicate this route',
+          })
+          .then((ok) => {
+            if (ok) {
+              nextClient
+                .forEntityNext(kind)
+                .create({
+                  ...value,
+                  name: value.name + ' (duplicated)',
+                  id: newId,
+                  enabled: false,
+                })
+                .then(() => {
+                  // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+                  history.push('/' + what + '/' + newId + '?tab=informations');
+                });
+            }
+          });
       }}
     >
       <i className="fas fa-copy" /> Duplicate route
@@ -195,19 +201,21 @@ function ManagerTitle({
       }
       {...props}
     >
-      {!isOnViewPlugins && <div style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        margin: 'auto',
-        bottom: '1.25rem',
-        width: 'fit-content'
-      }}>
-        <DraftEditorContainer
-          entityId={value.id}
-          value={value} />
-      </div>}
-      <Dropdown className='mb-1'>
+      {!isOnViewPlugins && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            margin: 'auto',
+            bottom: '1.25rem',
+            width: 'fit-content',
+          }}
+        >
+          <DraftEditorContainer entityId={value.id} value={value} />
+        </div>
+      )}
+      <Dropdown className="mb-1">
         {!isCreation &&
           tabs
             .filter((tab) => !tab.visible || tab.visible())
@@ -290,25 +298,27 @@ class Manager extends React.Component {
     const url = p.url;
 
     // this.props.setTitle(
-    dynamicTitleContent.value = <ManagerTitle
-      pathname={location.pathname}
-      menu={this.state.menu}
-      routeId={p.routeId}
-      url={url}
-      query={query}
-      isCreation={isCreation}
-      isOnViewPlugins={isOnViewPlugins}
-      entity={entity}
-      value={this.state.value}
-      viewPlugins={viewPlugins}
-      location={location}
-      history={history}
-      saveButton={this.state.saveButton}
-      globalEnv={this.props.globalEnv}
-      env={this.props.globalEnv}
-      reloadEnv={this.props.reloadEnv}
-      getTitle={this.props.getTitle}
-    />
+    dynamicTitleContent.value = (
+      <ManagerTitle
+        pathname={location.pathname}
+        menu={this.state.menu}
+        routeId={p.routeId}
+        url={url}
+        query={query}
+        isCreation={isCreation}
+        isOnViewPlugins={isOnViewPlugins}
+        entity={entity}
+        value={this.state.value}
+        viewPlugins={viewPlugins}
+        location={location}
+        history={history}
+        saveButton={this.state.saveButton}
+        globalEnv={this.props.globalEnv}
+        env={this.props.globalEnv}
+        reloadEnv={this.props.reloadEnv}
+        getTitle={this.props.getTitle}
+      />
+    );
     // );
   };
 
@@ -356,7 +366,7 @@ class Manager extends React.Component {
             history={history}
             value={this.state.value}
             setValue={(v) => {
-              this.setState({ value: v }, this.setTitle)
+              this.setState({ value: v }, this.setTitle);
             }}
             setSaveButton={(n) => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}

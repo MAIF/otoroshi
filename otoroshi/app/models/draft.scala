@@ -37,7 +37,7 @@ object Draft {
     } catch {
       case e: Throwable => throw e
     }
-  val format                                = new Format[Draft] {
+  val format                           = new Format[Draft] {
     override def writes(o: Draft): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
@@ -91,11 +91,9 @@ trait DraftDataStore extends BasicStore[Draft] {
   }
 }
 
-class KvDraftDataStore(redisCli: RedisLike, _env: Env)
-    extends DraftDataStore
-    with RedisLikeStore[Draft] {
-  override def fmt: Format[Draft]                 = Draft.format
+class KvDraftDataStore(redisCli: RedisLike, _env: Env) extends DraftDataStore with RedisLikeStore[Draft] {
+  override def fmt: Format[Draft]                      = Draft.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:drafts:$id"
-  override def extractId(value: Draft): String    = value.id
+  override def extractId(value: Draft): String         = value.id
 }
