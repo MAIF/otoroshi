@@ -414,9 +414,9 @@ class TailscaleCertificatesFetcherJob extends Job {
     implicit val mat = env.otoroshiMaterializer
     val domains      = env.proxyState
       .allRoutes()
-      .filter(_.frontend.domains.exists(_.domain.endsWith(s".$magicDNSSuffix")))
-      .flatMap(_.frontend.domains.map(_.domain))
-      .filter(_.endsWith(s".$magicDNSSuffix"))
+      .filter(_.frontend.domains.exists(_.domainLowerCase.endsWith(s".${magicDNSSuffix.toLowerCase()}")))
+      .flatMap(_.frontend.domains.map(_.domainLowerCase))
+      .filter(_.endsWith(s".${magicDNSSuffix.toLowerCase()}"))
       .distinct
     Source(domains.toList)
       .filterNot(certAlreadyExistsFor)

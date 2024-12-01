@@ -124,15 +124,15 @@ class TryItController(
       val routeFromId: Option[String]                                   = routeFromIdOpt.flatMap {
         case Left(ngService: NgRouteComposition) =>
           jsonBody.select("frontend_idx").asOpt[Int] match {
-            case Some(idx) => ngService.routes.lift(idx).flatMap(_.frontend.domains.map(_.domain).headOption)
-            case _         => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
+            case Some(idx) => ngService.routes.lift(idx).flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
+            case _         => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
           }
-        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domain).headOption
+        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domainLowerCase).headOption
       }
       val routeFromJson: Option[String]                                 = routeFromJsonOpt.flatMap {
         case Left(ngService: NgRouteComposition) =>
-          ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
-        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domain).headOption
+          ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domainLowerCase).headOption)
+        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domainLowerCase).headOption
       }
 
       routeFromId.orElse(routeFromJson) match {

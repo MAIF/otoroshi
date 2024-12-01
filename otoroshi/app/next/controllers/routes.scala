@@ -226,7 +226,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     import otoroshi.ssl.SSLImplicits._
 
     val routes           = env.proxyState.allRoutes()
-    val domains          = routes.flatMap(_.frontend.domains).map(_.domain).distinct
+    val domains          = routes.flatMap(_.frontend.domains).map(_.domainLowerCase).distinct
     val certs            = env.proxyState.allCertificates()
     val jsonDomains      = domains
       .map { domain =>

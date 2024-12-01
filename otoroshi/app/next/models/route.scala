@@ -98,7 +98,7 @@ case class NgRoute(
       val methodPasses = if (frontend.methods.isEmpty) true else frontend.methods.contains(method)
       if (methodPasses) {
         val res      = frontend.domains
-          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
+          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain)))
           .applyOn { seq =>
             if (frontend.exact) {
               noMoreSegments
@@ -244,7 +244,7 @@ case class NgRoute(
       domain = "--",
       subdomain = "--",
       targets = backend.allTargets.map(_.toTarget),
-      hosts = frontend.domains.map(_.domain),
+      hosts = frontend.domains.map(_.domainLowerCase),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
       clientConfig = backend.client.legacy,
