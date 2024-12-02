@@ -163,7 +163,9 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
         )
       )
     } recover { case e =>
@@ -185,7 +187,9 @@ case class BasicAuthModuleConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends AuthModuleConfig {
   def `type`: String                                                    = "basic"
   def humanName: String                                                 = "In memory auth. provider"
@@ -207,6 +211,8 @@ case class BasicAuthModuleConfig(
       "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "userValidators"           -> JsArray(userValidators.map(_.json)),
+      "allowedUsers"             -> this.allowedUsers,
+      "deniedUsers"              -> this.deniedUsers,
       "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
@@ -272,7 +278,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           tags = Seq.empty,
           metadata = Map.empty,
           location = authConfig.location
-        ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+        ).validate(descriptor, isRoute = true, authConfig)
       case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
@@ -302,7 +308,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           rights = user.rights,
           adminEntityValidators = user.adminEntityValidators,
           location = authConfig.location
-        ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+        ).validate(descriptor, isRoute = true, authConfig)
       case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
@@ -410,8 +416,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .flatMap {
               case Some(user) =>
                 user.validate(
-                  authConfig.userValidators,
-                  authConfig.remoteValidators,
                   descriptor,
                   isRoute = true,
                   authConfig
@@ -450,8 +454,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                         metadata = Map.empty,
                         location = authConfig.location
                       ).validate(
-                        authConfig.userValidators,
-                        authConfig.remoteValidators,
                         descriptor,
                         isRoute = true,
                         authConfig

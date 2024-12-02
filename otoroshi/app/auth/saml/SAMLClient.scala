@@ -217,7 +217,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
               otoroshiData = Some(authConfig.extraMetadata),
               location = authConfig.location
-            ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+            ).validate(descriptor, isRoute = true, authConfig)
         }
       case None       => FastFuture.successful(Left(ErrorReason("error")))
     }
@@ -342,8 +342,6 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
               ),
               location = authConfig.location
             ).validate(
-              authConfig.userValidators,
-              authConfig.remoteValidators,
               env.backOfficeServiceDescriptor,
               isRoute = true,
               authConfig
@@ -383,6 +381,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           issuer = (json \ "issuer").as[String],
           ssoProtocolBinding = (json \ "ssoProtocolBinding")
             .asOpt[String]
@@ -782,7 +782,9 @@ case class SamlAuthModuleConfig(
     usedNameIDAsEmail: Boolean = true,
     emailAttributeName: Option[String] = Some("Email"),
     sessionCookieValues: SessionCookieValues,
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends AuthModuleConfig {
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata
@@ -805,6 +807,8 @@ case class SamlAuthModuleConfig(
     "clientSideSessionEnabled"      -> this.clientSideSessionEnabled,
     "userValidators"                -> JsArray(userValidators.map(_.json)),
     "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
+    "allowedUsers"                  -> this.allowedUsers,
+    "deniedUsers"                   -> this.deniedUsers,
     "singleSignOnUrl"               -> this.singleSignOnUrl,
     "singleLogoutUrl"               -> this.singleLogoutUrl.map(JsString.apply).getOrElse(JsNull).asValue,
     "credentials"                   -> SAMLCredentials.fmt.writes(this.credentials),

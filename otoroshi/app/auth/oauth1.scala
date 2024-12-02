@@ -75,6 +75,8 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse("http://otoroshi.oto.tools:9999/backoffice/auth0/callback"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
             .map(_.mapValues(UserRights.readFromArray))
@@ -171,7 +173,9 @@ case class Oauth1ModuleConfig(
     remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
   def humanName: String                = "OAuth1 provider"
@@ -208,6 +212,8 @@ case class Oauth1ModuleConfig(
       "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
       "httpMethod"                    -> httpMethod.name,
       "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "allowedUsers"                  -> allowedUsers,
+      "deniedUsers"                   -> deniedUsers,
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
       })
@@ -546,8 +552,6 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                     ),
                     location = authConfig.location
                   ).validate(
-                    authConfig.userValidators,
-                    authConfig.remoteValidators,
                     env.backOfficeServiceDescriptor,
                     isRoute = false,
                     authConfig
@@ -565,8 +569,6 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                     realm = authConfig.cookieSuffix(descriptor.get),
                     otoroshiData = None
                   ).validate(
-                    authConfig.userValidators,
-                    authConfig.remoteValidators,
                     descriptor.getOrElse(env.backOfficeServiceDescriptor),
                     isRoute = true,
                     authConfig
