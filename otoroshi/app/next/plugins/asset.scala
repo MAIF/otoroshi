@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -50,8 +49,8 @@ class StaticAssetEndpoint extends NgRequestTransformer {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def name: String                                = "Serve any static http asset for"
-  override def description: Option[String]                 = "Serve any static http asset for".some
+  override def name: String                                = "Http static asset"
+  override def description: Option[String]                 = "Serve any static http asset for the current request".some
   override def defaultConfigObject: Option[NgPluginConfig] = Some(StaticAssetEndpointConfiguration.default)
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = StaticAssetEndpointConfiguration.configFlow
@@ -74,7 +73,7 @@ class StaticAssetEndpoint extends NgRequestTransformer {
       case Some(url) => {
         val uri    = Uri(url)
         val target = NgTarget(
-          id = url,
+          id = uri.authority.host.toString(),
           hostname = uri.authority.host.toString(),
           port = uri.effectivePort,
           tls = url.startsWith("https://")
@@ -82,7 +81,8 @@ class StaticAssetEndpoint extends NgRequestTransformer {
         ctx.otoroshiRequest
           .copy(
             backend = target.some,
-            url = url
+            url = url,
+            headers = ctx.otoroshiRequest.headers.removeIgnoreCase("Host").put("Host", uri.authority.host.toString())
           )
           .rightf
       }
