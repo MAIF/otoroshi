@@ -70,7 +70,6 @@ export const Informations = forwardRef(
       },
       enabled: {
         renderer: props => {
-          console.log(props)
           return <div className='d-flex align-items-baseline'>
             <p className='ms-2'>Exposition of the route</p>
             <span className={`mx-2 badge bg-${props.value ? 'success' : 'danger'}`}>
