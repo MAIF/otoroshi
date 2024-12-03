@@ -75,8 +75,9 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn py-3 wizard-route-chooser  ${state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
-            }`}
+          className={`btn py-3 wizard-route-chooser  ${
+            state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
+          }`}
           onClick={() => onChange(kind)}
           key={kind}
         >
@@ -203,10 +204,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ["mock", "graphql"].includes(state.route.kind)
         ? {
-          pahtname: "/",
-          hostname: "",
-          protocol: "https://",
-        }
+            pahtname: "/",
+            hostname: "",
+            protocol: "https://",
+          }
         : new URL(state.route.url);
       const secured = url.protocol.includes("https");
 
@@ -290,39 +291,81 @@ const ProcessStep = ({ state, history }) => {
       <div className="mt-3">
         <LoaderItem
           timeout={timers[timers.length - 2]}
-          text={<p style={{ color: 'var(--color_level3)' }}>Your route is now available</p>}
+          text={
+            <h4 style={{ color: "var(--color_level3)" }}>
+              Your route is now available
+            </h4>
+          }
         />
       </div>
 
       <LoaderItem timeout={timers[timers.length - 1]}>
         <div className="d-flex">
-          <button
-            className="btn btn-primaryColor"
-            onClick={() => {
-              if (["mock", "graphql"].includes(state.route.kind))
-                history.push(`/routes/${createdRoute.id}?tab=flow`, {
-                  plugin:
-                    state.route.kind === "mock"
-                      ? "cp:otoroshi.next.plugins.MockResponse"
-                      : "cp:otoroshi.next.plugins.GraphQLBackend",
-                });
-              else history.push(`/routes/${createdRoute.id}?tab=flow`);
-            }}
-          >
-            {state.route.kind === "mock"
-              ? "Start creating mocks"
-              : state.route.kind === "graphql"
-                ? "Start creating schema"
-                : "Start editing plugins"}
-          </button>
-          <button
-            className="ms-2 btn btn-primaryColor"
-            onClick={() => {
-              history.push(`/routes/${createdRoute.id}?tab=informations`);
-            }}
-          >
-            Publish your route
-          </button>
+          <div className="cards mx-3">
+            <div className="cards-header d-flex align-items-center justify-content-center">
+              <h4 className="mt-3" style={{ color: "var(--text)" }}>
+                {state.route.kind === "mock"
+                  ? "Creating mocks"
+                  : state.route.kind === "graphql"
+                  ? "Creating schema"
+                  : "Editing plugins"}
+              </h4>
+            </div>
+            <div className="cards-body">
+              <div className="cards-title">lorem50</div>
+              <div className="cards-description">
+                <p>ma petite description</p>
+                <div className="d-flex justify-content-end">
+                  <button
+                    className="btn btn-primaryColor"
+                    onClick={() => {
+                      if (["mock", "graphql"].includes(state.route.kind))
+                        history.push(`/routes/${createdRoute.id}?tab=flow`, {
+                          plugin:
+                            state.route.kind === "mock"
+                              ? "cp:otoroshi.next.plugins.MockResponse"
+                              : "cp:otoroshi.next.plugins.GraphQLBackend",
+                        });
+                      else history.push(`/routes/${createdRoute.id}?tab=flow`);
+                    }}
+                  >
+                    {state.route.kind === "mock"
+                      ? "Start creating mocks"
+                      : state.route.kind === "graphql"
+                      ? "Start creating schema"
+                      : "Start editing plugins"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="cards mx-3 cursor-pointer">
+            <div className="cards-header d-flex align-items-center justify-content-center">
+              <h4 className="mt-3" style={{ color: "var(--text)" }}>
+                Publish your route
+              </h4>
+            </div>
+            <div className="cards-body">
+              <div className="cards-title">
+               lorem50
+              </div>
+              <div className="cards-description">
+                <p>ma petite description</p>
+                <div className="d-flex justify-content-end">
+                  <button
+                    className="ms-2 btn btn-primaryColor"
+                    onClick={() => {
+                      history.push(
+                        `/routes/${createdRoute.id}?tab=informations`
+                      );
+                    }}
+                  >
+                    Publish
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </LoaderItem>
     </>
@@ -339,13 +382,11 @@ const LoaderItem = ({ text, timeout, children }) => {
         marginBottom: "6px",
         animation: `routePlugin 1s ease-in-out forwards`,
         animationDelay: `${timeout * 2}ms`,
-        opacity: 0
+        opacity: 0,
       }}
     >
       <div
         style={{
-          flex: 1,
-          marginLeft: "12px",
           fontWeight: "bold",
         }}
       >
@@ -486,10 +527,11 @@ export class RouteWizard extends React.Component {
 
               {step <= 4 && (
                 <div
-                  className={`mt-auto d-flex align-items-center ${step !== 1
-                    ? "justify-content-between"
-                    : "justify-content-end"
-                    }`}
+                  className={`mt-auto d-flex align-items-center ${
+                    step !== 1
+                      ? "justify-content-between"
+                      : "justify-content-end"
+                  }`}
                 >
                   {step !== 1 && (
                     <Button
@@ -501,7 +543,7 @@ export class RouteWizard extends React.Component {
                   <button
                     className="btn btn-primaryColor"
                     style={{
-                      padding: '12px 48px',
+                      padding: "12px 48px",
                     }}
                     disabled={error}
                     onClick={() => {

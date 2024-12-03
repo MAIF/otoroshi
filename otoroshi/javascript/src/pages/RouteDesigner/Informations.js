@@ -71,13 +71,13 @@ export const Informations = forwardRef(
       enabled: {
         renderer: props => {
           console.log(props)
-          return <div>
+          return <div className='d-flex align-items-baseline'>
             <p>Exposition of the route</p>
-            <span className={`badge bg-${props.value ? 'success' : 'danger'}`}>
+            <span className={`mx-2 badge bg-${props.value ? 'success' : 'danger'}`}>
               {props.value ? 'Exposed' : 'Disabled'}
             </span>
             {props.value ?
-              <Button type="danger" className="btn-sm" text="Disable the route"
+              <Button type="danger" className="btn-sm" text="Disable this route"
                 onClick={() => {
                   window
                     .newConfirm('Are you sure you disable this route ? Traffic will be stop immediately.')
@@ -88,7 +88,7 @@ export const Informations = forwardRef(
                       }
                     })
                 }} /> :
-              <Button type="success" className="btn-sm" text="Publish the route"
+              <Button type="success" className="btn-sm" text="Publish this route"
                 onClick={() => {
                   saveRoute({ ...value, enabled: true })
                     .then(() => window.location.reload())
