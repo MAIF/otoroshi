@@ -5,8 +5,7 @@ import isString from 'lodash/isString';
 import { WizardFrame } from './wizardframe';
 
 function EscapeModalListener({ close, children }) {
-
-  const ref = useRef()
+  const ref = useRef();
 
   const handleEscKey = (event, onClose) => {
     if (event.key === 'Escape') {
@@ -27,10 +26,10 @@ function EscapeModalListener({ close, children }) {
     return () => {
       document.removeEventListener('keyup', (event) => handleEscKey(event, close), false);
       document.removeEventListener('mousedown', (event) => handleClickOutside(event, ref, close));
-    }
-  }, [])
+    };
+  }, []);
 
-  return React.cloneElement(children, { ref })
+  return React.cloneElement(children, { ref });
 }
 
 class Alert extends Component {
@@ -45,7 +44,12 @@ class Alert extends Component {
     return (
       <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
         <EscapeModalListener close={this.props.close}>
-          <div className="modal-dialog" role="document" style={this.props.modalStyleOverride || {}} ref={this.props.ref}>
+          <div
+            className="modal-dialog"
+            role="document"
+            style={this.props.modalStyleOverride || {}}
+            ref={this.props.ref}
+          >
             <div className="modal-content" style={this.props.contentStyleOverride || {}}>
               <div className="modal-header">
                 <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
@@ -98,7 +102,12 @@ class Confirm extends Component {
 
   render() {
     return (
-      <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
+      <div
+        className={`modal ${this.props.className || ''}`}
+        tabIndex="-1"
+        role="dialog"
+        style={{ display: 'block' }}
+      >
         <EscapeModalListener close={this.props.cancel}>
           <div className="modal-dialog" role="document" ref={this.props.ref}>
             <div className="modal-content">

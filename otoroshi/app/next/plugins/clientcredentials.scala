@@ -478,7 +478,7 @@ case class NgClientCredentialTokenEndpointBody(
     clientSecret: String,
     scope: Option[String],
     bearerKind: String,
-    aud: Option[String],
+    aud: Option[String]
 )
 case class NgClientCredentialTokenEndpointConfig(expiration: FiniteDuration, defaultKeyPair: String)
     extends NgPluginConfig                   {
@@ -581,7 +581,14 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       ctx: NgbBackendCallContext
   )(implicit env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
-      case NgClientCredentialTokenEndpointBody("client_credentials", clientId, clientSecret, scope, bearerKind, aud) => {
+      case NgClientCredentialTokenEndpointBody(
+            "client_credentials",
+            clientId,
+            clientSecret,
+            scope,
+            bearerKind,
+            aud
+          ) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
           case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
@@ -648,7 +655,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
               .future
         }
       }
-      case _                                                                                                    =>
+      case _ =>
         Results
           .BadRequest(
             Json.obj(
@@ -678,7 +685,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
         body.get("client_secret"),
         body.get("scope"),
         body.get("bearer_kind"),
-        body.get("aud"),
+        body.get("aud")
       ) match {
         case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind, aud) =>
           handleTokenRequest(
@@ -686,7 +693,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             config,
             ctx
           )
-        case e                                                              =>
+        case e                                                                   =>
           ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))

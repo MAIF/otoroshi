@@ -318,8 +318,6 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
               location = oauthConfig.location
             )
               .validate(
-                oauthConfig.userValidators,
-                oauthConfig.remoteValidators,
                 ctx.route.legacy,
                 isRoute = true,
                 oauthConfig

@@ -886,7 +886,8 @@ object State {
             "privateAppsSessions" -> JsArray(proxyState.allPrivateAppsSessions().map(_.json)),
             "tcpServices"         -> JsArray(proxyState.allTcpServices().map(_.json)),
             "scripts"             -> JsArray(proxyState.allScripts().map(_.json)),
-            "wasmPlugins"         -> JsArray(proxyState.allWasmPlugins().map(_.json))
+            "wasmPlugins"         -> JsArray(proxyState.allWasmPlugins().map(_.json)),
+            "drafts"              -> JsArray(proxyState.allDrafts().map(_.json))
           )
           .stringify
 

@@ -72,10 +72,10 @@ object NgTreeRouter {
     val root = NgTreeRouter.empty
     routes.foreach { route =>
       route.frontend.domains.foreach { dpath =>
-        if (dpath.domain.contains("*")) {
-          root.wildcards.+=(NgRouteDomainAndPathWrapper(route, dpath.domain, dpath.path))
+        if (dpath.domainLowerCase.contains("*")) {
+          root.wildcards.+=(NgRouteDomainAndPathWrapper(route, dpath.domainLowerCase, dpath.path))
         }
-        val ptree = root.tree.getOrElseUpdate(dpath.domain, NgTreeNodePath.empty)
+        val ptree = root.tree.getOrElseUpdate(dpath.domainLowerCase, NgTreeNodePath.empty)
         ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
       }
     }

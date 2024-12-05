@@ -181,6 +181,13 @@ export const graph = (env) => {
           icon: () => 'fa-cubes',
           link: '/route-compositions',
         },
+        {
+          title: 'Drafts',
+          description: 'All drafts of your entities',
+          img: 'drafts',
+          icon: () => 'fa-pencil-ruler',
+          link: '/drafts',
+        },
       ],
     },
     {

@@ -100,6 +100,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights"),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
@@ -190,7 +192,9 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     otoroshiRightsField: String = "otoroshi_rights",
-    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty
+    adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
@@ -247,6 +251,8 @@ case class GenericOauth2ModuleConfig(
       "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"                  -> JsObject(dataOverride),
       "otoroshiRightsField"           -> this.otoroshiRightsField,
+      "allowedUsers"                  -> this.allowedUsers,
+      "deniedUsers"                   -> this.deniedUsers,
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
       })
@@ -722,8 +728,6 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   metadata = authConfig.metadata,
                   location = authConfig.location
                 ).validate(
-                  authConfig.userValidators,
-                  authConfig.remoteValidators,
                   descriptor,
                   isRoute = true,
                   authConfig
@@ -812,8 +816,6 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     },
                   location = authConfig.location
                 ).validate(
-                  authConfig.userValidators,
-                  authConfig.remoteValidators,
                   env.backOfficeServiceDescriptor,
                   isRoute = false,
                   authConfig

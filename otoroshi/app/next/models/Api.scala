@@ -7,13 +7,20 @@ import otoroshi.next.models._
 import otoroshi.next.plugins.NgApikeyCallsConfig
 import play.api.libs.json.{Format, JsResult, JsValue}
 
-case class ApiState(started: Boolean, published: Boolean, public: Boolean, deprecated: Boolean)
+// the state on the dev portal
+case class ApiState(
+    started: Boolean,
+    published: Boolean,
+    public: Boolean,
+    deprecated: Boolean
+)
 
 case class ApiBackend(
     name: String,
     targets: Seq[NgTarget],
     root: String,
     rewrite: Boolean,
+    client: Option[String],
     loadBalancing: LoadBalancing
 )
 
@@ -32,7 +39,7 @@ case class ApiPredicate()
 
 case class ApiPlugins(name: String, predicate: ApiPredicate, plugins: NgPlugins)
 
-case class ApiDeploymentRef(ref: String, at: DateTime)
+case class ApiDeploymentRef(ref: String, at: DateTime, who: String)
 
 case class ApiDeployment(
     location: EntityLocation,
@@ -180,6 +187,7 @@ case class Api(
     metadata: Map[String, String],
     version: String,
     // or versions: Seq[ApiVersion] with ApiVersion being the following ?
+    // versions: Seq[ApiVersion],
     //// ApiVersion
     debugFlow: Boolean,
     capture: Boolean,
@@ -193,6 +201,7 @@ case class Api(
     documentation: ApiDocumentation,
     consumers: Seq[ApiConsumer],
     deployments: Seq[ApiDeploymentRef]
+    // TODO: monitoring and heath ????
     //// ApiVersion
 ) extends EntityLocationSupport {
   override def internalId: String               = id

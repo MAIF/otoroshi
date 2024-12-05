@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect} from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NgSelectRenderer } from '../../components/nginputs';
 import { FeedbackButton } from './FeedbackButton';
 import { convertAsRoute } from '../../services/BackOfficeServices';
@@ -11,29 +11,34 @@ export function ImportServiceDescriptor({ hide }) {
   const history = useHistory();
   const modalRef = useRef(null);
 
-  const handleEscKey = useCallback((event) => {
-    if (event.key === "Escape") {
-      hide();
-    }
-  }, [hide]);
+  const handleEscKey = useCallback(
+    (event) => {
+      if (event.key === 'Escape') {
+        hide();
+      }
+    },
+    [hide]
+  );
 
-  const handleClickOutside = useCallback((event) => {
-    if (modalRef.current && !modalRef.current.contains(event.target)) {
-      hide();
-    }
-  }, [hide]);
+  const handleClickOutside = useCallback(
+    (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        hide();
+      }
+    },
+    [hide]
+  );
 
   useEffect(() => {
     document.addEventListener('keyup', handleEscKey, false);
     document.addEventListener('mousedown', handleClickOutside);
-
 
     return () => {
       document.removeEventListener('keyup', handleEscKey, false);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [handleEscKey, handleClickOutside]);
-  
+
   function conversion() {
     return convertAsRoute(service).then((res) => {
       return BackOfficeServices.fetchService('prod', service).then((fullService) => {

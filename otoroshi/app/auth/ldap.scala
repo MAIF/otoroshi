@@ -133,6 +133,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
                 .getOrElse(Seq.empty[GroupFilter])
           },
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -277,7 +279,9 @@ case class LdapAuthModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
-    groupRights: Map[String, GroupRights] = Map.empty
+    groupRights: Map[String, GroupRights] = Map.empty,
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
   def humanName: String = "Ldap auth. provider"
@@ -324,6 +328,8 @@ case class LdapAuthModuleConfig(
       "extractProfileFilterNot"       -> extractProfileFilterNot,
       "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"                  -> JsObject(dataOverride),
+      "allowedUsers"                  -> allowedUsers,
+      "deniedUsers"                   -> deniedUsers,
       "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
@@ -702,7 +708,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           tags = Seq.empty,
           metadata = Map.empty,
           location = authConfig.location
-        ).validate(authConfig.userValidators, authConfig.remoteValidators, descriptor, isRoute = true, authConfig)
+        ).validate(descriptor, isRoute = true, authConfig)
       case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
@@ -766,8 +772,6 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           location = authConfig.location,
           adminEntityValidators = user.adminEntityValidators
         ).validate(
-          authConfig.userValidators,
-          authConfig.remoteValidators,
           env.backOfficeServiceDescriptor,
           isRoute = false,
           authConfig
@@ -872,8 +876,6 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .flatMap {
               case Some(user) =>
                 user.validate(
-                  authConfig.userValidators,
-                  authConfig.remoteValidators,
                   descriptor,
                   isRoute = true,
                   authConfig

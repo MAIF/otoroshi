@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.21.0] - 2024-11-27
+
+
+https://github.com/MAIF/otoroshi/milestone/105?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.20.0...v16.21.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.21.0
+
+
+### Added 
+
+- Introduce a new Drafts API to manage the lifecycle of entities  (#2005)
+- ability to restrict apikey as jwt usage based on audience (#2022)
+- new external consumer profile mode for the Otoroshi infos plugins (#2023)
+- plugin to easily serve external assets on a route (#2028)       
+      
+### Changed 
+
+- Update coraza distrib. to use the latest CRS (#2021)       
+      
+### Fixed 
+
+- Coraza events must include route details when available (#2020)
+- websocket client unnecessarily splits cookie header (#2024)
+- OPA support broken (#2025)
+- Throttling per IP counter not reset in entities table (#2026)       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+* @dmorvant-altima
+
 ## [16.20.1] - 2024-10-31
 
 

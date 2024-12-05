@@ -7,6 +7,8 @@ import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
@@ -32,7 +34,6 @@ export const Informations = forwardRef(
           className="ms-2 mb-1"
           onPress={saveRoute}
           text={isCreation ? `Create ${entityName}` : `Save`}
-          icon={() => <i className="fas fa-paper-plane" />}
         />
       );
     }, [value]);
@@ -353,6 +354,8 @@ export const Informations = forwardRef(
 
     return (
       <>
+        <DraftStateDaemon value={value} setValue={setValue} />
+
         {showAdvancedForm ? (
           <RouteForm
             routeId={routeId}

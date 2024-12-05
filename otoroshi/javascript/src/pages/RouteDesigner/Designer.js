@@ -42,7 +42,13 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
-import { Button } from '../../components/Button';
+import {
+  draftSignal,
+  draftVersionSignal,
+  updateEntityURLSignal,
+} from '../../components/Drafts/DraftEditorSignal';
+import { useSignalValue } from 'signals-react-safe';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -494,6 +500,14 @@ const PluginsContainer = ({
   </div>
 );
 
+function SaveButton({ saveRoute, state }) {
+  const draftContext = useSignalValue(draftVersionSignal);
+
+  if (draftContext.version === 'draft') return null;
+
+  return <FeedbackButton type="success" className="ms-2 mb-1" onPress={saveRoute} text="Save" />;
+}
+
 class Designer extends React.Component {
   state = {
     backends: [],
@@ -563,17 +577,7 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
-    const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
-
-    this.props.setSaveButton(
-      <FeedbackButton
-        type="success"
-        className="ms-2 mb-1"
-        onPress={this.saveRoute}
-        text="Save"
-        _disabled={isEqual(this.state.route, this.state.originalRoute)}
-      />
-    );
+    this.props.setSaveButton(<SaveButton saveRoute={this.saveRoute} state={this.state} />);
   };
 
   injectOverrideRoutePluginsForm = () => (
@@ -642,16 +646,18 @@ class Designer extends React.Component {
     }
   };
 
-  loadData = () => {
+  loadData = (incomingRoute) => {
     Promise.all([
       nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
-      this.props.value
-        ? Promise.resolve(this.props.value)
-        : nextClient
-            .forEntityNext(
-              this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
-            )
-            .findById(this.props.routeId),
+      incomingRoute
+        ? Promise.resolve(incomingRoute)
+        : this.props.value
+          ? Promise.resolve(this.props.value)
+          : nextClient
+              .forEntityNext(
+                this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
+              )
+              .findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -669,7 +675,8 @@ class Designer extends React.Component {
       ),
       getOldPlugins(),
       getPlugins(),
-    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins]) => {
+      routePorts(this.props.routeId),
+    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
@@ -750,42 +757,37 @@ class Designer extends React.Component {
         };
       }
 
-      routePorts(route.id).then((ports) => {
-        this.setState(
-          {
-            ports,
-            backends,
-            loading: false,
-            categories: categories.filter((category) => !['Job'].includes(category)),
-            route: { ...routeWithNodeId },
-            originalRoute: { ...routeWithNodeId },
-            plugins: formattedPlugins.map((p) => ({
-              ...p,
-              selected: p.plugin_multi_inst
-                ? false
-                : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-            })),
-            nodes,
-            frontend: {
-              ...Frontend,
-              config_schema: toUpperCaseLabels(Frontend.schema),
-              config_flow: Frontend.flow,
-              nodeId: 'Frontend',
-            },
-            backend: {
-              ...Backend,
-              config_schema: toUpperCaseLabels(Backend.schema),
-              config_flow: Backend.flow,
-              nodeId: 'Backend',
-            },
-            selectedNode: this.getSelectedNodeFromLocation(
-              routeWithNodeId.plugins,
-              formattedPlugins
-            ),
+      this.setState(
+        {
+          ports,
+          backends,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...Frontend,
+            config_schema: toUpperCaseLabels(Frontend.schema),
+            config_flow: Frontend.flow,
+            nodeId: 'Frontend',
           },
-          this.injectNavbarMenu
-        );
-      });
+          backend: {
+            ...Backend,
+            config_schema: toUpperCaseLabels(Backend.schema),
+            config_flow: Backend.flow,
+            nodeId: 'Backend',
+          },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+        },
+        this.injectNavbarMenu
+      );
     });
   };
 
@@ -1246,8 +1248,8 @@ class Designer extends React.Component {
     });
   };
 
-  saveRoute = () => {
-    const { route, originalRoute } = this.state;
+  processRouteBeforeUpdate = (route) => {
+    const { originalRoute } = this.state;
 
     let newRoute;
 
@@ -1280,7 +1282,17 @@ class Designer extends React.Component {
       };
     }
 
-    if (this.props.setValue) this.props.setValue(newRoute);
+    return newRoute;
+  };
+
+  saveRoute = () => {
+    const { route } = this.state;
+
+    const newRoute = this.processRouteBeforeUpdate(route);
+
+    if (this.props.setValue) {
+      this.props.setValue(newRoute);
+    }
 
     return nextClient
       .forEntityNext(
@@ -1311,8 +1323,9 @@ class Designer extends React.Component {
       });
     });
 
-  isPluginEnabled = (value) =>
-    this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  isPluginEnabled = (value) => {
+    return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  };
 
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
@@ -1586,6 +1599,23 @@ class Designer extends React.Component {
 
     return (
       <Loader loading={loading}>
+        <DraftStateDaemon
+          processDraft={this.processRouteBeforeUpdate}
+          value={this.state.route}
+          setValue={(route) => {
+            this.props.setValue(route);
+            this.setState(
+              {
+                route,
+                selectedNode: undefined,
+              },
+              () => this.loadData(this.state.route)
+            );
+          }}
+          updateEntityURL={() => {
+            updateEntityURLSignal.value = this.saveRoute;
+          }}
+        />
         <Container
           showTryIt={showTryIt}
           onClick={() => {
@@ -1788,7 +1818,6 @@ class Designer extends React.Component {
                   }
                   originalRoute={originalRoute}
                   alertModal={alertModal}
-                  disabledSaveButton={isEqual(route, originalRoute)}
                 />
               </div>
             )}
@@ -2025,8 +2054,8 @@ const UnselectedNode = ({
               return allMethods.map((method, i) => {
                 return (
                   <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ width: 60 }}>{method}</div>
-                    <span style={{ fontFamily: 'monospace' }}>
+                    <div style={{ minWidth: 60 }}>{method}</div>
+                    <span style={{ fontSize: 15 }}>
                       {routeEntries(idx)}
                       {end}
                     </span>
@@ -2038,13 +2067,15 @@ const UnselectedNode = ({
                       >
                         <i className={copyIconName} />
                       </button>
-                      <button
-                        className="btn btn-sm btn-quiet ms-1"
-                        title={`Go to ${start}${domain}`}
-                        onClick={() => goTo(idx)}
-                      >
-                        <i className="fas fa-external-link-alt" />
-                      </button>
+                      {draftVersionSignal.value.version === 'published' && (
+                        <button
+                          className="btn btn-sm btn-quiet ms-1"
+                          title={`Go to ${start}${domain}`}
+                          onClick={() => goTo(idx)}
+                        >
+                          <i className="fas fa-external-link-alt" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -2061,7 +2092,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2082,7 +2113,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2148,8 +2179,8 @@ const UnselectedNode = ({
                     }}
                     key={`backend-targets${i}`}
                   >
-                    <span style={{ fontFamily: 'monospace' }} className="d-flex align-items-center">
-                      <div style={{ width: 60 }}>
+                    <span style={{ fontSize: 15 }} className="d-flex align-items-center">
+                      <div style={{ minWidth: 60 }}>
                         <span className="badge bg-success" style={{ fontSize: '.75rem' }}>
                           ALL
                         </span>
@@ -2335,7 +2366,7 @@ class EditView extends React.Component {
 
   onScroll = () => {
     this.setState({
-      offset: window.pageYOffset,
+      offset: window.scrollY,
     });
   };
 
@@ -2471,8 +2502,6 @@ class EditView extends React.Component {
       readOnly,
       addNode,
       hidePreview,
-      disabledSaveButton,
-      saveRoute,
     } = this.props;
 
     const { id, name, icon } = selectedNode;
@@ -2564,12 +2593,7 @@ class EditView extends React.Component {
                       }}
                     />
                   ) : (
-                    <Actions
-                      disabledSaveButton={disabledSaveButton}
-                      valid={saveRoute}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
+                    <Actions selectedNode={selectedNode} onRemove={onRemove} />
                   )}
                 </>
               )}
@@ -2632,16 +2656,9 @@ class EditView extends React.Component {
   }
 }
 
-const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
+const Actions = ({ selectedNode, onRemove }) => (
   <div className="d-flex mt-4 justify-content-end">
     {!['Frontend', 'Backend'].includes(selectedNode.id) && <RemoveComponent onRemove={onRemove} />}
-    <FeedbackButton
-      text="Save"
-      className="ms-2"
-      // disabled={disabledSaveButton}
-      icon={() => <i className="far fa-paper-plane" />}
-      onPress={valid}
-    />
   </div>
 );
 
@@ -2706,17 +2723,9 @@ export const Description = ({ text, steps, legacy }) => {
 
   return (
     <>
-      {content && content.toLowerCase() !== '...' && (
-        <MarkdownInput
-          className="form-description"
-          readOnly={true}
-          preview={true}
-          value={content}
-        />
-      )}
       {steps.length > 0 && (
-        <div className="steps" style={{ paddingLeft: 12 }}>
-          active on{' '}
+        <div className="steps py-2" style={{ paddingLeft: 12 }}>
+          Active on steps{' '}
           {steps.map((step, i) => (
             <span
               className="badge bg-warning text-dark"
@@ -2730,11 +2739,19 @@ export const Description = ({ text, steps, legacy }) => {
       )}
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-          this plugin is a{' '}
+          This plugin is a{' '}
           <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>
+      )}
+      {content && content.toLowerCase() !== '...' && (
+        <MarkdownInput
+          className="form-description"
+          readOnly={true}
+          preview={true}
+          value={content}
+        />
       )}
       {overflows && (
         <button

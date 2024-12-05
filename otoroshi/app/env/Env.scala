@@ -1261,7 +1261,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.21.0-dev"
+  lazy val otoroshiVersion    = "16.22.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1646,8 +1646,8 @@ class Env(
   }
 
   lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
-  lazy val sha256Alg = Algorithm.HMAC256(otoroshiSecret)
-  lazy val sha512Alg = Algorithm.HMAC512(otoroshiSecret)
+  lazy val sha256Alg     = Algorithm.HMAC256(otoroshiSecret)
+  lazy val sha512Alg     = Algorithm.HMAC512(otoroshiSecret)
 
   def encryptedJwt(user: PrivateAppsUser): String = {
     val added   = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3

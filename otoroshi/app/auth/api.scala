@@ -99,18 +99,62 @@ trait ValidableUser { self =>
 
   def json: JsValue
 
+  def email: String
+
   def validate(
-      validators: Seq[JsonPathValidator],
-      remoteValidators: Seq[RemoteUserValidatorSettings],
       desc: ServiceDescriptor,
       isRoute: Boolean,
       authModuleConfig: AuthModuleConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     val jsonuser = json
-    jsonPathValidate(jsonuser, validators) match {
-      case Left(err) => Left(err).vfuture
-      case Right(_)  =>
-        remoteValidation(jsonuser, remoteValidators, desc, isRoute, authModuleConfig)
+    val allowedUsers = authModuleConfig.allowedUsers
+    val deniedUsers = authModuleConfig.deniedUsers
+    if (allowedUsers.nonEmpty && !allowedUsers.exists(str => strMatch(email, str))) {
+      Left(ErrorReason("User not allowed", Json.obj("error" -> "user blocked by allowed list of auth module").some)).vfuture
+    } else if (deniedUsers.nonEmpty && deniedUsers.exists(str => strMatch(email, str))) {
+      Left(ErrorReason("User not allowed", Json.obj("error" -> "user blocked by denied list of auth module").some)).vfuture
+    } else {
+      val validators = authModuleConfig.userValidators
+      jsonPathValidate(jsonuser, validators) match {
+        case Left(err) => Left(err).vfuture
+        case Right(_) =>
+          val remoteValidators = authModuleConfig.remoteValidators
+          remoteValidation(jsonuser, remoteValidators, desc, isRoute, authModuleConfig)
+      }
+    }
+  }
+
+  def strMatch(v: String, expected: String): Boolean = {
+    if (expected.trim.startsWith("Regex(") && expected.trim.endsWith(")")) {
+      val regex = expected.substring(6).init
+      RegexPool.regex(regex).matches(v)
+    } else if (expected.trim.startsWith("Wildcard(") && expected.trim.endsWith(")")) {
+      val regex = expected.substring(9).init
+      RegexPool.apply(regex).matches(v)
+    } else if (expected.trim.startsWith("RegexNot(") && expected.trim.endsWith(")")) {
+      val regex = expected.substring(9).init
+      !RegexPool.regex(regex).matches(v)
+    } else if (expected.trim.startsWith("WildcardNot(") && expected.trim.endsWith(")")) {
+      val regex = expected.substring(12).init
+      !RegexPool.apply(regex).matches(v)
+    } else if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
+      val contained = expected.substring(9).init
+      v.contains(contained)
+    } else if (expected.trim.startsWith("ContainsNot(") && expected.trim.endsWith(")")) {
+      val contained = expected.substring(12).init
+      !v.contains(contained)
+    } else if (expected.trim.startsWith("Not(") && expected.trim.endsWith(")")) {
+      val contained = expected.substring(4).init
+      v != contained
+    } else if (expected.trim.startsWith("ContainedIn(") && expected.trim.endsWith(")")) {
+      val contained = expected.substring(12).init
+      contained.split(",").map(_.trim()).contains(v)
+    } else if (expected.trim.startsWith("NotContainedIn(") && expected.trim.endsWith(")")) {
+      val contained = expected.substring(15).init
+      val values    = contained.split(",").map(_.trim())
+      !values.contains(v)
+    } else {
+      v == expected
     }
   }
 
@@ -289,6 +333,8 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
   def clientSideSessionEnabled: Boolean
+  def allowedUsers: Seq[String]
+  def deniedUsers: Seq[String]
   def userValidators: Seq[JsonPathValidator]
   def remoteValidators: Seq[RemoteUserValidatorSettings]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]

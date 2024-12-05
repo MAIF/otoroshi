@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.21.0-dev"
+version := "16.22.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "3.6.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
@@ -392,7 +392,7 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file"
-  // "-Dotoroshi.storage=postgresql",
+  //"-Dotoroshi.storage=postgresql",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",
   // "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",

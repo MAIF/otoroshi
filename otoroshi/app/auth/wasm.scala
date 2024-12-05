@@ -44,6 +44,8 @@ object WasmAuthModuleConfig {
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(o.sessionCookieValues),
       "userValidators"           -> JsArray(o.userValidators.map(_.json)),
       "remoteValidators"         -> JsArray(o.remoteValidators.map(_.json)),
+      "allowedUsers"             -> o.allowedUsers,
+      "deniedUsers"              -> o.deniedUsers,
       "wasmRef"                  -> o.wasmRef.map(JsString.apply).getOrElse(JsNull).asValue
     )
     override def reads(json: JsValue): JsResult[WasmAuthModuleConfig] = Try {
@@ -56,6 +58,8 @@ object WasmAuthModuleConfig {
         sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
         sessionCookieValues =
           (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
@@ -87,7 +91,9 @@ case class WasmAuthModuleConfig(
     sessionCookieValues: SessionCookieValues,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
-    wasmRef: Option[String]
+    wasmRef: Option[String],
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty,
 ) extends AuthModuleConfig {
 
   override def authModule(config: GlobalConfig): AuthModule = new WasmAuthModule(this)
@@ -278,8 +284,6 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
                   case JsSuccess(user, _) =>
                     user.validate(
-                      authConfig.userValidators,
-                      authConfig.remoteValidators,
                       descriptor,
                       isRoute = true,
                       authConfig
@@ -442,8 +446,6 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
                   case JsSuccess(user, _) =>
                     user.validate(
-                      authConfig.userValidators,
-                      authConfig.remoteValidators,
                       env.backOfficeServiceDescriptor,
                       isRoute = false,
                       authConfig

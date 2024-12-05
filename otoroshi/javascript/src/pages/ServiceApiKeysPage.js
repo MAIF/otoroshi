@@ -9,6 +9,7 @@ import { Restrictions } from '../components/Restrictions';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase } from '../util';
+import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 
@@ -1225,8 +1226,6 @@ export class ApiKeysPage extends Component {
       });
     });
 
-    console.log(columns, fields);
-
     return (
       <Loader loading={this.state.loading}>
         <Table
@@ -1266,6 +1265,7 @@ export class ApiKeysPage extends Component {
               ...fields,
               [fieldPath]: true,
             };
+
             this.setState(
               {
                 fields: newFields,

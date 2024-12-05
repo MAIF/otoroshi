@@ -10,7 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -22,7 +31,13 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterDecodedJWT,
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterSyntax
+}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
@@ -1891,10 +1906,12 @@ object ApiKeyHelper {
                         .build
                     Try(verifier.verify(jwt))
                       .filter { token =>
-                        val aud = token.getAudience.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
+                        val aud = token.getAudience.asScala.headOption.filter(v =>
+                          v.startsWith("http://") || v.startsWith("https://")
+                        )
                         if (aud.isDefined) {
                           val currentUrl = req.theUrl
-                          val audience = aud.get
+                          val audience   = aud.get
                           currentUrl.startsWith(audience)
                         } else {
                           true

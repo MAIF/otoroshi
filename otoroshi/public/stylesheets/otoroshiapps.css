@@ -26,17 +26,17 @@ a.navbar-brand:hover {
 }
 
 .navbar-brand,
-.navbar-nav > li > a {
+.navbar-nav>li>a {
   text-shadow: none;
 }
 
-.navbar-inverse .navbar-nav > li > a {
+.navbar-inverse .navbar-nav>li>a {
   transition-duration: 0.5s;
   color: #f9b000;
 }
 
-.navbar-inverse .navbar-nav > li > a:focus,
-.navbar-inverse .navbar-nav > li > a:hover {
+.navbar-inverse .navbar-nav>li>a:focus,
+.navbar-inverse .navbar-nav>li>a:hover {
   color: #ffc02e;
 }
 
@@ -50,11 +50,6 @@ a.navbar-brand:hover {
 }
 
 /* Custom page header */
-
-.header {
-  /*padding-bottom: 20px;*/
-  /*border-bottom: 1px solid #e5e5e5;*/
-}
 
 /* Make the masthead heading the same height as the navigation */
 
@@ -89,39 +84,51 @@ a.navbar-brand:hover {
   0% {
     transform: perspective(500px) translate3d(2px, 1px, 0px);
   }
+
   8% {
     transform: perspective(500px) translate3d(5px, -2px, -3px);
   }
+
   16% {
     transform: perspective(500px) translate3d(8px, 1px, -7px);
   }
+
   24% {
     transform: perspective(500px) translate3d(10px, 2px, -10px);
   }
+
   32% {
     transform: perspective(500px) translate3d(7px, 4px, -13px);
   }
+
   40% {
     transform: perspective(500px) translate3d(6px, 6px, -17px);
   }
+
   48% {
     transform: perspective(500px) translate3d(4px, 7px, -20px);
   }
+
   56% {
     transform: perspective(500px) translate3d(1px, 6px, -17px);
   }
+
   64% {
     transform: perspective(500px) translate3d(-2px, 7px, -13px);
   }
+
   73% {
     transform: perspective(500px) translate3d(-2px, 4px, -10px);
   }
+
   81% {
     transform: perspective(500px) translate3d(-4px, 3px, -7px);
   }
+
   91% {
     transform: perspective(500px) translate3d(-2px, 2px, -3px);
   }
+
   100% {
     transform: perspective(500px) translate3d(2px, 1px, 0px);
   }
@@ -131,39 +138,51 @@ a.navbar-brand:hover {
   0% {
     transform: perspective(500px) translate3d(2px, 1px, 0px);
   }
+
   8% {
     transform: perspective(500px) translate3d(5px, -2px, -3px);
   }
+
   16% {
     transform: perspective(500px) translate3d(8px, 1px, -7px);
   }
+
   24% {
     transform: perspective(500px) translate3d(10px, 2px, -10px);
   }
+
   32% {
     transform: perspective(500px) translate3d(7px, 4px, -13px);
   }
+
   40% {
     transform: perspective(500px) translate3d(6px, 6px, -17px);
   }
+
   48% {
     transform: perspective(500px) translate3d(4px, 7px, -20px);
   }
+
   56% {
     transform: perspective(500px) translate3d(1px, 6px, -17px);
   }
+
   64% {
     transform: perspective(500px) translate3d(-2px, 7px, -13px);
   }
+
   73% {
     transform: perspective(500px) translate3d(-2px, 4px, -10px);
   }
+
   81% {
     transform: perspective(500px) translate3d(-4px, 3px, -7px);
   }
+
   91% {
     transform: perspective(500px) translate3d(-2px, 2px, -3px);
   }
+
   100% {
     transform: perspective(500px) translate3d(2px, 1px, 0px);
   }
@@ -185,7 +204,7 @@ a.navbar-brand:hover {
   }
 }
 
-.container-narrow > hr {
+.container-narrow>hr {
   margin: 30px 0;
 }
 
@@ -222,7 +241,7 @@ a.navbar-brand:hover {
   margin: 40px 0;
 }
 
-.marketing p + h4 {
+.marketing p+h4 {
   margin-top: 28px;
 }
 
@@ -233,10 +252,12 @@ a.navbar-brand:hover {
   padding-right: 0;
   padding-left: 0;
 }
+
 /* Space out the masthead */
 .header {
   margin-bottom: 30px;
 }
+
 /* Remove the bottom border on the jumbotron for visual effect */
 .jumbotron {
   border-bottom: 0;
@@ -254,18 +275,22 @@ a.navbar-brand:hover {
   align-items: center;
   justify-content: center;
 }
+
 .login-card img {
   width: 400px;
 }
+
 .login-card h1 {
   margin: 0;
   color: var(--color-primary);
 }
+
 .login-card-title {
   color: #fff;
   width: 100%;
   text-align: center;
 }
+
 .login-card-body {
   display: flex;
   flex-direction: column;
@@ -273,13 +298,14 @@ a.navbar-brand:hover {
   gap: 12px;
 }
 
-.btn-primaryColor, .btn-primaryColor:focus {
+.btn-primaryColor,
+.btn-primaryColor:focus {
   color: #FFF;
   border: 1px solid;
-    border-top-color: currentcolor;
-    border-right-color: currentcolor;
-    border-bottom-color: currentcolor;
-    border-left-color: currentcolor;
+  border-top-color: currentcolor;
+  border-right-color: currentcolor;
+  border-bottom-color: currentcolor;
+  border-left-color: currentcolor;
   border-color: #f9b000;
   background-color: #f9b000;
 }
@@ -288,7 +314,14 @@ a.navbar-brand:hover {
   color: #FFF;
 }
 
-.login-card img{
+.btn-primaryColor:hover {
+  color: #FFF;
+  border: 1px solid;
+  border-color: rgba(249, 176, 0, .2);
+  background-color:  rgba(249, 176, 0, .2);
+}
+
+.login-card img {
   transform: translateY(-30px);
 }
 

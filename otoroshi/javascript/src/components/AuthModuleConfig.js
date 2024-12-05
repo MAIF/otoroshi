@@ -172,6 +172,8 @@ export class Oauth2ModuleConfig extends Component {
     dataOverride: {},
     rightsOverride: {},
     adminEntityValidatorsOverride: {},
+    allowedUsers: [],
+    deniedUsers: [],
     mtlsConfig: {
       mtls: false,
       loose: false,
@@ -473,6 +475,14 @@ export class Oauth2ModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.otoroshiRightsField', v)}
         />
         <Separator title="Users" />
+        <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1114,6 +1124,14 @@ export class BasicModuleConfig extends Component {
           </Suspense>
         )}
         <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
@@ -1205,6 +1223,14 @@ export class WasmAuthModuleConfig extends Component {
           help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
           onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
         />
+        <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1561,6 +1587,14 @@ export class LdapModuleConfig extends Component {
           help="Retrieve metadata from LDAP field"
           onChange={(v) => changeTheValue(path + '.metadataField', v)}
         />
+        <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1934,6 +1968,8 @@ export class SamlModuleConfig extends Component {
     'validateSignature',
     'validateAssertions',
     'validatingCertificates',
+    'allowedUsers',
+    'deniedUsers',
     'userValidators',
     'remoteValidators',
     'adminEntityValidatorsOverride',
@@ -2053,6 +2089,18 @@ export class SamlModuleConfig extends Component {
         label: 'Validate Assertions Signature',
         help: 'Should SAML Assertions to be decrypted ?',
       },
+    },
+    'allowedUsers': {
+      type: 'array',
+      props: {
+        label: 'Allowed users',
+      }
+    },
+    'deniedUsers': {
+      type: 'array',
+      props: {
+        label: 'Denied users',
+      }
     },
     credentials: {
       type: ({}) => {
@@ -2398,6 +2446,8 @@ export class OAuth1ModuleConfig extends Component {
     'accessTokenURL',
     'profileURL',
     'callbackURL',
+    'allowedUsers',
+    'deniedUsers',
     'userValidators',
     'remoteValidators',
     'rightsOverride',
@@ -2451,6 +2501,18 @@ export class OAuth1ModuleConfig extends Component {
     consumerSecret: {
       type: 'string',
       props: { label: 'Consumer secret', placeholder: 'Consumer secret' },
+    },
+    'allowedUsers': {
+      type: 'array',
+      props: {
+        label: 'Allowed users',
+      }
+    },
+    'deniedUsers': {
+      type: 'array',
+      props: {
+        label: 'Denied users',
+      }
     },
     userValidators: {
       type: 'array',

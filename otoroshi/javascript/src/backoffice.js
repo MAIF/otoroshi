@@ -76,7 +76,7 @@ window.fetch = function (...params) {
       if (url.indexOf('/bo/simple/login') === -1) {
         throw new Error("You're not allowed to do that !");
       }
-    } else if (r.status > 399 && window.toast) {
+    } else if (r.status > 404 && window.toast) {
       return r.text().then((text) => {
         window.toast('Server error', 'An error occured server side: ' + text, 'error');
         throw new Error(text);

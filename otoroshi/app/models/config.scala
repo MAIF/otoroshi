@@ -523,6 +523,7 @@ case class DefaultTemplates(
     authConfig: Option[JsObject] = Json.obj().some,   // Option[AuthModuleConfig],
     certificate: Option[JsObject] = Json.obj().some,  // Option[Cert],
     script: Option[JsObject] = Json.obj().some,       // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,        // Option[Draft],
     tcpService: Option[JsObject] = Json.obj().some,   // Option[TcpService],
     dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
     tenant: Option[JsObject] = Json.obj().some,       // Option[Tenant],
@@ -548,6 +549,7 @@ object DefaultTemplates {
           authConfig = json.select("authConfig").asOpt[JsObject],
           certificate = json.select("certificate").asOpt[JsObject],
           script = json.select("script").asOpt[JsObject],
+          draft = json.select("draft").asOpt[JsObject],
           tcpService = json.select("tcpService").asOpt[JsObject],
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
@@ -571,6 +573,7 @@ object DefaultTemplates {
       "authConfig"   -> o.authConfig.getOrElse(JsNull).asValue,
       "certificate"  -> o.certificate.getOrElse(JsNull).asValue,
       "script"       -> o.script.getOrElse(JsNull).asValue,
+      "draft"        -> o.draft.getOrElse(JsNull).asValue,
       "tcpService"   -> o.tcpService.getOrElse(JsNull).asValue,
       "dataExporter" -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"       -> o.tenant.getOrElse(JsNull).asValue,
@@ -1064,7 +1067,8 @@ case class OtoroshiExport(
     routeCompositions: Seq[NgRouteComposition] = Seq.empty,
     backends: Seq[StoredNgBackend] = Seq.empty,
     wasmPlugins: Seq[WasmPlugin] = Seq.empty,
-    extensions: Map[String, Map[String, Seq[JsValue]]]
+    extensions: Map[String, Map[String, Seq[JsValue]]],
+    drafts: Seq[Draft] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1211,6 +1215,13 @@ case class OtoroshiExport(
         _.select("id").asString,
         _.id
       ),
+      drafts = customizeAndMergeArray[Draft](
+        drafts,
+        customization.select("drafts").asOpt[JsArray].getOrElse(Json.arr()),
+        Draft.format,
+        _.select("id").asString,
+        _.id
+      ),
       routeCompositions = customizeAndMergeArray[NgRouteComposition](
         routeCompositions,
         customization.select("routeCompositions").asOpt[JsArray].getOrElse(Json.arr()),
@@ -1265,6 +1276,7 @@ case class OtoroshiExport(
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
       "wasmPlugins"        -> JsArray(wasmPlugins.map(_.json)),
+      "drafts"             -> JsArray(drafts.map(_.json)),
       "extensions"         -> extensions
     )
   }

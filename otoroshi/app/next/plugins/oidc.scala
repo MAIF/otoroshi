@@ -483,8 +483,6 @@ class OIDCAuthToken extends NgAccessValidator {
               metadata = oauth2Config.metadata,
               location = oauth2Config.location
             ).validate(
-              oauth2Config.userValidators,
-              oauth2Config.remoteValidators,
               ctx.route.legacy,
               isRoute = true,
               oauth2Config
@@ -544,8 +542,6 @@ class OIDCAuthToken extends NgAccessValidator {
           metadata = oauth2Config.metadata,
           location = oauth2Config.location
         ).validate(
-          oauth2Config.userValidators,
-          oauth2Config.remoteValidators,
           ctx.route.legacy,
           isRoute = true,
           oauth2Config
