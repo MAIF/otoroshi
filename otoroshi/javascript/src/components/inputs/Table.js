@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { Form, OffSwitch, OnSwitch } from '.';
 import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
+import get from 'lodash/get';
+import orderBy from 'lodash/orderBy';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
 import {
@@ -355,6 +357,14 @@ class TableComponent extends Component {
     }
   };
 
+  getValueAtPath = (item, filterId) => {
+    let value = get(item, filterId.toLowerCase());
+    if (!value) {
+      return get(item, filterId)
+    }
+    return value
+  }
+
   update = debounce((paginationState = {}) => {
     this.setState({ loading: true });
 
@@ -370,9 +380,58 @@ class TableComponent extends Component {
         })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
+
+        const sortedItems = [...rawItems]
+        if (paginationState.sorted) {
+          paginationState.sorted.map(sort => {
+            sortedItems.sort((_a, _b) => {
+              const a = this.getValueAtPath(_a, sort.id);
+              const b = this.getValueAtPath(_b, sort.id);
+
+              try {
+                if (~~sort.desc) {
+                  return a?.localeCompare(b);
+                } else {
+                  return b?.localeCompare(a)
+                }
+              } catch (_err) {
+                if ('boolean' === typeof a || 'boolean' === typeof b) {
+                  if (~~sort.desc)
+                    return a === b ? 0 : a ? -1 : 1
+                  else
+                    return a === b ? 0 : a ? 1 : -1;
+                }
+                if (~~sort.desc) {
+                  return a - b
+                } else {
+                  return b - a
+                }
+              }
+            })
+          })
+        }
+
+        const newItems = sortedItems
+          .filter(item => {
+            if (paginationState.filtered) {
+              if (paginationState.filtered.length === 0) {
+                return true;
+              } else {
+                return paginationState.filtered
+                  .reduce((acc, filter) => {
+                    const value = this.getValueAtPath(item, filter.id);
+                    return acc && String(value).toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
+                  }, true)
+              }
+            }
+            return true
+          })
+          .slice(this.state.rowsPerPage * page, this.state.rowsPerPage * (page + 1));
+
         this.setState({
-          items: rawItems,
+          items: newItems,
           loading: false,
+          pages: Math.ceil(rawItems.length / this.state.rowsPerPage),
           page,
         });
       } else {
@@ -875,7 +934,6 @@ class TableComponent extends Component {
                   this.update(state);
                 }}
                 onFilteredChange={(column, value) => {
-                  // console.log('onFilteredChange')
                   if (this.state.lastFocus) document.getElementById(this.state.lastFocus)?.focus();
                 }}
                 columns={columns}

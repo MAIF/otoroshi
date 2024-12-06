@@ -254,18 +254,20 @@ export function RoutesTable(props) {
   };
 
   const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).findAllWithPagination({
-      ...paginationState,
-      fields: [
-        'backend.targets',
-        'enabled',
-        'frontend.domains',
-        'id',
-        'name',
-        'metadata',
-        ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
-      ].filter((c) => c),
-    });
+    nextClient
+      .forEntityNext(nextClient.ENTITIES[entity.fetchName])
+      .findAllWithPagination({
+        ...paginationState,
+        fields: [
+          'backend.targets',
+          'enabled',
+          'frontend.domains',
+          'id',
+          'name',
+          'metadata',
+          ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
+        ].filter((c) => c),
+      });
 
   const fetchTemplate = () =>
     nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).template();
