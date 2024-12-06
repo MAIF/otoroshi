@@ -360,6 +360,7 @@ export function RoutesTable(props) {
           extractKey={(item) => item.id}
           rowNavigation={true}
           hideAddItemAction={true}
+          itemUrl={(i) => `/bo/dashboard/routes/${i.id}?tab=flow`}
           rawEditUrl={true}
           displayTrash={(item) => item.id === props.globalEnv.adminApiId}
           injectTopBar={() => (
