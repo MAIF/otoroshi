@@ -262,8 +262,8 @@ const Modal = ({ question, onOk, onCancel }) => (
         Cancel
       </button>
       <button type="button" className="btn btn-sm btn-success" onClick={onOk}>
-        <i className="fas fa-check me-1" />
-        Delete
+        <i className=" me-1" />
+        Remove
       </button>
     </div>
   </div>
@@ -927,7 +927,7 @@ class Designer extends React.Component {
     this.setState({
       alertModal: {
         show: true,
-        question: `Delete this plugin ?`,
+        question: `Remove this plugin ?`,
         onCancel: (e) => {
           e.stopPropagation();
           this.setState({

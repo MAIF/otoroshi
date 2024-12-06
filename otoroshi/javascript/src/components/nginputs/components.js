@@ -256,7 +256,8 @@ export class NgFormRenderer extends Component {
             onClick={() => {
               if (clickable) this.setBreadcrumb();
             }}
-          >
+              className={showChildren ? '' : 'component_collapsable' }
+            >
             <div
               style={{
                 display: 'flex',

@@ -645,9 +645,9 @@
     max-height: 80px !important;
     min-height: 80px;
 
-    color: var(--color_level2);
-    background-color: var(--bg-color_level2);
-    border-color: var(--bg-color_level1);
+    // color: var(--color_level2);
+    // background-color: var(--bg-color_level2);
+    // border-color: var(--bg-color_level1);
 }
 
 .wizard-route-chooser h3 {
@@ -891,3 +891,15 @@
         background-position: 0 0;
     }
 }
+
+  
+  @keyframes routePlugin {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  }

@@ -38,18 +38,19 @@ export const Informations = forwardRef(
       );
     }, [value]);
 
-    if (!value) return null;
+    function saveRoute(customValue) {
 
-    function saveRoute() {
+      const finalValue = customValue || value;
+
       if (isCreation || location.state?.routeFromService) {
         return nextClient
           .forEntityNext(nextClient.ENTITIES[fetchName])
-          .create(value)
-          .then(() => history.push(`/${link}/${value.id}?tab=flow`));
+          .create(finalValue)
+          .then(() => history.push(`/${link}/${finalValue.id}?tab=flow`));
       } else {
         return nextClient
           .forEntityNext(nextClient.ENTITIES[fetchName])
-          .update(value)
+          .update(finalValue)
           .then((res) => {
             if (!res.error) setValue(res);
           });
@@ -69,9 +70,35 @@ export const Informations = forwardRef(
         // constraints: [constraints.required()],
       },
       enabled: {
-        type: 'bool',
-        label: 'Enabled',
-        props: {},
+        renderer: props => {
+          return <>
+            <div className='d-flex align-items-baseline'>
+              <p className='ms-2'>Exposition of the route</p>
+              <div className='d-flex flex-column gap-3 ms-3'>
+                <span className={`badge bg-${props.value ? 'success' : 'danger'}`} style={{ width: 'fit-content' }}>
+                  {props.value ? 'Exposed' : 'Disabled'}
+                </span>
+                {props.value ?
+                  <Button type="danger" className="btn-sm mb-3" text="Disable this route"
+                    onClick={() => {
+                      window
+                        .newConfirm('Are you sure you disable this route ? Traffic will be stop immediately.')
+                        .then((ok) => {
+                          if (ok) {
+                            saveRoute({ ...value, enabled: false })
+                              .then(() => window.location.reload())
+                          }
+                        })
+                    }} /> :
+                  <Button type="success" className="btn-sm mb-3" text="Publish this route"
+                    onClick={() => {
+                      saveRoute({ ...value, enabled: true })
+                        .then(() => window.location.reload())
+                    }} />}
+              </div>
+            </div>
+          </>
+        }
       },
       capture: {
         type: 'bool',

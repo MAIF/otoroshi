@@ -45,7 +45,7 @@ export class JwtVerifiersPage extends Component {
         <PageTitle title={title} {...this.props}>
           {isEditPage && (
             <Dropdown>
-              <YAMLExportButton value={verifier} entityKind="JwtVerifier" />
+              <YAMLExportButton value={verifier} entityKind="security.otoroshi.io/JwtVerifier" />
               <JsonExportButton value={verifier} entityKind="security.otoroshi.io/JwtVerifier" />
               <SquareButton
                 level="danger"

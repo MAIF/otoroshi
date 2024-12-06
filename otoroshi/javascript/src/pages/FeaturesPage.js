@@ -389,53 +389,24 @@ const Feature = ({ title, description, img, link, icon }) => {
   return (
     <AutoLink
       to={link}
-      className="d-flex"
-      style={{
-        backgroundColor: 'var(--bg-color_level2)',
-        margin: '5px 0px',
-        height: '100%',
-        borderRadius: '12px',
-        maxWidth: 300,
-        minWidth: 300,
-        maxHeight: 300,
-        minHeight: 300,
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
+      className="cards"
     >
       <div
+      className="cards-header"
         style={{
-          flex: 1,
-          background: `url(${img})`,
-          backgroundSize: 'contain',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          minHeight: 150,
-          margin: 12,
+          background: `url(${img})`
         }}
       ></div>
       <div
-        className="d-flex flex-column"
-        style={{ flex: 1, backgroundColor: 'var(--bg-color_level3)', padding: '12px' }}
+        className="cards-body"
       >
         <div
-          style={{
-            fontWeight: 'bold',
-            marginLeft: '5px',
-            marginTop: '7px',
-            marginBottom: '10px',
-            fontSize: 20,
-            color: 'var(--color_level3)',
-            textTransform: 'capitalize',
-          }}
+          className="cards-title"
         >
           {zeIcon} {title}
         </div>
         <div
-          className="me-1"
-          style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}
+          className="cards-description"
         >
           <p>{description}</p>
         </div>
