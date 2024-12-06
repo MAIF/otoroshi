@@ -17,6 +17,7 @@ import { Button } from '../Button';
 import { firstLetterUppercase } from '../../util';
 import { DraftEditorContainer, DraftStateDaemon } from '../Drafts/DraftEditor';
 import { updateEntityURLSignal } from '../Drafts/DraftEditorSignal';
+import { withRouter } from 'react-router-dom';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -236,7 +237,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
   );
 }
 
-export class Table extends Component {
+class TableComponent extends Component {
   static propTypes = {
     itemName: PropTypes.string.isRequired,
     columns: PropTypes.array.isRequired,
@@ -363,10 +364,10 @@ export class Table extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -468,9 +469,8 @@ export class Table extends Component {
       routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    // if (window.location.pathname !== routeTo) {
-    //   window.location.href = routeTo;
-    // } else {
+    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo)
+
     if (this.props.parentProps.setTitle) {
       this.props.parentProps.setTitle(
         `Update a ${this.props.itemName}`,
@@ -479,7 +479,6 @@ export class Table extends Component {
       );
     }
     this.setState({ currentItem: item, showEditForm: true });
-    // }
   };
 
   deleteItem = (e, item) => {
@@ -1165,3 +1164,5 @@ export class Table extends Component {
     );
   }
 }
+
+export const Table = withRouter(TableComponent)
