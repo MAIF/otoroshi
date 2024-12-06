@@ -873,7 +873,6 @@ export class Table extends Component {
                     : []
                 }
                 onFetchData={(state, instance) => {
-                  // console.log('onFetchData')
                   this.update(state);
                 }}
                 onFilteredChange={(column, value) => {

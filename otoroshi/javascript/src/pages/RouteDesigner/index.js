@@ -130,8 +130,8 @@ function MoreActionsButton({ value, menu, history }) {
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
-      <YAMLExportButton value={value} entityKind="JwtVerifier" />
-      <JsonExportButton value={value} entityKind="JwtVerifier" />
+      <YAMLExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
+      <JsonExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
       {menu}
     </div>
   );

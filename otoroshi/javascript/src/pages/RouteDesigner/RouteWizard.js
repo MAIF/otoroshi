@@ -6,7 +6,6 @@ import {
   nextClient,
 } from "../../services/BackOfficeServices";
 import { Plugins } from "../../forms/ng_plugins";
-import Loader from "../../components/Loader";
 import { Button } from "../../components/Button";
 
 const RouteNameStep = ({ state, onChange }) => (
@@ -75,9 +74,8 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn py-3 wizard-route-chooser  ${
-            state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
-          }`}
+          className={`btn py-3 wizard-route-chooser  ${state.route.kind === kind ? "btn-primaryColor" : "btn-quiet"
+            }`}
           onClick={() => onChange(kind)}
           key={kind}
         >
@@ -162,7 +160,6 @@ const BackendStep = ({ state, onChange, onError, error }) => {
 };
 
 const ProcessStep = ({ state, history }) => {
-  const [loading, setLoading] = useState(true);
   const [createdRoute, setCreatedRoute] = useState({});
 
   const API_PLUGINS = [
@@ -204,10 +201,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ["mock", "graphql"].includes(state.route.kind)
         ? {
-            pahtname: "/",
-            hostname: "",
-            protocol: "https://",
-          }
+          pahtname: "/",
+          hostname: "",
+          protocol: "https://",
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes("https");
 
@@ -261,13 +258,10 @@ const ProcessStep = ({ state, history }) => {
           },
         })
         .then((r) => {
-          setLoading(false);
           setCreatedRoute(r);
         });
     });
   }, []);
-
-  const pluginsLength = PLUGINS[state.route.kind].length;
 
   const timers = [...PLUGINS[state.route.kind], {}, {}].reduce((acc, _, i) => {
     if (i === 0) return [100 + Math.floor(Math.random() * 250)];
@@ -300,22 +294,22 @@ const ProcessStep = ({ state, history }) => {
       </div>
 
       <LoaderItem timeout={timers[timers.length - 1]}>
-        <div className="d-flex">
+        <div className="d-flex justify-content-center">
           <div className="cards mx-3">
             <div className="cards-header d-flex align-items-center justify-content-center">
               <h4 className="mt-3" style={{ color: "var(--text)" }}>
                 {state.route.kind === "mock"
                   ? "Creating mocks"
                   : state.route.kind === "graphql"
-                  ? "Creating schema"
-                  : "Editing plugins"}
+                    ? "Creating schema"
+                    : "Editing plugins"}
               </h4>
             </div>
             <div className="cards-body">
-              <div className="cards-title">lorem50</div>
-              <div className="cards-description">
-                <p>ma petite description</p>
-                <div className="d-flex justify-content-end">
+              <div className="cards-title">Draft way</div>
+              <div className="cards-description d-flex flex-column" style={{ flex: 1 }}>
+                <p>Continue to edit your route before publishing it</p>
+                <div className="d-flex justify-content-end mt-auto">
                   <button
                     className="btn btn-primaryColor"
                     onClick={() => {
@@ -332,8 +326,8 @@ const ProcessStep = ({ state, history }) => {
                     {state.route.kind === "mock"
                       ? "Start creating mocks"
                       : state.route.kind === "graphql"
-                      ? "Start creating schema"
-                      : "Start editing plugins"}
+                        ? "Start creating schema"
+                        : "Start editing plugins"}
                   </button>
                 </div>
               </div>
@@ -342,22 +336,25 @@ const ProcessStep = ({ state, history }) => {
           <div className="cards mx-3 cursor-pointer">
             <div className="cards-header d-flex align-items-center justify-content-center">
               <h4 className="mt-3" style={{ color: "var(--text)" }}>
-                Publish your route
+                Road to production
               </h4>
             </div>
             <div className="cards-body">
               <div className="cards-title">
-               lorem50
+                Publish way
               </div>
-              <div className="cards-description">
-                <p>ma petite description</p>
-                <div className="d-flex justify-content-end">
+              <div className="cards-description d-flex flex-column" style={{ flex: 1 }}>
+                <p>Expose the generate route to the world</p>
+                <div className="d-flex justify-content-end mt-auto">
                   <button
                     className="ms-2 btn btn-primaryColor"
                     onClick={() => {
-                      history.push(
-                        `/routes/${createdRoute.id}?tab=informations`
-                      );
+                      nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).update({
+                        ...createdRoute,
+                        enabled: true
+                      }).then(() => {
+                        history.push(`/routes/${createdRoute.id}?tab=informations`);
+                      })
                     }}
                   >
                     Publish
@@ -527,11 +524,10 @@ export class RouteWizard extends React.Component {
 
               {step <= 4 && (
                 <div
-                  className={`mt-auto d-flex align-items-center ${
-                    step !== 1
-                      ? "justify-content-between"
-                      : "justify-content-end"
-                  }`}
+                  className={`mt-auto d-flex align-items-center ${step !== 1
+                    ? "justify-content-between"
+                    : "justify-content-end"
+                    }`}
                 >
                   {step !== 1 && (
                     <Button
