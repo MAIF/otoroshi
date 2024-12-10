@@ -90,18 +90,21 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
-            <div className="d-flex items-center">
-              <i
-                className="fa fa-chevron-left me-3"
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  if (isCustomFieldView) showCustomField(false);
-                  else closeTab();
-                }}
-              />
-              <h3 style={{ fontSize: '1.5rem' }} className="text-center">
-                {isCustomFieldView ? 'New custom field' : 'Columns'}
-              </h3>
+            <div className="d-flex justify-content-between">
+              <div className='d-flex items-center'>
+                  <i
+                  className="fa fa-chevron-left me-3"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    if (isCustomFieldView) showCustomField(false);
+                    else closeTab();
+                  }}
+                />
+                <h3 style={{ fontSize: '1.5rem' }} className="text-center">
+                  {isCustomFieldView ? 'New column' : 'Columns'}
+                </h3>
+              </div>
+              <Button type="quiet" text="X" onClick={closeTab} className="btn-sm" />
             </div>
 
             <div className="wizard-content">
@@ -110,7 +113,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                   <NgStringRenderer label="Field path" onChange={setFieldPath} value={fieldPath} />
                   <Button
                     type="save"
-                    text="Add custom field"
+                    text="Add this column"
                     onClick={() => addField(fieldPath)}
                     className="my-2"
                     disabled={stringifiedExampleValue.length <= 0}
@@ -185,9 +188,12 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                           key={column}
                         >
                           <div className="d-flex items-center">
+                            <label className={`col-xs-12 col-form-label`}>
+                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
+                            </label>
                             {coreFields && !coreFields.includes(column) && (
                               <Button
-                                className="btn-sm me-2"
+                                className="btn-sm ms-2"
                                 type="danger"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -197,9 +203,6 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                                 <i className="fa fa-trash" />
                               </Button>
                             )}
-                            <label className={`col-xs-12 col-form-label`}>
-                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
-                            </label>
                           </div>
                           <div className="">
                             {enabled && <OnSwitch onChange={() => onChange(column, false)} />}
@@ -216,14 +219,13 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                     }}
                     onClick={() => showCustomField(true)}
                   >
-                    Add custom field
+                    Add a column
                     <i className="fa fa-chevron-right ms-1" />
                   </Button>
                 </>
               )}
             </div>
 
-            <Button text="Close" onClick={closeTab} className="mt-2" />
           </div>
         </div>
       </div>
@@ -232,8 +234,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
         className="ms-auto btn-sm d-flex align-items-center mb-1"
         onClick={() => setOpen(true)}
       >
-        <i className="fas fa-filter me-1" />
-        Filter columns
+        <i className="fas fa-table-columns me-1" />
+        Columns
       </Button>
     </>
   );
