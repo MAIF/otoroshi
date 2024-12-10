@@ -1,5 +1,6 @@
 .ReactTable {
   border: none !important;
+  overflow-y: scroll;
 
   input {
     color: var(--color_level2) !important;
