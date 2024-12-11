@@ -501,3 +501,32 @@ class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
   }
 }
 
+class OtoroshiAIAEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi AIA endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Authority Information Access for your certificates".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey) match {
+      case None => Left(NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "matched route not found")))).vfuture
+      case Some(matchedRoute) => {
+        matchedRoute.pathParams.get("id").orElse(matchedRoute.pathParams.get("cert_id")) match {
+          case None => Right(BackendCallResponse(NgPluginHttpResponse.fromResult(BadRequest(Json.obj("error" -> "cert id not available"))), None)).vfuture
+          case Some(id) => env.ocspResponder.aia(id, ctx.rawRequest).map { res =>
+            Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+          }
+        }
+      }
+    }
+  }
+}
