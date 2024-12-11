@@ -645,7 +645,7 @@ object OtoroshiMetricsEndpointConfig {
   val configFlow: Seq[String]        = Seq("filter")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "cert_ids"        -> Json.obj(
+      "filter"        -> Json.obj(
         "type" -> "string",
         "label" -> s"Filter metrics"
       )
