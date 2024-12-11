@@ -720,7 +720,7 @@ class GatewayRequestHandler(
 
   def aia(id: String) =
     actionBuilder.async { req =>
-      env.ocspResponder.aia(id, req)
+      env.ocspResponder.aia(id, req, Seq.empty)
     }
 
   def letsEncrypt() =

@@ -107,23 +107,27 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val nextUpdateOffset: Int =
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
-  def aia(id: String, req: RequestHeader)(implicit ec: ExecutionContext): Future[Result] = {
+  def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(implicit ec: ExecutionContext): Future[Result] = {
     import scala.util._
-    // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
-    DynamicSSLEngineProvider.certificates.values.find { c =>
-      Try {
-        c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(
-          c.certificate.get
-        )
+    if (possibleCerts.isEmpty || (possibleCerts.nonEmpty && possibleCerts.contains(id))) {
+      // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
+      DynamicSSLEngineProvider.certificates.values.find { c =>
+        Try {
+          c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(
+            c.certificate.get
+          )
+        } match {
+          case Failure(e) =>
+            e.printStackTrace()
+            false
+          case Success(v) => v
+        }
       } match {
-        case Failure(e) =>
-          e.printStackTrace()
-          false
-        case Success(v) => v
+        case None => Results.NotFound("").as("application/pkix-cert").future
+        case Some(cert) => Results.Ok(cert.certificate.get.asPem).as("application/pkix-cert").future
       }
-    } match {
-      case None       => Results.NotFound("").as("application/pkix-cert").future
-      case Some(cert) => Results.Ok(cert.certificate.get.asPem).as("application/pkix-cert").future
+    } else {
+      Results.NotFound("").as("application/pkix-cert").future
     }
   }
 
