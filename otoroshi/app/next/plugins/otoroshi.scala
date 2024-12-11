@@ -522,7 +522,7 @@ object PossibleCerts {
 class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -545,7 +545,7 @@ class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
 class OtoroshiAIAEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -575,7 +575,7 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
 class OtoroshiJWKSEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -601,7 +601,7 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
 class OtoroshiHealthEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -656,7 +656,7 @@ object OtoroshiMetricsEndpointConfig {
 class OtoroshiMetricsEndpoint extends NgBackendCall {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
