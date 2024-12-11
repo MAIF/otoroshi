@@ -8,24 +8,9 @@ import otoroshi.env.Env
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
 import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPublicKeyInfo}
 import org.bouncycastle.cert.X509CertificateHolder
-import org.bouncycastle.cert.ocsp.{
-  BasicOCSPRespBuilder,
-  CertificateID,
-  CertificateStatus,
-  OCSPReq,
-  OCSPResp,
-  OCSPRespBuilder,
-  Req,
-  RespID,
-  RevokedStatus,
-  UnknownStatus
-}
+import org.bouncycastle.cert.ocsp.{BasicOCSPRespBuilder, CertificateID, CertificateStatus, OCSPReq, OCSPResp, OCSPRespBuilder, Req, RespID, RevokedStatus, UnknownStatus}
 import org.bouncycastle.operator.{ContentSigner, DefaultDigestAlgorithmIdentifierFinder, DigestCalculatorProvider}
-import org.bouncycastle.operator.jcajce.{
-  JcaContentSignerBuilder,
-  JcaContentVerifierProviderBuilder,
-  JcaDigestCalculatorProviderBuilder
-}
+import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
 import otoroshi.ssl._
@@ -39,6 +24,7 @@ import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 
+import java.math.BigInteger
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -141,7 +127,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def respond(req: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext): Future[Result] = {
+  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(implicit ec: ExecutionContext): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
       if (bs.isEmpty) {
         FastFuture.successful(
@@ -153,7 +139,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
         if (ocspReq.isSigned && !isSignatureValid(ocspReq)) {
           Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded).future
         } else {
-          manageRequest(ocspReq).map { response =>
+          manageRequest(ocspReq, possibleCerts.flatMap(id => env.proxyState.certificate(id).flatMap(_.serialNumberLng))).map { response =>
             Results.Ok(response.getEncoded)
           } recover { case e: Throwable =>
             logger.error("error while checking certificate", e)
@@ -164,7 +150,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def manageRequest(ocspReq: OCSPReq): Future[OCSPResp] = {
+  private def manageRequest(ocspReq: OCSPReq, possibleCerts: Seq[BigInteger]): Future[OCSPResp] = {
     for {
       optRootCA         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(ec, env)
       optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(ec, env)
@@ -205,7 +191,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
           // Check that each request is valid and put the appropriate response in the builder
           val requests = ocspReq.getRequestList
           requests.foreach { request =>
-            addResponse(responseBuilder, request, issuingCertificate, digestCalculatorProvider)
+            addResponse(responseBuilder, request, issuingCertificate, digestCalculatorProvider, possibleCerts)
           }
 
           val signingCertificateChain: Array[X509CertificateHolder] =
@@ -222,11 +208,12 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def addResponse(
+  private def addResponse(
       responseBuilder: BasicOCSPRespBuilder,
       request: Req,
       issuingCertificate: JcaX509CertificateHolder,
-      digestCalculatorProvider: DigestCalculatorProvider
+      digestCalculatorProvider: DigestCalculatorProvider,
+      possibleCerts: Seq[BigInteger],
   ): Unit = {
     val certificateID = request.getCertID
 
@@ -252,15 +239,17 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
       )
 
     } else {
-      val certificateStatus = DynamicSSLEngineProvider._ocspProjectionCertificates.get(certificateID.getSerialNumber)
-
+      val r = DynamicSSLEngineProvider._ocspProjectionCertificates.get(certificateID.getSerialNumber)
+      val certificateStatus = if (possibleCerts.isEmpty) r else {
+        if (possibleCerts.contains(certificateID.getSerialNumber)) r else None
+      }
       getOCSPCertificateStatus(certificateStatus).foreach(value => {
         responseBuilder.addResponse(request.getCertID, value._1, value._2.toDate, value._3.toDate, extensions)
       })
     }
   }
 
-  def getUnknownStatus: CertificateStatus = {
+  private def getUnknownStatus: CertificateStatus = {
     if (rejectUnknown) {
       new RevokedStatus(DateTime.now().toDate, CRLReason.unspecified)
     } else {
@@ -268,7 +257,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def getOCSPCertificateStatus(
+  private def getOCSPCertificateStatus(
       certData: Option[OCSPCertProjection]
   ): Option[(CertificateStatus, DateTime, DateTime)] = {
     certData match {
@@ -288,7 +277,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def getCRLReason(revocationReason: String): Int = {
+  private def getCRLReason(revocationReason: String): Int = {
     revocationReason match {
       case "UNSPECIFIED"            => CRLReason.unspecified
       case "KEY_COMPROMISE"         => CRLReason.keyCompromise
@@ -304,7 +293,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def isSignatureValid(ocspReq: OCSPReq): Boolean =
+  private def isSignatureValid(ocspReq: OCSPReq): Boolean =
     ocspReq.isSignatureValid(
       new JcaContentVerifierProviderBuilder()
         .setProvider("BC")

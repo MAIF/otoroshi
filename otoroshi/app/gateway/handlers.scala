@@ -715,7 +715,7 @@ class GatewayRequestHandler(
 
   def ocsp() =
     actionBuilder.async(sourceBodyParser) { req =>
-      env.ocspResponder.respond(req, req.body)
+      env.ocspResponder.respond(req, req.body, Seq.empty)
     }
 
   def aia(id: String) =
