@@ -92,7 +92,7 @@ export class Toasts extends Component {
       <div
         id="otoroshi-toasts"
         style={{
-          padding: 10,
+          margin: 10,
           paddingBottom: 0,
           zIndex: 999999,
           display: 'flex',
