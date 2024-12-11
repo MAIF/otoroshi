@@ -14,6 +14,7 @@ import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
+import otoroshi.utils.jwk.JWKSHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -527,6 +528,31 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
           }
         }
       }
+    }
+  }
+}
+
+class OtoroshiJWKSEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi JWKS endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi JWKS data".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    JWKSHelper.jwks(ctx.rawRequest, Seq.empty).map {
+      case Left(body)  => Results.NotFound(body)
+      case Right(body) => Results.Ok(body)
+    } map {
+      case res => Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
     }
   }
 }
