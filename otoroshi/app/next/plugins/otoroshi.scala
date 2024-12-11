@@ -583,5 +583,28 @@ class OtoroshiHealthEndpoint extends NgBackendCall {
   }
 }
 
+class OtoroshiMetricsEndpoint extends NgBackendCall {
 
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi Metrics endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi metrics data for the current node".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val format      = ctx.rawRequest.getQueryString("format")
+    val filter      = ctx.rawRequest.getQueryString("filter")
+    val acceptsJson = ctx.rawRequest.accepts("application/json")
+    val acceptsProm = ctx.rawRequest.accepts("application/prometheus")
+    val res = HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter)
+    Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None)).vfuture
+  }
+}
 
