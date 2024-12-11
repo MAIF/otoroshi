@@ -510,7 +510,7 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Otoroshi AIA endpoint"
-  override def description: Option[String]                 = "This plugin provide an endpoint to return Authority Information Access for your certificates".some
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
@@ -556,3 +556,4 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
     }
   }
 }
+
