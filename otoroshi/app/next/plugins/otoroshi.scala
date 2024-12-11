@@ -4,6 +4,7 @@ import akka.Done
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
 import org.joda.time.DateTime
+import otoroshi.controllers.HealthController
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
@@ -551,9 +552,36 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
     JWKSHelper.jwks(ctx.rawRequest, Seq.empty).map {
       case Left(body)  => Results.NotFound(body)
       case Right(body) => Results.Ok(body)
-    } map {
-      case res => Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    } map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
     }
   }
 }
+
+class OtoroshiHealthEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi Health endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi Health informations data for the current node".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    HealthController.fetchHealth().map {
+      case Left(payload) => ServiceUnavailable(payload)
+      case Right(payload) => Ok(payload)
+    } map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    }
+  }
+}
+
+
 
