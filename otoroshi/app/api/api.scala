@@ -1,13 +1,16 @@
 package otoroshi.api
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.auth.AuthModuleConfig
+import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
+import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models._
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.script.Script
@@ -870,6 +873,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private implicit val mat = env.otoroshiMaterializer
 
+  private lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
+
   private def filterPrefix: Option[String] = "filter.".some
 
   private def adminApiEvent(
@@ -1453,6 +1458,27 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           f(resource)
         }
       }
+    }
+  }
+
+  // GET /apis/health
+  def health() = ApiAction.async {
+    HealthController.fetchHealth().map {
+      case Left(payload) => ServiceUnavailable(payload)
+      case Right(payload) => Ok(payload)
+    }
+  }
+
+  // GET /apis/metrics
+  def metrics() = ApiAction { ctx =>
+    val format      = ctx.request.getQueryString("format")
+    val filter      = ctx.request.getQueryString("filter")
+    val acceptsJson = ctx.request.accepts("application/json")
+    val acceptsProm = ctx.request.accepts("application/prometheus")
+    if (env.metricsEnabled) {
+      HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter)
+    } else {
+      NotFound(Json.obj("error" -> "metrics not enabled"))
     }
   }
 

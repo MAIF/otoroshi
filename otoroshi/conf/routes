@@ -4,6 +4,7 @@ GET     /robots.txt                                           otoroshi.controlle
 GET     /robot.txt                                            otoroshi.controllers.BackOfficeController.robotTxt
 GET     /error                                                otoroshi.controllers.BackOfficeController.error(message: Option[String])
 GET     /auth0error                                           otoroshi.controllers.AuthController.auth0error(error: Option[String], error_description: Option[String])
+
 GET     /health                                               otoroshi.controllers.HealthController.health()
 GET     /metrics                                              otoroshi.controllers.HealthController.processMetrics()
 GET     /live                                                 otoroshi.controllers.HealthController.live()
@@ -604,6 +605,13 @@ DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controlle
 # GET     /api/swagger/ui                                       otoroshi.controllers.SwaggerController.swaggerUi()
 GET     /api/openapi.json                                     otoroshi.controllers.SwaggerController.openapi()
 GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
+
+## New admin API
+GET     /apis/cluster/node/infos                              otoroshi.controllers.adminapi.InfosApiController.infos()
+GET     /apis/cluster/node/version                            otoroshi.controllers.adminapi.InfosApiController.version()
+GET     /apis/cluster/node/health                             otoroshi.api.GenericApiController.health()
+GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
+GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 
 # generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)
