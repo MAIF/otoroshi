@@ -606,14 +606,14 @@ DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controlle
 GET     /api/openapi.json                                     otoroshi.controllers.SwaggerController.openapi()
 GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
 
-## New admin API
+## New admin API - cluster and node api
 GET     /apis/cluster/node/infos                              otoroshi.controllers.adminapi.InfosApiController.infos()
 GET     /apis/cluster/node/version                            otoroshi.controllers.adminapi.InfosApiController.version()
 GET     /apis/cluster/node/health                             otoroshi.api.GenericApiController.health()
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 
-# generic apis
+# New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)
 PUT     /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkUpdate(group, version, entity)
 PATCH   /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkPatch(group, version, entity)
