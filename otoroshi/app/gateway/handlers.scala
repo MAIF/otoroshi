@@ -314,8 +314,6 @@ class GatewayRequestHandler(
 
   val reqCounter = new AtomicInteger(0)
 
-  val ocspResponder = OcspResponder(env, ec)
-
   val headersInFiltered = Seq(
     env.Headers.OtoroshiState,
     env.Headers.OtoroshiClaim,
@@ -717,12 +715,12 @@ class GatewayRequestHandler(
 
   def ocsp() =
     actionBuilder.async(sourceBodyParser) { req =>
-      ocspResponder.respond(req, req.body)
+      env.ocspResponder.respond(req, req.body)
     }
 
   def aia(id: String) =
     actionBuilder.async { req =>
-      ocspResponder.aia(id, req)
+      env.ocspResponder.aia(id, req)
     }
 
   def letsEncrypt() =

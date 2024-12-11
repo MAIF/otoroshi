@@ -8,15 +8,9 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.ApiKey.toJson
-import otoroshi.models.{
-  AlgoSettings,
-  ApiKey,
-  DataExporterConfigFiltering,
-  HSAlgoSettings,
-  SecComInfoTokenVersion,
-  SecComVersion
-}
+import otoroshi.models.{AlgoSettings, ApiKey, DataExporterConfigFiltering, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
@@ -484,3 +478,26 @@ class OtoroshiInfos extends NgRequestTransformer {
     ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right
   }
 }
+
+class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi OCSP Responder endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to act as the Otoroshi OCSP Responder".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    env.ocspResponder.respond(ctx.rawRequest, ctx.request.body).map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    }
+  }
+}
+

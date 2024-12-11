@@ -30,7 +30,7 @@ import otoroshi.script.plugins.Plugins
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
 import otoroshi.storage.{DataStores, DataStoresBuilder}
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
@@ -1276,6 +1276,8 @@ class Env(
     svr.start()
     logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
   }
+
+  val ocspResponder = OcspResponder(this, otoroshiExecutionContext)
 
   def beforeListening(): Future[Unit] = {
     ().vfuture
