@@ -1895,7 +1895,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         adminApiEvent(
           ctx,
           s"COUNT_ALL_${resource.pluralName.toUpperCase()}",
-          s"User bulk count all ${resource.pluralName}",
+          s"User count all ${resource.pluralName}",
           Json.obj(),
           None
         )
@@ -1916,7 +1916,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         adminApiEvent(
           ctx,
           s"READ_ALL_${resource.pluralName.toUpperCase()}",
-          s"User bulk read all ${resource.pluralName}",
+          s"User read all ${resource.pluralName}",
           Json.obj(),
           None
         )
@@ -1969,7 +1969,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                       adminApiEvent(
                         ctx,
                         s"CREATE_${resource.singularName.toUpperCase()}",
-                        s"User bulk created a ${resource.singularName}",
+                        s"User created a ${resource.singularName}",
                         body,
                         s"${resource.singularName}Created".some
                       )
@@ -1990,7 +1990,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         adminApiEvent(
           ctx,
           s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
-          s"User bulk deleted all ${resource.pluralName}",
+          s"User deleted all ${resource.pluralName}",
           Json.obj(),
           s"All${resource.singularName}Deleted".some
         )
@@ -2065,7 +2065,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           adminApiEvent(
             ctx,
             s"DELETE_${resource.singularName.toUpperCase()}",
-            s"User bulk deleted a ${resource.singularName}",
+            s"User deleted a ${resource.singularName}",
             Json.obj("id" -> id),
             s"${resource.singularName}Deleted".some
           )
@@ -2118,7 +2118,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                       adminApiEvent(
                         ctx,
                         s"CREATE_${resource.singularName.toUpperCase()}",
-                        s"User bulk created a ${resource.singularName}",
+                        s"User created a ${resource.singularName}",
                         body,
                         s"${resource.singularName}Created".some
                       )
@@ -2134,7 +2134,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                       adminApiEvent(
                         ctx,
                         s"UPDATE_${resource.singularName.toUpperCase()}",
-                        s"User bulk updated a ${resource.singularName}",
+                        s"User updated a ${resource.singularName}",
                         body,
                         s"${resource.singularName}Updated".some
                       )
@@ -2199,7 +2199,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                           adminApiEvent(
                             ctx,
                             s"UPDATE_${resource.singularName.toUpperCase()}",
-                            s"User bulk updated a ${resource.singularName}",
+                            s"User updated a ${resource.singularName}",
                             body,
                             s"${resource.singularName}Updated".some
                           )
@@ -2256,7 +2256,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                       adminApiEvent(
                         ctx,
                         s"PATCHED_${resource.singularName.toUpperCase()}",
-                        s"User bulk patched a ${resource.singularName}",
+                        s"User patched a ${resource.singularName}",
                         body,
                         s"${resource.singularName}Patched".some
                       )
