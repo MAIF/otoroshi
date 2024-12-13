@@ -1,13 +1,5 @@
 const { test, expect } = require('@playwright/test');
-
-const SECTIONS = {
-    MANAGE_RESOURCES: 'Manage resources',
-    CONFIGURATION: 'Configuration',
-    ANALYTICS: 'Analytics',
-    NETWORKING: 'Networking',
-    SESSIONS: 'Sessions',
-    TOOLING: 'Tooling',
-}
+const { SECTIONS } = require('../utils');
 
 async function showTableOfEntity(page, section, tab, expected) {
     await page.goto('/');
