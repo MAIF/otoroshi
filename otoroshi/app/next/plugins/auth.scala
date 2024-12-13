@@ -641,3 +641,80 @@ class BasicAuthCaller extends NgRequestTransformer {
 
   }
 }
+
+case class SimpleBasicAuthConfig(realm: String = "authentication", users: Map[String, String] = Map.empty) extends NgPluginConfig {
+  override def json: JsValue = SimpleBasicAuthConfig.format.writes(this)
+}
+object SimpleBasicAuthConfig {
+  val format = new Format[SimpleBasicAuthConfig] {
+    override def reads(json: JsValue): JsResult[SimpleBasicAuthConfig] = Try {
+      SimpleBasicAuthConfig(
+        realm = json.select("realm").asOptString.getOrElse("authentication"),
+        users = json.select("users").asOpt[Map[String, String]].getOrElse(Map.empty),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: SimpleBasicAuthConfig): JsValue = Json.obj(
+      "realm" -> o.realm,
+      "users" -> o.users,
+    )
+  }
+  val configFlow: Seq[String] = Seq("realm", "users")
+  def configSchema: Option[JsObject] = Some(Json.obj(
+    "realm" -> Json.obj(
+      "type" -> "string",
+      "label" -> s"Realm",
+    ),
+    "users" -> Json.obj(
+      "type" -> "object",
+      "label" -> "Users"
+    )
+  ))
+}
+
+class SimpleBasicAuth extends NgAccessValidator {
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def noJsForm: Boolean = true
+  override def name: String                                = "Basic Auth"
+  override def description: Option[String]                 =
+    "This plugin can be used to protect a route with basic auth.".some
+  override def defaultConfigObject: Option[NgPluginConfig] = SimpleBasicAuthConfig().some
+  override def configFlow: Seq[String] = SimpleBasicAuthConfig.configFlow
+  override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val authorization: String = ctx.request.headers.get("Authorization")
+      .filter(_.startsWith("Basic "))
+      .map(_.replace("Basic ", ""))
+      .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
+      .getOrElse("")
+    val parts = authorization.split(":").toSeq
+    if (authorization.contains(":") && parts.length > 1) {
+      val username = parts.head
+      val password = parts.tail.mkString(":")
+      config.users.get(username) match {
+        case Some(pwd) if password == pwd => NgAccess.NgAllowed.vfuture
+        case _ => {
+          NgAccess.NgDenied(
+            Results
+              .Unauthorized("")
+              .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
+          ).vfuture
+        }
+      }
+    } else {
+      NgAccess.NgDenied(
+        Results
+        .Unauthorized("")
+        .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
+      ).vfuture
+    }
+  }
+}
