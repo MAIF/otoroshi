@@ -675,7 +675,10 @@ object SimpleBasicAuthConfig {
     ),
     "users" -> Json.obj(
       "type" -> "object",
-      "label" -> "Users"
+      "label" -> "Users",
+      "props" -> Json.obj(
+        "bcryptable" -> true
+      )
     )
   ))
 }
