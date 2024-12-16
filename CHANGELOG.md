@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.22.0] - 2024-12-16
+
+
+https://github.com/MAIF/otoroshi/milestone/107?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.21.0...v16.22.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.22.0
+
+
+### Added 
+
+- add user allowed/denied list to auth. modules (#2031)
+- add version endpoint on the new admin api (#2039)
+- add infos endpoint on the new admin api (#2040)
+- add health endpoint on the new admin api (#2041)
+- add metrics endpoint on the new admin api (#2042)
+- add cluster members endpoint on the new admin api (#2043)
+- new plugin to provide OCSP Responder as a user endpoint (#2044)
+- new plugin to provide Authority Information Access as a user endpoint (#2045)
+- new plugin to provide Otoroshi JWKS as a user endpoint  (#2046)
+- new plugin to provide Otoroshi Health informations as a user endpoint (#2047)
+- new plugin to provide Otoroshi Metrics as a user endpoint (#2048)
+- add env. variable for session sameSite attribute (#2054)
+- plugin to add very simple basic auth. without complex user management (#2055)       
+      
+### Changed 
+
+- support a limited certificate set for the OCSP responder plugin (#2049)
+- support filter config for the otoroshi metrics endpoint plugin (#2050)
+- support a limited certificate set for the AIA plugin (#2051)       
+      
+### Fixed 
+
+- handle request domain as case insensitive in router (#2029)
+- static assets plugin does not use the right host header (#2030)
+- apikeys table doesn't work anymore (#2032)
+- Routes exports as JwtVerifiers from the UI (#2033)
+- command + clic on routes doesn't work anymore (#2034)
+- Support pagination server and client side (#2035)
+- Admin API generates badly labeled AdminApiEvent (#2052)
+- Redirection if already logged in to a auth. modules creates a redirection loop (#2053)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [16.21.0] - 2024-11-27
 
 
