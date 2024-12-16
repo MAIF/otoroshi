@@ -175,7 +175,7 @@ case class Oauth1ModuleConfig(
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
   def humanName: String                = "OAuth1 provider"

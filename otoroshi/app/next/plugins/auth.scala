@@ -643,44 +643,47 @@ class BasicAuthCaller extends NgRequestTransformer {
   }
 }
 
-case class SimpleBasicAuthConfig(realm: String = "authentication", users: Map[String, String] = Map.empty) extends NgPluginConfig {
+case class SimpleBasicAuthConfig(realm: String = "authentication", users: Map[String, String] = Map.empty)
+    extends NgPluginConfig   {
   override def json: JsValue = SimpleBasicAuthConfig.format.writes(this)
 }
 object SimpleBasicAuthConfig {
-  val format = new Format[SimpleBasicAuthConfig] {
+  val format                         = new Format[SimpleBasicAuthConfig] {
     override def reads(json: JsValue): JsResult[SimpleBasicAuthConfig] = Try {
       SimpleBasicAuthConfig(
         realm = json.select("realm").asOptString.getOrElse("authentication"),
-        users = json.select("users").asOpt[Map[String, String]].getOrElse(Map.empty),
+        users = json.select("users").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: SimpleBasicAuthConfig): JsValue = Json.obj(
+    override def writes(o: SimpleBasicAuthConfig): JsValue             = Json.obj(
       "realm" -> o.realm,
-      "users" -> o.users,
+      "users" -> o.users
     )
   }
-  val configFlow: Seq[String] = Seq("realm", "users")
-  def configSchema: Option[JsObject] = Some(Json.obj(
-    "realm" -> Json.obj(
-      "type" -> "string",
-      "label" -> s"Realm",
-      "help" -> "A unique realm name to avoid weird browser behaviors",
-      "props" -> Json.obj(
-        "placeholder" -> "A unique realm name to avoid weird browser behaviors",
-        "help" -> "A unique realm name to avoid weird browser behaviors",
+  val configFlow: Seq[String]        = Seq("realm", "users")
+  def configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "realm" -> Json.obj(
+        "type"  -> "string",
+        "label" -> s"Realm",
+        "help"  -> "A unique realm name to avoid weird browser behaviors",
+        "props" -> Json.obj(
+          "placeholder" -> "A unique realm name to avoid weird browser behaviors",
+          "help"        -> "A unique realm name to avoid weird browser behaviors"
+        )
       ),
-    ),
-    "users" -> Json.obj(
-      "type" -> "object",
-      "label" -> "Users",
-      "props" -> Json.obj(
-        "bcryptable" -> true
+      "users" -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Users",
+        "props" -> Json.obj(
+          "bcryptable" -> true
+        )
       )
     )
-  ))
+  )
 }
 
 class SimpleBasicAuth extends NgAccessValidator {
@@ -690,43 +693,55 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def noJsForm: Boolean = true
+  override def noJsForm: Boolean                           = true
   override def name: String                                = "Basic Auth"
-  override def description: Option[String]                 = "This plugin can be used to protect a route with basic auth. You can use clear text passwords (not recommended for production usage) or Bcryt hashed password as password values".some
+  override def description: Option[String]                 =
+    "This plugin can be used to protect a route with basic auth. You can use clear text passwords (not recommended for production usage) or Bcryt hashed password as password values".some
   override def defaultConfigObject: Option[NgPluginConfig] = SimpleBasicAuthConfig().some
 
-  override def configFlow: Seq[String] = SimpleBasicAuthConfig.configFlow
+  override def configFlow: Seq[String]        = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
-    val globalUsers = env.datastores.globalConfigDataStore.latest().plugins.config.select("simple_basic_auth_global_users").asOpt[Map[String, String]].getOrElse(Map.empty)
-    val authorization: String = ctx.request.headers.get("Authorization")
+    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val globalUsers           = env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select("simple_basic_auth_global_users")
+      .asOpt[Map[String, String]]
+      .getOrElse(Map.empty)
+    val authorization: String = ctx.request.headers
+      .get("Authorization")
       .filter(_.startsWith("Basic "))
       .map(_.replace("Basic ", ""))
       .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
       .getOrElse("")
-    val parts = authorization.split(":").toSeq
+    val parts                 = authorization.split(":").toSeq
     if (authorization.contains(":") && parts.length > 1) {
       val username = parts.head
       val password = parts.tail.mkString(":")
       (config.users ++ globalUsers).get(username) match {
-        case Some(pwd) if password == pwd => NgAccess.NgAllowed.vfuture
+        case Some(pwd) if password == pwd               => NgAccess.NgAllowed.vfuture
         case Some(pwd) if BCrypt.checkpw(password, pwd) => NgAccess.NgAllowed.vfuture
-        case _ => {
-          NgAccess.NgDenied(
-            Results
-              .Unauthorized("")
-              .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
-          ).vfuture
+        case _                                          => {
+          NgAccess
+            .NgDenied(
+              Results
+                .Unauthorized("")
+                .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
+            )
+            .vfuture
         }
       }
     } else {
-      NgAccess.NgDenied(
-        Results
-        .Unauthorized("")
-        .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
-      ).vfuture
+      NgAccess
+        .NgDenied(
+          Results
+            .Unauthorized("")
+            .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
+        )
+        .vfuture
     }
   }
 }

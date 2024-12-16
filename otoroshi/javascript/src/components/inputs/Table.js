@@ -91,8 +91,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
         >
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
             <div className="d-flex justify-content-between">
-              <div className='d-flex items-center'>
-                  <i
+              <div className="d-flex items-center">
+                <i
                   className="fa fa-chevron-left me-3"
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
@@ -225,7 +225,6 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                 </>
               )}
             </div>
-
           </div>
         </div>
       </div>
@@ -362,10 +361,10 @@ class TableComponent extends Component {
   getValueAtPath = (item, filterId) => {
     let value = get(item, filterId.toLowerCase());
     if (!value) {
-      return get(item, filterId)
+      return get(item, filterId);
     }
-    return value
-  }
+    return value;
+  };
 
   update = debounce((paginationState = {}) => {
     this.setState({ loading: true });
@@ -376,16 +375,15 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
-
-        const sortedItems = [...rawItems]
+        const sortedItems = [...rawItems];
         if (paginationState.sorted) {
-          paginationState.sorted.map(sort => {
+          paginationState.sorted.map((sort) => {
             sortedItems.sort((_a, _b) => {
               const a = this.getValueAtPath(_a, sort.id);
               const b = this.getValueAtPath(_b, sort.id);
@@ -394,39 +392,38 @@ class TableComponent extends Component {
                 if (~~sort.desc) {
                   return a?.localeCompare(b);
                 } else {
-                  return b?.localeCompare(a)
+                  return b?.localeCompare(a);
                 }
               } catch (_err) {
                 if ('boolean' === typeof a || 'boolean' === typeof b) {
-                  if (~~sort.desc)
-                    return a === b ? 0 : a ? -1 : 1
-                  else
-                    return a === b ? 0 : a ? 1 : -1;
+                  if (~~sort.desc) return a === b ? 0 : a ? -1 : 1;
+                  else return a === b ? 0 : a ? 1 : -1;
                 }
                 if (~~sort.desc) {
-                  return a - b
+                  return a - b;
                 } else {
-                  return b - a
+                  return b - a;
                 }
               }
-            })
-          })
+            });
+          });
         }
 
         const newItems = sortedItems
-          .filter(item => {
+          .filter((item) => {
             if (paginationState.filtered) {
               if (paginationState.filtered.length === 0) {
                 return true;
               } else {
-                return paginationState.filtered
-                  .reduce((acc, filter) => {
-                    const value = this.getValueAtPath(item, filter.id);
-                    return acc && String(value).toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
-                  }, true)
+                return paginationState.filtered.reduce((acc, filter) => {
+                  const value = this.getValueAtPath(item, filter.id);
+                  return (
+                    acc && String(value).toLowerCase().indexOf(filter.value.toLowerCase()) > -1
+                  );
+                }, true);
               }
             }
-            return true
+            return true;
           })
           .slice(this.state.rowsPerPage * page, this.state.rowsPerPage * (page + 1));
 
@@ -530,7 +527,7 @@ class TableComponent extends Component {
       routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo)
+    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
 
     if (this.props.parentProps.setTitle) {
       this.props.parentProps.setTitle(
@@ -1225,4 +1222,4 @@ class TableComponent extends Component {
   }
 }
 
-export const Table = withRouter(TableComponent)
+export const Table = withRouter(TableComponent);

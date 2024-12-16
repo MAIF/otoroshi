@@ -281,7 +281,7 @@ case class LdapAuthModuleConfig(
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty,
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
   def humanName: String = "Ldap auth. provider"

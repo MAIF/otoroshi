@@ -98,7 +98,9 @@ case class NgRoute(
       val methodPasses = if (frontend.methods.isEmpty) true else frontend.methods.contains(method)
       if (methodPasses) {
         val res      = frontend.domains
-          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain)))
+          .applyOnIf(!skipDomainVerif)(
+            _.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain))
+          )
           .applyOn { seq =>
             if (frontend.exact) {
               noMoreSegments

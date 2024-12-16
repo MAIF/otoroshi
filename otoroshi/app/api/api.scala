@@ -1464,7 +1464,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // GET /apis/health
   def health() = ApiAction.async {
     HealthController.fetchHealth().map {
-      case Left(payload) => ServiceUnavailable(payload)
+      case Left(payload)  => ServiceUnavailable(payload)
       case Right(payload) => Ok(payload)
     }
   }

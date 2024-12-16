@@ -105,8 +105,14 @@ export class ObjectInput extends React.Component {
   };
 
   disableBcrypt = (value) => {
-    return value.startsWith("$2a$") || value.startsWith("$2$") || value.startsWith("$2b$") || value.startsWith("$2x$") || value.startsWith("$2y$")
-  }
+    return (
+      value.startsWith('$2a$') ||
+      value.startsWith('$2$') ||
+      value.startsWith('$2b$') ||
+      value.startsWith('$2x$') ||
+      value.startsWith('$2y$')
+    );
+  };
 
   render() {
     const { data } = this.state;
@@ -174,11 +180,22 @@ export class ObjectInput extends React.Component {
                           value={value}
                           onChange={(e) => this.changeValue(idx, key, e)}
                         />
-                        {props.bcryptable ? <button className="btn btn-outline-secondary" type="button" disabled={this.disableBcrypt} onClick={e => {
-                          this.changeValue(idx, key, { target: { value: bcrypt.hashSync(value, 10) }})
-                        }}>bcrypt</button> : null}
+                        {props.bcryptable ? (
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            disabled={this.disableBcrypt}
+                            onClick={(e) => {
+                              this.changeValue(idx, key, {
+                                target: { value: bcrypt.hashSync(value, 10) },
+                              });
+                            }}
+                          >
+                            bcrypt
+                          </button>
+                        ) : null}
                       </>
-                      )}
+                    )}
                   </>
                 )}
                 <span className="input-group-btn">

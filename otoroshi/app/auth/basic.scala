@@ -165,7 +165,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -189,7 +189,7 @@ case class BasicAuthModuleConfig(
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String                                                    = "basic"
   def humanName: String                                                 = "In memory auth. provider"

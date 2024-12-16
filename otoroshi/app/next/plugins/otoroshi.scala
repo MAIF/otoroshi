@@ -9,7 +9,14 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.ApiKey.toJson
-import otoroshi.models.{AlgoSettings, ApiKey, DataExporterConfigFiltering, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
+import otoroshi.models.{
+  AlgoSettings,
+  ApiKey,
+  DataExporterConfigFiltering,
+  HSAlgoSettings,
+  SecComInfoTokenVersion,
+  SecComVersion
+}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -486,14 +493,14 @@ case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
 }
 
 object PossibleCerts {
-  val default = PossibleCerts(Seq.empty)
-  val format = new Format[PossibleCerts] {
+  val default                        = PossibleCerts(Seq.empty)
+  val format                         = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
-      "cert_ids"        -> o.certIds
+      "cert_ids" -> o.certIds
     )
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
-        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -503,8 +510,8 @@ object PossibleCerts {
   val configFlow: Seq[String]        = Seq("cert_ids")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "cert_ids"        -> Json.obj(
-        "type" -> "select",
+      "cert_ids" -> Json.obj(
+        "type"  -> "select",
         "array" -> true,
         "label" -> s"Allowed certificates",
         "props" -> Json.obj(
@@ -527,14 +534,22 @@ class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Otoroshi OCSP Responder endpoint"
-  override def description: Option[String]                 = "This plugin provide an endpoint to act as the Otoroshi OCSP Responder".some
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to act as the Otoroshi OCSP Responder".some
   override def defaultConfigObject: Option[NgPluginConfig] = PossibleCerts.default.some
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = PossibleCerts.configFlow
   override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
     env.ocspResponder.respond(ctx.rawRequest, ctx.request.body, config.certIds).map { res =>
       Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
@@ -550,23 +565,43 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Otoroshi AIA endpoint"
-  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates".some
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates".some
   override def defaultConfigObject: Option[NgPluginConfig] = PossibleCerts.default.some
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = PossibleCerts.configFlow
   override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
     ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey) match {
-      case None => Left(NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "matched route not found")))).vfuture
+      case None               =>
+        Left(
+          NgProxyEngineError.NgResultProxyEngineError(
+            Results.InternalServerError(Json.obj("error" -> "matched route not found"))
+          )
+        ).vfuture
       case Some(matchedRoute) => {
         matchedRoute.pathParams.get("id").orElse(matchedRoute.pathParams.get("cert_id")) match {
-          case None => Right(BackendCallResponse(NgPluginHttpResponse.fromResult(BadRequest(Json.obj("error" -> "cert id not available"))), None)).vfuture
-          case Some(id) => env.ocspResponder.aia(id, ctx.rawRequest, config.certIds).map { res =>
-            Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
-          }
+          case None     =>
+            Right(
+              BackendCallResponse(
+                NgPluginHttpResponse.fromResult(BadRequest(Json.obj("error" -> "cert id not available"))),
+                None
+              )
+            ).vfuture
+          case Some(id) =>
+            env.ocspResponder.aia(id, ctx.rawRequest, config.certIds).map { res =>
+              Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+            }
         }
       }
     }
@@ -588,7 +623,14 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
   override def configFlow: Seq[String]                     = PossibleCerts.configFlow
   override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
     JWKSHelper.jwks(ctx.rawRequest, config.certIds).map {
       case Left(body)  => Results.NotFound(body)
@@ -607,16 +649,24 @@ class OtoroshiHealthEndpoint extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Otoroshi Health endpoint"
-  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi Health informations data for the current node".some
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi Health informations data for the current node".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = Seq.empty
   override def configSchema: Option[JsObject]              = None
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     HealthController.fetchHealth().map {
-      case Left(payload) => ServiceUnavailable(payload)
+      case Left(payload)  => ServiceUnavailable(payload)
       case Right(payload) => Ok(payload)
     } map { res =>
       Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
@@ -629,14 +679,14 @@ case class OtoroshiMetricsEndpointConfig(filter: Option[String]) extends NgPlugi
 }
 
 object OtoroshiMetricsEndpointConfig {
-  val default = OtoroshiMetricsEndpointConfig(None)
-  val format = new Format[OtoroshiMetricsEndpointConfig] {
+  val default                        = OtoroshiMetricsEndpointConfig(None)
+  val format                         = new Format[OtoroshiMetricsEndpointConfig] {
     override def writes(o: OtoroshiMetricsEndpointConfig): JsValue             = Json.obj(
-      "filter"        -> o.filter.map(_.json).getOrElse(JsNull).asValue
+      "filter" -> o.filter.map(_.json).getOrElse(JsNull).asValue
     )
     override def reads(json: JsValue): JsResult[OtoroshiMetricsEndpointConfig] = Try {
       OtoroshiMetricsEndpointConfig(
-        filter = json.select("filter").asOpt[String],
+        filter = json.select("filter").asOpt[String]
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -646,8 +696,8 @@ object OtoroshiMetricsEndpointConfig {
   val configFlow: Seq[String]        = Seq("filter")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "filter"        -> Json.obj(
-        "type" -> "string",
+      "filter" -> Json.obj(
+        "type"  -> "string",
         "label" -> s"Filter metrics"
       )
     )
@@ -662,21 +712,30 @@ class OtoroshiMetricsEndpoint extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Otoroshi Metrics endpoint"
-  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi metrics data for the current node".some
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi metrics data for the current node".some
   override def defaultConfigObject: Option[NgPluginConfig] = OtoroshiMetricsEndpointConfig.default.some
   override def useDelegates: Boolean                       = false
   override def noJsForm: Boolean                           = true
   override def configFlow: Seq[String]                     = OtoroshiMetricsEndpointConfig.configFlow
   override def configSchema: Option[JsObject]              = OtoroshiMetricsEndpointConfig.configSchema
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx.cachedConfig(internalName)(OtoroshiMetricsEndpointConfig.format).getOrElse(OtoroshiMetricsEndpointConfig.default)
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config      = ctx
+      .cachedConfig(internalName)(OtoroshiMetricsEndpointConfig.format)
+      .getOrElse(OtoroshiMetricsEndpointConfig.default)
     val format      = ctx.rawRequest.getQueryString("format")
     val filter      = ctx.rawRequest.getQueryString("filter").orElse(config.filter)
     val acceptsJson = ctx.rawRequest.accepts("application/json")
     val acceptsProm = ctx.rawRequest.accepts("application/prometheus")
-    val res = HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter)
+    val res         = HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter)
     Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None)).vfuture
   }
 }
-

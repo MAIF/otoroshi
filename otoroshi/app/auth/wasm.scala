@@ -93,7 +93,7 @@ case class WasmAuthModuleConfig(
     remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     wasmRef: Option[String],
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
 
   override def authModule(config: GlobalConfig): AuthModule = new WasmAuthModule(this)
