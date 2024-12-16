@@ -3,6 +3,7 @@ package otoroshi.next.plugins
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
+import org.mindrot.jbcrypt.BCrypt
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUserHelper
@@ -666,6 +667,11 @@ object SimpleBasicAuthConfig {
     "realm" -> Json.obj(
       "type" -> "string",
       "label" -> s"Realm",
+      "help" -> "A unique realm name to avoid weird browser behaviors",
+      "props" -> Json.obj(
+        "placeholder" -> "A unique realm name to avoid weird browser behaviors",
+        "help" -> "A unique realm name to avoid weird browser behaviors",
+      ),
     ),
     "users" -> Json.obj(
       "type" -> "object",
@@ -675,6 +681,7 @@ object SimpleBasicAuthConfig {
 }
 
 class SimpleBasicAuth extends NgAccessValidator {
+
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Authentication)
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
@@ -682,9 +689,9 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def core: Boolean                               = true
   override def noJsForm: Boolean = true
   override def name: String                                = "Basic Auth"
-  override def description: Option[String]                 =
-    "This plugin can be used to protect a route with basic auth.".some
+  override def description: Option[String]                 = "This plugin can be used to protect a route with basic auth. You can use clear text passwords (not recommended for production usage) or Bcryt hashed password as password values".some
   override def defaultConfigObject: Option[NgPluginConfig] = SimpleBasicAuthConfig().some
+
   override def configFlow: Seq[String] = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
@@ -701,6 +708,7 @@ class SimpleBasicAuth extends NgAccessValidator {
       val password = parts.tail.mkString(":")
       config.users.get(username) match {
         case Some(pwd) if password == pwd => NgAccess.NgAllowed.vfuture
+        case Some(pwd) if BCrypt.checkpw(password, pwd) => NgAccess.NgAllowed.vfuture
         case _ => {
           NgAccess.NgDenied(
             Results
