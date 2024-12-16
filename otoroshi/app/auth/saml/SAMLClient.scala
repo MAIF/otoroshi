@@ -22,16 +22,13 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
 import org.w3c.dom.ls.DOMImplementationLS
 import org.w3c.dom.{Document, Node}
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
@@ -115,7 +112,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           }
           Redirect(redirectUrl)
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirectTo,
               "hash"                                                            -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
               "desc"                                                            -> descriptor.id,

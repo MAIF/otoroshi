@@ -13,7 +13,7 @@ import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
 import otoroshi.cluster._
 import otoroshi.events._
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
@@ -1167,6 +1167,9 @@ class Env(
   lazy val http2ClientProxyPort    =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
 
+  lazy val privateAppsSessionManager: PrivateAppsSessionManager = new PrivateAppsSessionManager(this)
+  privateAppsSessionManager.printStatus()
+
   lazy val defaultConfig = GlobalConfig(
     initWithNewEngine = true,
     trustXForwarded = initialTrustXForwarded,
@@ -1612,7 +1615,7 @@ class Env(
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  lazy val sessionDomain = configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
+  lazy val sessionDomain = if (privateAppsSessionManager.isEnabled) privateAppsSessionManager.sessionDomain else configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
   lazy val playSecret    = configuration.getOptionalWithFileSupport[String]("play.http.secret.key").get
 
   def sign(message: String): String =

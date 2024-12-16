@@ -6,6 +6,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import otoroshi.auth._
+import otoroshi.auth.implicits._
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.Errors
@@ -69,7 +70,7 @@ class AuthController(
         if (logger.isDebugEnabled) logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse("--")
       case _                                                                 =>
-        req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
+        req.getQueryString("hash").orElse(req.privateAppSession.get("hash")).orElse(req.session.get("hash")).getOrElse("--")
     }
 
     val expected = env.sign(s"${auth.id}:::$descId")
@@ -316,7 +317,7 @@ class AuthController(
                                 }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
-                                    .removingFromSession(
+                                    .removingFromPrivateAppSession(
                                       s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
                                       "desc"
                                     )
@@ -367,7 +368,7 @@ class AuthController(
                                 }
                                 FastFuture.successful(
                                   Redirect(setCookiesRedirect)
-                                    .removingFromSession(
+                                    .removingFromPrivateAppSession(
                                       s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
                                       "desc"
                                     )
@@ -434,7 +435,7 @@ class AuthController(
                                 }
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
-                                    .removingFromSession(
+                                    .removingFromPrivateAppSession(
                                       s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
                                       "desc"
                                     )
@@ -484,7 +485,7 @@ class AuthController(
                                 }
                                 FastFuture.successful(
                                   Redirect(setCookiesRedirect)
-                                    .removingFromSession(
+                                    .removingFromPrivateAppSession(
                                       s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
                                       "desc"
                                     )
@@ -583,13 +584,13 @@ class AuthController(
                 val host = url.getHost
 
                 Redirect(redirectTo)
-                  .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                  .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                   .withCookies(
                     env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
                   )
 
               case _ =>
-                ctx.request.session
+                ctx.request.privateAppSession
                   .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                   .getOrElse(
                     routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
@@ -605,7 +606,7 @@ class AuthController(
                     }
                     Redirect(
                       s"$redirection&hash=$hash"
-                    ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                    ).removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                       .withCookies(
                         env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
                       )
@@ -639,13 +640,13 @@ class AuthController(
                     }
                     if (webauthn) {
                       Ok(Json.obj("location" -> setCookiesRedirect))
-                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                         .withCookies(
                           env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
                         )
                     } else {
                       Redirect(setCookiesRedirect)
-                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                         .withCookies(
                           env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
                         )
@@ -657,14 +658,14 @@ class AuthController(
 
       var desc = ctx.request
         .getQueryString("desc")
-        .orElse(ctx.request.session.get("desc"))
+        .orElse(ctx.request.privateAppSession.get("desc"))
 
       var isRoute = ctx.request
         .getQueryString("route")
-        .orElse(ctx.request.session.get("route"))
+        .orElse(ctx.request.privateAppSession.get("route"))
         .contains("true")
 
-      var refFromRelayState: Option[String] = ctx.request.session.get("ref")
+      var refFromRelayState: Option[String] = ctx.request.privateAppSession.get("ref")
 
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
@@ -886,14 +887,14 @@ class AuthController(
 
       ((desc, stt) match {
         case (Some(serviceId), _) if !isRoute =>
-          processService(serviceId).map(_.removingFromSession("desc", "ref", "route"))
-        case (Some(routeId), _) if isRoute    => processRoute(routeId).map(_.removingFromSession("desc", "ref", "route"))
+          processService(serviceId).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+        case (Some(routeId), _) if isRoute    => processRoute(routeId).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
-            case Some(route) if isRoute    => processRoute(route).map(_.removingFromSession("desc", "ref", "route"))
-            case Some(service) if !isRoute => processService(service).map(_.removingFromSession("desc", "ref", "route"))
+            case Some(route) if isRoute    => processRoute(route).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+            case Some(service) if !isRoute => processService(service).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case _                         =>
               NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
           }

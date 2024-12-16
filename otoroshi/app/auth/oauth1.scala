@@ -1,6 +1,7 @@
 package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
+import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
@@ -354,7 +355,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val hash        = env.sign(s"${authConfig.id}:::${descriptor.id}")
             val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
-              .addingToSession(
+              .addingToPrivateAppSession(
                 "oauth_token_secret"                                              -> parameters("oauth_token_secret"),
                 "desc"                                                            -> descriptor.id,
                 "ref"                                                             -> authConfig.id,
@@ -466,7 +467,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       authConfig.accessTokenURL,
       method,
       authConfig.consumerSecret,
-      Some(request.session.get("oauth_token_secret").get)
+      Some(request.privateAppSession.get("oauth_token_secret").orElse(request.session.get("oauth_token_secret")).get)
     )
 
     (if (method == "POST") {
