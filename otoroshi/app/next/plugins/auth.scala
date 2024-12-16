@@ -700,6 +700,7 @@ class SimpleBasicAuth extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val globalUsers = env.datastores.globalConfigDataStore.latest().plugins.config.select("simple_basic_auth_global_users").asOpt[Map[String, String]].getOrElse(Map.empty)
     val authorization: String = ctx.request.headers.get("Authorization")
       .filter(_.startsWith("Basic "))
       .map(_.replace("Basic ", ""))
@@ -709,7 +710,7 @@ class SimpleBasicAuth extends NgAccessValidator {
     if (authorization.contains(":") && parts.length > 1) {
       val username = parts.head
       val password = parts.tail.mkString(":")
-      config.users.get(username) match {
+      (config.users ++ globalUsers).get(username) match {
         case Some(pwd) if password == pwd => NgAccess.NgAllowed.vfuture
         case Some(pwd) if BCrypt.checkpw(password, pwd) => NgAccess.NgAllowed.vfuture
         case _ => {
