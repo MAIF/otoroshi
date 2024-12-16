@@ -1168,7 +1168,6 @@ class Env(
     configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
 
   lazy val privateAppsSessionManager: PrivateAppsSessionManager = new PrivateAppsSessionManager(this)
-  privateAppsSessionManager.printStatus()
 
   lazy val defaultConfig = GlobalConfig(
     initWithNewEngine = true,
@@ -1340,6 +1339,8 @@ class Env(
     setupLoggers()
 
     DynamicSSLEngineProvider.setCurrentEnv(this)
+
+    privateAppsSessionManager.printStatus()
 
     clusterAgent.warnAboutHttpLeaderUrls()
     if (clusterConfig.mode == ClusterMode.Leader) {

@@ -48,9 +48,10 @@ class PrivateAppsSessionManager(env: Env) {
 
   def printStatus(): Unit = {
     if (enabled) {
-      env.logger.info("Private apps. session is enabled !")
-    } else {
-      env.logger.info("Private apps. session is disabled")
+      logger.info(s"Private apps. session is enabled !")
+      if (logger.isDebugEnabled) {
+        logger.debug(s"session config: ${sessionConfig}")
+      }
     }
   }
 
