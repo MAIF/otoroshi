@@ -10,11 +10,12 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import otoroshi.controllers.{routes, LocalCredentialRepository}
+import otoroshi.controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -339,7 +340,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           Results
             .Unauthorized("")
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
@@ -382,7 +383,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 env
               )
           )
-          .addingToSession(
+          .addingToPrivateAppSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )
