@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import './index.css'
+import './index.scss'
 
 import {
     createApi,
@@ -9,17 +9,19 @@ import {
     createApiFrontend,
     createApiPageLeaf,
     createApiRoute,
-    createApiState,
     createOpenApiSpecification,
     createApiDeploymentRef,
     createApiConsumer,
     createApiBackendClient,
     createApiPlugins,
-    createNgTarget
+    createNgTarget,
+    API_STATE,
+    generateHourlyData
 } from './model';
 import Sidebar from './Sidebar';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/Button';
+import { SmoothUptime, Uptime } from '../../components/Status';
 
 // Mock Data for NgTarget
 const ngTargetMock = createNgTarget({
@@ -32,14 +34,6 @@ const ngTargetMock = createNgTarget({
     predicateValue: "AlwaysMatch",
     ipAddressValue: "192.168.0.1",
     tlsConfigValue: { cert: "cert_path", key: "key_path" }
-});
-
-// Mock Data for ApiState
-const apiStateMock = createApiState({
-    startedValue: true,
-    publishedValue: true,
-    publicStateValue: true,
-    deprecatedValue: true
 });
 
 // Mock Data for the ApiBackend (including NgTarget in targetsValue)
@@ -124,7 +118,7 @@ const apiPluginsMock = createApiPlugins({
 const apiMock = createApi({
     locationValue: { tenant: "tenant1", teams: ["team1"] },
     idValue: "api-123",
-    nameValue: "My API",
+    nameValue: "Forecast API",
     descriptionValue: "This is a sample API",
     tagsValue: ["v1", "rest"],
     metadataValue: { author: "John Doe" },
@@ -132,7 +126,12 @@ const apiMock = createApi({
     debugFlowValue: true,
     captureValue: false,
     exportReportingValue: true,
-    stateValue: apiStateMock, // Using apiStateMock here
+    stateValue: API_STATE.PUBLISHED,
+    healthValue: {
+        today: generateHourlyData(0),
+        yesterday: generateHourlyData(-1),
+        nMinus2: generateHourlyData(-2),
+    },
     blueprintValue: "blueprint-001",
     routesValue: [apiRouteMock], // Referencing apiRouteMock here
     backendsValue: [apiBackendMock],
@@ -154,31 +153,97 @@ export default function ApiEditor(props) {
 
     const api = apiMock
 
-    return <div className='p-3'>
+    return <div className='editor p-3'>
 
-        <h2>{api.name}</h2>
-        <div className='d-flex gap-2'>
-            {api.state.started && <span className='api-status api-status-started'>
-                <i className='fas fa-rocket me-2' />
-                Started
-            </span>}
-
-            {api.state.deprecated && <span className='api-status api-status-deprecated'>
-                <i className='fas fa-warning me-2' />
-                Deprecated
-            </span>}
-
-            {api.state.published && <span className='api-status api-status-published'>
-                <i className='fas fa-check fa-xs me-2' />
-                Published
-            </span>}
+        <div className='d-flex flex-column gap-3'>
+            <div className='d-flex gap-3'>
+                <div className='d-flex flex-column flex-grow gap-3'>
+                    <ContainerBlock full highlighted>
+                        <APIHeader api={api} />
+                        <Uptime
+                            health={api.health.today}
+                            stopTheCountUnknownStatus={false}
+                        />
+                        <Uptime
+                            health={api.health.yesterday}
+                            stopTheCountUnknownStatus={false}
+                        />
+                        <Uptime
+                            health={api.health.nMinus2}
+                            stopTheCountUnknownStatus={false}
+                        />
+                    </ContainerBlock>
+                    <ContainerBlock full>
+                        <SectionHeader text="Customers" description="Manage customers and subscriptions" />
+                    </ContainerBlock>
+                </div>
+                <ContainerBlock>
+                    <SectionHeader text="Build your API" description="Manage entities for this API" />
+                    <Entities>
+                        <Backends backends={api.backends} />
+                        <Routes routes={api.routes} />
+                    </Entities>
+                </ContainerBlock>
+            </div>
         </div>
-
-        <Backends />
     </div>
 }
 
-function Backends() {
+function ContainerBlock({ children, full, highlighted }) {
+    return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}>
+        {children}
+    </div>
+}
+
+function APIHeader({ api }) {
+    return <>
+        <div className='d-flex align-items-center gap-3'>
+            <h2 className='m-0'>{api.name}</h2>
+            <APIState value={api.state} />
+        </div>
+        <p>{api.description}</p>
+    </>
+}
+
+function APIState({ value }) {
+    if (value === API_STATE.STARTED)
+        return <span className='badge api-status-started'>
+            <i className='fas fa-rocket me-2' />
+            Started
+        </span>
+
+    if (value === API_STATE.DEPRECATED)
+        return <span className='badge api-status-deprecated'>
+            <i className='fas fa-warning me-2' />
+            Deprecated
+        </span>
+
+    if (value === API_STATE.PUBLISHED)
+        return <span className='badge api-status-published'>
+            <i className='fas fa-check fa-xs me-2' />
+            Published
+        </span>
+
+
+    // TODO  - manage API_STATE.REMOVED
+    return null
+}
+
+function SectionHeader({ text, description, main }) {
+    return <div>
+        {main ? <h1 className='m-0'>{text}</h1> :
+            <h3 className='m-0'>{text}</h3>}
+        <p>{description}</p>
+    </div>
+}
+
+function Entities({ children }) {
+    return <div className='d-flex flex-column gap-3'>
+        {children}
+    </div>
+}
+
+function Backends({ backends }) {
     return <Link to="backends" href="" className="cards apis-cards">
         <div
             className="cards-header"
@@ -187,14 +252,59 @@ function Backends() {
             }}
         ></div>
         <div className="cards-body">
-            <div className='cards-title'>
-                Backend
+            <div className='cards-title d-flex align-items-center justify-content-between'>
+                Backends <span className='badge api-status-deprecated'>
+                    <i className='fas fa-microchip me-2' />
+                    {backends.length}
+                </span>
             </div>
-            <div className="cards-description">
-                <p>
-                    Design robust, scalable backends with optimized performance, security, and seamless front-end integration.
-                </p>
-            </div>
+            <p className="cards-description" style={{ position: 'relative' }}>
+                Design robust, scalable <HighlighedBackendText plural /> with optimized performance, security, and seamless front-end integration.
+                <i className='fas fa-chevron-right fa-lg navigate-icon' />
+            </p>
         </div>
     </Link>
+}
+
+function Routes({ routes }) {
+    return <Link to="routes" href="" className="cards apis-cards">
+        <div
+            className="cards-header"
+            style={{
+                background: `url(/assets/images/svgs/routes.svg)`,
+            }}
+        ></div>
+        <div className="cards-body">
+            <div className='cards-title d-flex align-items-center justify-content-between'>
+                Routes <span className='badge api-status-deprecated'>
+                    <i className='fas fa-road me-2' />
+                    {routes.length}
+                </span>
+            </div>
+            <p className="cards-description relative">
+                Define your <HighlighedRouteText />: connect <HighlighedFrontendText plural /> to <HighlighedBackendText plural /> and customize behavior with <HighlighedPluginsText plural /> like authentication, rate limiting, and transformations.
+                <i className='fas fa-chevron-right fa-lg navigate-icon' />
+            </p>
+        </div>
+    </Link>
+}
+
+function HighlighedPluginsText({ plural }) {
+    return <HighlighedText text={plural ? 'plugins' : "plugin"} link="/apis/flows" />
+}
+
+function HighlighedBackendText({ plural }) {
+    return <HighlighedText text={plural ? 'backends' : "backend"} link="/apis/backends" />
+}
+
+function HighlighedFrontendText({ plural }) {
+    return <HighlighedText text={plural ? 'frontends' : "frontend"} link="/apis/frontends" />
+}
+
+function HighlighedRouteText({ plural }) {
+    return <HighlighedText text={plural ? 'routes' : "route"} link="/apis/routes" />
+}
+
+function HighlighedText({ text, link }) {
+    return <Link to={link} className="highlighted-text">{text}</Link>
 }

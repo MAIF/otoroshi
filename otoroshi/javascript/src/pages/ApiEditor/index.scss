@@ -1,0 +1,142 @@
+.editor {
+
+    .badge {
+        color: var(--text);
+        border-radius: 1rem;
+        border: 2px solid var(--text);
+        padding: .25rem .75rem .25rem .5rem;
+    }
+
+    .badge i {
+        background-color: var(--text);
+        color: var(--reverse-text);
+        border-radius: 50%;
+        padding: .25rem;
+    }
+
+    .api-status-published {
+        background-color: hsla(150, 52%, 81%, 0.18);
+        border-color: hsla(150, 52%, 51%, 0.4);
+    }
+
+    .api-status-published i {
+        background-color: hsla(150, 52%, 51%, 1);
+        color: var(--text);
+    }
+
+    .api-status-deprecated {
+        background-color: hsla(40, 94%, 58%, 0.18);
+        border-color: hsla(40, 94%, 58%, 0.4);
+    }
+
+    .api-status-deprecated i {
+        background: none;
+        color: hsla(40, 94%, 58%, 1);
+    }
+
+    .api-status-started i {
+        background: none;
+        color: hsl(184, 9%, 62%);
+    }
+
+    .api-status-started {
+        background-color: hsla(184, 9%, 62%, 0.18);
+        border-color: hsla(184, 9%, 62%, 0.4);
+    }
+
+    .cards {
+        margin: 0;
+    }
+
+    .cards-title {
+        font-size: 1.5rem !important;
+        color: var(--text) !important;
+    }
+
+    .apis-cards:hover .cards-body {
+        background-color: hsla(0, 0%, 35%, .5);
+    }
+
+    .highlighted-text {
+        color: var(--color-primary);
+        font-weight: bold;
+        text-decoration: underline;
+    }
+
+    .container {
+        width: fit-content;
+        background-color: var(--bg-color_level2);
+        padding: 2rem;
+        border-radius: 1rem;
+    }
+
+    .container--full {
+        flex: 1;
+        margin: 0;
+        width: inherit;
+    }
+
+    .container--highlighted {
+        background-color: var(--bg-color_level3);
+    }
+
+    h3 {
+        color: var(--text) !important;
+    }
+
+    .navigate-icon {
+        position: absolute;
+        bottom: 0rem;
+        right: .2rem;
+        transition: all .2s;
+        opacity: .85;
+    }
+
+    .cards:hover .navigate-icon {
+        right: -.25rem;
+        color: var(--text);
+        opacity: 1;
+    }
+
+    .relative {
+        position: relative;
+    }
+
+    .flex-grow {
+        flex-grow: 1;
+    }
+
+    .health-container {
+        background: hsla(0, 0%, 25%, .3);
+        box-shadow: none;
+        padding: 1rem;
+        margin: 0;
+        margin-bottom: 1rem;
+        border-radius: 1rem;
+    }
+
+    .uptime-avg {
+        color: var(--text) !important;
+    }
+    
+    .health-container .uptime-avg {
+        color: var(--color-primary);
+    }
+    
+    .status.orange,
+    .status.light-orange {
+        background-color: var(--color-primary);
+    }
+
+    .status {
+        height: 1.5rem;
+        border-radius: .5rem;
+    }
+
+    .cards-header {
+        min-height: 170px;
+        background-size: cover !important;
+        padding: 2.5rem 2.5rem 1rem 2.5rem;
+        background-origin: content-box !important;
+    }
+}

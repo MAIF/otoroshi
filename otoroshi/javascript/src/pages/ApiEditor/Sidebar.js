@@ -18,6 +18,13 @@ const LINKS = (api) =>
             title: 'API Playground',
             tab: 'playground',
             tooltip: { ...createTooltip(`Show playground tab`) },
+        },
+        {
+            to: `/apis/${api.id}/deployments`,
+            icon: 'fa-server',
+            title: 'Deployments',
+            tab: 'deployments',
+            tooltip: { ...createTooltip(`Show deployments tab`) },
         }
     ].filter((link) => !link.enabled);
 
