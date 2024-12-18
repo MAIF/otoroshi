@@ -5,6 +5,14 @@ export const API_STATE = {
     "REMOVED": 'removed',
 }
 
+export const CONSUMER_KIND = {
+    'APIKEY': 'Apikey',
+    'MTLS': 'Mtls',
+    'KEYLESS': 'Keyless',
+    'OAUTH2': 'OAuth2',
+    'JWT': 'JWT',
+}
+
 // export function for creating ApiBackend
 export function createApiBackend({
     nameValue,
@@ -188,7 +196,7 @@ export function createApiBackendClient({
 }
 
 // export function for creating ApiPlugins
-export function createApiPlugins({
+export function createApiFlows({
     nameValue,
     predicateValue,
     pluginsValue
@@ -221,7 +229,7 @@ export function createApi({
     blueprintValue,
     routesValue,
     backendsValue,
-    pluginsValue,
+    flowsValue,
     clientsValue,
     documentationValue,
     consumersValue,
@@ -242,7 +250,7 @@ export function createApi({
     let blueprint = blueprintValue;
     let routes = routesValue;
     let backends = backendsValue;
-    let plugins = pluginsValue;
+    let flows = flowsValue;
     let clients = clientsValue;
     let documentation = documentationValue;
     let consumers = consumersValue;
@@ -264,7 +272,7 @@ export function createApi({
         blueprint,
         routes,
         backends,
-        plugins,
+        flows,
         clients,
         documentation,
         consumers,

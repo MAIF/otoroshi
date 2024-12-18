@@ -71,7 +71,7 @@
     }
 
     .container--full {
-        flex: 1;
+        // flex: 1;
         margin: 0;
         width: inherit;
     }
@@ -118,11 +118,11 @@
     .uptime-avg {
         color: var(--text) !important;
     }
-    
+
     .health-container .uptime-avg {
         color: var(--color-primary);
     }
-    
+
     .status.orange,
     .status.light-orange {
         background-color: var(--color-primary);
@@ -138,5 +138,16 @@
         background-size: cover !important;
         padding: 2.5rem 2.5rem 1rem 2.5rem;
         background-origin: content-box !important;
+    }
+
+    .tag {
+        color: var(--reverse-text);
+        font-size: .8rem;
+        border-radius: 1rem;
+        border: 1px solid var(--text);
+        background-color: var(--text);
+        padding: .1rem .3rem;
+        min-width: 3rem;
+        text-align: center;
     }
 }

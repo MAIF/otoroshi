@@ -13,10 +13,11 @@ import {
     createApiDeploymentRef,
     createApiConsumer,
     createApiBackendClient,
-    createApiPlugins,
+    createApiFlows,
     createNgTarget,
     API_STATE,
-    generateHourlyData
+    generateHourlyData,
+    CONSUMER_KIND
 } from './model';
 import Sidebar from './Sidebar';
 import { Link } from 'react-router-dom';
@@ -59,7 +60,7 @@ const apiFrontendMock = createApiFrontend({
 // Mock Data for the ApiRoute
 const apiRouteMock = createApiRoute({
     frontendValue: apiFrontendMock,
-    pluginsValue: [apiPluginsMock],
+    pluginsValue: [apiFlowsMock],
     backendValue: apiBackendMock
 });
 
@@ -95,7 +96,7 @@ const apiConsumerMock = createApiConsumer({
     nameValue: "Consumer1",
     descriptionValue: "API Consumer Description",
     autoValidationValue: true,
-    kindValue: "Apikey",
+    kindValue: CONSUMER_KIND.APIKEY,
     settingsValue: { key: "value" },
     statusValue: "Active",
     subscriptionsValue: ["sub1", "sub2"]
@@ -108,7 +109,7 @@ const apiBackendClientMock = createApiBackendClient({
 });
 
 // Mock Data for the ApiPlugins (with proper object structure)
-const apiPluginsMock = createApiPlugins({
+const apiFlowsMock = createApiFlows({
     nameValue: "Plugin1",
     predicateValue: "some predicate",
     pluginsValue: ["plugin1", "plugin2"]
@@ -120,7 +121,7 @@ const apiMock = createApi({
     idValue: "api-123",
     nameValue: "Forecast API",
     descriptionValue: "This is a sample API",
-    tagsValue: ["v1", "rest"],
+    tagsValue: ["v1", "rest", "weather", "grpc"],
     metadataValue: { author: "John Doe" },
     versionValue: "1.0.0",
     debugFlowValue: true,
@@ -135,7 +136,7 @@ const apiMock = createApi({
     blueprintValue: "blueprint-001",
     routesValue: [apiRouteMock], // Referencing apiRouteMock here
     backendsValue: [apiBackendMock],
-    pluginsValue: [apiPluginsMock],
+    flowsValue: [apiFlowsMock],
     clientsValue: [apiBackendClientMock],
     documentationValue: apiDocumentationMock,
     consumersValue: [apiConsumerMock],
@@ -180,6 +181,7 @@ export default function ApiEditor(props) {
                 <ContainerBlock>
                     <SectionHeader text="Build your API" description="Manage entities for this API" />
                     <Entities>
+                        <Flows flows={api.flows} />
                         <Backends backends={api.backends} />
                         <Routes routes={api.routes} />
                     </Entities>
@@ -201,7 +203,12 @@ function APIHeader({ api }) {
             <h2 className='m-0'>{api.name}</h2>
             <APIState value={api.state} />
         </div>
-        <p>{api.description}</p>
+        <div className='d-flex align-items-center gap-1 mb-3'>
+            <p className='m-0 me-2'>{api.description}</p>
+            {api.tags.map(tag => <span className='tag' key={tag}>
+                {tag}
+            </span>)}
+        </div>
     </>
 }
 
@@ -283,6 +290,29 @@ function Routes({ routes }) {
             </div>
             <p className="cards-description relative">
                 Define your <HighlighedRouteText />: connect <HighlighedFrontendText plural /> to <HighlighedBackendText plural /> and customize behavior with <HighlighedPluginsText plural /> like authentication, rate limiting, and transformations.
+                <i className='fas fa-chevron-right fa-lg navigate-icon' />
+            </p>
+        </div>
+    </Link>
+}
+
+function Flows({ flows }) {
+    return <Link to="flows" href="" className="cards apis-cards">
+        <div
+            className="cards-header"
+            style={{
+                background: `url(/assets/images/svgs/plugins.svg)`,
+            }}
+        ></div>
+        <div className="cards-body">
+            <div className='cards-title d-flex align-items-center justify-content-between'>
+                Flows <span className='badge api-status-deprecated'>
+                    <i className='fas fa-road me-2' />
+                    {flows.length}
+                </span>
+            </div>
+            <p className="cards-description relative">
+                Create flows of <HighlighedPluginsText plural /> to apply rules, transformations, and restrictions on <HighlighedRouteText plural />, enabling advanced traffic control and customization.
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>
