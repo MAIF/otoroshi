@@ -1,5 +1,6 @@
 .cards {
   background-color: var(--bg-color_level2);
+  border: 2px solid var(--bg-color_level3) !important;
   margin: 5px 0px;
   flex: 1;
   border-radius: 12px;
@@ -11,6 +12,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+
   &-header {
     flex: 1;
     background-size: contain !important;
@@ -19,6 +21,7 @@
     min-height: 150px;
     margin: 12px;
   }
+
   &-body {
     display: flex;
     flex-direction: column;
@@ -26,6 +29,7 @@
     background-color: var(--bg-color_level3);
     padding: 12px;
   }
+
   &-title {
     font-weight: bold;
     margin-left: 5px;
@@ -35,6 +39,7 @@
     color: var(--color_level3);
     text-transform: capitalize;
   }
+
   &-description {
     margin-right: 0.25rem !important;
     margin-left: 5px;

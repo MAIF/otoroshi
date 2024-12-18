@@ -64,6 +64,7 @@ $color-white-4-opa80: #e1dfdf80;
   --color_level3: #{$color-dark-1};
 
   --text: #fff;
+  --reverse-text: #000;
   --raw-text: 255, 255, 255;
   --bg-color_level1_opa80: #{$color-dark-6-opa80};
   --bg-color_level2_opa80: #{$color-dark-5-opa80};
@@ -79,6 +80,7 @@ $color-white-4-opa80: #e1dfdf80;
   --color_level3: #{$color-white-5};
 
   --text: #000;
+  --reverse-text: #fff;
   --raw-text: 0, 0, 0;
   --bg-color_level1_opa80: #{$color-white-2-opa80};
   --bg-color_level2_opa80: #{$color-white-3-opa80};
