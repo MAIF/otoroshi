@@ -240,16 +240,10 @@ case class ApiKey(
       ec: ExecutionContext,
       env: Env
   ): Future[(Boolean, Option[ApiKeyRotationInfo], RemainingQuotas)] = {
-    println("withinQuotasAndRotationQuotas")
     for {
       quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield {
-      println(s"withinQuotasAndRotationQuotas: -------------------------")
-      println(s"quotas.currentCallsPerSec: ${quotas.currentCallsPerSec} < ${(throttlingQuota * env.throttlingWindow)}")
-      println(s"quotas.currentCallsPerDay: ${quotas.currentCallsPerDay} < ${dailyQuota}")
-      println(s"quotas.currentCallsPerMonth: ${quotas.currentCallsPerMonth} < ${monthlyQuota}")
-      println("===================================")
       val within = (quotas.currentCallsPerSec < (throttlingQuota * env.throttlingWindow)) &&
         (quotas.currentCallsPerDay < dailyQuota) &&
         (quotas.currentCallsPerMonth < monthlyQuota)

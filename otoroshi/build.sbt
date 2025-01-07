@@ -377,6 +377,7 @@ reStart / javaOptions ++= Seq(
   //"-Dotoroshi.privateapps.subdomain=otoroshi",
   "-Dotoroshi.ssl.fromOutside.clientAuth=None",
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
+  "-Dotoroshi.throttlingWindow=1",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
   "-Dotoroshi.next.experimental.netty-server.enabled=true",
