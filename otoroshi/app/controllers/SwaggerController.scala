@@ -1176,7 +1176,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       "description" -> "Quotas state for an api key on a service group",
       "type"        -> "object",
       "required"    -> Json.arr(
-        "maxCallsPerWindow",
+        "authorizedCallsPerWindow",
         "throttlingCallsPerWindow",
         "remainingCallsPerWindow",
         "authorizedCallsPerDay",
@@ -1187,7 +1187,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "remainingCallsPerMonth"
       ),
       "properties"  -> Json.obj(
-        "maxCallsPerWindow"   -> SimpleLongType ~~> "The number of authorized calls per second",
+        "authorizedCallsPerWindow"   -> SimpleLongType ~~> "The number of authorized calls per second",
         "throttlingCallsPerWindow"      -> SimpleLongType ~~> "The current number of calls per second",
         "remainingCallsPerWindow"    -> SimpleLongType ~~> "The remaining number of calls per second",
         "authorizedCallsPerDay"   -> SimpleLongType ~~> "The number of authorized calls per day",

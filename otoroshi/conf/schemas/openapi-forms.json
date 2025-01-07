@@ -35056,8 +35056,8 @@
         "label" : "remainingCallsPerMonth",
         "type" : "number"
       },
-      "maxCallsPerWindow" : {
-        "label" : "maxCallsPerWindow",
+      "authorizedCallsPerWindow" : {
+        "label" : "authorizedCallsPerWindow",
         "type" : "number"
       },
       "authorizedCallsPerMonth" : {
@@ -35069,7 +35069,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "remainingCallsPerDay", "authorizedCallsPerMonth", "maxCallsPerWindow", "remainingCallsPerMonth", "currentCallsPerMonth", "authorizedCallsPerDay", "currentCallsPerDay", "remainingCallsPerWindow", "throttlingCallsPerWindow" ]
+    "flow" : [ "remainingCallsPerDay", "authorizedCallsPerMonth", "authorizedCallsPerWindow", "remainingCallsPerMonth", "currentCallsPerMonth", "authorizedCallsPerDay", "currentCallsPerDay", "remainingCallsPerWindow", "throttlingCallsPerWindow" ]
   },
   "otoroshi.next.plugins.JQRequest" : {
     "schema" : {

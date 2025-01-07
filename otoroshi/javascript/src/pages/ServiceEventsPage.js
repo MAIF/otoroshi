@@ -217,8 +217,8 @@ export class ServiceEventsPage extends Component {
     },
     {
       title: 'Auth. calls per sec',
-      filterId: 'remainingQuotas.maxCallsPerWindow',
-      content: (item) => safe(item.remainingQuotas, (i) => i.maxCallsPerWindow),
+      filterId: 'remainingQuotas.authorizedCallsPerWindow',
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerWindow),
     },
     {
       title: 'Rem. calls per sec',

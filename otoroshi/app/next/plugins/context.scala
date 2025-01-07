@@ -113,7 +113,7 @@ class ContextValidation extends NgAccessValidator {
       |    "otoroshi.core.RequestWebsocket" : false,
       |    "otoroshi.core.RequestCounterOut" : 0,
       |    "otoroshi.core.RemainingQuotas" : {
-      |      "maxCallsPerWindow" : 10000000,
+      |      "authorizedCallsPerWindow" : 10000000,
       |      "throttlingCallsPerWindow" : 0,
       |      "remainingCallsPerWindow" : 10000000,
       |      "authorizedCallsPerDay" : 10000000,

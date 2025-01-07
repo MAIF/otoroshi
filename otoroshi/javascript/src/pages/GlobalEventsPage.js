@@ -199,7 +199,7 @@ export class GlobalEventsPage extends Component {
     },
     {
       title: 'Auth. calls per sec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.maxCallsPerWindow),
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerWindow),
     },
     {
       title: 'Rem. calls per sec',

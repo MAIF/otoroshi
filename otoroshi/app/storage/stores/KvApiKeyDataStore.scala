@@ -81,7 +81,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       dailyCalls                  <- redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
       monthlyCalls                <- redisCli.get(monthlyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
     } yield RemainingQuotas(
-      maxCallsPerWindow = apiKey.throttlingQuota,
+      authorizedCallsPerWindow = apiKey.throttlingQuota,
       throttlingCallsPerWindow = throttlingCallsPerWindow,
       remainingCallsPerWindow = Math.max(0, apiKey.throttlingQuota - throttlingCallsPerWindow),
 
@@ -113,7 +113,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
              redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
            }
     } yield RemainingQuotas(
-      maxCallsPerWindow = apiKey.throttlingQuota,
+      authorizedCallsPerWindow = apiKey.throttlingQuota,
       throttlingCallsPerWindow = 0,
       remainingCallsPerWindow = 0,
       authorizedCallsPerDay = apiKey.dailyQuota,
@@ -149,7 +149,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                         redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
                       }
     } yield RemainingQuotas(
-      maxCallsPerWindow = apiKey.throttlingQuota,
+      authorizedCallsPerWindow = apiKey.throttlingQuota,
       throttlingCallsPerWindow = (secCalls / env.throttlingWindow).toInt,
       remainingCallsPerWindow = ((apiKey.throttlingQuota - secCalls) / env.throttlingWindow).toInt,
       authorizedCallsPerDay = apiKey.dailyQuota,

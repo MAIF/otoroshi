@@ -21203,7 +21203,7 @@
             "format" : "int64",
             "description" : "Remaining number of call per month"
           },
-          "maxCallsPerWindow" : {
+          "authorizedCallsPerWindow" : {
             "type" : "integer",
             "format" : "int64",
             "description" : "Number of authorized call per second"

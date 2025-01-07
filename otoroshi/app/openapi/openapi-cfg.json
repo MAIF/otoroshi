@@ -1957,7 +1957,7 @@
     "otoroshi.models.RegionMatch.region": "Region name",
     "otoroshi.models.RemainingQuotas.authorizedCallsPerDay": "Number of authorized call per day",
     "otoroshi.models.RemainingQuotas.authorizedCallsPerMonth": "Number of authorized call per month",
-    "otoroshi.models.RemainingQuotas.maxCallsPerWindow": "Number of authorized call per second",
+    "otoroshi.models.RemainingQuotas.authorizedCallsPerWindow": "Number of authorized call per second",
     "otoroshi.models.RemainingQuotas.currentCallsPerDay": "Current number of call per day",
     "otoroshi.models.RemainingQuotas.currentCallsPerMonth": "Current number of call per month",
     "otoroshi.models.RemainingQuotas.throttlingCallsPerWindow": "Current number of call per second",
