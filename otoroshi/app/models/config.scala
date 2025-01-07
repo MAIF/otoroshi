@@ -1026,7 +1026,7 @@ object GlobalConfig {
 }
 
 trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
-  def incrementCallsForIpAddressWithTTL(ip: String, ttl: Int = 1)(implicit ec: ExecutionContext): Future[Long]
+  def incrementCallsForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Long]
   def quotaForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Option[Long]]
   def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean]
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]

@@ -40,7 +40,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   private val quotasForIpAddressCache =
     new UnboundedConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
 
-  def incrementCallsForIpAddressWithTTL(ipAddress: String, ttl: Int = 1)(implicit
+  def incrementCallsForIpAddress(ipAddress: String)(implicit
       ec: ExecutionContext
   ): Future[Long] = {
 
@@ -54,7 +54,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         }
         redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith { case _ =>
           callsForIpAddressCache.remove(ipAddress)
-          redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
+          redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", _env.throttlingWindow)
         } map (_ => secCalls)
       }
 
@@ -116,7 +116,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       from: String
   )(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])] = {
     val a = withinThrottlingQuota()
-    val b = incrementCallsForIpAddressWithTTL(from)
+    val b = incrementCallsForIpAddress(from)
     val c = quotaForIpAddress(from)
 
     for {
@@ -130,7 +130,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       config: otoroshi.models.GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
-      _         <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 1) }
+      _         <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), env.throttlingWindow) }
       secCalls  <- redisCli.incrby(throttlingKey(), 1L)
       fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
