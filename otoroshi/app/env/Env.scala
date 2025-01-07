@@ -508,7 +508,7 @@ class Env(
   lazy val overheadThreshold: Double       =
     configuration.getOptionalWithFileSupport[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptionalWithFileSupport[Double]("app.health.limit").getOrElse(1000.0)
-  lazy val throttlingWindow: Int           = configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
+  lazy val throttlingWindow: Int           = 1 // configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
   lazy val analyticsWindow: Int            = configuration.getOptionalWithFileSupport[Int]("app.analyticsWindow").getOrElse(30)
   lazy val eventsName: String              = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String             =

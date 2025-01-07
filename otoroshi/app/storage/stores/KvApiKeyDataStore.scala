@@ -77,7 +77,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   override def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
     for {
-      secCalls     <- redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      secCalls     <- redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.debug(v => println(s"seccalls: ${v}")).toLong).getOrElse(0L))
       dailyCalls   <- redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
       monthlyCalls <- redisCli.get(monthlyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
     } yield RemainingQuotas(
@@ -127,6 +127,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       ec: ExecutionContext,
       env: Env
   ): Future[RemainingQuotas] = {
+    println("----------------------------------------------")
+    println("updateQuotas")
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -146,40 +148,52 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
                         redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
                       }
-    } yield RemainingQuotas(
-      authorizedCallsPerSec = apiKey.throttlingQuota,
-      currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-      remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
-      authorizedCallsPerDay = apiKey.dailyQuota,
-      currentCallsPerDay = dailyCalls,
-      remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
-      authorizedCallsPerMonth = apiKey.monthlyQuota,
-      currentCallsPerMonth = monthlyCalls,
-      remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
-    )
+    } yield {
+      println(s"updateQuotas: ${env.throttlingWindow}")
+      println(s"secCalls: ${secCalls}")
+      println(s"dailyCalls: ${dailyCalls}")
+      println(s"monthlyCalls: ${monthlyCalls}")
+      println("=====================================================")
+      RemainingQuotas(
+        authorizedCallsPerSec = apiKey.throttlingQuota,
+        currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
+        remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
+        authorizedCallsPerDay = apiKey.dailyQuota,
+        currentCallsPerDay = dailyCalls,
+        remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
+        authorizedCallsPerMonth = apiKey.monthlyQuota,
+        currentCallsPerMonth = monthlyCalls,
+        remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
+      )
+    }
   }
 
-  override def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    println("withingQuotas")
     for {
       sec <- withinThrottlingQuota(apiKey)
       day <- withinDailyQuota(apiKey)
       mon <- withinMonthlyQuota(apiKey)
-    } yield sec && day && mon
+    } yield {
+      logger.info(s"withingQuotas: sec:${sec} - day:${day} - mon:${mon}")
+      sec && day && mon
+    }
+  }
 
   override def withinThrottlingQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli
       .get(throttlingKey(apiKey.clientId))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (apiKey.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L).debug(v => println(s"throttling: ${v}")) < (apiKey.throttlingQuota * env.throttlingWindow))
 
   override def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.dailyQuota)
+    redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L).debug(v => println(s"daily: ${v}")) < apiKey.dailyQuota)
 
   override def withinMonthlyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli
       .get(monthlyQuotaKey(apiKey.clientId))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.monthlyQuota)
+      .map(_.map(_.utf8String.toLong).getOrElse(0L).debug(v => println(s"monthly: ${v}")) < apiKey.monthlyQuota)
 
   // optimized
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
