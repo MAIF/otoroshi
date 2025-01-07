@@ -398,5 +398,5 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.storage=redis",
    "-Dotoroshi.storage=lettuce",
    "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
-   "-Dotoroshi.throttlingWindow=10"
+   "-Dotoroshi.throttlingWindow=1"
 )

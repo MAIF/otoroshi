@@ -77,18 +77,21 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   override def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
     for {
-      secCalls     <- redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-      dailyCalls   <- redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-      monthlyCalls <- redisCli.get(monthlyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      throttlingCalls   <- redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      dailyCalls        <- redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      monthlyCalls      <- redisCli.get(monthlyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,
-      currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-      remainingCallsPerSec = ((apiKey.throttlingQuota - secCalls) / env.throttlingWindow).toInt,
+      currentCallsPerSec = throttlingCalls,
+
       authorizedCallsPerDay = apiKey.dailyQuota,
       currentCallsPerDay = dailyCalls,
-      remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
+
       authorizedCallsPerMonth = apiKey.monthlyQuota,
       currentCallsPerMonth = monthlyCalls,
+
+      remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
+      remainingCallsPerSec = apiKey.throttlingQuota - throttlingCalls,
       remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
     )
 

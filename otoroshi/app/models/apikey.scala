@@ -244,7 +244,7 @@ case class ApiKey(
       quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield {
-      val within = (quotas.currentCallsPerSec <= (throttlingQuota * env.throttlingWindow)) &&
+      val within = quotas.remainingCallsPerSec > 0 &&
         (quotas.currentCallsPerDay < dailyQuota) &&
         (quotas.currentCallsPerMonth < monthlyQuota)
       (within, rotation, quotas)
