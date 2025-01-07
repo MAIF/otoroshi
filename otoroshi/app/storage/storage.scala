@@ -757,12 +757,15 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     redis.del(keys: _*)
   }
   override def incr(key: String): Future[Long] = {
-    countWrite(key, "incr")
-    redis.incr(key)
+      countWrite(key, "incr")
+      redis.incr(key)
+    }(env.otoroshiExecutionContext)
   }
   override def incrby(key: String, increment: Long): Future[Long] = {
-    countWrite(key, "incrby")
-    redis.incrby(key, increment)
+    incropt.incrBy(key, increment) { total =>
+      countWrite(key, "incrby")
+      redis.incrby(key, total)
+    }(env.otoroshiExecutionContext)
   }
   override def exists(key: String): Future[Boolean] = {
     countRead(key)
@@ -869,4 +872,60 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
 
   override def swap(memory: Memory, strategy: SwapStrategy): Unit = redis.swap(memory, strategy)
+}
+
+case class IncrOptimizerItem(
+    ops: Int,
+    time: Int,
+    last: AtomicLong,
+    incr: AtomicLong,
+    current: AtomicLong,
+    curOps: AtomicInteger
+) {
+  def setCurrent(value: Long): Unit = current.set(value)
+  def incrBy(increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+    val elapsed     = System.currentTimeMillis() - last.get()
+    val tooMuchOps  = curOps.incrementAndGet() > ops
+    val tooMuchTime = elapsed > time
+    if (tooMuchOps || tooMuchTime) {
+      val total = incr.get() + increment
+      f(total).map { r =>
+        last.set(System.currentTimeMillis())
+        incr.addAndGet(0 - total)
+        curOps.addAndGet(0 - ops)
+        current.set(r)
+        r
+      }
+    } else {
+      val c = current.addAndGet(increment)
+      incr.addAndGet(increment)
+      c.vfuture
+    }
+  }
+}
+
+class IncrOptimizer(ops: Int, time: Int) {
+  private val cache = new UnboundedTrieMap[String, IncrOptimizerItem]()
+  def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+    cache.get(key) match {
+      case None       =>
+        f(increment).map { r =>
+          val item = IncrOptimizerItem(
+            ops,
+            time,
+            new AtomicLong(System.currentTimeMillis()),
+            new AtomicLong(0L),
+            new AtomicLong(r),
+            new AtomicInteger(0)
+          )
+          cache.putIfAbsent(key, item) match {
+            case None    =>
+              cache.get(key).foreach(i => i.setCurrent(r)) // when already there ....not sure about it !
+              r
+            case Some(_) => r
+          }
+        }
+      case Some(item) => item.incrBy(increment)(f)
+    }
+  }
 }
