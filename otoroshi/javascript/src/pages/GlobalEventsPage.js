@@ -195,15 +195,15 @@ export class GlobalEventsPage extends Component {
     { title: 'Headers Count', content: (item) => item.headers.length },
     {
       title: 'Calls per sec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerSec),
+      content: (item) => safe(item.remainingQuotas, (i) => i.throttlingCallsPerWindow),
     },
     {
       title: 'Auth. calls per sec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerSec),
+      content: (item) => safe(item.remainingQuotas, (i) => i.maxCallsPerWindow),
     },
     {
       title: 'Rem. calls per sec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerSec),
+      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerWindow),
     },
     {
       title: 'Calls per day',

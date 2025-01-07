@@ -456,9 +456,9 @@ class DailyRemainingQuotas extends Component {
 
   render() {
     const quotas = this.state.quotas || {
-      authorizedCallsPerSec: 0,
-      currentCallsPerSec: 0,
-      remainingCallsPerSec: 0,
+      maxCallsPerWindow: 0,
+      throttlingCallsPerWindow: 0,
+      remainingCallsPerWindow: 0,
       authorizedCallsPerDay: 0,
       currentCallsPerDay: 0,
       remainingCallsPerDay: 0,

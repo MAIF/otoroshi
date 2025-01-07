@@ -36548,12 +36548,12 @@
     "type" : "object",
     "description" : "Remaining quotas for an apikey",
     "properties" : {
-      "currentCallsPerSec" : {
+      "throttlingCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
         "description" : "Current number of call per second"
       },
-      "remainingCallsPerSec" : {
+      "remainingCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
         "description" : "Remaining number of call per second"
@@ -36578,7 +36578,7 @@
         "format" : "int64",
         "description" : "Remaining number of call per month"
       },
-      "authorizedCallsPerSec" : {
+      "maxCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
         "description" : "Number of authorized call per second"

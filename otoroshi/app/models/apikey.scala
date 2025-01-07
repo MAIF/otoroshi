@@ -51,9 +51,9 @@ case class RemainingQuotas(
     // dailyCallsRemaining: Long = RemainingQuotas.MaxValue,
     // monthlyCalls: Long = RemainingQuotas.MaxValue,
     // monthlyCallsRemaining: Long = RemainingQuotas.MaxValue
-    authorizedCallsPerSec: Long = RemainingQuotas.MaxValue,
-    currentCallsPerSec: Long = RemainingQuotas.MaxValue,
-    remainingCallsPerSec: Long = RemainingQuotas.MaxValue,
+    maxCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    throttlingCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    remainingCallsPerWindow: Long = RemainingQuotas.MaxValue,
     authorizedCallsPerDay: Long = RemainingQuotas.MaxValue,
     currentCallsPerDay: Long = RemainingQuotas.MaxValue,
     remainingCallsPerDay: Long = RemainingQuotas.MaxValue,
@@ -244,7 +244,7 @@ case class ApiKey(
       quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield {
-      val within = quotas.remainingCallsPerSec > 0 &&
+      val within = quotas.remainingCallsPerWindow > 0 &&
         (quotas.currentCallsPerDay < dailyQuota) &&
         (quotas.currentCallsPerMonth < monthlyQuota)
       (within, rotation, quotas)

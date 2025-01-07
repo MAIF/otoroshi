@@ -209,9 +209,9 @@ class ServiceQuotas extends AccessValidator {
                       }
     } yield ()
     // RemainingQuotas(
-    //   authorizedCallsPerSec = qconf.throttlingQuota,
-    //   currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-    //   remainingCallsPerSec = qconf.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
+    //   maxCallsPerWindow = qconf.throttlingQuota,
+    //   throttlingCallsPerWindow = (secCalls / env.throttlingWindow).toInt,
+    //   remainingCallsPerWindow = qconf.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
     //   authorizedCallsPerDay = qconf.dailyQuota,
     //   currentCallsPerDay = dailyCalls,
     //   remainingCallsPerDay = qconf.dailyQuota - dailyCalls,
