@@ -1940,7 +1940,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Right(_body)                               => {
           val dev  = if (env.isDev) "_dev" else ""
           val id   = Try(resource.access.extractIdJson(_body))
-            .getOrElse(IdGenerator.lowerCaseToken(16))
+            .getOrElse(s"${resource.singularName}${dev}_${IdGenerator.uuid}")
           val body = _body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
           resource.access.findOne(version, id).flatMap {
             case Some(oldEntity) =>
