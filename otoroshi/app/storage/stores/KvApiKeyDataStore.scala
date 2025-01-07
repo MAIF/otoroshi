@@ -83,7 +83,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,
       currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-      remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
+      remainingCallsPerSec = ((apiKey.throttlingQuota - secCalls) / env.throttlingWindow).toInt,
       authorizedCallsPerDay = apiKey.dailyQuota,
       currentCallsPerDay = dailyCalls,
       remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
@@ -112,8 +112,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
            }
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,
-      currentCallsPerSec = (0L / env.throttlingWindow).toInt,
-      remainingCallsPerSec = apiKey.throttlingQuota - (0L / env.throttlingWindow).toInt,
+      currentCallsPerSec = 0,
+      remainingCallsPerSec = 0,
       authorizedCallsPerDay = apiKey.dailyQuota,
       currentCallsPerDay = 0,
       remainingCallsPerDay = apiKey.dailyQuota - 0,
@@ -149,7 +149,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,
       currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-      remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
+      remainingCallsPerSec = ((apiKey.throttlingQuota - secCalls) / env.throttlingWindow).toInt,
       authorizedCallsPerDay = apiKey.dailyQuota,
       currentCallsPerDay = dailyCalls,
       remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,

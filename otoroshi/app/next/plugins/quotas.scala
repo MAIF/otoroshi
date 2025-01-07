@@ -63,7 +63,9 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
   ): Future[NgAccess] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val quota        = quotas.maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-    if (quotas.secCalls > (quota * 10L)) {
+    // if (quotas.secCalls > (quota * 10L)) {
+    if (quotas.secCalls > quota) {
+      println("6")
       errorResult(ctx, Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
     } else {
       NgAccess.NgAllowed.vfuture
@@ -125,6 +127,7 @@ class GlobalThrottling extends NgAccessValidator {
       ec: ExecutionContext
   ): Future[NgAccess] = {
     if (!quotas.within) {
+      println("5")
       errorResult(ctx, Results.TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
     } else {
       NgAccess.NgAllowed.vfuture

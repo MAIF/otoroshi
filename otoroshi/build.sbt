@@ -393,9 +393,9 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
-  "-Dotoroshi.storage=file"
+//  "-Dotoroshi.storage=file"
   //"-Dotoroshi.storage=postgresql",
   // "-Dotoroshi.storage=redis",
-  // "-Dotoroshi.storage=lettuce",
-  // "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+   "-Dotoroshi.storage=lettuce",
+   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
 )

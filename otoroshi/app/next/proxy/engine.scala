@@ -2017,11 +2017,16 @@ class ProxyEngine() extends RequestHandler {
       // quotasValidationFor increments calls for ip address
       FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
         val (within, secCalls, maybeQuota) = r
+//        println(s"maybe quota - $maybeQuota")
         val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-        if (secCalls > (quota * 10L)) {
+        println(s"[engine] secCalls $secCalls - perIpThrottlingQuota $quota")
+        // if (secCalls > (quota * 10L)) {
+        if (secCalls > quota) {
+          println("4")
           errorResult(Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
         } else {
           if (!within) {
+            println("3")
             errorResult(Results.TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
           } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
             errorResult(

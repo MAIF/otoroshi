@@ -1292,6 +1292,7 @@ object ApiKeyHelper {
               callDownstream(config, Some(key), None)
             case (false, _, quotas)            =>
               sendQuotasExceededError(key, quotas)
+              println("1")
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
       }
@@ -1331,6 +1332,7 @@ object ApiKeyHelper {
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
                 sendQuotasExceededError(key, quotas)
+                println("8")
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
@@ -1367,6 +1369,7 @@ object ApiKeyHelper {
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
                 sendQuotasExceededError(key, quotas)
+                println("9")
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
@@ -1399,6 +1402,7 @@ object ApiKeyHelper {
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
                 sendQuotasExceededError(key, quotas)
+                println("10")
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
@@ -1549,6 +1553,7 @@ object ApiKeyHelper {
                               sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
                             case (false, _, quotas)            =>
+                              println("11")
                               sendQuotasExceededError(apiKey, quotas)
                               errorResult(
                                 TooManyRequests,
@@ -1612,6 +1617,7 @@ object ApiKeyHelper {
                     callDownstream(config, Some(key), None)
                   case (false, _, quotas)            =>
                     sendQuotasExceededError(key, quotas)
+                    println("12")
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
             }
@@ -2082,6 +2088,7 @@ object ApiKeyHelper {
                 }
               case (false, _, quotas)            =>
                 sendQuotasExceededError(apikey, quotas)
+                println("7")
                 error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
           }

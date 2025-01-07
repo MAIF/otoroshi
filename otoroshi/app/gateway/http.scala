@@ -259,6 +259,7 @@ class HttpHandler()(implicit env: Env) {
       apiKey
         .map(_.updateQuotas())
         .getOrElse(FastFuture.successful(RemainingQuotas()))
+
     promise.future.andThen {
       case Success(resp) => {
 
