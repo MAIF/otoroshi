@@ -269,7 +269,7 @@ class NgServiceQuotas extends NgAccessValidator {
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore
       .get(throttlingKey(route.id))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
   private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
       ec: ExecutionContext,
@@ -596,7 +596,7 @@ class NgCustomThrottling extends NgAccessValidator {
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomThrottling.throttlingKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
   }
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {

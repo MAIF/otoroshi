@@ -238,7 +238,7 @@ class ServiceQuotas extends AccessValidator {
     env.datastores.rawDataStore
       .get(throttlingKey(descriptor.id))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
   private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
       ec: ExecutionContext,

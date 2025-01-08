@@ -344,7 +344,7 @@ addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
-Revolver.enableDebugging(port = 5005, suspend = false)
+Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
 
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
@@ -359,17 +359,18 @@ reStart / javaOptions ++= Seq(
   //"-Dapp.rootScheme=https",
   "-Dotoroshi.revolver=true",
   "-Dotoroshi.env=dev",
-  "-Dotoroshi.http.port=9999",
-  "-Dotoroshi.https.port=9998",
+  s"-Dotoroshi.http.port=${sys.props.getOrElse("otoroshi.http.port", "9999")}",
+  s"-Dotoroshi.https.port=${sys.props.getOrElse("otoroshi.https.port", "9998")}",
   "-Dotoroshi.liveJs=true",
   "-Dotoroshi.adminPassword=password",
   "-Dotoroshi.domain=oto.tools",
   "-Dotoroshi.events.maxSize=0",
-  "-Dotoroshi.cluster.mode=Leader",
-  "-Dotoroshi.cluster.leader.name=otoroshi-leader-dev",
+  s"-Dotoroshi.cluster.mode=${sys.props.getOrElse("otoroshi.cluster.mode", "Leader")}",
+  s"-Dotoroshi.cluster.leader.name=${sys.props.getOrElse("otoroshi.cluster.leader.name", "otoroshi-leader-dev")}",
+  s"-Dotoroshi.cluster.leader.urls.0=${sys.props.getOrElse("otoroshi.cluster.leader.urls.0", null)}",
   "-Dotoroshi.tunnels.enabled=false",
   "-Dotoroshi.tunnels.default.enabled=false",
-  "-Dotoroshi.tunnels.default.url=http://127.0.0.1:9999",
+//  "-Dotoroshi.tunnels.default.url=http://127.0.0.1:9999",
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.privateapps.session.enabled=true",
@@ -379,7 +380,7 @@ reStart / javaOptions ++= Seq(
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
-  "-Dotoroshi.next.experimental.netty-server.enabled=true",
+  s"-Dotoroshi.next.experimental.netty-server.enabled=${sys.props.getOrElse("otoroshi.next.experimental.netty-server.enabled", "true")}",
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
@@ -396,7 +397,8 @@ reStart / javaOptions ++= Seq(
 //  "-Dotoroshi.storage=file"
   //"-Dotoroshi.storage=postgresql",
   // "-Dotoroshi.storage=redis",
-   "-Dotoroshi.storage=lettuce",
-   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+  s"-Dotoroshi.storage=${sys.props.getOrElse("otoroshi.storage", "inmemory")}",
+  s"-Dotoroshi.redis.lettuce.uri=${sys.props.getOrElse("otoroshi.redis.lettuce.uri", null)}",
+//   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
    "-Dotoroshi.throttlingWindow=1"
 )

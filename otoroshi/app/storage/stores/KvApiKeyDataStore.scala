@@ -150,8 +150,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                       }
     } yield RemainingQuotas(
       authorizedCallsPerWindow = apiKey.throttlingQuota,
-      throttlingCallsPerWindow = (secCalls / env.throttlingWindow).toInt,
-      remainingCallsPerWindow = ((apiKey.throttlingQuota - secCalls) / env.throttlingWindow).toInt,
+      throttlingCallsPerWindow = secCalls,
+      remainingCallsPerWindow = (apiKey.throttlingQuota - secCalls).toInt,
       authorizedCallsPerDay = apiKey.dailyQuota,
       currentCallsPerDay = dailyCalls,
       remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
@@ -172,7 +172,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     redisCli
       .get(throttlingKey(apiKey.clientId))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (apiKey.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.throttlingQuota)
 
   override def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.dailyQuota)
