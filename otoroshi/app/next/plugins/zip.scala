@@ -113,6 +113,7 @@ class ZipFileBackend extends NgBackendCall {
               }
             }
           } else {
+            fileCache.put(filename, (System.currentTimeMillis(), Promise[String]()))
             fileCache.get(filename).foreach(_._2.trySuccess(filename))
             Right(new ZipFile(filename)).vfuture
           }
