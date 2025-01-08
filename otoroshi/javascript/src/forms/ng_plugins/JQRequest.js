@@ -2,8 +2,14 @@ export default {
   id: 'cp:otoroshi.next.plugins.JQRequest',
   config_schema: {
     filter: {
-      label: 'filter',
-      type: 'string',
+      label: 'Filter',
+      type: 'code',
+      help: 'Example: {user: .user, title: .title}',
+      props: {
+        label: 'Filter',
+        type: 'javascript',
+        editorOnly: true,
+      },
     },
   },
   config_flow: ['filter'],
