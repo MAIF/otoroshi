@@ -727,9 +727,9 @@ const ApiKeysConstants = {
       type: 'number',
       props: {
         label: 'Throttling quota',
-        placeholder: 'Authorized calls per second',
+        placeholder: 'Authorized calls per window',
         suffix: 'calls per sec.',
-        help: 'The authorized number of calls per second',
+        help: 'The authorized number of calls per window',
       },
     },
     dailyQuota: {

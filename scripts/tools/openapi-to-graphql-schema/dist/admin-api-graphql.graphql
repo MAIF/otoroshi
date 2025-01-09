@@ -144,7 +144,7 @@ An otoroshi apikey that can allow you to access some services
 type ApiKey {
  dailyQuota: Float # Authorized number of calls per day
  metadata: Json # Bunch of metadata for the key
- throttlingQuota: Float # Authorized number of calls per second, measured on 10 seconds
+ throttlingQuota: Float # Authorized number of calls per window, measured on 10 seconds
  constrainedServicesOnly: Boolean # This apikey can only be used on services that constrained their apikey routing
  allowClientIdOnly: Boolean # This apikey can be used juste with the client_id value
  _loc: EntityLocation # The location of the apikey
@@ -524,7 +524,7 @@ The global config (dynamic) for otoroshi
 type GlobalConfig {
  geolocationSettings: Json # Settings for geolocation extraction
  alertsEmails: [String] # Email addresses that will receive all Otoroshi alert events
- throttlingQuota: Float # Authorized number of calls per second globally, measured on 10 seconds
+ throttlingQuota: Float # Authorized number of calls per window globally
  maxWebhookSize: Float # Max number of items in webhooks
  maxConcurrentRequests: Float # The number of authorized request processed at the same time
  cleverSettings: CleverCloudSettings # Optional CleverCloud configuration
@@ -557,7 +557,7 @@ type GlobalConfig {
  letsEncryptSettings: LetsEncryptSettings # Let's encrypt (ACME) settings
  snowMonkeyConfig: SnowMonkeyConfig # Snowmonky settings
  scripts: GlobalScripts # global plugins settings. will be deprecated soon
- perIpThrottlingQuota: Float # Authorized number of calls per second globally per IP address, measured on 10 seconds
+ perIpThrottlingQuota: Float # Authorized number of calls per window globally per IP address
  useCircuitBreakers: Boolean # If enabled, services will be authorized to use circuit breakers
  maxHttp10ResponseSize: Float # The max size in bytes of an HTTP 1.0 response
  tlsSettings: TlsSettings # TLS settings
@@ -784,13 +784,13 @@ type NgCustomTimeouts {
 Remaining quotas for an apikey
 """
 type RemainingQuotas {
- currentCallsPerSec: Float # Current number of call per second
- remainingCallsPerSec: Float # Remaining number of call per second
+ throttlingCallsPerWindow: Float # Current number of call per window
+ remainingCallsPerWindow: Float # Remaining number of call per window
  currentCallsPerDay: Float # Current number of call per day
  authorizedCallsPerDay: Float # Number of authorized call per day
  currentCallsPerMonth: Float # Current number of call per month
  remainingCallsPerMonth: Float # Remaining number of call per month
- authorizedCallsPerSec: Float # Number of authorized call per second
+ authorizedCallsPerWindow: Float # Number of authorized call per window
  authorizedCallsPerMonth: Float # Number of authorized call per month
  remainingCallsPerDay: Float # Remaining number of call per day
 }

@@ -19135,7 +19135,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second, measured on 10 seconds"
+            "description" : "Authorized number of calls per window"
           },
           "constrainedServicesOnly" : {
             "type" : "boolean",
@@ -20477,7 +20477,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+            "description" : "Authorized number of calls per window globally"
           },
           "anonymousReporting" : {
             "type" : "boolean",
@@ -20680,7 +20680,7 @@
           "perIpThrottlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+            "description" : "Authorized number of calls per window globally per IP address"
           },
           "useCircuitBreakers" : {
             "type" : "boolean",
@@ -21176,12 +21176,12 @@
           "throttlingCallsPerWindow" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Current number of call per second"
+            "description" : "Current number of call per window"
           },
           "remainingCallsPerWindow" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Remaining number of call per second"
+            "description" : "Remaining number of call per window"
           },
           "currentCallsPerDay" : {
             "type" : "integer",
@@ -21206,7 +21206,7 @@
           "authorizedCallsPerWindow" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Number of authorized call per second"
+            "description" : "Number of authorized call per window"
           },
           "authorizedCallsPerMonth" : {
             "type" : "integer",
