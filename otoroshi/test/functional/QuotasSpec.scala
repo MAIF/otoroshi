@@ -117,7 +117,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       }
 
       counter200.get() > 0 mustBe true
-      // counter429.get() > 0 mustBe true
+      counter429.get() > 0 mustBe true
     }
 
     "prevent too many calls per day" in {

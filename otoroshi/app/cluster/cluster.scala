@@ -1334,7 +1334,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
       if (Cluster.logger.isDebugEnabled)
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
       stateUpdaterRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
+         env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
           utils.SchedulerHelper.runnable(
             try {
               cacheState()
@@ -2577,6 +2577,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           )
           GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
             val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
+
             queueRef
               .get()
               .offer(
@@ -2682,6 +2683,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (config.mode == ClusterMode.Worker) {
       if (Cluster.logger.isDebugEnabled)
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
+
       if (config.worker.useWs) {
         // Cluster.logger.warn("USING CLUSTER API THROUGH WEBSOCKET: THIS IS NOT READY YET !!!!")
         callLeaderAkka(1)

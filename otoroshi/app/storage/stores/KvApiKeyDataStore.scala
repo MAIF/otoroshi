@@ -136,29 +136,34 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     env.clusterAgent.incrementApi(apiKey.clientId, increment)
     for {
       _            <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
-      secCalls     <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
+
       secTtl       <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                        redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
-                      }
-      dailyCalls   <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
+                  redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+                }
+      secCalls     <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
+
       dailyTtl     <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                        redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
-                      }
-      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+                  redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+                }
+      dailyCalls   <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
+
       monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                        redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
-                      }
-    } yield RemainingQuotas(
-      authorizedCallsPerWindow = apiKey.throttlingQuota,
-      throttlingCallsPerWindow = secCalls,
-      remainingCallsPerWindow = (apiKey.throttlingQuota - secCalls).toInt,
-      authorizedCallsPerDay = apiKey.dailyQuota,
-      currentCallsPerDay = dailyCalls,
-      remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
-      authorizedCallsPerMonth = apiKey.monthlyQuota,
-      currentCallsPerMonth = monthlyCalls,
-      remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
-    )
+                  redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+                }
+      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+    } yield {
+      RemainingQuotas(
+        authorizedCallsPerWindow = apiKey.throttlingQuota,
+        throttlingCallsPerWindow = secCalls,
+        remainingCallsPerWindow = (apiKey.throttlingQuota - secCalls).toInt,
+        authorizedCallsPerDay = apiKey.dailyQuota,
+        currentCallsPerDay = dailyCalls,
+        remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
+        authorizedCallsPerMonth = apiKey.monthlyQuota,
+        currentCallsPerMonth = monthlyCalls,
+        remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
+      )
+    }
   }
 
   override def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =

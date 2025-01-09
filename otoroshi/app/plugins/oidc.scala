@@ -732,7 +732,6 @@ case class OIDCThirdPartyApiKeyConfig(
                                         }
                                       }
                                       case false => {
-                                        println("2")
                                         Errors
                                           .craftResponseResult(
                                             "You performed too much requests",

@@ -1276,14 +1276,10 @@ object ReverseProxyHelper {
 
     env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
       val (within, secCalls, maybeQuota)                 = r
-//      println(s"maybeQuota - $maybeQuota")
       val quota                                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
       val (restrictionsNotPassing, restrictionsResponse) =
         descriptor.restrictions.handleRestrictions(descriptor.id, descriptor.some, None, req, attrs)
-      // if (secCalls > (quota * 10L)) {
-      println(s"secCalls $secCalls - quota $quota")
       if (secCalls > quota) {
-        println("1")
         errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
       } else {
         if (!isSecured && descriptor.forceHttps) {
@@ -1296,7 +1292,6 @@ object ReverseProxyHelper {
           //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
           FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}")).map(Left.apply)
         } else if (!within) {
-          println("13")
           errorResult(TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
         } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
           /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist

@@ -400,5 +400,8 @@ reStart / javaOptions ++= Seq(
   s"-Dotoroshi.storage=${sys.props.getOrElse("otoroshi.storage", "inmemory")}",
   s"-Dotoroshi.redis.lettuce.uri=${sys.props.getOrElse("otoroshi.redis.lettuce.uri", null)}",
 //   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
-   "-Dotoroshi.throttlingWindow=1"
+  s"-Dotoroshi.throttlingWindow=${Integer.parseInt(sys.props.getOrElse("otoroshi.throttlingWindow", "1"))}",
+  s"-Dotoroshi.cluster.worker.state.pollEvery=${Integer.parseInt(sys.props.getOrElse("otoroshi.cluster.worker.state.pollEvery", "10000"))}",
+  s"-Dotoroshi.cluster.worker.quotas.pushEvery=${Integer.parseInt(sys.props.getOrElse("otoroshi.cluster.worker.quotas.pushEvery", "10000"))}",
+  s"-Dotoroshi.cluster.worker.useWs=${sys.props.getOrElse("otoroshi.cluster.worker.useWs", false)}"
 )
