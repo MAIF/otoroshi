@@ -731,7 +731,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                           }
                                         }
                                       }
-                                      case false => {
+                                      case false =>
                                         Errors
                                           .craftResponseResult(
                                             "You performed too much requests",
@@ -742,7 +742,6 @@ case class OIDCThirdPartyApiKeyConfig(
                                             attrs = attrs
                                           )
                                           .fleft[A]
-                                      }
                                     }
                                   }
                                 } else {
