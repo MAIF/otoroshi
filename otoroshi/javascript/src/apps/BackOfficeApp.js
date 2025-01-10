@@ -464,9 +464,7 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path={[
                           '/routes/:routeId',
-                          '/routes',
-                          '/route-compositions/:routeId',
-                          '/route-compositions',
+                          '/routes'
                         ]}
                         component={(props) => (
                           <RouteDesignerPage

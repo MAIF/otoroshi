@@ -174,14 +174,6 @@ export const graph = (env) => {
           link: '/wasm-plugins',
         },
         {
-          title: 'Route compositions',
-          description: 'routescomp',
-          img: 'routescomp',
-          display: () => false,
-          icon: () => 'fa-cubes',
-          link: '/route-compositions',
-        },
-        {
           title: 'Drafts',
           description: 'All drafts of your entities',
           img: 'drafts',

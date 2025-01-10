@@ -34,7 +34,6 @@ import camelCase from 'lodash/camelCase';
 import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
-import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
@@ -49,6 +48,7 @@ import {
 } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
+import { HTTP_COLORS } from './MocksDesigner';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -193,30 +193,16 @@ const Hr = ({ highlighted = true, flex }) => (
   />
 );
 
-const ServiceView = () => {
-  return (
-    <div onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view">
-      <p>
-        You are on a route composition. You can click to the routes button on the navbar to edit the
-        frontends/backends.
-      </p>
-    </div>
-  );
-};
-
 const FormContainer = ({
   selectedNode,
   route,
   preview,
   showPreview,
   alertModal,
-  serviceMode,
   nodes,
   setSelectedNode,
   ...props
 }) => {
-  const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id);
-
   const selectFrontend = () => setSelectedNode(nodes.find((n) => n.id === 'Frontend'));
   const selectBackend = () => setSelectedNode(nodes.find((n) => n.id === 'Backend'));
 
@@ -233,8 +219,7 @@ const FormContainer = ({
         selectBackend={selectBackend}
         {...props}
       />
-      {serviceMode && isOnFrontendBackend && <ServiceView />}
-      {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
+      {selectedNode && (
         <EditView
           {...props}
           route={route}
@@ -274,9 +259,6 @@ export default forwardRef(
     const { routeId } = props;
     const location = useLocation();
 
-    const viewPlugins = new URLSearchParams(location.search).get('view_plugins');
-    const subTab = new URLSearchParams(location.search).get('sub_tab');
-
     const childRef = useRef();
 
     useImperativeHandle(ref, () => ({
@@ -297,8 +279,6 @@ export default forwardRef(
         ref={childRef}
         toggleTesterButton={props.toggleTesterButton}
         history={history}
-        viewPlugins={props.viewPlugins || viewPlugins}
-        subTab={subTab}
         routeId={routeId}
         location={location}
         value={value}
@@ -307,7 +287,6 @@ export default forwardRef(
         setTestingButton={setTestingButton}
         setMenu={setMenu}
         pathname={location.pathname}
-        serviceMode={location.pathname.includes('route-compositions')}
       />
     );
   }
@@ -545,7 +524,6 @@ class Designer extends React.Component {
   componentDidMount() {
     this.loadData();
     this.injectSaveButton();
-    this.injectNavbarMenu();
     this.mountShortcuts();
   }
 
@@ -580,35 +558,6 @@ class Designer extends React.Component {
     this.props.setSaveButton(<SaveButton saveRoute={this.saveRoute} state={this.state} />);
   };
 
-  injectOverrideRoutePluginsForm = () => (
-    <>
-      <span className="me-3 mt-2">Override route plugins</span>{' '}
-      {/* mt-2 to fix the form lib css ...*/}
-      <NgBooleanRenderer
-        value={this.state.route?.overridePlugins}
-        onChange={(overridePlugins) => {
-          this.setState(
-            {
-              route: {
-                ...this.state.route,
-                overridePlugins,
-              },
-            },
-            () => {
-              this.injectNavbarMenu();
-              this.injectSaveButton();
-            }
-          );
-        }}
-      />
-    </>
-  );
-
-  injectNavbarMenu = () => {
-    if (this.props.viewPlugins && this.props.viewPlugins !== -1)
-      this.props.setMenu(this.injectOverrideRoutePluginsForm());
-  };
-
   loadHiddenStepsFromLocalStorage = (route) => {
     const data = localStorage.getItem('hidden_steps');
     if (data) {
@@ -619,7 +568,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -635,7 +584,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -654,10 +603,8 @@ class Designer extends React.Component {
         : this.props.value
           ? Promise.resolve(this.props.value)
           : nextClient
-              .forEntityNext(
-                this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
-              )
-              .findById(this.props.routeId),
+            .forEntityNext(nextClient.ENTITIES.ROUTES)
+            .findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -665,10 +612,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                  showAdvancedDesignerView: (pluginName) => {
-                    this.setState({ advancedDesignerView: pluginName });
-                  },
-                })
+                showAdvancedDesignerView: (pluginName) => {
+                  this.setState({ advancedDesignerView: pluginName });
+                },
+              })
               : plugin.config_schema,
           };
         })
@@ -676,17 +623,7 @@ class Designer extends React.Component {
       getOldPlugins(),
       getPlugins(),
       routePorts(this.props.routeId),
-    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
-      let route =
-        this.props.viewPlugins !== null && this.props.viewPlugins !== -1
-          ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
-          : r;
-
+    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       if (route.error) {
         this.setState({
           loading: false,
@@ -785,8 +722,7 @@ class Designer extends React.Component {
             nodeId: 'Backend',
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-        },
-        this.injectNavbarMenu
+        }
       );
     });
   };
@@ -1001,14 +937,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                      plugin: newNode.id,
-                      // [newNode.configRoot]: {
-                      ...newNode.config,
-                      // },
-                    }
+                    plugin: newNode.id,
+                    // [newNode.configRoot]: {
+                    ...newNode.config,
+                    // },
+                  }
                   : {
-                      ...newNode.config,
-                    },
+                    ...newNode.config,
+                  },
               },
             ],
           },
@@ -1249,40 +1185,19 @@ class Designer extends React.Component {
   };
 
   processRouteBeforeUpdate = (route) => {
-    const { originalRoute } = this.state;
-
-    let newRoute;
-
-    if (this.props.viewPlugins !== null && this.props.viewPlugins !== -1) {
-      newRoute = {
-        ...originalRoute,
-        routes: originalRoute.routes.map((r, i) => {
-          if (String(i) === String(this.props.viewPlugins))
-            return {
-              ...r,
-              plugins: route.plugins,
-              overridePlugins: route.overridePlugins,
-            };
-          else return r;
-        }),
-      };
-    } else {
-      newRoute = {
-        ...route,
-        plugins: route.plugins.map((plugin) => ({
-          ...plugin,
-          plugin_index: Object.fromEntries(
-            Object.entries(
-              plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
-            ).map(([key, v]) => [snakeCase(key), v])
-          ),
-        })),
-      };
-    }
-
-    return newRoute;
+    return {
+      ...route,
+      plugins: route.plugins.map((plugin) => ({
+        ...plugin,
+        plugin_index: Object.fromEntries(
+          Object.entries(
+            plugin.plugin_index ||
+            this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+            {}
+          ).map(([key, v]) => [snakeCase(key), v])
+        ),
+      })),
+    };
   };
 
   saveRoute = () => {
@@ -1295,9 +1210,7 @@ class Designer extends React.Component {
     }
 
     return nextClient
-      .forEntityNext(
-        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
-      )
+      .forEntityNext(nextClient.ENTITIES.ROUTES)
       .update(newRoute)
       .then((r) => {
         if (r.error) throw r.error;
@@ -1564,22 +1477,20 @@ class Designer extends React.Component {
       showTryIt,
     } = this.state;
 
-    const { serviceMode } = this.props;
-
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1791,7 +1702,6 @@ class Designer extends React.Component {
                     this.setState({ advancedDesignerView: pluginName })
                   }
                   nodes={[...this.state.nodes, this.state.backend, this.state.frontend]}
-                  serviceMode={serviceMode}
                   clearPlugins={this.clearPlugins}
                   deleteRoute={this.deleteRoute}
                   updateRoute={this.updateRoute}
@@ -1960,14 +1870,14 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}
-            >
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
 
     const unsecuredCopyToClipboard = (text) => {
@@ -2155,9 +2065,9 @@ const UnselectedNode = ({
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                    .length > 0 ? (
+                    target.tls_config.enabled &&
+                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                      .length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2240,9 +2150,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>

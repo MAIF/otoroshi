@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import './index.scss'
 
@@ -20,9 +20,11 @@ import {
     CONSUMER_KIND
 } from './model';
 import Sidebar from './Sidebar';
-import { Link } from 'react-router-dom';
-import { Button } from '../../components/Button';
-import { SmoothUptime, Uptime } from '../../components/Status';
+import { Link, Switch, Route, useParams, useHistory } from 'react-router-dom';
+import { Uptime } from '../../components/Status';
+import { Table } from '../../components/inputs';
+import { v4 as uuid } from 'uuid';
+import Designer from '../RouteDesigner/Designer';
 
 // Mock Data for NgTarget
 const ngTargetMock = createNgTarget({
@@ -110,9 +112,10 @@ const apiBackendClientMock = createApiBackendClient({
 
 // Mock Data for the ApiPlugins (with proper object structure)
 const apiFlowsMock = createApiFlows({
+    idValue: 'my_first_flow',
     nameValue: "Plugin1",
     predicateValue: "some predicate",
-    pluginsValue: ["plugin1", "plugin2"]
+    pluginsValue: []
 });
 
 // Mock Data for the Api
@@ -148,45 +151,159 @@ export default function ApiEditor(props) {
 
     useEffect(() => {
         props.setSidebarContent(<Sidebar api={apiMock} />);
-
+        props.setTitle("Flows")
         return () => props.setSidebarContent(null)
     }, [])
 
     const api = apiMock
 
     return <div className='editor p-3'>
+        <Switch>
+            <Route exact path='/apis/:apiId/flows' component={componentProps => <Flows {...props} {...componentProps} api={api} />} />
+            <Route exact path='/apis/:apiId/flows/:flowId/edit' component={componentProps => <FlowDesigner {...props} {...componentProps} api={api} />} />
+            <Route path='/apis/:apiId' component={Dashboard} />
+        </Switch>
+    </div>
+}
 
-        <div className='d-flex flex-column gap-3'>
-            <div className='d-flex gap-3'>
-                <div className='d-flex flex-column flex-grow gap-3'>
-                    <ContainerBlock full highlighted>
-                        <APIHeader api={api} />
-                        <Uptime
-                            health={api.health.today}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={api.health.yesterday}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={api.health.nMinus2}
-                            stopTheCountUnknownStatus={false}
-                        />
-                    </ContainerBlock>
-                    <ContainerBlock full>
-                        <SectionHeader text="Customers" description="Manage customers and subscriptions" />
-                    </ContainerBlock>
-                </div>
-                <ContainerBlock>
-                    <SectionHeader text="Build your API" description="Manage entities for this API" />
-                    <Entities>
-                        <Flows flows={api.flows} />
-                        <Backends backends={api.backends} />
-                        <Routes routes={api.routes} />
-                    </Entities>
+function FlowDesigner({ api, ...props }) {
+    const history = useHistory()
+    const params = useParams()
+
+    return <div>
+        <Designer
+            {...props}
+            toggleTesterButton={(va) => { }}
+            tab=""
+            history={history}
+            value={api.flows.find(flow => flow.id === params.flowId)}
+            setValue={(v) => {
+                // this.setState({ value: v }, this.setTitle);
+            }}
+            setSaveButton={(n) => {
+                console.log('setSaveButton')
+                // this.setState({ saveButton: n, saveTypeButton: 'routes' })
+            }}
+            setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })} />
+    </div>
+}
+
+function Flows({ api, ...props }) {
+    const ref = useRef()
+    const params = useParams()
+    const history = useHistory()
+
+    const [fields, setFields] = useState({
+        id: false,
+        name: true,
+    })
+    const columns = [
+        {
+            title: 'Id',
+            content: item => item.id
+        },
+        {
+            title: 'Name',
+            content: item => item.name
+        }
+    ];
+
+    const fetchItems = (paginationState) => Promise.resolve(api.flows)
+
+    const fetchTemplate = () => Promise.resolve({
+        id: uuid(),
+        name: 'My new flow',
+        plugins: []
+    })
+
+    console.log(params)
+
+    return <div>
+        <Table
+            ref={ref}
+            parentProps={{ params }}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+            selfUrl="flows"
+            defaultTitle="Flow"
+            itemName="Flow"
+            formSchema={null}
+            formFlow={null}
+            columns={columns}
+            fields={fields}
+            // coreFields={['id', 'name']}
+            // addField={(fieldPath) => {
+            //     const newFields = {
+            //         ...fields,
+            //         [fieldPath]: true,
+            //     };
+            //     setFields(newFields);
+            //     onFieldsChange(newFields);
+            // }}
+            // removeField={(fieldPath) => {
+            //     const { [fieldPath]: _, ...newFields } = fields;
+
+            //     setFields(newFields);
+            //     onFieldsChange(newFields);
+            // }}
+            // onToggleField={(column, enabled) => {
+            //     const newFields = {
+            //         ...fields,
+            //         [column]: enabled,
+            //     };
+            //     onFieldsChange(newFields);
+            //     setFields(newFields);
+            // }}
+            deleteItem={(item) => console.log('delete item', item)}
+            defaultSort="name"
+            defaultSortDesc="true"
+            fetchItems={fetchItems}
+            fetchTemplate={fetchTemplate}
+            showActions={true}
+            showLink={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            itemUrl={(i) => `/bo/dashboard/apis/${i.id}`}
+            rawEditUrl={true}
+            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        />
+    </div>
+}
+
+function Dashboard() {
+    const api = apiMock
+
+    return <div className='d-flex flex-column gap-3'>
+        <div className='d-flex gap-3'>
+            <div className='d-flex flex-column flex-grow gap-3'>
+                <ContainerBlock full highlighted>
+                    <APIHeader api={api} />
+                    <Uptime
+                        health={api.health.today}
+                        stopTheCountUnknownStatus={false}
+                    />
+                    <Uptime
+                        health={api.health.yesterday}
+                        stopTheCountUnknownStatus={false}
+                    />
+                    <Uptime
+                        health={api.health.nMinus2}
+                        stopTheCountUnknownStatus={false}
+                    />
+                </ContainerBlock>
+                <ContainerBlock full>
+                    <SectionHeader text="Customers" description="Manage customers and subscriptions" />
                 </ContainerBlock>
             </div>
+            <ContainerBlock>
+                <SectionHeader text="Build your API" description="Manage entities for this API" />
+                <Entities>
+                    <FlowsCard flows={api.flows} />
+                    <Backends backends={api.backends} />
+                    <Routes routes={api.routes} />
+                </Entities>
+            </ContainerBlock>
         </div>
     </div>
 }
@@ -296,8 +413,9 @@ function Routes({ routes }) {
     </Link>
 }
 
-function Flows({ flows }) {
-    return <Link to="flows" href="" className="cards apis-cards">
+function FlowsCard({ flows }) {
+    const params = useParams()
+    return <Link to={`/apis/${params.apiId}/flows`} className="cards apis-cards">
         <div
             className="cards-header"
             style={{
@@ -320,7 +438,9 @@ function Flows({ flows }) {
 }
 
 function HighlighedPluginsText({ plural }) {
-    return <HighlighedText text={plural ? 'plugins' : "plugin"} link="/apis/flows" />
+    const params = useParams()
+    console.log(params)
+    return <HighlighedText text={plural ? 'plugins' : "plugin"} link={`/apis/${params.apiId}/flows`} />
 }
 
 function HighlighedBackendText({ plural }) {

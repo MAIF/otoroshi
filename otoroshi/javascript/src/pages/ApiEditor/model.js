@@ -197,15 +197,18 @@ export function createApiBackendClient({
 
 // export function for creating ApiPlugins
 export function createApiFlows({
+    idValue,
     nameValue,
     predicateValue,
     pluginsValue
 }) {
+    let id = idValue;
     let name = nameValue;
     let predicate = predicateValue;
     let plugins = pluginsValue;
 
     return {
+        id,
         name,
         predicate,
         plugins,

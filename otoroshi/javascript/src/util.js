@@ -17,10 +17,10 @@ export const toUpperCaseLabels = (obj) => {
         : isLabelField
           ? v.charAt(0).toUpperCase() + v.slice(1)
           : typeof value === 'object' &&
-              value !== null &&
-              key !== 'transformer' &&
-              key !== 'optionsTransformer' &&
-              !Array.isArray(value)
+            value !== null &&
+            key !== 'transformer' &&
+            key !== 'optionsTransformer' &&
+            !Array.isArray(value)
             ? toUpperCaseLabels(value)
             : value,
     };
@@ -32,30 +32,12 @@ export function useQuery() {
   return React.useMemo(() => new URLSearchParams(search), [search]);
 }
 
-export const useEntityFromURI = () => {
-  const location = useLocation();
-  return entityFromURI(location);
-};
-
-export const entityFromURI = (location) => {
-  const { pathname } = location;
-
-  let entity = 'routes';
-  try {
-    entity = pathname.split('/')[1];
-  } catch (_) {}
-
-  const isRouteInstance = entity === 'routes';
-
-  return {
-    isRouteInstance,
-    capitalizePlural: isRouteInstance ? 'Routes' : 'Route Compositions',
-    capitalize: isRouteInstance ? 'Route' : 'Route Composition',
-    lowercase: isRouteInstance ? 'route' : 'route composition',
-    fetchName: isRouteInstance ? 'ROUTES' : 'SERVICES',
-    link: isRouteInstance ? 'routes' : 'route-compositions',
-  };
-};
+//     isRouteInstance,
+//     capitalizePlural: 'Routes',
+//     capitalize: 'Route',
+//     lowercase: 'route',
+//     fetchName: 'ROUTES',
+//     link: 'routes',
 
 export const humanMillisecond = function (ms, digits = 1) {
   const levels = [

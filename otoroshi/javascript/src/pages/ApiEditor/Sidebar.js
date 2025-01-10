@@ -13,6 +13,13 @@ const LINKS = (api) =>
             tooltip: { ...createTooltip(`Show informations tab`) },
         },
         {
+            to: `/apis/${api.id}/flows`,
+            icon: 'fa-project-diagram',
+            title: 'Flows',
+            tab: 'flows',
+            tooltip: { ...createTooltip(`Show flows tab`) },
+        },
+        {
             to: `/apis/${api.id}/playground`,
             icon: 'fa-play',
             title: 'API Playground',

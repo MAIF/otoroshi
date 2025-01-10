@@ -2,24 +2,23 @@ import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'rea
 import { LabelAndInput, NgBoxBooleanRenderer, NgForm } from '../../components/nginputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
-import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
-import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+
+const capitalize = 'Route';
+const lowercase = 'route';
+const fetchName = 'ROUTES';
+const link = 'routes';
+const entityName = 'route'
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
     const history = useHistory();
     const location = useLocation();
     const [showAdvancedForm, toggleAdvancedForm] = useState(false);
-
-    const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
-
-    const isOnRouteCompositions = location.pathname.includes('route-compositions');
-    const entityName = isOnRouteCompositions ? 'route composition' : 'route';
 
     useImperativeHandle(ref, () => ({
       onTestingButtonClick() {
@@ -301,8 +300,7 @@ export const Informations = forwardRef(
         renderer: (props) => {
           const what = window.location.pathname.split('/')[3];
           const id = window.location.pathname.split('/')[4];
-          const kind =
-            what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+          const kind = nextClient.ENTITIES.ROUTES
           return (
             <div className="row mb-3">
               <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
@@ -397,9 +395,7 @@ export const Informations = forwardRef(
         )}
 
         <div className="d-flex align-items-center justify-content-end mt-3 p-0">
-          {!isOnRouteCompositions && (
-            <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
-          )}
+          <FormSelector onChange={toggleAdvancedForm} entity={ENTITIES.ROUTES} className="me-1" />
           <Button
             type="danger"
             className="btn-sm"

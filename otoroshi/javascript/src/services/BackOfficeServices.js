@@ -1584,10 +1584,6 @@ export function findAllRoutesWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/routes', ps);
 }
 
-export function findAllRouteCompositionsWithPagination(ps) {
-  return findAllWithPagination('/bo/api/proxy/api/route-compositions', ps);
-}
-
 export function findAllServicesWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/services', ps);
 }
@@ -2181,7 +2177,6 @@ export const nextClient = {
     ROUTES: 'routes',
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
-    SERVICES: 'route-compositions',
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
   },

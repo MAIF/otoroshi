@@ -128,7 +128,6 @@ export function DefaultSidebar(props) {
 
   const onRouteTab =
     window.location.pathname.startsWith('/bo/dashboard/routes/') ||
-    window.location.pathname.startsWith('/bo/dashboard/route-compositions/') ||
     window.location.pathname.startsWith('/bo/dashboard/apis')
 
   const links = graph(props.env);
