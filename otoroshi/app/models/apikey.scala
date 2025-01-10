@@ -1930,9 +1930,9 @@ object ApiKeyHelper {
                         .build
                     Try(verifier.verify(jwt))
                       .filter { token =>
-                        val aud = token.getAudience.asScala.headOption.filter(v =>
+                        val aud = Option(token.getAudience).flatMap(_.asScala.headOption.filter(v =>
                           v.startsWith("http://") || v.startsWith("https://")
-                        )
+                        ))
                         if (aud.isDefined) {
                           val currentUrl = req.theUrl
                           val audience   = aud.get
