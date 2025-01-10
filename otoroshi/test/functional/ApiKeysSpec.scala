@@ -407,6 +407,20 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
       deleteOtoroshiService(service).futureValue
     }
 
+    "prevent to many calls per window" in {
+      val testApiKey = new ApiKey(
+      clientId = "1234",
+      clientSecret = "1234567890",
+      clientName = "test apikey",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
+      enabled = true,
+      throttlingQuota = 10,
+      dailyQuota = 10,
+      monthlyQuota = 100,
+      metadata = Map.empty
+    )
+    }
+
     "stop servers" in {
       basicTestServer1.stop()
       system.terminate()
