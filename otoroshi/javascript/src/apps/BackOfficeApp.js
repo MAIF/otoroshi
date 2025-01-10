@@ -481,7 +481,7 @@ class BackOfficeAppContainer extends Component {
                       />
                       <Route
                         path={[
-                          '/apis/:routeId',
+                          '/apis/:apiId',
                           '/apis',
                         ]}
                         component={(props) => (

@@ -77,13 +77,12 @@ function DuplicateButton({ value, history }) {
   );
 }
 
-function MoreActionsButton({ value, menu, history }) {
+function MoreActionsButton({ value, history }) {
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
       <YAMLExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
       <JsonExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
-      {menu}
     </div>
   );
 }
@@ -91,7 +90,6 @@ function MoreActionsButton({ value, menu, history }) {
 function ManagerTitle({
   query,
   isCreation,
-  menu,
   pathname,
   value,
   location,
@@ -135,7 +133,7 @@ function ManagerTitle({
 
       <Dropdown className="mb-1">
         {!isCreation && (location.state?.routeFromService ? tab.tab === 'Informations' : true) &&
-          <MoreActionsButton value={value} menu={menu} history={history} />}
+          <MoreActionsButton value={value} history={history} />}
       </Dropdown>
       {saveButton}
       <PublisDraftButton className="ms-2 mb-1" />
@@ -146,11 +144,8 @@ function ManagerTitle({
 class Manager extends React.Component {
   state = {
     value: this.props.value,
-    menu: undefined,
-    menuRefreshed: undefined,
     saveButton: undefined,
     saveTypeButton: undefined,
-    forceHideTester: false,
     loading: false,
     template: undefined,
   };
@@ -178,7 +173,7 @@ class Manager extends React.Component {
     }
 
     if (
-      ['saveTypeButton', 'menuRefreshed', 'forceHideTester'].some(
+      ['saveTypeButton'].some(
         (field) => this.state[field] !== prevState[field]
       )
     ) {
@@ -206,11 +201,9 @@ class Manager extends React.Component {
 
     const url = p.url;
 
-    // this.props.setTitle(
     dynamicTitleContent.value = (
       <ManagerTitle
         pathname={location.pathname}
-        menu={this.state.menu}
         routeId={p.routeId}
         url={url}
         query={query}
@@ -225,7 +218,6 @@ class Manager extends React.Component {
         getTitle={this.props.getTitle}
       />
     );
-    // );
   };
 
   updateSidebar = () => {
@@ -255,13 +247,13 @@ class Manager extends React.Component {
     const isCreation = this.props.routeId === 'new';
 
     const { value, loading } = this.state;
+
     const divs = [
       {
         predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation,
         render: () => (
           <Designer
             {...this.props}
-            toggleTesterButton={(va) => this.setState({ forceHideTester: va })}
             tab={query}
             history={history}
             value={this.state.value}
@@ -269,7 +261,6 @@ class Manager extends React.Component {
               this.setState({ value: v }, this.setTitle);
             }}
             setSaveButton={(n) => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
-            setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })}
           />
         ),
       },
@@ -286,7 +277,6 @@ class Manager extends React.Component {
                 isCreation,
                 setValue: (v) => this.setState({ value: v }, this.setTitle),
                 setSaveButton: (n) => this.setState({ saveButton: n, saveTypeButton: item.id }),
-                setMenu: (n) => this.setState({ menu: n, menuRefreshed: Date.now() }),
                 FeedbackButton: FeedbackButton,
                 props: this.props,
               }),

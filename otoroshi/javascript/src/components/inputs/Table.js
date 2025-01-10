@@ -375,10 +375,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -910,6 +910,9 @@ class TableComponent extends Component {
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
+                style={{
+                  scrollbarWidth: 'none'
+                }}
                 manual
                 page={this.state.page}
                 pages={this.state.pages}

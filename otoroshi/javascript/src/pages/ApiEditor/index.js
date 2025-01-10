@@ -25,6 +25,7 @@ import { Uptime } from '../../components/Status';
 import { Table } from '../../components/inputs';
 import { v4 as uuid } from 'uuid';
 import Designer from '../RouteDesigner/Designer';
+import Loader from '../../components/Loader';
 
 // Mock Data for NgTarget
 const ngTargetMock = createNgTarget({
@@ -151,41 +152,106 @@ export default function ApiEditor(props) {
 
     useEffect(() => {
         props.setSidebarContent(<Sidebar api={apiMock} />);
-        props.setTitle("Flows")
         return () => props.setSidebarContent(null)
     }, [])
 
     const api = apiMock
 
-    return <div className='editor p-3'>
+    return <div className='editor'>
         <Switch>
             <Route exact path='/apis/:apiId/flows' component={componentProps => <Flows {...props} {...componentProps} api={api} />} />
-            <Route exact path='/apis/:apiId/flows/:flowId/edit' component={componentProps => <FlowDesigner {...props} {...componentProps} api={api} />} />
-            <Route path='/apis/:apiId' component={Dashboard} />
+            <Route exact path='/apis/:apiId/flows/:flowId' component={componentProps => <FlowDesigner {...props} {...componentProps} api={api} />} />
+            <Route path='/apis/:apiId' component={componentProps => <Dashboard {...props} {...componentProps} />} />
+            <Route path='/apis' component={componentProps => <Apis {...props} {...componentProps} />} />
         </Switch>
     </div>
+}
+
+function Apis(props) {
+    const ref = useRef()
+    const params = useParams()
+    const history = useHistory()
+
+    useEffect(() => {
+        props.setTitle("Apis")
+    }, [])
+
+    const [fields, setFields] = useState({
+        id: false,
+        name: true,
+    })
+    const columns = [
+        {
+            title: 'Id',
+            content: item => item.id
+        },
+        {
+            title: 'Name',
+            content: item => item.name
+        }
+    ];
+
+    const fetchItems = (paginationState) => Promise.resolve([apiMock])
+
+    const fetchTemplate = () => Promise.resolve({
+        id: uuid(),
+        name: 'My new apis'
+    })
+
+    return <Table
+        ref={ref}
+        parentProps={{ params }}
+        navigateTo={(item) => history.push(`/apis/${item.id}`)}
+        navigateOnEdit={(item) => history.push(`/apis/${item.id}`)}
+        selfUrl="flows"
+        defaultTitle="Flow"
+        itemName="Flow"
+        formSchema={null}
+        formFlow={null}
+        columns={columns}
+        fields={fields}
+        deleteItem={(item) => console.log('delete item', item)}
+        defaultSort="name"
+        defaultSortDesc="true"
+        fetchItems={fetchItems}
+        fetchTemplate={fetchTemplate}
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => `/bo/dashboard/apis/${i.id}`}
+        rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId} />
 }
 
 function FlowDesigner({ api, ...props }) {
     const history = useHistory()
     const params = useParams()
 
-    return <div>
-        <Designer
-            {...props}
-            toggleTesterButton={(va) => { }}
-            tab=""
-            history={history}
-            value={api.flows.find(flow => flow.id === params.flowId)}
-            setValue={(v) => {
-                // this.setState({ value: v }, this.setTitle);
-            }}
-            setSaveButton={(n) => {
-                console.log('setSaveButton')
-                // this.setState({ saveButton: n, saveTypeButton: 'routes' })
-            }}
-            setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })} />
-    </div>
+    const loading = false;
+
+    useEffect(() => {
+        props.setTitle("Flow designer")
+    })
+
+    const value = api.flows.find(flow => flow.id === params.flowId)
+
+    return <Loader loading={loading}>
+        <div className='designer'>
+            <Designer
+                history={history}
+                value={value}
+                setValue={(v) => {
+                    // this.setState({ value: v }, this.setTitle);
+                }}
+                setSaveButton={(n) => {
+                    console.log('setSaveButton')
+                    // this.setState({ saveButton: n, saveTypeButton: 'routes' })
+                }}
+                setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })} />
+        </div>
+    </Loader>
 }
 
 function Flows({ api, ...props }) {
@@ -216,14 +282,12 @@ function Flows({ api, ...props }) {
         plugins: []
     })
 
-    console.log(params)
-
     return <div>
         <Table
             ref={ref}
             parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}`)}
             selfUrl="flows"
             defaultTitle="Flow"
             itemName="Flow"
@@ -271,8 +335,12 @@ function Flows({ api, ...props }) {
     </div>
 }
 
-function Dashboard() {
+function Dashboard(props) {
     const api = apiMock
+
+    useEffect(() => {
+        props.setTitle("Dashboard")
+    }, [])
 
     return <div className='d-flex flex-column gap-3'>
         <div className='d-flex gap-3'>

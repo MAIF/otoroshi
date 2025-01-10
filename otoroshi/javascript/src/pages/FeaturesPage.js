@@ -180,6 +180,13 @@ export const graph = (env) => {
           icon: () => 'fa-pencil-ruler',
           link: '/drafts',
         },
+        {
+          title: 'Apis',
+          description: 'All apis',
+          img: 'apis',
+          icon: () => 'fa-brush',
+          link: '/apis',
+        },
       ],
     },
     {

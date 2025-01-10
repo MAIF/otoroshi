@@ -255,7 +255,7 @@ const Modal = ({ question, onOk, onCancel }) => (
 );
 
 export default forwardRef(
-  ({ value, setSaveButton, setTestingButton, setMenu, history, setValue, ...props }, ref) => {
+  ({ value, setSaveButton, history, setValue, ...props }, ref) => {
     const { routeId } = props;
     const location = useLocation();
 
@@ -270,23 +270,17 @@ export default forwardRef(
     useEffect(() => {
       if (location?.state?.showTryIt || window.location.search.includes('showTryIt')) {
         childRef.current.toggleTryIt();
-        props.toggleTesterButton(true);
       } else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
     }, [location.state]);
 
     return (
       <Designer
         ref={childRef}
-        toggleTesterButton={props.toggleTesterButton}
         history={history}
         routeId={routeId}
-        location={location}
         value={value}
         setValue={setValue}
         setSaveButton={setSaveButton}
-        setTestingButton={setTestingButton}
-        setMenu={setMenu}
-        pathname={location.pathname}
       />
     );
   }
@@ -1544,8 +1538,6 @@ class Designer extends React.Component {
                 }}
                 hide={(e) => {
                   e.stopPropagation();
-
-                  if (this.props.toggleTesterButton) this.props.toggleTesterButton(false);
 
                   this.setState({
                     selectedNode: backendCallNodes.find((node) => {
