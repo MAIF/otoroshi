@@ -1,16 +1,14 @@
 package functional
 
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 
 class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -405,20 +403,6 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
       resp.status mustBe 401
 
       deleteOtoroshiService(service).futureValue
-    }
-
-    "prevent to many calls per window" in {
-      val testApiKey = new ApiKey(
-      clientId = "1234",
-      clientSecret = "1234567890",
-      clientName = "test apikey",
-      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
-      enabled = true,
-      throttlingQuota = 10,
-      dailyQuota = 10,
-      monthlyQuota = 100,
-      metadata = Map.empty
-    )
     }
 
     "stop servers" in {

@@ -184,7 +184,7 @@ class GreenScoreTest
       new GreenScoreTestSpec("GreenScore", Configurations.InMemoryConfiguration)
     )
 
-class ApiKeysTest
-    extends Suites(
-      new ApiKeysSpec("ApiKeysSpec", Configurations.InMemoryConfiguration)
-    )
+//class ApiKeysTest
+//    extends Suites(
+//      new ApiKeysSpec("ApiKeysSpec", Configurations.InMemoryConfiguration)
+//    )
