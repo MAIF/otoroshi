@@ -35032,12 +35032,12 @@
   },
   "otoroshi.models.RemainingQuotas" : {
     "schema" : {
-      "currentCallsPerSec" : {
-        "label" : "currentCallsPerSec",
+      "throttlingCallsPerWindow" : {
+        "label" : "throttlingCallsPerWindow",
         "type" : "number"
       },
-      "remainingCallsPerSec" : {
-        "label" : "remainingCallsPerSec",
+      "remainingCallsPerWindow" : {
+        "label" : "remainingCallsPerWindow",
         "type" : "number"
       },
       "currentCallsPerDay" : {
@@ -35056,8 +35056,8 @@
         "label" : "remainingCallsPerMonth",
         "type" : "number"
       },
-      "authorizedCallsPerSec" : {
-        "label" : "authorizedCallsPerSec",
+      "authorizedCallsPerWindow" : {
+        "label" : "authorizedCallsPerWindow",
         "type" : "number"
       },
       "authorizedCallsPerMonth" : {
@@ -35069,7 +35069,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "remainingCallsPerDay", "authorizedCallsPerMonth", "authorizedCallsPerSec", "remainingCallsPerMonth", "currentCallsPerMonth", "authorizedCallsPerDay", "currentCallsPerDay", "remainingCallsPerSec", "currentCallsPerSec" ]
+    "flow" : [ "remainingCallsPerDay", "authorizedCallsPerMonth", "authorizedCallsPerWindow", "remainingCallsPerMonth", "currentCallsPerMonth", "authorizedCallsPerDay", "currentCallsPerDay", "remainingCallsPerWindow", "throttlingCallsPerWindow" ]
   },
   "otoroshi.next.plugins.JQRequest" : {
     "schema" : {

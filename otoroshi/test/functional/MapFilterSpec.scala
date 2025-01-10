@@ -573,9 +573,9 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           |    },
           |    "remainingQuotas": {
           |      "remainingCallsPerMonth": 10000000,
-          |      "authorizedCallsPerSec": 10000000,
-          |      "currentCallsPerSec": 10000000,
-          |      "remainingCallsPerSec": 10000000,
+          |      "authorizedCallsPerWindow": 10000000,
+          |      "throttlingCallsPerWindow": 10000000,
+          |      "remainingCallsPerWindow": 10000000,
           |      "authorizedCallsPerDay": 10000000,
           |      "currentCallsPerDay": 10000000,
           |      "authorizedCallsPerMonth": 10000000,

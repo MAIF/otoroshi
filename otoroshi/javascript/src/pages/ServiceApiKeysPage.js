@@ -456,9 +456,9 @@ class DailyRemainingQuotas extends Component {
 
   render() {
     const quotas = this.state.quotas || {
-      authorizedCallsPerSec: 0,
-      currentCallsPerSec: 0,
-      remainingCallsPerSec: 0,
+      authorizedCallsPerWindow: 0,
+      throttlingCallsPerWindow: 0,
+      remainingCallsPerWindow: 0,
       authorizedCallsPerDay: 0,
       currentCallsPerDay: 0,
       remainingCallsPerDay: 0,
@@ -727,9 +727,9 @@ const ApiKeysConstants = {
       type: 'number',
       props: {
         label: 'Throttling quota',
-        placeholder: 'Authorized calls per second',
+        placeholder: 'Authorized calls per window',
         suffix: 'calls per sec.',
-        help: 'The authorized number of calls per second',
+        help: 'The authorized number of calls per window',
       },
     },
     dailyQuota: {

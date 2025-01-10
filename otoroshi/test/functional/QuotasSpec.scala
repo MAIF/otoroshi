@@ -96,7 +96,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       createOtoroshiApiKey(apiKeyLowDMonthlyQuota).futureValue
     }
 
-    "prevent too many calls per second" in {
+    "prevent too many calls per window" in {
       def call(auth: String) = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
@@ -117,7 +117,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       }
 
       counter200.get() > 0 mustBe true
-      // counter429.get() > 0 mustBe true
+      counter429.get() > 0 mustBe true
     }
 
     "prevent too many calls per day" in {

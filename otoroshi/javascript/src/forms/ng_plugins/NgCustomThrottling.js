@@ -2,7 +2,7 @@ export default {
   id: 'cp:otoroshi.next.plugins.NgCustomThrottling',
   config_schema: {
     throttling_quota: {
-      label: 'Allowed calls per seconds',
+      label: 'Allowed calls per window',
       type: 'number',
     },
     per_route: {

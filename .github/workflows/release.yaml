@@ -24,6 +24,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: sbt/setup-sbt@v1.1.5
       - name: setup node
         uses: actions/setup-node@v3
         with:

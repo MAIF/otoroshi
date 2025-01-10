@@ -195,10 +195,10 @@ class ServiceQuotas extends AccessValidator {
     env.clusterAgent.incrementApi(descriptor.id, increment)
     for {
       _            <- env.datastores.rawDataStore.incrby(totalCallsKey(descriptor.id), increment)
-      secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(descriptor.id), increment)
       secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(descriptor.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
-                      }
+                      env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
+                    }
+      secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(descriptor.id), increment)
       dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(descriptor.id), increment)
       dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith { case _ =>
                         env.datastores.rawDataStore.pexpire(dailyQuotaKey(descriptor.id), toDayEnd.toInt)
@@ -209,9 +209,9 @@ class ServiceQuotas extends AccessValidator {
                       }
     } yield ()
     // RemainingQuotas(
-    //   authorizedCallsPerSec = qconf.throttlingQuota,
-    //   currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
-    //   remainingCallsPerSec = qconf.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
+    //   authorizedCallsPerWindow = qconf.throttlingQuota,
+    //   throttlingCallsPerWindow = (secCalls / env.throttlingWindow).toInt,
+    //   remainingCallsPerWindow = qconf.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
     //   authorizedCallsPerDay = qconf.dailyQuota,
     //   currentCallsPerDay = dailyCalls,
     //   remainingCallsPerDay = qconf.dailyQuota - dailyCalls,
@@ -238,7 +238,7 @@ class ServiceQuotas extends AccessValidator {
     env.datastores.rawDataStore
       .get(throttlingKey(descriptor.id))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
   private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
       ec: ExecutionContext,
