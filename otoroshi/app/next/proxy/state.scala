@@ -1,6 +1,7 @@
 package otoroshi.next.proxy
 
 import com.github.blemale.scaffeine.Scaffeine
+import next.models.Api
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
@@ -55,6 +56,7 @@ class NgProxyState(env: Env) {
   private val scripts             = new UnboundedTrieMap[String, Script]()
   private val wasmPlugins         = new UnboundedTrieMap[String, WasmPlugin]()
   private val drafts              = new UnboundedTrieMap[String, Draft]()
+  private val apis                = new UnboundedTrieMap[String, Api]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -109,6 +111,7 @@ class NgProxyState(env: Env) {
   def globalConfig(): Option[GlobalConfig]                          = Option(globalConfigRef.get())
   def wasmPlugin(id: String): Option[WasmPlugin]                    = wasmPlugins.get(id)
   def draft(id: String): Option[Draft]                              = drafts.get(id)
+  def api(id: String): Option[Api]                                  = apis.get(id)
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
   def storedBackend(id: String): Option[StoredNgBackend]            = ngbackends.get(id)
@@ -133,6 +136,7 @@ class NgProxyState(env: Env) {
 
   def allWasmPlugins(): Seq[WasmPlugin]               = wasmPlugins.values.toSeq
   def allDrafts(): Seq[Draft]                         = drafts.values.toSeq
+  def allApis(): Seq[Api]                             = apis.values.toSeq
   def allScripts(): Seq[Script]                       = scripts.values.toSeq
   def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq
   def allRoutes(): Seq[NgRoute]                       = routes.values.toSeq
@@ -198,6 +202,10 @@ class NgProxyState(env: Env) {
 
   def updateDrafts(values: Seq[Draft]): Unit = {
     drafts.addAll(values.map(v => (v.id, v))).remAll(drafts.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateApis(values: Seq[Api]): Unit = {
+    apis.addAll(values.map(v => (v.id, v))).remAll(apis.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTenants(values: Seq[Tenant]): Unit = {
@@ -580,6 +588,7 @@ class NgProxyState(env: Env) {
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       wasmPlugins         <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
       drafts              <- env.datastores.draftsDataStore.findAll()
+      apis                <- env.datastores.apiDataStore.findAll()
       croutes             <- if (dev) {
                                NgRouteComposition
                                  .fromOpenApi(
@@ -637,6 +646,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateScripts(scripts)
       env.proxyState.updateWasmPlugins(wasmPlugins)
       env.proxyState.updateDrafts(drafts)
+      env.proxyState.updateApis(apis)
       env.proxyState.updateNgBackends(backends)
       env.proxyState.updateNgSRouteCompositions(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)

@@ -22,10 +22,17 @@ import {
 import Sidebar from './Sidebar';
 import { Link, Switch, Route, useParams, useHistory } from 'react-router-dom';
 import { Uptime } from '../../components/Status';
-import { Table } from '../../components/inputs';
+import { Form, Table } from '../../components/inputs';
 import { v4 as uuid } from 'uuid';
 import Designer from '../RouteDesigner/Designer';
 import Loader from '../../components/Loader';
+import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
+import PageTitle from '../../components/PageTitle';
+import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
+import { nextClient } from '../../services/BackOfficeServices';
+import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
+
+const queryClient = new QueryClient();
 
 // Mock Data for NgTarget
 const ngTargetMock = createNgTarget({
@@ -146,7 +153,7 @@ const apiMock = createApi({
     consumersValue: [apiConsumerMock],
     deploymentsValue: [apiDeploymentRefMock]
 });
-console.log(apiMock);
+// console.log(apiMock);
 
 export default function ApiEditor(props) {
 
@@ -155,16 +162,90 @@ export default function ApiEditor(props) {
         return () => props.setSidebarContent(null)
     }, [])
 
-    const api = apiMock
-
     return <div className='editor'>
-        <Switch>
-            <Route exact path='/apis/:apiId/flows' component={componentProps => <Flows {...props} {...componentProps} api={api} />} />
-            <Route exact path='/apis/:apiId/flows/:flowId' component={componentProps => <FlowDesigner {...props} {...componentProps} api={api} />} />
-            <Route path='/apis/:apiId' component={componentProps => <Dashboard {...props} {...componentProps} />} />
-            <Route path='/apis' component={componentProps => <Apis {...props} {...componentProps} />} />
-        </Switch>
+        <QueryClientProvider client={queryClient}>
+            <Switch>
+                <Route exact path='/apis/:apiId/flows' component={componentProps => <Flows {...props} {...componentProps} />} />
+                <Route exact path='/apis/:apiId/flows/:flowId/:action' component={componentProps => <FlowDesigner {...props} {...componentProps} />} />
+                <Route path='/apis/new' component={componentProps => <NewAPI {...props} {...componentProps} />} />
+                <Route path='/apis/:apiId' component={componentProps => <Dashboard {...props} {...componentProps} />} />
+                <Route path='/apis' component={componentProps => <Apis {...props} {...componentProps} />} />
+            </Switch>
+        </QueryClientProvider>
     </div>
+}
+
+function NewAPI(props) {
+
+    useEffect(() => {
+        props.setTitle("Create a new API")
+    }, [])
+
+    const [value, setValue] = useState({})
+
+    const template = useQuery(["getTemplate"],
+        nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
+        onSuccess: (data) => {
+            setValue(data)
+        }
+    });
+
+    // version: String,
+    // state: ApiState,
+    // blueprint: ApiBlueprint,
+    // routes: Seq[ApiRoute],
+    // backends: Seq[NgBackend],
+    // flows: Seq[ApiFlows],
+    // clients: Seq[ApiBackendClient],
+    // documentation: Option[ApiDocumentation],
+    // consumers: Seq[ApiConsumer],
+    // deployments: Seq[ApiDeployment]
+
+    const schema = {
+        location: {
+            type: 'location',
+            props: {},
+        },
+        id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
+        name: {
+            type: 'string',
+            props: { label: 'name', placeholder: 'My Awesome service Backend' },
+        },
+        description: {
+            type: 'string',
+            props: { label: 'description', placeholder: 'Description of the Backend' },
+        },
+        metadata: {
+            type: 'object',
+            props: { label: 'metadata' },
+        },
+        tags: {
+            type: 'array',
+            props: { label: 'tags' },
+        },
+        debug_flow: {
+            type: 'bool',
+            props: { label: 'Debug' },
+        },
+        export_reporting: {
+            type: 'bool',
+            props: { label: 'Export reports' },
+        },
+        capture: {
+            type: 'bool',
+            props: { label: 'Capture traffic' },
+        }
+    }
+    const flow = ['location', 'id', 'name', 'description', 'metadata', 'tags', 'debug_flow', 'export_reporting', 'capture']
+
+    return <Loader loading={template.isLoading}>
+        <Form
+            schema={schema}
+            flow={flow}
+            value={value}
+            onChange={setValue}
+        />
+    </Loader>
 }
 
 function Apis(props) {
@@ -191,12 +272,13 @@ function Apis(props) {
         }
     ];
 
-    const fetchItems = (paginationState) => Promise.resolve([apiMock])
+    const fetchItems = (paginationState) => nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .findAllWithPagination(paginationState)
 
-    const fetchTemplate = () => Promise.resolve({
-        id: uuid(),
-        name: 'My new apis'
-    })
+    const fetchTemplate = () => nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .template()
 
     return <Table
         ref={ref}
@@ -222,7 +304,15 @@ function Apis(props) {
         hideAddItemAction={true}
         itemUrl={(i) => `/bo/dashboard/apis/${i.id}`}
         rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId} />
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+                <Link className="btn btn-primary btn-sm" to="apis/new">
+                    <i className="fas fa-plus-circle" /> Create new API
+                </Link>
+                {props.injectTopBar}
+            </div>
+        )} />
 }
 
 function FlowDesigner({ api, ...props }) {
@@ -231,8 +321,30 @@ function FlowDesigner({ api, ...props }) {
 
     const loading = false;
 
+    const isCreation = params.action === 'new';
+
+    const saveFlow = () => {
+        return Promise.resolve()
+            .then(() => history.replace(`/apis/${params.apiId}/flows`))
+    }
+
     useEffect(() => {
-        props.setTitle("Flow designer")
+        dynamicTitleContent.value = (
+            <PageTitle
+                style={{
+                    paddingBottom: 0,
+                }}
+                title={api.flows.find(flow => flow.id === params.flowId)?.name}
+                {...props}
+            >
+                <FeedbackButton
+                    type="success"
+                    className="ms-2 mb-1"
+                    onPress={saveFlow}
+                    text={isCreation ? 'Create a new flow' : 'Save'}
+                />
+            </PageTitle>
+        );
     })
 
     const value = api.flows.find(flow => flow.id === params.flowId)
@@ -246,7 +358,7 @@ function FlowDesigner({ api, ...props }) {
                     // this.setState({ value: v }, this.setTitle);
                 }}
                 setSaveButton={(n) => {
-                    console.log('setSaveButton')
+                    return <div>Coucou</div>
                     // this.setState({ saveButton: n, saveTypeButton: 'routes' })
                 }}
                 setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })} />
@@ -274,6 +386,10 @@ function Flows({ api, ...props }) {
         }
     ];
 
+    useEffect(() => {
+        props.setTitle(`Flows of ${api.name}`)
+    }, [])
+
     const fetchItems = (paginationState) => Promise.resolve(api.flows)
 
     const fetchTemplate = () => Promise.resolve({
@@ -286,8 +402,8 @@ function Flows({ api, ...props }) {
         <Table
             ref={ref}
             parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}`)}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
             selfUrl="flows"
             defaultTitle="Flow"
             itemName="Flow"

@@ -12,6 +12,7 @@ import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
 import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Row}
+import next.models.{ApiDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -413,6 +414,9 @@ class ReactivePgDataStores(
 
   private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
+
+  private lazy val _apiDataStore             = new KvApiDataStore(redis, env)
+  override def apiDataStore: ApiDataStore = _apiDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

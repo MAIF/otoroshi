@@ -145,8 +145,13 @@ import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 import NgHttpWasm from './NgHttpWasm';
 
+import NgApiFrontend from './NgApiFrontend';
+import NgApiBackend from './NgApiBackend';
+
 export const Backend = NgBackend;
-export const Frontend = NgFrontend;
+export const Frontend = NgApiFrontend;
+export const ApiFrontend = NgApiFrontend;
+export const ApiBackend = NgApiBackend;
 
 const pluginsArray = [
   AdditionalHeadersIn,

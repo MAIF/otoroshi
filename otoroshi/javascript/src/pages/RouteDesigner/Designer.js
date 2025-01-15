@@ -16,7 +16,7 @@ import {
   routePorts,
 } from '../../services/BackOfficeServices';
 
-import { Backend, Frontend, Plugins } from '../../forms/ng_plugins';
+import { ApiFrontend, ApiBackend, Backend, Frontend, Plugins } from '../../forms/ng_plugins';
 
 import {
   EXCLUDED_PLUGINS,
@@ -26,12 +26,11 @@ import {
 import Loader from '../../components/Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { NgBooleanRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
-import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
 
@@ -42,7 +41,6 @@ import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
 import {
-  draftSignal,
   draftVersionSignal,
   updateEntityURLSignal,
 } from '../../components/Drafts/DraftEditorSignal';
@@ -203,7 +201,6 @@ const FormContainer = ({
   setSelectedNode,
   ...props
 }) => {
-  const selectFrontend = () => setSelectedNode(nodes.find((n) => n.id === 'Frontend'));
   const selectBackend = () => setSelectedNode(nodes.find((n) => n.id === 'Backend'));
 
   return (
@@ -215,7 +212,6 @@ const FormContainer = ({
       <UnselectedNode
         hideText={selectedNode}
         route={route}
-        selectFrontend={selectFrontend}
         selectBackend={selectBackend}
         {...props}
       />
@@ -286,8 +282,8 @@ export default forwardRef(
   }
 );
 
-const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => (
-  <div className="main-view relative-container" style={{ flex: 'initial' }}>
+const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => {
+  return <div className="main-view relative-container" style={{ flex: 'initial' }}>
     <NodeElement
       element={frontend}
       className="frontend-container-button"
@@ -313,7 +309,7 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
       <i className="fas fa-user frontend-button-icon" />
     </div>
   </div>
-);
+}
 
 const Container = ({ children, onClick, showTryIt }) => {
   const [propagate, setPropagate] = useState();
@@ -688,6 +684,11 @@ class Designer extends React.Component {
         };
       }
 
+      const isApis = window.location.pathname.includes('/apis')
+
+      const frontendConfiguration = isApis ? ApiFrontend : Frontend;
+      const backendConfiguration = isApis ? ApiBackend : Backend;
+
       this.setState(
         {
           ports,
@@ -704,16 +705,18 @@ class Designer extends React.Component {
           })),
           nodes,
           frontend: {
-            ...Frontend,
-            config_schema: toUpperCaseLabels(Frontend.schema),
-            config_flow: Frontend.flow,
+            ...frontendConfiguration,
+            config_schema: toUpperCaseLabels(frontendConfiguration.schema),
+            config_flow: frontendConfiguration.flow,
             nodeId: 'Frontend',
+            readOnly: isApis
           },
           backend: {
-            ...Backend,
-            config_schema: toUpperCaseLabels(Backend.schema),
-            config_flow: Backend.flow,
+            ...backendConfiguration,
+            config_schema: toUpperCaseLabels(backendConfiguration.schema),
+            config_flow: backendConfiguration.flow,
             nodeId: 'Backend',
+            readOnly: isApis
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
         }
@@ -966,23 +969,6 @@ class Designer extends React.Component {
           })),
         });
         this.updateRoute({ ...newRoute });
-      }
-    });
-  };
-
-  deleteRoute = () => {
-    window.newConfirm('are you sure you want to delete this route ?', (ok) => {
-      if (ok) {
-        nextClient
-          .forEntityNext(nextClient.ENTITIES.ROUTES)
-          .deleteById(this.state.route.id)
-          .then(() => {
-            if (history) {
-              history.push('/routes');
-            } else {
-              window.location = '/bo/dashboard/routes';
-            }
-          });
       }
     });
   };
@@ -1695,7 +1681,6 @@ class Designer extends React.Component {
                   }
                   nodes={[...this.state.nodes, this.state.backend, this.state.frontend]}
                   clearPlugins={this.clearPlugins}
-                  deleteRoute={this.deleteRoute}
                   updateRoute={this.updateRoute}
                   saveRoute={this.saveRoute}
                   selectedNode={selectedNode}
@@ -1848,8 +1833,6 @@ const UnselectedNode = ({
   hideText,
   route,
   clearPlugins,
-  deleteRoute,
-  selectFrontend,
   selectBackend,
   ports,
 }) => {
@@ -1989,7 +1972,6 @@ const UnselectedNode = ({
               <span>this route will match only if the following query params are present</span>
               <pre
                 className="dark-background"
-                // onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
                   marginTop: 10,
@@ -2010,7 +1992,6 @@ const UnselectedNode = ({
             <div className="">
               <span>this route will match only if the following headers are present</span>
               <pre
-                // onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
                   marginTop: 10,
@@ -2346,6 +2327,10 @@ class EditView extends React.Component {
   };
 
   onValidate = (newValue) => {
+
+    if (!newValue)
+      return
+
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
@@ -2408,8 +2393,10 @@ class EditView extends React.Component {
     const { id, name, icon } = selectedNode;
     const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state;
 
-    const showActions = !selectedNode.legacy && !readOnly && !usingExistingBackend; // && 'Backend' !== id;
+    const showActions = !selectedNode.legacy && !readOnly && !usingExistingBackend && !selectedNode.readOnly
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
+
+    const isApis = window.location.pathname.includes('/apis')
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
 
@@ -2436,7 +2423,9 @@ class EditView extends React.Component {
             hidePreview();
           }}
         />
-        <div className="dark-background">
+        <div className="dark-background" style={{
+          paddingTop: isApis ? '1rem' : 'inherit'
+        }}>
           {selectedNode.description && (
             <Description
               text={selectedNode.description}
@@ -2460,7 +2449,7 @@ class EditView extends React.Component {
             />
           )}
           <BackendSelector
-            enabled={id === 'Backend'}
+            enabled={id === 'Backend' && !window.location.pathname.includes('/apis')}
             backends={backends}
             setUsingExistingBackend={(e) => {
               this.setState({

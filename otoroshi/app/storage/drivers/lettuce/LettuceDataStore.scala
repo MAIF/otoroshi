@@ -11,6 +11,7 @@ import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
+import next.models.{ApiDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -227,6 +228,9 @@ class LettuceDataStores(
 
   private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
+
+  private lazy val _apiDataStore = new KvApiDataStore(redis, env)
+  override def apiDataStore: ApiDataStore = _apiDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

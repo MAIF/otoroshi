@@ -2179,6 +2179,7 @@ export const nextClient = {
     FRONTENDS: 'frontends',
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
+    APIS: 'apis'
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {

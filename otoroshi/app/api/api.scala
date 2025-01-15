@@ -3,6 +3,7 @@ package otoroshi.api
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
+import next.models.Api
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
@@ -858,6 +859,26 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.draft(id),
         stateUpdate = seq => env.proxyState.updateDrafts(seq)
       )
+    ),
+    //////
+    Resource(
+      "Api",
+      "apis",
+      "api",
+      "apis.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[Api](
+        Api.format,
+        classOf[Api],
+        env.datastores.apiDataStore.key,
+        env.datastores.apiDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (_v, _p) => env.datastores.apiDataStore.template(env).json,
+        stateAll = () => env.proxyState.allApis(),
+        stateOne = id => env.proxyState.api(id),
+        stateUpdate = seq => env.proxyState.updateApis(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
 }
@@ -1415,6 +1436,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       ) match {
       case None                                               => result(Results.NotFound, notFoundBody, request, None)
       case Some(resource) if !resource.access.canBulk && bulk =>
+        println("HERE")
         result(
           Results.Unauthorized,
           Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
@@ -1999,7 +2021,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
-  // GET /apis/:group/:version/:entity/:id/_template
+  // GET /apis/:group/:version/:entity/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last))

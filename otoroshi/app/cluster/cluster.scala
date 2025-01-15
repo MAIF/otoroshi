@@ -16,6 +16,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
+import next.models.{ApiDataStore, KvApiDataStore}
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
@@ -2944,6 +2945,9 @@ class SwappableInMemoryDataStores(
 
   private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
+
+  private lazy val _apiDataStore             = new KvApiDataStore(redis, env)
+  override def apiDataStore: ApiDataStore = _apiDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore
