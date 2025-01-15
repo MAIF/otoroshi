@@ -2,23 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import './index.scss'
 
-import {
-    createApi,
-    createApiBackend,
-    createApiDocumentation,
-    createApiFrontend,
-    createApiPageLeaf,
-    createApiRoute,
-    createOpenApiSpecification,
-    createApiDeploymentRef,
-    createApiConsumer,
-    createApiBackendClient,
-    createApiFlows,
-    createNgTarget,
-    API_STATE,
-    generateHourlyData,
-    CONSUMER_KIND
-} from './model';
+import { API_STATE } from './model';
 import Sidebar from './Sidebar';
 import { Link, Switch, Route, useParams, useHistory } from 'react-router-dom';
 import { Uptime } from '../../components/Status';
@@ -32,145 +16,198 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { nextClient } from '../../services/BackOfficeServices';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
+import { schemas } from '../RouteDesigner/form';
+import NgBackend from '../../forms/ng_plugins/NgBackend';
+import { NgForm } from '../../components/nginputs';
+import { BackendForm } from '../RouteDesigner/BackendNode';
 
 const queryClient = new QueryClient();
 
-// // Mock Data for NgTarget
-// const ngTargetMock = createNgTarget({
-//     idValue: "target1",
-//     hostnameValue: "localhost",
-//     portValue: 8080,
-//     tlsValue: true,
-//     weightValue: 10,
-//     protocolValue: "HTTP_1_1",
-//     predicateValue: "AlwaysMatch",
-//     ipAddressValue: "192.168.0.1",
-//     tlsConfigValue: { cert: "cert_path", key: "key_path" }
-// });
-
-// // Mock Data for the ApiBackend (including NgTarget in targetsValue)
-// const apiBackendMock = createApiBackend({
-//     nameValue: "Backend 1",
-//     targetsValue: [ngTargetMock], // Properly referencing ngTargetMock here
-//     rootValue: "/api",
-//     rewriteValue: true,
-//     clientValue: "client1",
-//     loadBalancingValue: "round-robin"
-// });
-
-// // Mock Data for the ApiFrontend
-// const apiFrontendMock = createApiFrontend({
-//     domainsValue: ["example.com", "api.example.com"],
-//     headersValue: { "Authorization": "Bearer token" },
-//     queryValue: { "page": "1" },
-//     methodsValue: ["GET", "POST"],
-//     stripPathValue: true,
-//     exactValue: false
-// });
-
-// // Mock Data for the ApiRoute
-// const apiRouteMock = createApiRoute({
-//     frontendValue: apiFrontendMock,
-//     pluginsValue: [apiFlowsMock],
-//     backendValue: apiBackendMock
-// });
-
-// // Mock Data for the ApiDeploymentRef
-// const apiDeploymentRefMock = createApiDeploymentRef({
-//     refValue: "deploy-001",
-//     atValue: new Date().toISOString(),
-//     whoValue: "admin"
-// });
-
-// // Mock Data for the ApiDocumentation
-// const apiPageLeafMock = createApiPageLeaf({
-//     pathName: "/home",
-//     apiPageName: "Home Page",
-//     apiContent: "Some content here"
-// });
-
-// const apiDocumentationMock = createApiDocumentation({
-//     specificationValue: "OpenAPI 3.0",
-//     homeValue: { path: "/", name: "Home" },
-//     pagesValue: [apiPageLeafMock],
-//     metadataValue: { author: "John Doe" },
-//     logosValue: ["logo1", "logo2"]
-// });
-
-// // Mock Data for the OpenApiSpecification
-// const openApiSpecMock = createOpenApiSpecification({
-//     contentValue: { info: "OpenAPI 3.0 Spec" }
-// });
-
-// // Mock Data for the ApiConsumer
-// const apiConsumerMock = createApiConsumer({
-//     nameValue: "Consumer1",
-//     descriptionValue: "API Consumer Description",
-//     autoValidationValue: true,
-//     kindValue: CONSUMER_KIND.APIKEY,
-//     settingsValue: { key: "value" },
-//     statusValue: "Active",
-//     subscriptionsValue: ["sub1", "sub2"]
-// });
-
-// // Mock Data for the ApiBackendClient
-// const apiBackendClientMock = createApiBackendClient({
-//     nameValue: "Client1",
-//     clientValue: { config: "some config" }
-// });
-
-// // Mock Data for the ApiPlugins (with proper object structure)
-// const apiFlowsMock = createApiFlows({
-//     idValue: 'my_first_flow',
-//     nameValue: "Plugin1",
-//     predicateValue: "some predicate",
-//     pluginsValue: []
-// });
-
-// // Mock Data for the Api
-// const apiMock = createApi({
-//     locationValue: { tenant: "tenant1", teams: ["team1"] },
-//     idValue: "api-123",
-//     nameValue: "Forecast API",
-//     descriptionValue: "This is a sample API",
-//     tagsValue: ["v1", "rest", "weather", "grpc"],
-//     metadataValue: { author: "John Doe" },
-//     versionValue: "1.0.0",
-//     debugFlowValue: true,
-//     captureValue: false,
-//     exportReportingValue: true,
-//     stateValue: API_STATE.PUBLISHED,
-//     healthValue: {
-//         today: generateHourlyData(0),
-//         yesterday: generateHourlyData(-1),
-//         nMinus2: generateHourlyData(-2),
-//     },
-//     blueprintValue: "blueprint-001",
-//     routesValue: [apiRouteMock], // Referencing apiRouteMock here
-//     backendsValue: [apiBackendMock],
-//     flowsValue: [apiFlowsMock],
-//     clientsValue: [apiBackendClientMock],
-//     documentationValue: apiDocumentationMock,
-//     consumersValue: [apiConsumerMock],
-//     deploymentsValue: [apiDeploymentRefMock]
-// });
-// console.log(apiMock);
+const RouteWithProps = ({ component: Component, ...rest }) => (
+    <Route
+        {...rest}
+        component={(routeProps) => <Component {...routeProps} {...rest.props} />}
+    />
+);
 
 export default function ApiEditor(props) {
     return <div className='editor'>
         <QueryClientProvider client={queryClient}>
             <Switch>
-                <Route path="*" >
-                    <Route exact path='/apis/:apiId/flows' component={componentProps => <Flows {...props} {...componentProps} />} />
-                    <Route exact path='/apis/:apiId/flows/new' component={componentProps => <NewFlow {...props} {...componentProps} />} />
-                    <Route exact path='/apis/:apiId/flows/:flowId/:action' component={componentProps => <FlowDesigner {...props} {...componentProps} />} />
-                    <Route path='/apis/new' component={componentProps => <NewAPI {...props} {...componentProps} />} />
-                    <Route path='/apis/:apiId' component={componentProps => <Dashboard {...props} {...componentProps} />} />
-                    <Route path='/apis' component={componentProps => <Apis {...props} {...componentProps} />} />
-                </Route>
+                <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/flows/:flowId/:action' component={FlowDesigner} props={props} />
+
+                <RouteWithProps exact path='/apis/:apiId/backends' component={Backends} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/backends/new' component={NewBackend} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/backends/:backendId' component={EditBackend} props={props} />
+
+                <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
+                <RouteWithProps path='/apis/:apiId' component={Dashboard} props={props} />
+                <RouteWithProps exact path='/apis' component={Apis} props={props} />
             </Switch>
         </QueryClientProvider>
     </div >
+}
+
+function Backends(props) {
+    const history = useHistory()
+    const params = useParams()
+
+    const columns = [
+        {
+            title: 'Name',
+            filterId: 'name',
+            content: (item) => item.name,
+        },
+        { title: 'Description', filterId: 'description', content: (item) => item.description },
+    ];
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
+
+    useEffect(() => {
+        props.setTitle(`Backends of ${rawAPI.data?.name}`)
+    }, [rawAPI.data])
+
+    const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
+    const api = rawAPI.data;
+
+    const deleteItem = item => client.update({
+        ...api,
+        backends: api.backends.filter(f => f.id !== item.id)
+    })
+
+    // const updateItem = item => client.update({
+    //     ...api,
+    //     backends: api.backends.map(backend => {
+    //         if (backend.id === item.id)
+    //             return item
+
+    //         return backend
+    //     })
+    // })
+
+    const fields = []
+
+    return <Loader loading={rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <Table
+            parentProps={{ params }}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}`)}
+            selfUrl="backends"
+            defaultTitle="Backend"
+            itemName="Backend"
+            columns={columns}
+            fields={fields}
+            deleteItem={deleteItem}
+            fetchTemplate={client.template}
+            fetchItems={() => Promise.resolve(rawAPI.data?.backends || [])}
+            defaultSort="name"
+            defaultSortDesc="true"
+            showActions={true}
+            showLink={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`}
+            rawEditUrl={true}
+            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+            injectTopBar={() => (
+                <div className="btn-group input-group-btn">
+                    <Link className="btn btn-primary btn-sm" to="backends/new">
+                        <i className="fas fa-plus-circle" /> Create new backend
+                    </Link>
+                    {props.injectTopBar}
+                </div>
+            )} />
+    </Loader>
+}
+
+function NewBackend(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [backend, setBackend] = useState()
+    const ref = useRef(backend)
+
+    const apiRef = useRef(backend)
+
+    useEffect(() => {
+        ref.current = backend
+    }, [backend])
+
+    useEffect(() => {
+        dynamicTitleContent.value = (
+            <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
+                <FeedbackButton
+                    type="success"
+                    className="ms-2 mb-1"
+                    onPress={saveBackend}
+                    text="Create"
+                />
+            </PageTitle>
+        );
+    }, [])
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
+
+    useEffect(() => {
+        apiRef.current = rawAPI.data
+    }, [rawAPI.data])
+
+    const saveBackend = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...apiRef.current,
+                backends: [...apiRef.current.backends, ref.current]
+            })
+            .then(() => history.push(`/apis/${params.apiId}/backends`))
+    }
+
+    const templateQuery = useQuery(["getTemplate"],
+        nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
+        retry: 0,
+        onSuccess: (data) => setBackend({
+            id: v4(),
+            name: 'My new backend',
+            ...data.backend
+        })
+    });
+
+    console.log(backend)
+
+    return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <BackendForm state={{
+                form: {
+                    schema: {
+                        name: {
+                            type: 'string',
+                            placeholder: 'New backend'
+                        },
+                        ...NgBackend.schema
+                    },
+                    flow: ['name', 'root', 'rewrite', 'targets'],
+                    value: backend,
+                }
+            }} onChange={setBackend} />
+        </div>
+    </Loader>
+}
+
+function EditBackend() {
+
 }
 
 function SidebarComponent(props) {
@@ -205,7 +242,9 @@ function NewFlow(props) {
     }
 
     const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
 
     const createFlow = () => {
         nextClient.forEntityNext(nextClient.ENTITIES.APIS)
@@ -243,6 +282,7 @@ function NewAPI(props) {
 
     const template = useQuery(["getTemplate"],
         nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
+        retry: 0,
         onSuccess: (data) => {
             setValue(data)
         }
@@ -396,7 +436,10 @@ function FlowDesigner(props) {
     const isCreation = params.action === 'new';
 
     const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
+        {
+            retry: 0
+        })
 
     const [flow, setFlow] = useState()
     const ref = useRef(flow)
@@ -468,7 +511,10 @@ function Flows(props) {
     const history = useHistory()
 
     const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
+        {
+            retry: 0
+        })
 
     const [fields, setFields] = useState({
         id: false,
@@ -563,7 +609,10 @@ function Dashboard(props) {
     }, [])
 
     const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
+        {
+            retry: 0
+        })
 
     const api = rawAPI.data
 
@@ -595,7 +644,7 @@ function Dashboard(props) {
                     <SectionHeader text="Build your API" description="Manage entities for this API" />
                     <Entities>
                         <FlowsCard flows={api.flows} />
-                        <Backends backends={api.backends} />
+                        <BackendsCard backends={api.backends} />
                         <Routes routes={api.routes} />
                     </Entities>
                 </ContainerBlock>
@@ -663,14 +712,16 @@ function Entities({ children }) {
     </div>
 }
 
-function Backends({ backends }) {
-    return <Link to="backends" href="" className="cards apis-cards">
-        <div
+function BackendsCard({ backends }) {
+    const params = useParams()
+
+    return <Link to={`/apis/${params.apiId}/backends`} className="cards apis-cards">
+        {/* <div
             className="cards-header"
             style={{
                 background: `url(/assets/images/svgs/backend.svg)`,
             }}
-        ></div>
+        ></div> */}
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Backends <span className='badge api-status-deprecated'>
@@ -687,13 +738,13 @@ function Backends({ backends }) {
 }
 
 function Routes({ routes }) {
-    return <Link to="routes" href="" className="cards apis-cards">
-        <div
+    return <Link to="routes" className="cards apis-cards">
+        {/* <div
             className="cards-header"
             style={{
                 background: `url(/assets/images/svgs/routes.svg)`,
             }}
-        ></div>
+        ></div> */}
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Routes <span className='badge api-status-deprecated'>
@@ -712,12 +763,12 @@ function Routes({ routes }) {
 function FlowsCard({ flows }) {
     const params = useParams()
     return <Link to={`/apis/${params.apiId}/flows`} className="cards apis-cards">
-        <div
+        {/* <div
             className="cards-header"
             style={{
                 background: `url(/assets/images/svgs/plugins.svg)`,
             }}
-        ></div>
+        ></div> */}
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Flows <span className='badge api-status-deprecated'>
@@ -739,7 +790,8 @@ function HighlighedPluginsText({ plural }) {
 }
 
 function HighlighedBackendText({ plural }) {
-    return <HighlighedText text={plural ? 'backends' : "backend"} link="/apis/backends" />
+    const params = useParams()
+    return <HighlighedText text={plural ? 'backends' : "backend"} link={`/apis/${params.apiId}/backends`} />
 }
 
 function HighlighedFrontendText({ plural }) {

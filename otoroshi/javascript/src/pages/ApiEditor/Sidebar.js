@@ -44,11 +44,13 @@ export default (props) => {
 
     const currentTab = location.pathname.split('/').slice(-1)[0];
 
-    const isActive = (tab) => {
-        const params = new URLSearchParams(window.location.search);
-        const queryTab = params.get('tab');
+    const noneTabIsActive = !LINKS().find(r => r.tab === currentTab)
 
-        return currentTab === tab || queryTab === tab ? 'active' : '';
+    const isActive = (tab) => {
+        if (tab === 'informations' && noneTabIsActive)
+            return 'active'
+
+        return currentTab === tab ? 'active' : null
     };
 
     if (location.pathname.endsWith('/new')) return null;

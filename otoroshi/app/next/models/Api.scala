@@ -473,6 +473,33 @@ object ApiConsumerStatus {
     override def name: String ="closed"
   }
 }
+
+case class ApiBackend(id: String, name: String, backend: NgBackend)
+
+object ApiBackend {
+  val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
+
+    override def reads(json: JsValue): JsResult[ApiBackend] = Try {
+      ApiBackend(
+        id = json.select("id").as[String],
+        name = json.select("name").as[String],
+        backend = json.select("backend").as(NgBackend.fmt)
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiBackend): JsValue = Json.obj(
+      "id"      -> o.id,
+      "name"    -> o.name,
+      "backend" -> NgBackend.fmt.writes(o.backend)
+    )
+  }
+}
+
 case class ApiBackendClient(name: String, client: NgClientConfig)
 
 object ApiBackendClient {
@@ -514,7 +541,7 @@ case class Api(
     state: ApiState,
     blueprint: ApiBlueprint,
     routes: Seq[ApiRoute],
-    backends: Seq[NgBackend],
+    backends: Seq[ApiBackend],
     flows: Seq[ApiFlows],
     clients: Seq[ApiBackendClient],
     documentation: Option[ApiDocumentation],
@@ -553,7 +580,7 @@ object Api {
       "state"             -> o.state.name,
       "blueprint"         -> o.blueprint.name,
       "routes"            -> o.routes.map(ApiRoute._fmt.writes),
-      "backends"          -> o.backends.map(NgBackend.fmt.writes),
+      "backends"          -> o.backends.map(ApiBackend._fmt.writes),
       "flows"             -> o.flows.map(ApiFlows._fmt.writes),
       "clients"           -> o.clients.map(ApiBackendClient._fmt.writes),
       "documentation"     -> o.documentation.map(ApiDocumentation._fmt.writes),
@@ -591,7 +618,7 @@ object Api {
           .getOrElse(Seq.empty),
         backends = (json \ "backends")
           .asOpt[Seq[JsValue]]
-          .map(_.flatMap(v => NgBackend.fmt.reads(v).asOpt))
+          .map(_.flatMap(v => ApiBackend._fmt.reads(v).asOpt))
           .getOrElse(Seq.empty),
         flows = (json \ "flows")
           .asOpt[Seq[JsValue]]
