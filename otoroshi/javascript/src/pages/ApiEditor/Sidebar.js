@@ -1,33 +1,33 @@
 import React, { useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 
-const LINKS = (api) =>
+const LINKS = (id) =>
     [
         {
-            to: `/apis/${api.id}/informations`,
+            to: `/apis/${id}`,
             icon: 'fa-file-alt',
             title: 'Informations',
             tab: 'informations',
             tooltip: { ...createTooltip(`Show informations tab`) },
         },
         {
-            to: `/apis/${api.id}/flows`,
+            to: `/apis/${id}/flows`,
             icon: 'fa-project-diagram',
             title: 'Flows',
             tab: 'flows',
             tooltip: { ...createTooltip(`Show flows tab`) },
         },
         {
-            to: `/apis/${api.id}/playground`,
+            to: `/apis/${id}/playground`,
             icon: 'fa-play',
             title: 'API Playground',
             tab: 'playground',
             tooltip: { ...createTooltip(`Show playground tab`) },
         },
         {
-            to: `/apis/${api.id}/deployments`,
+            to: `/apis/${id}/deployments`,
             icon: 'fa-server',
             title: 'Deployments',
             tab: 'deployments',
@@ -35,8 +35,11 @@ const LINKS = (api) =>
         }
     ].filter((link) => !link.enabled);
 
-export default ({ api }) => {
+export default (props) => {
     const location = useLocation();
+
+    const params = props.params
+
     const { openedSidebar } = useContext(SidebarContext);
 
     const currentTab = location.pathname.split('/').slice(-1)[0];
@@ -48,7 +51,7 @@ export default ({ api }) => {
         return currentTab === tab || queryTab === tab ? 'active' : '';
     };
 
-    if (location.pathname.endsWith('/new') || !api) return null;
+    if (location.pathname.endsWith('/new')) return null;
 
     return (
         <div
@@ -72,7 +75,7 @@ export default ({ api }) => {
                     </Link>
                 </li>
                 {openedSidebar && <p className="sidebar-title mt-3">General</p>}
-                {LINKS(api).map(({ to, icon, title, tooltip, tab }) => (
+                {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
                     <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
                         <Link
                             to={to}

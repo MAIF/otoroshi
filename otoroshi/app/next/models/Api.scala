@@ -91,13 +91,14 @@ object ApiRoute {
 
 case class ApiPredicate()
 
-case class ApiFlows(name: String, /*predicate: ApiPredicate,*/ plugins: NgPlugins)
+case class ApiFlows(id: String, name: String, /*predicate: ApiPredicate,*/ plugins: NgPlugins)
 
 object ApiFlows {
   val _fmt = new Format[ApiFlows] {
 
     override def reads(json: JsValue): JsResult[ApiFlows] = Try {
       ApiFlows(
+        id = json.select("id").as[String],
         name = json.select("name").as[String],
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
@@ -109,6 +110,7 @@ object ApiFlows {
     }
 
     override def writes(o: ApiFlows): JsValue = Json.obj(
+      "id" -> o.id,
       "name" -> o.name,
       "plugins" -> o.plugins.json
     )
@@ -566,10 +568,10 @@ object Api {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        version = (json \ "version").as[String],
-        debugFlow = (json \ "debugFlow").as[Boolean],
-        capture = (json \ "capture").as[Boolean],
-        exportReporting = (json \ "exportReporting").as[Boolean],
+        version = (json \ "version").asOpt[String].getOrElse("1.0.0"),
+        debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
+        capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
+        exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
         state = (json \ "state").asOpt[String].map {
           case "started" => ApiStarted
           case "published" => ApiPublished
