@@ -555,7 +555,9 @@ GET     /api/backends                          otoroshi.next.controllers.adminap
 POST    /api/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.createAction()
 
 ## Frontends
+## TODO - remove this endpoint
 GET     /api/frontends/_form                     otoroshi.next.controllers.adminapi.NgFrontendsController.form()
+GET     /api/frontends/_template                 otoroshi.next.controllers.adminapi.NgFrontendsController.template()
 
 ## Plugins
 GET     /api/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()

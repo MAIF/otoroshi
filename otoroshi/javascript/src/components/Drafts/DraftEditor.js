@@ -15,7 +15,12 @@ import { PillButton } from '../PillButton';
 import JsonViewCompare from './Compare';
 import { Button } from '../Button';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queries: {
+    retry: false,
+    refetchOnWindowFocus: false
+  },
+});
 
 function findDraftByEntityId(id) {
   return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(id);

@@ -10,7 +10,7 @@ import otoroshi.next.plugins.NgApikeyCallsConfig
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
-import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.util.{Failure, Success, Try}
 
@@ -65,16 +65,18 @@ case object ApiRemoved extends ApiState {
 //  }
 //}
 
-case class ApiRoute(frontend: NgFrontend, flows: String, backend: String)
+case class ApiRoute(id: String, name: Option[String], frontend: NgFrontend, flowRef: String, backend: ApiBackend)
 
 object ApiRoute {
   val _fmt = new Format[ApiRoute] {
 
     override def reads(json: JsValue): JsResult[ApiRoute] = Try {
       ApiRoute(
-        frontend = NgFrontend.readFrom((json \ "frontend")),
-        flows = (json \ "flows").as[String],
-        backend = (json \ "backend").as[String]
+        id = json.select("id").as[String],
+        name = json.select("name").asOpt[String],
+        frontend = NgFrontend.readFrom(json \ "frontend"),
+        flowRef = (json \ "flow_ref").as[String],
+        backend = (json \ "backend").as[ApiBackend](ApiBackend._fmt)
       )
     } match {
       case Failure(ex)    =>
@@ -84,7 +86,11 @@ object ApiRoute {
     }
 
     override def writes(o: ApiRoute): JsValue = Json.obj(
-
+      "id"        -> o.id,
+      "name"      -> o.name,
+      "frontend"  -> o.frontend.json,
+      "backend"   -> ApiBackend._fmt.writes(o.backend),
+      "flow_ref"  -> o.flowRef
     )
   }
 }
@@ -260,9 +266,7 @@ object ApiDocumentation {
           .getOrElse(Seq.empty)
       )
     } match {
-      case Failure(ex)    =>
-        ex.printStackTrace()
-        JsError(ex.getMessage)
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
 
@@ -474,17 +478,22 @@ object ApiConsumerStatus {
   }
 }
 
-case class ApiBackend(id: String, name: String, backend: NgBackend)
+sealed trait ApiBackend
 
 object ApiBackend {
-  val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
+  case class ApiBackendRef(ref: String) extends ApiBackend
+  case class ApiBackendInline(id: String, name: String, backend: NgBackend) extends ApiBackend
 
+  val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
     override def reads(json: JsValue): JsResult[ApiBackend] = Try {
-      ApiBackend(
-        id = json.select("id").as[String],
-        name = json.select("name").as[String],
-        backend = json.select("backend").as(NgBackend.fmt)
-      )
+      json.select("ref").asOpt[String] match {
+        case Some(ref)  => ApiBackendRef(ref)
+        case None       => ApiBackendInline(
+          id = json.select("id").as[String],
+          name = json.select("name").as[String],
+          backend = json.select("backend").as(NgBackend.fmt)
+        )
+      }
     } match {
       case Failure(ex)    =>
         ex.printStackTrace()
@@ -492,11 +501,16 @@ object ApiBackend {
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: ApiBackend): JsValue = Json.obj(
-      "id"      -> o.id,
-      "name"    -> o.name,
-      "backend" -> NgBackend.fmt.writes(o.backend)
-    )
+    override def writes(o: ApiBackend): JsValue = {
+      o match {
+        case ApiBackendRef(ref) => Json.obj("ref" -> ref)
+        case ApiBackendInline(id, name, backend) => Json.obj(
+          "id"      -> id,
+          "name"    -> name,
+          "backend" -> NgBackend.fmt.writes(backend)
+        )
+      }
+    }
   }
 }
 
@@ -628,7 +642,8 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq.empty),
-        documentation = ApiDocumentation._fmt.reads((json \ "documentation").as[JsValue]).asOpt,
+        documentation = (json \ "documentation")
+          .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads),
         consumers = (json \ "consumers")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiConsumer._fmt.reads(v).asOpt))

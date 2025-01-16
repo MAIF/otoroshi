@@ -20,6 +20,7 @@ class NgFrontendsController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   lazy val logger = Logger("otoroshi-frontends-api")
 
+  // TODO - ???
   def form() = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgFrontend") match {
       case Some(value) =>
@@ -41,5 +42,9 @@ class NgFrontendsController(val ApiAction: ApiAction, val cc: ControllerComponen
         )
       case _           => NotFound(Json.obj("error" -> "Schema and flow not found"))
     }
+  }
+
+  def template() = ApiAction {
+    Ok(NgFrontend.empty.json)
   }
 }

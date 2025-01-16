@@ -18,10 +18,17 @@ import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import { schemas } from '../RouteDesigner/form';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgForm } from '../../components/nginputs';
+import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
+import { PillButton } from '../../components/PillButton';
+import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    queries: {
+        retry: false,
+        refetchOnWindowFocus: false
+    },
+});
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
     <Route
@@ -34,6 +41,10 @@ export default function ApiEditor(props) {
     return <div className='editor'>
         <QueryClientProvider client={queryClient}>
             <Switch>
+                <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/routes/new' component={NewRoute} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/routes/:routeId/:action' component={RouteDesigner} props={props} />
+
                 <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/:flowId/:action' component={FlowDesigner} props={props} />
@@ -48,6 +59,222 @@ export default function ApiEditor(props) {
             </Switch>
         </QueryClientProvider>
     </div >
+}
+
+function RouteDesigner() {
+    return <p>Route designer</p>
+}
+
+function NewRoute(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [schema, setSchema] = useState()
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0,
+        onSuccess: data => {
+            setSchema({
+                name: {
+                    type: 'string',
+                    label: 'Route name',
+                    placeholder: 'My users route'
+                },
+                frontend: {
+                    type: 'form',
+                    label: 'Frontend',
+                    schema: NgFrontend.schema,
+                    flow: NgFrontend.flow,
+                    // v2: {
+                    //     folded: ['domains'],
+                    //     flow: [
+                    //         "domains",
+                    //     ],
+                    // }
+                },
+                flow_ref: {
+                    type: 'select',
+                    label: 'Flow ID',
+                    props: {
+                        options: data.flows,
+                        optionsTransformer: {
+                            label: 'name',
+                            value: 'id',
+                        }
+                    },
+                },
+                backend: {
+                    type: 'form',
+                    label: 'Backend',
+                    schema: NgBackend.schema,
+                    flow: NgBackend.flow
+                }
+            })
+        }
+    })
+
+    const flow = [
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: '1. Set your domains',
+            fields: ['frontend'],
+            summaryFields: ['domains']
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: '2. Add plugins to your route by selecting a flow',
+            fields: ['flow_ref'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: '3. Configure the backend',
+            fields: ['backend'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: '4. Additional informations',
+            fields: ['name'],
+        }
+    ]
+
+    const [route, setRoute] = useState({})
+
+    const saveRoute = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                routes: [
+                    ...rawAPI.data.routes, {
+                        ...route,
+                        id: v4()
+                    }
+                ]
+            })
+            .then(() => history.push(`/apis/${params.apiId}/routes`))
+    }
+
+    const templatesQuery = useQuery(["getTemplates"],
+        () => Promise.all([
+            nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template(),
+            fetch(`/bo/api/proxy/api/frontends/_template`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    Accept: 'application/json',
+                },
+            })
+                .then(r => r.json())
+        ]), {
+            onSuccess: ([backendTemplate, frontendTemplate]) => {
+                setRoute({
+                    ...route,
+                    frontend: frontendTemplate,
+                    backend: backendTemplate,
+                })
+            }
+        })
+
+    return <Loader loading={rawAPI.isLoading || !schema || templatesQuery.isLoading}>
+        <SidebarComponent {...props} />
+        <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
+
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={route}
+                flow={flow}
+                schema={schema}
+                onChange={newValue => setRoute(newValue)} />
+            <FeedbackButton
+                type="success"
+                className="d-flex mt-3 ms-auto"
+                onPress={saveRoute}
+                disabled={!route.flow_ref}
+                text="Create"
+            />
+        </div>
+    </Loader>
+}
+
+function Routes(props) {
+    const history = useHistory()
+    const params = useParams()
+
+    const columns = [
+        {
+            title: 'Name',
+            filterId: 'name',
+            content: (item) => item.name,
+        },
+        { title: 'Description', filterId: 'description', content: (item) => item.description },
+    ];
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
+
+    useEffect(() => {
+        props.setTitle(`Routes of ${rawAPI.data?.name}`)
+
+        return () => props.setTitle('')
+    }, [rawAPI.data])
+
+    const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+    const api = rawAPI.data;
+
+    const deleteItem = item => client.update({
+        ...api,
+        routes: api.routes.filter(f => f.id !== item.id)
+    })
+
+    const fields = []
+
+    return <Loader loading={rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <Table
+            parentProps={{ params }}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
+            selfUrl="routes"
+            defaultTitle="Route"
+            itemName="Route"
+            columns={columns}
+            fields={fields}
+            deleteItem={deleteItem}
+            fetchTemplate={client.template}
+            fetchItems={() => Promise.resolve(rawAPI.data?.routes || [])}
+            defaultSort="name"
+            defaultSortDesc="true"
+            showActions={true}
+            showLink={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`}
+            rawEditUrl={true}
+            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+            injectTopBar={() => (
+                <div className="btn-group input-group-btn">
+                    <Link className="btn btn-primary btn-sm" to="routes/new">
+                        <i className="fas fa-plus-circle" /> Create new route
+                    </Link>
+                    {props.injectTopBar}
+                </div>
+            )} />
+    </Loader>
 }
 
 function Backends(props) {
@@ -70,6 +297,8 @@ function Backends(props) {
 
     useEffect(() => {
         props.setTitle(`Backends of ${rawAPI.data?.name}`)
+
+        return () => props.setTitle('')
     }, [rawAPI.data])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
@@ -96,8 +325,8 @@ function Backends(props) {
         <SidebarComponent {...props} />
         <Table
             parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}`)}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
             selfUrl="backends"
             defaultTitle="Backend"
             itemName="Backend"
@@ -131,43 +360,30 @@ function NewBackend(props) {
     const params = useParams()
     const history = useHistory()
 
+    // const [usingExistingBackend, setUsingExistingBackend] = useState(false)
+
     const [backend, setBackend] = useState()
-    const ref = useRef(backend)
-
-    const apiRef = useRef(backend)
-
-    useEffect(() => {
-        ref.current = backend
-    }, [backend])
-
-    useEffect(() => {
-        dynamicTitleContent.value = (
-            <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
-                <FeedbackButton
-                    type="success"
-                    className="ms-2 mb-1"
-                    onPress={saveBackend}
-                    text="Create"
-                />
-            </PageTitle>
-        );
-    }, [])
 
     const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
 
-    useEffect(() => {
-        apiRef.current = rawAPI.data
-    }, [rawAPI.data])
+    // const [backends, setBackends] = useState([])
+    // const backendsQuery = useQuery(['getBackends'],
+    //     () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+    //     {
+    //         enabled: usingExistingBackend && backends.length <= 0,
+    //         onSuccess: setBackends
+    //     })
 
     const saveBackend = () => {
+        const { id, name, ...rest } = backend
         return nextClient
             .forEntityNext(nextClient.ENTITIES.APIS)
             .update({
-                ...apiRef.current,
-                backends: [...apiRef.current.backends, ref.current]
+                ...rawAPI.data,
+                backends: [...rawAPI.data.backends, {
+                    id, name, backend: rest
+                }]
             })
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
@@ -182,17 +398,63 @@ function NewBackend(props) {
         })
     });
 
-    console.log(backend)
-
     return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
+            <FeedbackButton
+                type="success"
+                className="ms-2 mb-1"
+                onPress={saveBackend}
+                text="Create"
+            />
+        </PageTitle>
+
         <div style={{
             maxWidth: 640,
             margin: 'auto'
         }}>
+            {/* <div className="row mb-3">
+                <label className="col-xs-12 col-sm-2 col-form-label" />
+                <div className="col-sm-10">
+                    <PillButton
+                        pillButtonStyle={{ width: 'auto', flex: 1 }}
+                        style={{ display: 'flex', width: '100%', minHeight: 36, maxWidth: 420 }}
+                        className='pb-3'
+                        rightEnabled={usingExistingBackend}
+                        leftText="Select an existing backend"
+                        rightText="Create a new backend"
+                        onChange={setUsingExistingBackend}
+                    />
+                </div>
+            </div> */}
+            {/* {usingExistingBackend && <Loader loading={backendsQuery.isLoading}>
+                <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label" >Backends</label>
+                    <div className="col-sm-10">
+                        <NgSelectRenderer
+                            id="backend_select"
+                            value={backend}
+                            placeholder="Select an existing backend"
+                            label={' '}
+                            ngOptions={{
+                                spread: true,
+                            }}
+                            isClearable
+                            onChange={setBackend}
+                            options={backendsQuery.data}
+                            optionsTransformer={(arr) =>
+                                arr.map((item) => ({ label: item.name, value: item.id }))
+                            }
+                        />
+                    </div>
+                </div>
+            </Loader>} */}
+            {/* {!usingExistingBackend &&  */}
             <BackendForm state={{
                 form: {
                     schema: {
                         name: {
+                            label: 'Name',
                             type: 'string',
                             placeholder: 'New backend'
                         },
@@ -201,10 +463,77 @@ function NewBackend(props) {
                     flow: ['name', 'root', 'rewrite', 'targets'],
                     value: backend,
                 }
-            }} onChange={setBackend} />
+            }}
+                onChange={setBackend} />
+            {/* } */}
         </div>
     </Loader>
 }
+
+// function BackendSelector() {
+//     return <>
+//         <h3>Select a backend template</h3>
+//         <div
+//             style={{
+//                 display: 'flex',
+//                 flexDirection: 'column',
+//                 gap: '10px',
+//             }}
+//         >
+//             {[
+//                 {
+//                     kind: 'empty',
+//                     title: 'BLANK ROUTE',
+//                     text: 'From scratch, no plugin added',
+//                 },
+//                 {
+//                     kind: 'api',
+//                     title: 'REST API',
+//                     text: 'Already setup secured rest api with api management',
+//                 },
+//                 {
+//                     kind: 'webapp',
+//                     title: 'WEBAPP',
+//                     text: 'Already setup web application with authentication',
+//                 },
+//                 {
+//                     kind: 'graphql-proxy',
+//                     title: 'GRAPHQL API',
+//                     text: 'Already setup grapqhl api with api management and validation',
+//                 },
+//                 {
+//                     kind: 'mock',
+//                     title: 'QUICKSTART REST API',
+//                     text: 'Already setup rest api with extended mocking capabilities',
+//                 },
+//                 {
+//                     kind: 'graphql',
+//                     title: 'GRAPHQL COMPOSER API',
+//                     text: 'Create a graphql api from scratch from existing sources',
+//                 },
+//             ].map(({ kind, title, text }) => (
+//                 <button
+//                     type="button"
+//                     className={`btn py-3 wizard-route-chooser  ${state.route.kind === kind ? 'btn-primaryColor' : 'btn-quiet'
+//                         }`}
+//                     onClick={() => onChange(kind)}
+//                     key={kind}
+//                 >
+//                     <h3 className="wizard-h3--small">{title}</h3>
+//                     <span
+//                         style={{
+//                             flex: 1,
+//                             display: 'flex',
+//                             alignItems: 'center',
+//                         }}
+//                     >
+//                         {text}
+//                     </span>
+//                 </button>
+//             ))}
+//         </div>
+//     </>
+// }
 
 function EditBackend() {
 
@@ -398,14 +727,17 @@ function Apis(props) {
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${item.id}`)}
             navigateOnEdit={(item) => history.push(`/apis/${item.id}`)}
-            selfUrl="flows"
-            defaultTitle="Flow"
-            itemName="Flow"
+            selfUrl="apis"
+            defaultTitle="Api"
+            itemName="Api"
             formSchema={null}
             formFlow={null}
             columns={columns}
             fields={fields}
-            deleteItem={(item) => console.log('delete item', item)}
+            deleteItem={(item) => nextClient
+                .forEntityNext(nextClient.ENTITIES.APIS).deleteById(item.id)
+                .then(() => window.location.reload())
+            }
             defaultSort="name"
             defaultSortDesc="true"
             fetchItems={fetchItems}
@@ -645,7 +977,7 @@ function Dashboard(props) {
                     <Entities>
                         <FlowsCard flows={api.flows} />
                         <BackendsCard backends={api.backends} />
-                        <Routes routes={api.routes} />
+                        <RoutesCard routes={api.routes} />
                     </Entities>
                 </ContainerBlock>
             </div>}
@@ -737,8 +1069,9 @@ function BackendsCard({ backends }) {
     </Link>
 }
 
-function Routes({ routes }) {
-    return <Link to="routes" className="cards apis-cards">
+function RoutesCard({ routes }) {
+    const params = useParams()
+    return <Link to={`/apis/${params.apiId}/routes`} className="cards apis-cards">
         {/* <div
             className="cards-header"
             style={{
@@ -753,7 +1086,7 @@ function Routes({ routes }) {
                 </span>
             </div>
             <p className="cards-description relative">
-                Define your <HighlighedRouteText />: connect <HighlighedFrontendText plural /> to <HighlighedBackendText plural /> and customize behavior with <HighlighedPluginsText plural /> like authentication, rate limiting, and transformations.
+                Define your <HighlighedRouteText />: connect <HighlighedFrontendText plural /> to <HighlighedBackendText plural /> and customize behavior with <HighlighedFlowsText plural /> like authentication, rate limiting, and transformations.
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>
@@ -795,11 +1128,18 @@ function HighlighedBackendText({ plural }) {
 }
 
 function HighlighedFrontendText({ plural }) {
-    return <HighlighedText text={plural ? 'frontends' : "frontend"} link="/apis/frontends" />
+    const params = useParams()
+    return <HighlighedText text={plural ? 'frontends' : "frontend"} link={`/apis/${params.apiId}/frontends`} />
 }
 
 function HighlighedRouteText({ plural }) {
-    return <HighlighedText text={plural ? 'routes' : "route"} link="/apis/routes" />
+    const params = useParams()
+    return <HighlighedText text={plural ? 'routes' : "route"} link={`/apis/${params.apiId}/routes`} />
+}
+
+function HighlighedFlowsText({ plural }) {
+    const params = useParams()
+    return <HighlighedText text={plural ? 'flows' : "flow"} link={`/apis/${params.apiId}/flows`} />
 }
 
 function HighlighedText({ text, link }) {

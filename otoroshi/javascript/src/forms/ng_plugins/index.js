@@ -149,7 +149,7 @@ import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
 
 export const Backend = NgBackend;
-export const Frontend = NgApiFrontend;
+export const Frontend = NgFrontend;
 export const ApiFrontend = NgApiFrontend;
 export const ApiBackend = NgApiBackend;
 

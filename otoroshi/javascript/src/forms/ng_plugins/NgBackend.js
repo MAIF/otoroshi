@@ -7,7 +7,7 @@ export default {
   field: 'backend',
   schema: {
     root: {
-      label: 'root',
+      label: 'Root',
       type: 'string',
       help: 'The root URL of the target service',
     },

@@ -879,7 +879,27 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq)
       )
-    )
+    ),
+//    //////
+//    Resource(
+//      "Flow",
+//      "flows",
+//      "flow",
+//      "flows.otoroshi.io",
+//      ResourceVersion("v1", true, false, true),
+//      GenericResourceAccessApiWithState[Flow](
+//        Flow.format,
+//        classOf[Flow],
+//        env.datastores.flowDataStore.key,
+//        env.datastores.flowDataStore.extractId,
+//        json => json.select("id").asString,
+//        () => "id",
+//        (_v, _p) => env.datastores.flowDataStore.template(env).json,
+//        stateAll = () => env.proxyState.allFlows(),
+//        stateOne = id => env.proxyState.flow(id),
+//        stateUpdate = seq => env.proxyState.updateFlows(seq)
+//      )
+//    )
   ) ++ env.adminExtensions.resources()
 }
 
