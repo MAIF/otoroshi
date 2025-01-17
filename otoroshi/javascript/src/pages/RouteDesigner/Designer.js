@@ -2456,7 +2456,12 @@ class EditView extends React.Component {
                 usingExistingBackend: e,
               });
             }}
-            setRoute={setRoute}
+            onChange={backend_ref =>
+              setRoute({
+                ...route,
+                backend_ref,
+              })
+            }
             usingExistingBackend={usingExistingBackend}
             route={route}
           />
@@ -2552,14 +2557,17 @@ const Actions = ({ selectedNode, onRemove }) => (
   </div>
 );
 
-const BackendSelector = ({
+export const BackendSelector = ({
   enabled,
   setUsingExistingBackend,
-  setRoute,
+  onChange,
   usingExistingBackend,
   route,
   backends,
 }) => {
+
+  if (!enabled)
+    return null
   return (
     enabled && (
       <div className="dark-background backend-selector">
@@ -2575,19 +2583,14 @@ const BackendSelector = ({
           <div className="mt-3">
             <NgSelectRenderer
               id="backend_select"
-              value={route.backend_ref}
+              value={route.backend_ref || route.backend}
               placeholder="Select an existing backend"
               label={' '}
               ngOptions={{
                 spread: true,
               }}
               isClearable
-              onChange={(backend_ref) =>
-                setRoute({
-                  ...route,
-                  backend_ref,
-                })
-              }
+              onChange={onChange}
               options={backends}
               optionsTransformer={(arr) =>
                 arr.map((item) => ({ label: item.name, value: item.id }))

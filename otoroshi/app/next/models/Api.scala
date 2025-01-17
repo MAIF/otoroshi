@@ -486,7 +486,7 @@ object ApiBackend {
 
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
     override def reads(json: JsValue): JsResult[ApiBackend] = Try {
-      json.select("ref").asOpt[String] match {
+      json.asOpt[String] match {
         case Some(ref)  => ApiBackendRef(ref)
         case None       => ApiBackendInline(
           id = json.select("id").as[String],
@@ -503,7 +503,7 @@ object ApiBackend {
 
     override def writes(o: ApiBackend): JsValue = {
       o match {
-        case ApiBackendRef(ref) => Json.obj("ref" -> ref)
+        case ApiBackendRef(ref) => JsString(ref)
         case ApiBackendInline(id, name, backend) => Json.obj(
           "id"      -> id,
           "name"    -> name,

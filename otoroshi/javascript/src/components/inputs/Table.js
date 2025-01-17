@@ -870,7 +870,13 @@ class TableComponent extends Component {
             <div className="row">
               <div
                 className=""
-                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '1.15rem',
+                  width: 'fit-content',
+                  paddingRight: 0
+                }}
               >
                 <button
                   type="button"

@@ -8,7 +8,7 @@ import { Link, Switch, Route, useParams, useHistory } from 'react-router-dom';
 import { Uptime } from '../../components/Status';
 import { Form, Table } from '../../components/inputs';
 import { v4 as uuid, v4 } from 'uuid';
-import Designer from '../RouteDesigner/Designer';
+import Designer, { BackendSelector } from '../RouteDesigner/Designer';
 import Loader from '../../components/Loader';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
@@ -61,8 +61,123 @@ export default function ApiEditor(props) {
     </div >
 }
 
-function RouteDesigner() {
-    return <p>Route designer</p>
+function RouteDesigner(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [schema, setSchema] = useState()
+    const [route, setRoute] = useState({})
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0,
+        onSuccess: data => {
+            setRoute(data.routes.find(route => route.id === params.routeId))
+            setSchema({
+                name: {
+                    type: 'string',
+                    label: 'Route name',
+                    placeholder: 'My users route'
+                },
+                frontend: {
+                    type: 'form',
+                    label: 'Frontend',
+                    schema: NgFrontend.schema,
+                    props: {
+                        v2: {
+                            folded: ['domains', 'methods'],
+                            flow: NgFrontend.flow,
+                        }
+                    }
+                    // flow: NgFrontend.flow,
+                },
+                flow_ref: {
+                    type: 'select',
+                    label: 'Flow ID',
+                    props: {
+                        options: data.flows,
+                        optionsTransformer: {
+                            label: 'name',
+                            value: 'id',
+                        }
+                    },
+                },
+                backend: {
+                    type: 'form',
+                    label: 'Backend',
+                    schema: NgBackend.schema,
+                    flow: NgBackend.flow
+                }
+            })
+        }
+    })
+
+    const flow = [
+        {
+            type: 'group',
+            name: 'Domains information',
+            collapsable: true,
+            fields: ['frontend']
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Selected flow',
+            fields: ['flow_ref'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Backend configuration',
+            fields: ['backend'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Additional informations',
+            fields: ['name'],
+        }
+    ]
+
+    const updateRoute = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                routes: rawAPI.data.routes.map(item => {
+                    if (item.id === route.id)
+                        return route
+                    return item
+                })
+            })
+            .then(() => history.push(`/apis/${params.apiId}/routes`))
+    }
+
+    return <Loader loading={rawAPI.isLoading || !schema}>
+        <SidebarComponent {...props} />
+        <PageTitle title={route.name || "Update the route"} {...props}>
+            <FeedbackButton
+                type="success"
+                className="d-flex ms-auto"
+                onPress={updateRoute}
+                disabled={!route.flow_ref}
+                text="Update"
+            />
+        </PageTitle>
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={route}
+                flow={flow}
+                schema={schema}
+                onChange={newValue => setRoute(newValue)} />
+        </div>
+    </Loader>
 }
 
 function NewRoute(props) {
@@ -71,9 +186,19 @@ function NewRoute(props) {
 
     const [schema, setSchema] = useState()
 
+    const [backends, setBackends] = useState([])
+
+    const backendsQuery = useQuery(['getBackends'],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+        {
+            enabled: backends.length <= 0,
+            onSuccess: setBackends
+        })
+
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
         retry: 0,
+        enabled: backendsQuery.data !== undefined,
         onSuccess: data => {
             setSchema({
                 name: {
@@ -105,10 +230,31 @@ function NewRoute(props) {
                     },
                 },
                 backend: {
-                    type: 'form',
-                    label: 'Backend',
-                    schema: NgBackend.schema,
-                    flow: NgBackend.flow
+                    // type: 'form',
+                    // label: 'Backend',
+                    renderer: props => {
+                        return <BackendSelector
+                            enabled
+                            backends={[...data.backends, ...backends]}
+                            setUsingExistingBackend={e => {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    usingExistingBackend: e
+                                })
+                            }}
+                            onChange={backend_ref => {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    usingExistingBackend: true,
+                                    backend: backend_ref
+                                })
+                            }}
+                            usingExistingBackend={props.rootValue.usingExistingBackend}
+                            route={props.rootValue}
+                        />
+                    }
+                    // schema: NgBackend.schema,
+                    // flow: NgBackend.flow
                 }
             })
         }
@@ -175,14 +321,16 @@ function NewRoute(props) {
             })
                 .then(r => r.json())
         ]), {
-            onSuccess: ([backendTemplate, frontendTemplate]) => {
-                setRoute({
-                    ...route,
-                    frontend: frontendTemplate,
-                    backend: backendTemplate,
-                })
-            }
-        })
+        retry: 0,
+        onSuccess: ([backendTemplate, frontendTemplate]) => {
+            setRoute({
+                ...route,
+                frontend: frontendTemplate,
+                backend: backendTemplate,
+                usingExistingBackend: false
+            })
+        }
+    })
 
     return <Loader loading={rawAPI.isLoading || !schema || templatesQuery.isLoading}>
         <SidebarComponent {...props} />
@@ -218,7 +366,7 @@ function Routes(props) {
             filterId: 'name',
             content: (item) => item.name,
         },
-        { title: 'Description', filterId: 'description', content: (item) => item.description },
+        { title: 'Domains', filterId: 'frontend.domains', content: (item) => item.description },
     ];
 
     const rawAPI = useQuery(["getAPI", params.apiId],
@@ -239,6 +387,7 @@ function Routes(props) {
         ...api,
         routes: api.routes.filter(f => f.id !== item.id)
     })
+        .then(() => window.location.reload())
 
     const fields = []
 
@@ -469,71 +618,6 @@ function NewBackend(props) {
         </div>
     </Loader>
 }
-
-// function BackendSelector() {
-//     return <>
-//         <h3>Select a backend template</h3>
-//         <div
-//             style={{
-//                 display: 'flex',
-//                 flexDirection: 'column',
-//                 gap: '10px',
-//             }}
-//         >
-//             {[
-//                 {
-//                     kind: 'empty',
-//                     title: 'BLANK ROUTE',
-//                     text: 'From scratch, no plugin added',
-//                 },
-//                 {
-//                     kind: 'api',
-//                     title: 'REST API',
-//                     text: 'Already setup secured rest api with api management',
-//                 },
-//                 {
-//                     kind: 'webapp',
-//                     title: 'WEBAPP',
-//                     text: 'Already setup web application with authentication',
-//                 },
-//                 {
-//                     kind: 'graphql-proxy',
-//                     title: 'GRAPHQL API',
-//                     text: 'Already setup grapqhl api with api management and validation',
-//                 },
-//                 {
-//                     kind: 'mock',
-//                     title: 'QUICKSTART REST API',
-//                     text: 'Already setup rest api with extended mocking capabilities',
-//                 },
-//                 {
-//                     kind: 'graphql',
-//                     title: 'GRAPHQL COMPOSER API',
-//                     text: 'Create a graphql api from scratch from existing sources',
-//                 },
-//             ].map(({ kind, title, text }) => (
-//                 <button
-//                     type="button"
-//                     className={`btn py-3 wizard-route-chooser  ${state.route.kind === kind ? 'btn-primaryColor' : 'btn-quiet'
-//                         }`}
-//                     onClick={() => onChange(kind)}
-//                     key={kind}
-//                 >
-//                     <h3 className="wizard-h3--small">{title}</h3>
-//                     <span
-//                         style={{
-//                             flex: 1,
-//                             display: 'flex',
-//                             alignItems: 'center',
-//                         }}
-//                     >
-//                         {text}
-//                     </span>
-//                 </button>
-//             ))}
-//         </div>
-//     </>
-// }
 
 function EditBackend() {
 
