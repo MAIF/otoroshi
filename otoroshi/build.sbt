@@ -345,7 +345,7 @@ addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
-Revolver.enableDebugging(port = 5005, suspend = false)
+Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
 
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
@@ -395,8 +395,6 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file"
-  //"-Dotoroshi.storage=postgresql",
   // "-Dotoroshi.storage=redis",
-  // "-Dotoroshi.storage=lettuce",
-  // "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+//   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
 )

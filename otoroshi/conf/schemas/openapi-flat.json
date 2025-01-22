@@ -3945,7 +3945,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second, measured on 10 seconds"
+            "description" : "Authorized number of calls per window"
           },
           "constrainedServicesOnly" : {
             "type" : "boolean",
@@ -13040,7 +13040,7 @@
       "throttlingQuota" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Authorized number of calls per second, measured on 10 seconds"
+        "description" : "Authorized number of calls per window"
       },
       "constrainedServicesOnly" : {
         "type" : "boolean",
@@ -20638,7 +20638,7 @@
             "throttlingQuota" : {
               "type" : "integer",
               "format" : "int64",
-              "description" : "Authorized number of calls per second, measured on 10 seconds"
+              "description" : "Authorized number of calls per window"
             },
             "constrainedServicesOnly" : {
               "type" : "boolean",
@@ -25144,7 +25144,7 @@
             "throttlingQuota" : {
               "type" : "integer",
               "format" : "int64",
-              "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+              "description" : "Authorized number of calls per window globally"
             },
             "anonymousReporting" : {
               "type" : "boolean",
@@ -26460,7 +26460,7 @@
             "perIpThrottlingQuota" : {
               "type" : "integer",
               "format" : "int64",
-              "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+              "description" : "Authorized number of calls per window globally per IP address"
             },
             "useCircuitBreakers" : {
               "type" : "boolean",
@@ -29802,7 +29802,7 @@
       "throttlingQuota" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+        "description" : "Authorized number of calls per window globally"
       },
       "anonymousReporting" : {
         "type" : "boolean",
@@ -31131,7 +31131,7 @@
       "perIpThrottlingQuota" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+        "description" : "Authorized number of calls per window globally per IP address"
       },
       "useCircuitBreakers" : {
         "type" : "boolean",
@@ -36548,15 +36548,15 @@
     "type" : "object",
     "description" : "Remaining quotas for an apikey",
     "properties" : {
-      "currentCallsPerSec" : {
+      "throttlingCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Current number of call per second"
+        "description" : "Current number of call per window"
       },
-      "remainingCallsPerSec" : {
+      "remainingCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Remaining number of call per second"
+        "description" : "Remaining number of call per window"
       },
       "currentCallsPerDay" : {
         "type" : "integer",
@@ -36578,10 +36578,10 @@
         "format" : "int64",
         "description" : "Remaining number of call per month"
       },
-      "authorizedCallsPerSec" : {
+      "authorizedCallsPerWindow" : {
         "type" : "integer",
         "format" : "int64",
-        "description" : "Number of authorized call per second"
+        "description" : "Number of authorized call per window"
       },
       "authorizedCallsPerMonth" : {
         "type" : "integer",
@@ -42974,7 +42974,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second, measured on 10 seconds"
+            "description" : "Authorized number of calls per window"
           },
           "constrainedServicesOnly" : {
             "type" : "boolean",
@@ -51175,7 +51175,7 @@
               "throttlingQuota" : {
                 "type" : "integer",
                 "format" : "int64",
-                "description" : "Authorized number of calls per second, measured on 10 seconds"
+                "description" : "Authorized number of calls per window"
               },
               "constrainedServicesOnly" : {
                 "type" : "boolean",
@@ -56177,7 +56177,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+            "description" : "Authorized number of calls per window globally"
           },
           "anonymousReporting" : {
             "type" : "boolean",
@@ -57506,7 +57506,7 @@
           "perIpThrottlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+            "description" : "Authorized number of calls per window globally per IP address"
           },
           "useCircuitBreakers" : {
             "type" : "boolean",
@@ -61682,7 +61682,7 @@
           "throttlingQuota" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Authorized number of calls per second, measured on 10 seconds"
+            "description" : "Authorized number of calls per window"
           },
           "constrainedServicesOnly" : {
             "type" : "boolean",

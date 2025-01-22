@@ -192,13 +192,13 @@ query apikeysIdQuotas($id: String) {
   apikeysIdQuotas(id: $id) {
   	authorizedCallsPerDay
   	authorizedCallsPerMonth
-  	authorizedCallsPerSec
+  	authorizedCallsPerWindow
   	currentCallsPerDay
   	currentCallsPerMonth
-  	currentCallsPerSec
+  	throttlingCallsPerWindow
   	remainingCallsPerDay
   	remainingCallsPerMonth
-  	remainingCallsPerSec
+  	remainingCallsPerWindow
   }
 }
 
