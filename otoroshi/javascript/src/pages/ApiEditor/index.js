@@ -39,6 +39,7 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
 
 export default function ApiEditor(props) {
     return <div className='editor'>
+        <SidebarComponent {...props} />
         <QueryClientProvider client={queryClient}>
             <Switch>
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
@@ -161,7 +162,6 @@ function RouteDesigner(props) {
     }
 
     return <Loader loading={rawAPI.isLoading || !schema}>
-        <SidebarComponent {...props} />
         <PageTitle title={route.name || "Update the route"} {...props}>
             <FeedbackButton
                 type="success"
@@ -337,7 +337,6 @@ function NewRoute(props) {
     })
 
     return <Loader loading={rawAPI.isLoading || !schema || templatesQuery.isLoading}>
-        <SidebarComponent {...props} />
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
 
         <div style={{
@@ -395,7 +394,7 @@ function Consumers(props) {
     const fields = []
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <Table
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
@@ -523,6 +522,30 @@ function NewConsumer(props) {
                 </div>
             }
         },
+        status: {
+            type: 'dots',
+            label: "Status",
+            props: {
+                options: ['staging', 'published', 'deprecated', 'closed'],
+            },
+        },
+        description: {
+            renderer: ({ rootValue }) => {
+                const descriptions = {
+                    staging: "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users",
+                    published: "When your plan is finalized, you can publish it to allow API consumers to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable",
+                    deprecated: "Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API consumers",
+                    closed: "Closing a plan terminates all associated subscriptions, and this action is irreversible. API consumers previously subscribed to the plan will no longer have access to the API"
+                };
+
+                return <div className="row mb-3" style={{ marginTop: "-1rem" }}>
+                    <label className="col-xs-12 col-sm-2 col-form-label" />
+                    <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
+                        {descriptions[rootValue?.status]}
+                    </div>
+                </div>
+            }
+        },
         settings: {
             type: 'json',
             label: 'Plan configuration'
@@ -543,7 +566,7 @@ function NewConsumer(props) {
     }
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
 
         <div style={{
@@ -600,6 +623,30 @@ function ConsumerDesigner(props) {
                 </div>
             }
         },
+        status: {
+            type: 'dots',
+            label: "Status",
+            props: {
+                options: ['staging', 'published', 'deprecated', 'closed'],
+            },
+        },
+        description: {
+            renderer: ({ rootValue }) => {
+                const descriptions = {
+                    staging: "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users",
+                    published: "When your plan is finalized, you can publish it to allow API consumers to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable",
+                    deprecated: "Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API consumers",
+                    closed: "Closing a plan terminates all associated subscriptions, and this action is irreversible. API consumers previously subscribed to the plan will no longer have access to the API"
+                };
+
+                return <div className="row mb-3" style={{ marginTop: "-1rem" }}>
+                    <label className="col-xs-12 col-sm-2 col-form-label" />
+                    <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
+                        {descriptions[rootValue?.status]}
+                    </div>
+                </div>
+            }
+        },
         settings: {
             type: 'json',
             label: 'Plan configuration'
@@ -624,11 +671,11 @@ function ConsumerDesigner(props) {
                     return item
                 })
             })
-            .then(() => history.push(`/apis/${params.apiId}/consumers`))
+            .then(() => history.push(`/apis/${params.apiId}`))
     }
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -688,7 +735,7 @@ function Routes(props) {
     const fields = []
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <Table
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
@@ -767,7 +814,7 @@ function Backends(props) {
     const fields = []
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <Table
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
@@ -844,7 +891,7 @@ function NewBackend(props) {
     });
 
     return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -924,7 +971,7 @@ function SidebarComponent(props) {
     useEffect(() => {
         props.setSidebarContent(<Sidebar params={params} />);
         return () => props.setSidebarContent(null)
-    }, [])
+    }, [params])
 
     return null
 }
@@ -1101,7 +1148,7 @@ function Apis(props) {
         .template()
 
     return <>
-        <SidebarComponent {...props} />
+
         <Table
             ref={ref}
             parentProps={{ params }}
@@ -1204,7 +1251,7 @@ function FlowDesigner(props) {
     }
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <div className='designer'>
             <Designer
                 history={history}
@@ -1252,7 +1299,7 @@ function Flows(props) {
     })
 
     return <Loader loading={rawAPI.isLoading}>
-        <SidebarComponent {...props} />
+
         <Table
             ref={ref}
             parentProps={{ params }}
@@ -1315,6 +1362,7 @@ function Flows(props) {
 
 function Dashboard(props) {
     const params = useParams()
+    const history = useHistory()
 
     useEffect(() => {
         props.setTitle("Dashboard")
@@ -1333,13 +1381,14 @@ function Dashboard(props) {
     const hasCreateFlow = api && api.flows.length > 0
     const hasCreateRoute = api && api.routes.length > 0
     const hasCreateConsumer = api && api.consumers.length > 0
+    const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute
 
     return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
         <Loader loading={rawAPI.isLoading}>
-            <SidebarComponent {...props} />
+
             {api && <div className='d-flex gap-3'>
                 <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
-                    <ContainerBlock full>
+                    {showGettingStarted && <ContainerBlock full>
                         <SectionHeader text="Getting Started" />
 
                         {hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
@@ -1377,7 +1426,7 @@ function Dashboard(props) {
                                 onPress={() => { }}
                                 text="Create" />}
                         />}
-                    </ContainerBlock>
+                    </ContainerBlock>}
                     <ContainerBlock full highlighted>
                         <APIHeader api={api} />
                         {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>}
@@ -1403,7 +1452,11 @@ function Dashboard(props) {
                     {hasCreateConsumer && <ContainerBlock full>
                         <SectionHeader text="API Consumers"
                             description={api.consumers.length <= 0 ? 'API consumers will appear here' : ''}
-                            actions={<Button type="primaryColor" text="New Consumer" className='btn-sm' />} />
+                            actions={<Button
+                                type="primaryColor"
+                                text="New Consumer"
+                                className='btn-sm'
+                                onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
 
                         <ApiConsumersView api={api} />
                     </ContainerBlock>}
@@ -1440,6 +1493,13 @@ function Consumer({ consumer }) {
     const params = useParams()
     const [open, setOpen] = useState(false)
 
+    const CONSUMER_STATUS_COLORS = {
+        staging: 'info',
+        published: 'success',
+        deprecated: 'warning',
+        closed: 'danger',
+    }
+
     return <div className='short-table-row'
         style={{
             backgroundColor: 'hsla(184, 9%, 62%, 0.18)',
@@ -1455,18 +1515,19 @@ function Consumer({ consumer }) {
                     history.push(`/apis/${params.apiId}/consumers/${consumer.id}/edit`)
                 }} style={{
                     position: 'absolute',
-                    top: '1rem',
-                    right: '1rem'
+                    top: '.5rem',
+                    right: 0
                 }} />
             <NgCodeRenderer
+                raw
                 readOnly
-                label="Configuration"
+                label={undefined}
                 value={JSON.stringify(consumer, null, 2)} />
         </div>}
         {!open && <>
             <div>{consumer.name}</div>
             <div>{consumer.description}</div>
-            <div className='badge bg-success' style={{
+            <div className={`badge bg-${CONSUMER_STATUS_COLORS[consumer.status]}`} style={{
                 width: 'fit-content',
                 border: 'none'
             }}>{consumer.status}</div>
@@ -1537,6 +1598,7 @@ function Subscription({ subscription }) {
 function ContainerBlock({ children, full, highlighted }) {
     return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}
         style={{
+            margin: 0,
             position: 'relative'
         }}>
         {children}

@@ -74,7 +74,7 @@ export default (props) => {
         return currentTab === tab ? 'active' : null
     };
 
-    if (location.pathname.endsWith('/new')) return null;
+    // if (location.pathname.endsWith('/new')) return null;
 
     return (
         <div

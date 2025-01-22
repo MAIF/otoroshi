@@ -240,7 +240,7 @@ export function LabelAndInput(_props) {
   const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
-  if (ngOptions.spread && !_props.readOnly) {
+  if ((ngOptions.spread && !_props.readOnly) || _props.raw) {
     return _props.children;
   }
 
