@@ -409,7 +409,7 @@ function Consumers(props) {
             fetchTemplate={() => Promise.resolve({
                 id: v4(),
                 name: "New consumer",
-                kind: "apikey",
+                consumer_kind: "apikey",
                 config: {}
             })}
             fetchItems={() => Promise.resolve(rawAPI.data?.consumers || [])}
@@ -443,8 +443,8 @@ const TEMPLATES = {
             monthlyQuota: 1000
         }
     },
-    cert: {
-        name: 'cert',
+    mtls: {
+        name: 'mtls',
         config: {}
     },
     keyless: {
@@ -488,7 +488,7 @@ function NewConsumer(props) {
     const [consumer, setConsumer] = useState({
         id: v4(),
         name: "New consumer",
-        kind: "apikey",
+        consumer_kind: "apikey",
         settings: TEMPLATES.apikey,
         status: "staging",
         subscriptions: []
@@ -499,7 +499,7 @@ function NewConsumer(props) {
             type: 'string',
             label: 'Name'
         },
-        kind: {
+        consumer_kind: {
             renderer: props => {
                 return <div className="row mb-3">
                     <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
@@ -510,14 +510,14 @@ function NewConsumer(props) {
                                 props.rootOnChange({
                                     ...props.rootValue,
                                     settings: TEMPLATES[newType],
-                                    kind: newType
+                                    consumer_kind: newType
                                 })
                             }}
                             label="Plan Type"
                             ngOptions={{ spread: true }}
                             margin={0}
                             style={{ flex: 1 }}
-                            options={['apikey', 'cert', 'keyless', 'oauth2', 'jwt']}
+                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
                         />
                     </div>
                 </div>
@@ -539,7 +539,7 @@ function NewConsumer(props) {
                 ...rawAPI.data,
                 consumers: [...rawAPI.data.consumers, consumer]
             })
-            .then(() => history.push(`/apis/${params.apiId}/consumers`))
+            .then(() => history.push(`/apis/${params.apiId}`))
     }
 
     return <Loader loading={rawAPI.isLoading}>
@@ -576,7 +576,7 @@ function ConsumerDesigner(props) {
             type: 'string',
             label: 'Name'
         },
-        kind: {
+        consumer_kind: {
             renderer: props => {
                 return <div className="row mb-3">
                     <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
@@ -587,14 +587,14 @@ function ConsumerDesigner(props) {
                                 props.rootOnChange({
                                     ...props.rootValue,
                                     settings: TEMPLATES[newType],
-                                    kind: newType
+                                    consumer_kind: newType
                                 })
                             }}
                             label="Plan Type"
                             ngOptions={{ spread: true }}
                             margin={0}
                             style={{ flex: 1 }}
-                            options={['apikey', 'cert', 'keyless', 'oauth2', 'jwt']}
+                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
                         />
                     </div>
                 </div>
@@ -1318,6 +1318,8 @@ function Dashboard(props) {
 
     useEffect(() => {
         props.setTitle("Dashboard")
+
+        return () => props.setTitle(undefined)
     }, [])
 
     const rawAPI = useQuery(["getAPI", params.apiId],
@@ -1328,13 +1330,57 @@ function Dashboard(props) {
 
     const api = rawAPI.data
 
+    const hasCreateFlow = api && api.flows.length > 0
+    const hasCreateRoute = api && api.routes.length > 0
+    const hasCreateConsumer = api && api.consumers.length > 0
+
     return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
         <Loader loading={rawAPI.isLoading}>
             <SidebarComponent {...props} />
             {api && <div className='d-flex gap-3'>
-                <div className='d-flex flex-column flex-grow gap-3'>
+                <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
+                    <ContainerBlock full>
+                        <SectionHeader text="Getting Started" />
+
+                        {hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
+                            to={`/apis/${params.apiId}/consumers/new`}
+                            title="Create your first API consumer"
+                            description={<>
+                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
+
+                        {hasCreateFlow && !hasCreateRoute && <Card
+                            to={`/apis/${params.apiId}/routes/new`}
+                            title="Create your first route"
+                            description={<>
+                                Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
+
+                        {!hasCreateFlow && <Card
+                            to={`/apis/${params.apiId}/flows/new`}
+                            title="Create your first flow of plugins"
+                            description={<>
+                                Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
+                    </ContainerBlock>
                     <ContainerBlock full highlighted>
                         <APIHeader api={api} />
+                        {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>}
                         <Uptime
                             health={api.health?.today}
                             stopTheCountUnknownStatus={false}
@@ -1348,37 +1394,87 @@ function Dashboard(props) {
                             stopTheCountUnknownStatus={false}
                         />
                     </ContainerBlock>
-                    {api.consumers.length === 0 && <ContainerBlock full>
-                        <SectionHeader text="Getting Started" />
-
-                        <Card
-                            to={`/apis/${params.apiId}/consumers/new`}
-                            title="Your first API consumer"
-                            description={<>
-                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />
-                    </ContainerBlock>}
-                    <ContainerBlock full>
-                        <SectionHeader text="Subscriptions" description="Manage subscriptions" />
+                    {hasCreateConsumer && <ContainerBlock full>
+                        <SectionHeader text="Subscriptions" description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''} />
 
                         <SubscriptionsView api={api} />
-                    </ContainerBlock>
+                    </ContainerBlock>}
+
+                    {hasCreateConsumer && <ContainerBlock full>
+                        <SectionHeader text="API Consumers"
+                            description={api.consumers.length <= 0 ? 'API consumers will appear here' : ''}
+                            actions={<Button type="primaryColor" text="New Consumer" className='btn-sm' />} />
+
+                        <ApiConsumersView api={api} />
+                    </ContainerBlock>}
                 </div>
-                <ContainerBlock>
+                {api.flows.length > 0 && api.routes.length > 0 && <ContainerBlock>
                     <SectionHeader text="Build your API" description="Manage entities for this API" />
                     <Entities>
                         <FlowsCard flows={api.flows} />
                         <BackendsCard backends={api.backends} />
                         <RoutesCard routes={api.routes} />
                     </Entities>
-                </ContainerBlock>
+                </ContainerBlock>}
             </div>}
         </Loader>
+    </div>
+}
+
+function ApiConsumersView({ api }) {
+    return <div>
+        <div className='short-table-row'>
+            <div>Name</div>
+            <div>Description</div>
+            <div>Status</div>
+            <div>Kind</div>
+        </div>
+        {api.consumers.map(consumer => {
+            return <Consumer key={consumer.id} consumer={consumer} />
+        })}
+    </div>
+}
+
+function Consumer({ consumer }) {
+    const history = useHistory()
+    const params = useParams()
+    const [open, setOpen] = useState(false)
+
+    return <div className='short-table-row'
+        style={{
+            backgroundColor: 'hsla(184, 9%, 62%, 0.18)',
+            borderColor: 'hsla(184, 9%, 62%, 0.4)',
+            borderRadius: '.5rem',
+            gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px'
+        }}
+        onClick={() => setOpen(!open)}>
+        {open && <div style={{ position: 'relative' }}>
+            <Button type="primaryColor" className="btn-sm" text="Edit"
+                onClick={e => {
+                    e.stopPropagation()
+                    history.push(`/apis/${params.apiId}/consumers/${consumer.id}/edit`)
+                }} style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem'
+                }} />
+            <NgCodeRenderer
+                readOnly
+                label="Configuration"
+                value={JSON.stringify(consumer, null, 2)} />
+        </div>}
+        {!open && <>
+            <div>{consumer.name}</div>
+            <div>{consumer.description}</div>
+            <div className='badge bg-success' style={{
+                width: 'fit-content',
+                border: 'none'
+            }}>{consumer.status}</div>
+            <div className="badge bg-success" style={{
+                border: 'none'
+            }}>{consumer.consumer_kind}</div>
+            <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
+        </>}
     </div>
 }
 
@@ -1411,7 +1507,7 @@ function SubscriptionsView({ api }) {
 }
 
 function Subscription({ subscription }) {
-    const [open, setOpened] = useState(false)
+    const [open, setOpen] = useState(false)
 
     return <div key={subscription.id}
         className='short-table-row'
@@ -1421,27 +1517,28 @@ function Subscription({ subscription }) {
             borderRadius: '.5rem',
             gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px'
         }}
-        onClick={() => setOpened(!open)}>
+        onClick={() => setOpen(!open)}>
         {open && <>
             <NgCodeRenderer
                 readOnly
                 label="Configuration"
-                value={JSON.stringify(subscription, null, 4)} />
+                value={JSON.stringify(subscription, null, 2)} />
         </>}
         {!open && <>
             <div>{subscription.name}</div>
             <div>{subscription.description}</div>
             <div>{moment(new Date(subscription.dates.created_at)).format('DD/MM/YY hh:mm')}</div>
-            <div className='badge' style={{
-                borderColor: 'rgba(249, 181, 47, 0.4)'
-            }}>{subscription.subscription_kind}</div>
+            <div className='badge bg-success' style={{ border: 'none' }}>{subscription.subscription_kind}</div>
             <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
         </>}
     </div>
 }
 
 function ContainerBlock({ children, full, highlighted }) {
-    return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}>
+    return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}
+        style={{
+            position: 'relative'
+        }}>
         {children}
     </div>
 }
@@ -1485,10 +1582,13 @@ function APIState({ value }) {
     return null
 }
 
-function SectionHeader({ text, description, main }) {
+function SectionHeader({ text, description, main, actions }) {
     return <div>
-        {main ? <h1 className='m-0'>{text}</h1> :
-            <h3 className='m-0'>{text}</h3>}
+        <div className='d-flex align-items-center justify-content-between'>
+            {main ? <h1 className='m-0'>{text}</h1> :
+                <h3 className='m-0'>{text}</h3>}
+            {actions}
+        </div>
         <p>{description}</p>
     </div>
 }
@@ -1500,7 +1600,7 @@ function Entities({ children }) {
 }
 
 function Card({ title, description, to, button }) {
-    return <Link to={to} className="cards apis-cards cards--large">
+    return <Link to={to} className="cards apis-cards cards--large mb-3">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 {title}

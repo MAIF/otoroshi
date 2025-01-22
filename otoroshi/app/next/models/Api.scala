@@ -297,7 +297,7 @@ case class ApiConsumer(
     name: String,
     description: Option[String],
     autoValidation: Boolean,
-    kind: ApiConsumerKind,
+    consumerKind: ApiConsumerKind,
     settings: ApiConsumerSettings,
     status: ApiConsumerStatus,
     subscriptions: Seq[ApiConsumerSubscriptionRef]
@@ -311,13 +311,13 @@ object ApiConsumer {
         name = json.select("name").asString,
         description = json.select("description").asOptString,
         autoValidation = json.select("autoValidation").asOpt[Boolean].getOrElse(false),
-        kind = json.select("kind").asString.toLowerCase match {
+        consumerKind = json.select("consumer_kind").asOptString.map(_.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
           case "keyless" => ApiConsumerKind.Keyless
           case "oauth2"  => ApiConsumerKind.OAuth2
           case "jwt"     => ApiConsumerKind.JWT
-        },
+        }).getOrElse(ApiConsumerKind.Apikey),
         settings = (json \ "settings" \ "name").asString match {
           case "apikey"   => {
             ApiConsumerSettings.Apikey(
@@ -362,7 +362,7 @@ object ApiConsumer {
       "name" -> o.name,
       "description" -> o.description,
       "autoValidation" -> o.autoValidation,
-      "kind" -> o.kind.name,
+      "consumer_kind" -> o.consumerKind.name,
       "settings" -> o.settings.json,
       "status" -> o.status.name,
       "subscriptions" -> o.subscriptions.map(_.ref)
