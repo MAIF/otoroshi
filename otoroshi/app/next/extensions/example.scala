@@ -3,6 +3,8 @@ package otoroshi.next.extensions
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.util.ByteString
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
 import otoroshi.api._
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
@@ -230,6 +232,18 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
       states.updateFoos(foos)
       ()
     }
+  }
+
+  override def publicKeys(): Seq[PublicKeyJwk] = {
+    val jwk = new OctetKeyPairGenerator(Curve.Ed25519).keyID("fake-key").generate
+    val publicJWK = jwk.toPublicJWK.toJSONString.parseJson
+    Seq(PublicKeyJwk(publicJWK))
+    // Seq(PublicKeyJwk(Json.obj(
+    //   "kty" -> "OKP",
+    //   "crv" -> "Ed25519",
+    //   "kid" -> "123",
+    //   "x" -> "sO3w8_ow469Fu7vuNEssGLC-06fz8iRRjOJN_au6vug"
+    // )))
   }
 
   override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
