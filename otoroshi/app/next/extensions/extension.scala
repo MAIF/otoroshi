@@ -145,6 +145,8 @@ case class AdminExtensionConfig(enabled: Boolean)
 
 case class AdminExtensionVault(name: String, build: (String, Configuration, Env) => Vault)
 
+case class PublicKeyJwk(raw: JsValue)
+
 trait AdminExtension {
 
   def env: Env
@@ -179,6 +181,7 @@ trait AdminExtension {
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute]                        = Seq.empty
   def wellKnownOverridesRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
   def vaults(): Seq[AdminExtensionVault]                                          = Seq.empty
+  def publicKeys(): Seq[PublicKeyJwk]                                             = Seq.empty
   def configuration: Configuration                                                = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
     .getOrElse(Configuration.empty)
@@ -284,7 +287,6 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
   private val vaults: Seq[AdminExtensionVault]                                          = extensions.flatMap(_.vaults())
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private val extCache = new UnboundedTrieMap[Class[_], Any]
@@ -529,6 +531,14 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   def resources(): Seq[Resource] = {
     if (hasExtensions) {
       entities.map(_.resource)
+    } else {
+      Seq.empty
+    }
+  }
+
+  def publicKeys(): Seq[PublicKeyJwk] = {
+    if (hasExtensions) {
+      extensions.flatMap(_.publicKeys())
     } else {
       Seq.empty
     }
