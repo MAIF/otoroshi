@@ -4,7 +4,7 @@ import akka.util.ByteString
 import diffson.PatchOps
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas}
 import otoroshi.next.models._
 import otoroshi.next.plugins.NgApikeyCallsConfig
 import otoroshi.security.IdGenerator
@@ -293,8 +293,9 @@ object ApiBlueprint {
 }
 
 case class ApiConsumer(
+    id: String,
     name: String,
-    description: String,
+    description: Option[String],
     autoValidation: Boolean,
     kind: ApiConsumerKind,
     settings: ApiConsumerSettings,
@@ -306,9 +307,10 @@ object ApiConsumer {
   val _fmt: Format[ApiConsumer] = new Format[ApiConsumer] {
     override def reads(json: JsValue): JsResult[ApiConsumer] = Try {
       ApiConsumer(
+        id = json.select("name").as[String],
         name = json.select("name").as[String],
-        description = json.select("description").as[String],
-        autoValidation = json.select("autoValidation").as[Boolean],
+        description = json.select("description").asOpt[String],
+        autoValidation = json.select("autoValidation").asOpt[Boolean].getOrElse(false),
         kind = json.select("kind").as[String].toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
@@ -317,21 +319,25 @@ object ApiConsumer {
           case "jwt"     => ApiConsumerKind.JWT
         },
         settings = (json \ "settings" \ "name").as[String] match {
-          case "Apikey"   => ApiConsumerSettings.Apikey(
-            config = (json \ "settings" \ "config").as(NgApikeyCallsConfig.format.reads),
-            name = "ApiKey")
-          case "Mtls"     => ApiConsumerSettings.Mtls(
-            caRefs = (json \ "settings" \ "caRefs").as[Seq[String]],
-            certRefs = (json \ "settings" \ "certRefs").as[Seq[String]],
-            name = "Mtls"
+          case "apikey"   => {
+            ApiConsumerSettings.Apikey(
+              throttlingQuota = (json \ "settings" \ "config" \ "throttlingQuota").as[Long],
+              monthlyQuota = (json \ "settings" \ "config" \ "monthlyQuota").as[Long],
+              dailyQuota = (json \ "settings" \ "config" \ "dailyQuota").as[Long],
+              name = "apikey")
+          }
+          case "mtls"     => ApiConsumerSettings.Mtls(
+            caRefs = (json \ "settings" \ "config" \ "caRefs").as[Seq[String]],
+            certRefs = (json \ "settings" \ "config" \ "certRefs").as[Seq[String]],
+            name = "mtls"
           )
-          case "Keyless"  => ApiConsumerSettings.Keyless(name = "Keyless")
-          case "OAuth2"   => ApiConsumerSettings.OAuth2(
-            config = (json \ "settings" \ "config").as(NgApikeyCallsConfig.format.reads),
-            name = "OAuth2")
-          case "JWT"      => ApiConsumerSettings.JWT(
-            jwtVerifierRefs = (json \ "settings" \ "jwtVerifierRefs").as[Seq[String]],
-            name = "JWT")
+          case "keyless"  => ApiConsumerSettings.Keyless(name = "Keyless")
+          case "oauth2"   => ApiConsumerSettings.OAuth2(
+            config = (json \ "settings" \ "config").as[JsValue],
+            name = "oauth2")
+          case "jwt"      => ApiConsumerSettings.JWT(
+            jwtVerifierRefs = (json \ "settings" \ "config" \ "jwtVerifierRefs").as[Seq[String]],
+            name = "jwt")
         },
         status = json.select("status").as[String].toLowerCase match {
           case "staging"      => ApiConsumerStatus.Staging()
@@ -352,6 +358,7 @@ object ApiConsumer {
     }
 
     override def writes(o: ApiConsumer): JsValue = Json.obj(
+      "id" -> o.id,
       "name" -> o.name,
       "description" -> o.description,
       "autoValidation" -> o.autoValidation,
@@ -428,34 +435,46 @@ trait ApiConsumerSettings {
   def json: JsValue
 }
 object ApiConsumerSettings {
-  case class Apikey(name: String, config: NgApikeyCallsConfig)              extends ApiConsumerSettings {
+  case class Apikey(name: String,
+                    throttlingQuota: Long = RemainingQuotas.MaxValue,
+                    dailyQuota: Long = RemainingQuotas.MaxValue,
+                    monthlyQuota: Long = RemainingQuotas.MaxValue)              extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
-      "name"    -> name,
-      "config"  -> config.json
+      "name"            -> name,
+      "config"         -> Json.obj(
+        "throttlingQuota"  -> throttlingQuota,
+        "dailyQuota"      -> dailyQuota,
+        "monthlyQuota"    -> monthlyQuota
+      ),
     )
   }
   case class Mtls(name: String, caRefs: Seq[String], certRefs: Seq[String]) extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
       "name"      -> name,
-      "caRefs"    -> caRefs,
-      "certRefs"  -> certRefs,
+      "config"    -> Json.obj(
+        "caRefs"    -> caRefs,
+        "certRefs"  -> certRefs,
+      )
     )
   }
   case class Keyless(name: String)                                          extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
-      "name"      -> name
+      "name"      -> name,
+      "config"         -> Json.obj()
     )
   }
-  case class OAuth2(name: String, config: NgApikeyCallsConfig)              extends ApiConsumerSettings { // using client credential stuff
+  case class OAuth2(name: String, config: JsValue)              extends ApiConsumerSettings { // using client credential stuff
     def json: JsValue = Json.obj(
       "name"      -> name,
-      "config"    -> NgApikeyCallsConfig.format.writes(config)
+      "config"    -> config
     )
   }
   case class JWT(name: String, jwtVerifierRefs: Seq[String])                extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
       "name"            -> name,
-      "jwtVerifierRefs" -> jwtVerifierRefs
+      "config"         -> Json.obj(
+        "jwtVerifierRefs" -> jwtVerifierRefs
+      )
     )
   }
 }
@@ -683,7 +702,7 @@ trait ApiDataStore extends BasicStore[Api] {
       clients = Seq.empty,
       documentation = None,
       consumers = Seq.empty,
-      deployments = Seq.empty
+      deployments = Seq.empty,
     )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
@@ -703,4 +722,48 @@ class KvApiDataStore(redisCli: RedisLike, _env: Env) extends ApiDataStore with R
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:apis:$id"
   override def extractId(value: Api): String         = value.id
+}
+
+
+trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscription] {
+  def template(env: Env): ApiConsumerSubscription = {
+    val defaultSubscription = ApiConsumerSubscription(
+      location = EntityLocation.default,
+      id = IdGenerator.namedId("api-consumer-subscription", env),
+      name = "New API Consumer Subscription",
+      description = "New API Consumer Subscription description",
+      metadata = Map.empty,
+      tags = Seq.empty,
+      enabled = true,
+      dates = ApiConsumerSubscriptionDates(
+        created_at = DateTime.now(),
+        processed_at = DateTime.now(),
+        started_at = DateTime.now(),
+        ending_at = DateTime.now(),
+        closed_at = DateTime.now()
+      ),
+      ownerRef = "",
+      consumerRef = None,
+      kind = ApiConsumerKind.Apikey,
+      tokenRefs = Seq.empty
+    )
+
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .apiConsumerSubscription
+      .map { template =>
+        ApiConsumerSubscription.format.reads(defaultSubscription.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultSubscription
+      }
+  }
+}
+
+class KvApiConsumerSubscriptionDataStore(redisCli: RedisLike, _env: Env) extends ApiConsumerSubscriptionDataStore with RedisLikeStore[ApiConsumerSubscription] {
+  override def fmt: Format[ApiConsumerSubscription]               = ApiConsumerSubscription.format
+  override def redisLike(implicit env: Env): RedisLike            = redisCli
+  override def key(id: String): String                            = s"${_env.storageRoot}:apis:$id"
+  override def extractId(value: ApiConsumerSubscription): String  = value.id
 }

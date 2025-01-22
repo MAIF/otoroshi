@@ -16,11 +16,9 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { nextClient } from '../../services/BackOfficeServices';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
-import { schemas } from '../RouteDesigner/form';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
 import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
-import { PillButton } from '../../components/PillButton';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
 const queryClient = new QueryClient({
@@ -44,6 +42,10 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/routes/new' component={NewRoute} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/routes/:routeId/:action' component={RouteDesigner} props={props} />
+
+                <RouteWithProps exact path='/apis/:apiId/consumers' component={Consumers} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/consumers/new' component={NewConsumer} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/consumers/:consumerId/:action' component={ConsumerDesigner} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
@@ -355,6 +357,298 @@ function NewRoute(props) {
         </div>
     </Loader>
 }
+
+function Consumers(props) {
+    const history = useHistory()
+    const params = useParams()
+
+    const columns = [
+        {
+            title: 'Name',
+            filterId: 'name',
+            content: (item) => item.name,
+        }
+    ];
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
+
+    useEffect(() => {
+        props.setTitle(`Consumers of ${rawAPI.data?.name}`)
+
+        return () => props.setTitle('')
+    }, [rawAPI.data])
+
+    const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+    const api = rawAPI.data;
+
+    const deleteItem = item => client.update({
+        ...api,
+        consumers: api.consumers.filter(f => f.id !== item.id)
+    })
+        .then(() => window.location.reload())
+
+    const fields = []
+
+    return <Loader loading={rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <Table
+            parentProps={{ params }}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
+            selfUrl="consumers"
+            defaultTitle="Consumer"
+            itemName="Consumer"
+            columns={columns}
+            fields={fields}
+            deleteItem={deleteItem}
+            fetchTemplate={() => Promise.resolve({
+                id: v4(),
+                name: "New consumer",
+                kind: "apikey",
+                config: {}
+            })}
+            fetchItems={() => Promise.resolve(rawAPI.data?.consumers || [])}
+            defaultSort="name"
+            defaultSortDesc="true"
+            showActions={true}
+            showLink={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/consumers/${i.id}/edit`}
+            rawEditUrl={true}
+            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+            injectTopBar={() => (
+                <div className="btn-group input-group-btn">
+                    <Link className="btn btn-primary btn-sm" to="consumers/new">
+                        <i className="fas fa-plus-circle" /> Create new consumer
+                    </Link>
+                    {props.injectTopBar}
+                </div>
+            )} />
+    </Loader>
+}
+
+const TEMPLATES = {
+    apikey: {
+        name: 'apikey',
+        config: {
+            throttlingQuota: 1000,
+            dailyQuota: 1000,
+            monthlyQuota: 1000
+        }
+    },
+    cert: {
+        name: 'cert',
+        config: {}
+    },
+    keyless: {
+        name: 'keyless',
+        config: {}
+    },
+    oauth2: {
+        name: 'oauth2',
+        config: {}
+    },
+    jwt: {
+        name: 'jwt',
+        config: {
+            strict: true,
+            source: {
+                type: "InHeader",
+                name: "X-JWT-Token",
+                remove: ""
+            },
+            algoSettings: {
+                "type": "HSAlgoSettings",
+                "size": 512,
+                "secret": "secret",
+                "base64": false
+            },
+            strategy: {
+                type: 'PassThrough',
+                verificationSettings: {
+                    fields: {},
+                    arrayFields: {}
+                }
+            }
+        }
+    }
+}
+
+function NewConsumer(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [consumer, setConsumer] = useState({
+        id: v4(),
+        name: "New consumer",
+        kind: "apikey",
+        settings: TEMPLATES.apikey,
+        status: "staging",
+        subscriptions: []
+    })
+
+    const schema = {
+        name: {
+            type: 'string',
+            label: 'Name'
+        },
+        kind: {
+            renderer: props => {
+                return <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
+                    <div className="col-sm-10">
+                        <NgSelectRenderer
+                            value={props.value}
+                            onChange={newType => {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    settings: TEMPLATES[newType],
+                                    kind: newType
+                                })
+                            }}
+                            label="Plan Type"
+                            ngOptions={{ spread: true }}
+                            margin={0}
+                            style={{ flex: 1 }}
+                            options={['apikey', 'cert', 'keyless', 'oauth2', 'jwt']}
+                        />
+                    </div>
+                </div>
+            }
+        },
+        settings: {
+            type: 'json',
+            label: 'Plan configuration'
+        }
+    }
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+
+    const savePlan = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                consumers: [...rawAPI.data.consumers, consumer]
+            })
+            .then(() => history.push(`/apis/${params.apiId}/consumers`))
+    }
+
+    return <Loader loading={rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
+
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={consumer}
+                // flow={flow}
+                schema={schema}
+                onChange={newValue => setConsumer(newValue)} />
+            <Button
+                type="success"
+                className="btn-sm ms-auto d-flex"
+                onClick={savePlan}
+                text="Create"
+            />
+        </div>
+    </Loader >
+}
+
+function ConsumerDesigner(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [consumer, setConsumer] = useState()
+
+    const schema = {
+        name: {
+            type: 'string',
+            label: 'Name'
+        },
+        kind: {
+            renderer: props => {
+                return <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
+                    <div className="col-sm-10">
+                        <NgSelectRenderer
+                            value={props.value}
+                            onChange={newType => {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    settings: TEMPLATES[newType],
+                                    kind: newType
+                                })
+                            }}
+                            label="Plan Type"
+                            ngOptions={{ spread: true }}
+                            margin={0}
+                            style={{ flex: 1 }}
+                            options={['apikey', 'cert', 'keyless', 'oauth2', 'jwt']}
+                        />
+                    </div>
+                </div>
+            }
+        },
+        settings: {
+            type: 'json',
+            label: 'Plan configuration'
+        }
+    }
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        onSuccess: api => {
+            setConsumer(api.consumers.find(item => item.id === params.consumerId))
+        }
+    })
+
+    const updatePlan = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                consumers: rawAPI.data.consumers.map(item => {
+                    if (item.id === consumer.id)
+                        return consumer
+                    return item
+                })
+            })
+            .then(() => history.push(`/apis/${params.apiId}/consumers`))
+    }
+
+    return <Loader loading={rawAPI.isLoading}>
+        <SidebarComponent {...props} />
+        <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
+            <FeedbackButton
+                type="success"
+                className="ms-2 mb-1"
+                onPress={updatePlan}
+                text="Update"
+            />
+        </PageTitle>
+
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={consumer}
+                // flow={flow}
+                schema={schema}
+                onChange={newValue => setConsumer(newValue)} />
+        </div>
+    </Loader>
+}
+
 
 function Routes(props) {
     const history = useHistory()

@@ -8,9 +8,23 @@ const LINKS = (id) =>
         {
             to: `/apis/${id}`,
             icon: 'fa-file-alt',
-            title: 'Informations',
-            tab: 'informations',
-            tooltip: { ...createTooltip(`Show informations tab`) },
+            title: 'Overview',
+            tab: 'overview',
+            tooltip: { ...createTooltip(`Show overview tab`) },
+        },
+        {
+            to: `/apis/${id}/routes`,
+            icon: 'fa-road',
+            title: 'Routes',
+            tab: 'routes',
+            tooltip: { ...createTooltip(`Show routes tab`) },
+        },
+        {
+            to: `/apis/${id}/backends`,
+            icon: 'fa-server',
+            title: 'Backends',
+            tab: 'backends',
+            tooltip: { ...createTooltip(`Show backends tab`) },
         },
         {
             to: `/apis/${id}/flows`,
@@ -18,6 +32,13 @@ const LINKS = (id) =>
             title: 'Flows',
             tab: 'flows',
             tooltip: { ...createTooltip(`Show flows tab`) },
+        },
+        {
+            to: `/apis/${id}/consumers`,
+            icon: 'fa-list',
+            title: 'Consumers',
+            tab: 'Consumers',
+            tooltip: { ...createTooltip(`Show consumers tab`) },
         },
         {
             to: `/apis/${id}/playground`,

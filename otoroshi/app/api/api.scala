@@ -3,7 +3,7 @@ package otoroshi.api
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import next.models.Api
+import next.models.{Api, ApiConsumerSubscription}
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
@@ -878,7 +878,26 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq)
-      )
+      ),
+      //////
+      Resource(
+        "ApiConsumerSubscription",
+        "apiconsumersubscriptions",
+        "apiconsumersubscription",
+        "apis-consumer-subscriptions.otoroshi.io",
+        ResourceVersion("v1", true, false, true),
+        GenericResourceAccessApiWithState[ApiConsumerSubscription](
+          ApiConsumerSubscription.format,
+          classOf[ApiConsumerSubscription],
+          env.datastores.apiConsumerSubscriptionDataStore.key,
+          env.datastores.apiConsumerSubscriptionDataStore.extractId,
+          json => json.select("id").asString,
+          () => "id",
+          (_v, _p) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
+          stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
+          stateOne = id => env.proxyState.apiConsumerSubscription(id),
+          stateUpdate = seq => env.proxyState.updateApisConsumerSubscriptions(seq)
+        )
     ),
 //    //////
 //    Resource(
