@@ -2179,7 +2179,8 @@ export const nextClient = {
     FRONTENDS: 'frontends',
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
-    APIS: 'apis'
+    APIS: 'apis',
+    API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions'
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -2214,6 +2215,7 @@ export const nextClient = {
   },
   forEntityNext: (entity) => {
     return {
+      findAllIds: ids => fetchWrapperNext(`/${entity}?ids=${ids.join(",")}`),
       findAllWithPagination: (paginationState) =>
         findAllWithPagination(entity, paginationState, '/bo/api/proxy/apis/any/v1/'),
       findAll: () => fetchWrapperNext(`/${entity}`),

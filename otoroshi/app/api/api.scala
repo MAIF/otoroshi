@@ -878,48 +878,29 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq)
-      ),
-      //////
-      Resource(
-        "ApiConsumerSubscription",
-        "apiconsumersubscriptions",
-        "apiconsumersubscription",
-        "apis-consumer-subscriptions.otoroshi.io",
-        ResourceVersion("v1", true, false, true),
-        GenericResourceAccessApiWithState[ApiConsumerSubscription](
-          ApiConsumerSubscription.format,
-          classOf[ApiConsumerSubscription],
-          env.datastores.apiConsumerSubscriptionDataStore.key,
-          env.datastores.apiConsumerSubscriptionDataStore.extractId,
-          json => json.select("id").asString,
-          () => "id",
-          (_v, _p) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
-          stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
-          stateOne = id => env.proxyState.apiConsumerSubscription(id),
-          stateUpdate = seq => env.proxyState.updateApisConsumerSubscriptions(seq)
-        )
+      )
     ),
-//    //////
-//    Resource(
-//      "Flow",
-//      "flows",
-//      "flow",
-//      "flows.otoroshi.io",
-//      ResourceVersion("v1", true, false, true),
-//      GenericResourceAccessApiWithState[Flow](
-//        Flow.format,
-//        classOf[Flow],
-//        env.datastores.flowDataStore.key,
-//        env.datastores.flowDataStore.extractId,
-//        json => json.select("id").asString,
-//        () => "id",
-//        (_v, _p) => env.datastores.flowDataStore.template(env).json,
-//        stateAll = () => env.proxyState.allFlows(),
-//        stateOne = id => env.proxyState.flow(id),
-//        stateUpdate = seq => env.proxyState.updateFlows(seq)
-//      )
-//    )
-  ) ++ env.adminExtensions.resources()
+    //////
+    Resource(
+      "ApiConsumerSubscription",
+      "apiconsumersubscriptions",
+      "apiconsumersubscription",
+      "apis.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[ApiConsumerSubscription](
+        ApiConsumerSubscription.format,
+        classOf[ApiConsumerSubscription],
+        env.datastores.apiConsumerSubscriptionDataStore.key,
+        env.datastores.apiConsumerSubscriptionDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (_v, _p) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
+        stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
+        stateOne = id => env.proxyState.apiConsumerSubscription(id),
+        stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq)
+      )
+    )
+  )++ env.adminExtensions.resources()
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
@@ -1973,6 +1954,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         resource.access.findAll(version)
       }
+
+      val ids: Seq[String] = ctx.request.getQueryString("ids")
+        .map(_.split(",").toSeq)
+        .getOrElse(Seq.empty[String])
+      val onlyIds = ids.nonEmpty
+
       fuEntities.flatMap { entities =>
         adminApiEvent(
           ctx,
@@ -1981,7 +1968,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           Json.obj(),
           None
         )
-        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
+        result(Results.Ok, JsArray(entities
+          .filter(e => {
+            if (onlyIds) {
+                ids.contains(e.select("id").asOpt[String].getOrElse(""))
+            } else
+              true
+          })
+          .filter(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
       }
     }
   }

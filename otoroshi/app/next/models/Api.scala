@@ -35,7 +35,7 @@ case object ApiRemoved extends ApiState {
 //  val _fmt = new Format[ApiFrontend] {
 //
 //    override def reads(json: JsValue): JsResult[ApiFrontend] = Try {
-//      val optDomain = json.select("domain").asOpt[String].map(NgDomainAndPath.apply)
+//      val optDomain = json.select("domain").asOptString.map(NgDomainAndPath.apply)
 //      ApiFrontend(
 //        domains = optDomain
 //          .map(d => Seq(d))
@@ -72,10 +72,10 @@ object ApiRoute {
 
     override def reads(json: JsValue): JsResult[ApiRoute] = Try {
       ApiRoute(
-        id = json.select("id").as[String],
-        name = json.select("name").asOpt[String],
+        id = json.select("id").asString,
+        name = json.select("name").asOptString,
         frontend = NgFrontend.readFrom(json \ "frontend"),
-        flowRef = (json \ "flow_ref").as[String],
+        flowRef = (json \ "flow_ref").asString,
         backend = (json \ "backend").as[ApiBackend](ApiBackend._fmt)
       )
     } match {
@@ -104,8 +104,8 @@ object ApiFlows {
 
     override def reads(json: JsValue): JsResult[ApiFlows] = Try {
       ApiFlows(
-        id = json.select("id").as[String],
-        name = json.select("name").as[String],
+        id = json.select("id").asString,
+        name = json.select("name").asString,
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
@@ -144,9 +144,9 @@ object ApiDeployment {
     override def reads(json: JsValue): JsResult[ApiDeployment] = Try {
       ApiDeployment(
         location = json.select("location").as(EntityLocation.format),
-        id = json.select("id").as[String],
-        apiRef = json.select("apiRef").as[String],
-        owner = json.select("owner").as[String],
+        id = json.select("id").asString,
+        apiRef = json.select("apiRef").asString,
+        owner = json.select("owner").asString,
         at = json.select("at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         apiDefinition = json.select("apiDefinition").as[JsValue]
       )
@@ -180,7 +180,7 @@ object ApiSpecification {
     override def reads(json: JsValue): JsResult[ApiSpecification] = Try {
       val content = json.select("content").as[JsValue]
 
-      json.select("name").as[String] match {
+      json.select("name").asString match {
         case name if name == "OpenApiSpecification" => OpenApiSpecification(content, name)
         case _ => AsyncApiSpecification(content, name = "AsyncApiSpecification")
       }
@@ -209,14 +209,14 @@ object ApiPage {
 
   val _fmt: Format[ApiPage] = new Format[ApiPage] {
     override def reads(json: JsValue): JsResult[ApiPage] = Try {
-      val path = json.select("path").as[String]
+      val path = json.select("path").asString
 
-      json.select("name").as[String] match {
+      json.select("name").asString match {
         case name if name == "ApiPageDir" => ApiPageDir(path, name, leafs = (json \ "leafs")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
           .getOrElse(Seq.empty))
-        case _ => ApiPageLeaf(path, "ApiPageLeaf", content = ByteString(json.select("content").as[String]))
+        case _ => ApiPageLeaf(path, "ApiPageLeaf", content = ByteString(json.select("content").asString))
       }
     } match {
       case Failure(ex) => JsError(ex.getMessage)
@@ -307,18 +307,18 @@ object ApiConsumer {
   val _fmt: Format[ApiConsumer] = new Format[ApiConsumer] {
     override def reads(json: JsValue): JsResult[ApiConsumer] = Try {
       ApiConsumer(
-        id = json.select("name").as[String],
-        name = json.select("name").as[String],
-        description = json.select("description").asOpt[String],
+        id = json.select("id").asString,
+        name = json.select("name").asString,
+        description = json.select("description").asOptString,
         autoValidation = json.select("autoValidation").asOpt[Boolean].getOrElse(false),
-        kind = json.select("kind").as[String].toLowerCase match {
+        kind = json.select("kind").asString.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
           case "keyless" => ApiConsumerKind.Keyless
           case "oauth2"  => ApiConsumerKind.OAuth2
           case "jwt"     => ApiConsumerKind.JWT
         },
-        settings = (json \ "settings" \ "name").as[String] match {
+        settings = (json \ "settings" \ "name").asString match {
           case "apikey"   => {
             ApiConsumerSettings.Apikey(
               throttlingQuota = (json \ "settings" \ "config" \ "throttlingQuota").as[Long],
@@ -339,7 +339,7 @@ object ApiConsumer {
             jwtVerifierRefs = (json \ "settings" \ "config" \ "jwtVerifierRefs").as[Seq[String]],
             name = "jwt")
         },
-        status = json.select("status").as[String].toLowerCase match {
+        status = json.select("status").asString.toLowerCase match {
           case "staging"      => ApiConsumerStatus.Staging()
           case "published"    => ApiConsumerStatus.Published()
           case "deprecated"   => ApiConsumerStatus.Deprecated()
@@ -347,7 +347,7 @@ object ApiConsumer {
         },
         subscriptions = json.select("subscriptions")
           .asOpt[Seq[String]]
-          .map(refs => refs.map(ApiConsumerSubscriptionRef))
+          .map(refs => refs.map(ref => ApiConsumerSubscriptionRef(ref)))
           .getOrElse(Seq.empty)
       )
     } match {
@@ -378,6 +378,31 @@ case class ApiConsumerSubscriptionDates(
     closed_at: DateTime
 )
 
+object ApiConsumerSubscriptionDates {
+  val _fmt: Format[ApiConsumerSubscriptionDates] = new Format[ApiConsumerSubscriptionDates] {
+    override def reads(json: JsValue): JsResult[ApiConsumerSubscriptionDates] = Try {
+      ApiConsumerSubscriptionDates(
+        created_at    = json.select("created_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        processed_at  = json.select("processed_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        started_at    = json.select("started_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        ending_at     = json.select("ending_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        closed_at     = json.select("closed_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now())
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiConsumerSubscriptionDates): JsValue = Json.obj(
+      "created_at"    -> o.created_at.getMillis,
+      "processed_at"  -> o.processed_at.getMillis,
+      "started_at"    -> o.started_at.getMillis,
+      "ending_at"     -> o.ending_at.getMillis,
+      "closed_at"     -> o.closed_at.getMillis
+    )
+  }
+}
+
 case class ApiConsumerSubscription(
     location: EntityLocation,
     id: String,
@@ -389,7 +414,7 @@ case class ApiConsumerSubscription(
     dates: ApiConsumerSubscriptionDates,
     ownerRef: String,
     consumerRef: Option[String],
-    kind: ApiConsumerKind,
+    subscriptionKind: ApiConsumerKind,
     tokenRefs: Seq[String] // ref to apikey, cert, etc
 ) extends EntityLocationSupport {
   override def internalId: String               = id
@@ -402,8 +427,45 @@ case class ApiConsumerSubscription(
 
 object ApiConsumerSubscription {
   val format = new Format[ApiConsumerSubscription] {
-    override def reads(json: JsValue): JsResult[ApiConsumerSubscription] = ???
-    override def writes(o: ApiConsumerSubscription): JsValue             = ???
+    override def reads(json: JsValue): JsResult[ApiConsumerSubscription] = Try {
+      ApiConsumerSubscription(
+        location    = json.select("location").as(EntityLocation.format),
+        id          = json.select("id").asString,
+        name        = json.select("name").asString,
+        description = json.select("description").asString,
+        tags        = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        metadata    = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        enabled     = json.select("enabled").asOpt[Boolean].getOrElse(false),
+        dates       = json.select("dates").as(ApiConsumerSubscriptionDates._fmt),
+        ownerRef    = json.select("owner_ref").asString,
+        consumerRef = json.select("consumer_ref").asOptString,
+        subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
+          case "apikey"  => ApiConsumerKind.Apikey
+          case "mtls"    => ApiConsumerKind.Mtls
+          case "keyless" => ApiConsumerKind.Keyless
+          case "oauth2"  => ApiConsumerKind.OAuth2
+          case "jwt"     => ApiConsumerKind.JWT
+        },
+        tokenRefs   = json.select("token_refs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: ApiConsumerSubscription): JsValue             = Json.obj(
+        "location"      -> o.location.json,
+        "id"            -> o.id,
+        "name"          -> o.name,
+        "description"   -> o.description,
+        "tags"          -> o.tags,
+        "metadata"      -> o.metadata,
+        "enabled"       -> o.enabled,
+        "dates"         -> ApiConsumerSubscriptionDates._fmt.writes(o.dates),
+        "owner_ref"     -> o.ownerRef,
+        "consumer_ref"  -> o.consumerRef,
+        "subscription_kind"          -> o.subscriptionKind.name,
+        "token_refs"    -> o.tokenRefs
+    )
   }
 }
 
@@ -505,11 +567,11 @@ object ApiBackend {
 
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
     override def reads(json: JsValue): JsResult[ApiBackend] = Try {
-      json.asOpt[String] match {
+      json.asOptString match {
         case Some(ref)  => ApiBackendRef(ref)
         case None       => ApiBackendInline(
-          id = json.select("id").as[String],
-          name = json.select("name").as[String],
+          id = json.select("id").asString,
+          name = json.select("name").asString,
           backend = json.select("backend").as(NgBackend.fmt)
         )
       }
@@ -540,7 +602,7 @@ object ApiBackendClient {
 
     override def reads(json: JsValue): JsResult[ApiBackendClient] = Try {
       ApiBackendClient(
-        name = json.select("name").as[String],
+        name = json.select("name").asString,
         client = json.select("client").as(NgClientConfig.format)
       )
     } match {
@@ -623,22 +685,22 @@ object Api {
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
         location = otoroshi.models.EntityLocation.readFromKey(json),
-        id = (json \ "id").as[String],
-        name = (json \ "name").as[String],
-        description = (json \ "description").as[String],
+        id = (json \ "id").asString,
+        name = (json \ "name").asString,
+        description = (json \ "description").asString,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        version = (json \ "version").asOpt[String].getOrElse("1.0.0"),
+        version = (json \ "version").asOptString.getOrElse("1.0.0"),
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
-        state = (json \ "state").asOpt[String].map {
+        state = (json \ "state").asOptString.map {
           case "started" => ApiStarted
           case "published" => ApiPublished
           case "deprecated" => ApiDeprecated
           case "removed" => ApiRemoved
         }.getOrElse(ApiStarted),
-        blueprint = (json \ " blueprint").asOpt[String].map {
+        blueprint = (json \ " blueprint").asOptString.map {
           case "REST"      => ApiBlueprint.REST
           case "GraphQL"   => ApiBlueprint.GraphQL
           case "gRPC"      => ApiBlueprint.gRPC
@@ -744,7 +806,7 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
       ),
       ownerRef = "",
       consumerRef = None,
-      kind = ApiConsumerKind.Apikey,
+      subscriptionKind = ApiConsumerKind.Apikey,
       tokenRefs = Seq.empty
     )
 
@@ -764,6 +826,6 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
 class KvApiConsumerSubscriptionDataStore(redisCli: RedisLike, _env: Env) extends ApiConsumerSubscriptionDataStore with RedisLikeStore[ApiConsumerSubscription] {
   override def fmt: Format[ApiConsumerSubscription]               = ApiConsumerSubscription.format
   override def redisLike(implicit env: Env): RedisLike            = redisCli
-  override def key(id: String): String                            = s"${_env.storageRoot}:apis:$id"
+  override def key(id: String): String                            = s"${_env.storageRoot}:apiconsumersubscriptions:$id"
   override def extractId(value: ApiConsumerSubscription): String  = value.id
 }

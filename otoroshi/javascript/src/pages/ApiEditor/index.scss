@@ -49,6 +49,33 @@
         min-height: initial;
     }
 
+    .short-table-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) 54px 32px;
+        align-items: center;
+        gap: 1rem;
+        padding: .5rem 2rem .5rem 1rem;
+        margin-bottom: .4rem;
+        color: var(--text);
+    }
+
+    .short-table-row pre {
+        text-align: start;
+    }
+
+    .short-table-row:first-child {
+        text-transform: uppercase;
+        font-weight: 100;
+    }
+
+    .short-table-row div:last-child {
+        text-align: center;
+    }
+
+    .cards--large {
+        max-width: inherit;
+    }
+
     .cards-title {
         font-size: 1.5rem !important;
         color: var(--text) !important;
@@ -83,6 +110,23 @@
 
     h3 {
         color: var(--text) !important;
+    }
+
+    .short-table-navigate-icon {
+        transition: all .2s;
+        opacity: .85;
+        padding-left: 0;
+        text-align: end;
+    }
+
+    .short-table-row:hover {
+        cursor: pointer;
+    }
+
+    .short-table-row:hover .short-table-navigate-icon {
+        opacity: 1;
+        color: var(--text);
+        padding-left: 1.5rem;
     }
 
     .navigate-icon {

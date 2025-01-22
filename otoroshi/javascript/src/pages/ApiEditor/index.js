@@ -17,9 +17,11 @@ import { nextClient } from '../../services/BackOfficeServices';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgCodeRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
+
+import moment from 'moment';
 
 const queryClient = new QueryClient({
     queries: {
@@ -1326,7 +1328,7 @@ function Dashboard(props) {
 
     const api = rawAPI.data
 
-    return <div className='d-flex flex-column gap-3'>
+    return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
         <Loader loading={rawAPI.isLoading}>
             <SidebarComponent {...props} />
             {api && <div className='d-flex gap-3'>
@@ -1346,8 +1348,25 @@ function Dashboard(props) {
                             stopTheCountUnknownStatus={false}
                         />
                     </ContainerBlock>
+                    {api.consumers.length === 0 && <ContainerBlock full>
+                        <SectionHeader text="Getting Started" />
+
+                        <Card
+                            to={`/apis/${params.apiId}/consumers/new`}
+                            title="Your first API consumer"
+                            description={<>
+                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />
+                    </ContainerBlock>}
                     <ContainerBlock full>
-                        <SectionHeader text="Customers" description="Manage customers and subscriptions" />
+                        <SectionHeader text="Subscriptions" description="Manage subscriptions" />
+
+                        <SubscriptionsView api={api} />
                     </ContainerBlock>
                 </div>
                 <ContainerBlock>
@@ -1360,6 +1379,64 @@ function Dashboard(props) {
                 </ContainerBlock>
             </div>}
         </Loader>
+    </div>
+}
+
+function SubscriptionsView({ api }) {
+    const [subscriptions, setSubscriptions] = useState([])
+
+    useEffect(() => {
+        const subscriptionsRefs = api.consumers
+            .flatMap(consumer => consumer.subscriptions)
+            .sort((a, b) => a.created_at < b.created_at ? -1 : 1)
+            .slice(0, 5);
+
+        nextClient
+            .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+            .findAllIds(subscriptionsRefs)
+            .then(setSubscriptions)
+    }, [])
+
+    return <div>
+        <div className='short-table-row'>
+            <div>Name</div>
+            <div>Description</div>
+            <div>Created At</div>
+            <div>Kind</div>
+        </div>
+        {subscriptions.map(subscription => {
+            return <Subscription subscription={subscription} key={subscription.id} />
+        })}
+    </div>
+}
+
+function Subscription({ subscription }) {
+    const [open, setOpened] = useState(false)
+
+    return <div key={subscription.id}
+        className='short-table-row'
+        style={{
+            backgroundColor: 'hsla(184, 9%, 62%, 0.18)',
+            borderColor: 'hsla(184, 9%, 62%, 0.4)',
+            borderRadius: '.5rem',
+            gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px'
+        }}
+        onClick={() => setOpened(!open)}>
+        {open && <>
+            <NgCodeRenderer
+                readOnly
+                label="Configuration"
+                value={JSON.stringify(subscription, null, 4)} />
+        </>}
+        {!open && <>
+            <div>{subscription.name}</div>
+            <div>{subscription.description}</div>
+            <div>{moment(new Date(subscription.dates.created_at)).format('DD/MM/YY hh:mm')}</div>
+            <div className='badge' style={{
+                borderColor: 'rgba(249, 181, 47, 0.4)'
+            }}>{subscription.subscription_kind}</div>
+            <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
+        </>}
     </div>
 }
 
@@ -1420,6 +1497,20 @@ function Entities({ children }) {
     return <div className='d-flex flex-column gap-3'>
         {children}
     </div>
+}
+
+function Card({ title, description, to, button }) {
+    return <Link to={to} className="cards apis-cards cards--large">
+        <div className="cards-body">
+            <div className='cards-title d-flex align-items-center justify-content-between'>
+                {title}
+            </div>
+            <p className="cards-description" style={{ position: 'relative' }}>
+                {description}
+                {button ? button : <i className='fas fa-chevron-right fa-lg navigate-icon' />}
+            </p>
+        </div>
+    </Link>
 }
 
 function BackendsCard({ backends }) {
