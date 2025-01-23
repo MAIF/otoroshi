@@ -234,10 +234,10 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  override def publicKeys(): Seq[PublicKeyJwk] = {
+  override def publicKeys(): Future[Seq[PublicKeyJwk]] = {
     val jwk = new OctetKeyPairGenerator(Curve.Ed25519).keyID("fake-key").generate
     val publicJWK = jwk.toPublicJWK.toJSONString.parseJson
-    Seq(PublicKeyJwk(publicJWK))
+    Seq(PublicKeyJwk(publicJWK)).vfuture
     // Seq(PublicKeyJwk(Json.obj(
     //   "kty" -> "OKP",
     //   "crv" -> "Ed25519",
