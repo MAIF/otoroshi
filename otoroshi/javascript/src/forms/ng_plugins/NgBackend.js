@@ -375,7 +375,6 @@ export default {
           type: 'form',
           collapsable: true,
           collapsed: true,
-          label: 'Custom TLS setup',
           schema: Object.entries({
             enabled: {
               label: 'enabled',
@@ -537,7 +536,13 @@ export default {
           help: 'The percentage of targets in with the best response in the whole target pool to choose. If 0,5, then more than 50% of the calls will happen on the target with the best response time.',
         },
       },
-      flow: ['type', 'ratio'],
+      flow: (item) => {
+        if (item.type === 'WeightedBestResponseTime') {
+          return ['type', 'ratio'];
+        } else {
+          return ['type'];
+        }
+      },
     },
   },
   flow: ['root', 'rewrite', 'targets', 'client', 'load_balancing', 'health_check'],

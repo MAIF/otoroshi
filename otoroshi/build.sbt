@@ -179,6 +179,7 @@ libraryDependencies ++= Seq(
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
+  "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
@@ -344,7 +345,7 @@ addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
-Revolver.enableDebugging(port = 5005, suspend = false)
+Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
 
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
@@ -373,7 +374,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.privateapps.session.enabled=true",
-  "-Dotoroshi.loggers.otoroshi-papps-session-manager=DEBUG",
+  //"-Dotoroshi.loggers.otoroshi-papps-session-manager=DEBUG",
   //"-Dotoroshi.privateapps.subdomain=otoroshi",
   "-Dotoroshi.ssl.fromOutside.clientAuth=None",
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
@@ -393,10 +394,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
-  "-Dotoroshi.storage=file",
-//  "-DOTOROSHI_IMPORT_FROM=/Users/zwitterion/Downloads/dev-otoroshi-2025-01-10-15-31-04.ndjson"
-  //"-Dotoroshi.storage=postgresql",
+  "-Dotoroshi.storage=file"
   // "-Dotoroshi.storage=redis",
-  // "-Dotoroshi.storage=lettuce",
-  // "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+//   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
 )

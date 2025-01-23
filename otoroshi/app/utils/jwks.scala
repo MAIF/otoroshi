@@ -16,7 +16,7 @@ object JWKSHelper {
   def jwks(req: RequestHeader, certIds: Seq[String])(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[JsValue, JsValue]] = {
+  ): Future[Either[JsValue, Seq[JsValue]]] = {
     if (req.method == "GET") {
       for {
         apikeys <- env.datastores.apiKeyDataStore.findAll()
@@ -45,7 +45,7 @@ object JWKSHelper {
                 .some
             case _                       => None
           }
-        Right(Json.obj("keys" -> JsArray(exposedCerts)))
+        Right(exposedCerts)
       }
     } else {
       Left(Json.obj("error" -> "resource not found !")).future

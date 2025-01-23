@@ -292,7 +292,7 @@ class ReactivePgDataStores(
 
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
-    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.second)(SchedulerHelper.runnable {
+    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.seconds)(SchedulerHelper.runnable {
       try {
         client
           .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
@@ -883,7 +883,12 @@ class ReactivePgRedis(
          |values ($$1, 'counter', $$2)
          |on conflict (key)
          |do
-         |  update set type = 'counter', counter = $schemaDotTable.counter + $$2 returning counter;
+         |  update set type = 'counter',
+         |    counter = CASE
+         |     WHEN ($schemaDotTable.ttl_starting_at + $schemaDotTable.ttl > NOW()) THEN $schemaDotTable.counter + $$2
+         |     ELSE $$2
+         |    END
+         |  returning counter
          |""".stripMargin,
         Seq(key, increment.asInstanceOf[AnyRef])
       ) { row =>

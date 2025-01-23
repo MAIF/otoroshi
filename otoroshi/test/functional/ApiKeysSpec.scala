@@ -1,16 +1,14 @@
 package functional
 
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 
 class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

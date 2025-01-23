@@ -105,6 +105,7 @@ export class ObjectInput extends React.Component {
   };
 
   disableBcrypt = (value) => {
+    if (!value) return false;
     return (
       value.startsWith('$2a$') ||
       value.startsWith('$2$') ||
@@ -184,7 +185,7 @@ export class ObjectInput extends React.Component {
                           <button
                             className="btn btn-outline-secondary"
                             type="button"
-                            disabled={this.disableBcrypt}
+                            disabled={this.disableBcrypt(value)}
                             onClick={(e) => {
                               this.changeValue(idx, key, {
                                 target: { value: bcrypt.hashSync(value, 10) },
