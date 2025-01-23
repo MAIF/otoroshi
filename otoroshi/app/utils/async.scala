@@ -32,4 +32,30 @@ class AsyncUtils {
     next(items)
     promise.future
   }
+
+  def foreachAsync[A](items: Seq[Future[A]])(implicit ec: ExecutionContext): Future[Unit] = {
+
+    val promise = Promise[Unit]()
+
+    def next(futures: Seq[Future[A]]): Unit = {
+      if (futures.isEmpty) {
+        promise.trySuccess(())
+      } else {
+        val head = futures.head
+        head.andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(value) => {
+            if (futures.size == 1) {
+              promise.trySuccess(())
+            } else {
+              next(futures.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
 }
