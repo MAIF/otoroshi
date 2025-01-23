@@ -6,6 +6,7 @@ import akka.util.ByteString
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.api.DeleteAction.{DeleteAll, DeleteOne}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
@@ -134,12 +135,6 @@ object WriteAction {
   case object Update extends WriteAction
 }
 
-sealed trait ReadAction
-object ReadAction {
-  case object ReadOne extends ReadAction
-  case object ReadAll extends ReadAction
-}
-
 sealed trait DeleteAction
 object DeleteAction {
   case object DeleteOne extends DeleteAction
@@ -162,9 +157,9 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def canDelete: Boolean
   def canBulk: Boolean
 
-  def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]]
-  //def deleteValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: DeleteAction): Future[Either[JsValue, T]]
-  //def readValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: ReadAction): Future[Either[JsValue, T]]
+  def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
+
+  def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = ().rightf
 
   def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit
       env: Env
@@ -260,20 +255,20 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteAll(version: String, canWrite: JsValue => Boolean)(implicit
+  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Either[JsValue, Unit]] = {
     env.datastores.rawDataStore
       .allMatching(key("*"))
       .flatMap { rawItems =>
         val keys = rawItems
           .map { bytestring =>
             val json = bytestring.utf8String.parseJson
-            format.reads(json)
+            (json, format.reads(json))
           }
-          .collect { case JsSuccess(value, _) =>
-            value
+          .collect { case (json, JsSuccess(value, _)) =>
+            (json, value)
           }
           // .filter { entity =>
           //   if (namespace == "any") true
@@ -281,19 +276,33 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           //   else if (namespace == "*") true
           //   else entity.location.tenant.value == namespace
           // }
-          .filter(e => canWrite(e.json))
+          .filter(e => canWrite(e._1))
           .map { entity =>
-            key(entity.theId)
+            (entity._1, entity._2, key(entity._2.theId))
           }
-        env.datastores.rawDataStore.del(keys)
+        keys.mapAsync {
+          case (json, entity, key) => deleteValidation(entity, json, singularName, key, DeleteAction.DeleteAll, env).map {
+            case Left(err) => Left(err)
+            case Right(_) => Right(key)
+          }
+        }.flatMap { res =>
+          val hasErrors = res.exists(_.isLeft)
+          if (hasErrors) {
+            val errors = res.filter(_.isLeft).map(_.left.get)
+            val error = Json.obj("errors" -> JsArray(errors))
+            error.leftf
+          } else {
+            val keys = res.map(_.right.get)
+            env.datastores.rawDataStore.del(keys).map(_ => ().right)
+          }
+        }
       }
-      .map(_ => ())
   }
 
-  def deleteOne(version: String, id: String)(implicit
+  def deleteOne(version: String, id: String, singularName: String)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Either[JsValue, Unit]] = {
     env.datastores.rawDataStore
       .get(key(id))
       .flatMap {
@@ -303,14 +312,18 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
             case JsSuccess(entity, _) => {
               //  if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => {
               val k = key(entity.theId)
-              env.datastores.rawDataStore.del(Seq(k)).map(_ => ())
+              deleteValidation(entity, json, singularName, id, DeleteAction.DeleteOne, env).flatMap {
+                case Left(err) => err.leftf
+                case Right(_) => env.datastores.rawDataStore.del(Seq(k)).map(_ => ().right)
+              }
             }
-            case _                    => ().vfuture
+            case _                    => ().rightf
           }
-        case None          => ().vfuture
+        case None          => ().rightf
       }
   }
 
+  // no validation as it's only used by kubernetes jobs
   def deleteMany(version: String, ids: Seq[String])(implicit
       ec: ExecutionContext,
       env: Env
@@ -374,7 +387,6 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
   override def all(): Seq[T]                                                     = throw new UnsupportedOperationException()
   override def one(id: String): Option[T]                                        = throw new UnsupportedOperationException()
   override def update(values: Seq[T]): Unit                                      = throw new UnsupportedOperationException()
-  override def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
 }
 
 case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
@@ -402,7 +414,6 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
   override def all(): Seq[T]                                                     = stateAll()
   override def one(id: String): Option[T]                                        = stateOne(id)
   override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
-  override def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
 }
 
 case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocationSupport](
@@ -422,6 +433,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   stateOne: (String) => Option[T],
   stateUpdate: (Seq[T]) => Unit,
   writeValidator: Function6[T, JsValue, String, Option[String], WriteAction, Env, Future[Either[JsValue, T]]] = (ent: T, _: JsValue, _: String, _: Option[String], _: WriteAction, _: Env) => ent.rightf,
+  deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] = (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf,
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -433,6 +445,9 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
   override def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = {
     writeValidator.apply(entity, body, singularName, id, action, env)
+  }
+  override def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
+    deleteValidator.apply(entity, body, singularName, id, action, env)
   }
 }
 
@@ -1930,16 +1945,28 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     Json.obj("id" -> resource.access.extractIdJson(entity)),
                     s"${resource.singularName}Deleted".some
                   )
-                  resource.access.deleteOne(version, resource.access.extractIdJson(entity)).map { _ =>
-                    Json
+                  resource.access.deleteOne(version, resource.access.extractIdJson(entity), resource.singularName).map {
+                    case Left(err) => Json
                       .obj(
-                        "status"   -> 200,
-                        "deleted"  -> true,
-                        "id"       -> resource.access.extractIdJson(entity),
-                        "id_field" -> resource.access.idFieldName()
+                        "status" -> err.select("http_status_code").asOpt[Int].getOrElse(400).json,
+                        "deleted" -> false,
+                        "id" -> resource.access.extractIdJson(entity),
+                        "id_field" -> resource.access.idFieldName(),
+                        "error" -> err
                       )
                       .stringify
                       .byteString
+                    case Right(_) => {
+                      Json
+                        .obj(
+                          "status" -> 200,
+                          "deleted" -> true,
+                          "id" -> resource.access.extractIdJson(entity),
+                          "id_field" -> resource.access.idFieldName()
+                        )
+                        .stringify
+                        .byteString
+                    }
                   }
                 }
               }
@@ -2078,15 +2105,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // DELETE /apis/:group/:version/:entity
   def deleteAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      resource.access.deleteAll(version, e => ctx.canUserWriteJson(e)).map { _ =>
-        adminApiEvent(
-          ctx,
-          s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
-          s"User deleted all ${resource.pluralName}",
-          Json.obj(),
-          s"All${resource.singularName}Deleted".some
-        )
-        NoContent
+      resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
+        case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+        case Right(_) => {
+          adminApiEvent(
+            ctx,
+            s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
+            s"User deleted all ${resource.pluralName}",
+            Json.obj(),
+            s"All${resource.singularName}Deleted".some
+          )
+          NoContent.vfuture
+        }
       }
     }
   }
@@ -2161,8 +2191,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("id" -> id),
             s"${resource.singularName}Deleted".some
           )
-          resource.access.deleteOne(version, id).flatMap { _ =>
-            result(Results.Ok, entity, ctx.request, resource.some)
+          resource.access.deleteOne(version, id, resource.singularName).flatMap {
+            case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+            case Right(_) => result(Results.Ok, entity, ctx.request, resource.some)
           }
       }
     }

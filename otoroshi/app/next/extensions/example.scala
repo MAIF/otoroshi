@@ -290,6 +290,14 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
+  def deleteValidationForFoo(entity: Foo, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
+    println(s"delete validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
+    id match {
+      case "foo_2" => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
+      case _ => ().rightf
+    }
+  }
+
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
       AdminExtensionEntity(
@@ -309,7 +317,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             stateAll = () => states.allFoos(),
             stateOne = id => states.foo(id),
             stateUpdate = values => states.updateFoos(values),
-            writeValidator = writeValidationForFoo
+            writeValidator = writeValidationForFoo,
+            deleteValidator = deleteValidationForFoo,
           )
         )
       )
