@@ -87,6 +87,32 @@ class AsyncUtils {
     promise.future
   }
 
+  def foreachAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(implicit ec: ExecutionContext): Future[Unit] = {
+
+    val promise = Promise[Unit]()
+
+    def next(all: Seq[I]): Unit = {
+      if (all.isEmpty) {
+        promise.trySuccess(())
+      } else {
+        val head = all.head
+        f(head).andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(_) => {
+            if (all.size == 1) {
+              promise.trySuccess(())
+            } else {
+              next(all.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
   def chainAsync[A](items: Seq[Function[A, Future[A]]])(input: A)(implicit ec: ExecutionContext): Future[A] = {
     val promise = Promise[A]()
     var latest: A = input
