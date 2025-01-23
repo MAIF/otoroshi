@@ -58,4 +58,32 @@ class AsyncUtils {
     next(items)
     promise.future
   }
+
+  def chainAsync[A](items: Seq[Function[A, Future[A]]])(input: A)(implicit ec: ExecutionContext): Future[A] = {
+    val promise = Promise[A]()
+    var latest: A = input
+
+    def next(futures: Seq[Function[A, Future[A]]]): Unit = {
+      if (futures.isEmpty) {
+        promise.trySuccess(latest)
+      } else {
+        val head = futures.head
+        head(latest).andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(l) => {
+            latest = l
+            if (futures.size == 1) {
+              promise.trySuccess(latest)
+            } else {
+              next(futures.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+  
 }
