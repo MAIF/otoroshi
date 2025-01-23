@@ -5,7 +5,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class AsyncUtils {
+object AsyncUtils {
 
   def mapAsync[A](items: Seq[Future[A]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
 

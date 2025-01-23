@@ -13,7 +13,7 @@ import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
+import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
@@ -665,6 +665,7 @@ object implicits {
     def containsAll(elems: Seq[A]): Boolean = {
       elems.forall(e => seq.contains(e))
     }
+
     def avgBy(f: A => Int): Double = {
       if (seq.isEmpty) 0.0
       else {
@@ -674,6 +675,7 @@ object implicits {
         sum / seq.size
       }
     }
+
     def findFirstSome[B](f: A => Option[B]): Option[B] = {
       if (seq.isEmpty) {
         None
@@ -686,6 +688,22 @@ object implicits {
         }
         None
       }
+    }
+
+    def mapAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+      AsyncUtils.mapAsyncF[A, O](seq)(f)
+    }
+
+    def foreachAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Unit] = {
+      AsyncUtils.foreachAsyncF[A, O](seq)(f)
+    }
+
+    def chainAsync[I](input: I)(f: Function2[A, I, Future[I]])(implicit ec: ExecutionContext): Future[I] = {
+      AsyncUtils.chainAsyncF[A, I](seq)(input)(f)
+    }
+
+    def chainAsyncE[Err, I](input: I)(f: Function2[A, I, Future[Either[Err, I]]])(implicit ec: ExecutionContext): Future[Either[Err, I]] = {
+      AsyncUtils.chainAsyncFE[Err, A, I](seq)(input)(f)
     }
   }
 
