@@ -181,7 +181,7 @@ trait AdminExtension {
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute]                        = Seq.empty
   def wellKnownOverridesRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
   def vaults(): Seq[AdminExtensionVault]                                          = Seq.empty
-  def publicKeys(): Seq[PublicKeyJwk]                                             = Seq.empty
+  def publicKeys(): Future[Seq[PublicKeyJwk]]                                     = Future.successful(Seq.empty)
   def configuration: Configuration                                                = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
     .getOrElse(Configuration.empty)
@@ -536,9 +536,11 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     }
   }
 
-  def publicKeys(): Seq[PublicKeyJwk] = {
+  def publicKeys(): Future[Seq[PublicKeyJwk]] = {
     if (hasExtensions) {
-      extensions.flatMap(_.publicKeys())
+      extensions.mapAsync { ext =>
+        ext.publicKeys()
+      }
     } else {
       Seq.empty
     }

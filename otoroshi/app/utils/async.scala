@@ -39,6 +39,34 @@ object AsyncUtils {
     promise.future
   }
 
+  def flatmapAsync[A](items: Seq[Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+
+    val promise = Promise[Seq[A]]()
+    var results = Seq.empty[A]
+
+    def next(futures: Seq[Future[Seq[A]]]): Unit = {
+      if (futures.isEmpty) {
+        promise.trySuccess(results)
+      } else {
+        val head = futures.head
+        head.andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(value) => {
+            results = results ++ value
+            if (futures.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(futures.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
   def mapAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
@@ -53,6 +81,34 @@ object AsyncUtils {
           case Failure(e) => promise.tryFailure(e)
           case Success(value) => {
             results = results :+ value
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
+  def flatmapAsyncF[I, A](items: Seq[I])(f: Function[I, Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+
+    val promise = Promise[Seq[A]]()
+    var results = Seq.empty[A]
+
+    def next(all: Seq[I]): Unit = {
+      if (all.isEmpty) {
+        promise.trySuccess(results)
+      } else {
+        val head = all.head
+        f(head).andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(value) => {
+            results = results ++ value
             if (all.size == 1) {
               promise.trySuccess(results)
             } else {

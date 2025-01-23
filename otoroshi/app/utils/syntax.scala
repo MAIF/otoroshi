@@ -694,6 +694,10 @@ object implicits {
       AsyncUtils.mapAsyncF[A, O](seq)(f)
     }
 
+    def flatmapAsync[O](f: Function[A, Future[Seq[O]]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+      AsyncUtils.flatmapAsyncF[A, O](seq)(f)
+    }
+
     def foreachAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Unit] = {
       AsyncUtils.foreachAsyncF[A, O](seq)(f)
     }
