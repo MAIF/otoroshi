@@ -1,5 +1,7 @@
 package otoroshi.utils
 
+import otoroshi.utils.syntax.implicits.BetterSyntax
+
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -155,6 +157,34 @@ class AsyncUtils {
             latest = l
             if (all.size == 1) {
               promise.trySuccess(latest)
+            } else {
+              next(all.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
+  def chainAsyncE[I, A, Err](items: Seq[I])(input: A)(f: Function2[I, A, Future[Either[Err, A]]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+    val promise = Promise[Either[Err, A]]()
+    var latest: A = input
+
+    def next(all: Seq[I]): Unit = {
+      if (all.isEmpty) {
+        promise.trySuccess(latest.right)
+      } else {
+        val head = all.head
+        f(head, latest).andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(Left(err)) => promise.trySuccess(err.left)
+          case Success(Right(value)) => {
+            latest = value
+            if (all.size == 1) {
+              promise.trySuccess(latest.right)
             } else {
               next(all.tail)
             }
