@@ -169,7 +169,35 @@ class AsyncUtils {
     promise.future
   }
 
-  def chainAsyncE[I, A, Err](items: Seq[I])(input: A)(f: Function2[I, A, Future[Either[Err, A]]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+  def chainAsyncE[Err, A](items: Seq[Function[A, Future[Either[Err, A]]]])(input: A)(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+    val promise = Promise[Either[Err, A]]()
+    var latest: A = input
+
+    def next(futures: Seq[Function[A, Future[Either[Err, A]]]]): Unit = {
+      if (futures.isEmpty) {
+        promise.trySuccess(latest.right)
+      } else {
+        val head = futures.head
+        head(latest).andThen {
+          case Failure(e) => promise.tryFailure(e)
+          case Success(Left(err)) => promise.trySuccess(err.left)
+          case Success(Right(value)) => {
+            latest = value
+            if (futures.size == 1) {
+              promise.trySuccess(latest.right)
+            } else {
+              next(futures.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
+  def chainAsyncFE[Err, I, A](items: Seq[I])(input: A)(f: Function2[I, A, Future[Either[Err, A]]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
     val promise = Promise[Either[Err, A]]()
     var latest: A = input
 
