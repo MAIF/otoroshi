@@ -282,6 +282,14 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
+  def writeValidationForFoo(entity: Foo, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, Foo]] = {
+    println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
+    id match {
+      case Some("foo_1") => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
+      case _ => entity.rightf
+    }
+  }
+
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
       AdminExtensionEntity(
@@ -291,7 +299,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
           "foo",
           "foo.extensions.otoroshi.io",
           ResourceVersion("v1", true, false, true),
-          GenericResourceAccessApiWithState[Foo](
+          GenericResourceAccessApiWithStateAndWriteValidation[Foo](
             Foo.format,
             classOf[Foo],
             id => datastores.fooDatastore.key(id),
@@ -300,7 +308,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             () => "id",
             stateAll = () => states.allFoos(),
             stateOne = id => states.foo(id),
-            stateUpdate = values => states.updateFoos(values)
+            stateUpdate = values => states.updateFoos(values),
+            writeValidator = writeValidationForFoo
           )
         )
       )
