@@ -22,6 +22,7 @@ import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
 import moment from 'moment';
+import { LiveStatTiles } from '../../components/LiveStatTiles';
 
 const queryClient = new QueryClient({
     queries: {
@@ -1429,7 +1430,8 @@ function Dashboard(props) {
                     </ContainerBlock>}
                     <ContainerBlock full highlighted>
                         <APIHeader api={api} />
-                        {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>}
+                        {/* {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>} */}
+                        <LiveStatTiles url={`/bo/api/proxy/api/live/${api.id}?every=2000`} />
                         <Uptime
                             health={api.health?.today}
                             stopTheCountUnknownStatus={false}
@@ -1543,17 +1545,22 @@ function SubscriptionsView({ api }) {
     const [subscriptions, setSubscriptions] = useState([])
 
     useEffect(() => {
-        const subscriptionsRefs = api.consumers
-            .flatMap(consumer => consumer.subscriptions)
-            .sort((a, b) => a.created_at < b.created_at ? -1 : 1)
-            .slice(0, 5);
-
         nextClient
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
-            .findAllIds(subscriptionsRefs)
-            .then(setSubscriptions)
+            .findAllWithPagination({
+                page: 1,
+                pageSize: 5,
+                filtered: [{
+                    id: 'api_ref',
+                    value: api.id
+                }],
+                sorted: [{
+                    id: 'dates.created_at',
+                    desc: false
+                }]
+            })
+            .then(raw => setSubscriptions(raw.data))
     }, [])
-
     return <div>
         <div className='short-table-row'>
             <div>Name</div>

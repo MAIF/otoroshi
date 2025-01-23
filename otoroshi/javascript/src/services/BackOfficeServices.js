@@ -2215,7 +2215,6 @@ export const nextClient = {
   },
   forEntityNext: (entity) => {
     return {
-      findAllIds: ids => fetchWrapperNext(`/${entity}?ids=${ids.join(",")}`),
       findAllWithPagination: (paginationState) =>
         findAllWithPagination(entity, paginationState, '/bo/api/proxy/apis/any/v1/'),
       findAll: () => fetchWrapperNext(`/${entity}`),

@@ -1456,7 +1456,6 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       ) match {
       case None                                               => result(Results.NotFound, notFoundBody, request, None)
       case Some(resource) if !resource.access.canBulk && bulk =>
-        println("HERE")
         result(
           Results.Unauthorized,
           Json.obj("error" -> "unauthorized", "error_description" -> "you cannot do that"),
@@ -1954,12 +1953,6 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       } else {
         resource.access.findAll(version)
       }
-
-      val ids: Seq[String] = ctx.request.getQueryString("ids")
-        .map(_.split(",").toSeq)
-        .getOrElse(Seq.empty[String])
-      val onlyIds = ids.nonEmpty
-
       fuEntities.flatMap { entities =>
         adminApiEvent(
           ctx,
@@ -1968,14 +1961,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           Json.obj(),
           None
         )
-        result(Results.Ok, JsArray(entities
-          .filter(e => {
-            if (onlyIds) {
-                ids.contains(e.select("id").asOpt[String].getOrElse(""))
-            } else
-              true
-          })
-          .filter(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
+        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e))), ctx.request, resource.some)
       }
     }
   }

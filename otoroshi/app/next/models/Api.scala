@@ -413,7 +413,8 @@ case class ApiConsumerSubscription(
     enabled: Boolean,
     dates: ApiConsumerSubscriptionDates,
     ownerRef: String,
-    consumerRef: Option[String],
+    consumerRef: String,
+    apiRef: String,
     subscriptionKind: ApiConsumerKind,
     tokenRefs: Seq[String] // ref to apikey, cert, etc
 ) extends EntityLocationSupport {
@@ -438,7 +439,7 @@ object ApiConsumerSubscription {
         enabled     = json.select("enabled").asOpt[Boolean].getOrElse(false),
         dates       = json.select("dates").as(ApiConsumerSubscriptionDates._fmt),
         ownerRef    = json.select("owner_ref").asString,
-        consumerRef = json.select("consumer_ref").asOptString,
+        consumerRef = json.select("consumer_ref").asString,
         subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
@@ -446,6 +447,7 @@ object ApiConsumerSubscription {
           case "oauth2"  => ApiConsumerKind.OAuth2
           case "jwt"     => ApiConsumerKind.JWT
         },
+        apiRef      = json.select("api_ref").asString,
         tokenRefs   = json.select("token_refs").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
@@ -463,6 +465,7 @@ object ApiConsumerSubscription {
         "dates"         -> ApiConsumerSubscriptionDates._fmt.writes(o.dates),
         "owner_ref"     -> o.ownerRef,
         "consumer_ref"  -> o.consumerRef,
+        "api_ref"       -> o.apiRef,
         "subscription_kind"          -> o.subscriptionKind.name,
         "token_refs"    -> o.tokenRefs
     )
@@ -805,9 +808,10 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
         closed_at = DateTime.now()
       ),
       ownerRef = "",
-      consumerRef = None,
+      consumerRef = "",
       subscriptionKind = ApiConsumerKind.Apikey,
-      tokenRefs = Seq.empty
+      tokenRefs = Seq.empty,
+      apiRef = ""
     )
 
     env.datastores.globalConfigDataStore
