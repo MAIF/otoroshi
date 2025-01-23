@@ -5,6 +5,10 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
+/**
+ * This one should let use avoid using akka-stream when doing something like Source(seq).mapAsync(1) { ... }.runWith(Sink.seq)
+ * or Source(seq).mapAsync(1) { ... }.runWith(Sink.ignore)
+ */
 object AsyncUtils {
 
   def mapAsync[A](items: Seq[Future[A]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
