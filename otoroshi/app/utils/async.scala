@@ -44,7 +44,7 @@ class AsyncUtils {
         val head = futures.head
         head.andThen {
           case Failure(e) => promise.tryFailure(e)
-          case Success(value) => {
+          case Success(_) => {
             if (futures.size == 1) {
               promise.trySuccess(())
             } else {
