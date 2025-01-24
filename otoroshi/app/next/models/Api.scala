@@ -343,10 +343,10 @@ object ApiConsumer {
             name = "jwt")
         },
         status = json.select("status").asString.toLowerCase match {
-          case "staging"      => ApiConsumerStatus.Staging()
-          case "published"    => ApiConsumerStatus.Published()
-          case "deprecated"   => ApiConsumerStatus.Deprecated()
-          case "closed"       => ApiConsumerStatus.Closed()
+          case "staging"      => ApiConsumerStatus.Staging
+          case "published"    => ApiConsumerStatus.Published
+          case "deprecated"   => ApiConsumerStatus.Deprecated
+          case "closed"       => ApiConsumerStatus.Closed
         },
         subscriptions = json.select("subscriptions")
           .asOpt[Seq[String]]
@@ -444,7 +444,7 @@ case class ApiConsumerSubscription(
 
 object ApiConsumerSubscription {
 
-  def writeValidatorForApiConsumerSubscription(entity: ApiConsumerSubscription,
+  def writeValidator(entity: ApiConsumerSubscription,
                                                 body: JsValue,
                                                 singularName: String,
                                                 id: Option[String],
@@ -463,17 +463,14 @@ object ApiConsumerSubscription {
 
     env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
       case Some(api)  => api.consumers.find(_.id == entity.consumerRef) match {
-        case Some(consumer) => consumer.status match {
-          case _: ApiConsumerStatus.Published => entity.rightf
+        case Some(consumer) if consumer.status == ApiConsumerStatus.Published => entity.rightf
           case _ => onError("wrong status")
         }
         case None => onError("consumer not found")
       }
-      case None       => onError("api not found")
-    }
   }
 
-  val format = new Format[ApiConsumerSubscription] {
+  val format: Format[ApiConsumerSubscription] = new Format[ApiConsumerSubscription] {
     override def reads(json: JsValue): JsResult[ApiConsumerSubscription] = Try {
       ApiConsumerSubscription(
         location    = json.select("location").as(EntityLocation.format),
@@ -592,19 +589,24 @@ object ApiConsumerSettings {
 
 trait ApiConsumerStatus {
   def name: String
+  def orderPosition: Int
 }
 object ApiConsumerStatus {
-  case class Staging()    extends ApiConsumerStatus  {
+  case object Staging    extends ApiConsumerStatus  {
     override def name: String ="staging"
+    override def orderPosition: Int = 1
   }
-  case class Published()  extends ApiConsumerStatus {
+  case object Published  extends ApiConsumerStatus {
     override def name: String ="published"
+    override def orderPosition: Int = 2
   }
-  case class Deprecated() extends ApiConsumerStatus {
+  case object Deprecated extends ApiConsumerStatus {
     override def name: String ="deprecated"
+    override def orderPosition: Int = 3
   }
-  case class Closed()     extends ApiConsumerStatus {
+  case object Closed      extends ApiConsumerStatus {
     override def name: String ="closed"
+    override def orderPosition: Int = 4
   }
 }
 
@@ -739,6 +741,44 @@ case class Api(
 }
 
 object Api {
+   def writeValidator(newApi: Api,
+                      body: JsValue,
+                      singularName: String,
+                      id: Option[String],
+                      action: WriteAction,
+                      env: Env): Future[Either[JsValue, Api]] = {
+     implicit val ec = env.otoroshiExecutionContext
+     implicit val e = env
+
+     def onError(error: String) = Json.obj(
+       "error" -> s"api has rejected your demand : $error",
+       "http_status_code" -> 400
+     ).leftf
+
+//     println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
+
+     if(action == WriteAction.Update) env.datastores.apiDataStore.findById(newApi.id)
+         .map(_.get)
+         .map(api => {
+           newApi.consumers.foreach(consumer => {
+             api.consumers.find(_.id == consumer.id).map(oldConsumer => {
+//               println(s"${oldConsumer.id} ${oldConsumer.status} - ${consumer.status}")
+               // staging     -> published  = ok
+               // published   -> deprecated = ok
+               // deprecated  -> closed     = ok
+               // deprecated  -> published  = ok
+
+               if (consumer.status == ApiConsumerStatus.Published && oldConsumer.status == ApiConsumerStatus.Deprecated) {
+
+               } else if (oldConsumer.status.orderPosition > consumer.status.orderPosition) {
+                 return onError("you can't get back to a consumer status")
+               }
+             })
+           })
+       })
+     newApi.rightf
+   }
+
   def fromJsons(value: JsValue): Api =
     try {
       format.reads(value).get
