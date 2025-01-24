@@ -965,7 +965,7 @@ class OtoroshiResources(env: Env) {
         (_v, _p) => env.datastores.apiDataStore.template(env).json,
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq)
+        stateUpdate = seq => env.proxyState.updateApis(seq),
       )
     ),
     //////
@@ -975,7 +975,7 @@ class OtoroshiResources(env: Env) {
       "apiconsumersubscription",
       "apis.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[ApiConsumerSubscription](
+      GenericResourceAccessApiWithStateAndWriteValidation[ApiConsumerSubscription](
         ApiConsumerSubscription.format,
         classOf[ApiConsumerSubscription],
         env.datastores.apiConsumerSubscriptionDataStore.key,
@@ -985,7 +985,9 @@ class OtoroshiResources(env: Env) {
         (_v, _p) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
         stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
         stateOne = id => env.proxyState.apiConsumerSubscription(id),
-        stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq)
+        stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq),
+        writeValidator = ApiConsumerSubscription.writeValidatorForApiConsumerSubscription,
+//        deleteValidator = deleteValidatorForApiConsumerSubscription,
       )
     )
   )++ env.adminExtensions.resources()

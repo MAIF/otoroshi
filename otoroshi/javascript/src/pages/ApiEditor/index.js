@@ -22,7 +22,7 @@ import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
 import moment from 'moment';
-import { LiveStatTiles } from '../../components/LiveStatTiles';
+import { ApiStats } from './ApiStats';
 
 const queryClient = new QueryClient({
     queries: {
@@ -1431,7 +1431,13 @@ function Dashboard(props) {
                     <ContainerBlock full highlighted>
                         <APIHeader api={api} />
                         {/* {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>} */}
-                        <LiveStatTiles url={`/bo/api/proxy/api/live/${api.id}?every=2000`} />
+                        {api.routes.map(route => {
+                            return <div key={route.id}>
+                                <h3 className="m-0">{route.name}</h3>
+                                <ApiStats url={`/bo/api/proxy/api/live/${route.id}?every=2000`} />
+                            </div>
+                        })}
+
                         <Uptime
                             health={api.health?.today}
                             stopTheCountUnknownStatus={false}
@@ -1606,7 +1612,8 @@ function ContainerBlock({ children, full, highlighted }) {
     return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}
         style={{
             margin: 0,
-            position: 'relative'
+            position: 'relative',
+            height: 'fit-content'
         }}>
         {children}
     </div>

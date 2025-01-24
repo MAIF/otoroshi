@@ -2,16 +2,19 @@ package next.models
 
 import akka.util.ByteString
 import diffson.PatchOps
+import next.models.ApiBackend.ApiBackendInline
 import org.joda.time.DateTime
+import otoroshi.api.WriteAction
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas}
 import otoroshi.next.models._
 import otoroshi.next.plugins.NgApikeyCallsConfig
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 sealed trait ApiState {
@@ -68,7 +71,7 @@ case object ApiRemoved extends ApiState {
 case class ApiRoute(id: String, name: Option[String], frontend: NgFrontend, flowRef: String, backend: ApiBackend)
 
 object ApiRoute {
-  val _fmt = new Format[ApiRoute] {
+  val _fmt: Format[ApiRoute] = new Format[ApiRoute] {
 
     override def reads(json: JsValue): JsResult[ApiRoute] = Try {
       ApiRoute(
@@ -424,9 +427,52 @@ case class ApiConsumerSubscription(
   override def theDescription: String           = description
   override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
+
+//  def deleteValidatorForApiConsumerSubscription(entity: ApiConsumerSubscription,
+//                                                body: JsValue,
+//                                                singularName: String,
+//                                                id: String,
+//                                                action: DeleteAction,
+//                                                env: Env): Future[Either[JsValue, Unit]] = {
+//    println(s"delete validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
+//    id match {
+//      case "foo_2" => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
+//      case _ => ().rightf
+//    }
+//  }
 }
 
 object ApiConsumerSubscription {
+
+  def writeValidatorForApiConsumerSubscription(entity: ApiConsumerSubscription,
+                                                body: JsValue,
+                                                singularName: String,
+                                                id: Option[String],
+                                                action: WriteAction,
+                                                env: Env): Future[Either[JsValue, ApiConsumerSubscription]] = {
+
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val e = env
+
+    def onError(error: String) = Json.obj(
+        "error" -> s"api consumer has rejected your demand : $error",
+        "http_status_code" -> 400
+      ).leftf
+
+//    println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
+
+    env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
+      case Some(api)  => api.consumers.find(_.id == entity.consumerRef) match {
+        case Some(consumer) => consumer.status match {
+          case _: ApiConsumerStatus.Published => entity.rightf
+          case _ => onError("wrong status")
+        }
+        case None => onError("consumer not found")
+      }
+      case None       => onError("api not found")
+    }
+  }
+
   val format = new Format[ApiConsumerSubscription] {
     override def reads(json: JsValue): JsResult[ApiConsumerSubscription] = Try {
       ApiConsumerSubscription(
@@ -648,13 +694,48 @@ case class Api(
     // TODO: monitoring and heath ????
     //// ApiVersion
 ) extends EntityLocationSupport {
-  override def internalId: String               = id
-  override def json: JsValue                    = Api.format.writes(this)
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: Seq[String]             = tags
+  override def internalId: String = id
+
+  override def json: JsValue = Api.format.writes(this)
+
+  override def theName: String = name
+
+  override def theDescription: String = description
+
+  override def theTags: Seq[String] = tags
+
   override def theMetadata: Map[String, String] = metadata
-  def toRoutes: Seq[NgRoute]                    = ???
+
+  def toRoutes: Seq[NgRoute] = ???
+
+  def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
+    implicit val ec = env.otoroshiExecutionContext
+
+    val apiRoute = routes.find(_.id == routeId).get // TODO - maybe test if exists
+
+    (apiRoute.backend match {
+      case ApiBackend.ApiBackendRef(ref) => env.datastores.backendsDataStore.findById(ref).map(_.map(_.backend))
+      case ApiBackend.ApiBackendInline(_, _, backend) => backend.some.future
+    })
+      .map(_.map(backend => NgRoute(
+        location = location,
+        id = apiRoute.id,
+        name = apiRoute.name + " - " + apiRoute.frontend.methods
+          .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
+        description = description,
+        tags = tags,
+        metadata = metadata,
+        enabled = true,
+        capture = capture,
+        debugFlow = debugFlow,
+        exportReporting = exportReporting,
+        groups = Seq.empty,
+        frontend = apiRoute.frontend,
+        backend = backend,
+        backendRef = None,
+        plugins = flows.find(_.id == apiRoute.flowRef).get.plugins
+      )))
+  }
 }
 
 object Api {

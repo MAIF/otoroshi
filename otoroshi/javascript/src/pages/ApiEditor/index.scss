@@ -195,4 +195,22 @@
         min-width: 3rem;
         text-align: center;
     }
+
+    .row-metrics {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: .5rem;
+    }
+
+    .row-metrics .metric {
+        height: initial;
+        width: initial;
+        flex: 1;
+        margin: initial;
+    }
+
+    .row-metrics * {
+        font-size: initial;
+        font-family: Raleway, Helvetica, sans-serif;
+    }
 }
