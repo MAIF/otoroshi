@@ -537,7 +537,7 @@ export default {
         },
       },
       flow: (item) => {
-        if (item.type === 'WeightedBestResponseTime') {
+        if (item?.type === 'WeightedBestResponseTime') {
           return ['type', 'ratio'];
         } else {
           return ['type'];

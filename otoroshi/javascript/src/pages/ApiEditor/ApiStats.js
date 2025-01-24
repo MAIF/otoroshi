@@ -51,10 +51,7 @@ class Metric extends Component {
                     width: props.width || 300,
                 }}
             >
-                <div className="metric-text">
-                    <span className="metric-text-value">{props.value}</span>
-                    <span className="metric-text-title">{props.legend}</span>
-                </div>
+                <span className="metric-text-title">{props.legend}</span>
                 <div className="metric-box">
                     <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
                         <SparklinesLine
@@ -64,6 +61,7 @@ class Metric extends Component {
                         <SparklinesSpots />
                     </Sparklines>
                 </div>
+                <span className="metric-text-value">{props.value}<span>{props.unit}</span></span>
             </div>
         );
     }
@@ -149,21 +147,21 @@ export class ApiStats extends Component {
         }
         return <>
             <div className="row-metrics">
-                <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />
-                <Metric time={Date.now()} value={this.state.duration} legend="ms. per request" />
-                <Metric time={Date.now()} value={this.state.overhead} legend="ms. overhead per request" />
+                <Metric time={Date.now()} value={this.state.rate} legend="Requests" unit="/sec" />
+                <Metric time={Date.now()} value={this.state.duration} legend="Per request" unit="ms" />
+                <Metric time={Date.now()} value={this.state.overhead} legend="Overhead per request" unit="ms" />
             </div>
             <div className="row-metrics">
                 {/* <Metric time={Date.now()} value={this.state.dataInRate} />
                 <Metric time={Date.now()} value={this.state.dataOutRate} /> */}
-                
+
             </div>
             <div className="row-metrics">
-                <Metric time={Date.now()} value={this.state.requests} legend="requests served" />
+                <Metric time={Date.now()} value={this.state.requests} legend="Requests served" />
                 <Metric
                     time={Date.now()}
                     value={this.state.concurrentHandledRequests}
-                    legend="concurrent requests"
+                    legend="Concurrent requests"
                 />
                 {/* <Metric time={Date.now()} value={this.state.dataIn} />
                 <Metric time={Date.now()} value={this.state.dataOut} /> */}

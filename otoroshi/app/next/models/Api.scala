@@ -14,15 +14,15 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 sealed trait ApiState {
   def name: String
 }
 
-case object ApiStarted extends ApiState {
-  def name: String = "started"
+case object ApiStaging extends ApiState {
+  def name: String = "staging"
 }
 case object ApiPublished extends ApiState {
   def name: String = "published"
@@ -454,20 +454,35 @@ object ApiConsumerSubscription {
     implicit val ec = env.otoroshiExecutionContext
     implicit val e = env
 
-    def onError(error: String) = Json.obj(
+    def onError(error: String): Either[JsValue, ApiConsumerSubscription] = Json.obj(
         "error" -> s"api consumer has rejected your demand : $error",
         "http_status_code" -> 400
-      ).leftf
+      ).left
+
+    def addSubscriptionToConsumer(api: Api): Future[Boolean] = {
+       env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
+            if (consumer.id == entity.consumerRef) {
+              consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
+            } else {
+              consumer
+            }
+          })))
+    }
 
 //    println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
 
-    env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
+    env.datastores.apiDataStore.findById(entity.apiRef) flatMap  {
       case Some(api)  => api.consumers.find(_.id == entity.consumerRef) match {
-        case Some(consumer) if consumer.status == ApiConsumerStatus.Published => entity.rightf
-          case _ => onError("wrong status")
+          case None => onError("consumer not found").vfuture
+          case Some(consumer) if consumer.status == ApiConsumerStatus.Published =>
+             addSubscriptionToConsumer(api).map {
+               case true => entity.right
+               case false => onError("failed to add subscription to api")
+             }
+          case _ => onError("wrong status").vfuture
         }
-        case None => onError("consumer not found")
-      }
+      case _ => onError("api not found").vfuture
+    }
   }
 
   val format: Format[ApiConsumerSubscription] = new Format[ApiConsumerSubscription] {
@@ -708,7 +723,18 @@ case class Api(
 
   override def theMetadata: Map[String, String] = metadata
 
-  def toRoutes: Seq[NgRoute] = ???
+  def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
+    implicit val ec = env.otoroshiExecutionContext
+
+    if (state == ApiStaging) {
+      Seq.empty.vfuture
+    } else {
+      Future.sequence(routes.map(route => apiRouteToNgRoute(route.id))
+        .map(_.collect {
+        case Some(route) => route
+      })).map(_.filter(_.enabled))
+    }
+  }
 
   def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
@@ -742,27 +768,30 @@ case class Api(
 
 object Api {
    def writeValidator(newApi: Api,
-                      body: JsValue,
-                      singularName: String,
-                      id: Option[String],
+                      _body: JsValue,
+                      _singularName: String,
+                      _id: Option[String],
                       action: WriteAction,
                       env: Env): Future[Either[JsValue, Api]] = {
-     implicit val ec = env.otoroshiExecutionContext
-     implicit val e = env
+     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+     implicit val e: Env = env
 
-     def onError(error: String) = Json.obj(
-       "error" -> s"api has rejected your demand : $error",
-       "http_status_code" -> 400
-     ).leftf
-
-//     println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
-
-     if(action == WriteAction.Update) env.datastores.apiDataStore.findById(newApi.id)
+     if(action == WriteAction.Update) {
+       env.datastores.apiDataStore.findById(newApi.id)
          .map(_.get)
          .map(api => {
+
+           // API needs to be published to have consumers
+           if (newApi.consumers.nonEmpty && newApi.state == ApiStaging) {
+               return Json.obj(
+                 "error" -> s"api is not accessible by consumers. Publish your API to continue",
+                 "http_status_code" -> 400
+               ).leftf
+           }
+
            newApi.consumers.foreach(consumer => {
              api.consumers.find(_.id == consumer.id).map(oldConsumer => {
-//               println(s"${oldConsumer.id} ${oldConsumer.status} - ${consumer.status}")
+               //               println(s"${oldConsumer.id} ${oldConsumer.status} - ${consumer.status}")
                // staging     -> published  = ok
                // published   -> deprecated = ok
                // deprecated  -> closed     = ok
@@ -771,11 +800,16 @@ object Api {
                if (consumer.status == ApiConsumerStatus.Published && oldConsumer.status == ApiConsumerStatus.Deprecated) {
 
                } else if (oldConsumer.status.orderPosition > consumer.status.orderPosition) {
-                 return onError("you can't get back to a consumer status")
+                 return Json.obj(
+                   "error" -> s"api has rejected your demand : you can't get back to a consumer status",
+                   "http_status_code" -> 400
+                 ).leftf
                }
              })
            })
-       })
+         })
+     }
+
      newApi.rightf
    }
 
@@ -819,11 +853,12 @@ object Api {
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
         state = (json \ "state").asOptString.map {
-          case "started" => ApiStarted
+          case "staging" => ApiStaging
           case "published" => ApiPublished
           case "deprecated" => ApiDeprecated
           case "removed" => ApiRemoved
-        }.getOrElse(ApiStarted),
+          case _ => ApiStaging
+        }.getOrElse(ApiStaging),
         blueprint = (json \ " blueprint").asOptString.map {
           case "REST"      => ApiBlueprint.REST
           case "GraphQL"   => ApiBlueprint.GraphQL
@@ -880,7 +915,7 @@ trait ApiDataStore extends BasicStore[Api] {
       debugFlow = false,
       capture = false,
       exportReporting = false,
-      state = ApiStarted,
+      state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,
       backends = Seq.empty,

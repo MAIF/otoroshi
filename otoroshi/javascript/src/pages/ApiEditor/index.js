@@ -74,9 +74,19 @@ function RouteDesigner(props) {
     const [schema, setSchema] = useState()
     const [route, setRoute] = useState({})
 
+    const [backends, setBackends] = useState([])
+
+    const backendsQuery = useQuery(['getBackends'],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+        {
+            enabled: backends.length <= 0,
+            onSuccess: setBackends
+        })
+
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
         retry: 0,
+        enabled: backendsQuery.data !== undefined,
         onSuccess: data => {
             setRoute(data.routes.find(route => route.id === params.routeId))
             setSchema({
@@ -109,10 +119,41 @@ function RouteDesigner(props) {
                     },
                 },
                 backend: {
-                    type: 'form',
+                    type: 'select',
                     label: 'Backend',
-                    schema: NgBackend.schema,
-                    flow: NgBackend.flow
+                    props: {
+                        options: backends,
+                        optionsTransformer: {
+                            value: 'id',
+                            label: 'name'
+                        }
+                    }
+                    // return <BackendSelector
+                    //     enabled
+                    //     backends={[...data.backends, ...backends]}
+                    //     setUsingExistingBackend={e => {
+                    //         props.rootOnChange({
+                    //             ...props.rootValue,
+                    //             usingExistingBackend: e
+                    //         })
+                    //     }}
+                    //     onChange={backend_ref => {
+                    //         props.rootOnChange({
+                    //             ...props.rootValue,
+                    //             usingExistingBackend: true,
+                    //             backend: backend_ref
+                    //         })
+                    //     }}
+                    //     usingExistingBackend={props.rootValue.usingExistingBackend !== undefined ?
+                    //         props.rootValue.usingExistingBackend : (typeof props.rootValue.backend === 'string')
+                    //     }
+                    //     route={props.rootValue}
+                    // />
+                    // }
+                    // type: 'form',
+                    // label: 'Backend',
+                    // schema: NgBackend.schema,
+                    // flow: NgBackend.flow
                 }
             })
         }
@@ -1433,7 +1474,7 @@ function Dashboard(props) {
                         {/* {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>} */}
                         {api.routes.map(route => {
                             return <div key={route.id}>
-                                <h3 className="m-0">{route.name}</h3>
+                                <h3 className="m-0 mb-1">{route.name}</h3>
                                 <ApiStats url={`/bo/api/proxy/api/live/${route.id}?every=2000`} />
                             </div>
                         })}
@@ -1620,10 +1661,51 @@ function ContainerBlock({ children, full, highlighted }) {
 }
 
 function APIHeader({ api }) {
+    const updateAPI = newAPI => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update(newAPI)
+    }
+
     return <>
         <div className='d-flex align-items-center gap-3'>
             <h2 className='m-0'>{api.name}</h2>
             <APIState value={api.state} />
+            {api.state === API_STATE.STAGING && <Button
+                type='primaryColor'
+                onClick={() => {
+                    updateAPI({
+                        ...api,
+                        state: API_STATE.PUBLISHED
+                    })
+                        .then(() => window.location.reload())
+                }}
+                className='btn-sm ms-auto'
+                text="Start you API" />}
+            {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
+                <Button
+                    type='quiet'
+                    onClick={() => {
+                        updateAPI({
+                            ...api,
+                            state: api.state === API_STATE.PUBLISHED ? API_STATE.DEPRECATED : API_STATE.PUBLISHED
+                        })
+                            .then(() => window.location.reload())
+                    }}
+                    className='btn-sm ms-auto'
+                    text={api.state === API_STATE.PUBLISHED ? "Deprecate your API" : "Publish your API"} />}
+            {/* {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
+                <Button
+                    type='danger'
+                    onClick={() => {
+                        updateAPI({
+                            ...api,
+                            state: API_STATE.DEPRECATED
+                        })
+                            .then(() => window.location.reload())
+                    }}
+                    className='btn-sm ms-auto'
+                    text="Close your API" />} */}
         </div>
         <div className='d-flex align-items-center gap-1 mb-3'>
             <p className='m-0 me-2'>{api.description}</p>
@@ -1635,10 +1717,10 @@ function APIHeader({ api }) {
 }
 
 function APIState({ value }) {
-    if (value === API_STATE.STARTED)
+    if (value === API_STATE.STAGING)
         return <span className='badge api-status-started'>
             <i className='fas fa-rocket me-2' />
-            Started
+            Staging
         </span>
 
     if (value === API_STATE.DEPRECATED)

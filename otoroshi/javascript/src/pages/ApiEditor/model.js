@@ -1,5 +1,5 @@
 export const API_STATE = {
-    "STARTED": 'started',
+    "STAGING": 'staging',
     "PUBLISHED": 'published',
     "DEPRECATED": 'deprecated',
     "REMOVED": 'removed',

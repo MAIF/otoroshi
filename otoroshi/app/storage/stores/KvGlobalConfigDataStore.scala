@@ -98,8 +98,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   override def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val config = latest()
     //singleton().map { config =>
-    redisCli.get(throttlingKey()).map { bs =>
-      throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
+    redisCli.get(throttlingKey()).map { bs =>      throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
       // throttlingQuotasCache.get() <= (config.throttlingQuota * 10L)
       throttlingQuotasCache.get() <= config.throttlingQuota
     }

@@ -207,10 +207,42 @@
         width: initial;
         flex: 1;
         margin: initial;
+        align-items: start;
+        justify-content: space-around;
     }
 
     .row-metrics * {
         font-size: initial;
         font-family: Raleway, Helvetica, sans-serif;
+    }
+
+    .metric {
+        position: relative;
+    }
+
+    .metric-box {
+        height: inherit;
+        margin-top: 32px;
+    }
+
+    .metric-text-title,
+    .metric-text-value {
+        text-shadow: none;
+        color: var(--text);
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .metric-text-title {
+        position: absolute;
+        top: 6px;
+    }
+
+    .metric-text-value {
+        font-size: 2rem;
+    }
+
+    .metric-text-value span {
+        font-size: .75rem;
     }
 }
