@@ -1584,7 +1584,7 @@ object KubernetesCRDsJob {
                 v => v.select("id").asString,
                 v =>
                   resource.access
-                    .create(resource.version.name, resource.singularName, v.select("id").asOptString, v, WriteAction.Update)
+                    .create(resource.version.name, resource.singularName, v.select("id").asOptString, v, WriteAction.Update, None)
                     .map(_.isRight)
               )
             }.flatten

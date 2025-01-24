@@ -157,7 +157,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def canDelete: Boolean
   def canBulk: Boolean
 
-  def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
+  def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
 
   def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = ().rightf
 
@@ -194,7 +194,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def create(version: String, singularName: String, id: Option[String], body: JsValue, action: WriteAction)(implicit
+  def create(version: String, singularName: String, id: Option[String], body: JsValue, action: WriteAction, oldEntity: Option[JsValue])(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
@@ -205,7 +205,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     format.reads(body) match {
       case err @ JsError(_)    => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
       case JsSuccess(_value, _) => {
-        writeValidation(_value, body, singularName, id, action, env).flatMap {
+        writeValidation(_value, body, oldEntity.flatMap(oe => format.reads(oe).asOpt.map(v => (v, oe))), singularName, id, action, env).flatMap {
           case Left(err) => err.leftf
           case Right(value) => {
             val idKey     = idFieldName()
@@ -432,7 +432,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   stateAll: () => Seq[T],
   stateOne: (String) => Option[T],
   stateUpdate: (Seq[T]) => Unit,
-  writeValidator: Function6[T, JsValue, String, Option[String], WriteAction, Env, Future[Either[JsValue, T]]] = (ent: T, _: JsValue, _: String, _: Option[String], _: WriteAction, _: Env) => ent.rightf,
+  writeValidator: Function7[T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env, Future[Either[JsValue, T]]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) => ent.rightf,
   deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] = (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf,
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
@@ -443,8 +443,8 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   override def all(): Seq[T]                                                     = stateAll()
   override def one(id: String): Option[T]                                        = stateOne(id)
   override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
-  override def writeValidation(entity: T, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = {
-    writeValidator.apply(entity, body, singularName, id, action, env)
+  override def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = {
+    writeValidator.apply(entity, body, oldEntity, singularName, id, action, env)
   }
   override def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
     deleteValidator.apply(entity, body, singularName, id, action, env)
@@ -1645,7 +1645,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                         resource.singularName,
                         resource.access.extractIdJson(patchedEntity).some,
                         patchedEntity,
-                        WriteAction.Update
+                        WriteAction.Update,
+                        entity.some
                       )
                       .map {
                         case Left(error)          =>
@@ -1748,7 +1749,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .byteString
                             .vfuture
                         case JsSuccess(_, _) =>
-                          resource.access.create(version, resource.singularName, None, entity, WriteAction.Create).map {
+                          resource.access.create(version, resource.singularName, None, entity, WriteAction.Create, None).map {
                             case Left(error)          =>
                               error.stringify.byteString
                             case Right(createdEntity) =>
@@ -1862,7 +1863,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .vfuture
                         case JsSuccess(_, _) =>
                           resource.access
-                            .create(version, resource.singularName, resource.access.extractIdJson(entity).some, entity, WriteAction.Update)
+                            .create(version, resource.singularName, resource.access.extractIdJson(entity).some, entity, WriteAction.Update, oldEntity.some)
                             .map {
                               case Left(error)          =>
                                 error.stringify.byteString
@@ -2082,7 +2083,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     resource.some
                   )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, None, body, WriteAction.Create).flatMap {
+                  resource.access.create(version, resource.singularName, None, body, WriteAction.Create, None).flatMap {
                     case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -2235,7 +2236,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             case JsSuccess(body, _)                              => {
               resource.access.findOne(version, id).flatMap {
                 case None      =>
-                  resource.access.create(version, resource.singularName, Some(id), body, WriteAction.Create).flatMap {
+                  resource.access.create(version, resource.singularName, Some(id), body, WriteAction.Create, None).flatMap {
                     case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -2251,7 +2252,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   val oldEntity  = resource.access.format.reads(old).get
                   val newEntity  = resource.access.format.reads(body).get
                   val hasChanged = oldEntity == newEntity
-                  resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update).flatMap {
+                  resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, old.some).flatMap {
                     case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
@@ -2316,7 +2317,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   resource.access.findOne(version, id).flatMap {
                     case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
                     case Some(_) =>
-                      resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update).flatMap {
+                      resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, oldEntity.some).flatMap {
                         case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
                           adminApiEvent(
@@ -2373,7 +2374,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     resource.some
                   )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, id.some, patchedBody, WriteAction.Update).flatMap {
+                  resource.access.create(version, resource.singularName, id.some, patchedBody, WriteAction.Update, current.some).flatMap {
                     case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(

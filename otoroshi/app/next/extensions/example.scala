@@ -282,7 +282,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
-  def writeValidationForFoo(entity: Foo, body: JsValue, singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, Foo]] = {
+  def writeValidationForFoo(entity: Foo, body: JsValue, oldEntity: Option[(Foo, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, Foo]] = {
     println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
     id match {
       case Some("foo_1") => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
