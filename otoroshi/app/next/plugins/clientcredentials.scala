@@ -238,7 +238,7 @@ class NgClientCredentials extends NgRequestSink {
             val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 
             val symbols           = new SymbolTable()
-            val authority_builder = new Block(0, symbols)
+            val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
 
             authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
             authority_builder.add_fact(
@@ -297,7 +297,7 @@ class NgClientCredentials extends NgRequestSink {
               val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
-              Biscuit.make(rng, keypair, symbols, authority_builder.build()).serialize_b64url()
+              Biscuit.make(rng, keypair, authority_builder.build(symbols)).serialize_b64url()
             }
 
             val pass = scope.forall { s =>
