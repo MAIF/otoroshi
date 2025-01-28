@@ -642,16 +642,16 @@ export class DangerZonePage extends Component {
       type: 'number',
       props: {
         label: 'Global throttling',
-        placeholder: `Number of requests per seconds`,
-        help: `The max. number of requests allowed per seconds globally on Otoroshi`,
+        placeholder: `Number of requests per window`,
+        help: `The max. number of requests allowed per window globally on Otoroshi`,
       },
     },
     perIpThrottlingQuota: {
       type: 'number',
       props: {
         label: 'Throttling per IP',
-        placeholder: `Number of requests per seconds per IP`,
-        help: `The max. number of requests allowed per seconds per IP address globally on Otoroshi`,
+        placeholder: `Number of requests per window per IP`,
+        help: `The max. number of requests allowed per window per IP address globally on Otoroshi`,
       },
     },
     analyticsEventsUrl: {

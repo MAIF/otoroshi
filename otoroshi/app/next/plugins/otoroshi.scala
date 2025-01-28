@@ -634,7 +634,7 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
     JWKSHelper.jwks(ctx.rawRequest, config.certIds).map {
       case Left(body)  => Results.NotFound(body)
-      case Right(body) => Results.Ok(body)
+      case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
     } map { res =>
       Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
     }

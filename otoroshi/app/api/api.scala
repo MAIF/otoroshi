@@ -6,6 +6,7 @@ import akka.util.ByteString
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.api.DeleteAction.{DeleteAll, DeleteOne}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
@@ -90,6 +91,18 @@ case class ResourceVersion(
     }
   }
 }
+
+object Resource {
+  val unknown = Resource(
+    kind = "Unknown",
+    pluralName = "unknowns",
+    singularName = "unknown",
+    group = "proxy.otoroshi.io",
+    version =  ResourceVersion("v1", true, false, true),
+    access = null,
+  )
+}
+
 case class Resource(
     kind: String,
     pluralName: String,
@@ -98,7 +111,7 @@ case class Resource(
     version: ResourceVersion,
     access: ResourceAccessApi[_]
 )                                                   {
-  lazy val groupKing = s"${group}/${kind}"
+  lazy val groupKind = s"${group}/${kind}"
   def json: JsValue  = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
@@ -115,6 +128,19 @@ case class Resource(
     "version"       -> version.jsonWithSchema(kind, access.clazz)
   )
 }
+
+sealed trait WriteAction
+object WriteAction {
+  case object Create extends WriteAction
+  case object Update extends WriteAction
+}
+
+sealed trait DeleteAction
+object DeleteAction {
+  case object DeleteOne extends DeleteAction
+  case object DeleteAll extends DeleteAction
+}
+
 trait ResourceAccessApi[T <: EntityLocationSupport] {
 
   def clazz: Class[T]
@@ -130,6 +156,10 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def canUpdate: Boolean
   def canDelete: Boolean
   def canBulk: Boolean
+
+  def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
+
+  def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = ().rightf
 
   def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit
       env: Env
@@ -164,7 +194,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def create(version: String, singularName: String, id: Option[String], body: JsValue)(implicit
+  def create(version: String, singularName: String, id: Option[String], body: JsValue, action: WriteAction, oldEntity: Option[JsValue])(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
@@ -174,23 +204,28 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
     format.reads(body) match {
       case err @ JsError(_)    => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
-      case JsSuccess(value, _) => {
-        val idKey     = idFieldName()
-        val updateKey = if (id.isDefined) "updated_at" else "created_at"
-        val finalBody = format
-          .writes(value)
-          .asObject
-          .deepMerge(
-            Json.obj(
-              idKey      -> resId,
-              "metadata" -> Json.obj(updateKey -> DateTime.now().toString())
-            )
-          )
-        env.datastores.rawDataStore
-          .set(key(resId), finalBody.stringify.byteString, None)
-          .map { _ =>
-            Right(finalBody)
+      case JsSuccess(_value, _) => {
+        writeValidation(_value, body, oldEntity.flatMap(oe => format.reads(oe).asOpt.map(v => (v, oe))), singularName, id, action, env).flatMap {
+          case Left(err) => err.leftf
+          case Right(value) => {
+            val idKey     = idFieldName()
+            val updateKey = if (id.isDefined) "updated_at" else "created_at"
+            val finalBody = format
+              .writes(value)
+              .asObject
+              .deepMerge(
+                Json.obj(
+                  idKey      -> resId,
+                  "metadata" -> Json.obj(updateKey -> DateTime.now().toString())
+                )
+              )
+            env.datastores.rawDataStore
+              .set(key(resId), finalBody.stringify.byteString, None)
+              .map { _ =>
+                Right(finalBody)
+              }
           }
+        }
       }
     }
   }
@@ -220,20 +255,20 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteAll(version: String, canWrite: JsValue => Boolean)(implicit
+  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Either[JsValue, Unit]] = {
     env.datastores.rawDataStore
       .allMatching(key("*"))
       .flatMap { rawItems =>
         val keys = rawItems
           .map { bytestring =>
             val json = bytestring.utf8String.parseJson
-            format.reads(json)
+            (json, format.reads(json))
           }
-          .collect { case JsSuccess(value, _) =>
-            value
+          .collect { case (json, JsSuccess(value, _)) =>
+            (json, value)
           }
           // .filter { entity =>
           //   if (namespace == "any") true
@@ -241,19 +276,33 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           //   else if (namespace == "*") true
           //   else entity.location.tenant.value == namespace
           // }
-          .filter(e => canWrite(e.json))
+          .filter(e => canWrite(e._1))
           .map { entity =>
-            key(entity.theId)
+            (entity._1, entity._2, key(entity._2.theId))
           }
-        env.datastores.rawDataStore.del(keys)
+        keys.mapAsync {
+          case (json, entity, key) => deleteValidation(entity, json, singularName, key, DeleteAction.DeleteAll, env).map {
+            case Left(err) => Left(err)
+            case Right(_) => Right(key)
+          }
+        }.flatMap { res =>
+          val hasErrors = res.exists(_.isLeft)
+          if (hasErrors) {
+            val errors = res.filter(_.isLeft).map(_.left.get)
+            val error = Json.obj("errors" -> JsArray(errors))
+            error.leftf
+          } else {
+            val keys = res.map(_.right.get)
+            env.datastores.rawDataStore.del(keys).map(_ => ().right)
+          }
+        }
       }
-      .map(_ => ())
   }
 
-  def deleteOne(version: String, id: String)(implicit
+  def deleteOne(version: String, id: String, singularName: String)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Either[JsValue, Unit]] = {
     env.datastores.rawDataStore
       .get(key(id))
       .flatMap {
@@ -263,14 +312,18 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
             case JsSuccess(entity, _) => {
               //  if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => {
               val k = key(entity.theId)
-              env.datastores.rawDataStore.del(Seq(k)).map(_ => ())
+              deleteValidation(entity, json, singularName, id, DeleteAction.DeleteOne, env).flatMap {
+                case Left(err) => err.leftf
+                case Right(_) => env.datastores.rawDataStore.del(Seq(k)).map(_ => ().right)
+              }
             }
-            case _                    => ().vfuture
+            case _                    => ().rightf
           }
-        case None          => ().vfuture
+        case None          => ().rightf
       }
   }
 
+  // no validation as it's only used by kubernetes jobs
   def deleteMany(version: String, ids: Seq[String])(implicit
       ec: ExecutionContext,
       env: Env
@@ -324,7 +377,7 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
     canDelete: Boolean = true,
-    canBulk: Boolean = true
+    canBulk: Boolean = true,
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -351,7 +404,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     canBulk: Boolean = true,
     stateAll: () => Seq[T],
     stateOne: (String) => Option[T],
-    stateUpdate: (Seq[T]) => Unit
+    stateUpdate: (Seq[T]) => Unit,
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -361,6 +414,41 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
   override def all(): Seq[T]                                                     = stateAll()
   override def one(id: String): Option[T]                                        = stateOne(id)
   override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
+}
+
+case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocationSupport](
+  format: Format[T],
+  clazz: Class[T],
+  keyf: String => String,
+  extractIdf: T => String,
+  extractIdJsonf: JsValue => String,
+  idFieldNamef: () => String,
+  tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
+  canRead: Boolean = true,
+  canCreate: Boolean = true,
+  canUpdate: Boolean = true,
+  canDelete: Boolean = true,
+  canBulk: Boolean = true,
+  stateAll: () => Seq[T],
+  stateOne: (String) => Option[T],
+  stateUpdate: (Seq[T]) => Unit,
+  writeValidator: Function7[T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env, Future[Either[JsValue, T]]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) => ent.rightf,
+  deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] = (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf,
+) extends ResourceAccessApi[T] {
+  override def key(id: String): String                                           = keyf.apply(id)
+  override def extractId(value: T): String                                       = value.theId
+  override def extractIdJson(value: JsValue): String                             = extractIdJsonf(value)
+  override def idFieldName(): String                                             = idFieldNamef()
+  override def template(version: String, template: Map[String, String]): JsValue = tmpl(version, template)
+  override def all(): Seq[T]                                                     = stateAll()
+  override def one(id: String): Option[T]                                        = stateOne(id)
+  override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
+  override def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = {
+    writeValidator.apply(entity, body, oldEntity, singularName, id, action, env)
+  }
+  override def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
+    deleteValidator.apply(entity, body, singularName, id, action, env)
+  }
 }
 
 class OtoroshiResources(env: Env) {
@@ -1236,9 +1324,13 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       res: Results.Status,
       _entity: JsValue,
       request: RequestHeader,
-      resEntity: Option[Resource],
+      _resEntity: Option[Resource],
       addHeaders: Map[String, String] = Map.empty
   ): Future[Result] = {
+    val resEntity = _resEntity match {
+      case Some(r) => Some(r)
+      case None => Resource.unknown.some
+    }
     val gzipConfig = GzipConfig(
       enabled = true,
       whiteList =
@@ -1263,7 +1355,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             HttpEntity.Streamed(
               data = Source(
                 seq
-                  .map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+                  .map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKind))
                   .toList
                   .map(_.stringify.byteString)
               ),
@@ -1283,7 +1375,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case JsArray(arr)
           if !request.accepts("application/json") && (request
             .accepts("application/yaml") || request.accepts("application/yml")) =>
-        res(Yaml.write(JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))))
+        res(Yaml.write(JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)))))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
@@ -1295,7 +1387,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case _
           if !request.accepts("application/json") && (request
             .accepts("application/yaml") || request.accepts("application/yml")) =>
-        res(Yaml.write(entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))
+        res(Yaml.write(entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
             r.withHeaders(addHeaders.toSeq: _*)
@@ -1317,7 +1409,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   "metadata"   -> Json.obj(
                     "name" -> o.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
                   ),
-                  "spec"       -> (o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+                  "spec"       -> (o.asObject ++ Json.obj("kind" -> resEntity.get.groupKind))
                 )
               )
             )
@@ -1343,7 +1435,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               "metadata"   -> Json.obj(
                 "name" -> entity.content.select("name").asOpt[String].getOrElse("no name").asInstanceOf[String]
               ),
-              "spec"       -> (entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing))
+              "spec"       -> (entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKind))
             )
           )
         )
@@ -1364,7 +1456,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           case Some("false") => false
           case _             => env.defaultPrettyAdminApi
         }
-        val entityWithKind = JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)))
+        val entityWithKind = JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)))
         val finalEntity    = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
         val entityStr      = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
@@ -1385,7 +1477,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           case Some("false") => false
           case _             => env.defaultPrettyAdminApi
         }
-        val entityWithKind = entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKing)
+        val entityWithKind = entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)
         val finalEntity    = if (envelope) Json.obj("data" -> entityWithKind) else entityWithKind
         val entityStr      = if (pretty) finalEntity.prettify else finalEntity.stringify
         res(entityStr)
@@ -1502,7 +1594,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
     import otoroshi.utils.json.JsonPatchHelpers.patchJson
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") =>
@@ -1552,7 +1644,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                         version,
                         resource.singularName,
                         resource.access.extractIdJson(patchedEntity).some,
-                        patchedEntity
+                        patchedEntity,
+                        WriteAction.Update,
+                        entity.some
                       )
                       .map {
                         case Left(error)          =>
@@ -1598,7 +1692,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   // POST /apis/:group/:version/:entity/_bulk
   def bulkCreate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx =>
+    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -1655,7 +1749,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .byteString
                             .vfuture
                         case JsSuccess(_, _) =>
-                          resource.access.create(version, resource.singularName, None, entity).map {
+                          resource.access.create(version, resource.singularName, None, entity, WriteAction.Create, None).map {
                             case Left(error)          =>
                               error.stringify.byteString
                             case Right(createdEntity) =>
@@ -1701,7 +1795,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   // PUT /apis/:group/:version/:entity/_bulk
   def bulkUpdate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx =>
+    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -1769,7 +1863,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .vfuture
                         case JsSuccess(_, _) =>
                           resource.access
-                            .create(version, resource.singularName, resource.access.extractIdJson(entity).some, entity)
+                            .create(version, resource.singularName, resource.access.extractIdJson(entity).some, entity, WriteAction.Update, oldEntity.some)
                             .map {
                               case Left(error)          =>
                                 error.stringify.byteString
@@ -1817,7 +1911,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   // DELETE /apis/:group/:version/:entity/_bulk
   def bulkDelete(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx =>
+    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -1852,16 +1946,28 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     Json.obj("id" -> resource.access.extractIdJson(entity)),
                     s"${resource.singularName}Deleted".some
                   )
-                  resource.access.deleteOne(version, resource.access.extractIdJson(entity)).map { _ =>
-                    Json
+                  resource.access.deleteOne(version, resource.access.extractIdJson(entity), resource.singularName).map {
+                    case Left(err) => Json
                       .obj(
-                        "status"   -> 200,
-                        "deleted"  -> true,
-                        "id"       -> resource.access.extractIdJson(entity),
-                        "id_field" -> resource.access.idFieldName()
+                        "status" -> err.select("http_status_code").asOpt[Int].getOrElse(400).json,
+                        "deleted" -> false,
+                        "id" -> resource.access.extractIdJson(entity),
+                        "id_field" -> resource.access.idFieldName(),
+                        "error" -> err
                       )
                       .stringify
                       .byteString
+                    case Right(_) => {
+                      Json
+                        .obj(
+                          "status" -> 200,
+                          "deleted" -> true,
+                          "id" -> resource.access.extractIdJson(entity),
+                          "id_field" -> resource.access.idFieldName()
+                        )
+                        .stringify
+                        .byteString
+                    }
                   }
                 }
               }
@@ -1925,8 +2031,22 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
+  private def getStatus(err: JsValue): Results.Status = {
+    err.select("http_status_code").asOptInt match {
+      case None => Results.InternalServerError
+      case Some(code) => Results.Status(code)
+    }
+  }
+
+  private def cleanError(err: JsValue): JsValue = {
+    err match {
+      case obj: JsObject => obj - "http_status_code"
+      case _ => err
+    }
+  }
+
   // POST /apis/:group/:version/:entity
-  def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+  def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -1963,8 +2083,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     resource.some
                   )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, None, body).flatMap {
-                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                  resource.access.create(version, resource.singularName, None, body, WriteAction.Create, None).flatMap {
+                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
                         ctx,
@@ -1986,15 +2106,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // DELETE /apis/:group/:version/:entity
   def deleteAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      resource.access.deleteAll(version, e => ctx.canUserWriteJson(e)).map { _ =>
-        adminApiEvent(
-          ctx,
-          s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
-          s"User deleted all ${resource.pluralName}",
-          Json.obj(),
-          s"All${resource.singularName}Deleted".some
-        )
-        NoContent
+      resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
+        case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+        case Right(_) => {
+          adminApiEvent(
+            ctx,
+            s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
+            s"User deleted all ${resource.pluralName}",
+            Json.obj(),
+            s"All${resource.singularName}Deleted".some
+          )
+          NoContent.vfuture
+        }
       }
     }
   }
@@ -2069,15 +2192,16 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             Json.obj("id" -> id),
             s"${resource.singularName}Deleted".some
           )
-          resource.access.deleteOne(version, id).flatMap { _ =>
-            result(Results.Ok, entity, ctx.request, resource.some)
+          resource.access.deleteOne(version, id, resource.singularName).flatMap {
+            case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+            case Right(_) => result(Results.Ok, entity, ctx.request, resource.some)
           }
       }
     }
   }
 
   // POST /apis/:group/:version/:entity/:id
-  def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
+  def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2112,8 +2236,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             case JsSuccess(body, _)                              => {
               resource.access.findOne(version, id).flatMap {
                 case None      =>
-                  resource.access.create(version, resource.singularName, None, body).flatMap {
-                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                  resource.access.create(version, resource.singularName, Some(id), body, WriteAction.Create, None).flatMap {
+                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
                         ctx,
@@ -2128,8 +2252,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   val oldEntity  = resource.access.format.reads(old).get
                   val newEntity  = resource.access.format.reads(body).get
                   val hasChanged = oldEntity == newEntity
-                  resource.access.create(version, resource.singularName, id.some, body).flatMap {
-                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                  resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, old.some).flatMap {
+                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
                         ctx,
@@ -2157,7 +2281,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PUT /apis/:group/:version/:entity/:id
-  def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
+  def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request, resource, version) flatMap {
         case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2193,8 +2317,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   resource.access.findOne(version, id).flatMap {
                     case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
                     case Some(_) =>
-                      resource.access.create(version, resource.singularName, id.some, body).flatMap {
-                        case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                      resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, oldEntity.some).flatMap {
+                        case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
                           adminApiEvent(
                             ctx,
@@ -2216,7 +2340,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/:id
-  def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx =>
+  def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
     import otoroshi.utils.json.JsonPatchHelpers.patchJson
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(version, id).flatMap {
@@ -2250,8 +2374,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     resource.some
                   )
                 case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, id.some, patchedBody).flatMap {
-                    case Left(err)  => result(Results.InternalServerError, err, ctx.request, resource.some)
+                  resource.access.create(version, resource.singularName, id.some, patchedBody, WriteAction.Update, current.some).flatMap {
+                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                     case Right(res) =>
                       adminApiEvent(
                         ctx,
