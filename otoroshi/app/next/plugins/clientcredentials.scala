@@ -591,7 +591,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
           ) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
-          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && apiKey.authorizedOnServiceOrGroups(ctx.route.id, ctx.route.groups) => {
             val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
             val algo: Algorithm               = maybeKeyPair.map { kp =>
