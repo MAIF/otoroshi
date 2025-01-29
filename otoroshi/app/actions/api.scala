@@ -211,14 +211,18 @@ trait ApiActionContextCapable {
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.apiDataStore.findAll() flatMap {
-              apis =>
-                apis.find(api => api.routes.exists(_.id == serviceId)) match {
-                  case Some(api) => api.apiRouteToNgRoute(serviceId).flatMap {
-                    case Some(route)  => route.legacy.some.future
-                    case _            => getRouteCompositions
-                  }
-                  case None      => getRouteCompositions
+            env.datastores.apiDataStore.findById(serviceId) flatMap {
+              case Some(api) => api.legacy.some.vfuture
+              case None      =>
+                env.datastores.apiDataStore.findAll() flatMap {
+                  apis =>
+                    apis.find(api => api.routes.exists(_.id == serviceId)) match {
+                      case Some(api) => api.apiRouteToNgRoute(serviceId).flatMap {
+                        case Some(route)  => route.legacy.some.future
+                        case _            => getRouteCompositions
+                      }
+                      case None      => getRouteCompositions
+                    }
                 }
             }
         }

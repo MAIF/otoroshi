@@ -76,6 +76,8 @@ export default (props) => {
 
     // if (location.pathname.endsWith('/new')) return null;
 
+    const isOnApisHome = location.pathname.endsWith("/apis")
+
     return (
         <div
             className="d-flex"
@@ -97,22 +99,24 @@ export default (props) => {
                         <div className="title"> {openedSidebar ? 'APIs' : ''}</div>
                     </Link>
                 </li>
-                {openedSidebar && <p className="sidebar-title mt-3">General</p>}
-                {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
-                    <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
-                        <Link
-                            to={to}
-                            {...(tooltip || {})}
-                            className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                                } m-0 ${isActive(tab)}`}>
-                            <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                                <i className={`fas ${icon}`} />
-                            </div>
-                            <div className="title"> {openedSidebar ? title : ''}</div>
-                        </Link>
-                    </li>
-                ))}
-                {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>}
+                {!isOnApisHome && <>
+                    {openedSidebar && <p className="sidebar-title mt-3">General</p>}
+                    {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
+                        <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+                            <Link
+                                to={to}
+                                {...(tooltip || {})}
+                                className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                                    } m-0 ${isActive(tab)}`}>
+                                <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                                    <i className={`fas ${icon}`} />
+                                </div>
+                                <div className="title"> {openedSidebar ? title : ''}</div>
+                            </Link>
+                        </li>
+                    ))}
+                    {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>}
+                </>}
             </ul>
         </div>
     );

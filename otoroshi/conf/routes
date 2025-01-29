@@ -574,7 +574,7 @@ GET     /api/events/_template                                 otoroshi.controlle
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
 GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
-GET     /api/entities/:entity/:id                otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
+GET     /api/entities/:entity/:id                             otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
 
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               otoroshi.controllers.adminapi.UsersController.discardSession(id)
@@ -614,6 +614,8 @@ GET     /apis/cluster/node/version                            otoroshi.controlle
 GET     /apis/cluster/node/health                             otoroshi.api.GenericApiController.health()
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
+
+GET     /apis/api.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
 
 # New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)

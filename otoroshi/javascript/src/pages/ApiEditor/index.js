@@ -51,13 +51,17 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/consumers/new' component={NewConsumer} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/consumers/:consumerId/:action' component={ConsumerDesigner} props={props} />
 
+                <RouteWithProps exact path='/apis/:apiId/subscriptions' component={Subscriptions} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/subscriptions/new' component={NewSubscription} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/subscriptions/:consumerId/:action' component={SubscriptionDesigner} props={props} />
+
                 <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/:flowId/:action' component={FlowDesigner} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/backends' component={Backends} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/backends/new' component={NewBackend} props={props} />
-                <RouteWithProps exact path='/apis/:apiId/backends/:backendId' component={EditBackend} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/backends/:backendId/:action' component={EditBackend} props={props} />
 
                 <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
                 <RouteWithProps path='/apis/:apiId' component={Dashboard} props={props} />
@@ -65,6 +69,136 @@ export default function ApiEditor(props) {
             </Switch>
         </QueryClientProvider>
     </div >
+}
+
+function Subscriptions() {
+    return <div>
+        Subscriptions view
+    </div>
+}
+
+function SubscriptionDesigner() {
+    const params = useParams()
+    const history = useHistory()
+
+    const [subscription, setSubscription] = useState({})
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId)
+    )
+
+    const schema = {
+        name: {
+            type: 'string',
+            label: 'Route name',
+            placeholder: 'My users route'
+        },
+        frontend: {
+            type: 'form',
+            label: 'Frontend',
+            schema: NgFrontend.schema,
+            props: {
+                v2: {
+                    folded: ['domains', 'methods'],
+                    flow: NgFrontend.flow,
+                }
+            }
+        },
+        flow_ref: {
+            type: 'select',
+            label: 'Flow ID',
+            props: {
+                options: data.flows,
+                optionsTransformer: {
+                    label: 'name',
+                    value: 'id',
+                }
+            },
+        },
+        backend: {
+            type: 'select',
+            label: 'Backend',
+            props: {
+                options: [...data.backends, ...backends],
+                optionsTransformer: {
+                    value: 'id',
+                    label: 'name'
+                }
+            }
+        }
+    }
+
+    const flow = [
+        {
+            type: 'group',
+            name: 'Domains information',
+            collapsable: true,
+            fields: ['frontend']
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Selected flow',
+            fields: ['flow_ref'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Backend configuration',
+            fields: ['backend'],
+        },
+        {
+            type: 'group',
+            collapsable: true,
+            collapsed: true,
+            name: 'Additional informations',
+            fields: ['name'],
+        }
+    ]
+
+    const updateRoute = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                routes: rawAPI.data.routes.map(item => {
+                    if (item.id === route.id)
+                        return route
+                    return item
+                })
+            })
+            .then(() => history.push(`/apis/${params.apiId}/routes`))
+    }
+
+    return <Loader loading={rawAPI.isLoading}>
+        <PageTitle title={subscription.name} {...props}>
+            {/* <FeedbackButton
+                type="success"
+                className="d-flex ms-auto"
+                onPress={updateRoute}
+                disabled={!route.flow_ref}
+                text="Update"
+            /> */}
+        </PageTitle>
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            {/* <NgForm
+                value={route}
+                flow={flow}
+                schema={schema}
+                onChange={newValue => setRoute(newValue)} /> */}
+        </div>
+    </Loader>
+}
+
+function NewSubscription() {
+    return <div>
+        New Subscription
+    </div>
 }
 
 function RouteDesigner(props) {
@@ -122,7 +256,7 @@ function RouteDesigner(props) {
                     type: 'select',
                     label: 'Backend',
                     props: {
-                        options: backends,
+                        options: [...data.backends, ...backends],
                         optionsTransformer: {
                             value: 'id',
                             label: 'name'
@@ -894,30 +1028,17 @@ function NewBackend(props) {
     const params = useParams()
     const history = useHistory()
 
-    // const [usingExistingBackend, setUsingExistingBackend] = useState(false)
-
     const [backend, setBackend] = useState()
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
 
-    // const [backends, setBackends] = useState([])
-    // const backendsQuery = useQuery(['getBackends'],
-    //     () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
-    //     {
-    //         enabled: usingExistingBackend && backends.length <= 0,
-    //         onSuccess: setBackends
-    //     })
-
     const saveBackend = () => {
-        const { id, name, ...rest } = backend
         return nextClient
             .forEntityNext(nextClient.ENTITIES.APIS)
             .update({
                 ...rawAPI.data,
-                backends: [...rawAPI.data.backends, {
-                    id, name, backend: rest
-                }]
+                backends: [...rawAPI.data.backends, backend]
             })
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
@@ -947,65 +1068,93 @@ function NewBackend(props) {
             maxWidth: 640,
             margin: 'auto'
         }}>
-            {/* <div className="row mb-3">
-                <label className="col-xs-12 col-sm-2 col-form-label" />
-                <div className="col-sm-10">
-                    <PillButton
-                        pillButtonStyle={{ width: 'auto', flex: 1 }}
-                        style={{ display: 'flex', width: '100%', minHeight: 36, maxWidth: 420 }}
-                        className='pb-3'
-                        rightEnabled={usingExistingBackend}
-                        leftText="Select an existing backend"
-                        rightText="Create a new backend"
-                        onChange={setUsingExistingBackend}
-                    />
-                </div>
-            </div> */}
-            {/* {usingExistingBackend && <Loader loading={backendsQuery.isLoading}>
-                <div className="row mb-3">
-                    <label className="col-xs-12 col-sm-2 col-form-label" >Backends</label>
-                    <div className="col-sm-10">
-                        <NgSelectRenderer
-                            id="backend_select"
-                            value={backend}
-                            placeholder="Select an existing backend"
-                            label={' '}
-                            ngOptions={{
-                                spread: true,
-                            }}
-                            isClearable
-                            onChange={setBackend}
-                            options={backendsQuery.data}
-                            optionsTransformer={(arr) =>
-                                arr.map((item) => ({ label: item.name, value: item.id }))
+            <BackendForm
+                state={{
+                    form: {
+                        schema: {
+                            name: {
+                                label: 'Name',
+                                type: 'string',
+                                placeholder: 'New backend'
+                            },
+                            backend: {
+                                type: 'form',
+                                schema: NgBackend.schema,
+                                flow: NgBackend.flow
                             }
-                        />
-                    </div>
-                </div>
-            </Loader>} */}
-            {/* {!usingExistingBackend &&  */}
-            <BackendForm state={{
-                form: {
-                    schema: {
-                        name: {
-                            label: 'Name',
-                            type: 'string',
-                            placeholder: 'New backend'
                         },
-                        ...NgBackend.schema
-                    },
-                    flow: ['name', 'root', 'rewrite', 'targets'],
-                    value: backend,
-                }
-            }}
+                        flow: ['name', 'backend'],
+                        value: backend
+                    }
+                }}
                 onChange={setBackend} />
-            {/* } */}
         </div>
     </Loader>
 }
 
-function EditBackend() {
+function EditBackend(props) {
+    const params = useParams()
+    const history = useHistory()
 
+    const [backend, setBackend] = useState()
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        onSuccess: data => {
+            setBackend(data.backends.find(item => item.id === params.backendId))
+        }
+    })
+
+    const updateBackend = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                backends: rawAPI.data.backends.map(item => {
+                    if (item.id === backend.id)
+                        return backend
+                    return item
+                })
+            })
+            .then(() => history.push(`/apis/${params.apiId}/backends`))
+    }
+
+    return <Loader loading={rawAPI.isLoading}>
+        <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+            <FeedbackButton
+                type="success"
+                className="ms-2 mb-1"
+                onPress={updateBackend}
+                text="Update"
+            />
+        </PageTitle>
+
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <BackendForm
+                state={{
+                    form: {
+                        schema: {
+                            name: {
+                                label: 'Name',
+                                type: 'string',
+                                placeholder: 'New backend'
+                            },
+                            backend: {
+                                type: 'form',
+                                schema: NgBackend.schema,
+                                flow: NgBackend.flow
+                            }
+                        },
+                        flow: ['name', 'backend'],
+                        value: backend
+                    }
+                }}
+                onChange={setBackend} />
+        </div>
+    </Loader>
 }
 
 function SidebarComponent(props) {
@@ -1471,13 +1620,7 @@ function Dashboard(props) {
                     </ContainerBlock>}
                     <ContainerBlock full highlighted>
                         <APIHeader api={api} />
-                        {/* {!api.health && <p className="alert alert-info" role="alert">API Health will appear here</p>} */}
-                        {api.routes.map(route => {
-                            return <div key={route.id}>
-                                <h3 className="m-0 mb-1">{route.name}</h3>
-                                <ApiStats url={`/bo/api/proxy/api/live/${route.id}?every=2000`} />
-                            </div>
-                        })}
+                        <ApiStats url={`/bo/api/proxy/apis/api.otoroshi.io/v1/apis/${api.id}/live?every=2000`} />
 
                         <Uptime
                             health={api.health?.today}
@@ -1622,6 +1765,8 @@ function SubscriptionsView({ api }) {
 }
 
 function Subscription({ subscription }) {
+    const params = useParams()
+    const history = useHistory()
     const [open, setOpen] = useState(false)
 
     return <div key={subscription.id}
@@ -1630,10 +1775,20 @@ function Subscription({ subscription }) {
             backgroundColor: 'hsla(184, 9%, 62%, 0.18)',
             borderColor: 'hsla(184, 9%, 62%, 0.4)',
             borderRadius: '.5rem',
-            gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px'
+            gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px',
+            position: 'relative'
         }}
         onClick={() => setOpen(!open)}>
         {open && <>
+            <Button type="primaryColor" className="btn-sm" text="Edit"
+                onClick={e => {
+                    e.stopPropagation()
+                    history.push(`/apis/${params.apiId}/subscriptions/${subscription.id}/edit`)
+                }} style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem'
+                }} />
             <NgCodeRenderer
                 readOnly
                 label="Configuration"

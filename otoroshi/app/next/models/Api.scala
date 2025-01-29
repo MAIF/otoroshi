@@ -2,11 +2,10 @@ package next.models
 
 import akka.util.ByteString
 import diffson.PatchOps
-import next.models.ApiBackend.ApiBackendInline
 import org.joda.time.DateTime
 import otoroshi.api.WriteAction
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, ServiceDescriptor}
 import otoroshi.next.models._
 import otoroshi.next.plugins.NgApikeyCallsConfig
 import otoroshi.security.IdGenerator
@@ -68,7 +67,7 @@ case object ApiRemoved extends ApiState {
 //  }
 //}
 
-case class ApiRoute(id: String, name: Option[String], frontend: NgFrontend, flowRef: String, backend: ApiBackend)
+case class ApiRoute(id: String, name: Option[String], frontend: NgFrontend, flowRef: String, backend: String)
 
 object ApiRoute {
   val _fmt: Format[ApiRoute] = new Format[ApiRoute] {
@@ -79,7 +78,7 @@ object ApiRoute {
         name = json.select("name").asOptString,
         frontend = NgFrontend.readFrom(json \ "frontend"),
         flowRef = (json \ "flow_ref").asString,
-        backend = (json \ "backend").as[ApiBackend](ApiBackend._fmt)
+        backend = (json \ "backend").as[String]
       )
     } match {
       case Failure(ex)    =>
@@ -92,7 +91,7 @@ object ApiRoute {
       "id"        -> o.id,
       "name"      -> o.name,
       "frontend"  -> o.frontend.json,
-      "backend"   -> ApiBackend._fmt.writes(o.backend),
+      "backend"   -> o.backend,
       "flow_ref"  -> o.flowRef
     )
   }
@@ -625,22 +624,16 @@ object ApiConsumerStatus {
   }
 }
 
-sealed trait ApiBackend
+case class ApiBackend(id: String, name: String, backend: NgBackend)
 
 object ApiBackend {
-  case class ApiBackendRef(ref: String) extends ApiBackend
-  case class ApiBackendInline(id: String, name: String, backend: NgBackend) extends ApiBackend
-
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
     override def reads(json: JsValue): JsResult[ApiBackend] = Try {
-      json.asOptString match {
-        case Some(ref)  => ApiBackendRef(ref)
-        case None       => ApiBackendInline(
-          id = json.select("id").asString,
-          name = json.select("name").asString,
-          backend = json.select("backend").as(NgBackend.fmt)
-        )
-      }
+      ApiBackend(
+        id = json.select("id").asString,
+        name = json.select("name").asString,
+        backend = json.select("backend").as(NgBackend.fmt)
+      )
     } match {
       case Failure(ex)    =>
         ex.printStackTrace()
@@ -649,14 +642,11 @@ object ApiBackend {
     }
 
     override def writes(o: ApiBackend): JsValue = {
-      o match {
-        case ApiBackendRef(ref) => JsString(ref)
-        case ApiBackendInline(id, name, backend) => Json.obj(
-          "id"      -> id,
-          "name"    -> name,
-          "backend" -> NgBackend.fmt.writes(backend)
-        )
-      }
+      Json.obj(
+        "id"      -> o.id,
+        "name"    -> o.name,
+        "backend" -> NgBackend.fmt.writes(o.backend)
+      )
     }
   }
 }
@@ -729,40 +719,63 @@ case class Api(
     if (state == ApiStaging) {
       Seq.empty.vfuture
     } else {
-      Future.sequence(routes.map(route => apiRouteToNgRoute(route.id))
-        .map(_.collect {
-        case Some(route) => route
-      })).map(_.filter(_.enabled))
+      Future.sequence(routes.map(route => apiRouteToNgRoute(route.id)))
+        .map(routes => routes.collect {
+          case Some(value) => value
+        }.filter(_.enabled))
     }
   }
 
+
+  def legacy: ServiceDescriptor = {
+    NgRoute(
+      location = location,
+      id = id,
+      name = name,
+      description = description,
+      tags = tags,
+      metadata = metadata,
+      enabled = true,
+      capture = capture,
+      debugFlow = debugFlow,
+      exportReporting = exportReporting,
+      groups = Seq.empty,
+      frontend = NgFrontend.empty,
+      backend = NgBackend.empty,
+      backendRef = None,
+      plugins = NgPlugins.empty
+    ).legacy
+  }
+
   def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val apiRoute = routes.find(_.id == routeId).get // TODO - maybe test if exists
-
-    (apiRoute.backend match {
-      case ApiBackend.ApiBackendRef(ref) => env.datastores.backendsDataStore.findById(ref).map(_.map(_.backend))
-      case ApiBackend.ApiBackendInline(_, _, backend) => backend.some.future
-    })
-      .map(_.map(backend => NgRoute(
-        location = location,
-        id = apiRoute.id,
-        name = apiRoute.name + " - " + apiRoute.frontend.methods
-          .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
-        description = description,
-        tags = tags,
-        metadata = metadata,
-        enabled = true,
-        capture = capture,
-        debugFlow = debugFlow,
-        exportReporting = exportReporting,
-        groups = Seq.empty,
-        frontend = apiRoute.frontend,
-        backend = backend,
-        backendRef = None,
-        plugins = flows.find(_.id == apiRoute.flowRef).get.plugins
-      )))
+    routes.find(_.id == routeId) match {
+      case Some(apiRoute) => for {
+          globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
+          apiBackend          <- backends.find(_.id == apiRoute.backend).vfuture
+        } yield {
+          NgRoute(
+            location = location,
+            id = apiRoute.id,
+            name = apiRoute.name + " - " + apiRoute.frontend.methods
+              .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
+            description = description,
+            tags = tags,
+            metadata = metadata,
+            enabled = true,
+            capture = capture,
+            debugFlow = debugFlow,
+            exportReporting = exportReporting,
+            groups = Seq.empty,
+            frontend = apiRoute.frontend,
+            backend = globalBackendEntity.map(_.backend).getOrElse(apiBackend.get.backend),
+            backendRef = None,
+            plugins = flows.find(_.id == apiRoute.flowRef).get.plugins
+          ).some
+        }
+      case None => None.vfuture
+    }
   }
 }
 

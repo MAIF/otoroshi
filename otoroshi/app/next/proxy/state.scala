@@ -570,6 +570,8 @@ class NgProxyState(env: Env) {
       _                         <- env.vaults.renewSecretsInCache()
       routes                    <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK
       routescomp                <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
+      apis                      <- env.datastores.apiDataStore.findAllAndFillSecrets() // secrets OK
+      apisRoutes                <- Future.sequence(apis.map(api => api.toRoutes)).map(_.flatten)
       genRoutesDomain           <- generateRoutesByDomain(env)
       genRoutesPath             <- generateRoutesByName(env)
       genRandom                 <- generateRandomRoutes(env)
@@ -577,7 +579,7 @@ class NgProxyState(env: Env) {
       fakeRoutes                 = if (dev) Seq(NgRoute.fake) else Seq.empty
       newRoutes                  = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
                                       NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                                    ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+                                    ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
       apikeys                   <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs                     <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers                 <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
