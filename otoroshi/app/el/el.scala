@@ -12,9 +12,12 @@ import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
+import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
+import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -61,6 +64,7 @@ object GlobalExpressionLanguage {
         val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
         val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
             case r"item.$field@(.*)"              =>
@@ -418,6 +422,13 @@ object GlobalExpressionLanguage {
             case r"nbf"                                                                          => "{nbf}"
             case r"iat"                                                                          => "{iat}"
             case r"exp"                                                                          => "{exp}"
+
+            case "req.client_cert.dn" if req.isDefined && headCert.isDefined => DN(headCert.get.getSubjectDN.getName).stringify
+            case "req.client_cert.id" if req.isDefined && headCert.isDefined => headCert.get.getSerialNumber.toString(16)
+            case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined => headCert.get.rawDomain.get
+            case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined => headCert.get.rawDomain.get
+            case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined => DN(headCert.get.getIssuerDN.getName).stringify
+
             case expr                                                                            => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>
