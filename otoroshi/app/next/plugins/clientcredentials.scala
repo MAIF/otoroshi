@@ -8,7 +8,7 @@ import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models.ApiKeyHelper
+import otoroshi.models.{ApiKey, ApiKeyHelper, ServiceGroupIdentifier}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
@@ -480,18 +480,25 @@ case class NgClientCredentialTokenEndpointBody(
     bearerKind: String,
     aud: Option[String]
 )
-case class NgClientCredentialTokenEndpointConfig(expiration: FiniteDuration, defaultKeyPair: String)
-    extends NgPluginConfig                   {
+case class NgClientCredentialTokenEndpointConfig(
+    expiration: FiniteDuration,
+    defaultKeyPair: String,
+    allowedApikeys: Seq[String],
+    allowedGroups: Seq[String],
+)
+    extends NgPluginConfig {
   override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
 }
 object NgClientCredentialTokenEndpointConfig {
-  val default = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning)
+  val default = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning, Seq.empty, Seq.empty)
   val format  = new Format[NgClientCredentialTokenEndpointConfig] {
     override def reads(json: JsValue): JsResult[NgClientCredentialTokenEndpointConfig] = Try {
       NgClientCredentialTokenEndpointConfig(
         expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),
         defaultKeyPair =
-          json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
+          json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning),
+        allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty),
       )
     } match {
       case Success(s) => JsSuccess(s)
@@ -500,7 +507,9 @@ object NgClientCredentialTokenEndpointConfig {
 
     override def writes(o: NgClientCredentialTokenEndpointConfig): JsValue = Json.obj(
       "expiration"       -> o.expiration.toMillis,
-      "default_key_pair" -> o.defaultKeyPair
+      "default_key_pair" -> o.defaultKeyPair,
+      "allowed_apikeys" -> o.allowedApikeys,
+      "allowed_groups" -> o.allowedGroups,
     )
   }
 }
@@ -575,6 +584,21 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
     }
   }
 
+  private def apikeyAllowed(conf: NgClientCredentialTokenEndpointConfig, apikey: ApiKey, ctx: NgbBackendCallContext): Boolean = {
+    if (conf.allowedApikeys.isEmpty && conf.allowedGroups.isEmpty) {
+      true
+    } else {
+      if (conf.allowedApikeys.contains(apikey.clientId)) {
+        true
+      } else {
+        val apkgroups = apikey.authorizedEntities.collect {
+          case ServiceGroupIdentifier(id) => id
+        }
+        conf.allowedGroups.exists(s => apkgroups.contains(s))
+      }
+    }
+  }
+
   private def handleTokenRequest(
       ccfb: NgClientCredentialTokenEndpointBody,
       conf: NgClientCredentialTokenEndpointConfig,
@@ -591,7 +615,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
           ) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
-          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() => {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && apikeyAllowed(conf, apiKey, ctx) => {
             val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
             val algo: Algorithm               = maybeKeyPair.map { kp =>
