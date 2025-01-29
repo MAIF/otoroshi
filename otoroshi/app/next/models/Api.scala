@@ -650,7 +650,6 @@ object ApiBackend {
     }
   }
 }
-
 case class ApiBackendClient(name: String, client: NgClientConfig)
 
 object ApiBackendClient {
@@ -848,6 +847,7 @@ object Api {
       "routes"            -> o.routes.map(ApiRoute._fmt.writes),
       "backends"          -> o.backends.map(ApiBackend._fmt.writes),
       "flows"             -> o.flows.map(ApiFlows._fmt.writes),
+      // TODO - list of HTTP clients
       "clients"           -> o.clients.map(ApiBackendClient._fmt.writes),
       "documentation"     -> o.documentation.map(ApiDocumentation._fmt.writes),
       "consumers"         -> o.consumers.map(ApiConsumer._fmt.writes),
