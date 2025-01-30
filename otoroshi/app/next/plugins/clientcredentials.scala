@@ -484,9 +484,8 @@ case class NgClientCredentialTokenEndpointConfig(
     expiration: FiniteDuration,
     defaultKeyPair: String,
     allowedApikeys: Seq[String],
-    allowedGroups: Seq[String],
-)
-    extends NgPluginConfig {
+    allowedGroups: Seq[String]
+) extends NgPluginConfig {
   override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
 }
 object NgClientCredentialTokenEndpointConfig {
@@ -498,7 +497,7 @@ object NgClientCredentialTokenEndpointConfig {
         defaultKeyPair =
           json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning),
         allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty),
-        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Success(s) => JsSuccess(s)
@@ -508,8 +507,8 @@ object NgClientCredentialTokenEndpointConfig {
     override def writes(o: NgClientCredentialTokenEndpointConfig): JsValue = Json.obj(
       "expiration"       -> o.expiration.toMillis,
       "default_key_pair" -> o.defaultKeyPair,
-      "allowed_apikeys" -> o.allowedApikeys,
-      "allowed_groups" -> o.allowedGroups,
+      "allowed_apikeys"  -> o.allowedApikeys,
+      "allowed_groups"   -> o.allowedGroups
     )
   }
 }
@@ -584,15 +583,19 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
     }
   }
 
-  private def apikeyAllowed(conf: NgClientCredentialTokenEndpointConfig, apikey: ApiKey, ctx: NgbBackendCallContext): Boolean = {
+  private def apikeyAllowed(
+      conf: NgClientCredentialTokenEndpointConfig,
+      apikey: ApiKey,
+      ctx: NgbBackendCallContext
+  ): Boolean = {
     if (conf.allowedApikeys.isEmpty && conf.allowedGroups.isEmpty) {
       true
     } else {
       if (conf.allowedApikeys.contains(apikey.clientId)) {
         true
       } else {
-        val apkgroups = apikey.authorizedEntities.collect {
-          case ServiceGroupIdentifier(id) => id
+        val apkgroups = apikey.authorizedEntities.collect { case ServiceGroupIdentifier(id) =>
+          id
         }
         conf.allowedGroups.exists(s => apkgroups.contains(s))
       }
@@ -615,7 +618,8 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
           ) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
-          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && apikeyAllowed(conf, apiKey, ctx) => {
+          case Some(apiKey)
+              if apiKey.isValid(clientSecret) && apiKey.isActive() && apikeyAllowed(conf, apiKey, ctx) => {
             val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
             val algo: Algorithm               = maybeKeyPair.map { kp =>
@@ -673,7 +677,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
                 .future
             }
           }
-          case _                                                                 =>
+          case _ =>
             Results
               .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"bad client credentials"))
               .future

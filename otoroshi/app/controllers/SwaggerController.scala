@@ -1187,15 +1187,15 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "remainingCallsPerMonth"
       ),
       "properties"  -> Json.obj(
-        "authorizedCallsPerWindow"   -> SimpleLongType ~~> "The number of authorized calls per window",
-        "throttlingCallsPerWindow"      -> SimpleLongType ~~> "The current number of calls per window",
-        "remainingCallsPerWindow"    -> SimpleLongType ~~> "The remaining number of calls per window",
-        "authorizedCallsPerDay"   -> SimpleLongType ~~> "The number of authorized calls per day",
-        "currentCallsPerDay"      -> SimpleLongType ~~> "The current number of calls per day",
-        "remainingCallsPerDay"    -> SimpleLongType ~~> "The remaining number of calls per day",
-        "authorizedCallsPerMonth" -> SimpleLongType ~~> "The number of authorized calls per month",
-        "currentCallsPerMonth"    -> SimpleLongType ~~> "The current number of calls per month",
-        "remainingCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month"
+        "authorizedCallsPerWindow" -> SimpleLongType ~~> "The number of authorized calls per window",
+        "throttlingCallsPerWindow" -> SimpleLongType ~~> "The current number of calls per window",
+        "remainingCallsPerWindow"  -> SimpleLongType ~~> "The remaining number of calls per window",
+        "authorizedCallsPerDay"    -> SimpleLongType ~~> "The number of authorized calls per day",
+        "currentCallsPerDay"       -> SimpleLongType ~~> "The current number of calls per day",
+        "remainingCallsPerDay"     -> SimpleLongType ~~> "The remaining number of calls per day",
+        "authorizedCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month",
+        "currentCallsPerMonth"     -> SimpleLongType ~~> "The current number of calls per month",
+        "remainingCallsPerMonth"   -> SimpleLongType ~~> "The number of authorized calls per month"
       )
     )
 

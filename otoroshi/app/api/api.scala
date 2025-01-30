@@ -58,7 +58,7 @@ case class ResourceVersion(
     deprecated: Boolean,
     storage: Boolean,
     schema: Option[JsValue] = None
-)                                                   {
+) {
   def json: JsValue = Json.obj(
     "name"       -> name,
     "served"     -> served,
@@ -98,8 +98,8 @@ object Resource {
     pluralName = "unknowns",
     singularName = "unknown",
     group = "proxy.otoroshi.io",
-    version =  ResourceVersion("v1", true, false, true),
-    access = null,
+    version = ResourceVersion("v1", true, false, true),
+    access = null
   )
 }
 
@@ -110,7 +110,7 @@ case class Resource(
     group: String,
     version: ResourceVersion,
     access: ResourceAccessApi[_]
-)                                                   {
+) {
   lazy val groupKind = s"${group}/${kind}"
   def json: JsValue  = Json.obj(
     "kind"          -> kind,
@@ -157,9 +157,24 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def canDelete: Boolean
   def canBulk: Boolean
 
-  def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = entity.rightf
+  def writeValidation(
+      entity: T,
+      body: JsValue,
+      oldEntity: Option[(T, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, T]] = entity.rightf
 
-  def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = ().rightf
+  def deleteValidation(
+      entity: T,
+      body: JsValue,
+      singularName: String,
+      id: String,
+      action: DeleteAction,
+      env: Env
+  ): Future[Either[JsValue, Unit]] = ().rightf
 
   def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit
       env: Env
@@ -194,7 +209,14 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def create(version: String, singularName: String, id: Option[String], body: JsValue, action: WriteAction, oldEntity: Option[JsValue])(implicit
+  def create(
+      version: String,
+      singularName: String,
+      id: Option[String],
+      body: JsValue,
+      action: WriteAction,
+      oldEntity: Option[JsValue]
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
@@ -203,10 +225,18 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       .orElse(Try(extractIdJson(body)).toOption)
       .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
     format.reads(body) match {
-      case err @ JsError(_)    => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
+      case err @ JsError(_)     => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
       case JsSuccess(_value, _) => {
-        writeValidation(_value, body, oldEntity.flatMap(oe => format.reads(oe).asOpt.map(v => (v, oe))), singularName, id, action, env).flatMap {
-          case Left(err) => err.leftf
+        writeValidation(
+          _value,
+          body,
+          oldEntity.flatMap(oe => format.reads(oe).asOpt.map(v => (v, oe))),
+          singularName,
+          id,
+          action,
+          env
+        ).flatMap {
+          case Left(err)    => err.leftf
           case Right(value) => {
             val idKey     = idFieldName()
             val updateKey = if (id.isDefined) "updated_at" else "created_at"
@@ -280,22 +310,24 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           .map { entity =>
             (entity._1, entity._2, key(entity._2.theId))
           }
-        keys.mapAsync {
-          case (json, entity, key) => deleteValidation(entity, json, singularName, key, DeleteAction.DeleteAll, env).map {
-            case Left(err) => Left(err)
-            case Right(_) => Right(key)
+        keys
+          .mapAsync { case (json, entity, key) =>
+            deleteValidation(entity, json, singularName, key, DeleteAction.DeleteAll, env).map {
+              case Left(err) => Left(err)
+              case Right(_)  => Right(key)
+            }
           }
-        }.flatMap { res =>
-          val hasErrors = res.exists(_.isLeft)
-          if (hasErrors) {
-            val errors = res.filter(_.isLeft).map(_.left.get)
-            val error = Json.obj("errors" -> JsArray(errors))
-            error.leftf
-          } else {
-            val keys = res.map(_.right.get)
-            env.datastores.rawDataStore.del(keys).map(_ => ().right)
+          .flatMap { res =>
+            val hasErrors = res.exists(_.isLeft)
+            if (hasErrors) {
+              val errors = res.filter(_.isLeft).map(_.left.get)
+              val error  = Json.obj("errors" -> JsArray(errors))
+              error.leftf
+            } else {
+              val keys = res.map(_.right.get)
+              env.datastores.rawDataStore.del(keys).map(_ => ().right)
+            }
           }
-        }
       }
   }
 
@@ -314,7 +346,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
               val k = key(entity.theId)
               deleteValidation(entity, json, singularName, id, DeleteAction.DeleteOne, env).flatMap {
                 case Left(err) => err.leftf
-                case Right(_) => env.datastores.rawDataStore.del(Seq(k)).map(_ => ().right)
+                case Right(_)  => env.datastores.rawDataStore.del(Seq(k)).map(_ => ().right)
               }
             }
             case _                    => ().rightf
@@ -377,7 +409,7 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
     canDelete: Boolean = true,
-    canBulk: Boolean = true,
+    canBulk: Boolean = true
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -404,7 +436,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     canBulk: Boolean = true,
     stateAll: () => Seq[T],
     stateOne: (String) => Option[T],
-    stateUpdate: (Seq[T]) => Unit,
+    stateUpdate: (Seq[T]) => Unit
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -417,23 +449,27 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
 }
 
 case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocationSupport](
-  format: Format[T],
-  clazz: Class[T],
-  keyf: String => String,
-  extractIdf: T => String,
-  extractIdJsonf: JsValue => String,
-  idFieldNamef: () => String,
-  tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
-  canRead: Boolean = true,
-  canCreate: Boolean = true,
-  canUpdate: Boolean = true,
-  canDelete: Boolean = true,
-  canBulk: Boolean = true,
-  stateAll: () => Seq[T],
-  stateOne: (String) => Option[T],
-  stateUpdate: (Seq[T]) => Unit,
-  writeValidator: Function7[T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env, Future[Either[JsValue, T]]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) => ent.rightf,
-  deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] = (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf,
+    format: Format[T],
+    clazz: Class[T],
+    keyf: String => String,
+    extractIdf: T => String,
+    extractIdJsonf: JsValue => String,
+    idFieldNamef: () => String,
+    tmpl: (String, Map[String, String]) => JsValue = (v, p) => Json.obj(),
+    canRead: Boolean = true,
+    canCreate: Boolean = true,
+    canUpdate: Boolean = true,
+    canDelete: Boolean = true,
+    canBulk: Boolean = true,
+    stateAll: () => Seq[T],
+    stateOne: (String) => Option[T],
+    stateUpdate: (Seq[T]) => Unit,
+    writeValidator: Function7[T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env, Future[
+      Either[JsValue, T]
+    ]] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) =>
+      ent.rightf,
+    deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] =
+      (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String                                           = keyf.apply(id)
   override def extractId(value: T): String                                       = value.theId
@@ -443,10 +479,25 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   override def all(): Seq[T]                                                     = stateAll()
   override def one(id: String): Option[T]                                        = stateOne(id)
   override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
-  override def writeValidation(entity: T, body: JsValue, oldEntity: Option[(T, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, T]] = {
+  override def writeValidation(
+      entity: T,
+      body: JsValue,
+      oldEntity: Option[(T, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, T]] = {
     writeValidator.apply(entity, body, oldEntity, singularName, id, action, env)
   }
-  override def deleteValidation(entity: T, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
+  override def deleteValidation(
+      entity: T,
+      body: JsValue,
+      singularName: String,
+      id: String,
+      action: DeleteAction,
+      env: Env
+  ): Future[Either[JsValue, Unit]] = {
     deleteValidator.apply(entity, body, singularName, id, action, env)
   }
 }
@@ -1327,9 +1378,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       _resEntity: Option[Resource],
       addHeaders: Map[String, String] = Map.empty
   ): Future[Result] = {
-    val resEntity = _resEntity match {
+    val resEntity  = _resEntity match {
       case Some(r) => Some(r)
-      case None => Resource.unknown.some
+      case None    => Resource.unknown.some
     }
     val gzipConfig = GzipConfig(
       enabled = true,
@@ -1594,100 +1645,101 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
-    import otoroshi.utils.json.JsonPatchHelpers.patchJson
-    ctx.request.headers.get("Content-Type") match {
-      case Some("application/x-ndjson") =>
-        withResource(group, version, entity, ctx.request, bulk = true) { resource =>
-          val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
-          val src      = ctx.request.body
-            .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-            .map(bs => Try(Json.parse(bs.utf8String)))
-            .collect { case Success(e) => e }
-            .mapAsync(1) { e =>
-              resource.access
-                .findOne(version, resource.access.extractIdJson(e))
-                .map(ee => (e.select("patch").asValue, ee))
-            }
-            .map {
-              case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
-              case (_, Some(e)) => Right(("--", e))
-            }
-            .filter {
-              case Left(_)            => true
-              case Right((_, entity)) => ctx.canUserWriteJson(entity)
-            }
-            .mapAsync(grouping) {
-              case Left((error, json))        =>
-                Json
-                  .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
-                  .stringify
-                  .byteString
-                  .future
-              case Right((patchBody, entity)) => {
-                val patchedEntity = patchJson(Json.parse(patchBody), entity)
-                resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
-                  case JsError(errs)   =>
-                    Json
-                      .obj(
-                        "status"            -> 400,
-                        "error"             -> "bad_request",
-                        "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply)),
-                        "entity"            -> entity
-                      )
-                      .stringify
-                      .byteString
-                      .vfuture
-                  case JsSuccess(_, _) =>
-                    resource.access
-                      .create(
-                        version,
-                        resource.singularName,
-                        resource.access.extractIdJson(patchedEntity).some,
-                        patchedEntity,
-                        WriteAction.Update,
-                        entity.some
-                      )
-                      .map {
-                        case Left(error)          =>
-                          error.stringify.byteString
-                        case Right(createdEntity) =>
-                          adminApiEvent(
-                            ctx,
-                            s"BULK_PATCH_${resource.singularName.toUpperCase()}",
-                            s"User bulk patched a ${resource.singularName}",
-                            createdEntity,
-                            s"${resource.singularName}Patched".some
-                          )
-                          Json
-                            .obj(
-                              "status"   -> 200,
-                              "updated"  -> true,
-                              "id"       -> resource.access.extractIdJson(createdEntity),
-                              "id_field" -> resource.access.idFieldName()
+  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
+    ctx: ApiActionContext[Source[ByteString, _]] =>
+      import otoroshi.utils.json.JsonPatchHelpers.patchJson
+      ctx.request.headers.get("Content-Type") match {
+        case Some("application/x-ndjson") =>
+          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+            val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+            val src      = ctx.request.body
+              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+              .map(bs => Try(Json.parse(bs.utf8String)))
+              .collect { case Success(e) => e }
+              .mapAsync(1) { e =>
+                resource.access
+                  .findOne(version, resource.access.extractIdJson(e))
+                  .map(ee => (e.select("patch").asValue, ee))
+              }
+              .map {
+                case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
+                case (_, Some(e)) => Right(("--", e))
+              }
+              .filter {
+                case Left(_)            => true
+                case Right((_, entity)) => ctx.canUserWriteJson(entity)
+              }
+              .mapAsync(grouping) {
+                case Left((error, json))        =>
+                  Json
+                    .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                    .stringify
+                    .byteString
+                    .future
+                case Right((patchBody, entity)) => {
+                  val patchedEntity = patchJson(Json.parse(patchBody), entity)
+                  resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
+                    case JsError(errs)   =>
+                      Json
+                        .obj(
+                          "status"            -> 400,
+                          "error"             -> "bad_request",
+                          "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply)),
+                          "entity"            -> entity
+                        )
+                        .stringify
+                        .byteString
+                        .vfuture
+                    case JsSuccess(_, _) =>
+                      resource.access
+                        .create(
+                          version,
+                          resource.singularName,
+                          resource.access.extractIdJson(patchedEntity).some,
+                          patchedEntity,
+                          WriteAction.Update,
+                          entity.some
+                        )
+                        .map {
+                          case Left(error)          =>
+                            error.stringify.byteString
+                          case Right(createdEntity) =>
+                            adminApiEvent(
+                              ctx,
+                              s"BULK_PATCH_${resource.singularName.toUpperCase()}",
+                              s"User bulk patched a ${resource.singularName}",
+                              createdEntity,
+                              s"${resource.singularName}Patched".some
                             )
-                            .stringify
-                            .byteString
-                      }
+                            Json
+                              .obj(
+                                "status"   -> 200,
+                                "updated"  -> true,
+                                "id"       -> resource.access.extractIdJson(createdEntity),
+                                "id_field" -> resource.access.idFieldName()
+                              )
+                              .stringify
+                              .byteString
+                        }
+                  }
                 }
               }
-            }
-          Ok.sendEntity(
-            HttpEntity.Streamed.apply(
-              data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
-              contentLength = None,
-              contentType = Some("application/x-ndjson")
-            )
-          ).future
-        }
-      case _                            =>
-        result(
-          Results.BadRequest,
-          Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
-          ctx.request,
-          None
-        )
-    }
+            Ok.sendEntity(
+              HttpEntity.Streamed.apply(
+                data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+                contentLength = None,
+                contentType = Some("application/x-ndjson")
+              )
+            ).future
+          }
+        case _                            =>
+          result(
+            Results.BadRequest,
+            Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
+            ctx.request,
+            None
+          )
+      }
   }
 
   // POST /apis/:group/:version/:entity/_bulk
@@ -1749,27 +1801,29 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .byteString
                             .vfuture
                         case JsSuccess(_, _) =>
-                          resource.access.create(version, resource.singularName, None, entity, WriteAction.Create, None).map {
-                            case Left(error)          =>
-                              error.stringify.byteString
-                            case Right(createdEntity) =>
-                              adminApiEvent(
-                                ctx,
-                                s"BULK_CREATE_${resource.singularName.toUpperCase()}",
-                                s"User bulk created a ${resource.singularName}",
-                                createdEntity,
-                                s"${resource.singularName}Created".some
-                              )
-                              Json
-                                .obj(
-                                  "status"   -> 201,
-                                  "created"  -> true,
-                                  "id"       -> resource.access.extractIdJson(createdEntity),
-                                  "id_field" -> resource.access.idFieldName()
+                          resource.access
+                            .create(version, resource.singularName, None, entity, WriteAction.Create, None)
+                            .map {
+                              case Left(error)          =>
+                                error.stringify.byteString
+                              case Right(createdEntity) =>
+                                adminApiEvent(
+                                  ctx,
+                                  s"BULK_CREATE_${resource.singularName.toUpperCase()}",
+                                  s"User bulk created a ${resource.singularName}",
+                                  createdEntity,
+                                  s"${resource.singularName}Created".some
                                 )
-                                .stringify
-                                .byteString
-                          }
+                                Json
+                                  .obj(
+                                    "status"   -> 201,
+                                    "created"  -> true,
+                                    "id"       -> resource.access.extractIdJson(createdEntity),
+                                    "id_field" -> resource.access.idFieldName()
+                                  )
+                                  .stringify
+                                  .byteString
+                            }
                       }
                     }
                   }
@@ -1863,7 +1917,14 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             .vfuture
                         case JsSuccess(_, _) =>
                           resource.access
-                            .create(version, resource.singularName, resource.access.extractIdJson(entity).some, entity, WriteAction.Update, oldEntity.some)
+                            .create(
+                              version,
+                              resource.singularName,
+                              resource.access.extractIdJson(entity).some,
+                              entity,
+                              WriteAction.Update,
+                              oldEntity.some
+                            )
                             .map {
                               case Left(error)          =>
                                 error.stringify.byteString
@@ -1947,22 +2008,23 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     s"${resource.singularName}Deleted".some
                   )
                   resource.access.deleteOne(version, resource.access.extractIdJson(entity), resource.singularName).map {
-                    case Left(err) => Json
-                      .obj(
-                        "status" -> err.select("http_status_code").asOpt[Int].getOrElse(400).json,
-                        "deleted" -> false,
-                        "id" -> resource.access.extractIdJson(entity),
-                        "id_field" -> resource.access.idFieldName(),
-                        "error" -> err
-                      )
-                      .stringify
-                      .byteString
-                    case Right(_) => {
+                    case Left(err) =>
                       Json
                         .obj(
-                          "status" -> 200,
-                          "deleted" -> true,
-                          "id" -> resource.access.extractIdJson(entity),
+                          "status"   -> err.select("http_status_code").asOpt[Int].getOrElse(400).json,
+                          "deleted"  -> false,
+                          "id"       -> resource.access.extractIdJson(entity),
+                          "id_field" -> resource.access.idFieldName(),
+                          "error"    -> err
+                        )
+                        .stringify
+                        .byteString
+                    case Right(_)  => {
+                      Json
+                        .obj(
+                          "status"   -> 200,
+                          "deleted"  -> true,
+                          "id"       -> resource.access.extractIdJson(entity),
                           "id_field" -> resource.access.idFieldName()
                         )
                         .stringify
@@ -2033,7 +2095,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private def getStatus(err: JsValue): Results.Status = {
     err.select("http_status_code").asOptInt match {
-      case None => Results.InternalServerError
+      case None       => Results.InternalServerError
       case Some(code) => Results.Status(code)
     }
   }
@@ -2041,66 +2103,69 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   private def cleanError(err: JsValue): JsValue = {
     err match {
       case obj: JsObject => obj - "http_status_code"
-      case _ => err
+      case _             => err
     }
   }
 
   // POST /apis/:group/:version/:entity
-  def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
-    withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
-        case Right(body) if !ctx.canUserWriteJson(body) =>
-          result(
-            Results.Unauthorized,
-            Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-            ctx.request,
-            resource.some
-          )
-        case Right(_body)                               => {
-          val dev  = if (env.isDev) "_dev" else ""
-          val id   = Try(resource.access.extractIdJson(_body))
-            .getOrElse(s"${resource.singularName}${dev}_${IdGenerator.uuid}")
-          val body = _body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-          resource.access.findOne(version, id).flatMap {
-            case Some(oldEntity) =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "resource already exists"),
-                ctx.request,
-                resource.some
-              )
-            case None            => {
-              resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
-                case JsError(errs)   =>
-                  result(
-                    Results.BadRequest,
-                    Json.obj(
-                      "error"             -> "bad_request",
-                      "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))
-                    ),
-                    ctx.request,
-                    resource.some
-                  )
-                case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, None, body, WriteAction.Create, None).flatMap {
-                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-                    case Right(res) =>
-                      adminApiEvent(
-                        ctx,
-                        s"CREATE_${resource.singularName.toUpperCase()}",
-                        s"User created a ${resource.singularName}",
-                        body,
-                        s"${resource.singularName}Created".some
-                      )
-                      result(Results.Created, res, ctx.request, resource.some)
-                  }
+  def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
+    ctx: ApiActionContext[Source[ByteString, _]] =>
+      withResource(group, version, entity, ctx.request) { resource =>
+        bodyIn(ctx.request, resource, version) flatMap {
+          case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
+          case Right(body) if !ctx.canUserWriteJson(body) =>
+            result(
+              Results.Unauthorized,
+              Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+              ctx.request,
+              resource.some
+            )
+          case Right(_body)                               => {
+            val dev  = if (env.isDev) "_dev" else ""
+            val id   = Try(resource.access.extractIdJson(_body))
+              .getOrElse(s"${resource.singularName}${dev}_${IdGenerator.uuid}")
+            val body = _body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
+            resource.access.findOne(version, id).flatMap {
+              case Some(oldEntity) =>
+                result(
+                  Results.Unauthorized,
+                  Json.obj("error" -> "unauthorized", "error_description" -> "resource already exists"),
+                  ctx.request,
+                  resource.some
+                )
+              case None            => {
+                resource.access.validateToJson(body, resource.singularName, ctx.backOfficeUser) match {
+                  case JsError(errs)   =>
+                    result(
+                      Results.BadRequest,
+                      Json.obj(
+                        "error"             -> "bad_request",
+                        "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))
+                      ),
+                      ctx.request,
+                      resource.some
+                    )
+                  case JsSuccess(_, _) =>
+                    resource.access
+                      .create(version, resource.singularName, None, body, WriteAction.Create, None)
+                      .flatMap {
+                        case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+                        case Right(res) =>
+                          adminApiEvent(
+                            ctx,
+                            s"CREATE_${resource.singularName.toUpperCase()}",
+                            s"User created a ${resource.singularName}",
+                            body,
+                            s"${resource.singularName}Created".some
+                          )
+                          result(Results.Created, res, ctx.request, resource.some)
+                      }
+                }
               }
             }
           }
         }
       }
-    }
   }
 
   // DELETE /apis/:group/:version/:entity
@@ -2108,7 +2173,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
         case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-        case Right(_) => {
+        case Right(_)  => {
           adminApiEvent(
             ctx,
             s"DELETE_ALL_${resource.pluralName.toUpperCase()}",
@@ -2194,131 +2259,71 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           )
           resource.access.deleteOne(version, id, resource.singularName).flatMap {
             case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-            case Right(_) => result(Results.Ok, entity, ctx.request, resource.some)
+            case Right(_)  => result(Results.Ok, entity, ctx.request, resource.some)
           }
       }
     }
   }
 
   // POST /apis/:group/:version/:entity/:id
-  def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
-    withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
-        case Right(__body) => {
-          val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-          //resource.access.findOne(version, id).flatMap {
-          //  case None                                                =>
-          //    result(
-          //      Results.Unauthorized,
-          //      Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
-          //      ctx.request,
-          //      resource.some
-          //    ).vfuture
-          //  case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
-          //    result(
-          //      Results.Unauthorized,
-          //      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-          //      ctx.request,
-          //      resource.some
-          //    ).vfuture
-          //  case Some(oldEntity)                                     => {
-          resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
-            case err @ JsError(_)                                =>
-              result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
-            case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                ctx.request,
-                resource.some
-              )
-            case JsSuccess(body, _)                              => {
-              resource.access.findOne(version, id).flatMap {
-                case None      =>
-                  resource.access.create(version, resource.singularName, Some(id), body, WriteAction.Create, None).flatMap {
-                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-                    case Right(res) =>
-                      adminApiEvent(
-                        ctx,
-                        s"CREATE_${resource.singularName.toUpperCase()}",
-                        s"User created a ${resource.singularName}",
-                        body,
-                        s"${resource.singularName}Created".some
-                      )
-                      result(Results.Created, res, ctx.request, resource.some)
-                  }
-                case Some(old) =>
-                  val oldEntity  = resource.access.format.reads(old).get
-                  val newEntity  = resource.access.format.reads(body).get
-                  val hasChanged = oldEntity == newEntity
-                  resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, old.some).flatMap {
-                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-                    case Right(res) =>
-                      adminApiEvent(
-                        ctx,
-                        s"UPDATE_${resource.singularName.toUpperCase()}",
-                        s"User updated a ${resource.singularName}",
-                        body,
-                        s"${resource.singularName}Updated".some
-                      )
-                      result(
-                        Results.Ok,
-                        res,
-                        ctx.request,
-                        resource.some,
-                        Map("Otoroshi-Entity-Updated" -> hasChanged.toString)
-                      )
-                  }
-              }
-            }
-            //  }
-            //}
-          }
-        }
-      }
-    }
-  }
-
-  // PUT /apis/:group/:version/:entity/:id
-  def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
-    withResource(group, version, entity, ctx.request) { resource =>
-      bodyIn(ctx.request, resource, version) flatMap {
-        case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
-        case Right(__body) => {
-          val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-          resource.access.findOne(version, id).flatMap {
-            case None                                                =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
-                ctx.request,
-                resource.some
-              )
-            case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
-              result(
-                Results.Unauthorized,
-                Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                ctx.request,
-                resource.some
-              )
-            case Some(oldEntity)                                     => {
-              resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
-                case err @ JsError(_)                                =>
-                  result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
-                case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
-                  result(
-                    Results.Unauthorized,
-                    Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-                    ctx.request,
-                    resource.some
-                  )
-                case JsSuccess(body, _)                              => {
-                  resource.access.findOne(version, id).flatMap {
-                    case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
-                    case Some(_) =>
-                      resource.access.create(version, resource.singularName, id.some, body, WriteAction.Update, oldEntity.some).flatMap {
-                        case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+  def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
+    ctx: ApiActionContext[Source[ByteString, _]] =>
+      withResource(group, version, entity, ctx.request) { resource =>
+        bodyIn(ctx.request, resource, version) flatMap {
+          case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
+          case Right(__body) => {
+            val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
+            //resource.access.findOne(version, id).flatMap {
+            //  case None                                                =>
+            //    result(
+            //      Results.Unauthorized,
+            //      Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
+            //      ctx.request,
+            //      resource.some
+            //    ).vfuture
+            //  case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
+            //    result(
+            //      Results.Unauthorized,
+            //      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+            //      ctx.request,
+            //      resource.some
+            //    ).vfuture
+            //  case Some(oldEntity)                                     => {
+            resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
+              case err @ JsError(_)                                =>
+                result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
+              case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
+                result(
+                  Results.Unauthorized,
+                  Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+                  ctx.request,
+                  resource.some
+                )
+              case JsSuccess(body, _)                              => {
+                resource.access.findOne(version, id).flatMap {
+                  case None      =>
+                    resource.access
+                      .create(version, resource.singularName, Some(id), body, WriteAction.Create, None)
+                      .flatMap {
+                        case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+                        case Right(res) =>
+                          adminApiEvent(
+                            ctx,
+                            s"CREATE_${resource.singularName.toUpperCase()}",
+                            s"User created a ${resource.singularName}",
+                            body,
+                            s"${resource.singularName}Created".some
+                          )
+                          result(Results.Created, res, ctx.request, resource.some)
+                      }
+                  case Some(old) =>
+                    val oldEntity  = resource.access.format.reads(old).get
+                    val newEntity  = resource.access.format.reads(body).get
+                    val hasChanged = oldEntity == newEntity
+                    resource.access
+                      .create(version, resource.singularName, id.some, body, WriteAction.Update, old.some)
+                      .flatMap {
+                        case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
                         case Right(res) =>
                           adminApiEvent(
                             ctx,
@@ -2327,8 +2332,77 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                             body,
                             s"${resource.singularName}Updated".some
                           )
-                          result(Results.Ok, res, ctx.request, resource.some)
+                          result(
+                            Results.Ok,
+                            res,
+                            ctx.request,
+                            resource.some,
+                            Map("Otoroshi-Entity-Updated" -> hasChanged.toString)
+                          )
                       }
+                }
+              }
+              //  }
+              //}
+            }
+          }
+        }
+      }
+  }
+
+  // PUT /apis/:group/:version/:entity/:id
+  def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
+    ctx: ApiActionContext[Source[ByteString, _]] =>
+      withResource(group, version, entity, ctx.request) { resource =>
+        bodyIn(ctx.request, resource, version) flatMap {
+          case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
+          case Right(__body) => {
+            val _body = __body.asObject ++ Json.obj(resource.access.idFieldName() -> id)
+            resource.access.findOne(version, id).flatMap {
+              case None                                                =>
+                result(
+                  Results.Unauthorized,
+                  Json.obj("error" -> "unauthorized", "error_description" -> "resource does not exists"),
+                  ctx.request,
+                  resource.some
+                )
+              case Some(oldEntity) if !ctx.canUserWriteJson(oldEntity) =>
+                result(
+                  Results.Unauthorized,
+                  Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+                  ctx.request,
+                  resource.some
+                )
+              case Some(oldEntity)                                     => {
+                resource.access.validateToJson(_body, resource.singularName, ctx.backOfficeUser) match {
+                  case err @ JsError(_)                                =>
+                    result(Results.BadRequest, JsError.toJson(err), ctx.request, resource.some)
+                  case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) =>
+                    result(
+                      Results.Unauthorized,
+                      Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+                      ctx.request,
+                      resource.some
+                    )
+                  case JsSuccess(body, _)                              => {
+                    resource.access.findOne(version, id).flatMap {
+                      case None    => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
+                      case Some(_) =>
+                        resource.access
+                          .create(version, resource.singularName, id.some, body, WriteAction.Update, oldEntity.some)
+                          .flatMap {
+                            case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+                            case Right(res) =>
+                              adminApiEvent(
+                                ctx,
+                                s"UPDATE_${resource.singularName.toUpperCase()}",
+                                s"User updated a ${resource.singularName}",
+                                body,
+                                s"${resource.singularName}Updated".some
+                              )
+                              result(Results.Ok, res, ctx.request, resource.some)
+                          }
+                    }
                   }
                 }
               }
@@ -2336,62 +2410,64 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           }
         }
       }
-    }
   }
 
   // PATCH /apis/:group/:version/:entity/:id
-  def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
-    import otoroshi.utils.json.JsonPatchHelpers.patchJson
-    withResource(group, version, entity, ctx.request) { resource =>
-      resource.access.findOne(version, id).flatMap {
-        case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
-        case Some(current) if !ctx.canUserWriteJson(current) =>
-          result(
-            Results.Unauthorized,
-            Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
-            ctx.request,
-            resource.some
-          )
-        case Some(current)                                   => {
-          val isFormDataBody                  = ctx.request.contentType.contains(
-            "application/x-www-form-urlencoded"
-          ) || ctx.request.contentType.contains("application/json+oto-patch")
-          val defaultEntity: Option[JsObject] = if (isFormDataBody) Some(current.asObject) else None
-          bodyIn(ctx.request, resource, version, defaultEntity) flatMap {
-            case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some)
-            case Right(body) => {
-              val _patchedBody = if (isFormDataBody) body else patchJson(body, current)
-              val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
-              resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
-                case JsError(errs)   =>
-                  result(
-                    Results.BadRequest,
-                    Json.obj(
-                      "error"             -> "bad_request",
-                      "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))
-                    ),
-                    ctx.request,
-                    resource.some
-                  )
-                case JsSuccess(_, _) =>
-                  resource.access.create(version, resource.singularName, id.some, patchedBody, WriteAction.Update, current.some).flatMap {
-                    case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
-                    case Right(res) =>
-                      adminApiEvent(
-                        ctx,
-                        s"PATCHED_${resource.singularName.toUpperCase()}",
-                        s"User patched a ${resource.singularName}",
-                        body,
-                        s"${resource.singularName}Patched".some
-                      )
-                      result(Results.Ok, res, ctx.request, resource.some)
-                  }
+  def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
+    ctx: ApiActionContext[Source[ByteString, _]] =>
+      import otoroshi.utils.json.JsonPatchHelpers.patchJson
+      withResource(group, version, entity, ctx.request) { resource =>
+        resource.access.findOne(version, id).flatMap {
+          case None                                            => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
+          case Some(current) if !ctx.canUserWriteJson(current) =>
+            result(
+              Results.Unauthorized,
+              Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"),
+              ctx.request,
+              resource.some
+            )
+          case Some(current)                                   => {
+            val isFormDataBody                  = ctx.request.contentType.contains(
+              "application/x-www-form-urlencoded"
+            ) || ctx.request.contentType.contains("application/json+oto-patch")
+            val defaultEntity: Option[JsObject] = if (isFormDataBody) Some(current.asObject) else None
+            bodyIn(ctx.request, resource, version, defaultEntity) flatMap {
+              case Left(err)   => result(Results.BadRequest, err, ctx.request, resource.some)
+              case Right(body) => {
+                val _patchedBody = if (isFormDataBody) body else patchJson(body, current)
+                val patchedBody  = _patchedBody.asObject ++ Json.obj(resource.access.idFieldName() -> id)
+                resource.access.validateToJson(patchedBody, resource.singularName, ctx.backOfficeUser) match {
+                  case JsError(errs)   =>
+                    result(
+                      Results.BadRequest,
+                      Json.obj(
+                        "error"             -> "bad_request",
+                        "error_description" -> JsArray(errs.flatMap(_._2).flatMap(_.messages).map(JsString.apply))
+                      ),
+                      ctx.request,
+                      resource.some
+                    )
+                  case JsSuccess(_, _) =>
+                    resource.access
+                      .create(version, resource.singularName, id.some, patchedBody, WriteAction.Update, current.some)
+                      .flatMap {
+                        case Left(err)  => result(getStatus(err), cleanError(err), ctx.request, resource.some)
+                        case Right(res) =>
+                          adminApiEvent(
+                            ctx,
+                            s"PATCHED_${resource.singularName.toUpperCase()}",
+                            s"User patched a ${resource.singularName}",
+                            body,
+                            s"${resource.singularName}Patched".some
+                          )
+                          result(Results.Ok, res, ctx.request, resource.some)
+                      }
+                }
               }
             }
           }
         }
       }
-    }
   }
 
   def openapi() = Action { req =>

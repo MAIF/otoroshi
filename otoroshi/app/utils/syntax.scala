@@ -706,7 +706,9 @@ object implicits {
       AsyncUtils.chainAsyncF[A, I](seq)(input)(f)
     }
 
-    def chainAsyncE[Err, I](input: I)(f: Function2[A, I, Future[Either[Err, I]]])(implicit ec: ExecutionContext): Future[Either[Err, I]] = {
+    def chainAsyncE[Err, I](
+        input: I
+    )(f: Function2[A, I, Future[Either[Err, I]]])(implicit ec: ExecutionContext): Future[Either[Err, I]] = {
       AsyncUtils.chainAsyncFE[Err, A, I](seq)(input)(f)
     }
   }

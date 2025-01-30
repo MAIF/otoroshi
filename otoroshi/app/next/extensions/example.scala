@@ -235,7 +235,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   }
 
   override def publicKeys(): Future[Seq[PublicKeyJwk]] = {
-    val jwk = new OctetKeyPairGenerator(Curve.Ed25519).keyID("fake-key").generate
+    val jwk       = new OctetKeyPairGenerator(Curve.Ed25519).keyID("fake-key").generate
     val publicJWK = jwk.toPublicJWK.toJSONString.parseJson
     Seq(PublicKeyJwk(publicJWK)).vfuture
     // Seq(PublicKeyJwk(Json.obj(
@@ -282,19 +282,34 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
-  def writeValidationForFoo(entity: Foo, body: JsValue, oldEntity: Option[(Foo, JsValue)], singularName: String, id: Option[String], action: WriteAction, env: Env): Future[Either[JsValue, Foo]] = {
+  def writeValidationForFoo(
+      entity: Foo,
+      body: JsValue,
+      oldEntity: Option[(Foo, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, Foo]] = {
     println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
     id match {
       case Some("foo_1") => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
-      case _ => entity.rightf
+      case _             => entity.rightf
     }
   }
 
-  def deleteValidationForFoo(entity: Foo, body: JsValue, singularName: String, id: String, action: DeleteAction, env: Env): Future[Either[JsValue, Unit]] = {
+  def deleteValidationForFoo(
+      entity: Foo,
+      body: JsValue,
+      singularName: String,
+      id: String,
+      action: DeleteAction,
+      env: Env
+  ): Future[Either[JsValue, Unit]] = {
     println(s"delete validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
     id match {
       case "foo_2" => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
-      case _ => ().rightf
+      case _       => ().rightf
     }
   }
 
@@ -318,7 +333,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             stateOne = id => states.foo(id),
             stateUpdate = values => states.updateFoos(values),
             writeValidator = writeValidationForFoo,
-            deleteValidator = deleteValidationForFoo,
+            deleteValidator = deleteValidationForFoo
           )
         )
       )

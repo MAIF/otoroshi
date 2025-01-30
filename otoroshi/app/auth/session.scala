@@ -32,7 +32,7 @@ class PrivateAppsSessionManager(env: Env) {
       signatureAlgorithm = jwtconfig.getOptionalWithFileSupport[String]("signatureAlgorithm").getOrElse("HS256"),
       expiresAfter = jwtconfig.getOptionalWithFileSupport[FiniteDuration]("expiresAfter"),
       clockSkew = jwtconfig.getOptionalWithFileSupport[FiniteDuration]("clockSkew").getOrElse(30.seconds),
-      dataClaim = jwtconfig.getOptionalWithFileSupport[String]("dataClaim").getOrElse("data"),
+      dataClaim = jwtconfig.getOptionalWithFileSupport[String]("dataClaim").getOrElse("data")
     )
   )
 
@@ -82,7 +82,7 @@ object implicits {
       }
     }
   }
-  implicit class ResultWithPrivateAppSession(val result: Result) extends AnyVal {
+  implicit class ResultWithPrivateAppSession(val result: Result)           extends AnyVal {
     def privateAppSession(implicit request: RequestHeader, env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
         env.privateAppsSessionManager.decodeFromCookies(request)

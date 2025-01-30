@@ -61,9 +61,9 @@ object GlobalExpressionLanguage {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
-        val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
-        val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
-        val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        val userAgentDetails                       = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
+        val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
+        val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
@@ -423,13 +423,18 @@ object GlobalExpressionLanguage {
             case r"iat"                                                                          => "{iat}"
             case r"exp"                                                                          => "{exp}"
 
-            case "req.client_cert.dn" if req.isDefined && headCert.isDefined => DN(headCert.get.getSubjectDN.getName).stringify
-            case "req.client_cert.id" if req.isDefined && headCert.isDefined => headCert.get.getSerialNumber.toString(16)
-            case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined => headCert.get.rawDomain.get
-            case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined => headCert.get.rawDomain.get
-            case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined => DN(headCert.get.getIssuerDN.getName).stringify
+            case "req.client_cert.dn" if req.isDefined && headCert.isDefined                                         =>
+              DN(headCert.get.getSubjectDN.getName).stringify
+            case "req.client_cert.id" if req.isDefined && headCert.isDefined                                         =>
+              headCert.get.getSerialNumber.toString(16)
+            case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined     =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
+              DN(headCert.get.getIssuerDN.getName).stringify
 
-            case expr                                                                            => "bad-expr" //s"$${$expr}"
+            case expr => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)

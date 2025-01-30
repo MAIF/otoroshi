@@ -22,7 +22,7 @@ object AsyncUtils {
       } else {
         val head = futures.head
         head.andThen {
-          case Failure(e) => promise.tryFailure(e)
+          case Failure(e)     => promise.tryFailure(e)
           case Success(value) => {
             results = results :+ value
             if (futures.size == 1) {
@@ -50,7 +50,7 @@ object AsyncUtils {
       } else {
         val head = futures.head
         head.andThen {
-          case Failure(e) => promise.tryFailure(e)
+          case Failure(e)     => promise.tryFailure(e)
           case Success(value) => {
             results = results ++ value
             if (futures.size == 1) {
@@ -78,7 +78,7 @@ object AsyncUtils {
       } else {
         val head = all.head
         f(head).andThen {
-          case Failure(e) => promise.tryFailure(e)
+          case Failure(e)     => promise.tryFailure(e)
           case Success(value) => {
             results = results :+ value
             if (all.size == 1) {
@@ -95,7 +95,9 @@ object AsyncUtils {
     promise.future
   }
 
-  def flatmapAsyncF[I, A](items: Seq[I])(f: Function[I, Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  def flatmapAsyncF[I, A](
+      items: Seq[I]
+  )(f: Function[I, Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
     var results = Seq.empty[A]
@@ -106,7 +108,7 @@ object AsyncUtils {
       } else {
         val head = all.head
         f(head).andThen {
-          case Failure(e) => promise.tryFailure(e)
+          case Failure(e)     => promise.tryFailure(e)
           case Success(value) => {
             results = results ++ value
             if (all.size == 1) {
@@ -176,7 +178,7 @@ object AsyncUtils {
   }
 
   def chainAsync[A](items: Seq[Function[A, Future[A]]])(input: A)(implicit ec: ExecutionContext): Future[A] = {
-    val promise = Promise[A]()
+    val promise   = Promise[A]()
     var latest: A = input
 
     def next(futures: Seq[Function[A, Future[A]]]): Unit = {
@@ -202,8 +204,10 @@ object AsyncUtils {
     promise.future
   }
 
-  def chainAsyncF[I, A](items: Seq[I])(input: A)(f: Function2[I, A, Future[A]])(implicit ec: ExecutionContext): Future[A] = {
-    val promise = Promise[A]()
+  def chainAsyncF[I, A](
+      items: Seq[I]
+  )(input: A)(f: Function2[I, A, Future[A]])(implicit ec: ExecutionContext): Future[A] = {
+    val promise   = Promise[A]()
     var latest: A = input
 
     def next(all: Seq[I]): Unit = {
@@ -229,8 +233,10 @@ object AsyncUtils {
     promise.future
   }
 
-  def chainAsyncE[Err, A](items: Seq[Function[A, Future[Either[Err, A]]]])(input: A)(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
-    val promise = Promise[Either[Err, A]]()
+  def chainAsyncE[Err, A](
+      items: Seq[Function[A, Future[Either[Err, A]]]]
+  )(input: A)(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+    val promise   = Promise[Either[Err, A]]()
     var latest: A = input
 
     def next(futures: Seq[Function[A, Future[Either[Err, A]]]]): Unit = {
@@ -239,8 +245,8 @@ object AsyncUtils {
       } else {
         val head = futures.head
         head(latest).andThen {
-          case Failure(e) => promise.tryFailure(e)
-          case Success(Left(err)) => promise.trySuccess(err.left)
+          case Failure(e)            => promise.tryFailure(e)
+          case Success(Left(err))    => promise.trySuccess(err.left)
           case Success(Right(value)) => {
             latest = value
             if (futures.size == 1) {
@@ -257,8 +263,10 @@ object AsyncUtils {
     promise.future
   }
 
-  def chainAsyncFE[Err, I, A](items: Seq[I])(input: A)(f: Function2[I, A, Future[Either[Err, A]]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
-    val promise = Promise[Either[Err, A]]()
+  def chainAsyncFE[Err, I, A](
+      items: Seq[I]
+  )(input: A)(f: Function2[I, A, Future[Either[Err, A]]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+    val promise   = Promise[Either[Err, A]]()
     var latest: A = input
 
     def next(all: Seq[I]): Unit = {
@@ -267,8 +275,8 @@ object AsyncUtils {
       } else {
         val head = all.head
         f(head, latest).andThen {
-          case Failure(e) => promise.tryFailure(e)
-          case Success(Left(err)) => promise.trySuccess(err.left)
+          case Failure(e)            => promise.tryFailure(e)
+          case Success(Left(err))    => promise.trySuccess(err.left)
           case Success(Right(value)) => {
             latest = value
             if (all.size == 1) {
