@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.23.0] - 2025-01-30
+
+
+https://github.com/MAIF/otoroshi/milestone/108?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.22.0...v16.23.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.0
+
+
+### Added 
+
+- plugin to add cookie in a request (#2057)
+- plugin to add cookie in a response (#2058)
+- plugin to add cookie in a request if missing (#2059)
+- plugin to add cookie in a response if missing (#2060)
+- plugin to validate cookie values (#2061)
+- plugin to remove cookie from a request (#2062)
+- plugin to add cookie in a response (#2063)
+- admin. extensions should be able to provide public keys that can be exposed in /.well-known/jwks.json (#2074)
+- support write validation on generic API entities (#2078)
+- support delete validation on generic API entities (#2079)
+- Add support for client certificate in expression language (#2082)       
+      
+### Changed 
+
+- use a separate session for every interactions happening on the sso domain (#2056)
+- JQ plugins filter must be a code input in UI (#2065)       
+      
+### Fixed 
+
+- weight ratio in LoadBalancing section of Backend should only be visible for WeightedBestResponseTime strategy (#2064)
+- Quotas Consumptions are wrong (#2066)
+- Throttling quota doesn't block request ? (#2067)
+- Prevent JWT validation failure as an API key when the audience is null  (#2072)
+- None.get error on unknown entity using generic admin APIs (#2077)
+- client_credentials plugin should not accept any kind of apikey, only the one authorized on the route (#2081)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @cbois
+
 ## [16.22.0] - 2024-12-16
 
 
