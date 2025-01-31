@@ -133,6 +133,20 @@ export function setupCorazaExtension(registerExtension) {
 
     return {
       id: extensionId,
+      categories:[{
+        title: 'WAF',
+        description: 'All the features related to Web Application Firewalls',
+        features: [
+          {
+            title: 'WAF configs.',
+            description: 'All your Coraza WAF configs.',
+            absoluteImg: '',
+            link: '/extensions/coraza-waf/coraza-configs',
+            display: () => true,
+            icon: () => 'fa-cubes',
+          }
+        ]
+      }],
       sidebarItems: [],
       creationItems: [],
       dangerZoneParts: [],

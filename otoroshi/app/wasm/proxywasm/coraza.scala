@@ -495,7 +495,7 @@ object NgCorazaWAF {
 class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -595,8 +595,8 @@ class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def name: String                                = "Coraza WAF - Incoming Request Validtor"
-  override def description: Option[String]                 = "Coraza WAF - Incoming Request Validtor plugin".some
+  override def name: String                                = "Coraza WAF - Incoming Request Validator"
+  override def description: Option[String]                 = "Coraza WAF - Incoming Request Validator plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
 
   override def access(
