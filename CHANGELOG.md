@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.23.1] - 2025-01-31
+
+
+https://github.com/MAIF/otoroshi/milestone/110?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.0...v16.23.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.1
+
+
+### Added 
+
+- allow to define vaults using environment variables (#2083)       
+      
+
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.23.0] - 2025-01-30
 
 
