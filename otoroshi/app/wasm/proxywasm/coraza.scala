@@ -456,7 +456,7 @@ object NgCorazaWAF {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      val url = "wasm/coraza-proxy-wasm-v6fb6b5f34ffef5b87039dfd3d2543e244bbf2a0b.wasm"
+      val url = "wasm/coraza-proxy-wasm-v31a1e6a187ee07a476d737342ebb731fb2171e25.wasm"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
