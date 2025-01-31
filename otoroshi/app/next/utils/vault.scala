@@ -1042,24 +1042,30 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
 
 class Vaults(env: Env) {
 
-  private val logger = Logger("otoroshi-vaults")
-  private val envVaultConfig: Seq[(String, JsObject)] = sys.env.filter(_._1.startsWith("OTOROSHI_VAULTS_INSTANCES_")).toSeq.map {
-    case (key, value) => {
-      val name = key.replaceFirst("OTOROSHI_VAULTS_INSTANCES_", "").toLowerCase()
-     (name, Json.parse(value).asObject)
+  private val logger                                  = Logger("otoroshi-vaults")
+  private val envVaultConfig: Seq[(String, JsObject)] =
+    sys.env.filter(_._1.startsWith("OTOROSHI_VAULTS_INSTANCES_")).toSeq.map {
+      case (key, value) => {
+        val name = key.replaceFirst("OTOROSHI_VAULTS_INSTANCES_", "").toLowerCase()
+        (name, Json.parse(value).asObject)
+      }
     }
-  }
-  private val vaultConfig: Configuration =
-    env._configuration.getOptionalWithFileSupport[Configuration]("otoroshi.vaults").getOrElse(Configuration.empty)
+  private val vaultConfig: Configuration              =
+    env._configuration
+      .getOptionalWithFileSupport[Configuration]("otoroshi.vaults")
+      .getOrElse(Configuration.empty)
       .applyOn { conf =>
         var newConf = conf
-        envVaultConfig.foreach {
-          case (name, json) =>
-            val fb = Configuration(ConfigFactory.parseString(
-              Json.obj(name -> json).prettify,
-              ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)
-            ).resolve(ConfigResolveOptions.defaults()))
-            newConf = newConf.withFallback(fb)
+        envVaultConfig.foreach { case (name, json) =>
+          val fb = Configuration(
+            ConfigFactory
+              .parseString(
+                Json.obj(name -> json).prettify,
+                ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)
+              )
+              .resolve(ConfigResolveOptions.defaults())
+          )
+          newConf = newConf.withFallback(fb)
         }
         newConf
       }
