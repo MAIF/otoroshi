@@ -93,7 +93,7 @@ trait Node {
   def id: String = json.select("id").asString
   def kind: String = json.select("kind").asString
   def result: Option[String] = json.select("result").asOptString
-  def returned: Option[String] = json.select("returned").asOptString
+  def returned: Option[JsValue] = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   final def internalRun(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     wfr.log(s"starting '${id}'", this)
@@ -106,7 +106,7 @@ trait Node {
         case Right(res) => {
           wfr.log(s"ending '${id}'", this)
           result.foreach(name => wfr.memory.set(name, res))
-          returned.flatMap(name => wfr.memory.get(name)).map(v => Right(v)).getOrElse(Right(res)) // TODO: el like
+          returned.map(v => WorkflowOperators.processOperators(v, wfr, env)).map(v => Right(v)).getOrElse(Right(res)) // TODO: el like
         }
       }
       .recover {
@@ -181,6 +181,31 @@ class PrintFunction() extends WorkflowFunction {
   }
 }
 
+object WorkflowOperators {
+  def processOperators(value: JsValue, wfr: WorkflowRun, env: Env): JsValue = value match {
+    // case JsNull =>
+    // case JsString(str) =>
+    // case JsNumber(number) =>
+    // case JsBoolean(bool) =>
+    // case JsArray(arr) =>
+    // case JsObject(map) =>
+    case JsObject(map) if map.size == 1 && map.head._1.startsWith("$") => map.head._1 match {
+      case "$mem_ref" => {
+        val opts = map.head._2.asObject
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None => JsNull
+          case Some(value) if path.isEmpty => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+      case _ => value
+    }
+    case _ => value
+  }
+}
+
 object WorkflowTest {
   def main(args: Array[String]): Unit = {
     implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
@@ -194,11 +219,11 @@ object WorkflowTest {
         Json.obj("id" -> "call_2", "kind" -> "call", "function" -> "core.log", "args" -> Json.obj("message" -> "step 2"), "result" -> "call_2"),
         Json.obj("id" -> "call_3", "kind" -> "call", "function" -> "core.log", "args" -> Json.obj("message" -> "step 3"), "result" -> "call_3"),
       ),
-      "returned" -> "call_3"
+      "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "input", "path" -> "foo.bar"))
     )
     val node = Node.from(workflow)
     Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
-    engine.run(node, Json.obj("foo" -> "bar")).map { res =>
+    engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix"))).map { res =>
       println(s"result: ${res.json.prettify}")
     }
   }
