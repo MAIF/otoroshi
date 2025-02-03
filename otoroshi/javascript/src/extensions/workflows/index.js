@@ -48,7 +48,7 @@ export function setupWorkflowsExtension(registerExtension) {
       render() {
         return (
           <>
-            <CodeInput mode="json" height="150px" value={this.state.input} onChange={e => this.setState({input: e})}/>
+            <CodeInput mode="json" label="Input" height="150px" value={this.state.input} onChange={e => this.setState({input: e})}/>
             <div className="row mb-3">
               <label className="col-sm-2 col-form-label"></label>
               <div className="col-sm-10">
@@ -57,13 +57,16 @@ export function setupWorkflowsExtension(registerExtension) {
               </div>
             </div>
             {(this.state.result || this.state.error) && (
-              <CodeInput mode="json" height="150px" value={JSON.stringify({
+              <CodeInput mode="json" label="Result" height="150px" value={JSON.stringify({
                 returned: this.state.result,
                 error: this.state.error,
               }, null, 2)} />
             )}
             {this.state.run && (
-              <CodeInput mode="json" height="400px" value={JSON.stringify(this.state.run, null, 2)} />
+              <CodeInput mode="json" label="Memory" height="400px" value={JSON.stringify(this.state.run.memory, null, 2)} />
+            )}
+            {this.state.run && (
+              <CodeInput mode="json" label="Log" height="400px" value={JSON.stringify(this.state.run, null, 2)} />
             )}
           </>
         )
