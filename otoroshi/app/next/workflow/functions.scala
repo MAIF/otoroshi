@@ -1,7 +1,9 @@
 package otoroshi.next.workflow
 
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
+import org.joda.time.DateTime
 import otoroshi.env.Env
+import otoroshi.events.{AnalyticEvent, AuditEvent}
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.next.workflow.WorkflowFunction.registerFunction
@@ -24,6 +26,16 @@ object WorkflowFunctionsInitializer {
     registerFunction("core.store_get", new StoreGetFunction())
     registerFunction("core.store_set", new StoreSetFunction())
     registerFunction("core.store_del", new StoreDelFunction())
+    registerFunction("core.emit_event", new EmitEventFunction())
+    // access otoroshi resources (apikeys, etc)
+  }
+}
+
+class EmitEventFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val event = args.select("event").asOpt[JsObject].getOrElse(Json.obj())
+    WorkflowEmitEvent(event, env).toAnalytics()
+    JsNull.rightf
   }
 }
 
@@ -157,5 +169,31 @@ class StoreMatchFunction extends WorkflowFunction {
     env.datastores.rawDataStore.allMatching(pattern).map { seq =>
       Right(JsArray(seq.map(_.utf8String.json)))
     }
+  }
+}
+
+case class WorkflowEmitEvent(
+  payload: JsObject,
+  env: Env
+) extends AnalyticEvent {
+
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
+  val fromUserAgent: Option[String] = None
+  val `@type`: String = "WorkflowEmitEvent"
+  val `@service`: String = "Otoroshi"
+  val `@serviceId`: String = ""
+
+  override def toJson(implicit _env: Env): JsValue = {
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> "WorkflowEmitEvent",
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> "",
+      "@service"   -> "Otoroshi",
+      "@env"       -> env.env,
+    ) ++ payload
   }
 }

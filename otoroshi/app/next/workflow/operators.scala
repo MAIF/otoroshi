@@ -33,7 +33,14 @@ object WorkflowOperatorsInitializer {
     registerOperator("$encode_base64", new EncodeBase64Operator())
     registerOperator("$decode_base64", new DecodeBase64Operator())
     registerOperator("$basic_auth", new BasicAuthOperator())
+    registerOperator("$now", new NowOperator())
     // math operations
+  }
+}
+
+class NowOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    System.currentTimeMillis().json
   }
 }
 

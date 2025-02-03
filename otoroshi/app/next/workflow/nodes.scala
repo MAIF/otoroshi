@@ -77,9 +77,15 @@ case class AssignNode(json: JsObject) extends Node {
 }
 
 case class ParallelFlowsNode(json: JsObject) extends Node {
-  lazy val paths: Seq[Node] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o))
+  lazy val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    Future.sequence(paths.map { path =>
+    Future.sequence(paths.filter { o =>
+      if (o.select("predicate").isDefined) {
+        o.select("predicate").asOptBoolean.getOrElse(false)
+      } else {
+        true
+      }
+    }.map(v => Node.from(v)).map { path =>
       path.internalRun(wfr).recover {
         case t: Throwable => WorkflowError(s"caught exception on task '${id}' at step: '${path.id}'", None, Some(t)).left
       }

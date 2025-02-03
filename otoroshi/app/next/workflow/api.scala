@@ -3,6 +3,7 @@ package otoroshi.next.workflow
 import io.azam.ulidj.ULID
 import org.joda.time.DateTime
 import otoroshi.env.Env
+import otoroshi.events.AnalyticEvent
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
@@ -10,6 +11,7 @@ import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent._
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+import scala.util.Success
 
 class WorkflowEngine(env: Env) {
 
@@ -23,6 +25,8 @@ class WorkflowEngine(env: Env) {
       case Right(result) => WorkflowResult(result.some, None, wfRun)
     }.recover {
       case t: Throwable => WorkflowResult(node.result.flatMap(r => wfRun.memory.get(r)), WorkflowError("exception on root run", None, t.some).some, wfRun)
+    }.andThen {
+      case Success(value) => WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
     }
   }
 }
@@ -190,5 +194,36 @@ object WorkflowOperator {
       }
     }
     case _ => value
+  }
+}
+
+case class WorkflowRunEvent(
+                              node: Node,
+                              input: JsObject,
+                              result: WorkflowResult,
+                              env: Env
+                            ) extends AnalyticEvent {
+
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
+  val fromUserAgent: Option[String] = None
+  val `@type`: String = "WorkflowRunEvent"
+  val `@service`: String = "Otoroshi"
+  val `@serviceId`: String = ""
+
+  override def toJson(implicit _env: Env): JsValue = {
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> `@type`,
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "@env"       -> env.env,
+      "input" -> input,
+      "node" -> node.json,
+      "result" -> result.json
+    )
   }
 }
