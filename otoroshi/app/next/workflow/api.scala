@@ -2,22 +2,14 @@ package otoroshi.next.workflow
 
 import io.azam.ulidj.ULID
 import org.joda.time.DateTime
-import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.plugins.api.NgPluginHttpRequest
+import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import java.io.File
-import java.nio.file.Files
 import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent._
-import scala.concurrent.duration.DurationLong
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
-
-case class Env() {
-  val otoroshiExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-}
 
 class WorkflowEngine(env: Env) {
 
@@ -100,15 +92,16 @@ trait WorkflowFunction {
 }
 
 object WorkflowFunction {
-  val functions = {
-    val m = new TrieMap[String, WorkflowFunction]()
-    // TODO: try to find something more automatic
-    m.put("core.log", new PrintFunction())
+  val functions = new TrieMap[String, WorkflowFunction]()
+
+  def initDefaults(): Unit = {
+    registerFunction("core.log", new PrintFunction())
+    registerFunction("core.hello", new HelloFunction())
     // http call
     // store get
     // store set
-    m
   }
+
   def registerFunction(name: String, function: WorkflowFunction): Unit = {
     println(s"registering WorkflowFunction: '${name}'")
     functions.put(name, function)
@@ -148,28 +141,27 @@ trait Node {
 }
 
 object Node {
-  val nodes = {
-    val n = new TrieMap[String, (JsObject) => Node]()
-    n.put("workflow", json =>  WorkflowNode(json))
-    n.put("call", json =>  CallNode(json))
-    n.put("assign", json =>  AssignNode(json))
-    n.put("parallel", json =>  ParallelFlowsNode(json))
-    n.put("switch", json =>  SwitchNode(json))
-    n
+  val default = Json.obj(
+    "id" -> "main",
+    "kind" -> "workflow",
+    "steps" -> Json.arr(
+      Json.obj("id" -> "hello", "kind" -> "call", "function" -> "core.hello", "args" -> Json.obj("name" -> "Otoroshi"), "result" -> "call_res"),
+    ),
+    "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "call_res"))
+  )
+  val nodes = new TrieMap[String, (JsObject) => Node]()
+  def initDefaults(): Unit = {
+    registerNode("workflow", json =>  WorkflowNode(json))
+    registerNode("call", json =>  CallNode(json))
+    registerNode("assign", json =>  AssignNode(json))
+    registerNode("parallel", json =>  ParallelFlowsNode(json))
+    registerNode("switch", json =>  SwitchNode(json))
   }
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
   }
   def from(json: JsObject): Node = {
-    val kind = json.select("kind").asOpt[String].getOrElse("--").toLowerCase() /*match {
-      // TODO: search in a map of possible nodes ?
-      case "workflow" => WorkflowNode(json)
-      case "call" => CallNode(json)
-      case "assign" => AssignNode(json)
-      case "parallel" => ParallelFlowsNode(json)
-      case "switch" => SwitchNode(json)
-      case _ => NoopNode(json)
-    }*/
+    val kind = json.select("kind").asOpt[String].getOrElse("--").toLowerCase()
     nodes.get(kind) match {
       case None => NoopNode(json)
       case Some(node) => node(json)
@@ -182,10 +174,9 @@ trait WorkflowOperator {
 }
 
 object WorkflowOperator {
-  private val operators = {
-    val ops = new TrieMap[String, WorkflowOperator]()
-    ops.put("$mem_ref", new MemRefOperator())
-    ops
+  private val operators = new TrieMap[String, WorkflowOperator]()
+  def initDefaults(): Unit = {
+    registerOperator("$mem_ref", new MemRefOperator())
   }
   def registerOperator(name: String, operator: WorkflowOperator): Unit = {
     operators.put(name, operator)

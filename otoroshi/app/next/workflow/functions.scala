@@ -17,6 +17,17 @@ class PrintFunction extends WorkflowFunction {
   }
 }
 
+class HelloFunction extends WorkflowFunction {
+
+  override def call(args: JsObject): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asOptString.getOrElse("Stranger")
+    val message = s"Hello ${name} !"
+    println(message)
+    message.json.rightf
+  }
+}
+
+
 class HttpClientFunction extends WorkflowFunction {
 
   override def call(args: JsObject): Future[Either[WorkflowError, JsValue]] = {
