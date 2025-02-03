@@ -30,6 +30,30 @@ object WorkflowOperatorsInitializer {
     registerOperator("$lt", new LtOperator())
     registerOperator("$gte", new GteOperator())
     registerOperator("$lte", new LteOperator())
+    registerOperator("$encode_base64", new EncodeBase64Operator())
+    registerOperator("$decode_base64", new DecodeBase64Operator())
+    registerOperator("$basic_auth", new BasicAuthOperator())
+    // math operations
+  }
+}
+
+class BasicAuthOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val user = opts.select("user").asString
+    val password = opts.select("password").asString
+    s"Basic ${s"${user}:${password}".base64}".json
+  }
+}
+
+class EncodeBase64Operator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asString.base64.json
+  }
+}
+
+class DecodeBase64Operator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asString.decodeBase64.json
   }
 }
 
@@ -258,6 +282,7 @@ class ArrayAppendOperator extends WorkflowOperator {
       }
     }
     value match {
+      case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
       case arr @ JsArray(_) => arr.append(v)
       case _ => JsNull
     }
@@ -281,6 +306,7 @@ class ArrayPrependOperator extends WorkflowOperator {
       }
     }
     value match {
+      case arr @ JsArray(_) if v.isInstanceOf[JsArray] => v.asArray ++ arr
       case arr @ JsArray(_) => arr.prepend(v)
       case _ => JsNull
     }

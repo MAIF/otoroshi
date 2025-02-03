@@ -45,6 +45,15 @@ export function setupWorkflowsExtension(registerExtension) {
         })
       }
 
+      clear = () => {
+        this.setState({
+          running: false,
+          result: null,
+          run: null,
+          error: null
+        });
+      }
+
       render() {
         return (
           <>
@@ -52,8 +61,11 @@ export function setupWorkflowsExtension(registerExtension) {
             <div className="row mb-3">
               <label className="col-sm-2 col-form-label"></label>
               <div className="col-sm-10">
-                {!this.state.running && <button type="button" className="btn btn-success" onClick={this.run}><i className="fas fa-play"/> run</button>}
-                {this.state.running &&<button type="button" className="btn btn-success" disabled><i className="fas fa-play"/> runing ...</button>}
+                <div className="btn-group">
+                  {!this.state.running && <button type="button" className="btn btn-success" onClick={this.run}><i className="fas fa-play"/> run</button>}
+                  {this.state.running &&<button type="button" className="btn btn-success" disabled><i className="fas fa-play"/> running ...</button>}
+                  <button type="button" className="btn btn-danger" onClick={this.clear}><i className="fas fa-times"/> clear</button>
+                </div>
               </div>
             </div>
             {(this.state.result || this.state.error) && (
