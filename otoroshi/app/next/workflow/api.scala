@@ -43,6 +43,11 @@ case class WorkflowResult(returned: Option[JsValue], error: Option[WorkflowError
     "error" -> error.map(_.json).getOrElse(JsNull).asValue,
     "run" -> run.json
   )
+  def lightJson: JsValue = Json.obj(
+    "returned" -> returned,
+    "error" -> error.map(_.json).getOrElse(JsNull).asValue,
+    "run" -> run.lightJson
+  )
 }
 
 case class WorkflowError(message: String, details: Option[JsObject], exception: Option[Throwable]) {
@@ -85,8 +90,9 @@ case class WorkflowRun(id: String) {
   def json: JsValue = Json.obj(
     "id" -> id,
     "memory" -> memory.json,
-    // "log" -> runlog.json,
+    "log" -> runlog.json,
   )
+  def lightJson: JsValue = json.asObject - "log"
 }
 
 trait WorkflowFunction {

@@ -27,7 +27,7 @@ object WorkflowTest {
     val node = Node.from(workflow)
     Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
     engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix"))).map { res =>
-      println(s"result: ${res.json.prettify}")
+      println(s"result: ${res.lightJson.prettify}")
     }
   }
 }
