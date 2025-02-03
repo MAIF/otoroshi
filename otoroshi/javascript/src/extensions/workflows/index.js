@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
+import CodeInput from "../../components/inputs/CodeInput";
+import {Help} from "../../components/inputs";
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -9,9 +11,61 @@ export function setupWorkflowsExtension(registerExtension) {
   registerExtension(extensionId, true, (ctx) => {
 
     class WorkflowTester extends Component {
+
+      state = {
+        input: '{\n  "name": "foo"\n}',
+        running: false,
+        result: null,
+        run: null,
+        error: null
+      }
+
+      run = () => {
+        this.setState({
+          running: true,
+          result: null,
+          run: null,
+          error: null
+        }, () => {
+          fetch('/extensions/workflows/_test', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ input: this.state.input, workflow: this.props.rawValue.config })
+          }).then(r => r.json()).then(r => {
+            this.setState({
+              result: r.returned,
+              run: r.run,
+              error: r.error,
+              running: false,
+            })
+          })
+        })
+      }
+
       render() {
         return (
-          <h1>Tester</h1>
+          <>
+            <CodeInput mode="json" height="150px" value={this.state.input} onChange={e => this.setState({input: e})}/>
+            <div className="row mb-3">
+              <label className="col-sm-2 col-form-label"></label>
+              <div className="col-sm-10">
+                {!this.state.running && <button type="button" className="btn btn-success" onClick={this.run}><i className="fas fa-play"/> run</button>}
+                {this.state.running &&<button type="button" className="btn btn-success" disabled><i className="fas fa-play"/> runing ...</button>}
+              </div>
+            </div>
+            {(this.state.result || this.state.error) && (
+              <CodeInput mode="json" height="150px" value={JSON.stringify({
+                returned: this.state.result,
+                error: this.state.error,
+              }, null, 2)} />
+            )}
+            {this.state.run && (
+              <CodeInput mode="json" height="400px" value={JSON.stringify(this.state.run, null, 2)} />
+            )}
+          </>
         )
       }
     }
@@ -22,10 +76,10 @@ export function setupWorkflowsExtension(registerExtension) {
           type: 'location',
           props: {},
         },
-        id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+        id: {type: 'string', disabled: true, props: {label: 'Id', placeholder: '---'}},
         name: {
           type: 'string',
-          props: { label: 'Name', placeholder: 'New Workflow' },
+          props: {label: 'Name', placeholder: 'New Workflow'},
         },
         description: {
           type: 'string',
@@ -43,6 +97,7 @@ export function setupWorkflowsExtension(registerExtension) {
           type: 'jsonobjectcode',
           props: {
             label: 'Workflow',
+            height: '40vh',
           },
         },
         tester: {
@@ -68,7 +123,8 @@ export function setupWorkflowsExtension(registerExtension) {
         'metadata',
         '<<<Workflow',
         'config',
-        '>>>Tester',
+        '<<<Tester',
+        //'>>>Tester',
         'tester',
       ];
 
@@ -100,11 +156,11 @@ export function setupWorkflowsExtension(registerExtension) {
                 "kind": "workflow",
                 "steps": [
                   {
-                    "id": "hello", 
+                    "id": "hello",
                     "kind": "call",
                     "function": "core.hello",
                     "args": {
-                      "name": "Otoroshi"
+                      "name": "${input.name}"
                     },
                     "result": "call_res"
                   },

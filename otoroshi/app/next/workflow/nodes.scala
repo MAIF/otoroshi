@@ -1,10 +1,21 @@
 package otoroshi.next.workflow
 
 import otoroshi.env.Env
+import otoroshi.next.workflow.Node.registerNode
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
+
+object NodesInitializer {
+  def initDefaults(): Unit = {
+    registerNode("workflow", json =>  WorkflowNode(json))
+    registerNode("call", json =>  CallNode(json))
+    registerNode("assign", json =>  AssignNode(json))
+    registerNode("parallel", json =>  ParallelFlowsNode(json))
+    registerNode("switch", json =>  SwitchNode(json))
+  }
+}
 
 case class NoopNode(json: JsObject) extends Node {
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -49,21 +60,44 @@ case class CallNode(json: JsObject) extends Node {
   }
 }
 
+case class AssignOperation(json: JsObject) {
+  def execute(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Unit = {
+    val name = json.select("name").asString
+    val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
+    wfr.memory.set(name, value)
+  }
+}
+
 case class AssignNode(json: JsObject) extends Node {
-
-  lazy val values = ???
-
+  lazy val values: Seq[AssignOperation] = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => AssignOperation(o))
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    ???
+    values.foreach(_.execute(wfr: WorkflowRun))
+    Right(JsNull).vfuture
   }
 }
 
 case class ParallelFlowsNode(json: JsObject) extends Node {
-
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = ???
+  lazy val paths: Seq[Node] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o))
+  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    Future.sequence(paths.map { path =>
+      path.internalRun(wfr).recover {
+        case t: Throwable => WorkflowError(s"caught exception on task '${id}' at step: '${path.id}'", None, Some(t)).left
+      }
+    }).map { seq =>
+      val hasError = seq.exists(_.isLeft)
+      if (hasError) {
+        Left(WorkflowError("at least on path has failed", Json.obj(
+          "errors" -> JsArray(seq.collect {
+            case Left(err) => err.json
+          })
+        ).some, None))
+      } else {
+        Right(JsArray(seq.map(_.right.get)))
+      }
+    }
+  }
 }
 
 case class SwitchNode(json: JsObject) extends Node {
-
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = ???
 }

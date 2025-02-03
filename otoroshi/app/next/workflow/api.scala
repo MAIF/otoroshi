@@ -88,22 +88,12 @@ case class WorkflowRun(id: String) {
 }
 
 trait WorkflowFunction {
-  def call(args: JsObject): Future[Either[WorkflowError, JsValue]]
+  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
 }
 
 object WorkflowFunction {
   val functions = new TrieMap[String, WorkflowFunction]()
-
-  def initDefaults(): Unit = {
-    registerFunction("core.log", new PrintFunction())
-    registerFunction("core.hello", new HelloFunction())
-    // http call
-    // store get
-    // store set
-  }
-
   def registerFunction(name: String, function: WorkflowFunction): Unit = {
-    println(s"registering WorkflowFunction: '${name}'")
     functions.put(name, function)
   }
   def get(name: String): Option[WorkflowFunction] = functions.get(name)
@@ -145,18 +135,11 @@ object Node {
     "id" -> "main",
     "kind" -> "workflow",
     "steps" -> Json.arr(
-      Json.obj("id" -> "hello", "kind" -> "call", "function" -> "core.hello", "args" -> Json.obj("name" -> "Otoroshi"), "result" -> "call_res"),
+      Json.obj("id" -> "hello", "kind" -> "call", "function" -> "core.hello", "args" -> Json.obj("name" -> "${input.name}"), "result" -> "call_res"),
     ),
     "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "call_res"))
   )
   val nodes = new TrieMap[String, (JsObject) => Node]()
-  def initDefaults(): Unit = {
-    registerNode("workflow", json =>  WorkflowNode(json))
-    registerNode("call", json =>  CallNode(json))
-    registerNode("assign", json =>  AssignNode(json))
-    registerNode("parallel", json =>  ParallelFlowsNode(json))
-    registerNode("switch", json =>  SwitchNode(json))
-  }
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
   }
@@ -175,9 +158,6 @@ trait WorkflowOperator {
 
 object WorkflowOperator {
   private val operators = new TrieMap[String, WorkflowOperator]()
-  def initDefaults(): Unit = {
-    registerOperator("$mem_ref", new MemRefOperator())
-  }
   def registerOperator(name: String, operator: WorkflowOperator): Unit = {
     operators.put(name, operator)
   }

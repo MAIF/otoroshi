@@ -1,19 +1,22 @@
 package otoroshi.next.workflow
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
+import play.api.mvc.{RequestHeader, Result, Results}
 
+import java.io.File
+import java.nio.file.Files
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
-
 
 case class Workflow(
   location: EntityLocation,
@@ -105,15 +108,14 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 
   override def name: String = "Otoroshi Workflows extension"
 
-  override def description: Option[String] = "Otoroshi Workflows  extension".some
+  override def description: Option[String] = "Otoroshi Workflows extension".some
 
   override def enabled: Boolean = true
 
   override def start(): Unit = {
-    WorkflowFunction.initDefaults()
-    WorkflowOperator.initDefaults()
-    Node.initDefaults()
-
+    WorkflowFunctionsInitializer.initDefaults()
+    WorkflowOperatorsInitializer.initDefaults()
+    NodesInitializer.initDefaults()
   }
 
   override def stop(): Unit = ()
@@ -129,6 +131,15 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
+  override def backofficeAuthRoutes(): Seq[AdminExtensionBackofficeAuthRoute] = Seq(
+    AdminExtensionBackofficeAuthRoute(
+      method = "POST",
+      path = "/extensions/workflows/_test",
+      wantsBody = true,
+      handle = handleWorkflowTest
+    )
+  )
+
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
       AdminExtensionEntity(
@@ -136,7 +147,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
           "Workflow",
           "workflows",
           "workflows",
-          "plugin.otoroshi.io",
+          "plugins.otoroshi.io",
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[Workflow](
             Workflow.format,
@@ -153,5 +164,29 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         )
       )
     )
+  }
+
+  def handleWorkflowTest(ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute], req: RequestHeader, user: Option[BackOfficeUser], body:  Option[Source[ByteString, _]]): Future[Result] = {
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    implicit val ev = env
+    (body match {
+      case None => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
+      case Some(bodySource) => bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+        val payload = bodyRaw.utf8String.parseJson
+        val input = payload.select("input").asString.parseJson.asObject
+        val workflow = payload.select("workflow").asObject
+        val engine = new WorkflowEngine(env)
+        val node = Node.from(workflow)
+        // Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
+        engine.run(node, input).map { res =>
+          Results.Ok(res.json)
+        }
+      }
+    }).recover {
+      case e: Throwable => {
+        Results.Ok(Json.obj("done" -> false, "error" -> e.getMessage))
+      }
+    }
   }
 }
