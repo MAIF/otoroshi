@@ -99,5 +99,16 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
 }
 
 case class SwitchNode(json: JsObject) extends Node {
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = ???
+  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    paths.find(o => o.select("predicate").asOptBoolean.getOrElse(false)) match {
+      case None => JsNull.rightf
+      case Some(path) => {
+        val node =Node.from(path.select("node").asObject)
+        node.internalRun(wfr).recover {
+          case t: Throwable => WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+        }
+      }
+    }
+  }
 }
