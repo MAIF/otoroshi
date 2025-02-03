@@ -38,6 +38,39 @@ export class JsonObjectAsCodeInput extends Component {
   }
 }
 
+export class JsonObjectAsCodeInputUpdatable extends Component {
+
+  state = {
+    value: this.props.value
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log('componentDidUpdate')
+    if (prevProps.value !== this.props.value) {
+      console.log('trigger')
+      this.setState({ value: this.props.value })
+    }
+  }
+
+  render() {
+    return (
+      <CodeInput
+        {...this.props}
+        mode="json"
+        value={JSON.stringify(this.state.value, null, 2)}
+        onChange={(e) => {
+          try {
+            const value = JSON.parse(e);
+            this.setState({ value }, () => {
+              this.props.onChange(value);
+            })
+          } catch (ex) {}
+        }}
+      />
+    );
+  }
+}
+
 export default class CodeInput extends Component {
   static Toggle = (props) => {
     const [display, setDisplay] = useState(true);
