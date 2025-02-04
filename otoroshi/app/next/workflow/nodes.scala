@@ -81,7 +81,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     Future.sequence(paths.filter { o =>
       if (o.select("predicate").isDefined) {
-        o.select("predicate").asOptBoolean.getOrElse(false)
+        WorkflowOperator.processOperators(o.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
       } else {
         true
       }
@@ -107,10 +107,10 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
 case class SwitchNode(json: JsObject) extends Node {
   override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-    paths.find(o => o.select("predicate").asOptBoolean.getOrElse(false)) match {
+    paths.find(o => WorkflowOperator.processOperators(o.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)) match {
       case None => JsNull.rightf
       case Some(path) => {
-        val node =Node.from(path.select("node").asObject)
+        val node = Node.from(path.select("node").asObject)
         node.internalRun(wfr).recover {
           case t: Throwable => WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
         }

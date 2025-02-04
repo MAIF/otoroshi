@@ -104,6 +104,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   private[workflow] lazy val datastores = new WorkflowConfigAdminExtensionDatastores(env, id)
   private[workflow] lazy val states     = new WorkflowConfigAdminExtensionState(env)
 
+  val engine = new WorkflowEngine(env)
+
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.Workflows")
 
   override def name: String = "Otoroshi Workflows extension"
@@ -176,9 +178,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         val payload = bodyRaw.utf8String.parseJson
         val input = payload.select("input").asString.parseJson.asObject
         val workflow = payload.select("workflow").asObject
-        val engine = new WorkflowEngine(env)
         val node = Node.from(workflow)
-        // Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
         engine.run(node, input).map { res =>
           Results.Ok(res.json)
         }

@@ -7,7 +7,7 @@ import otoroshi.events.AnalyticEvent
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
 import scala.concurrent._
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
