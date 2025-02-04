@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.23.2] - 2025-02-04
+
+
+https://github.com/MAIF/otoroshi/milestone/109?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.1...v16.23.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.2
+
+
+### Added 
+
+- add sidebar category for WAF (#2084)
+- upgrade coraza to use latest CRS (#2085)
+- Allow extensions to use CodeInput (#2088)       
+      
+### Changed 
+
+- enhance WAF UI (#2087)       
+      
+### Fixed 
+
+- recursive call in the privateapp session manager (#2086)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [16.23.1] - 2025-01-31
 
 
