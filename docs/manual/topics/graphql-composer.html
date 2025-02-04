@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>GraphQL Composer Plugin · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="active page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/http-wasm.html" class="page">Http WASM</a></li>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
+<nav class="site-nav">
+<div class="title-logo"></div>
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="active page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/http-wasm.html" class="page">Http WASM</a></li>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column with-responsive-left-padding-5-rem">
+
+<header class="site-header expanded row">
+<div class="small-12 column" style="padding: 0">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title"><a href="../index.html">Otoroshi</a> <div>DOCS</div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>GraphQL Composer Plugin</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#graphql-composer-plugin" name="graphql-composer-plugin" class="anchor"><span class="anchor-link"></span></a>GraphQL Composer Plugin</h1>
+<div style="display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem">
+<span style="font-weight: bold">Route plugins:</span>
+<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.GraphQLBackend">GraphQL Composer</a>
+</div><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<blockquote>
+  <p>GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools. <a href="https://graphql.org/">Official GraphQL website</a></p>
+</blockquote>
+<p>APIs RESTful and GraphQL development has become one of the most popular activities for companies as well as users in recent times. In fast scaling companies, the multiplication of clients can cause the number of API needs to grow at scale.</p>
+<p>Otoroshi comes with a solution to create and meet your customers&rsquo; needs without constantly creating and recreating APIs: the <code>GraphQL composer plugin</code>. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api, raw JSON or WASM binary or anything that supports the HTTP protocol. </p><div class="centered-img">
+<img src="../imgs/graphql-composer.png" width="620px" /></div>
+<h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
+<p>Let&rsquo;s set up the plugin to align with the specified models:</p>
+<p>A user model with attributes for name and password. A country model with attributes for name and its associated users.</p>
+<p>The plugin provides custom directives to compose your API. A <code>directive</code> decorates part of a GraphQL schema or operation with additional configuration. Directives are preceded by the <strong>@</strong> character, like so:</p>
+<ul>
+  <li><a href="graphql-composer.html#directives">rest</a> : to call a http rest service with dynamic path params</li>
+  <li><a href="graphql-composer.html#directives">permission</a> : to restrict the access to the sensitive field</li>
+  <li><a href="graphql-composer.html#directives">graphql</a> : to call a graphQL service by passing a url and the associated query</li>
+</ul>
+<p>The GraphQL schema of our tutorial should look like this</p>
+<pre class="prettyprint"><code class="language-graphql">type Country {
+  name: String
+  users: [User] @rest(url: &quot;http://localhost:5000/countries/${item.name}/users&quot;)
+}
+
+type User {
+  name: String
+  password: String @password(value: &quot;ADMIN&quot;)
+}
+
+type Query {
+  users: [User] @rest(url: &quot;http://localhost:5000/users&quot;, paginate: true)
+  user(id: String): User @rest(url: &quot;http://localhost:5000/users/${params.id}&quot;)
+  countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com&quot;, query: &quot;{ countries { name }}&quot;, paginate: true)
+}
+</code></pre>
+<p>Now that we&rsquo;ve covered the fundamentals of GraphQL Composer, let&rsquo;s proceed with setting it up in our project :</p>
+<ul>
+  <li>set up a route containing the GraphQL Composer plugin</li>
+  <li>configure the plugin with the appropriate schema</li>
+  <li>conduct a test to ensure everything is functioning correctly</li>
+</ul><div class="centered-img">
+<img src="../imgs/countries-api.png" width="620px" /></div>
+<h3><a href="#setup-your-environment" name="setup-your-environment" class="anchor"><span class="anchor-link"></span></a>Setup your environment</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">Set up an Otoroshi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.23.2/otoroshi.jar&#39;
+</code></pre>
+<p>then you can run start Otoroshi :</p>
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
+</code></pre>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://request.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;name&quot;: &quot;my-service&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myservice.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  }
+}
+EOF
+</code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
+<h3><a href="#create-our-countries-api" name="create-our-countries-api" class="anchor"><span class="anchor-link"></span></a>Create our countries API</h3>
+<p>Let&rsquo;s create the <code>route</code> with few informations :</p>
+<ul>
+  <li>name: <code>My countries API</code></li>
+  <li>frontend: <code>countries-api.oto.tools</code></li>
+  <li>plugins: <code>GraphQL composer</code> plugin</li>
+</ul>
+<p>Let&rsquo;s make a request call through the Otoroshi Admin API (with the default apikey), like the example below</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
+  -d &#39;{
+  &quot;id&quot;: &quot;countries-api&quot;,
+  &quot;name&quot;: &quot;My countries API&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;countries.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ],
+    &quot;load_balancing&quot;: {
+      &quot;type&quot;: &quot;RoundRobin&quot;
+    }
+  },
+  &quot;plugins&quot;: [
+    {
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.GraphQLBackend&quot;
+    }
+  ]
+}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
+<h3><a href="#configure-our-countries-api" name="configure-our-countries-api" class="anchor"><span class="anchor-link"></span></a>Configure our countries API</h3>
+<p>Let&rsquo;s continue our API by updating the configuration of the GraphQL plugin with the initial schema.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X PUT &#39;http://otoroshi-api.oto.tools:8080/api/routes/countries-api&#39; \
+  -d &#39;{
+    &quot;id&quot;: &quot;countries-api&quot;,
+    &quot;name&quot;: &quot;My countries API&quot;,
+    &quot;frontend&quot;: {
+        &quot;domains&quot;: [
+            &quot;countries.oto.tools&quot;
+        ]
+    },
+    &quot;backend&quot;: {
+        &quot;targets&quot;: [
+            {
+                &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
+                &quot;port&quot;: 443,
+                &quot;tls&quot;: true
+            }
+        ],
+        &quot;load_balancing&quot;: {
+            &quot;type&quot;: &quot;RoundRobin&quot;
+        }
+    },
+    &quot;plugins&quot;: [
+        {
+            &quot;enabled&quot;: true,
+            &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.GraphQLBackend&quot;,
+            &quot;config&quot;: {
+                &quot;schema&quot;: &quot;type Country {\n  name: String\n  users: [User] @rest(url: \&quot;http://localhost:8181/countries/${item.name}/users\&quot;, headers: \&quot;{}\&quot;)\n}\n\ntype Query {\n  users: [User] @rest(url: \&quot;http://localhost:8181/users\&quot;, paginate: true, headers: \&quot;{}\&quot;)\n  user(id: String): User @rest(url: \&quot;http://localhost:8181/users/${params.id}\&quot;)\n  countries: [Country] @graphql(url: \&quot;https://countries.trevorblades.com\&quot;, query: \&quot;{ countries { name }}\&quot;, paginate: true)\ntype User {\n  name: String\n  password: String }\n&quot;
+            }
+        }
+    ]
+}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
+<p>Our created route expects an API, exposed on the localhost:8181, designed to retrieve users based on their countries. </p>
+<p>Let&rsquo;s develop this API using NodeJS. The API uses express as http server.</p>
+<pre class="prettyprint"><code class="language-js">const express = require(&#39;express&#39;)
+
+const app = express()
+
+const users = [
+  {
+    name: &#39;Joe&#39;,
+    password: &#39;password&#39;
+  },
+  {
+    name: &#39;John&#39;,
+    password: &#39;password2&#39;
+  }
+]
+
+const countries = [
+  {
+    name: &#39;Andorra&#39;,
+    users: [users[0]]
+  },
+  {
+    name: &#39;United Arab Emirates&#39;,
+    users: [users[1]]
+  }
+]
+
+app.get(&#39;/users&#39;, (_, res) =&gt; {
+  return res.json(users)
+})
+
+app.get(`/users/:name`, (req, res) =&gt; {
+  res.json(users.find(u =&gt; u.name === req.params.name))
+})
+
+app.get(&#39;/countries/:id/users&#39;, (req, res) =&gt; {
+  const country = countries.find(c =&gt; c.name === req.params.id)
+
+  if (country) 
+    return res.json(country.users)
+  else 
+    return res.json([])
+})
+
+app.listen(8181, () =&gt; {
+  console.log(`Listening on 8181`)
+});
+
+</code></pre>
+<p>Let&rsquo;s initiate our first request to the countries API.</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
+--header &#39;Content-Type: application/json&#39; \
+--data-binary @- &lt;&lt; EOF
+{
+    &quot;query&quot;: &quot;{\n    countries {\n        name\n        users {\n            name\n   }\n    }\n}&quot;
+}
+EOF
+</code></pre>
+<p>You should see the following content in your terminal.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;data&quot;: { 
+    &quot;countries&quot;: [
+      { 
+        &quot;name&quot;:&quot;Andorra&quot;,
+        &quot;users&quot;: [
+          { &quot;name&quot;:&quot;Joe&quot; }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+<p>The call graph should looks like</p>
+<ol>
+  <li>Initiate a request to <a href="https://countries.trevorblades.com">https://countries.trevorblades.com</a></li>
+  <li>For each country retrieved:</li>
+</ol>
+<ul>
+  <li>extract the <code>name</code> field</li>
+  <li>sends a request to <a href="http://localhost:8181/countries/${country}/users">http://localhost:8181/countries/${country}/users</a> to retrieve the list of users associated with this country.</li>
+</ul>
+<p>You may have noticed that we appended an argument called <code>pagniate</code> to the end of the graphql directive. This argument enables pagination for the client, allowing it to accept parameters such as limit and offset. The plugin utilizes these parameters to filter and streamline the content.</p>
+<p>Let&rsquo;s initiate a new call that doesn&rsquo;t specify any country.</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
+--header &#39;Content-Type: application/json&#39; \
+--data-binary @- &lt;&lt; EOF
+{
+    &quot;query&quot;: &quot;{\n    countries(limit: 0) {\n        name\n        users {\n            name\n   }\n    }\n}&quot;
+}
+EOF
+</code></pre>
+<p>You should see the following content in your terminal.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;data&quot;: { 
+    &quot;countries&quot;: []
+  }
+}
+</code></pre>
+<p>Let&rsquo;s move on to the next section to secure sensitive field of our API.</p>
+<h3><a href="#basics-of-permissions" name="basics-of-permissions" class="anchor"><span class="anchor-link"></span></a>Basics of permissions</h3>
+<p>The permission directives have been established to safeguard the fields within the GraphQL schema. The validation process commences by generating a context for all incoming requests, derived from the list of paths specified in the permissions field of the plugin. These permissions paths can reference various components of the request data (such as URL, headers, etc.), user credentials (such as API key, etc.), and details regarding the matched route. Subsequently, the process verifies that the specified value or values are present within the context.</p><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Permission</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : value and unauthorized_value</em></p>
+<p>The permission directive is designed to to secure a field on <strong>one</strong> value. The directive checks that a specific value is present in the <code>context</code>.</p>
+<p>Two arguments are available : <code>value</code> which is mandatory and specifies the expected value. Optionally, <code>unauthorized_value</code>, which can be utilized to indicate the rejection message in the outgoing response.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type User {
+    id: String @permission(
+        value: &quot;FOO&quot;, 
+        unauthorized_value: &quot;You&#39;re not authorized to get this field&quot;)
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">All permissions</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : values and unauthorized_value</em></p>
+<p>This directive is presumably the same as the previous one except that it takes a list of values.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type User {
+    id: String @allpermissions(
+        values: [&quot;FOO&quot;, &quot;BAR&quot;], 
+        unauthorized_value: &quot;FOO and BAR could not be found&quot;)
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">One permissions of</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : values and unauthorized_value</em></p>
+<p>This directive takes a list of values and validate that one of them is in the context.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type User {
+    id: String @onePermissionsOf(
+        values: [&quot;FOO&quot;, &quot;BAR&quot;], 
+        unauthorized_value: &quot;FOO or BAR could not be found&quot;)
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Authorize</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : path, value and unauthorized_value</em></p>
+<p>The authorize directive has one more required argument, named <code>path</code>, which indicates the path to value, in the context. Unlike the last three directives, the authorize directive doesn&rsquo;t search in the entire context but at the specified path.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type User {
+    id: String @authorize(
+        path: &quot;$.raw_request.headers.foo&quot;, 
+        value: &quot;BAR&quot;, 
+        unauthorized_value: &quot;Bar could not be found in the foo header&quot;)
+}
+</code></pre></div>
+<p>Let&rsquo;s restrict the password field to the users that comes with a <code>role</code> header of the value <code>ADMIN</code>.</p>
+<ol>
+  <li>
+  <p>
+  <p>Patch the configuration of the API by adding the permissions in the configuration of the plugin.</p>
+  <pre class="prettyprint"><code class="language-json">...
+ &quot;permissions&quot;: [&quot;$.raw_request.headers.role&quot;]
+...
+</code></pre></p></li>
+  <li>
+  <p>Add an directive on the password field in the schema</p>
+  <pre class="prettyprint"><code class="language-graphql">type User {
+  name: String
+  password: String @permission(value: &quot;ADMIN&quot;)
+}
+</code></pre></li>
+</ol>
+<p>Let&rsquo;s make a call with the role header</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
+--header &#39;Content-Type: application/json&#39; \
+--header &#39;role: ADMIN&#39;
+--data-binary @- &lt;&lt; EOF
+{
+    &quot;query&quot;: &quot;{\n    countries(limit: 0) {\n name\n  users {\n name\n password\n   }\n    }\n}&quot;
+}
+EOF
+</code></pre>
+<p>Now try to change the value of the role header</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;countries.oto.tools:9999/&#39; \
+--header &#39;Content-Type: application/json&#39; \
+--header &#39;role: USER&#39;
+--data-binary @- &lt;&lt; EOF
+{
+    &quot;query&quot;: &quot;{\n    countries(limit: 0) {\n name\n  users {\n name\n password\n   }\n    }\n}&quot;
+}
+EOF
+</code></pre>
+<p>The error message should look like </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;errors&quot;: [
+    {
+      &quot;message&quot;: &quot;You&#39;re not authorized&quot;,
+      &quot;path&quot;: [
+        &quot;countries&quot;,
+        0,
+        &quot;users&quot;,
+        0,
+        &quot;password&quot;
+      ],
+      ...
+    }
+  ]
+}
+</code></pre>
+<h1><a href="#glossary" name="glossary" class="anchor"><span class="anchor-link"></span></a>Glossary</h1>
+<h2><a href="#directives" name="directives" class="anchor"><span class="anchor-link"></span></a>Directives</h2><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Rest</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : url, method, headers, timeout, data, response_path, response_filter, limit, offset, paginate</em></p>
+<p>The rest directive is used to expose servers that communicate using the http protocol. The only required argument is the <code>url</code>.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type Query {
+    users(limit: Int, offset: Int): [User] @rest(url: &quot;http://foo.oto.tools/users&quot;, method: &quot;GET&quot;)
+}
+</code></pre>
+<p>It can be placed on the field of a query and type. To custom your url queries, you can use the path parameter and another field with respectively, <code>params</code> and <code>item</code> variables.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type Country {
+  name: String
+  phone: String
+  users: [User] @rest(url: &quot;http://foo.oto.tools/users/${item.name}&quot;)
+}
+
+type Query {
+  user(id: String): User @rest(url: &quot;http://foo.oto.tools/users/${params.id}&quot;)
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">GraphQL</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments : url, method, headers, timeout, query, data, response_path, response_filter, limit, offset, paginate</em></p>
+<p>The rest directive is used to call an other graphql server.</p>
+<p>The required argument are the <code>url</code> and the <code>query</code>.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type Query {
+    countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com/&quot;, query: &quot;{ countries { name phone }}&quot;)
+}
+
+type Country {
+    name: String
+    phone: String
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Soap</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments: all following arguments</em></p>
+<p>The soap directive is used to call a soap service. </p>
+<pre class="prettyprint"><code class="language-js">type Query {
+    randomNumber: String @soap(
+        jq_response_filter: &quot;.[\&quot;soap:Envelope\&quot;] | .[\&quot;soap:Body\&quot;] | .[\&quot;m:NumberToWordsResponse\&quot;] | .[\&quot;m:NumberToWordsResult\&quot;]&quot;, 
+        url: &quot;https://www.dataaccess.com/webservicesserver/numberconversion.wso&quot;, 
+        envelope: &quot;&lt;?xml version=\&quot;1.0\&quot; encoding=\&quot;utf-8\&quot;?&gt; \n  &lt;soap:Envelope xmlns:soap=\&quot;http://schemas.xmlsoap.org/soap/envelope/\&quot;&gt;   \n  &lt;soap:Body&gt;     \n    &lt;NumberToWords xmlns=\&quot;http://www.dataaccess.com/webservicesserver/\&quot;&gt;       \n      &lt;ubiNum&gt;12&lt;/ubiNum&gt;     \n    &lt;/NumberToWords&gt;   \n  &lt;/soap:Body&gt; \n&lt;/soap:Envelope&gt;&quot;)
+}
+</code></pre>
+<h5><a href="#specific-arguments" name="specific-arguments" class="anchor"><span class="anchor-link"></span></a>Specific arguments</h5>
+<table>
+  <thead>
+    <tr>
+      <th>Argument </th>
+      <th>Type </th>
+      <th>Optional </th>
+      <th>Default value </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>envelope </td>
+      <td><em>STRING</em> </td>
+      <td>Required </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>url </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>action </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>preserve_query </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>Required </td>
+      <td>true </td>
+    </tr>
+    <tr>
+      <td>charset </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>convert_request_body_to_xml </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>Required </td>
+      <td>true </td>
+    </tr>
+    <tr>
+      <td>jq_request_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>jq_response_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">JSON</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments: path, json, paginate</em></p>
+<p>The json directive can be used to expose static data or mocked data. The first usage is to defined a raw stringify JSON in the <code>data</code> argument. The second usage is to set data in the predefined field of the GraphQL plugin composer and to specify a path in the <code>path</code> argument.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type Query {
+    users_from_raw_data: [User] @json(data: &quot;[{\&quot;firstname\&quot;:\&quot;Foo\&quot;,\&quot;name\&quot;:\&quot;Bar\&quot;}]&quot;)
+    users_from_predefined_data: [User] @json(path: &quot;users&quot;)
+}
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Mock</span>
+<button class="simple-block-button">Close</button>
+</div>
+<p><em>Arguments: url</em></p>
+<p>The mock directive is to used with the Mock Responses Plugin, also named <code>Charlatan</code>. This directive can be interesting to mock your schema and start to use your Otoroshi route before starting to develop the underlying service.</p>
+<p><strong>Example</strong></p>
+<pre class="prettyprint"><code class="language-js">type Query {
+    users: @mock(url: &quot;/users&quot;)
+}
+</code></pre>
+<p>This example supposes that the Mock Responses plugin is set on the route&rsquo;s feed, and that an endpoint <code>/users</code> is available.</p></div>
+<h3><a href="#list-of-directive-arguments" name="list-of-directive-arguments" class="anchor"><span class="anchor-link"></span></a>List of directive arguments</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Argument </th>
+      <th>Type </th>
+      <th>Optional </th>
+      <th>Default value </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>url </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>method </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td>GET </td>
+    </tr>
+    <tr>
+      <td>headers </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>timeout </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td>5000 </td>
+    </tr>
+    <tr>
+      <td>data </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>path </td>
+      <td><em>STRING</em> </td>
+      <td>x (only for json directive) </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>query </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>response_path </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>response_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>limit </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>offset </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>value </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>values </td>
+      <td>LIST of <em>STRING</em> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>path </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>paginate </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>unauthorized_value </td>
+      <td><em>STRING</em> </td>
+      <td>x (only for permissions directive) </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/secrets.html">Secrets management</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">
+<h3>On this page</h3>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/graphql-composer.html#graphql-composer-plugin" class="header">GraphQL Composer Plugin</a>
+  <ul>
+    <li><a href="../topics/graphql-composer.html#tutorial" class="header">Tutorial</a></li>
+    <li><a href="../topics/graphql-composer.html#glossary" class="header">Glossary</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2025</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
