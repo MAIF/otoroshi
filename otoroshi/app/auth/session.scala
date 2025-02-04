@@ -84,7 +84,7 @@ object implicits {
     }
   }
 
-  implicit class ResultWithPrivateAppSession(val result: Result)           extends AnyVal {
+  implicit class ResultWithPrivateAppSession(val result: Result) extends AnyVal {
     def privateAppSession(implicit request: RequestHeader, env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
         env.privateAppsSessionManager.decodeFromCookies(request)

@@ -2,86 +2,127 @@ import React, { Component } from 'react';
 import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
-import CodeInput from "../../components/inputs/CodeInput";
-import {Help} from "../../components/inputs";
+import CodeInput from '../../components/inputs/CodeInput';
+import { Help } from '../../components/inputs';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
 export function setupWorkflowsExtension(registerExtension) {
   registerExtension(extensionId, true, (ctx) => {
-
     class WorkflowTester extends Component {
-
       state = {
         input: '{\n  "name": "foo"\n}',
         running: false,
         result: null,
         run: null,
-        error: null
-      }
+        error: null,
+      };
 
       run = () => {
-        this.setState({
-          running: true,
-          result: null,
-          run: null,
-          error: null
-        }, () => {
-          fetch('/extensions/workflows/_test', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ input: this.state.input, workflow: this.props.rawValue.config })
-          }).then(r => r.json()).then(r => {
-            this.setState({
-              result: r.returned,
-              run: r.run,
-              error: r.error,
-              running: false,
+        this.setState(
+          {
+            running: true,
+            result: null,
+            run: null,
+            error: null,
+          },
+          () => {
+            fetch('/extensions/workflows/_test', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                input: this.state.input,
+                workflow: this.props.rawValue.config,
+              }),
             })
-          })
-        })
-      }
+              .then((r) => r.json())
+              .then((r) => {
+                this.setState({
+                  result: r.returned,
+                  run: r.run,
+                  error: r.error,
+                  running: false,
+                });
+              });
+          }
+        );
+      };
 
       clear = () => {
         this.setState({
           running: false,
           result: null,
           run: null,
-          error: null
+          error: null,
         });
-      }
+      };
 
       render() {
         return (
           <>
-            <CodeInput mode="json" label="Input" height="150px" value={this.state.input} onChange={e => this.setState({input: e})}/>
+            <CodeInput
+              mode="json"
+              label="Input"
+              height="150px"
+              value={this.state.input}
+              onChange={(e) => this.setState({ input: e })}
+            />
             <div className="row mb-3">
               <label className="col-sm-2 col-form-label"></label>
               <div className="col-sm-10">
                 <div className="btn-group">
-                  {!this.state.running && <button type="button" className="btn btn-success" onClick={this.run}><i className="fas fa-play"/> run</button>}
-                  {this.state.running &&<button type="button" className="btn btn-success" disabled><i className="fas fa-play"/> running ...</button>}
-                  <button type="button" className="btn btn-danger" onClick={this.clear}><i className="fas fa-times"/> clear</button>
+                  {!this.state.running && (
+                    <button type="button" className="btn btn-success" onClick={this.run}>
+                      <i className="fas fa-play" /> run
+                    </button>
+                  )}
+                  {this.state.running && (
+                    <button type="button" className="btn btn-success" disabled>
+                      <i className="fas fa-play" /> running ...
+                    </button>
+                  )}
+                  <button type="button" className="btn btn-danger" onClick={this.clear}>
+                    <i className="fas fa-times" /> clear
+                  </button>
                 </div>
               </div>
             </div>
             {(this.state.result || this.state.error) && (
-              <CodeInput mode="json" label="Result" height="150px" value={JSON.stringify({
-                returned: this.state.result,
-                error: this.state.error,
-              }, null, 2)} />
+              <CodeInput
+                mode="json"
+                label="Result"
+                height="150px"
+                value={JSON.stringify(
+                  {
+                    returned: this.state.result,
+                    error: this.state.error,
+                  },
+                  null,
+                  2
+                )}
+              />
             )}
             {this.state.run && (
-              <CodeInput mode="json" label="Memory" height="400px" value={JSON.stringify(this.state.run.memory, null, 2)} />
+              <CodeInput
+                mode="json"
+                label="Memory"
+                height="400px"
+                value={JSON.stringify(this.state.run.memory, null, 2)}
+              />
             )}
             {this.state.run && (
-              <CodeInput mode="json" label="Log" height="400px" value={JSON.stringify(this.state.run, null, 2)} />
+              <CodeInput
+                mode="json"
+                label="Log"
+                height="400px"
+                value={JSON.stringify(this.state.run, null, 2)}
+              />
             )}
           </>
-        )
+        );
       }
     }
 
@@ -91,10 +132,10 @@ export function setupWorkflowsExtension(registerExtension) {
           type: 'location',
           props: {},
         },
-        id: {type: 'string', disabled: true, props: {label: 'Id', placeholder: '---'}},
+        id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
         name: {
           type: 'string',
-          props: {label: 'Name', placeholder: 'New Workflow'},
+          props: { label: 'Name', placeholder: 'New Workflow' },
         },
         description: {
           type: 'string',
@@ -116,8 +157,8 @@ export function setupWorkflowsExtension(registerExtension) {
           },
         },
         tester: {
-          type: WorkflowTester
-        }
+          type: WorkflowTester,
+        },
       };
 
       columns = [
@@ -147,11 +188,7 @@ export function setupWorkflowsExtension(registerExtension) {
         this.props.setTitle(`All Workflows`);
       }
 
-      client = BackOfficeServices.apisClient(
-        'plugins.otoroshi.io',
-        'v1',
-        'workflows'
-      );
+      client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
       render() {
         return React.createElement(
@@ -167,24 +204,24 @@ export function setupWorkflowsExtension(registerExtension) {
               tags: [],
               metadata: {},
               config: {
-                "id": "main",
-                "kind": "workflow",
-                "steps": [
+                id: 'main',
+                kind: 'workflow',
+                steps: [
                   {
-                    "id": "hello",
-                    "kind": "call",
-                    "function": "core.hello",
-                    "args": {
-                      "name": "${input.name}"
+                    id: 'hello',
+                    kind: 'call',
+                    function: 'core.hello',
+                    args: {
+                      name: '${input.name}',
                     },
-                    "result": "call_res"
+                    result: 'call_res',
                   },
                 ],
-                "returned": {
-                  "$mem_ref": {
-                    "name": "call_res"
-                  }
-                }
+                returned: {
+                  $mem_ref: {
+                    name: 'call_res',
+                  },
+                },
               },
             }),
             itemName: 'Workflow',
@@ -214,7 +251,7 @@ export function setupWorkflowsExtension(registerExtension) {
 
     return {
       id: extensionId,
-      categories:[],
+      categories: [],
       // categories:[{
       //   title: 'Workflows',
       //   description: 'All the features related to Otoroshi Workflows',

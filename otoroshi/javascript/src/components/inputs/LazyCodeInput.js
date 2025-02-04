@@ -1,4 +1,4 @@
-const React = require("react");
+const React = require('react');
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 

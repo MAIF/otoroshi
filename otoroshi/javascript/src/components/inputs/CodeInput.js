@@ -39,16 +39,15 @@ export class JsonObjectAsCodeInput extends Component {
 }
 
 export class JsonObjectAsCodeInputUpdatable extends Component {
-
   state = {
-    value: this.props.value
-  }
+    value: this.props.value,
+  };
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    console.log('componentDidUpdate')
+    console.log('componentDidUpdate');
     if (prevProps.value !== this.props.value) {
-      console.log('trigger')
-      this.setState({ value: this.props.value })
+      console.log('trigger');
+      this.setState({ value: this.props.value });
     }
   }
 
@@ -63,7 +62,7 @@ export class JsonObjectAsCodeInputUpdatable extends Component {
             const value = JSON.parse(e);
             this.setState({ value }, () => {
               this.props.onChange(value);
-            })
+            });
           } catch (ex) {}
         }}
       />

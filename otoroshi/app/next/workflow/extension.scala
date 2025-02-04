@@ -19,13 +19,13 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 case class Workflow(
-  location: EntityLocation,
-  id: String,
-  name: String,
-  description: String,
-  tags: Seq[String],
-  metadata: Map[String, String],
-  config: JsObject,
+    location: EntityLocation,
+    id: String,
+    name: String,
+    description: String,
+    tags: Seq[String],
+    metadata: Map[String, String],
+    config: JsObject
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -43,16 +43,16 @@ object Workflow {
     description = "New Workflow",
     metadata = Map.empty,
     tags = Seq.empty,
-    config = Node.default,
+    config = Node.default
   )
-  val format                      = new Format[Workflow] {
+  val format               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
-      "id"            -> o.id,
-      "name"          -> o.name,
-      "description"   -> o.description,
-      "metadata"      -> o.metadata,
-      "tags"          -> JsArray(o.tags.map(JsString.apply)),
-      "config"        -> o.config,
+      "id"          -> o.id,
+      "name"        -> o.name,
+      "description" -> o.description,
+      "metadata"    -> o.metadata,
+      "tags"        -> JsArray(o.tags.map(JsString.apply)),
+      "config"      -> o.config
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
       Workflow(
@@ -74,12 +74,12 @@ object Workflow {
 trait WorkflowConfigDataStore extends BasicStore[Workflow]
 
 class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
-  extends WorkflowConfigDataStore
+    extends WorkflowConfigDataStore
     with RedisLikeStore[Workflow] {
-  override def fmt: Format[Workflow]              = Workflow.format
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
-  override def key(id: String): String                   = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflows:$id"
-  override def extractId(value: Workflow): String = value.id
+  override def fmt: Format[Workflow]                   = Workflow.format
+  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflows:$id"
+  override def extractId(value: Workflow): String      = value.id
 }
 
 class WorkflowConfigAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
@@ -168,21 +168,27 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     )
   }
 
-  def handleWorkflowTest(ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute], req: RequestHeader, user: Option[BackOfficeUser], body:  Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec = env.otoroshiExecutionContext
+  def handleWorkflowTest(
+      ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
+      req: RequestHeader,
+      user: Option[BackOfficeUser],
+      body: Option[Source[ByteString, _]]
+  ): Future[Result] = {
+    implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
-    implicit val ev = env
+    implicit val ev  = env
     (body match {
-      case None => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
-      case Some(bodySource) => bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-        val payload = bodyRaw.utf8String.parseJson
-        val input = payload.select("input").asString.parseJson.asObject
-        val workflow = payload.select("workflow").asObject
-        val node = Node.from(workflow)
-        engine.run(node, input).map { res =>
-          Results.Ok(res.json)
+      case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
+      case Some(bodySource) =>
+        bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+          val payload  = bodyRaw.utf8String.parseJson
+          val input    = payload.select("input").asString.parseJson.asObject
+          val workflow = payload.select("workflow").asObject
+          val node     = Node.from(workflow)
+          engine.run(node, input).map { res =>
+            Results.Ok(res.json)
+          }
         }
-      }
     }).recover {
       case e: Throwable => {
         Results.Ok(Json.obj("done" -> false, "error" -> e.getMessage))

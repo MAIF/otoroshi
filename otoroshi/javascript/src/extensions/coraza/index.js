@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
-import CodeInput from "../../components/inputs/CodeInput";
+import CodeInput from '../../components/inputs/CodeInput';
 
 const extensionId = 'otoroshi.extensions.CorazaWAF';
 
@@ -53,36 +53,47 @@ export function setupCorazaExtension(registerExtension) {
             possibleValues: [
               { label: 'Detection Only', value: 'DetectionOnly' },
               { label: 'Blocking', value: 'On' },
-            ]
-          }
+            ],
+          },
         },
         include_crs: {
           type: 'bool',
           props: {
             help: 'to know more about it, go to https://coraza.io/docs/tutorials/coreruleset/',
-            label: 'Use OWASP CRS'
-          }
+            label: 'Use OWASP CRS',
+          },
         },
         custom_rules_infos: {
           type: 'display',
           props: {
             label: 'Custom rules',
-            value: <p style={{ marginTop: 6 }}>
-              to know more about custom rules, go to <a href="https://coraza.io/docs/seclang/">https://coraza.io/docs/seclang/</a>
-            </p>
-          }
+            value: (
+              <p style={{ marginTop: 6 }}>
+                to know more about custom rules, go to{' '}
+                <a href="https://coraza.io/docs/seclang/">https://coraza.io/docs/seclang/</a>
+              </p>
+            ),
+          },
         },
         custom_rules: {
           type: 'array',
           props: {
             label: '',
-            component: (props) => <CodeInput {...props} label="" mode="prolog" value={props.itemValue} onChange={e => {
-              const arr = props.value;
-              arr[props.idx] = e;
-              props.onChange(arr)
-            }} />
-          }
-        }
+            component: (props) => (
+              <CodeInput
+                {...props}
+                label=""
+                mode="prolog"
+                value={props.itemValue}
+                onChange={(e) => {
+                  const arr = props.value;
+                  arr[props.idx] = e;
+                  props.onChange(arr);
+                }}
+              />
+            ),
+          },
+        },
       };
 
       columns = [
@@ -158,66 +169,62 @@ export function setupCorazaExtension(registerExtension) {
             formFlow: this.formFlow,
             columns: this.columns,
             stayAfterSave: true,
-            fetchItems: (paginationState) => this.client.findAll().then(arr => {
-              const base = [
-                'Include @recommended-conf',
-                'Include @crs-setup-conf',
-                'Include @owasp_crs/*.conf',
-                'SecRuleEngine DetectionOnly',
-                'SecRuleEngine On',
-              ];
-              return arr.map(item => {
-                let mode = 'DetectionOnly';
-                if (item.config.directives_map.default.indexOf("SecRuleEngine On") > -1) {
-                  mode = 'On';
-                }
-                const include_crs = item.config.directives_map.default.indexOf("Include @owasp_crs/*.conf") > -1;
-                const custom_rules = item.config.directives_map.default.filter(line => {
-                  return base.indexOf(line) === -1;
+            fetchItems: (paginationState) =>
+              this.client.findAll().then((arr) => {
+                const base = [
+                  'Include @recommended-conf',
+                  'Include @crs-setup-conf',
+                  'Include @owasp_crs/*.conf',
+                  'SecRuleEngine DetectionOnly',
+                  'SecRuleEngine On',
+                ];
+                return arr.map((item) => {
+                  let mode = 'DetectionOnly';
+                  if (item.config.directives_map.default.indexOf('SecRuleEngine On') > -1) {
+                    mode = 'On';
+                  }
+                  const include_crs =
+                    item.config.directives_map.default.indexOf('Include @owasp_crs/*.conf') > -1;
+                  const custom_rules = item.config.directives_map.default.filter((line) => {
+                    return base.indexOf(line) === -1;
+                  });
+                  const r = {
+                    ...item,
+                    mode,
+                    include_crs,
+                    custom_rules,
+                  };
+                  console.log(r);
+                  return r;
                 });
-                const r = {
-                  ...item,
-                  mode,
-                  include_crs,
-                  custom_rules,
-                }
-                console.log(r)
-                return r;
-              })
-            }),
+              }),
             updateItem: (content) => {
-              const d =  [
-                'Include @recommended-conf',
-                'Include @crs-setup-conf',
-              ];
+              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
               if (content.include_crs) {
-                d.push('Include @owasp_crs/*.conf')
+                d.push('Include @owasp_crs/*.conf');
               }
-              content.custom_rules.forEach(v => d.push(v));
+              content.custom_rules.forEach((v) => d.push(v));
               if (content.mode === 'On') {
-                d.push('SecRuleEngine On')
+                d.push('SecRuleEngine On');
               } else {
-                d.push('SecRuleEngine DetectionOnly')
+                d.push('SecRuleEngine DetectionOnly');
               }
               content.config.directives_map.default = d;
-              return this.client.update(content)
+              return this.client.update(content);
             },
             createItem: (content) => {
-              const d =  [
-                'Include @recommended-conf',
-                'Include @crs-setup-conf',
-              ];
+              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
               if (content.include_crs) {
-                d.push('Include @owasp_crs/*.conf')
+                d.push('Include @owasp_crs/*.conf');
               }
-              content.custom_rules.forEach(v => d.push(v));
+              content.custom_rules.forEach((v) => d.push(v));
               if (content.mode === 'On') {
-                d.push('SecRuleEngine On')
+                d.push('SecRuleEngine On');
               } else {
-                d.push('SecRuleEngine DetectionOnly')
+                d.push('SecRuleEngine DetectionOnly');
               }
               content.config.directives_map.default = d;
-              return this.client.create(content)
+              return this.client.create(content);
             },
             deleteItem: this.client.delete,
             navigateTo: (item) => {
@@ -231,22 +238,19 @@ export function setupCorazaExtension(registerExtension) {
             export: true,
             kubernetesKind: 'coraza-waf.extensions.otoroshi.io/CorazaConfig',
             onStateChange: (newValue, oldValue, onChange) => {
-              const d =  [
-                'Include @recommended-conf',
-                'Include @crs-setup-conf',
-              ];
+              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
               if (newValue.include_crs) {
-                d.push('Include @owasp_crs/*.conf')
+                d.push('Include @owasp_crs/*.conf');
               }
-              newValue.custom_rules.forEach(v => d.push(v));
+              newValue.custom_rules.forEach((v) => d.push(v));
               if (newValue.mode === 'On') {
-                d.push('SecRuleEngine On')
+                d.push('SecRuleEngine On');
               } else {
-                d.push('SecRuleEngine DetectionOnly')
+                d.push('SecRuleEngine DetectionOnly');
               }
               newValue.config.directives_map.default = d;
-              onChange(newValue)
-            }
+              onChange(newValue);
+            },
           },
           null
         );
@@ -255,20 +259,22 @@ export function setupCorazaExtension(registerExtension) {
 
     return {
       id: extensionId,
-      categories:[{
-        title: 'WAF',
-        description: 'All the features related to Web Application Firewalls',
-        features: [
-          {
-            title: 'WAF configs.',
-            description: 'All your Coraza WAF configs.',
-            absoluteImg: '',
-            link: '/extensions/coraza-waf/coraza-configs',
-            display: () => true,
-            icon: () => 'fa-cubes',
-          }
-        ]
-      }],
+      categories: [
+        {
+          title: 'WAF',
+          description: 'All the features related to Web Application Firewalls',
+          features: [
+            {
+              title: 'WAF configs.',
+              description: 'All your Coraza WAF configs.',
+              absoluteImg: '',
+              link: '/extensions/coraza-waf/coraza-configs',
+              display: () => true,
+              icon: () => 'fa-cubes',
+            },
+          ],
+        },
+      ],
       sidebarItems: [],
       creationItems: [],
       dangerZoneParts: [],

@@ -46,7 +46,7 @@ class NowOperator extends WorkflowOperator {
 
 class BasicAuthOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val user = opts.select("user").asString
+    val user     = opts.select("user").asString
     val password = opts.select("password").asString
     s"Basic ${s"${user}:${password}".base64}".json
   }
@@ -96,7 +96,6 @@ class LteOperator extends WorkflowOperator {
   }
 }
 
-
 class EqOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val a = opts.select("a").asValue
@@ -115,24 +114,24 @@ class NeqOperator extends WorkflowOperator {
 
 class ContainsOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val value = opts.select("value").asValue
+    val value              = opts.select("value").asValue
     val container: JsValue = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     (container match {
       case JsObject(values) if value.isInstanceOf[JsString] => values.contains(value.asString)
-      case JsArray(values) => values.contains(value)
-      case JsString(str) if value.isInstanceOf[JsString] => str.contains(value.asString)
-      case _ => false
+      case JsArray(values)                                  => values.contains(value)
+      case JsString(str) if value.isInstanceOf[JsString]    => str.contains(value.asString)
+      case _                                                => false
     }).json
   }
 }
@@ -141,22 +140,22 @@ class IsTruthyOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("value").asOpt[JsValue] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     (value match {
-      case JsNull => false
-      case JsString(str) if str.isEmpty => false
-      case JsBoolean(false) => false
+      case JsNull                                                   => false
+      case JsString(str) if str.isEmpty                             => false
+      case JsBoolean(false)                                         => false
       case JsNumber(v) if v.bigDecimal == java.math.BigDecimal.ZERO => false
-      case _ => true
+      case _                                                        => true
     }).json
   }
 }
@@ -166,8 +165,8 @@ class MemRefOperator extends WorkflowOperator {
     val name = opts.select("name").asString
     val path = opts.select("path").asOptString
     wfr.memory.get(name) match {
-      case None => JsNull
-      case Some(value) if path.isEmpty => value
+      case None                          => JsNull
+      case Some(value) if path.isEmpty   => value
       case Some(value) if path.isDefined => value.at(path.get).asValue
     }
   }
@@ -177,26 +176,26 @@ class JsonParseOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("value").asOptString match {
       case Some(v) => v.json
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case JsString(str) => str.parseJson
-      case _ => JsNull
+      case _             => JsNull
     }
   }
 }
 
 class StrConcatOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
     val separator = opts.select("separator").asOptString.getOrElse(" ")
     values.mkString(separator).json
   }
@@ -205,22 +204,22 @@ class StrConcatOperator extends WorkflowOperator {
 class MapGetOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val key = opts.select("key").asString
-    val value: JsValue = opts.select("map").asOpt[JsObject]  match {
+    val key            = opts.select("key").asString
+    val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case JsObject(underlying) => underlying.get(key).getOrElse(JsNull)
-      case _ => JsNull
+      case _                    => JsNull
     }
   }
 }
@@ -228,22 +227,22 @@ class MapGetOperator extends WorkflowOperator {
 class MapDelOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val key = opts.select("key").asString
+    val key            = opts.select("key").asString
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case obj @ JsObject(_) => obj - key
-      case _ => JsNull
+      case _                 => JsNull
     }
   }
 }
@@ -251,23 +250,23 @@ class MapDelOperator extends WorkflowOperator {
 class MapPutOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val key = opts.select("key").asString
-    val v = opts.select("value").asValue
+    val key            = opts.select("key").asString
+    val v              = opts.select("value").asValue
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case obj @ JsObject(_) => obj ++ Json.obj(key -> v)
-      case _ => JsNull
+      case _                 => JsNull
     }
   }
 }
@@ -275,23 +274,23 @@ class MapPutOperator extends WorkflowOperator {
 class ArrayAppendOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val v = opts.select("value").asValue
+    val v              = opts.select("value").asValue
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
-      case arr @ JsArray(_) => arr.append(v)
-      case _ => JsNull
+      case arr @ JsArray(_)                            => arr.append(v)
+      case _                                           => JsNull
     }
   }
 }
@@ -299,23 +298,23 @@ class ArrayAppendOperator extends WorkflowOperator {
 class ArrayPrependOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val v = opts.select("value").asValue
+    val v              = opts.select("value").asValue
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => v.asArray ++ arr
-      case arr @ JsArray(_) => arr.prepend(v)
-      case _ => JsNull
+      case arr @ JsArray(_)                            => arr.prepend(v)
+      case _                                           => JsNull
     }
   }
 }
@@ -323,22 +322,22 @@ class ArrayPrependOperator extends WorkflowOperator {
 class ArrayDelOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val idx = opts.select("idx").asInt
+    val idx            = opts.select("idx").asInt
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case arr @ JsArray(_) => JsArray(arr.value.zipWithIndex.filterNot(_._2 == idx).map(_._1))
-      case _ => JsNull
+      case _                => JsNull
     }
   }
 }
@@ -346,22 +345,22 @@ class ArrayDelOperator extends WorkflowOperator {
 class ArrayAtOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val idx = opts.select("idx").asInt
+    val idx            = opts.select("idx").asInt
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case JsArray(arr) => arr.apply(idx)
-      case _ => JsNull
+      case _            => JsNull
     }
   }
 }
@@ -369,27 +368,27 @@ class ArrayAtOperator extends WorkflowOperator {
 class ArrayPageOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val page = opts.select("page").asInt
-    val pageSize = opts.select("page_size").asInt
+    val page           = opts.select("page").asInt
+    val pageSize       = opts.select("page_size").asInt
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
     }
     value match {
       case JsArray(arr) => {
-        val paginationPosition      = page * pageSize
-        val content = arr.slice(paginationPosition, paginationPosition + pageSize)
+        val paginationPosition = page * pageSize
+        val content            = arr.slice(paginationPosition, paginationPosition + pageSize)
         JsArray(content)
       }
-      case _ => JsNull
+      case _            => JsNull
     }
   }
 }
@@ -397,15 +396,15 @@ class ArrayPageOperator extends WorkflowOperator {
 class ProjectionOperator extends WorkflowOperator {
 
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val blueprint = opts.select("projection").asObject
+    val blueprint      = opts.select("projection").asObject
     val value: JsValue = opts.select("value").asOpt[JsObject] match {
       case Some(v) => v
-      case None => {
+      case None    => {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None => JsNull
-          case Some(value) if path.isEmpty => value
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
@@ -413,5 +412,3 @@ class ProjectionOperator extends WorkflowOperator {
     otoroshi.utils.Projection.project(value, blueprint, identity)
   }
 }
-
-

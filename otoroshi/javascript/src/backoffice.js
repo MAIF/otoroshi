@@ -256,5 +256,5 @@ function setupLocalExtensions() {
   setupGreenScoreExtension(registerExtension);
   setupCorazaExtension(registerExtension);
   setupHttpListenersExtension(registerExtension);
-  setupWorkflowsExtension(registerExtension)
+  setupWorkflowsExtension(registerExtension);
 }

@@ -13,7 +13,7 @@ import {
 // import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
-import {JsonObjectAsCodeInput, JsonObjectAsCodeInputUpdatable} from './CodeInput'; // TODO: fix
+import { JsonObjectAsCodeInput, JsonObjectAsCodeInputUpdatable } from './CodeInput'; // TODO: fix
 
 import isFunction from 'lodash/isFunction';
 import cloneDeep from 'lodash/cloneDeep';
