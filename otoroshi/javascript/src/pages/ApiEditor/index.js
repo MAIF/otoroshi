@@ -53,7 +53,7 @@ export default function ApiEditor(props) {
 
                 <RouteWithProps exact path='/apis/:apiId/subscriptions' component={Subscriptions} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/subscriptions/new' component={NewSubscription} props={props} />
-                <RouteWithProps exact path='/apis/:apiId/subscriptions/:consumerId/:action' component={SubscriptionDesigner} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/subscriptions/:subscriptionId/:action' component={SubscriptionDesigner} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
@@ -71,134 +71,287 @@ export default function ApiEditor(props) {
     </div >
 }
 
-function Subscriptions() {
-    return <div>
-        Subscriptions view
-    </div>
+function Subscriptions(props) {
+    const history = useHistory()
+    const params = useParams()
+
+    const columns = [
+        {
+            title: 'Name',
+            filterId: 'name',
+            content: (item) => item.name,
+        }
+    ];
+
+    useEffect(() => {
+        props.setTitle('Subscriptions')
+
+        return () => props.setTitle('')
+    }, [])
+
+    const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+
+    const rawSubscriptions = useQuery(["getSubscriptions"], () => {
+        return client.findAllWithPagination({
+            page: 1,
+            pageSize: 15,
+            filtered: [{
+                id: 'api_ref',
+                value: params.apiId
+            }]
+        })
+    })
+
+    const deleteItem = item => client.delete(item.id)
+        .then(() => window.location.reload())
+
+    const fields = []
+
+    return <Loader loading={rawSubscriptions.isLoading}>
+
+        <Table
+            parentProps={{ params }}
+            navigateTo={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+            selfUrl="subscriptions"
+            defaultTitle="Subscription"
+            itemName="Subscription"
+            columns={columns}
+            fields={fields}
+            deleteItem={deleteItem}
+            fetchTemplate={client.template}
+            fetchItems={() => Promise.resolve(rawSubscriptions.data || [])}
+            defaultSort="name"
+            defaultSortDesc="true"
+            showActions={true}
+            showLink={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`}
+            rawEditUrl={true}
+            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+            injectTopBar={() => (
+                <div className="btn-group input-group-btn">
+                    <Link className="btn btn-primary btn-sm" to="subscriptions/new">
+                        <i className="fas fa-plus-circle" /> Create new subscription
+                    </Link>
+                    {props.injectTopBar}
+                </div>
+            )} />
+    </Loader>
 }
 
-function SubscriptionDesigner() {
+function SubscriptionDesigner(props) {
     const params = useParams()
     const history = useHistory()
 
-    const [subscription, setSubscription] = useState({})
+    const [subscription, setSubscription] = useState()
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId)
     )
 
+    const rawSubscription = useQuery(["getSubscription", params.subscriptionId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).findById(params.subscriptionId),
+        {
+            onSuccess: setSubscription
+        }
+    )
+
+    // prevent schema to have a empty consumers list
+    if (rawAPI.isLoading || !subscription)
+        return null
+
     const schema = {
+        location: {
+            type: 'location'
+        },
         name: {
             type: 'string',
-            label: 'Route name',
-            placeholder: 'My users route'
+            label: 'Name'
         },
-        frontend: {
-            type: 'form',
-            label: 'Frontend',
-            schema: NgFrontend.schema,
-            props: {
-                v2: {
-                    folded: ['domains', 'methods'],
-                    flow: NgFrontend.flow,
-                }
-            }
+        description: {
+            type: 'string',
+            label: 'Description'
         },
-        flow_ref: {
+        enabled: {
+            type: 'boolean',
+            label: 'Enabled'
+        },
+        owner_ref: {
+            type: 'string',
+            label: 'Owner'
+        },
+        consumer_ref: {
             type: 'select',
-            label: 'Flow ID',
+            label: 'Consumer',
             props: {
-                options: data.flows,
-                optionsTransformer: {
-                    label: 'name',
-                    value: 'id',
-                }
-            },
-        },
-        backend: {
-            type: 'select',
-            label: 'Backend',
-            props: {
-                options: [...data.backends, ...backends],
+                options: rawAPI.data.consumers,
                 optionsTransformer: {
                     value: 'id',
                     label: 'name'
                 }
             }
+        },
+        token_refs: {
+            type: 'array',
+            label: 'Token refs'
         }
     }
 
     const flow = [
+        'location',
         {
             type: 'group',
-            name: 'Domains information',
-            collapsable: true,
-            fields: ['frontend']
+            name: 'Informations',
+            collapsable: false,
+            fields: ['name', 'description', 'enabled'],
         },
         {
             type: 'group',
-            collapsable: true,
-            collapsed: true,
-            name: 'Selected flow',
-            fields: ['flow_ref'],
+            name: 'Ownership',
+            collapsable: false,
+            fields: ['owner_ref', 'consumer_ref', 'token_refs'],
         },
-        {
-            type: 'group',
-            collapsable: true,
-            collapsed: true,
-            name: 'Backend configuration',
-            fields: ['backend'],
-        },
-        {
-            type: 'group',
-            collapsable: true,
-            collapsed: true,
-            name: 'Additional informations',
-            fields: ['name'],
-        }
     ]
 
-    const updateRoute = () => {
+    const updateSubscription = () => {
         return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                routes: rawAPI.data.routes.map(item => {
-                    if (item.id === route.id)
-                        return route
-                    return item
-                })
-            })
-            .then(() => history.push(`/apis/${params.apiId}/routes`))
+            .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+            .update(subscription)
+            .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
     }
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={rawAPI.isLoading || rawSubscription.isLoading}>
         <PageTitle title={subscription.name} {...props}>
-            {/* <FeedbackButton
+            <FeedbackButton
                 type="success"
                 className="d-flex ms-auto"
-                onPress={updateRoute}
-                disabled={!route.flow_ref}
+                onPress={updateSubscription}
                 text="Update"
-            /> */}
+            />
         </PageTitle>
         <div style={{
             maxWidth: 640,
             margin: 'auto'
         }}>
-            {/* <NgForm
-                value={route}
-                flow={flow}
+            <NgForm
+                value={subscription}
                 schema={schema}
-                onChange={newValue => setRoute(newValue)} /> */}
+                flow={flow}
+                onChange={setSubscription} />
         </div>
     </Loader>
 }
 
-function NewSubscription() {
-    return <div>
-        New Subscription
-    </div>
+function NewSubscription(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [subscription, setSubscription] = useState()
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+
+    const templatesQuery = useQuery(["getTemplate"],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
+        {
+            enabled: !!rawAPI.data,
+            onSuccess: sub => setSubscription({
+                ...sub,
+                consumer_ref: rawAPI.data.consumers?.length > 0 ? rawAPI.data.consumers[0]?.id : undefined
+            })
+        }
+    )
+
+    // prevent schema to have a empty consumers list
+    if (rawAPI.isLoading || !subscription)
+        return null
+
+    const schema = {
+        location: {
+            type: 'location'
+        },
+        name: {
+            type: 'string',
+            label: 'Name'
+        },
+        description: {
+            type: 'string',
+            label: 'Description'
+        },
+        enabled: {
+            type: 'boolean',
+            label: 'Enabled'
+        },
+        owner_ref: {
+            type: 'string',
+            label: 'Owner'
+        },
+        consumer_ref: {
+            type: 'select',
+            label: 'Consumer',
+            props: {
+                options: rawAPI.data.consumers,
+                optionsTransformer: {
+                    value: 'id',
+                    label: 'name'
+                }
+            }
+        },
+        token_refs: {
+            type: 'array',
+            label: 'Token refs'
+        }
+    }
+
+    const flow = [
+        'location',
+        {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['name', 'description', 'enabled'],
+        },
+        {
+            type: 'group',
+            name: 'Ownership',
+            collapsable: false,
+            fields: ['owner_ref', 'consumer_ref', 'token_refs'],
+        },
+    ]
+
+    const updateSubscription = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+            .create({
+                ...subscription,
+                api_ref: params.apiId
+            })
+            .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
+    }
+
+    return <Loader loading={rawAPI.isLoading || templatesQuery.isLoading}>
+        <PageTitle title={subscription.name} {...props}>
+            <FeedbackButton
+                type="success"
+                className="d-flex ms-auto"
+                onPress={updateSubscription}
+                text="Update"
+            />
+        </PageTitle>
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={subscription}
+                schema={schema}
+                flow={flow}
+                onChange={setSubscription} />
+        </div>
+    </Loader>
 }
 
 function RouteDesigner(props) {
@@ -611,49 +764,14 @@ function Consumers(props) {
 
 const TEMPLATES = {
     apikey: {
-        name: 'apikey',
-        config: {
-            throttlingQuota: 1000,
-            dailyQuota: 1000,
-            monthlyQuota: 1000
-        }
+        throttlingQuota: 1000,
+        dailyQuota: 1000,
+        monthlyQuota: 1000
     },
-    mtls: {
-        name: 'mtls',
-        config: {}
-    },
-    keyless: {
-        name: 'keyless',
-        config: {}
-    },
-    oauth2: {
-        name: 'oauth2',
-        config: {}
-    },
-    jwt: {
-        name: 'jwt',
-        config: {
-            strict: true,
-            source: {
-                type: "InHeader",
-                name: "X-JWT-Token",
-                remove: ""
-            },
-            algoSettings: {
-                "type": "HSAlgoSettings",
-                "size": 512,
-                "secret": "secret",
-                "base64": false
-            },
-            strategy: {
-                type: 'PassThrough',
-                verificationSettings: {
-                    fields: {},
-                    arrayFields: {}
-                }
-            }
-        }
-    }
+    mtls: {},
+    keyless: {},
+    oauth2: {},
+    jwt: {}
 }
 
 function NewConsumer(props) {
@@ -720,6 +838,13 @@ function NewConsumer(props) {
                         {descriptions[rootValue?.status]}
                     </div>
                 </div>
+            }
+        },
+        auto_validation: {
+            type: 'box-bool',
+            label: 'Auto-validation',
+            props: {
+                description: "When creating a customer, you can enable subscription auto-validation to immediately approve subscription requests. If Auto validate subscription is disabled, the API publisher must approve all subscription requests."
             }
         },
         settings: {
@@ -821,6 +946,13 @@ function ConsumerDesigner(props) {
                         {descriptions[rootValue?.status]}
                     </div>
                 </div>
+            }
+        },
+        auto_validation: {
+            type: 'box-bool',
+            label: 'Auto-validation',
+            props: {
+                description: "When creating a customer, you can enable subscription auto-validation to immediately approve subscription requests. If Auto validate subscription is disabled, the API publisher must approve all subscription requests."
             }
         },
         settings: {
@@ -1636,7 +1768,14 @@ function Dashboard(props) {
                         />
                     </ContainerBlock>
                     {hasCreateConsumer && <ContainerBlock full>
-                        <SectionHeader text="Subscriptions" description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''} />
+                        <SectionHeader
+                            text="Subscriptions"
+                            description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
+                            actions={<Button
+                                type="primaryColor"
+                                text="Subscribe"
+                                className='btn-sm'
+                                onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
 
                         <SubscriptionsView api={api} />
                     </ContainerBlock>}
@@ -1791,6 +1930,9 @@ function Subscription({ subscription }) {
                 }} />
             <NgCodeRenderer
                 readOnly
+                style={{
+                    overflowX: 'hidden'
+                }}
                 label="Configuration"
                 value={JSON.stringify(subscription, null, 2)} />
         </>}

@@ -510,7 +510,7 @@ export default {
       type: 'bool',
     },
     load_balancing: {
-      label: 'load_balancing',
+      label: 'Load Balancing',
       type: 'form',
       collapsable: true,
       collapsed: true,
@@ -518,8 +518,8 @@ export default {
         type: {
           type: 'select',
           help: 'The load balancing algorithm used',
+          label: 'Type',
           props: {
-            label: 'type',
             options: [
               'BestResponseTime',
               'IpAddressHash',

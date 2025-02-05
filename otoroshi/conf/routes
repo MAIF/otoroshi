@@ -616,6 +616,7 @@ GET     /apis/cluster/node/metrics                            otoroshi.api.Gener
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 
 GET     /apis/api.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
+GET     /apis/apis.otoroshi.io/v1/apiconsumersubscriptions/:id/_validate                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
 
 # New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)

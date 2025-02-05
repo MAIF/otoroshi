@@ -312,33 +312,33 @@ object ApiConsumer {
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asOptString,
-        autoValidation = json.select("autoValidation").asOpt[Boolean].getOrElse(false),
-        consumerKind = json.select("consumer_kind").asOptString.map(_.toLowerCase match {
+        autoValidation = json.select("auto_validation").asOpt[Boolean].getOrElse(false),
+        consumerKind = json.select("consumer_kind").asString.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
           case "keyless" => ApiConsumerKind.Keyless
           case "oauth2"  => ApiConsumerKind.OAuth2
           case "jwt"     => ApiConsumerKind.JWT
-        }).getOrElse(ApiConsumerKind.Apikey),
-        settings = (json \ "settings" \ "name").asString match {
+        },
+        settings = json.select("consumer_kind").asString.toLowerCase  match {
           case "apikey"   => {
             ApiConsumerSettings.Apikey(
-              throttlingQuota = (json \ "settings" \ "config" \ "throttlingQuota").as[Long],
-              monthlyQuota = (json \ "settings" \ "config" \ "monthlyQuota").as[Long],
-              dailyQuota = (json \ "settings" \ "config" \ "dailyQuota").as[Long],
+              throttlingQuota = (json \ "settings" \ "throttlingQuota").as[Long],
+              monthlyQuota = (json \ "settings" \ "monthlyQuota").as[Long],
+              dailyQuota = (json \ "settings" \ "dailyQuota").as[Long],
               name = "apikey")
           }
           case "mtls"     => ApiConsumerSettings.Mtls(
-            caRefs = (json \ "settings" \ "config" \ "caRefs").as[Seq[String]],
-            certRefs = (json \ "settings" \ "config" \ "certRefs").as[Seq[String]],
+            caRefs = (json \ "settings" \ "caRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            certRefs = (json \ "settings" \ "certRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             name = "mtls"
           )
           case "keyless"  => ApiConsumerSettings.Keyless(name = "Keyless")
           case "oauth2"   => ApiConsumerSettings.OAuth2(
-            config = (json \ "settings" \ "config").as[JsValue],
+            config = (json \ "settings").as[JsValue],
             name = "oauth2")
           case "jwt"      => ApiConsumerSettings.JWT(
-            jwtVerifierRefs = (json \ "settings" \ "config" \ "jwtVerifierRefs").as[Seq[String]],
+            jwtVerifierRefs = (json \ "settings" \ "jwtVerifierRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             name = "jwt")
         },
         status = json.select("status").asString.toLowerCase match {
@@ -363,7 +363,7 @@ object ApiConsumer {
       "id" -> o.id,
       "name" -> o.name,
       "description" -> o.description,
-      "autoValidation" -> o.autoValidation,
+      "auto_validation" -> o.autoValidation,
       "consumer_kind" -> o.consumerKind.name,
       "settings" -> o.settings.json,
       "status" -> o.status.name,
@@ -376,6 +376,7 @@ case class ApiConsumerSubscriptionDates(
     created_at: DateTime,
     processed_at: DateTime,
     started_at: DateTime,
+    paused_at: DateTime,
     ending_at: DateTime,
     closed_at: DateTime
 )
@@ -387,6 +388,7 @@ object ApiConsumerSubscriptionDates {
         created_at    = json.select("created_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         processed_at  = json.select("processed_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         started_at    = json.select("started_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        paused_at     = json.select("paused_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         ending_at     = json.select("ending_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         closed_at     = json.select("closed_at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now())
       )
@@ -399,6 +401,7 @@ object ApiConsumerSubscriptionDates {
       "created_at"    -> o.created_at.getMillis,
       "processed_at"  -> o.processed_at.getMillis,
       "started_at"    -> o.started_at.getMillis,
+      "paused_at"     -> o.paused_at.getMillis,
       "ending_at"     -> o.ending_at.getMillis,
       "closed_at"     -> o.closed_at.getMillis
     )
@@ -459,13 +462,23 @@ object ApiConsumerSubscription {
       ).left
 
     def addSubscriptionToConsumer(api: Api): Future[Boolean] = {
-       env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
-            if (consumer.id == entity.consumerRef) {
-              consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
+        env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
+          if (consumer.id == entity.consumerRef) {
+            if(action == WriteAction.Update) {
+              consumer.copy(subscriptions = consumer.subscriptions.map(subscription => {
+                if (subscription.ref == entity.id) {
+                  subscription.copy(entity.id)
+                } else {
+                  subscription
+                }
+              }))
             } else {
-              consumer
+              consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
             }
-          })))
+          } else {
+            consumer
+          }
+        })))
     }
 
 //    println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
@@ -562,41 +575,26 @@ object ApiConsumerSettings {
                     dailyQuota: Long = RemainingQuotas.MaxValue,
                     monthlyQuota: Long = RemainingQuotas.MaxValue)              extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
-      "name"            -> name,
-      "config"         -> Json.obj(
-        "throttlingQuota"  -> throttlingQuota,
-        "dailyQuota"      -> dailyQuota,
-        "monthlyQuota"    -> monthlyQuota
-      ),
+      "throttlingQuota"  -> throttlingQuota,
+      "dailyQuota"      -> dailyQuota,
+      "monthlyQuota"    -> monthlyQuota
     )
   }
   case class Mtls(name: String, caRefs: Seq[String], certRefs: Seq[String]) extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
-      "name"      -> name,
-      "config"    -> Json.obj(
-        "caRefs"    -> caRefs,
-        "certRefs"  -> certRefs,
-      )
+      "caRefs"    -> caRefs,
+      "certRefs"  -> certRefs,
     )
   }
   case class Keyless(name: String)                                          extends ApiConsumerSettings {
-    def json: JsValue = Json.obj(
-      "name"      -> name,
-      "config"         -> Json.obj()
-    )
+    def json: JsValue = Json.obj()
   }
   case class OAuth2(name: String, config: JsValue)              extends ApiConsumerSettings { // using client credential stuff
-    def json: JsValue = Json.obj(
-      "name"      -> name,
-      "config"    -> config
-    )
+    def json: JsValue = Json.obj()
   }
   case class JWT(name: String, jwtVerifierRefs: Seq[String])                extends ApiConsumerSettings {
     def json: JsValue = Json.obj(
-      "name"            -> name,
-      "config"         -> Json.obj(
-        "jwtVerifierRefs" -> jwtVerifierRefs
-      )
+      "jwtVerifierRefs" -> jwtVerifierRefs
     )
   }
 }
@@ -970,11 +968,12 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
       tags = Seq.empty,
       enabled = true,
       dates = ApiConsumerSubscriptionDates(
-        created_at = DateTime.now(),
-        processed_at = DateTime.now(),
-        started_at = DateTime.now(),
-        ending_at = DateTime.now(),
-        closed_at = DateTime.now()
+        created_at    = DateTime.now(),
+        processed_at  = DateTime.now(),
+        started_at    = DateTime.now(),
+        paused_at     = DateTime.now(),
+        ending_at     = DateTime.now(),
+        closed_at     = DateTime.now()
       ),
       ownerRef = "",
       consumerRef = "",
