@@ -41,6 +41,13 @@ const LINKS = (id) =>
             tooltip: { ...createTooltip(`Show consumers tab`) },
         },
         {
+            to: `/apis/${id}/subscriptions`,
+            icon: 'fa-key',
+            title: 'Subscriptions',
+            tab: 'Subscriptions',
+            tooltip: { ...createTooltip(`Show subscriptions tab`) },
+        },
+        {
             to: `/apis/${id}/playground`,
             icon: 'fa-play',
             title: 'API Playground',

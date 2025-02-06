@@ -3,7 +3,7 @@ package next.models
 import akka.util.ByteString
 import diffson.PatchOps
 import org.joda.time.DateTime
-import otoroshi.api.WriteAction
+import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, ServiceDescriptor}
 import otoroshi.next.models._
@@ -67,7 +67,12 @@ case object ApiRemoved extends ApiState {
 //  }
 //}
 
-case class ApiRoute(id: String, name: Option[String], frontend: NgFrontend, flowRef: String, backend: String)
+case class ApiRoute(id: String,
+                    enabled: Boolean,
+                    name: Option[String],
+                    frontend: NgFrontend,
+                    flowRef: String,
+                    backend: String)
 
 object ApiRoute {
   val _fmt: Format[ApiRoute] = new Format[ApiRoute] {
@@ -75,6 +80,7 @@ object ApiRoute {
     override def reads(json: JsValue): JsResult[ApiRoute] = Try {
       ApiRoute(
         id = json.select("id").asString,
+        enabled = json.select("enabled").asOptBoolean.getOrElse(true),
         name = json.select("name").asOptString,
         frontend = NgFrontend.readFrom(json \ "frontend"),
         flowRef = (json \ "flow_ref").asString,
@@ -89,6 +95,7 @@ object ApiRoute {
 
     override def writes(o: ApiRoute): JsValue = Json.obj(
       "id"        -> o.id,
+      "enabled"   -> o.enabled,
       "name"      -> o.name,
       "frontend"  -> o.frontend.json,
       "backend"   -> o.backend,
@@ -297,12 +304,12 @@ object ApiBlueprint {
 case class ApiConsumer(
     id: String,
     name: String,
-    description: Option[String],
+    description: Option[String] = None,
     autoValidation: Boolean,
     consumerKind: ApiConsumerKind,
     settings: ApiConsumerSettings,
     status: ApiConsumerStatus,
-    subscriptions: Seq[ApiConsumerSubscriptionRef]
+    subscriptions: Seq[ApiConsumerSubscriptionRef] = Seq.empty
 )
 
 object ApiConsumer {
@@ -445,6 +452,30 @@ case class ApiConsumerSubscription(
 }
 
 object ApiConsumerSubscription {
+
+  def deleteValidator(entity: ApiConsumerSubscription,
+                        body: JsValue,
+                        singularName: String,
+                        id: String,
+                        action: DeleteAction,
+                        env: Env):  Future[Either[JsValue, Unit]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: Env = env
+
+     env.datastores.apiDataStore.findById(entity.apiRef) flatMap  {
+       case Some(api) => env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
+            if (consumer.id == entity.consumerRef) {
+              consumer.copy(subscriptions = consumer.subscriptions.filter(_.ref != id))
+            }
+            else
+              consumer
+          }))).map(_ => ().right)
+       case None => Json.obj(
+        "error" -> "api not found",
+        "http_status_code" -> 404
+      ).as[JsValue].left.vfuture
+     }
+  }
 
   def writeValidator(entity: ApiConsumerSubscription,
                                                 body: JsValue,
@@ -713,7 +744,7 @@ case class Api(
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
 
-    if (state == ApiStaging) {
+    if (state != ApiRemoved) {
       Seq.empty.vfuture
     } else {
       Future.sequence(routes.map(route => apiRouteToNgRoute(route.id)))
@@ -760,7 +791,7 @@ case class Api(
             description = description,
             tags = tags,
             metadata = metadata,
-            enabled = true,
+            enabled = apiRoute.enabled,
             capture = capture,
             debugFlow = debugFlow,
             exportReporting = exportReporting,
@@ -801,16 +832,8 @@ object Api {
 
            newApi.consumers.foreach(consumer => {
              api.consumers.find(_.id == consumer.id).map(oldConsumer => {
-               //               println(s"${oldConsumer.id} ${oldConsumer.status} - ${consumer.status}")
-               // staging     -> published  = ok
-               // published   -> deprecated = ok
-               // deprecated  -> closed     = ok
-               // deprecated  -> published  = ok
-
-               if (consumer.status == ApiConsumerStatus.Published && oldConsumer.status == ApiConsumerStatus.Deprecated) {
-
-               } else if (oldConsumer.status.orderPosition > consumer.status.orderPosition) {
-                 return Json.obj(
+               if (!updateConsumerStatus(oldConsumer, consumer)) {
+                return Json.obj(
                    "error" -> s"api has rejected your demand : you can't get back to a consumer status",
                    "http_status_code" -> 400
                  ).leftf
@@ -822,6 +845,20 @@ object Api {
 
      newApi.rightf
    }
+
+  def updateConsumerStatus(oldConsumer: ApiConsumer, consumer: ApiConsumer): Boolean = {
+     // staging     -> published  = ok
+     // published   -> deprecated = ok
+     // deprecated  -> closed     = ok
+     // deprecated  -> published  = ok
+     if (consumer.status == ApiConsumerStatus.Published && oldConsumer.status == ApiConsumerStatus.Deprecated) {
+      true
+     } else if (oldConsumer.status.orderPosition > consumer.status.orderPosition) {
+       false
+     } else {
+       true
+     }
+  }
 
   def fromJsons(value: JsValue): Api =
     try {

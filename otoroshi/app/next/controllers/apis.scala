@@ -2,6 +2,7 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
+import next.models.{Api, ApiConsumerStatus, ApiPublished, ApiRemoved, ApiState}
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}
@@ -121,4 +122,150 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       }
     }
 
+
+  def start(id: String) = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(id) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_APIS",
+            "User started the api",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> id)
+          )
+        )
+
+        toggleApiRoutesStatus(id, newStatus = true)
+      }
+    }
+  }
+
+  def toggleApiRoutesStatus(apiId: String, newStatus: Boolean): Future[Result] = {
+    env.datastores.apiDataStore.findById(apiId).flatMap {
+      case Some(api) => env.datastores.apiDataStore.set(api.copy(
+          state = ApiPublished,
+          routes = api.routes.map(route => route.copy(enabled = newStatus))))
+        .flatMap(_ => Results.Ok.future)
+      case None      => Results.NotFound.future
+    }
+  }
+
+  def stop(id: String) = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(id) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_APIS",
+            "User stopped the api",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> id)
+          )
+        )
+
+        toggleApiRoutesStatus(id, newStatus = false)
+      }
+    }
+  }
+
+  def publishConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API_CONSUMER",
+            "User published the consumer",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
+          )
+        )
+
+        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Published)
+      }
+    }
+  }
+
+  def updateConsumerStatus(apiId: String, consumerId: String, status: ApiConsumerStatus): Future[Result] = {
+    env.datastores.apiDataStore.findById(apiId).flatMap {
+      case Some(api) =>
+        var result: Option[String] = Some("")
+        val newAPI = api.copy(consumers = api.consumers.map(consumer => {
+          if(consumer.id == consumerId) {
+            if (Api.updateConsumerStatus(consumer, consumer.copy(status = status))) {
+              consumer.copy(status = status)
+            } else {
+              result = None
+              consumer
+            }
+          } else {
+            consumer
+          }
+        }))
+
+        result match {
+          case None => Results.BadRequest(Json.obj("error" -> "you can't update consumer status")).future
+          case Some(_) => env.datastores.apiDataStore.set(newAPI)
+            .flatMap(_ => Results.Ok.vfuture)
+        }
+      case None      => Results.NotFound.future
+    }
+  }
+
+  def deprecateConsumer(apiId: String, consumerId: String) = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API_CONSUMER",
+            "User deprecated the consumer",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
+          )
+        )
+
+        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Deprecated)
+      }
+    }
+  }
+
+  def closeConsumer(apiId: String, consumerId: String) = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API_CONSUMER",
+            "User deprecated the consumer",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
+          )
+        )
+
+        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Closed)
+      }
+    }
+  }
 }

@@ -102,7 +102,7 @@ function Subscriptions(props) {
         })
     })
 
-    const deleteItem = item => client.delete(item.id)
+    const deleteItem = item => client.delete(item)
         .then(() => window.location.reload())
 
     const fields = []
@@ -195,8 +195,9 @@ function SubscriptionDesigner(props) {
             }
         },
         token_refs: {
-            type: 'array',
-            label: 'Token refs'
+            array: true,
+            label: 'Token refs',
+            type: 'string'
         }
     }
 

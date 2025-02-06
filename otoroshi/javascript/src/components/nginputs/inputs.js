@@ -704,6 +704,7 @@ export class NgArrayRenderer extends Component {
 
   render() {
     const schema = this.props.schema;
+    console.log(schema)
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
