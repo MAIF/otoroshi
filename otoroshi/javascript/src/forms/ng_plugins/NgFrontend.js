@@ -6,7 +6,7 @@ export default {
   field: 'frontend',
   schema: {
     headers: {
-      label: 'headers',
+      label: 'Headers',
       type: 'object',
     },
     methods: {
@@ -25,7 +25,7 @@ export default {
       },
     },
     query: {
-      label: 'query',
+      label: 'Query',
       type: 'object',
     },
     exact: {
@@ -36,7 +36,7 @@ export default {
       },
     },
     domains: {
-      label: 'domains',
+      label: 'Domains',
       type: 'array',
       array: true,
       format: null,

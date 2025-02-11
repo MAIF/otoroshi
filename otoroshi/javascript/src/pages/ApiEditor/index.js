@@ -295,15 +295,18 @@ function NewSubscription(props) {
             label: 'Consumer',
             props: {
                 options: rawAPI.data.consumers,
-                optionsTransformer: {
-                    value: 'id',
-                    label: 'name'
+                optionsTransformer: consumers => {
+                    return consumers.map(consumer => ({
+                        value: consumer.id,
+                        label: `${consumer.name} [${consumer.status}]`
+                    }))
                 }
             }
         },
         token_refs: {
-            type: 'array',
-            label: 'Token refs'
+            array: true,
+            label: 'Token refs',
+            type: 'string'
         }
     }
 
@@ -324,6 +327,13 @@ function NewSubscription(props) {
     ]
 
     const updateSubscription = () => {
+        const consumer = rawAPI.data.consumers.find(consumer => consumer.id === subscription.consumer_ref)
+
+        consumer.log(consumer)
+        if (consumer.state === 'staging' || consumer.state === 'closed') {
+            return alert('attention on est en staging')
+        }
+
         return nextClient
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
             .create({
@@ -334,14 +344,7 @@ function NewSubscription(props) {
     }
 
     return <Loader loading={rawAPI.isLoading || templatesQuery.isLoading}>
-        <PageTitle title={subscription.name} {...props}>
-            <FeedbackButton
-                type="success"
-                className="d-flex ms-auto"
-                onPress={updateSubscription}
-                text="Update"
-            />
-        </PageTitle>
+        <PageTitle title={subscription.name} {...props} />
         <div style={{
             maxWidth: 640,
             margin: 'auto'
@@ -351,6 +354,12 @@ function NewSubscription(props) {
                 schema={schema}
                 flow={flow}
                 onChange={setSubscription} />
+            <FeedbackButton
+                type="success"
+                className="d-flex ms-auto mt-3"
+                onPress={updateSubscription}
+                text="Create"
+            />
         </div>
     </Loader>
 }
@@ -598,8 +607,8 @@ function NewRoute(props) {
         {
             type: 'group',
             collapsable: true,
-            collapsed: true,
-            name: '1. Set your domains',
+            collapsed: false,
+            name: '1. Add your domains',
             fields: ['frontend'],
             summaryFields: ['domains']
         },
@@ -655,13 +664,15 @@ function NewRoute(props) {
             })
                 .then(r => r.json())
         ]), {
-        retry: 0,
+        enabled: !!rawAPI.data,
         onSuccess: ([backendTemplate, frontendTemplate]) => {
             setRoute({
                 ...route,
+                name: 'My first route',
                 frontend: frontendTemplate,
-                backend: backendTemplate,
-                usingExistingBackend: false
+                backend: rawAPI.data.backends.length && rawAPI.data.backends[0].id,
+                usingExistingBackend: true,
+                flow_ref: rawAPI.data.flows.length && rawAPI.data.flows[0].id,
             })
         }
     })
@@ -887,7 +898,7 @@ function NewConsumer(props) {
                 text="Create"
             />
         </div>
-    </Loader >
+    </Loader>
 }
 
 function ConsumerDesigner(props) {
@@ -1705,7 +1716,8 @@ function Dashboard(props) {
     const hasCreateFlow = api && api.flows.length > 0
     const hasCreateRoute = api && api.routes.length > 0
     const hasCreateConsumer = api && api.consumers.length > 0
-    const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute
+    const isPublished = api && api.state === API_STATE.PUBLISHED
+    const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || !isPublished
 
     return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
         <Loader loading={rawAPI.isLoading}>
@@ -1715,7 +1727,19 @@ function Dashboard(props) {
                     {showGettingStarted && <ContainerBlock full>
                         <SectionHeader text="Getting Started" />
 
-                        {hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
+                        {!isPublished && !hasCreateConsumer && <Card
+                            onClick={() => publishAPI(api)}
+                            title="Deploy your API"
+                            description={<>
+                                Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => publishAPI(api)}
+                                text="Start your API" />}
+                        />}
+
+                        {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
                             to={`/apis/${params.apiId}/consumers/new`}
                             title="Create your first API consumer"
                             description={<>
@@ -1751,7 +1775,7 @@ function Dashboard(props) {
                                 text="Create" />}
                         />}
                     </ContainerBlock>}
-                    <ContainerBlock full highlighted>
+                    {api.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
                         <APIHeader api={api} />
                         <ApiStats url={`/bo/api/proxy/apis/api.otoroshi.io/v1/apis/${api.id}/live?every=2000`} />
 
@@ -1767,7 +1791,7 @@ function Dashboard(props) {
                             health={api.health?.nMinus2}
                             stopTheCountUnknownStatus={false}
                         />
-                    </ContainerBlock>
+                    </ContainerBlock>}
                     {hasCreateConsumer && <ContainerBlock full>
                         <SectionHeader
                             text="Subscriptions"
@@ -1958,6 +1982,16 @@ function ContainerBlock({ children, full, highlighted }) {
     </div>
 }
 
+function publishAPI(api) {
+    return nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .update({
+            ...api,
+            state: API_STATE.PUBLISHED
+        })
+        .then(() => window.location.reload())
+}
+
 function APIHeader({ api }) {
     const updateAPI = newAPI => {
         return nextClient
@@ -1971,13 +2005,7 @@ function APIHeader({ api }) {
             <APIState value={api.state} />
             {api.state === API_STATE.STAGING && <Button
                 type='primaryColor'
-                onClick={() => {
-                    updateAPI({
-                        ...api,
-                        state: API_STATE.PUBLISHED
-                    })
-                        .then(() => window.location.reload())
-                }}
+                onClick={() => publishAPI(api)}
                 className='btn-sm ms-auto'
                 text="Start you API" />}
             {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
@@ -2055,8 +2083,11 @@ function Entities({ children }) {
     </div>
 }
 
-function Card({ title, description, to, button }) {
-    return <Link to={to} className="cards apis-cards cards--large mb-3">
+function Card({ title, description, to, button, onClick }) {
+    return <Link
+        to={to}
+        className="cards apis-cards cards--large mb-3"
+        onClick={() => onClick ? onClick : {}}>
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 {title}

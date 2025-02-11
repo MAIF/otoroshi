@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
+//  "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
@@ -368,7 +368,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.events.maxSize=0",
   "-Dotoroshi.cluster.mode=Leader",
   "-Dotoroshi.cluster.leader.name=otoroshi-leader-dev",
-  "-Dotoroshi.tunnels.enabled=false",
+  "-Dotoroshi.tunnels.enabled=true",
   "-Dotoroshi.tunnels.default.enabled=false",
   "-Dotoroshi.tunnels.default.url=http://127.0.0.1:9999",
   "-Dotoroshi.instance.name=dev",
@@ -394,7 +394,8 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
-  "-Dotoroshi.storage=file"
+  "-Dotoroshi.storage=file",
+  "-DVAULT_VALUE=admin-api-apikey-secret",
   // "-Dotoroshi.storage=redis",
 //   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
 )

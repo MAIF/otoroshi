@@ -605,7 +605,10 @@ export class NgBoxBooleanRenderer extends Component {
       ? ({ children }) => children
       : ({ children }) => (
         <div className={`row mb-${margin} ${className || ''}`}>
-          <div className="col-sm-10 ms-auto">{children}</div>
+          <label className='col-xs-12 col-sm-2 col-form-label' style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
         </div>
       );
 
@@ -626,18 +629,7 @@ export class NgBoxBooleanRenderer extends Component {
           }}
         >
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
-            <div
-              style={{
-                // color: "var(--color-primary)",
-                fontWeight: 'bold',
-                marginLeft: '5px',
-                marginTop: '7px',
-                marginBottom: '10px',
-              }}
-            >
-              {label}
-            </div>
-            <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
+            <div className="me-1" style={{ margin: '10px 0 10px 5px' }}>
               <p>{description}</p>
               {readOnly ? (
                 <ReadOnlyField value={value ? 'true' : 'false'} />
@@ -704,7 +696,6 @@ export class NgArrayRenderer extends Component {
 
   render() {
     const schema = this.props.schema;
-    console.log(schema)
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;

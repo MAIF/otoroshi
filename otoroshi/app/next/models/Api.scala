@@ -109,6 +109,9 @@ case class ApiPredicate()
 case class ApiFlows(id: String, name: String, /*predicate: ApiPredicate,*/ plugins: NgPlugins)
 
 object ApiFlows {
+
+  def empty(implicit env: Env): ApiFlows = ApiFlows(IdGenerator.namedId("api_flows", env), "empty flow", NgPlugins.empty)
+
   val _fmt = new Format[ApiFlows] {
 
     override def reads(json: JsValue): JsResult[ApiFlows] = Try {
@@ -656,6 +659,13 @@ object ApiConsumerStatus {
 case class ApiBackend(id: String, name: String, backend: NgBackend)
 
 object ApiBackend {
+
+  def empty(implicit env: Env): ApiBackend = ApiBackend(
+    IdGenerator.namedId("api_flows", env),
+    name = "empty_backend",
+    backend = NgBackend.empty
+  )
+
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
     override def reads(json: JsValue): JsResult[ApiBackend] = Try {
       ApiBackend(
@@ -966,8 +976,8 @@ trait ApiDataStore extends BasicStore[Api] {
       state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,
-      backends = Seq.empty,
-      flows = Seq.empty,
+      backends = Seq(ApiBackend.empty(env)),
+      flows = Seq(ApiFlows.empty(env)),
       clients = Seq.empty,
       documentation = None,
       consumers = Seq.empty,
