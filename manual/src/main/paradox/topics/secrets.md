@@ -56,7 +56,7 @@ export OTOROSHI_VAULTS_INSTANCES_MYVAULT='{"type":"kubernetes"}'
 
 in the previous example, we instanciate a vault of type `kubernetes` with name `MYVAULT`. So you can use it with a vault expression like:
 
-`${vault://MYVAULT/namespace/secret_name/key}`
+`${vault://MYVAULT/namespace/secret_name/secret_key}`
 
 ## Entities with secrets management
 
@@ -320,8 +320,7 @@ otoroshi {
 }
 ```
 
-you should define your references like `${vault://k8s_vault/namespace/secret_name/key_name}`. `key_name` is optional. if present, otoroshi will try to lookup `key_name` in the secrets `stringData`, if not defined the secrets `data` will be base64 decoded and used.
-
+you should define your references like `${vault://k8s_vault/namespace/secret_name/key_name}`. if no secret data with `key_name` is present, then otoroshi try to lookup `key_name` in the secrets `stringData`.
 
 ### Izanami config.
 

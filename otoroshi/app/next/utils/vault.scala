@@ -576,16 +576,17 @@ class KubernetesVault(name: String, configuration: Configuration, env: Env) exte
       .map {
         case None         => CachedVaultSecretStatus.SecretNotFound
         case Some(secret) => {
-          if (parts.size > 2 && secret.hasStringData) {
-            val valueName = parts.tail.tail.head
-            secret.stringData.getOrElse(Map.empty).get(valueName) match {
-              case None        => CachedVaultSecretStatus.SecretValueNotFound
+          if (parts.size == 3) {
+            val valueName = parts.tail.tail.headOption.getOrElse("default")
+            secret.data.get(valueName) match {
+              case None => secret.stringData.getOrElse(Map.empty).get(valueName) match {
+                case None => CachedVaultSecretStatus.SecretValueNotFound
+                case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
+              }
               case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
             }
-          } else if (parts.size > 2) {
-            CachedVaultSecretStatus.SecretValueNotFound
           } else {
-            CachedVaultSecretStatus.SecretReadSuccess(secret.data)
+            CachedVaultSecretStatus.SecretReadError("Bad secret reference. A good reference should be composed like vault://vault_name/namespace/secret_name/secret_key")
           }
         }
       }
