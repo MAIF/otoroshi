@@ -9,7 +9,7 @@ import otoroshi.models.CorsSettings
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.{Result, Results}
+import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -36,6 +36,26 @@ case class NgCorsSettings(
     maxAge = maxAge,
     allowCredentials = allowCredentials
   )
+
+  def asHeaders: Seq[(String, String)] = {
+    var headers = Map(
+      "Access-Control-Allow-Origin" -> allowOrigin,
+      "Access-Control-Allow-Credentials" -> allowCredentials.toString
+    )
+    if (exposeHeaders.nonEmpty) {
+      headers = headers + ("Access-Control-Expose-Headers" -> exposeHeaders.mkString(", "))
+    }
+    if (allowHeaders.nonEmpty) {
+      headers = headers + ("Access-Control-Allow-Headers" -> allowHeaders.mkString(", "))
+    }
+    if (allowMethods.nonEmpty) {
+      headers = headers + ("Access-Control-Allow-Methods" -> allowMethods.mkString(", "))
+    }
+    maxAge.foreach { age =>
+      headers = headers + ("Access-Control-Max-Age" -> age.toSeconds.toString)
+    }
+    headers.toSeq
+  }
 }
 
 object NgCorsSettings {
@@ -137,10 +157,14 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val req         = ctx.request
-    val cors        =
-      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
+//    val cors        =
+//      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
+
+    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
+
+    println(cors)
     val corsHeaders = cors
-      .asHeaders(req)
+      .asHeaders
       .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
       .map(v =>
         (
