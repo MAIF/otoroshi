@@ -493,6 +493,8 @@ class TableComponent extends Component {
     urlTo(`/bo/dashboard/${this.props.selfUrl}/add`);
     const defVal = this.props.defaultValue();
 
+    console.log(defVal)
+
     if (this.props.parentProps.setTitle) {
       this.props.parentProps.setTitle(
         `Create a new ${this.props.itemName}`,

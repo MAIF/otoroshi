@@ -6,7 +6,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.controllers._
-import otoroshi.utils.syntax.implicits.BetterJsReadable
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -170,7 +170,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def initiateStoredNgBackend() = ApiAction {
+  def initiateStoredNgBackend() = ApiAction { ctx =>
     val defaultBackend = StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",
@@ -180,6 +180,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
       metadata = Map.empty,
       backend = NgBackend.empty
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
     env.datastores.globalConfigDataStore
       .latest()
       .templates

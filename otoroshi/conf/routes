@@ -47,6 +47,7 @@ GET     /bo/api/eureka-servers/:id/apps                       otoroshi.controlle
 # GET     /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.privateAppsSessions()
 # DELETE  /bo/api/papps/sessions/:id                          otoroshi.controllers.BackOfficeController.discardPrivateAppsSession(id)
 # DELETE  /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.discardAllPrivateAppsSessions()
+GET     /bo/api/location                                      otoroshi.controllers.BackOfficeController.getOwnEntityLocation()
 POST    /bo/api/ui-mode                                       otoroshi.controllers.BackOfficeController.updateUiMode()
 POST    /bo/api/panic                                         otoroshi.controllers.BackOfficeController.panicMode()
 GET     /bo/api/events/audit                                  otoroshi.controllers.BackOfficeController.auditEvents()

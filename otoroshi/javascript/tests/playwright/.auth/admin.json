@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "otoroshi-session",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7ImJvdXNyIjoibWVVVkU3RWpieGJqd3FTM2d2bk5YZWNPV2Q1QjZlb2tXUTZITFJzMFZXTkNxQkNOUnpDbHpjSW1OcXlXTEZIWCJ9LCJleHAiOjE3NDMyNjIxMzUsIm5iZiI6MTc0MzAwMjkzNSwiaWF0IjoxNzQzMDAyOTM1fQ.W8Cc8iYE5byhRg5Xp1L7Bubv3_TZRtNYDpsT6AGk1Gc",
+      "domain": ".oto.tools",
+      "path": "/",
+      "expires": 1743262135.000675,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://otoroshi.oto.tools:9999",
+      "localStorage": [
+        {
+          "name": "Otoroshi-Tenant",
+          "value": "tester"
+        }
+      ]
+    }
+  ]
+}
