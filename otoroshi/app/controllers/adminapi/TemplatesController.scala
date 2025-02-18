@@ -59,19 +59,19 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case Some(gid) => {
             env.datastores.serviceGroupDataStore.findById(gid).map {
               case Some(group) => {
-                val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey(gid, env)
-                val finalKey = apiKey
-                  .copy(location = apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+                val finalKey   = env.datastores.apiKeyDataStore.initiateNewApiKey(gid, env, ctx.some)
+//                val finalKey = apiKey
+//                  .copy(location = apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 Ok(process(finalKey.toJson, ctx.request))
               }
               case None        => NotFound(Json.obj("error" -> s"Group with id `$gid` does not exist"))
             }
           }
           case None      => {
-            val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey("default", env)
-            val finalKey = apiKey.copy(location =
-              apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))
-            )
+            val finalKey   = env.datastores.apiKeyDataStore.initiateNewApiKey("default", env, ctx.some)
+//            val finalKey = apiKey.copy(location =
+//              apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))
+//            )
             FastFuture.successful(Ok(process(finalKey.toJson, ctx.request)))
           }
         }
@@ -81,10 +81,10 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateServiceGroup() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val group      = env.datastores.serviceGroupDataStore.initiateNewGroup(env)
-        val finalGroup =
-          group.copy(location = group.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        Ok(process(finalGroup.toJson, ctx.request)).future
+        val group      = env.datastores.serviceGroupDataStore.initiateNewGroup(env, ctx.some)
+//        val finalGroup =
+//          group.copy(location = group.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        Ok(process(group.toJson, ctx.request)).future
       }
     }
 
@@ -92,22 +92,22 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val desc      = env.datastores.serviceDescriptorDataStore.initiateNewDescriptor()
-        val finaldesc =
-          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        Ok(process(finaldesc.toJson, ctx.request)).future
+          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
+//        val finaldesc =
+//          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        Ok(process(desc.toJson, ctx.request)).future
       }
     }
 
   def initiateTcpService() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val service      = env.datastores.tcpServiceDataStore.template(env)
-        val finalService =
-          service.copy(location = service.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-
+        val service      = env.datastores.tcpServiceDataStore.template(env, ctx.some)
+//        val finalService =
+//          service.copy(location = service.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(
           process(
-            finalService.json,
+            service.json,
             ctx.request
           )
         ).future
@@ -117,10 +117,10 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateCertificate() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        env.datastores.certificatesDataStore.nakedTemplate(env).map { cert =>
-          val finalCert =
-            cert.copy(location = cert.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          Ok(process(finalCert.toJson, ctx.request))
+        env.datastores.certificatesDataStore.nakedTemplate(env, ctx.some).map { cert =>
+//          val finalCert =
+//            cert.copy(location = cert.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+          Ok(process(cert.toJson, ctx.request))
         }
       }
     }
@@ -135,11 +135,11 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateJwtVerifier() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val jwt      = env.datastores.globalJwtVerifierDataStore.template(env)
-        val finalJwt =
-          jwt.copy(location = jwt.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        val jwt      = env.datastores.globalJwtVerifierDataStore.template(env, ctx.some)
+//        val finalJwt =
+//          jwt.copy(location = jwt.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(
-          process(finalJwt.asJson, ctx.request)
+          process(jwt.asJson, ctx.request)
         ).future
       }
     }
@@ -148,8 +148,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val module = env.datastores.authConfigsDataStore
-          .template(ctx.request.getQueryString("mod-type"), env)
-          .applyOn(c => c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
+          .template(ctx.request.getQueryString("mod-type"), env, ctx.some)
+//          .applyOn(c => c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
         Ok(
           process(module.asJson, ctx.request)
         ).future
@@ -248,9 +248,10 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val module =
-          env.datastores.dataExporterConfigDataStore.template(ctx.request.getQueryString("type")).applyOn { c =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          }
+          env.datastores.dataExporterConfigDataStore.template(ctx.request.getQueryString("type"), ctx.some)
+//            .applyOn { c =>
+//            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+//          }
         Ok(
           process(module.json, ctx.request)
         ).future
@@ -676,11 +677,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .json
           )
         case "Route"                         =>
-          FastFuture.successful(
-            NgRoute
-              .fromJsons(env.datastores.routeDataStore.template(env).json.as[JsObject].deepMerge(resource))
-              .json
-          )
+            NgRoute.fromJsons(NgRoute.default.json.as[JsObject].deepMerge(resource)).json.vfuture
         case "RouteComposition"              =>
           FastFuture.successful(
             NgRoute

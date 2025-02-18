@@ -23,6 +23,7 @@ import {
   NgSelectRenderer,
   NgStringRenderer,
 } from '../components/nginputs';
+import { Location } from '../components/Location';
 
 function tryOrTrue(f) {
   try {
@@ -116,9 +117,8 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
-                    props?.rootValue?.eventType || 'GatewayEvent'
-                  }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
+                    }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -567,6 +567,24 @@ export class NewExporterForm extends Component {
   render() {
     return (
       <>
+        <Collapse initCollapsed={false} label="Location" lineEnd={true}>
+          <Location
+            tenant={this.data()._loc.tenant || 'default'}
+            onChangeTenant={(v) => this.dataChange({
+              _loc: {
+                ...this.data()._loc,
+                tenant: v
+              }
+            })}
+            teams={this.data()._loc.teams || ['default']}
+            onChangeTeams={(v) => this.dataChange({
+              _loc: {
+                ...this.data()._loc,
+                teams: v
+              }
+            })}
+          />
+        </Collapse>
         <form className="form-horizontal">
           <SelectInput
             label="Type"

@@ -13,6 +13,7 @@ import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
+import otoroshi.actions.ApiActionContext
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
 import otoroshi.next.models.{NgOverflowStrategy, NgTarget}
@@ -2343,9 +2344,9 @@ object ServiceDescriptorDataStore {
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
-  def template(env: Env): ServiceDescriptor = initiateNewDescriptor()(env)
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceDescriptor = initiateNewDescriptor(ctx)(env)
 
-  def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
+  def initiateNewDescriptor(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
       ServiceLocation.fullQuery(
         v,
@@ -2384,12 +2385,14 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       missingOnlyHeadersOut = Map.empty,
       stripPath = true
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
       .descriptor
       .map { template =>
         ServiceDescriptor._fmt.reads(defaultDescriptor.json.asObject.deepMerge(template)).get
+          .copy(location = EntityLocation.ownEntityLocation(ctx))
       }
       .getOrElse {
         defaultDescriptor

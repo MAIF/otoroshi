@@ -10,6 +10,11 @@ const extensionId = 'otoroshi.extensions.CorazaWAF';
 export function setupCorazaExtension(registerExtension) {
   registerExtension(extensionId, true, (ctx) => {
     class CorazaWafConfigsPage extends Component {
+
+      state = {
+        defaultLocation: undefined
+      }
+
       formSchema = {
         _loc: {
           type: 'location',
@@ -125,6 +130,16 @@ export function setupCorazaExtension(registerExtension) {
 
       componentDidMount() {
         this.props.setTitle(`All Coraza WAF configs.`);
+
+        fetch('/bo/api/location', {
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+          .then(r => r.json())
+          .then(defaultLocation => this.setState({
+            defaultLocation
+          }))
       }
 
       client = BackOfficeServices.apisClient(
@@ -134,6 +149,9 @@ export function setupCorazaExtension(registerExtension) {
       );
 
       render() {
+        if (!this.state.defaultLocation)
+          return null
+
         return React.createElement(
           Table,
           {
@@ -142,6 +160,7 @@ export function setupCorazaExtension(registerExtension) {
             defaultTitle: 'All Coraza WAF configs.',
             defaultValue: () => ({
               id: 'coraza-waf-config_' + uuid(),
+              _loc: this.state.defaultLocation,
               name: 'My WAF',
               description: 'An awesome WAF',
               tags: [],

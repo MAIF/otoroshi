@@ -2,6 +2,7 @@ package otoroshi.next.models
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.OverflowStrategy
+import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.security.IdGenerator
@@ -577,9 +578,9 @@ case class StoredNgBackend(
 }
 
 trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
-  def template(env: Env): StoredNgBackend = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): StoredNgBackend = {
     val default = StoredNgBackend(
-      location = EntityLocation.default,
+      location = EntityLocation.ownEntityLocation(ctx)(env),
       id = IdGenerator.namedId("backend", env),
       name = "New backend",
       description = "New backend",
@@ -587,6 +588,7 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
       tags = Seq.empty,
       backend = NgBackend.empty
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
