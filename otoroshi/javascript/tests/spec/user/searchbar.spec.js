@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 test('search bar must return entity', async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/playwright/.auth/user.json' });
+    const context = await browser.newContext({ storageState: 'tests/playwright/.auth/tester.json' });
     const page = await context.newPage();
 
     await page.goto('/');

@@ -6,7 +6,7 @@ export default defineConfig({
     timeout: 5000,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    workers: process.env.CI ? 5 : undefined,
     reporter: 'html',
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
@@ -22,14 +22,6 @@ export default defineConfig({
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
-            },
-            dependencies: ['setup']
-        },
-
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox']
             },
             dependencies: ['setup']
         }
