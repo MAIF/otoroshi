@@ -2,16 +2,16 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
     testDir: './tests',
-    fullyParallel: true,
-    timeout: 4000,
+    fullyParallel: false,
+    timeout: 5000,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
+    retries: process.env.CI ? 1 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: 'html',
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
         baseURL: 'http://otoroshi.oto.tools:9999',
-        trace: 'on-first-retry',
+        trace: 'on-first-retry'
     },
     projects: [
         {
@@ -22,8 +22,6 @@ export default defineConfig({
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
-                // Use prepared auth state.
-                storageState: 'playwright/.auth/user.json',
             },
             dependencies: ['setup']
         },
@@ -31,9 +29,7 @@ export default defineConfig({
         {
             name: 'firefox',
             use: {
-                ...devices['Desktop Firefox'],
-                // Use prepared auth state.
-                storageState: 'playwright/.auth/user.json',
+                ...devices['Desktop Firefox']
             },
             dependencies: ['setup']
         }
