@@ -1,7 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'path';
 
-const userAuthFile = path.join(__dirname, '../playwright/.auth/user.json');
+const userAuthFile = path.join(__dirname, '../playwright/.auth/tester.json');
 const adminAuthFile = path.join(__dirname, '../playwright/.auth/admin.json');
 
 setup('authenticate', async ({ page }) => {
