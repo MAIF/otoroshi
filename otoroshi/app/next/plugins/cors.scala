@@ -9,7 +9,7 @@ import otoroshi.models.CorsSettings
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc.{Result, Results}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
