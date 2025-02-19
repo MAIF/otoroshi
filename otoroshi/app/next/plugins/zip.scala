@@ -125,7 +125,6 @@ class ZipFileBackend extends NgBackendCall {
   private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(implicit
       env: Env
   ): Option[(String, Source[ByteString, _])] = {
-
     var path =
       if (_path == "/") "index.html"
       else {
@@ -144,13 +143,6 @@ class ZipFileBackend extends NgBackendCall {
     if (path.startsWith("/")) {
       path = path.substring(1)
     }
-
-    val entries = zip.entries()
-    while (entries.hasMoreElements) {
-      val entry = entries.nextElement
-      System.out.println(entry.getName)
-    }
-
     Option(zip.getEntry(path)).flatMap { entry =>
       if (entry.isDirectory) {
         None
