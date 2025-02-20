@@ -363,7 +363,7 @@ class CertificateApiSpec(name: String, configurationSpec: => Configuration) exte
   }
 
   override def queryParams(): Seq[(String, String)]       = Seq(("enrich", "false"))
-  override def singleEntity(): Cert                       = Await.result(env.datastores.certificatesDataStore.template(ec, env), 10.seconds)
+  override def singleEntity(): Cert                       = Await.result(env.datastores.certificatesDataStore.template()(ec, env), 10.seconds)
   override def entityName: String                         = "Cert"
   override def route(): String                            = "/api/certificates"
   override def readEntityFromJson(json: JsValue): Cert    = Cert._fmt.reads(json).get
