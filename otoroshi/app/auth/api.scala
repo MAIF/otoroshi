@@ -481,6 +481,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       case Some(ref) =>
         templates()(env)
           .find(config => config.`type` == ref)
+          .map(_.withLocation(EntityLocation.ownEntityLocation(ctx)(env)))
           .getOrElse(defaultValue)
       case _         => defaultValue
     }
