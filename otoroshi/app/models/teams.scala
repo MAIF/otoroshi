@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import otoroshi.actions.ApiActionContext
+import otoroshi.actions.{ApiActionContext, BackOfficeActionContext, BackOfficeActionContextAuth}
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.utils.RegexPool
@@ -143,15 +143,22 @@ object EntityLocation {
   val default = EntityLocation()
   def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(implicit env: Env): EntityLocation = {
     rawCtx.map(ctx =>
-      EntityLocation(
-        tenant = ctx.currentTenant,
+      getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
+      .getOrElse(EntityLocation.default)
+  }
+  private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)
+                                                              (implicit env: Env) = {
+    EntityLocation(
+        tenant = currentTenant,
         teams = env.proxyState.allTeams()
-          .filter(item => ctx.currentTenant.value == item.location.tenant.value || ctx.currentTenant == TenantId.all)
-          .filter(item => ctx.canUserRead(item))
+          .filter(item => currentTenant.value == item.location.tenant.value || currentTenant == TenantId.all)
+          .filter(item => canUserRead(item.asInstanceOf[T]))
           .map(_.id)
           .slice(0, 1)
-      ))
-      .getOrElse(EntityLocation.default)
+      )
+  }
+  def fromBackOffice(ctx: BackOfficeActionContextAuth[JsValue])(implicit env: Env): EntityLocation = {
+    getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead)
   }
   val keyName = "_loc"
   val format  = new Format[EntityLocation] {

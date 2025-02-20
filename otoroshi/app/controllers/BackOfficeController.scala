@@ -947,7 +947,8 @@ class BackOfficeController(
                 tags = Seq.empty,
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues,
-                clientSideSessionEnabled = true
+                clientSideSessionEnabled = true,
+                location = EntityLocation.fromBackOffice(ctx)(env)
               ).asJson
             )
           )
@@ -1019,7 +1020,8 @@ class BackOfficeController(
                             None,
                             MtlsConfig.default
                           )
-                        )
+                        ),
+                        location = EntityLocation.fromBackOffice(ctx)(env)
                       )
                       .asJson
                   )
@@ -1036,7 +1038,8 @@ class BackOfficeController(
                       tags = Seq.empty,
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues,
-                      clientSideSessionEnabled = true
+                      clientSideSessionEnabled = true,
+                      location = EntityLocation.fromBackOffice(ctx)(env)
                     ).asJson
                   )
                 }
@@ -1053,7 +1056,8 @@ class BackOfficeController(
                     tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
-                    clientSideSessionEnabled = true
+                    clientSideSessionEnabled = true,
+                    location = EntityLocation.fromBackOffice(ctx)(env)
                   ).asJson
                 )
               }
