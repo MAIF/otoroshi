@@ -6,5 +6,4 @@ stats.json
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-package-lock.json
 tests/playwright
