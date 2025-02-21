@@ -329,6 +329,10 @@ object implicits {
     def prettify: String                     = Json.prettyPrint(obj)
     def select(name: String): JsLookupResult = obj \ name
     def select(index: Int): JsLookupResult   = obj \ index
+    def multiSelect(snakeCase: String): JsLookupResult = select(snakeToCamel(snakeCase)) match {
+      case res @ JsDefined(_) => res
+      case _: JsUndefined => select(snakeCase)
+    }
     def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
       parts.foldLeft(Option(obj)) {
@@ -359,6 +363,15 @@ object implicits {
         case Some(value) => JsDefined(value)
       }
     }
+
+    private def snakeToCamel(s: String): String = s.split("_")
+        .zipWithIndex
+        .map { case (word, index) =>
+          if (index == 0) word
+          else word.capitalize
+        }
+        .mkString
+
   }
   implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
     def orJsNull: JsValue = obj.getOrElse(JsNull)

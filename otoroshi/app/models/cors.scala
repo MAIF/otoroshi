@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import otoroshi.utils.RegexPool
+import otoroshi.utils.syntax.implicits.BetterJsValue
 
 import java.util.concurrent.TimeUnit
 import play.api.libs.json._
@@ -98,13 +99,13 @@ object CorsSettings extends FromJson[CorsSettings] {
       Right(
         CorsSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          allowOrigin = (json \ "allowOrigin").asOpt[String].getOrElse("*"),
-          exposeHeaders = (json \ "exposeHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowHeaders = (json \ "allowHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowMethods = (json \ "allowMethods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          maxAge = (json \ "maxAge").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
-          allowCredentials = (json \ "allowCredentials").asOpt[Boolean].getOrElse(true)
+          allowOrigin = json.multiSelect("allow_origin").asOpt[String].getOrElse("*"),
+          exposeHeaders = json.multiSelect("expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allowHeaders = json.multiSelect("allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allowMethods = json.multiSelect("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = json.multiSelect("excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          maxAge = json.multiSelect("max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
+          allowCredentials = json.multiSelect("allow_credentials").asOpt[Boolean].getOrElse(true)
         )
       )
     } recover { case e =>
