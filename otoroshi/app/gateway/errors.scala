@@ -51,7 +51,8 @@ object Errors {
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
   )(implicit env: Env, ec: ExecutionContext): Unit = {
-    (maybeDescriptor, maybeRoute) match {
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    (maybeDescriptor, finalMaybeRoute) match {
       case (Some(descriptor), _) => {
         val fromLbl          = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
         // TODO : mark as error ???
@@ -71,7 +72,7 @@ object Errors {
           else _target.host,
           Some(req),
           Some(descriptor),
-          maybeRoute,
+          finalMaybeRoute,
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
           attrs.get(otoroshi.plugins.Keys.UserKey),
           attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -84,7 +85,7 @@ object Errors {
           s"$scheme://$host${descriptor.root}$uri",
           Some(req),
           Some(descriptor),
-          maybeRoute,
+          finalMaybeRoute,
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
           attrs.get(otoroshi.plugins.Keys.UserKey),
           attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -468,7 +469,8 @@ object Errors {
       maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val errorId = env.snowflakeGenerator.nextIdStr()
-    ((maybeDescriptor, maybeRoute) match {
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    ((maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {
         customResult(desc.id, req, status, message, maybeCauseId, emptyBody, errorId).flatMap { res =>
           val ctx = TransformerErrorContext(
@@ -565,7 +567,7 @@ object Errors {
           emptyBody,
           sendEvent,
           attrs,
-          maybeRoute
+          finalMaybeRoute
         )
     }
   }
@@ -588,7 +590,8 @@ object Errors {
       modern: Boolean = false
   )(implicit ec: ExecutionContext, env: Env): Result = {
     val errorId = env.snowflakeGenerator.nextIdStr()
-    (maybeDescriptor, maybeRoute) match {
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    (maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {
         val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId, modern)
         // val ctx      = TransformerErrorContext(
@@ -639,7 +642,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         finalRes
       }
@@ -692,7 +695,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         finalRes
       }
@@ -714,7 +717,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         resp
       }
