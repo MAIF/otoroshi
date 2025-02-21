@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const CompressionPlugin = require("compression-webpack-plugin");
 
@@ -199,7 +199,8 @@ module.exports = (env, argv) => {
           new TerserJSPlugin({
             parallel: true
           }),
-          new OptimizeCSSAssetsPlugin({})
+          // new OptimizeCSSAssetsPlugin({})
+          new CssMinimizerPlugin()
         ],
       }
     };
