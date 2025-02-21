@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -2027,7 +2029,6 @@ otoroshi {
     every = 30000
     every = ${?OTOROSHI_METRICS_EVERY}
     accessKey = ${?app.health.accessKey}
-    accessKey = ${?OTOROSHI_app.health.accessKey}
     accessKey = ${?OTOROSHI_METRICS_ACCESS_KEY}
   }
   plugins {
@@ -2503,6 +2504,7 @@ otoroshi {
   http-listeners = []
   http-listeners-json = ${?OTOROSHI_HTTP_LISTENERS}
 }
+
 
 
 http.port = 8080                       # the main http port for the otoroshi server
@@ -3375,7 +3377,6 @@ otoroshi {
     enabled = ${?OTOROSHI_METRICS_ENABLED}
     every = ${?OTOROSHI_METRICS_EVERY}
     accessKey = ${?app.health.accessKey}
-    accessKey = ${?OTOROSHI_app.health.accessKey}
     accessKey = ${?OTOROSHI_METRICS_ACCESS_KEY}
   }
   plugins {
