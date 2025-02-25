@@ -1,19 +1,10 @@
 package otoroshi.events
 
 import java.util.concurrent.TimeUnit
-import com.sksamuel.pulsar4s.{
-  Consumer,
-  ConsumerConfig,
-  DefaultPulsarClient,
-  Producer,
-  ProducerConfig,
-  PulsarClient,
-  PulsarClientConfig,
-  Subscription,
-  Topic
-}
+import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, DefaultPulsarClient, Producer, ProducerConfig, PulsarClient, PulsarClientConfig, Subscription, Topic}
 import otoroshi.models.Exporter
 import com.sksamuel.pulsar4s.playjson._
+import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
@@ -26,6 +17,9 @@ case class PulsarConfig(
     tenant: String,
     namespace: String,
     topic: String,
+    token: Option[String],
+    username: Option[String],
+    password: Option[String],
     mtlsConfig: MtlsConfig = MtlsConfig()
 ) extends Exporter {
   override def toJson: JsValue = PulsarConfig.format.writes(this)
@@ -40,6 +34,9 @@ object PulsarConfig {
         "tenant"                -> o.tenant,
         "namespace"             -> o.namespace,
         "topic"                 -> o.topic,
+        "token"                 -> o.token,
+        "username"              -> o.username,
+        "password"              -> o.password,
         "mtlsConfig"            -> o.mtlsConfig.json
       )
 
@@ -51,6 +48,9 @@ object PulsarConfig {
           tenant = (json \ "tenant").as[String],
           namespace = (json \ "namespace").as[String],
           topic = (json \ "topic").as[String],
+          token = (json \ "token").asOpt[String].filter(_.trim.nonEmpty),
+          username = (json \ "username").asOpt[String].filter(_.trim.nonEmpty),
+          password = (json \ "password").asOpt[String].filter(_.trim.nonEmpty),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       } match {
@@ -79,7 +79,21 @@ object PulsarSetting {
 
       new DefaultPulsarClient(builder.build())
     } else {
-      val c = PulsarClientConfig(serviceUrl = config.uri)
+      val c = PulsarClientConfig(
+        serviceUrl = config.uri,
+        authentication = {
+          config.token
+            .map(token => new AuthenticationToken(token))
+            .orElse(for {
+              username <- config.username
+              password <- config.password
+            } yield {
+              val auth = new AuthenticationBasic()
+              auth.configure(Json.stringify(Json.obj("userId" -> username, "password" -> password)))
+              auth
+            })
+        }
+      )
       PulsarClient(c)
     }
   }
