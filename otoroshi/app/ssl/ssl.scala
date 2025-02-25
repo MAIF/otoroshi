@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
 import akka.stream.scaladsl.{Flow, Sink, Source}
@@ -36,11 +36,7 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{
-  JcaPEMKeyConverter,
-  JceOpenSSLPKCS8DecryptorProviderBuilder,
-  JcePEMDecryptorProviderBuilder
-}
+import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -660,8 +656,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )
   }
 
-  def nakedTemplate(env: Env): Future[Cert] = {
+  def nakedTemplate(env: Env, ctx: Option[ApiActionContext[_]] = None): Future[Cert] = {
     val defaultCert = syncTemplate(env)
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
@@ -675,8 +672,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
       .vfuture
   }
 
-  def template(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
-    nakedTemplate(env)
+  def template(ctx: Option[ApiActionContext[_]] = None)(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
+    nakedTemplate(env, ctx)
     // env.pki
     //   .genSelfSignedCert(
     //     GenCsrQuery(

@@ -16,6 +16,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.ApikeyCalls
 import akka.http.scaladsl.model.Uri
+import otoroshi.actions.ApiActionContext
 
 case class NgMinimalRoute(
     frontend: NgFrontend,
@@ -266,8 +267,9 @@ object NgRouteComposition {
 }
 
 trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
-  def template(env: Env): NgRouteComposition = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): NgRouteComposition = {
     val default: NgRouteComposition = NgRouteComposition.empty
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

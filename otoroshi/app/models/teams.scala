@@ -1,5 +1,6 @@
 package otoroshi.models
 
+import otoroshi.actions.{ApiActionContext, BackOfficeActionContext, BackOfficeActionContextAuth}
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.utils.RegexPool
@@ -140,6 +141,25 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 
 object EntityLocation {
   val default = EntityLocation()
+  def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(implicit env: Env): EntityLocation = {
+    rawCtx.map(ctx =>
+      getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
+      .getOrElse(EntityLocation.default)
+  }
+  private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)
+                                                              (implicit env: Env) = {
+    EntityLocation(
+        tenant = currentTenant,
+        teams = env.proxyState.allTeams()
+          .filter(item => currentTenant.value == item.location.tenant.value || currentTenant == TenantId.all)
+          .filter(item => canUserRead(item.asInstanceOf[T]))
+          .map(_.id)
+          .slice(0, 1)
+      )
+  }
+  def fromBackOffice(ctx: BackOfficeActionContextAuth[JsValue])(implicit env: Env): EntityLocation = {
+    getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead)
+  }
   val keyName = "_loc"
   val format  = new Format[EntityLocation] {
     override def writes(o: EntityLocation): JsValue             =
@@ -149,13 +169,33 @@ object EntityLocation {
       )
     override def reads(json: JsValue): JsResult[EntityLocation] =
       Try {
+        val teamsAsStringList: Option[Seq[TeamId]] = json
+          .select("teams")
+          .asOpt[Seq[String]]
+          .map(s => s.map(TeamId.apply).distinct)
+
+        val teamsAsJsonArray = json
+          .select("teams")
+          .asOpt[JsArray]
+          .map {
+            _.value
+              .map(e => Team.format.reads(e))
+              .collect { case JsSuccess(team, _) => team.id }
+          }
+          .getOrElse(Seq.empty)
+
+        val teams = teamsAsStringList
+          .map(teams => teams ++ teamsAsJsonArray)
+
         EntityLocation(
           tenant = json.select("tenant").asOpt[String].map(TenantId.apply).getOrElse(TenantId.default),
-          teams = json
-            .select("teams")
-            .asOpt[Seq[String]]
-            .map(s => s.map(TeamId.apply).distinct)
-            .getOrElse(Seq(TeamId.default))
+          teams = teams match {
+            case Some(value) => value
+            case None => if (teamsAsJsonArray.isEmpty)
+              Seq(TeamId.default)
+            else
+              teamsAsJsonArray
+          }
         )
       } match {
         case Failure(e)   => JsError(e.getMessage)
