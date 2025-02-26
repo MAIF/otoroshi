@@ -103,15 +103,15 @@ class WorkflowCallFunction extends WorkflowFunction {
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
-    val input       = args.select("input").asObject
-    val extension = env.adminExtensions.extension[WorkflowAdminExtension].get
+    val input      = args.select("input").asObject
+    val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
     extension.states.workflow(workflowId) match {
-      case None => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
+      case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
       case Some(workflow) => {
         val node = Node.from(workflow.config)
         extension.engine.run(node, input).map {
           case res if res.hasError => Left(res.error.get)
-          case res => Right(res.returned.get)
+          case res                 => Right(res.returned.get)
         }
       }
     }

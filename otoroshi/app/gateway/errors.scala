@@ -468,7 +468,7 @@ object Errors {
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val errorId = env.snowflakeGenerator.nextIdStr()
+    val errorId                          = env.snowflakeGenerator.nextIdStr()
     val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
     ((maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {
@@ -589,7 +589,7 @@ object Errors {
       maybeRoute: Option[NgRoute] = None,
       modern: Boolean = false
   )(implicit ec: ExecutionContext, env: Env): Result = {
-    val errorId = env.snowflakeGenerator.nextIdStr()
+    val errorId                          = env.snowflakeGenerator.nextIdStr()
     val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
     (maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {

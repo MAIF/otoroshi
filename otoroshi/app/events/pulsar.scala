@@ -1,7 +1,17 @@
 package otoroshi.events
 
 import java.util.concurrent.TimeUnit
-import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, DefaultPulsarClient, Producer, ProducerConfig, PulsarClient, PulsarClientConfig, Subscription, Topic}
+import com.sksamuel.pulsar4s.{
+  Consumer,
+  ConsumerConfig,
+  DefaultPulsarClient,
+  Producer,
+  ProducerConfig,
+  PulsarClient,
+  PulsarClientConfig,
+  Subscription,
+  Topic
+}
 import otoroshi.models.Exporter
 import com.sksamuel.pulsar4s.playjson._
 import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}

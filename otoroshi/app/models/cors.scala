@@ -52,16 +52,21 @@ case class CorsSettings(
       originOpt.map(_.toLowerCase()).map(o => allowOrigin == "*" || o == allowOrigin).getOrElse(allowOrigin == "*")
     // The value * only counts as a special wildcard value for requests without credentials
     // (requests without HTTP cookies or HTTP authentication information).
-    val passAllowedRequestHeaders: Boolean = if (req.cookies.isEmpty &&
-      !req.headers.hasHeader("Authorization") &&
-      allowHeaders.contains("*")) {
-      true
-    } else {
-      headersOpt
-        .map(h => h.split(",").map(_.trim.toLowerCase()))
-        .map(headers => headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _))
-        .getOrElse(!headersOpt.isDefined)
-    }
+    val passAllowedRequestHeaders: Boolean =
+      if (
+        req.cookies.isEmpty &&
+        !req.headers.hasHeader("Authorization") &&
+        allowHeaders.contains("*")
+      ) {
+        true
+      } else {
+        headersOpt
+          .map(h => h.split(",").map(_.trim.toLowerCase()))
+          .map(headers =>
+            headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _)
+          )
+          .getOrElse(!headersOpt.isDefined)
+      }
     val passAllowedRequestMethod: Boolean  = methodOpt
       .map(_.trim.toLowerCase())
       .map(m => allowMethods.map(n => n.trim.toLowerCase()).contains(m.trim.toLowerCase()))

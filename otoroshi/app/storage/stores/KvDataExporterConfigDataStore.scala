@@ -83,7 +83,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             topic = "otoroshi",
             token = None,
             username = None,
-            password = None,
+            password = None
           )
         )
       case Some("kafka")          =>

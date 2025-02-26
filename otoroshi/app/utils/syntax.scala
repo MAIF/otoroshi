@@ -189,7 +189,7 @@ object implicits {
       if (f) seq ++ other else seq
   }
 
-  implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
+  implicit class BetterSyntax[A](private val obj: A)           extends AnyVal {
     def seq: Seq[A]                                                 = Seq(obj)
     def set: Set[A]                                                 = Set(obj)
     def list: List[A]                                               = List(obj)
@@ -254,7 +254,7 @@ object implicits {
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
-  implicit class BetterString(private val obj: String)                 extends AnyVal {
+  implicit class BetterString(private val obj: String)         extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String                            = obj.slug
     def slugifyWithSlash: String                   = obj.slug2
@@ -285,18 +285,18 @@ object implicits {
         .asInstanceOf[X509Certificate]
     }
   }
-  implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
+  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
     def sha256: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
     def sha512: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
-  implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
+  implicit class BetterBoolean(private val obj: Boolean)       extends AnyVal {
     def json: JsValue = JsBoolean(obj)
   }
-  implicit class BetterDouble(private val obj: Double)                 extends AnyVal {
+  implicit class BetterDouble(private val obj: Double)         extends AnyVal {
     def json: JsValue = JsNumber(obj)
   }
-  implicit class BetterInt(private val obj: Int)                       extends AnyVal {
+  implicit class BetterInt(private val obj: Int)               extends AnyVal {
     def json: JsValue         = JsNumber(obj)
     def atomic: AtomicInteger = new AtomicInteger(obj)
     def bytes: Array[Byte] = {
@@ -308,7 +308,7 @@ object implicits {
       )
     }
   }
-  implicit class BetterLong(private val obj: Long)                     extends AnyVal {
+  implicit class BetterLong(private val obj: Long)             extends AnyVal {
     def json: JsValue      = JsNumber(obj)
     def atomic: AtomicLong = new AtomicLong(obj)
     def bytes: Array[Byte] = {
@@ -324,14 +324,14 @@ object implicits {
       )
     }
   }
-  implicit class BetterJsValue(private val obj: JsValue)               extends AnyVal {
-    def stringify: String                    = Json.stringify(obj)
-    def prettify: String                     = Json.prettyPrint(obj)
-    def select(name: String): JsLookupResult = obj \ name
-    def select(index: Int): JsLookupResult   = obj \ index
+  implicit class BetterJsValue(private val obj: JsValue)       extends AnyVal {
+    def stringify: String                              = Json.stringify(obj)
+    def prettify: String                               = Json.prettyPrint(obj)
+    def select(name: String): JsLookupResult           = obj \ name
+    def select(index: Int): JsLookupResult             = obj \ index
     def multiSelect(snakeCase: String): JsLookupResult = select(snakeToCamel(snakeCase)) match {
       case res @ JsDefined(_) => res
-      case _: JsUndefined => select(snakeCase)
+      case _: JsUndefined     => select(snakeCase)
     }
     def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
@@ -364,13 +364,14 @@ object implicits {
       }
     }
 
-    private def snakeToCamel(s: String): String = s.split("_")
-        .zipWithIndex
-        .map { case (word, index) =>
-          if (index == 0) word
-          else word.capitalize
-        }
-        .mkString
+    private def snakeToCamel(s: String): String = s
+      .split("_")
+      .zipWithIndex
+      .map { case (word, index) =>
+        if (index == 0) word
+        else word.capitalize
+      }
+      .mkString
 
   }
   implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
