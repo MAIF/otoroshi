@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.24.0] - 2025-02-26
+
+
+https://github.com/MAIF/otoroshi/milestone/111?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.2...v16.24.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.24.0
+
+
+### Added 
+
+- CORS plugin: Accept * as Access-Control-Allow-Headers (#2099)       
+      
+### Changed 
+
+- enhance secret vaults doc (#2090)
+- No Route data in GatewayEvent logs when a call is blocked by Otoroshi (#2092)
+- Ensure correct tenant and teams are displayed when creating new entities (#2096)
+- Ensure the correct tenant and teams are displayed when using 'Get from OIDC config' (#2097)       
+      
+### Fixed 
+
+- fix kubernetes vault implementation (#2091)
+- pulsar connector cannot use basic or token auth. (#2110)       
+      
+### Documentation 
+
+- enhance secret vaults doc (#2090)       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @dmorvant-altima
+
 ## [16.23.2] - 2025-02-04
 
 
