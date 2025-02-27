@@ -1,5 +1,6 @@
 package otoroshi.models
 
+import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
@@ -71,7 +72,7 @@ object WasmPlugin {
 }
 
 trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
-  def template(env: Env): WasmPlugin = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): WasmPlugin = {
     val defaultWasmPlugin = WasmPlugin(
       id = IdGenerator.namedId("wasm-plugin", env),
       name = "New wasm plugin",
@@ -79,7 +80,7 @@ trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
       tags = Seq.empty,
       metadata = Map.empty,
       config = WasmConfig()
-    )
+    ).copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

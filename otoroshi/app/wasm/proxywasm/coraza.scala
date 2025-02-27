@@ -755,7 +755,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.corazaConfigsDatastore.extractId(c),
             json => json.select("id").asString,
             () => "id",
-            tmpl = (v, p) => CorazaWafConfig.template().json,
+            tmpl = (v, p, _ctx) => CorazaWafConfig.template().json,
             stateAll = () => states.allConfigs(),
             stateOne = id => states.config(id),
             stateUpdate = values => states.updateConfigs(values)

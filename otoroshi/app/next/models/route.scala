@@ -1,6 +1,7 @@
 package otoroshi.next.models
 
 import akka.stream.Materializer
+import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -1288,10 +1289,9 @@ object NgRoute {
 }
 
 trait NgRouteDataStore extends BasicStore[NgRoute] {
-  def template(env: Env): NgRoute = {
-    // val default = NgRoute.default
+  def template(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env): NgRoute = {
     val default = NgRoute(
-      location = EntityLocation.default,
+      location = EntityLocation.ownEntityLocation(ctx),
       id = s"route_${IdGenerator.uuid}",
       name = "New route",
       description = "A new route",
@@ -1332,6 +1332,7 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
         )
       )
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
