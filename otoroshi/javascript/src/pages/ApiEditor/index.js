@@ -25,8 +25,11 @@ import moment from 'moment';
 import semver from 'semver'
 
 import { ApiStats } from './ApiStats';
-import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
+import { DraftEditorContainer, DraftStateDaemon, PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
+import { useSignalValue } from 'signals-react-safe';
+import { draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { clearResponses } from 'graphql-playground-react';
 
 const queryClient = new QueryClient({
     queries: {
@@ -83,12 +86,7 @@ export default function ApiEditor(props) {
     return <div className='editor'>
         <SidebarComponent {...props} />
 
-        {/* <DraftEditorContainer
-            entityId={this.props.extractKey(this.state.currentItem)}
-            value={this.state.currentItem}
-        />
-
-        <DraftStateDaemon
+        {/* <DraftStateDaemon
             value={this.state.currentItem}
             setValue={(currentItem) => this.setState({ currentItem })}
             updateEntityURL={() => {
@@ -127,7 +125,63 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis' component={Apis} props={props} />
             </Switch>
         </QueryClientProvider>
-    </div >
+    </div>
+}
+
+function useDraft() {
+    const params = useParams()
+
+    const [draft, setDraft] = useState()
+    const [draftWrapper, setDraftWrapper] = useState()
+
+    const draftClient = nextClient
+        .forEntityNext(nextClient.ENTITIES.DRAFTS);
+
+    const query = useQuery(['findDraftById', params.apiId], () => nextClient
+        .forEntityNext(nextClient.ENTITIES.DRAFTS)
+        .findById(params.apiId), {
+        retry: 0,
+        onSuccess: data => {
+            if (data.error) {
+                Promise.all([
+                    nextClient
+                        .forEntityNext(nextClient.ENTITIES.APIS)
+                        .findById(params.apiId),
+                    draftClient.template()
+                ])
+                    .then(([api, template]) => {
+                        const newDraft = {
+                            ...template,
+                            kind: api.id.split('_')[1],
+                            id: api.id,
+                            name: api.name,
+                            content: api,
+                        }
+                        draftClient.create(newDraft)
+                        setDraftWrapper(newDraft)
+                        setDraft(api)
+                    })
+            } else {
+                setDraftWrapper(data)
+                setDraft(data.content)
+            }
+        }
+    })
+
+    const updateDraft = () => {
+        return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+            .update({
+                ...draftWrapper,
+                content: draft
+            })
+    }
+
+    return {
+        draft,
+        setDraft,
+        updateDraft,
+        isLoading: query.isLoading
+    }
 }
 
 function Subscriptions(props) {
@@ -2035,17 +2089,9 @@ function NewVersionForm({ api, draft, owner, setState }) {
 }
 
 function Informations(props) {
-    const params = useParams()
     const history = useHistory()
 
-    const [value, setValue] = useState()
-
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
-        {
-            retry: 0,
-            onSuccess: setValue
-        })
+    const { draft, setDraft, isLoading, updateDraft } = useDraft()
 
     const schema = {
         location: {
@@ -2157,25 +2203,24 @@ function Informations(props) {
         },]
 
     const updateAPI = () => {
-        nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-            .update(value)
-            .then(() => history.push(`/apis/${value.id}`));
+        updateDraft()
+            .then(() => history.push(`/apis/${draft.id}`));
     }
 
     useEffect(() => {
-        if (rawAPI.data) {
-            props.setTitle(`${rawAPI?.data.name}`)
+        if (draft) {
+            props.setTitle(`${draft.name}`)
 
             return () => props.setTitle(undefined)
         }
-    }, [rawAPI.data])
+    }, [])
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
         <NgForm
             schema={schema}
             flow={flow}
-            value={value}
-            onChange={setValue}
+            value={draft}
+            onChange={setDraft}
         />
         <Button
             type="success"

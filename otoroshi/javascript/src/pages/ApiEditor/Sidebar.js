@@ -82,7 +82,7 @@ export default (props) => {
     const noneTabIsActive = !LINKS().find(r => r.tab === currentTab)
 
     const isActive = (tab) => {
-        if (tab === 'informations' && noneTabIsActive)
+        if (tab === 'overview' && noneTabIsActive)
             return 'active'
 
         return currentTab === tab ? 'active' : null

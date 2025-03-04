@@ -39,7 +39,6 @@ export const resetDraftSignal = (props = {}) => {
 const saveDraft = debounce(() => {
   if (draftSignal.value.initialized) {
     if (mergeData(draftSignal.value.rawDraft?.content, draftSignal.value.draft).changed) {
-      // console.log('save draft', draftSignal.value);
       const { draft, processCallback } = draftSignal.value;
 
       let newValue = draft;
