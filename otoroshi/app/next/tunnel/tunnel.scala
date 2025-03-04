@@ -548,11 +548,6 @@ class TunnelManager(env: Env) {
         case None          => {
           env.datastores.clusterStateDataStore.getMembers().flatMap { members =>
             val membersWithTunnel = members.filter(_.tunnels.contains(tunnelId))
-            println("## SEND REQUEST ##")
-            println(members.map(member => {
-              (member.id, member.name, member.tunnels)
-            }), tunnelId)
-            println("## END REQUEST ##")
             if (membersWithTunnel.isEmpty) {
               Results.NotFound(Json.obj("error" -> s"missing tunnel '${tunnelId}'")).vfuture
             } else {

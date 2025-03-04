@@ -4,7 +4,7 @@ import './index.scss'
 
 import { API_STATE } from './model';
 import Sidebar from './Sidebar';
-import { Link, Switch, Route, useParams, useHistory } from 'react-router-dom';
+import { Link, Switch, Route, useParams, useHistory, useLocation } from 'react-router-dom';
 import { Uptime } from '../../components/Status';
 import { Form, Table } from '../../components/inputs';
 import { v4 as uuid, v4 } from 'uuid';
@@ -13,16 +13,20 @@ import Loader from '../../components/Loader';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
-import { nextClient } from '../../services/BackOfficeServices';
+import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgCodeRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgCodeRenderer, NgDotsRenderer, NgForm, NgSelectRenderer, NgStringRenderer, NgTextRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
 import moment from 'moment';
+import semver from 'semver'
+
 import { ApiStats } from './ApiStats';
+import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
+import { mergeData } from '../../components/Drafts/Compare/utils';
 
 const queryClient = new QueryClient({
     queries: {
@@ -38,9 +42,60 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
     />
 );
 
+// const DraftAPI = () => {
+//     const params = useParams()
+
+//     const rawAPI = useQuery(["getAPI", params.apiId],
+//         () => nextClient
+//             .forEntityNext(nextClient.ENTITIES.APIS)
+//             .findById(params.apiId)
+//     )
+
+//     const api = rawAPI.data
+
+//     if (!api)
+//         return null
+
+//     return <>
+//         <DraftEditorContainer
+//             entityId={api.id}
+//             value={api}
+//         />
+//         <DraftStateDaemon
+//             value={api}
+//             setValue={(newValue) => {
+//                 console.log(newValue)
+//             }}
+//         />
+//     </>
+// }
+
+// const ApiRoute = ({ component: Component, ...rest }) => {
+//     return <Route
+//         {...rest}
+//         component={(routeProps) => <Component {...routeProps} {...rest.props}
+//             draft={<DraftAPI />}
+//         />}
+//     />
+// }
+
 export default function ApiEditor(props) {
     return <div className='editor'>
         <SidebarComponent {...props} />
+
+        {/* <DraftEditorContainer
+            entityId={this.props.extractKey(this.state.currentItem)}
+            value={this.state.currentItem}
+        />
+
+        <DraftStateDaemon
+            value={this.state.currentItem}
+            setValue={(currentItem) => this.setState({ currentItem })}
+            updateEntityURL={() => {
+                updateEntityURLSignal.value = this.updateItemAndStay;
+            }}
+        /> */}
+
         <QueryClientProvider client={queryClient}>
             <Switch>
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
@@ -63,7 +118,11 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/backends/new' component={NewBackend} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/backends/:backendId/:action' component={EditBackend} props={props} />
 
+                <RouteWithProps exact path='/apis/:apiId/deployments' component={Deployments} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/deployments/new' component={NewDeployment} props={props} />
+
                 <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
+                <RouteWithProps path='/apis/:apiId/informations' component={Informations} props={props} />
                 <RouteWithProps path='/apis/:apiId' component={Dashboard} props={props} />
                 <RouteWithProps exact path='/apis' component={Apis} props={props} />
             </Switch>
@@ -251,6 +310,7 @@ function NewSubscription(props) {
     const history = useHistory()
 
     const [subscription, setSubscription] = useState()
+    const [error, setError] = useState()
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
@@ -329,7 +389,6 @@ function NewSubscription(props) {
     const updateSubscription = () => {
         const consumer = rawAPI.data.consumers.find(consumer => consumer.id === subscription.consumer_ref)
 
-        consumer.log(consumer)
         if (consumer.state === 'staging' || consumer.state === 'closed') {
             return alert('attention on est en staging')
         }
@@ -340,7 +399,18 @@ function NewSubscription(props) {
                 ...subscription,
                 api_ref: params.apiId
             })
-            .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
+            .then(res => {
+                if (res && res.error) {
+                    if (res.error.includes('wrong status')) {
+                        setError("You can't subscribe to an unpublished consumer")
+                    } else {
+                        setError(res.error)
+                    }
+                    throw res.error
+                } else {
+                    history.push(`/apis/${params.apiId}/subscriptions`)
+                }
+            })
     }
 
     return <Loader loading={rawAPI.isLoading || templatesQuery.isLoading}>
@@ -353,7 +423,21 @@ function NewSubscription(props) {
                 value={subscription}
                 schema={schema}
                 flow={flow}
-                onChange={setSubscription} />
+                onChange={newSub => {
+                    setSubscription(newSub)
+                    setError(undefined)
+                }} />
+
+            {error && <div
+                className="mt-3 p-3"
+                style={{
+                    borderLeft: '2px solid #D5443F',
+                    background: '#D5443F',
+                    color: 'var(--text)',
+                    borderRadius: '.25rem'
+                }}>
+                {error}
+            </div>}
             <FeedbackButton
                 type="success"
                 className="d-flex ms-auto mt-3"
@@ -466,21 +550,21 @@ function RouteDesigner(props) {
         {
             type: 'group',
             collapsable: true,
-            collapsed: true,
+            collapsed: false,
             name: 'Selected flow',
             fields: ['flow_ref'],
         },
         {
             type: 'group',
             collapsable: true,
-            collapsed: true,
+            collapsed: false,
             name: 'Backend configuration',
             fields: ['backend'],
         },
         {
             type: 'group',
             collapsable: true,
-            collapsed: true,
+            collapsed: false,
             name: 'Additional informations',
             fields: ['name'],
         }
@@ -679,7 +763,6 @@ function NewRoute(props) {
 
     return <Loader loading={rawAPI.isLoading || !schema || templatesQuery.isLoading}>
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
-
         <div style={{
             maxWidth: 640,
             margin: 'auto'
@@ -1301,10 +1384,143 @@ function EditBackend(props) {
     </Loader>
 }
 
+function Deployments(props) {
+    const history = useHistory()
+    const params = useParams()
+
+    const columns = [
+        {
+            title: 'Version',
+            filterId: 'version',
+            content: (item) => item.version,
+        },
+        {
+            title: 'Deployed At',
+            filterId: 'at',
+            content: (item) => moment(item.at).format('YYYY-MM-DD HH:mm:ss.SSS')
+        },
+        {
+            title: 'Owner',
+            filterId: 'owner',
+            content: (item) => item.owner
+        },
+    ];
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        retry: 0
+    })
+
+    useEffect(() => {
+        props.setTitle(`Deployments of ${rawAPI.data?.name}`)
+        return () => props.setTitle('')
+    }, [rawAPI.data])
+
+    const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
+
+    return <Loader loading={rawAPI.isLoading}>
+        <Table
+            navigateTo={item =>
+                window.wizard('Version', () => <PublisDraftModalContent
+                    draft={item}
+                    currentItem={item} />, {
+                    noCancel: true,
+                    okLabel: 'Close'
+                })
+            }
+            parentProps={{ params }}
+            selfUrl="deployments"
+            defaultTitle="Deployment"
+            itemName="Deployment"
+            columns={columns}
+            fetchTemplate={client.template}
+            fetchItems={() => Promise.resolve(rawAPI.data?.deployments || [])}
+            defaultSort="version"
+            defaultSortDesc="true"
+            showActions={false}
+            extractKey={(item) => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+        />
+    </Loader>
+}
+
+function NewDeployment(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [backend, setBackend] = useState()
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+
+    const saveBackend = () => {
+        return nextClient
+            .forEntityNext(nextClient.ENTITIES.APIS)
+            .update({
+                ...rawAPI.data,
+                backends: [...rawAPI.data.backends, backend]
+            })
+            .then(() => history.push(`/apis/${params.apiId}/backends`))
+    }
+
+    const templateQuery = useQuery(["getTemplate"],
+        nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
+        retry: 0,
+        onSuccess: (data) => setBackend({
+            id: v4(),
+            name: 'My new backend',
+            ...data.backend
+        })
+    });
+
+    return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
+
+        <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
+            <FeedbackButton
+                type="success"
+                className="ms-2 mb-1"
+                onPress={saveBackend}
+                text="Create"
+            />
+        </PageTitle>
+
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <BackendForm
+                state={{
+                    form: {
+                        schema: {
+                            name: {
+                                label: 'Name',
+                                type: 'string',
+                                placeholder: 'New backend'
+                            },
+                            backend: {
+                                type: 'form',
+                                schema: NgBackend.schema,
+                                flow: NgBackend.flow
+                            }
+                        },
+                        flow: ['name', 'backend'],
+                        value: backend
+                    }
+                }}
+                onChange={setBackend} />
+        </div>
+    </Loader>
+}
+
 function SidebarComponent(props) {
     const params = useParams()
+    const location = useLocation()
+
     useEffect(() => {
-        props.setSidebarContent(<Sidebar params={params} />);
+        if (location.pathname !== '/apis') {
+            props.setSidebarContent(<Sidebar params={params} />);
+        }
         return () => props.setSidebarContent(null)
     }, [params])
 
@@ -1412,20 +1628,29 @@ function NewAPI(props) {
             type: 'array',
             props: { label: 'tags' },
         },
+        capture: {
+            type: 'bool',
+            label: 'Capture route traffic',
+            props: {
+                labelColumn: 3,
+            },
+        },
         debug_flow: {
             type: 'bool',
-            props: { label: 'Debug' },
+            label: 'Debug the route',
+            props: {
+                labelColumn: 3,
+            },
         },
         export_reporting: {
             type: 'bool',
-            props: { label: 'Export reports' },
+            label: 'Export reporting',
+            props: {
+                labelColumn: 3,
+            },
         },
-        capture: {
-            type: 'bool',
-            props: { label: 'Capture traffic' },
-        }
     }
-    const editionFlow = ['location', 'id', 'name', 'description', 'metadata', 'tags', 'debug_flow', 'export_reporting', 'capture']
+
     const flow = ['location', 'name', 'description']
 
     const createApi = () => {
@@ -1465,13 +1690,13 @@ function Apis(props) {
     })
     const columns = [
         {
+            title: 'Name',
+            content: item => item.name
+        },
+        {
             title: 'Id',
             content: item => item.id
         },
-        {
-            title: 'Name',
-            content: item => item.name
-        }
     ];
 
     const fetchItems = (paginationState) => nextClient
@@ -1695,15 +1920,275 @@ function Flows(props) {
     </Loader>
 }
 
-function Dashboard(props) {
+function NewVersionForm({ api, draft, owner, setState }) {
+
+    const [deployment, setDeployment] = useState({
+        location: {},
+        apiRef: api.id,
+        owner,
+        at: Date.now(),
+        apiDefinition: draft.content,
+        draftId: draft.id,
+        action: 'patch',
+        version: semver.inc(api.version, 'patch')
+    })
+
+    const schema = {
+        location: {
+            type: 'location'
+        },
+        version: {
+            type: 'string',
+            label: 'Version'
+        },
+        action: {
+            renderer: (props) => {
+                const version = props.rootValue?.version
+
+                const nextVersions = {
+                    [semver.inc(api.version, 'patch')]: 'patch',
+                    [semver.inc(api.version, 'minor')]: 'minor',
+                    [semver.inc(api.version, 'major')]: 'major'
+                }
+
+                return <div>
+                    <NgDotsRenderer
+                        value={nextVersions[version]}
+                        options={['patch', 'minor', 'major']}
+                        schema={{
+                            props: {
+                                label: 'Action'
+                            }
+                        }}
+                        onChange={action => {
+                            if (action === 'patch') {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    version: semver.inc(api.version, 'patch')
+                                })
+                            } else if (action === 'minor') {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    version: semver.inc(api.version, 'minor')
+                                })
+                            } else {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    version: semver.inc(api.version, 'major')
+                                })
+                            }
+                        }}
+                    />
+                </div>
+            }
+        },
+        apiRef: {
+            type: 'string',
+            props: {
+                readOnly: true
+            }
+        },
+        owner: {
+            type: 'string',
+            label: 'Owner'
+        },
+        at: {
+            type: 'datetime'
+        },
+        apiDefinition: {
+            renderer: () => {
+                return <PublisDraftModalContent
+                    draft={draft.content}
+                    currentItem={api} />
+            }
+        }
+    }
+
+    const { changed, result } = mergeData(api, draft.content)
+
+    const flow = [
+        {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['version', 'action', 'owner']
+        },
+        {
+            type: 'group',
+            name: !changed ? 'No changes' : `${result.length} elements has changed`,
+            collapsed: true,
+            fields: ['apiDefinition'],
+        }
+    ]
+
+    return <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 820 }}>
+        <NgForm
+            value={deployment}
+            onChange={data => {
+                setDeployment(data)
+                setState(data)
+            }}
+            schema={schema}
+            flow={flow} />
+    </div>
+
+}
+
+function Informations(props) {
     const params = useParams()
     const history = useHistory()
 
-    useEffect(() => {
-        props.setTitle("Dashboard")
+    const [value, setValue] = useState()
 
-        return () => props.setTitle(undefined)
-    }, [])
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
+        {
+            retry: 0,
+            onSuccess: setValue
+        })
+
+    const schema = {
+        location: {
+            type: 'location',
+            props: {},
+        },
+        id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
+        name: {
+            type: 'string',
+            props: { label: 'Name' },
+        },
+        description: {
+            type: 'string',
+            props: { label: 'Description' },
+        },
+        metadata: {
+            type: 'object',
+            label: 'Metadata'
+        },
+        tags: {
+            type: 'array',
+            label: 'Tags'
+        },
+        capture: {
+            type: 'bool',
+            label: 'Capture route traffic',
+            props: {
+                labelColumn: 3,
+            },
+        },
+        debug_flow: {
+            type: 'bool',
+            label: 'Debug the route',
+            props: {
+                labelColumn: 3,
+            },
+        },
+        export_reporting: {
+            type: 'bool',
+            label: 'Export reporting',
+            props: {
+                labelColumn: 3,
+            },
+        },
+        danger_zone: {
+            renderer: (inputProps) => {
+                return (
+                    <div className="row mb-3">
+                        <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+                            Delete this API
+                        </label>
+                        <div className="col-sm-10">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <p>Once you delete an API, there is no going back. Please be certain.</p>
+                                <Button
+                                    style={{ width: 'fit-content' }}
+                                    disabled={inputProps.rootValue?.id === props.globalEnv.adminApiId} // TODO
+                                    type="danger"
+                                    onClick={() => {
+                                        window
+                                            .newConfirm('Are you sure you want to delete this entity ?')
+                                            .then((ok) => {
+                                                if (ok) {
+                                                    nextClient
+                                                        .forEntityNext(nextClient.ENTITIES.APIS)
+                                                        .deleteById(inputProps.rootValue?.id)
+                                                        .then(() => {
+                                                            history.push('/');
+                                                        });
+                                                }
+                                            });
+                                    }}
+                                >
+                                    Delete this API
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            },
+        },
+    }
+    const flow = ['location',
+        {
+            type: 'group',
+            name: 'Route',
+            fields: [
+                'name',
+                'description',
+            ],
+        },
+        {
+            type: 'group',
+            name: 'Misc.',
+            collapsed: true,
+            fields: ['tags', 'metadata',
+                {
+                    type: 'grid',
+                    name: 'Flags',
+                    fields: ['debug_flow', 'export_reporting', 'capture'],
+                }
+            ],
+        },
+        {
+            type: 'group',
+            name: 'Danger zone',
+            collapsed: true,
+            fields: ['danger_zone'],
+        },]
+
+    const updateAPI = () => {
+        nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+            .update(value)
+            .then(() => history.push(`/apis/${value.id}`));
+    }
+
+    useEffect(() => {
+        if (rawAPI.data) {
+            props.setTitle(`${rawAPI?.data.name}`)
+
+            return () => props.setTitle(undefined)
+        }
+    }, [rawAPI.data])
+
+    return <Loader loading={rawAPI.isLoading}>
+        <NgForm
+            schema={schema}
+            flow={flow}
+            value={value}
+            onChange={setValue}
+        />
+        <Button
+            type="success"
+            className="btn-sm ms-auto d-flex"
+            onClick={updateAPI}
+            text="Update"
+        />
+    </Loader>
+}
+
+function Dashboard(props) {
+    const params = useParams()
+    const history = useHistory()
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
@@ -1711,7 +2196,66 @@ function Dashboard(props) {
             retry: 0
         })
 
+    const rawDraftAPI = useQuery(["getDraft", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(params.apiId),
+        {
+            retry: 0
+        })
+
     const api = rawAPI.data
+    const draft = rawDraftAPI.data
+
+    useEffect(() => {
+        if (!rawAPI.isLoading && !rawDraftAPI.isLoading) {
+            props.setTitle(<div className="page-header_title d-flex align-item-center justify-content-between mb-3">
+                <div className="d-flex">
+                    <h3 className="m-0 align-self-center">
+                        Version {api.version}
+                    </h3>
+                </div>
+                <div className="d-flex align-item-center justify-content-between">
+                    {/* <NgSelectRenderer
+                        value={api.version}
+                        ngOptions={{
+                            spread: true,
+                        }}
+                        onChange={newVersion => {
+                            console.log(newVersion)
+                        }}
+                        options={api.versions?.length > 0 ? api.versions : ['0.0.1']} /> */}
+                    <Button
+                        text="Publish new version"
+                        className="btn-sm mx-2"
+                        type="primaryColor"
+                        style={{
+                            borderColor: 'var(--color-primary)',
+                        }}
+                        onClick={() => {
+                            window
+                                .wizard('Create a new version', (ok, cancel, state, setState) => {
+                                    return <NewVersionForm api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
+                                }, {
+                                    style: { width: '100%' },
+                                    noCancel: false,
+                                    okClassName: 'ms-2',
+                                    okLabel: 'I want to publish this API',
+                                })
+                                .then(deployment => {
+                                    if (deployment) {
+                                        fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                                            .then(res => {
+                                                console.log(res)
+                                            })
+                                    }
+                                });
+                        }}
+                    />
+                </div>
+            </div>)
+        }
+
+        return () => props.setTitle(undefined)
+    }, [api, draft])
 
     const hasCreateFlow = api && api.flows.length > 0
     const hasCreateRoute = api && api.routes.length > 0
@@ -1722,110 +2266,112 @@ function Dashboard(props) {
     return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
         <Loader loading={rawAPI.isLoading}>
 
-            {api && <div className='d-flex gap-3'>
-                <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
-                    {showGettingStarted && <ContainerBlock full>
-                        <SectionHeader text="Getting Started" />
+            {api && <>
+                <div className='d-flex gap-3'>
+                    <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
+                        {showGettingStarted && <ContainerBlock full>
+                            <SectionHeader text="Getting Started" />
 
-                        {!isPublished && !hasCreateConsumer && <Card
-                            onClick={() => publishAPI(api)}
-                            title="Deploy your API"
-                            description={<>
-                                Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => publishAPI(api)}
-                                text="Start your API" />}
-                        />}
+                            {!isPublished && !hasCreateConsumer && <Card
+                                onClick={() => publishAPI(api)}
+                                title="Deploy your API"
+                                description={<>
+                                    Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
+                                </>}
+                                button={<FeedbackButton type="primaryColor"
+                                    className="ms-auto d-flex"
+                                    onPress={() => publishAPI(api)}
+                                    text="Start your API" />}
+                            />}
 
-                        {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
-                            to={`/apis/${params.apiId}/consumers/new`}
-                            title="Create your first API consumer"
-                            description={<>
-                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
+                            {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
+                                to={`/apis/${params.apiId}/consumers/new`}
+                                title="Create your first API consumer"
+                                description={<>
+                                    <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
+                                </>}
+                                button={<FeedbackButton type="primaryColor"
+                                    className="ms-auto d-flex"
+                                    onPress={() => { }}
+                                    text="Create" />}
+                            />}
 
-                        {hasCreateFlow && !hasCreateRoute && <Card
-                            to={`/apis/${params.apiId}/routes/new`}
-                            title="Create your first route"
-                            description={<>
-                                Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
+                            {hasCreateFlow && !hasCreateRoute && <Card
+                                to={`/apis/${params.apiId}/routes/new`}
+                                title="Create your first route"
+                                description={<>
+                                    Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
+                                </>}
+                                button={<FeedbackButton type="primaryColor"
+                                    className="ms-auto d-flex"
+                                    onPress={() => { }}
+                                    text="Create" />}
+                            />}
 
-                        {!hasCreateFlow && <Card
-                            to={`/apis/${params.apiId}/flows/new`}
-                            title="Create your first flow of plugins"
-                            description={<>
-                                Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
-                    </ContainerBlock>}
-                    {api.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
-                        <APIHeader api={api} />
-                        <ApiStats url={`/bo/api/proxy/apis/api.otoroshi.io/v1/apis/${api.id}/live?every=2000`} />
+                            {!hasCreateFlow && <Card
+                                to={`/apis/${params.apiId}/flows/new`}
+                                title="Create your first flow of plugins"
+                                description={<>
+                                    Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
+                                </>}
+                                button={<FeedbackButton type="primaryColor"
+                                    className="ms-auto d-flex"
+                                    onPress={() => { }}
+                                    text="Create" />}
+                            />}
+                        </ContainerBlock>}
+                        {api.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
+                            <APIHeader api={api} />
+                            <ApiStats url={`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${api.id}/live?every=2000`} />
 
-                        <Uptime
-                            health={api.health?.today}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={api.health?.yesterday}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={api.health?.nMinus2}
-                            stopTheCountUnknownStatus={false}
-                        />
-                    </ContainerBlock>}
-                    {hasCreateConsumer && <ContainerBlock full>
-                        <SectionHeader
-                            text="Subscriptions"
-                            description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
-                            actions={<Button
-                                type="primaryColor"
-                                text="Subscribe"
-                                className='btn-sm'
-                                onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
+                            <Uptime
+                                health={api.health?.today}
+                                stopTheCountUnknownStatus={false}
+                            />
+                            <Uptime
+                                health={api.health?.yesterday}
+                                stopTheCountUnknownStatus={false}
+                            />
+                            <Uptime
+                                health={api.health?.nMinus2}
+                                stopTheCountUnknownStatus={false}
+                            />
+                        </ContainerBlock>}
+                        {hasCreateConsumer && <ContainerBlock full>
+                            <SectionHeader
+                                text="Subscriptions"
+                                description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
+                                actions={<Button
+                                    type="primaryColor"
+                                    text="Subscribe"
+                                    className='btn-sm'
+                                    onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
 
-                        <SubscriptionsView api={api} />
-                    </ContainerBlock>}
+                            <SubscriptionsView api={api} />
+                        </ContainerBlock>}
 
-                    {hasCreateConsumer && <ContainerBlock full>
-                        <SectionHeader text="API Consumers"
-                            description={api.consumers.length <= 0 ? 'API consumers will appear here' : ''}
-                            actions={<Button
-                                type="primaryColor"
-                                text="New Consumer"
-                                className='btn-sm'
-                                onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
+                        {hasCreateConsumer && <ContainerBlock full>
+                            <SectionHeader text="API Consumers"
+                                description={api.consumers.length <= 0 ? 'API consumers will appear here' : ''}
+                                actions={<Button
+                                    type="primaryColor"
+                                    text="New Consumer"
+                                    className='btn-sm'
+                                    onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
 
-                        <ApiConsumersView api={api} />
+                            <ApiConsumersView api={api} />
+                        </ContainerBlock>}
+                    </div>
+                    {api.flows.length > 0 && api.routes.length > 0 && <ContainerBlock>
+                        <SectionHeader text="Build your API" description="Manage entities for this API" />
+                        <Entities>
+                            <FlowsCard flows={api.flows} />
+                            <BackendsCard backends={api.backends} />
+                            <RoutesCard routes={api.routes} />
+                        </Entities>
                     </ContainerBlock>}
                 </div>
-                {api.flows.length > 0 && api.routes.length > 0 && <ContainerBlock>
-                    <SectionHeader text="Build your API" description="Manage entities for this API" />
-                    <Entities>
-                        <FlowsCard flows={api.flows} />
-                        <BackendsCard backends={api.backends} />
-                        <RoutesCard routes={api.routes} />
-                    </Entities>
-                </ContainerBlock>}
-            </div>}
+            </>}
         </Loader>
     </div>
 }

@@ -13,6 +13,13 @@ const LINKS = (id) =>
             tooltip: { ...createTooltip(`Show overview tab`) },
         },
         {
+            to: `/apis/${id}/informations`,
+            icon: 'fa-file-alt',
+            title: 'Informations',
+            tab: 'informations',
+            tooltip: { ...createTooltip(`Show informations tab`) },
+        },
+        {
             to: `/apis/${id}/routes`,
             icon: 'fa-road',
             title: 'Routes',

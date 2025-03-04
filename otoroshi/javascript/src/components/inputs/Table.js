@@ -241,23 +241,23 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
 }
 
 class TableComponent extends Component {
-  static propTypes = {
-    itemName: PropTypes.string.isRequired,
-    columns: PropTypes.array.isRequired,
-    fetchItems: PropTypes.func.isRequired,
-    updateItem: PropTypes.func,
-    deleteItem: PropTypes.func,
-    createItem: PropTypes.func,
-    navigateTo: PropTypes.func,
-    stayAfterSave: PropTypes.bool.isRequired,
-    showActions: PropTypes.bool.isRequired,
-    showLink: PropTypes.bool.isRequired,
-    formSchema: PropTypes.object,
-    formFlow: PropTypes.array,
-    extractKey: PropTypes.func.isRequired,
-    defaultValue: PropTypes.func,
-    rowNavigation: PropTypes.bool.isRequired,
-  };
+  // static propTypes = {
+  //   itemName: PropTypes.string.isRequired,
+  //   columns: PropTypes.array.isRequired,
+  //   fetchItems: PropTypes.func.isRequired,
+  //   updateItem: PropTypes.func,
+  //   deleteItem: PropTypes.func,
+  //   createItem: PropTypes.func,
+  //   navigateTo: PropTypes.func,
+  //   stayAfterSave: PropTypes.bool.isRequired,
+  //   showActions: PropTypes.bool.isRequired,
+  //   showLink: PropTypes.bool.isRequired,
+  //   formSchema: PropTypes.object,
+  //   formFlow: PropTypes.array,
+  //   extractKey: PropTypes.func.isRequired,
+  //   defaultValue: PropTypes.func,
+  //   rowNavigation: PropTypes.bool.isRequired,
+  // };
 
   static defaultProps = {
     rowNavigation: false,

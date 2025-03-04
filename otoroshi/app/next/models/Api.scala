@@ -141,7 +141,8 @@ case class ApiDeployment(
     apiRef: String,
     owner: String,
     at: DateTime,
-    apiDefinition: JsValue
+    apiDefinition: JsValue,
+    version: String
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = ApiDeployment._fmt.writes(this)
@@ -155,12 +156,13 @@ object ApiDeployment {
   val _fmt: Format[ApiDeployment] = new Format[ApiDeployment] {
     override def reads(json: JsValue): JsResult[ApiDeployment] = Try {
       ApiDeployment(
-        location = json.select("location").as(EntityLocation.format),
-        id = json.select("id").asString,
+        location = json.select("location").asOpt(EntityLocation.format).getOrElse(EntityLocation.default),
+        id = json.select("id").asOptString.getOrElse(IdGenerator.namedId("api_deployment", IdGenerator.uuid)),
         apiRef = json.select("apiRef").asString,
         owner = json.select("owner").asString,
         at = json.select("at").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
-        apiDefinition = json.select("apiDefinition").as[JsValue]
+        apiDefinition = json.select("apiDefinition").as[JsValue],
+        version = json.select("version").asOptString.getOrElse("0.0.1"),
       )
     } match {
       case Failure(ex) =>
@@ -174,7 +176,8 @@ object ApiDeployment {
       "apiRef"      -> o.apiRef,
       "owner"       -> o.owner,
       "at"          -> o.at.getMillis,
-      "apiDefinition" -> o.apiDefinition
+      "apiDefinition" -> o.apiDefinition,
+      "version"     -> o.version
     )
   }
 }
@@ -700,7 +703,7 @@ object ApiBackendClient {
         client = json.select("client").as(NgClientConfig.format)
       )
     } match {
-      case Failure(ex)    =>
+      case Failure(ex) =>
         ex.printStackTrace()
         JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
@@ -722,7 +725,7 @@ case class Api(
     metadata: Map[String, String],
     version: String,
     // or versions: Seq[ApiVersion] with ApiVersion being the following ?
-    // versions: Seq[ApiVersion],
+     versions: Seq[String] = Seq("0.0.1"),
     //// ApiVersion
     debugFlow: Boolean,
     capture: Boolean,
@@ -896,7 +899,8 @@ object Api {
       "clients"           -> o.clients.map(ApiBackendClient._fmt.writes),
       "documentation"     -> o.documentation.map(ApiDocumentation._fmt.writes),
       "consumers"         -> o.consumers.map(ApiConsumer._fmt.writes),
-      "deployments"       -> o.deployments.map(ApiDeployment._fmt.writes)
+      "deployments"       -> o.deployments.map(ApiDeployment._fmt.writes),
+      "versions"          -> o.versions
     )
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
@@ -906,7 +910,7 @@ object Api {
         description = (json \ "description").asString,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        version = (json \ "version").asOptString.getOrElse("1.0.0"),
+        version = (json \ "version").asOptString.getOrElse("0.0.1"),
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
@@ -949,7 +953,10 @@ object Api {
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        versions    = json.select("versions")
+          .asOpt[Seq[String]]
+          .getOrElse(Seq.empty),
       )
     } match {
       case Failure(ex)    =>
@@ -969,7 +976,7 @@ trait ApiDataStore extends BasicStore[Api] {
       description = "New API description",
       metadata = Map.empty,
       tags = Seq.empty,
-      version = "1.0.0",
+      version = "0.0.1",
       debugFlow = false,
       capture = false,
       exportReporting = false,

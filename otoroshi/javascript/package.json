@@ -62,6 +62,7 @@
     "react-table": "6.11.4",
     "react-tooltip": "5.28.0",
     "recharts": "1.8.5",
+    "semver": "^7.7.1",
     "set-value": "4.0.1",
     "showdown": "1.9.1",
     "signals-react-safe": "^1.1.2",

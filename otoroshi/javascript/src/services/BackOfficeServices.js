@@ -2098,14 +2098,14 @@ const fetchWrapper = (url, method = 'GET', body) => {
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 };
-const fetchWrapperNext = (url, method = 'GET', body) => {
+export const fetchWrapperNext = (url, method = 'GET', body, group = 'any') => {
   const headers = {
     Accept: 'application/json',
   };
   if (body) {
     headers['Content-Type'] = 'application/json';
   }
-  return fetch(`/bo/api/proxy/apis/any/v1${url}`, {
+  return fetch(`/bo/api/proxy/apis/${group}/v1${url}`, {
     method,
     credentials: 'include',
     headers: headers,

@@ -615,13 +615,14 @@ GET     /apis/cluster/node/health                             otoroshi.api.Gener
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 
-GET     /apis/api.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
-GET     /apis/api.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
-GET     /apis/api.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)
+GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
+GET     /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
+GET     /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)
 
-GET     /apis/api.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
-GET     /apis/api.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)
-GET     /apis/api.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_close                otoroshi.next.controllers.adminapi.ApisController.closeConsumer(apiId, consumerId)
+POST    /apis/apis.otoroshi.io/v1/apis/:apiId/deployments                                 otoroshi.next.controllers.adminapi.ApisController.createNewVersion(apiId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_close                otoroshi.next.controllers.adminapi.ApisController.closeConsumer(apiId, consumerId)
 
 # New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)

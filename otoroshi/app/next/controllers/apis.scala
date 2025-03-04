@@ -2,14 +2,15 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import next.models.{Api, ApiConsumerStatus, ApiPublished, ApiRemoved, ApiState}
+import akka.util.ByteString
+import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiRemoved, ApiState}
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}
 import otoroshi.next.controllers.Stats
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -265,6 +266,51 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         )
 
         updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Closed)
+      }
+    }
+  }
+
+  def createNewVersion(apiId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to create a new API",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId" -> apiId
+            )
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None => Results.NotFound.future
+          case Some(api) =>
+            ApiDeployment._fmt.reads(ctx.request.body) match {
+              case JsError(_) => Results.BadRequest(Json.obj("error" -> "bad entity")).future
+              case JsSuccess(deployment, _) =>
+                val updatedApi = api.copy(
+                  versions = api.versions :+ deployment.version,
+                  deployments = api.deployments :+ deployment.copy(location = api.location),
+                  version = deployment.version
+                )
+                env.datastores.apiDataStore.set(updatedApi)
+                  .map(result =>
+                    if (result) {
+                      ctx.request.body.select("draftId").asOptString
+                        .map(draftId => env.datastores.draftsDataStore.delete(draftId))
+                      Results.Created(updatedApi.json)
+                    } else
+                      Results.BadRequest(Json.obj("error" -> "something wrong happened"))
+                  )
+            }
+        }
       }
     }
   }

@@ -186,13 +186,15 @@ export const DraftStateDaemon = withRouter(
   }
 );
 
-function PublisDraftModalContent() {
+export function PublisDraftModalContent({ draft, currentItem }) {
   const draftContext = useSignalValue(draftSignal);
   const entityContent = useSignalValue(entityContentSignal);
 
   return (
     <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
-      <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
+      <JsonViewCompare
+        oldData={currentItem || entityContent}
+        newData={draft || draftContext.draft} />
     </div>
   );
 }

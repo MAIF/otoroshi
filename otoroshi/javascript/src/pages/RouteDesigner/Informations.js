@@ -311,7 +311,7 @@ export const Informations = forwardRef(
                   <p>Once you delete a route, there is no going back. Please be certain.</p>
                   <Button
                     style={{ width: 'fit-content' }}
-                    // disabled={id === props.globalEnv.adminApiId} // TODO
+                    disabled={id === props.globalEnv.adminApiId}
                     type="danger"
                     onClick={() => {
                       window
