@@ -92,13 +92,9 @@ export default (props) => {
         return currentTab === tab ? 'active' : null
     };
 
-    // if (location.pathname.endsWith('/new')) return null;
-
     const isOnApisHome = location.pathname.endsWith("/apis")
 
     const version = useSignalValue(signalVersion)
-
-    console.log(version)
 
     return (
         <div style={{

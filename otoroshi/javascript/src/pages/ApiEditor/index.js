@@ -27,7 +27,7 @@ import semver from 'semver'
 import { ApiStats } from './ApiStats';
 import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
-import { effect } from 'signals-react-safe';
+import { effect, useSignalValue } from 'signals-react-safe';
 import { signalVersion } from './VersionSignal';
 
 const queryClient = new QueryClient({
@@ -70,7 +70,6 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/backends/:backendId/:action' component={EditBackend} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/deployments' component={Deployments} props={props} />
-                <RouteWithProps exact path='/apis/:apiId/deployments/new' component={NewDeployment} props={props} />
 
                 <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
                 <RouteWithProps path='/apis/:apiId/informations' component={Informations} props={props} />
@@ -81,60 +80,79 @@ export default function ApiEditor(props) {
     </div>
 }
 
-function useDraft() {
+function useDraftOfAPI() {
     const params = useParams()
+    const version = useSignalValue(signalVersion)
 
     const [draft, setDraft] = useState()
+    const [api, setAPI] = useState()
+
     const [draftWrapper, setDraftWrapper] = useState()
 
     const draftClient = nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS);
 
+    const isPublished = !version || version === 'Published'
+
+    const rawAPI = useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        enabled: isPublished,
+        onSuccess: setAPI
+    })
+
     const query = useQuery(['findDraftById', params.apiId], () => nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS)
-        .findById(params.apiId), {
-        retry: 0,
-        onSuccess: data => {
-            if (data.error) {
-                Promise.all([
-                    nextClient
-                        .forEntityNext(nextClient.ENTITIES.APIS)
-                        .findById(params.apiId),
-                    draftClient.template()
-                ])
-                    .then(([api, template]) => {
-                        const newDraft = {
-                            ...template,
-                            kind: api.id.split('_')[1],
-                            id: api.id,
-                            name: api.name,
-                            content: api,
-                        }
-                        draftClient.create(newDraft)
-                        setDraftWrapper(newDraft)
-                        setDraft(api)
-                    })
-            } else {
-                setDraftWrapper(data)
-                setDraft(data.content)
+        .findById(params.apiId),
+        {
+            retry: 0,
+            enabled: version === 'Draft',
+            onSuccess: data => {
+                if (data.error) {
+                    Promise.all([
+                        nextClient
+                            .forEntityNext(nextClient.ENTITIES.APIS)
+                            .findById(params.apiId),
+                        draftClient.template()
+                    ])
+                        .then(([api, template]) => {
+                            const newDraft = {
+                                ...template,
+                                kind: api.id.split('_')[1],
+                                id: api.id,
+                                name: api.name,
+                                content: api,
+                            }
+                            draftClient.create(newDraft)
+                            setDraftWrapper(newDraft)
+                            setDraft(api)
+                        })
+                } else {
+                    setDraftWrapper(data)
+                    setDraft(data.content)
+                }
             }
-        }
-    })
+        })
 
     const updateDraft = (optDraft) => {
         return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
             .update({
                 ...draftWrapper,
-                content: optDraft
+                content: optDraft ? optDraft : draft
             })
-            .then(() => setDraft(optDraft))
+            .then(() => setDraft(optDraft ? optDraft : draft))
+    }
+
+    const updateAPI = (optAPI) => {
+        return nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+            .update(optAPI ? optAPI : api)
+            .then(() => setAPI(optAPI ? optAPI : api))
     }
 
     return {
-        draft,
-        setDraft,
-        updateDraft,
-        isLoading: query.isLoading
+        item: isPublished ? api : draft,
+        setItem: isPublished ? setAPI : setDraft,
+        updateItem: isPublished ? updateAPI : updateDraft,
+        isLoading: isPublished ? rawAPI.isLoading : query.isLoading
     }
 }
 
@@ -215,9 +233,7 @@ function SubscriptionDesigner(props) {
 
     const [subscription, setSubscription] = useState()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId)
-    )
+    const { item, isLoading } = useDraftOfAPI()
 
     const rawSubscription = useQuery(["getSubscription", params.subscriptionId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).findById(params.subscriptionId),
@@ -227,7 +243,7 @@ function SubscriptionDesigner(props) {
     )
 
     // prevent schema to have a empty consumers list
-    if (rawAPI.isLoading || !subscription)
+    if (isLoading || !subscription)
         return null
 
     const schema = {
@@ -254,7 +270,7 @@ function SubscriptionDesigner(props) {
             type: 'select',
             label: 'Consumer',
             props: {
-                options: rawAPI.data.consumers,
+                options: item.consumers,
                 optionsTransformer: {
                     value: 'id',
                     label: 'name'
@@ -291,7 +307,7 @@ function SubscriptionDesigner(props) {
             .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
     }
 
-    return <Loader loading={rawAPI.isLoading || rawSubscription.isLoading}>
+    return <Loader loading={isLoading || rawSubscription.isLoading}>
         <PageTitle title={subscription.name} {...props}>
             <FeedbackButton
                 type="success"
@@ -320,22 +336,21 @@ function NewSubscription(props) {
     const [subscription, setSubscription] = useState()
     const [error, setError] = useState()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+    const { item, isLoading } = useDraftOfAPI()
 
     const templatesQuery = useQuery(["getTemplate"],
         () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
         {
-            enabled: !!rawAPI.data,
+            enabled: !!item,
             onSuccess: sub => setSubscription({
                 ...sub,
-                consumer_ref: rawAPI.data.consumers?.length > 0 ? rawAPI.data.consumers[0]?.id : undefined
+                consumer_ref: item.consumers?.length > 0 ? item.consumers[0]?.id : undefined
             })
         }
     )
 
     // prevent schema to have a empty consumers list
-    if (rawAPI.isLoading || !subscription)
+    if (isLoading || !subscription)
         return null
 
     const schema = {
@@ -362,7 +377,7 @@ function NewSubscription(props) {
             type: 'select',
             label: 'Consumer',
             props: {
-                options: rawAPI.data.consumers,
+                options: item.consumers,
                 optionsTransformer: consumers => {
                     return consumers.map(consumer => ({
                         value: consumer.id,
@@ -395,7 +410,7 @@ function NewSubscription(props) {
     ]
 
     const updateSubscription = () => {
-        const consumer = rawAPI.data.consumers.find(consumer => consumer.id === subscription.consumer_ref)
+        const consumer = item.consumers.find(consumer => consumer.id === subscription.consumer_ref)
 
         if (consumer.state === 'staging' || consumer.state === 'closed') {
             return alert('attention on est en staging')
@@ -421,7 +436,7 @@ function NewSubscription(props) {
             })
     }
 
-    return <Loader loading={rawAPI.isLoading || templatesQuery.isLoading}>
+    return <Loader loading={isLoading || templatesQuery.isLoading}>
         <PageTitle title={subscription.name} {...props} />
         <div style={{
             maxWidth: 640,
@@ -460,8 +475,10 @@ function RouteDesigner(props) {
     const params = useParams()
     const history = useHistory()
 
+    const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
-    const [route, setRoute] = useState({})
+
+    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
 
     const [backends, setBackends] = useState([])
 
@@ -472,12 +489,9 @@ function RouteDesigner(props) {
             onSuccess: setBackends
         })
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0,
-        enabled: backendsQuery.data !== undefined,
-        onSuccess: data => {
-            setRoute(data.routes.find(route => route.id === params.routeId))
+    useEffect(() => {
+        if (item && backendsQuery.data !== undefined) {
+            setRoute(item.routes.find(route => route.id === params.routeId))
             setSchema({
                 name: {
                     type: 'string',
@@ -500,7 +514,7 @@ function RouteDesigner(props) {
                     type: 'select',
                     label: 'Flow ID',
                     props: {
-                        options: data.flows,
+                        options: item.flows,
                         optionsTransformer: {
                             label: 'name',
                             value: 'id',
@@ -511,7 +525,7 @@ function RouteDesigner(props) {
                     type: 'select',
                     label: 'Backend',
                     props: {
-                        options: [...data.backends, ...backends],
+                        options: [...item.backends, ...backends],
                         optionsTransformer: {
                             value: 'id',
                             label: 'name'
@@ -546,7 +560,7 @@ function RouteDesigner(props) {
                 }
             })
         }
-    })
+    }, [item, backendsQuery.data])
 
     const flow = [
         {
@@ -579,20 +593,21 @@ function RouteDesigner(props) {
     ]
 
     const updateRoute = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                routes: rawAPI.data.routes.map(item => {
-                    if (item.id === route.id)
-                        return route
-                    return item
-                })
+        return updateItem({
+            ...item,
+            routes: item.routes.map(item => {
+                if (item.id === route.id)
+                    return route
+                return item
             })
+        })
             .then(() => history.push(`/apis/${params.apiId}/routes`))
     }
 
-    return <Loader loading={rawAPI.isLoading || !schema}>
+    if (!route)
+        return null
+
+    return <Loader loading={isLoading || !schema}>
         <PageTitle title={route.name || "Update the route"} {...props}>
             <FeedbackButton
                 type="success"
@@ -630,10 +645,10 @@ function NewRoute(props) {
             onSuccess: setBackends
         })
 
-    const { draft, setDraft, isLoading, updateDraft } = useDraft()
+    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (draft && !backendsQuery.isLoading) {
+        if (item && !backendsQuery.isLoading) {
             setSchema({
                 name: {
                     type: 'string',
@@ -650,7 +665,7 @@ function NewRoute(props) {
                     type: 'select',
                     label: 'Flow ID',
                     props: {
-                        options: draft.flows,
+                        options: item.flows,
                         optionsTransformer: {
                             label: 'name',
                             value: 'id',
@@ -661,7 +676,7 @@ function NewRoute(props) {
                     renderer: props => {
                         return <BackendSelector
                             enabled
-                            backends={[...draft.backends, ...backends]}
+                            backends={[...item.backends, ...backends]}
                             setUsingExistingBackend={e => {
                                 props.rootOnChange({
                                     ...props.rootValue,
@@ -682,7 +697,7 @@ function NewRoute(props) {
                 }
             })
         }
-    }, [draft, backendsQuery])
+    }, [item, backendsQuery])
 
     const flow = [
         {
@@ -717,10 +732,10 @@ function NewRoute(props) {
     ]
 
     const saveRoute = () => {
-        return updateDraft({
-            ...draft,
+        return updateItem({
+            ...item,
             routes: [
-                ...draft.routes, {
+                ...item.routes, {
                     ...route,
                     id: v4()
                 }
@@ -744,9 +759,9 @@ function NewRoute(props) {
                     ...route,
                     name: 'My first route',
                     frontend: frontendTemplate,
-                    backend: draft.backends.length && draft.backends[0].id,
+                    backend: item.backends.length && item.backends[0].id,
                     usingExistingBackend: true,
-                    flow_ref: draft.flows.length && draft.flows[0].id,
+                    flow_ref: item.flows.length && item.flows[0].id,
                 })
             }
         })
@@ -758,15 +773,16 @@ function NewRoute(props) {
             margin: 'auto'
         }}>
             <NgForm
-                value={draft}
                 flow={flow}
                 schema={schema}
-                onChange={setDraft} />
+                value={item}
+                onChange={setItem}
+            />
             <FeedbackButton
                 type="success"
                 className="d-flex mt-3 ms-auto"
                 onPress={saveRoute}
-                disabled={!draft.flow_ref}
+                disabled={!item.flow_ref}
                 text="Create"
             />
         </div>
@@ -785,29 +801,21 @@ function Consumers(props) {
         }
     ];
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        props.setTitle(`Consumers of ${rawAPI.data?.name}`)
+        props.setTitle(`Consumers of ${item?.name}`)
 
         return () => props.setTitle('')
-    }, [rawAPI.data])
+    }, [item])
 
-    const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-    const api = rawAPI.data;
-
-    const deleteItem = item => client.update({
-        ...api,
-        consumers: api.consumers.filter(f => f.id !== item.id)
+    const deleteItem = newItem => updateItem({
+        ...item,
+        consumers: item.consumers.filter(f => f.id !== newItem.id)
     })
         .then(() => window.location.reload())
 
-    const fields = []
-
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
 
         <Table
             parentProps={{ params }}
@@ -817,7 +825,6 @@ function Consumers(props) {
             defaultTitle="Consumer"
             itemName="Consumer"
             columns={columns}
-            fields={fields}
             deleteItem={deleteItem}
             fetchTemplate={() => Promise.resolve({
                 id: v4(),
@@ -825,7 +832,7 @@ function Consumers(props) {
                 consumer_kind: "apikey",
                 config: {}
             })}
-            fetchItems={() => Promise.resolve(rawAPI.data?.consumers || [])}
+            fetchItems={() => Promise.resolve(item.consumers || [])}
             defaultSort="name"
             defaultSortDesc="true"
             showActions={true}
@@ -938,20 +945,17 @@ function NewConsumer(props) {
         }
     }
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const savePlan = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                consumers: [...rawAPI.data.consumers, consumer]
-            })
+        return updateItem({
+            ...item,
+            consumers: [...item.consumers, consumer]
+        })
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
 
         <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
 
@@ -1046,28 +1050,27 @@ function ConsumerDesigner(props) {
         }
     }
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        onSuccess: api => {
-            setConsumer(api.consumers.find(item => item.id === params.consumerId))
+    const { item, updateItem, isLoading } = useDraftOfAPI()
+
+    useEffect(() => {
+        if (item && !consumer) {
+            setConsumer(item.consumers.find(item => item.id === params.consumerId))
         }
-    })
+    }, [item])
 
     const updatePlan = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                consumers: rawAPI.data.consumers.map(item => {
-                    if (item.id === consumer.id)
-                        return consumer
-                    return item
-                })
+        return updateItem({
+            ...item,
+            consumers: item.consumers.map(item => {
+                if (item.id === consumer.id)
+                    return consumer
+                return item
             })
+        })
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
 
         <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
@@ -1105,21 +1108,21 @@ function Routes(props) {
         { title: 'Domains', filterId: 'frontend.domains', content: (item) => item.description },
     ];
 
-    const { draft, isLoading, updateDraft } = useDraft()
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (draft)
-            props.setTitle(`Routes of ${draft.name}`)
+        if (item)
+            props.setTitle(`Routes of ${item.name}`)
 
         return () => props.setTitle('')
-    }, [draft])
+    }, [item])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
 
     const deleteItem = item => {
-        updateDraft({
-            ...draft,
-            routes: draft.routes.filter(f => f.id !== item.id)
+        updateItem({
+            ...item,
+            routes: item.routes.filter(f => f.id !== item.id)
         })
     }
 
@@ -1138,7 +1141,7 @@ function Routes(props) {
             fields={fields}
             deleteItem={deleteItem}
             fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(draft.routes || [])}
+            fetchItems={() => Promise.resolve(item.routes || [])}
             defaultSort="name"
             defaultSortDesc="true"
             showActions={true}
@@ -1173,38 +1176,23 @@ function Backends(props) {
         { title: 'Description', filterId: 'description', content: (item) => item.description },
     ];
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        props.setTitle(`Backends of ${rawAPI.data?.name}`)
+        if (item)
+            props.setTitle(`Backends of ${item.name}`)
 
         return () => props.setTitle('')
-    }, [rawAPI.data])
+    }, [item])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
-    const api = rawAPI.data;
 
-    const deleteItem = item => client.update({
-        ...api,
-        backends: api.backends.filter(f => f.id !== item.id)
+    const deleteItem = newItem => updateItem({
+        ...item,
+        backends: item.backends.filter(f => f.id !== newItem.id)
     })
 
-    // const updateItem = item => client.update({
-    //     ...api,
-    //     backends: api.backends.map(backend => {
-    //         if (backend.id === item.id)
-    //             return item
-
-    //         return backend
-    //     })
-    // })
-
-    const fields = []
-
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
 
         <Table
             parentProps={{ params }}
@@ -1214,10 +1202,9 @@ function Backends(props) {
             defaultTitle="Backend"
             itemName="Backend"
             columns={columns}
-            fields={fields}
             deleteItem={deleteItem}
             fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(rawAPI.data?.backends || [])}
+            fetchItems={() => Promise.resolve(item.backends || [])}
             defaultSort="name"
             defaultSortDesc="true"
             showActions={true}
@@ -1245,16 +1232,13 @@ function NewBackend(props) {
 
     const [backend, setBackend] = useState()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const saveBackend = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                backends: [...rawAPI.data.backends, backend]
-            })
+        return updateItem({
+            ...item,
+            backends: [...item.backends, backend]
+        })
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
 
@@ -1268,7 +1252,7 @@ function NewBackend(props) {
         })
     });
 
-    return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
+    return <Loader loading={templateQuery.isLoading || isLoading}>
 
         <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
@@ -1311,30 +1295,29 @@ function EditBackend(props) {
     const params = useParams()
     const history = useHistory()
 
+    const { item, updateItem, isLoading } = useDraftOfAPI()
+
     const [backend, setBackend] = useState()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        onSuccess: data => {
-            setBackend(data.backends.find(item => item.id === params.backendId))
+    useEffect(() => {
+        if (item && !backend) {
+            setBackend(item.backends.find(item => item.id === params.backendId))
         }
-    })
+    }, [item])
 
     const updateBackend = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                backends: rawAPI.data.backends.map(item => {
-                    if (item.id === backend.id)
-                        return backend
-                    return item
-                })
+        return updateItem({
+            ...item,
+            backends: item.backends.map(item => {
+                if (item.id === backend.id)
+                    return backend
+                return item
             })
+        })
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
         <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -1393,19 +1376,15 @@ function Deployments(props) {
         },
     ];
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+    const { item, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        props.setTitle(`Deployments of ${rawAPI.data?.name}`)
+        if (item)
+            props.setTitle('Deployments')
         return () => props.setTitle('')
-    }, [rawAPI.data])
+    }, [item])
 
-    const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
-
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
         <Table
             navigateTo={item =>
                 window.wizard('Version', () => <PublisDraftModalContent
@@ -1420,8 +1399,8 @@ function Deployments(props) {
             defaultTitle="Deployment"
             itemName="Deployment"
             columns={columns}
-            fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(rawAPI.data?.deployments || [])}
+            fetchTemplate={() => Promise.resolve({})}
+            fetchItems={() => Promise.resolve(item.deployments || [])}
             defaultSort="version"
             defaultSortDesc="true"
             showActions={false}
@@ -1432,85 +1411,13 @@ function Deployments(props) {
     </Loader>
 }
 
-function NewDeployment(props) {
-    const params = useParams()
-    const history = useHistory()
-
-    const [backend, setBackend] = useState()
-
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId))
-
-    const saveBackend = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                backends: [...rawAPI.data.backends, backend]
-            })
-            .then(() => history.push(`/apis/${params.apiId}/backends`))
-    }
-
-    const templateQuery = useQuery(["getTemplate"],
-        nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
-        retry: 0,
-        onSuccess: (data) => setBackend({
-            id: v4(),
-            name: 'My new backend',
-            ...data.backend
-        })
-    });
-
-    return <Loader loading={templateQuery.isLoading || rawAPI.isLoading}>
-
-        <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
-            <FeedbackButton
-                type="success"
-                className="ms-2 mb-1"
-                onPress={saveBackend}
-                text="Create"
-            />
-        </PageTitle>
-
-        <div style={{
-            maxWidth: 640,
-            margin: 'auto'
-        }}>
-            <BackendForm
-                state={{
-                    form: {
-                        schema: {
-                            name: {
-                                label: 'Name',
-                                type: 'string',
-                                placeholder: 'New backend'
-                            },
-                            backend: {
-                                type: 'form',
-                                schema: NgBackend.schema,
-                                flow: NgBackend.flow
-                            }
-                        },
-                        flow: ['name', 'backend'],
-                        value: backend
-                    }
-                }}
-                onChange={setBackend} />
-        </div>
-    </Loader>
-}
-
 function SidebarWithVersion({ params }) {
     const queryParams = new URLSearchParams(window.location.search)
     const queryVersion = queryParams.get('version')
 
-    console.log(queryVersion)
-
     useEffect(() => {
         if (queryVersion) {
             changeColor(queryVersion)
-        } else {
-            // changeColor('Published')
         }
         return () => document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', '#f9b000')
     }, [queryVersion])
@@ -1579,21 +1486,17 @@ function NewFlow(props) {
         }
     }
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const createFlow = () => {
-        nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                flows: [...rawAPI.data.flows, flow]
-            })
+        return updateItem({
+            ...item,
+            flows: [...item.flows, flow]
+        })
             .then(() => history.push(`/apis/${params.apiId}/flows/${flow.id}`));
     }
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
         <Form
             schema={schema}
             flow={["name"]}
@@ -1715,10 +1618,6 @@ function Apis(props) {
         props.setTitle("Apis")
     }, [])
 
-    const [fields, setFields] = useState({
-        id: false,
-        name: true,
-    })
     const columns = [
         {
             title: 'Name',
@@ -1751,7 +1650,6 @@ function Apis(props) {
             formSchema={null}
             formFlow={null}
             columns={columns}
-            fields={fields}
             deleteItem={(item) => nextClient
                 .forEntityNext(nextClient.ENTITIES.APIS).deleteById(item.id)
                 .then(() => window.location.reload())
@@ -1785,11 +1683,7 @@ function FlowDesigner(props) {
 
     const isCreation = params.action === 'new';
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
-        {
-            retry: 0
-        })
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const [flow, setFlow] = useState()
     const ref = useRef(flow)
@@ -1799,15 +1693,15 @@ function FlowDesigner(props) {
     }, [flow])
 
     useEffect(() => {
-        if (rawAPI.data) {
-            setFlow(rawAPI.data.flows.find(flow => flow.id === params.flowId))
+        if (item && !flow) {
+            setFlow(item.flows.find(flow => flow.id === params.flowId))
 
             dynamicTitleContent.value = (
                 <PageTitle
                     style={{
                         paddingBottom: 0,
                     }}
-                    title={rawAPI.data.flows.find(flow => flow.id === params.flowId)?.name}
+                    title={item.flows.find(flow => flow.id === params.flowId)?.name}
                     {...props}
                 >
                     <FeedbackButton
@@ -1819,57 +1713,44 @@ function FlowDesigner(props) {
                 </PageTitle>
             );
         }
-    }, [rawAPI.data])
+    }, [item])
 
     const saveFlow = () => {
-        const api = rawAPI.data
         const {
             id, name, plugins
         } = ref.current.value
 
-        return nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...api,
-                flows: api.flows.map(item => {
-                    if (item.id === id)
-                        return {
-                            id, name, plugins
-                        }
-                    return item
-                })
+        return updateItem({
+            ...item,
+            flows: item.flows.map(flow => {
+                if (flow.id === id)
+                    return {
+                        id, name, plugins
+                    }
+                return flow
             })
+        })
             .then(() => history.replace(`/apis/${params.apiId}/flows`))
     }
 
-    return <Loader loading={rawAPI.isLoading}>
-
+    return <Loader loading={isLoading || !flow}>
         <div className='designer'>
             <Designer
                 history={history}
                 value={flow}
                 setValue={value => setFlow({ value })}
                 setSaveButton={() => { }}
-            // setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })}
             />
         </div>
     </Loader>
 }
 
 function Flows(props) {
-    const ref = useRef()
     const params = useParams()
     const history = useHistory()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
-        {
-            retry: 0
-        })
+    const { item, isLoading } = useDraftOfAPI()
 
-    const [fields, setFields] = useState({
-        id: false,
-        name: true,
-    })
     const columns = [
         {
             title: 'Name',
@@ -1878,10 +1759,11 @@ function Flows(props) {
     ];
 
     useEffect(() => {
-        props.setTitle(`Flows of ${rawAPI.data?.name}`)
-    }, [rawAPI.data])
+        if (item)
+            props.setTitle(`Flows of ${item.name}`)
+    }, [item])
 
-    const fetchItems = (paginationState) => Promise.resolve(rawAPI.data.flows)
+    const fetchItems = (paginationState) => Promise.resolve(item.flows)
 
     const fetchTemplate = () => Promise.resolve({
         id: uuid(),
@@ -1889,43 +1771,15 @@ function Flows(props) {
         plugins: []
     })
 
-    return <Loader loading={rawAPI.isLoading}>
-
+    return <Loader loading={isLoading}>
         <Table
-            ref={ref}
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
             navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
             selfUrl="flows"
             defaultTitle="Flow"
             itemName="Flow"
-            formSchema={null}
-            formFlow={null}
             columns={columns}
-            fields={fields}
-            // coreFields={['id', 'name']}
-            // addField={(fieldPath) => {
-            //     const newFields = {
-            //         ...fields,
-            //         [fieldPath]: true,
-            //     };
-            //     setFields(newFields);
-            //     onFieldsChange(newFields);
-            // }}
-            // removeField={(fieldPath) => {
-            //     const { [fieldPath]: _, ...newFields } = fields;
-
-            //     setFields(newFields);
-            //     onFieldsChange(newFields);
-            // }}
-            // onToggleField={(column, enabled) => {
-            //     const newFields = {
-            //         ...fields,
-            //         [column]: enabled,
-            //     };
-            //     onFieldsChange(newFields);
-            //     setFields(newFields);
-            // }}
             deleteItem={(item) => console.log('delete item', item)}
             defaultSort="name"
             defaultSortDesc="true"
@@ -1951,45 +1805,45 @@ function Flows(props) {
     </Loader>
 }
 
-function VersionManagerSelector({ createOrUpdate, setCreateOrUpdate }) {
-    return <div className='d-flex flex-column mt-3'
-        style={{ gap: '.25rem' }}>
-        {[
-            {
-                kind: 'create',
-                title: 'NEW',
-                text: 'Create a new version from the current draft',
-            },
-            {
-                kind: 'update',
-                title: 'UPDATE',
-                text: 'Erase the current published version',
-            }
-        ].map(({ kind, title, text }) => (
-            <button
-                type="button"
-                className={`btn py-3 wizard-route-chooser  ${createOrUpdate === kind ? 'btn-primaryColor' : 'btn-quiet'}`}
-                onClick={() => setCreateOrUpdate(kind)}
-                key={kind}
-            >
-                <h3 className="wizard-h3--small">{title}</h3>
-                <span
-                    style={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                    }}
-                >
-                    {text}
-                </span>
-            </button>
-        ))}
-    </div>
-}
+// function VersionManagerSelector({ createOrUpdate, setCreateOrUpdate }) {
+//     return <div className='d-flex flex-column mt-3'
+//         style={{ gap: '.25rem' }}>
+//         {[
+//             {
+//                 kind: 'create',
+//                 title: 'NEW',
+//                 text: 'Create a new version from the current draft',
+//             },
+//             {
+//                 kind: 'update',
+//                 title: 'UPDATE',
+//                 text: 'Erase the current published version',
+//             }
+//         ].map(({ kind, title, text }) => (
+//             <button
+//                 type="button"
+//                 className={`btn py-3 wizard-route-chooser  ${createOrUpdate === kind ? 'btn-primaryColor' : 'btn-quiet'}`}
+//                 onClick={() => setCreateOrUpdate(kind)}
+//                 key={kind}
+//             >
+//                 <h3 className="wizard-h3--small">{title}</h3>
+//                 <span
+//                     style={{
+//                         flex: 1,
+//                         display: 'flex',
+//                         alignItems: 'center',
+//                     }}
+//                 >
+//                     {text}
+//                 </span>
+//             </button>
+//         ))}
+//     </div>
+// }
 
 function VersionManager({ api, draft, owner, setState }) {
 
-    const [createOrUpdate, setCreateOrUpdate] = useState()
+    // const [createOrUpdate, setCreateOrUpdate] = useState()
 
     const [deployment, setDeployment] = useState({
         location: {},
@@ -2091,34 +1945,35 @@ function VersionManager({ api, draft, owner, setState }) {
     ]
 
     return <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 820 }}>
-        {createOrUpdate && <Button
+        {/* {createOrUpdate && <Button
             className='btn-quiet mt-3'
             onClick={() => setCreateOrUpdate(undefined)}
             style={{
                 width: 'fit-content'
             }}>
             <i className='fas fa-chevron-left me-2' />Back
-        </Button>}
-        {!createOrUpdate && <VersionManagerSelector
+        </Button>} */}
+        {/* {!createOrUpdate && <VersionManagerSelector
             createOrUpdate={createOrUpdate}
-            setCreateOrUpdate={setCreateOrUpdate} />}
+            setCreateOrUpdate={setCreateOrUpdate} />} */}
 
-        {createOrUpdate === 'create' && <NgForm
+        {/* {createOrUpdate === 'create' &&  */}
+        <NgForm
             value={deployment}
             onChange={data => {
                 setDeployment(data)
                 setState(data)
             }}
             schema={schema}
-            flow={flow} />}
-
+            flow={flow} />
+        {/* } */}
     </div>
 }
 
 function Informations(props) {
     const history = useHistory()
 
-    const { draft, setDraft, isLoading, updateDraft } = useDraft()
+    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
 
     const schema = {
         location: {
@@ -2230,24 +2085,24 @@ function Informations(props) {
         },]
 
     const updateAPI = () => {
-        updateDraft()
-            .then(() => history.push(`/apis/${draft.id}`));
+        updateItem()
+            .then(() => history.push(`/apis/${item.id}`));
     }
 
     useEffect(() => {
-        if (draft) {
-            props.setTitle(`${draft.name}`)
+        if (item) {
+            props.setTitle(`${item.name}`)
 
             return () => props.setTitle(undefined)
         }
-    }, [draft])
+    }, [item])
 
     return <Loader loading={isLoading}>
         <NgForm
             schema={schema}
             flow={flow}
-            value={draft}
-            onChange={setDraft}
+            value={item}
+            onChange={setItem}
         />
         <Button
             type="success"
@@ -2256,6 +2111,56 @@ function Informations(props) {
             text="Update"
         />
     </Loader>
+}
+
+function DashboardTitle({ api, draft, ...props }) {
+
+    const version = useSignalValue(signalVersion)
+
+    return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
+        <div className="d-flex">
+            <h3 className="m-0 align-self-center">Dashboard</h3>
+        </div>
+        <div className="d-flex align-item-center justify-content-between">
+            {/* <NgSelectRenderer
+            value={api.version}
+            ngOptions={{
+                spread: true,
+            }}
+            onChange={newVersion => {
+                console.log(newVersion)
+            }}
+            options={api.versions?.length > 0 ? api.versions : ['0.0.1']} /> */}
+
+            {version === 'Draft' && <Button
+                text="Publish new version"
+                className="btn-sm mx-2"
+                type="primaryColor"
+                style={{
+                    borderColor: 'var(--color-primary)',
+                }}
+                onClick={() => {
+                    window
+                        .wizard('Version manager', (ok, cancel, state, setState) => {
+                            return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
+                        }, {
+                            style: { width: '100%' },
+                            noCancel: false,
+                            okClassName: 'ms-2',
+                            okLabel: 'I want to publish this API',
+                        })
+                        .then(deployment => {
+                            if (deployment) {
+                                fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                                    .then(res => {
+                                        console.log(res)
+                                    })
+                            }
+                        });
+                }}
+            />}
+        </div>
+    </div>
 }
 
 function Dashboard(props) {
@@ -2279,49 +2184,7 @@ function Dashboard(props) {
 
     useEffect(() => {
         if (!rawAPI.isLoading && !rawDraftAPI.isLoading) {
-            props.setTitle(<div className="page-header_title d-flex align-item-center justify-content-between mb-3">
-                <div className="d-flex">
-                    <h3 className="m-0 align-self-center">Dashboard</h3>
-                </div>
-                <div className="d-flex align-item-center justify-content-between">
-                    {/* <NgSelectRenderer
-                        value={api.version}
-                        ngOptions={{
-                            spread: true,
-                        }}
-                        onChange={newVersion => {
-                            console.log(newVersion)
-                        }}
-                        options={api.versions?.length > 0 ? api.versions : ['0.0.1']} /> */}
-                    <Button
-                        text="Publish new version"
-                        className="btn-sm mx-2"
-                        type="primaryColor"
-                        style={{
-                            borderColor: 'var(--color-primary)',
-                        }}
-                        onClick={() => {
-                            window
-                                .wizard('Version manager', (ok, cancel, state, setState) => {
-                                    return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
-                                }, {
-                                    style: { width: '100%' },
-                                    noCancel: false,
-                                    okClassName: 'ms-2',
-                                    okLabel: 'I want to publish this API',
-                                })
-                                .then(deployment => {
-                                    if (deployment) {
-                                        fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
-                                            .then(res => {
-                                                console.log(res)
-                                            })
-                                    }
-                                });
-                        }}
-                    />
-                </div>
-            </div>)
+            props.setTitle(<DashboardTitle {...props} api={api} draft={draft} />)
         }
 
         return () => props.setTitle(undefined)
