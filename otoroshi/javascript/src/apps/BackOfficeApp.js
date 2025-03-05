@@ -294,7 +294,7 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}>
+          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }} id="otoroshi-container">
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}

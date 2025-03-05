@@ -27,6 +27,8 @@ import semver from 'semver'
 import { ApiStats } from './ApiStats';
 import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
+import { effect } from 'signals-react-safe';
+import { signalVersion } from './VersionSignal';
 
 const queryClient = new QueryClient({
     queries: {
@@ -1371,7 +1373,6 @@ function EditBackend(props) {
 }
 
 function Deployments(props) {
-    const history = useHistory()
     const params = useParams()
 
     const columns = [
@@ -1499,13 +1500,57 @@ function NewDeployment(props) {
     </Loader>
 }
 
+function SidebarWithVersion({ params }) {
+    const queryParams = new URLSearchParams(window.location.search)
+    const queryVersion = queryParams.get('version')
+
+    console.log(queryVersion)
+
+    useEffect(() => {
+        if (queryVersion) {
+            changeColor(queryVersion)
+        } else {
+            // changeColor('Published')
+        }
+        return () => document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', '#f9b000')
+    }, [queryVersion])
+
+    const updateSignal = version => {
+        signalVersion.value = version
+    }
+
+    effect(() => {
+        const version = signalVersion.value
+
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("version", version);
+        history.replaceState(null, null, "?" + queryParams.toString());
+
+        document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', version === 'Draft' ? '#f9b000' : '#d5443f')
+    })
+
+    const updateQueryParams = version => {
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("version", version);
+        history.replaceState(null, null, "?" + queryParams.toString());
+    }
+
+    const changeColor = version => {
+        document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', version === 'Draft' ? '#f9b000' : '#d5443f')
+        updateQueryParams(version)
+        updateSignal(version)
+    }
+
+    return <Sidebar params={params} />
+}
+
 function SidebarComponent(props) {
     const params = useParams()
     const location = useLocation()
 
     useEffect(() => {
         if (location.pathname !== '/apis') {
-            props.setSidebarContent(<Sidebar params={params} />);
+            props.setSidebarContent(<SidebarWithVersion params={params} />);
         }
         return () => props.setSidebarContent(null)
     }, [params])
@@ -1906,7 +1951,45 @@ function Flows(props) {
     </Loader>
 }
 
-function NewVersionForm({ api, draft, owner, setState }) {
+function VersionManagerSelector({ createOrUpdate, setCreateOrUpdate }) {
+    return <div className='d-flex flex-column mt-3'
+        style={{ gap: '.25rem' }}>
+        {[
+            {
+                kind: 'create',
+                title: 'NEW',
+                text: 'Create a new version from the current draft',
+            },
+            {
+                kind: 'update',
+                title: 'UPDATE',
+                text: 'Erase the current published version',
+            }
+        ].map(({ kind, title, text }) => (
+            <button
+                type="button"
+                className={`btn py-3 wizard-route-chooser  ${createOrUpdate === kind ? 'btn-primaryColor' : 'btn-quiet'}`}
+                onClick={() => setCreateOrUpdate(kind)}
+                key={kind}
+            >
+                <h3 className="wizard-h3--small">{title}</h3>
+                <span
+                    style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    {text}
+                </span>
+            </button>
+        ))}
+    </div>
+}
+
+function VersionManager({ api, draft, owner, setState }) {
+
+    const [createOrUpdate, setCreateOrUpdate] = useState()
 
     const [deployment, setDeployment] = useState({
         location: {},
@@ -2008,16 +2091,28 @@ function NewVersionForm({ api, draft, owner, setState }) {
     ]
 
     return <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 820 }}>
-        <NgForm
+        {createOrUpdate && <Button
+            className='btn-quiet mt-3'
+            onClick={() => setCreateOrUpdate(undefined)}
+            style={{
+                width: 'fit-content'
+            }}>
+            <i className='fas fa-chevron-left me-2' />Back
+        </Button>}
+        {!createOrUpdate && <VersionManagerSelector
+            createOrUpdate={createOrUpdate}
+            setCreateOrUpdate={setCreateOrUpdate} />}
+
+        {createOrUpdate === 'create' && <NgForm
             value={deployment}
             onChange={data => {
                 setDeployment(data)
                 setState(data)
             }}
             schema={schema}
-            flow={flow} />
-    </div>
+            flow={flow} />}
 
+    </div>
 }
 
 function Informations(props) {
@@ -2186,9 +2281,7 @@ function Dashboard(props) {
         if (!rawAPI.isLoading && !rawDraftAPI.isLoading) {
             props.setTitle(<div className="page-header_title d-flex align-item-center justify-content-between mb-3">
                 <div className="d-flex">
-                    <h3 className="m-0 align-self-center">
-                        Version {api.version}
-                    </h3>
+                    <h3 className="m-0 align-self-center">Dashboard</h3>
                 </div>
                 <div className="d-flex align-item-center justify-content-between">
                     {/* <NgSelectRenderer
@@ -2209,8 +2302,8 @@ function Dashboard(props) {
                         }}
                         onClick={() => {
                             window
-                                .wizard('Create a new version', (ok, cancel, state, setState) => {
-                                    return <NewVersionForm api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
+                                .wizard('Version manager', (ok, cancel, state, setState) => {
+                                    return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
                                 }, {
                                     style: { width: '100%' },
                                     noCancel: false,

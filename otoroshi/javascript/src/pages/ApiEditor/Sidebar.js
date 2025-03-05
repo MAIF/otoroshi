@@ -2,6 +2,10 @@ import React, { useContext } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
+import { NgSelectRenderer } from '../../components/nginputs';
+import Select from 'react-select';
+import { signalVersion } from './VersionSignal';
+import { useSignalValue } from 'signals-react-safe';
 
 const LINKS = (id) =>
     [
@@ -92,12 +96,14 @@ export default (props) => {
 
     const isOnApisHome = location.pathname.endsWith("/apis")
 
+    const version = useSignalValue(signalVersion)
+
+    console.log(version)
+
     return (
-        <div
-            className="d-flex"
-            style={{
-                padding: openedSidebar ? 'inherit' : '12px 0 6px',
-            }}>
+        <div style={{
+            padding: openedSidebar ? 'inherit' : '12px 0 6px',
+        }}>
             <ul className="nav flex-column nav-sidebar">
                 <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="APIs">
                     <Link
@@ -115,6 +121,58 @@ export default (props) => {
                 </li>
                 {!isOnApisHome && <>
                     {openedSidebar && <p className="sidebar-title mt-3">General</p>}
+                    <div className='me-1 my-2'>
+                        <Select
+                            value={{ value: version, label: version }}
+                            onChange={item => {
+                                signalVersion.value = item.value
+                            }}
+                            isClearable={false}
+                            isSearchable={false}
+                            components={{
+                                IndicatorSeparator: () => null,
+                                SingleValue: (props) => {
+                                    return <div className='d-flex align-items-center m-0' style={{
+                                        gap: '.5rem'
+                                    }}>
+                                        <span className={`badge ${props.data.value === 'Draft' ? 'bg-warning' : 'bg-danger'}`}>
+                                            {props.data.label === 'Published' ? 'PROD' : 'DEV'}
+                                        </span>{props.data.label}
+                                    </div>
+                                }
+                            }}
+                            options={['Published', 'Draft'].map(r => ({ value: r, label: r }))}
+                            styles={{
+                                control: (baseStyles) => ({
+                                    ...baseStyles,
+                                    border: '1px solid var(--bg-color_level3)',
+                                    color: 'var(--text)',
+                                    backgroundColor: 'var(--bg-color_level2)',
+                                    boxShadow: 'none',
+                                }),
+                                valueContainer: (baseStyles) => ({
+                                    ...baseStyles,
+                                    display: 'flex'
+                                }),
+                                menu: (baseStyles) => ({
+                                    ...baseStyles,
+                                    margin: 0,
+                                    borderTopLeftRadius: 0,
+                                    borderTopRightRadius: 0,
+                                    backgroundColor: 'var(--bg-color_level2)',
+                                    color: 'var(--text)',
+                                }),
+                                option: (provided, { isFocused }) => ({
+                                    ...provided,
+                                    backgroundColor: isFocused ? 'var(--bg-color_level2)' : 'var(--bg-color_level3)',
+                                }),
+                                MenuList: (provided) => ({
+                                    ...provided,
+                                    background: 'red',
+                                })
+                            }}
+                        />
+                    </div>
                     {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
                         <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
                             <Link

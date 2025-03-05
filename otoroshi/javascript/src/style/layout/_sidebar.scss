@@ -21,7 +21,7 @@
     height: 32px;
 
     &.active {
-      color: var(--color-primary);
+      color: var(--color-primary) !important;
     }
 
     &:hover {
