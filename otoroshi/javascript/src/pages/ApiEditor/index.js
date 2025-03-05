@@ -17,7 +17,7 @@ import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices'
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgCodeRenderer, NgDotsRenderer, NgForm, NgSelectRenderer, NgStringRenderer, NgTextRenderer } from '../../components/nginputs';
+import { NgCodeRenderer, NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
@@ -25,11 +25,8 @@ import moment from 'moment';
 import semver from 'semver'
 
 import { ApiStats } from './ApiStats';
-import { DraftEditorContainer, DraftStateDaemon, PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
+import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
-import { useSignalValue } from 'signals-react-safe';
-import { draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
-import { clearResponses } from 'graphql-playground-react';
 
 const queryClient = new QueryClient({
     queries: {
@@ -45,55 +42,9 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
     />
 );
 
-// const DraftAPI = () => {
-//     const params = useParams()
-
-//     const rawAPI = useQuery(["getAPI", params.apiId],
-//         () => nextClient
-//             .forEntityNext(nextClient.ENTITIES.APIS)
-//             .findById(params.apiId)
-//     )
-
-//     const api = rawAPI.data
-
-//     if (!api)
-//         return null
-
-//     return <>
-//         <DraftEditorContainer
-//             entityId={api.id}
-//             value={api}
-//         />
-//         <DraftStateDaemon
-//             value={api}
-//             setValue={(newValue) => {
-//                 console.log(newValue)
-//             }}
-//         />
-//     </>
-// }
-
-// const ApiRoute = ({ component: Component, ...rest }) => {
-//     return <Route
-//         {...rest}
-//         component={(routeProps) => <Component {...routeProps} {...rest.props}
-//             draft={<DraftAPI />}
-//         />}
-//     />
-// }
-
 export default function ApiEditor(props) {
     return <div className='editor'>
         <SidebarComponent {...props} />
-
-        {/* <DraftStateDaemon
-            value={this.state.currentItem}
-            setValue={(currentItem) => this.setState({ currentItem })}
-            updateEntityURL={() => {
-                updateEntityURLSignal.value = this.updateItemAndStay;
-            }}
-        /> */}
-
         <QueryClientProvider client={queryClient}>
             <Switch>
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
@@ -168,12 +119,13 @@ function useDraft() {
         }
     })
 
-    const updateDraft = () => {
+    const updateDraft = (optDraft) => {
         return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
             .update({
                 ...draftWrapper,
-                content: draft
+                content: optDraft
             })
+            .then(() => setDraft(optDraft))
     }
 
     return {
@@ -676,11 +628,10 @@ function NewRoute(props) {
             onSuccess: setBackends
         })
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0,
-        enabled: backendsQuery.data !== undefined,
-        onSuccess: data => {
+    const { draft, setDraft, isLoading, updateDraft } = useDraft()
+
+    useEffect(() => {
+        if (draft && !backendsQuery.isLoading) {
             setSchema({
                 name: {
                     type: 'string',
@@ -691,19 +642,13 @@ function NewRoute(props) {
                     type: 'form',
                     label: 'Frontend',
                     schema: NgFrontend.schema,
-                    flow: NgFrontend.flow,
-                    // v2: {
-                    //     folded: ['domains'],
-                    //     flow: [
-                    //         "domains",
-                    //     ],
-                    // }
+                    flow: NgFrontend.flow
                 },
                 flow_ref: {
                     type: 'select',
                     label: 'Flow ID',
                     props: {
-                        options: data.flows,
+                        options: draft.flows,
                         optionsTransformer: {
                             label: 'name',
                             value: 'id',
@@ -711,12 +656,10 @@ function NewRoute(props) {
                     },
                 },
                 backend: {
-                    // type: 'form',
-                    // label: 'Backend',
                     renderer: props => {
                         return <BackendSelector
                             enabled
-                            backends={[...data.backends, ...backends]}
+                            backends={[...draft.backends, ...backends]}
                             setUsingExistingBackend={e => {
                                 props.rootOnChange({
                                     ...props.rootValue,
@@ -734,12 +677,10 @@ function NewRoute(props) {
                             route={props.rootValue}
                         />
                     }
-                    // schema: NgBackend.schema,
-                    // flow: NgBackend.flow
                 }
             })
         }
-    })
+    }, [draft, backendsQuery])
 
     const flow = [
         {
@@ -773,64 +714,57 @@ function NewRoute(props) {
         }
     ]
 
-    const [route, setRoute] = useState({})
-
     const saveRoute = () => {
-        return nextClient
-            .forEntityNext(nextClient.ENTITIES.APIS)
-            .update({
-                ...rawAPI.data,
-                routes: [
-                    ...rawAPI.data.routes, {
-                        ...route,
-                        id: v4()
-                    }
-                ]
-            })
+        return updateDraft({
+            ...draft,
+            routes: [
+                ...draft.routes, {
+                    ...route,
+                    id: v4()
+                }
+            ]
+        })
             .then(() => history.push(`/apis/${params.apiId}/routes`))
     }
 
     const templatesQuery = useQuery(["getTemplates"],
-        () => Promise.all([
-            nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template(),
-            fetch(`/bo/api/proxy/api/frontends/_template`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    Accept: 'application/json',
-                },
-            })
-                .then(r => r.json())
-        ]), {
-        enabled: !!rawAPI.data,
-        onSuccess: ([backendTemplate, frontendTemplate]) => {
-            setRoute({
-                ...route,
-                name: 'My first route',
-                frontend: frontendTemplate,
-                backend: rawAPI.data.backends.length && rawAPI.data.backends[0].id,
-                usingExistingBackend: true,
-                flow_ref: rawAPI.data.flows.length && rawAPI.data.flows[0].id,
-            })
-        }
-    })
+        () => fetch(`/bo/api/proxy/api/frontends/_template`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                Accept: 'application/json',
+            },
+        }),
+        {
+            enabled: !isLoading,
+            onSuccess: (frontendTemplate) => {
+                setRoute({
+                    ...route,
+                    name: 'My first route',
+                    frontend: frontendTemplate,
+                    backend: draft.backends.length && draft.backends[0].id,
+                    usingExistingBackend: true,
+                    flow_ref: draft.flows.length && draft.flows[0].id,
+                })
+            }
+        })
 
-    return <Loader loading={rawAPI.isLoading || !schema || templatesQuery.isLoading}>
+    return <Loader loading={isLoading || !schema || templatesQuery.isLoading}>
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
         <div style={{
             maxWidth: 640,
             margin: 'auto'
         }}>
             <NgForm
-                value={route}
+                value={draft}
                 flow={flow}
                 schema={schema}
-                onChange={newValue => setRoute(newValue)} />
+                onChange={setDraft} />
             <FeedbackButton
                 type="success"
                 className="d-flex mt-3 ms-auto"
                 onPress={saveRoute}
-                disabled={!route.flow_ref}
+                disabled={!draft.flow_ref}
                 text="Create"
             />
         </div>
@@ -1169,29 +1103,27 @@ function Routes(props) {
         { title: 'Domains', filterId: 'frontend.domains', content: (item) => item.description },
     ];
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        retry: 0
-    })
+    const { draft, isLoading, updateDraft } = useDraft()
 
     useEffect(() => {
-        props.setTitle(`Routes of ${rawAPI.data?.name}`)
+        if (draft)
+            props.setTitle(`Routes of ${draft.name}`)
 
         return () => props.setTitle('')
-    }, [rawAPI.data])
+    }, [draft])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-    const api = rawAPI.data;
 
-    const deleteItem = item => client.update({
-        ...api,
-        routes: api.routes.filter(f => f.id !== item.id)
-    })
-        .then(() => window.location.reload())
+    const deleteItem = item => {
+        updateDraft({
+            ...draft,
+            routes: draft.routes.filter(f => f.id !== item.id)
+        })
+    }
 
     const fields = []
 
-    return <Loader loading={rawAPI.isLoading}>
+    return <Loader loading={isLoading}>
 
         <Table
             parentProps={{ params }}
@@ -1204,7 +1136,7 @@ function Routes(props) {
             fields={fields}
             deleteItem={deleteItem}
             fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(rawAPI.data?.routes || [])}
+            fetchItems={() => Promise.resolve(draft.routes || [])}
             defaultSort="name"
             defaultSortDesc="true"
             showActions={true}
@@ -2213,7 +2145,7 @@ function Informations(props) {
 
             return () => props.setTitle(undefined)
         }
-    }, [])
+    }, [draft])
 
     return <Loader loading={isLoading}>
         <NgForm
