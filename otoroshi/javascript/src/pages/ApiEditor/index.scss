@@ -81,6 +81,10 @@
         color: var(--text) !important;
     }
 
+    .apis-cards {
+        cursor: pointer;
+    }
+
     .apis-cards:hover .cards-body {
         background-color: hsla(0, 0%, 35%, .5);
     }

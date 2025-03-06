@@ -757,7 +757,7 @@ case class Api(
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
 
-    if (state != ApiRemoved) {
+    if (state == ApiRemoved || state == ApiStaging) {
       Seq.empty.vfuture
     } else {
       Future.sequence(routes.map(route => apiRouteToNgRoute(route.id)))

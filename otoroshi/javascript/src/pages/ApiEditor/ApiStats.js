@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { converterBase2 } from 'byte-converter';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
@@ -11,60 +11,53 @@ function init(size, value = 0) {
     return arr;
 }
 
-class Metric extends Component {
-    size = 30;
+function Metric({ time, value, ...props }) {
+    const size = 30;
 
-    state = {
-        values: init(this.size),
-    };
+    const [values, setValues] = useState(init(size))
 
-    restrict(what, size) {
+    const restrict = (what) => {
         if (what.length > size) {
             what.shift();
         }
         return what;
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.time !== this.props.time) {
-            let value = nextProps.value;
-            if (value.replace) {
-                value = value
-                    .replace(' ', '')
-                    .replace('in', '')
-                    .replace('out', '')
-                    .replace('/sec', '')
-                    .replace(/Mb|Gb|Tb|Pb|Kb/, '');
-                value = parseFloat(value);
-            }
-            this.setState({ values: this.restrict([...this.state.values, value], this.size) });
+    useEffect(() => {
+        let newValue = value
+        if (newValue.replace) {
+            newValue = newValue
+                .replace(' ', '')
+                .replace('in', '')
+                .replace('out', '')
+                .replace('/sec', '')
+                .replace(/Mb|Gb|Tb|Pb|Kb/, '');
+            newValue = parseFloat(newValue);
         }
-    }
+        setValues(restrict([...values, newValue]))
+    }, [time])
 
-    render() {
-        const props = this.props;
-        const mode = window.localStorage.getItem('otoroshi-dark-light-mode') || 'dark';
-        return (
-            <div
-                className="metric"
-                style={{
-                    width: props.width || 300,
-                }}
-            >
-                <span className="metric-text-title">{props.legend}</span>
-                <div className="metric-box">
-                    <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
-                        <SparklinesLine
-                            color={mode === 'dark' ? 'var(--color-primary)' : 'black'}
-                            _color="rgb(249, 176, 0)"
-                        />
-                        <SparklinesSpots />
-                    </Sparklines>
-                </div>
-                <span className="metric-text-value">{props.value}<span>{props.unit}</span></span>
+    const mode = window.localStorage.getItem('otoroshi-dark-light-mode') || 'dark';
+    return (
+        <div
+            className="metric"
+            style={{
+                width: props.width || 300,
+            }}
+        >
+            <span className="metric-text-title">{props.legend}</span>
+            <div className="metric-box">
+                <Sparklines data={values} limit={values.length} height={65}>
+                    <SparklinesLine
+                        color={mode === 'dark' ? 'var(--color-primary)' : 'black'}
+                        _color="rgb(249, 176, 0)"
+                    />
+                    <SparklinesSpots />
+                </Sparklines>
             </div>
-        );
-    }
+            <span className="metric-text-value">{value}<span>{props.unit}</span></span>
+        </div>
+    )
 }
 
 export class ApiStats extends Component {

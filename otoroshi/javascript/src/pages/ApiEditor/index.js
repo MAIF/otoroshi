@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import './index.scss'
 
@@ -45,6 +45,7 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
 );
 
 export default function ApiEditor(props) {
+
     return <div className='editor'>
         <SidebarComponent {...props} />
         <QueryClientProvider client={queryClient}>
@@ -169,9 +170,13 @@ function Subscriptions(props) {
     ];
 
     useEffect(() => {
-        props.setTitle('Subscriptions')
+        props.setTitle({
+            value: 'Subscriptions',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
 
-        return () => props.setTitle('')
+        return () => props.setTitle(undefined)
     }, [])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
@@ -804,10 +809,13 @@ function Consumers(props) {
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        props.setTitle(`Consumers of ${item?.name}`)
-
+        props.setTitle({
+            value: 'Consumers',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
         return () => props.setTitle('')
-    }, [item])
+    }, [])
 
     const deleteItem = newItem => updateItem({
         ...item,
@@ -1111,11 +1119,14 @@ function Routes(props) {
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (item)
-            props.setTitle(`Routes of ${item.name}`)
+        props.setTitle({
+            value: 'Routes',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
 
-        return () => props.setTitle('')
-    }, [item])
+        return () => props.setTitle(undefined)
+    }, [])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
 
@@ -1179,11 +1190,14 @@ function Backends(props) {
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (item)
-            props.setTitle(`Backends of ${item.name}`)
+        props.setTitle({
+            value: 'Backends',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
 
         return () => props.setTitle('')
-    }, [item])
+    }, [])
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS)
 
@@ -1379,10 +1393,13 @@ function Deployments(props) {
     const { item, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (item)
-            props.setTitle('Deployments')
-        return () => props.setTitle('')
-    }, [item])
+        props.setTitle({
+            value: 'Deployments',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
+        return () => props.setTitle(undefined)
+    }, [])
 
     return <Loader loading={isLoading}>
         <Table
@@ -1470,7 +1487,13 @@ function NewFlow(props) {
     const params = useParams()
 
     useEffect(() => {
-        props.setTitle("Create a new Flow")
+        props.setTitle({
+            value: "Create a new Flow",
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
+
+        return () => props.setTitle(undefined)
     }, [])
 
     const [flow, setFlow] = useState({
@@ -1516,7 +1539,12 @@ function NewAPI(props) {
     const history = useHistory()
 
     useEffect(() => {
-        props.setTitle("Create a new API")
+        props.setTitle({
+            value: "Create a new API",
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
+        return () => props.setTitle(undefined)
     }, [])
 
     const [value, setValue] = useState({})
@@ -1615,7 +1643,12 @@ function Apis(props) {
     const history = useHistory()
 
     useEffect(() => {
-        props.setTitle("Apis")
+        props.setTitle({
+            value: "Apis",
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
+        return () => props.setTitle(undefined)
     }, [])
 
     const columns = [
@@ -1759,9 +1792,14 @@ function Flows(props) {
     ];
 
     useEffect(() => {
-        if (item)
-            props.setTitle(`Flows of ${item.name}`)
-    }, [item])
+        props.setTitle({
+            value: 'Flows',
+            noThumbtack: true,
+            children: <VersionBadge />
+        })
+
+        return () => props.setTitle(undefined)
+    }, [])
 
     const fetchItems = (paginationState) => Promise.resolve(item.flows)
 
@@ -2091,7 +2129,11 @@ function Informations(props) {
 
     useEffect(() => {
         if (item) {
-            props.setTitle(`${item.name}`)
+            props.setTitle({
+                value: 'Informations',
+                noThumbtack: true,
+                children: <VersionBadge />
+            })
 
             return () => props.setTitle(undefined)
         }
@@ -2113,13 +2155,24 @@ function Informations(props) {
     </Loader>
 }
 
+function VersionBadge() {
+    const version = useSignalValue(signalVersion)
+    return <div className='m-0 ms-2' style={{ fontSize: '1rem' }}>
+        <span className={`badge bg-xs ${version === 'Draft' ? 'bg-warning' : 'bg-danger'}`}>
+            {version === 'Published' ? 'PROD' : 'DEV'}
+        </span>
+    </div>
+}
+
 function DashboardTitle({ api, draft, ...props }) {
 
     const version = useSignalValue(signalVersion)
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
         <div className="d-flex">
-            <h3 className="m-0 align-self-center">Dashboard</h3>
+            <h3 className="m-0 d-flex align-items-center">Dashboard
+                <VersionBadge />
+            </h3>
         </div>
         <div className="d-flex align-item-center justify-content-between">
             {/* <NgSelectRenderer
@@ -2581,14 +2634,9 @@ function Card({ title, description, to, button, onClick }) {
 
 function BackendsCard({ backends }) {
     const params = useParams()
+    const history = useHistory()
 
-    return <Link to={`/apis/${params.apiId}/backends`} className="cards apis-cards">
-        {/* <div
-            className="cards-header"
-            style={{
-                background: `url(/assets/images/svgs/backend.svg)`,
-            }}
-        ></div> */}
+    return <div onClick={() => history.push(`/apis/${params.apiId}/backends`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Backends <span className='badge api-status-deprecated'>
@@ -2601,18 +2649,14 @@ function BackendsCard({ backends }) {
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>
-    </Link>
+    </div>
 }
 
 function RoutesCard({ routes }) {
     const params = useParams()
-    return <Link to={`/apis/${params.apiId}/routes`} className="cards apis-cards">
-        {/* <div
-            className="cards-header"
-            style={{
-                background: `url(/assets/images/svgs/routes.svg)`,
-            }}
-        ></div> */}
+    const history = useHistory()
+
+    return <div onClick={() => history.push(`/apis/${params.apiId}/routes`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Routes <span className='badge api-status-deprecated'>
@@ -2625,18 +2669,14 @@ function RoutesCard({ routes }) {
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>
-    </Link>
+    </div>
 }
 
 function FlowsCard({ flows }) {
     const params = useParams()
-    return <Link to={`/apis/${params.apiId}/flows`} className="cards apis-cards">
-        {/* <div
-            className="cards-header"
-            style={{
-                background: `url(/assets/images/svgs/plugins.svg)`,
-            }}
-        ></div> */}
+    const history = useHistory()
+
+    return <div onClick={() => history.push(`/apis/${params.apiId}/flows`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Flows <span className='badge api-status-deprecated'>
@@ -2649,7 +2689,7 @@ function FlowsCard({ flows }) {
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>
-    </Link>
+    </div>
 }
 
 function HighlighedPluginsText({ plural }) {
