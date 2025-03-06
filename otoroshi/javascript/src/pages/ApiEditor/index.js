@@ -9,7 +9,7 @@ import { Uptime } from '../../components/Status';
 import { Form, Table } from '../../components/inputs';
 import { v4 as uuid, v4 } from 'uuid';
 import Designer, { BackendSelector } from '../RouteDesigner/Designer';
-import Loader from '../../components/Loader';
+import SimpleLoader from './SimpleLoader';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
@@ -101,12 +101,11 @@ function useDraftOfAPI() {
         onSuccess: setAPI
     })
 
-    const query = useQuery(['findDraftById', params.apiId], () => nextClient
+    const query = useQuery(['findDraftById', params.apiId, version], () => nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS)
         .findById(params.apiId),
         {
             retry: 0,
-            enabled: version === 'Draft',
             onSuccess: data => {
                 if (data.error) {
                     Promise.all([
@@ -151,6 +150,9 @@ function useDraftOfAPI() {
 
     return {
         item: isPublished ? api : draft,
+        draft,
+        version,
+        tag: version === 'Published' ? 'PROD' : 'DEV',
         setItem: isPublished ? setAPI : setDraft,
         updateItem: isPublished ? updateAPI : updateDraft,
         isLoading: isPublished ? rawAPI.isLoading : query.isLoading
@@ -195,41 +197,39 @@ function Subscriptions(props) {
     const deleteItem = item => client.delete(item)
         .then(() => window.location.reload())
 
-    const fields = []
 
-    return <Loader loading={rawSubscriptions.isLoading}>
+    if (rawSubscriptions.isLoading)
+        return <SimpleLoader />
 
-        <Table
-            parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
-            selfUrl="subscriptions"
-            defaultTitle="Subscription"
-            itemName="Subscription"
-            columns={columns}
-            fields={fields}
-            deleteItem={deleteItem}
-            fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(rawSubscriptions.data || [])}
-            defaultSort="name"
-            defaultSortDesc="true"
-            showActions={true}
-            showLink={false}
-            extractKey={(item) => item.id}
-            rowNavigation={true}
-            hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`}
-            rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
-            injectTopBar={() => (
-                <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="subscriptions/new">
-                        <i className="fas fa-plus-circle" /> Create new subscription
-                    </Link>
-                    {props.injectTopBar}
-                </div>
-            )} />
-    </Loader>
+    return <Table
+        parentProps={{ params }}
+        navigateTo={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+        selfUrl="subscriptions"
+        defaultTitle="Subscription"
+        itemName="Subscription"
+        columns={columns}
+        deleteItem={deleteItem}
+        fetchTemplate={client.template}
+        fetchItems={() => Promise.resolve(rawSubscriptions.data || [])}
+        defaultSort="name"
+        defaultSortDesc="true"
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`}
+        rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+                <Link className="btn btn-primary btn-sm" to="subscriptions/new">
+                    <i className="fas fa-plus-circle" /> Create new subscription
+                </Link>
+                {props.injectTopBar}
+            </div>
+        )} />
 }
 
 function SubscriptionDesigner(props) {
@@ -312,7 +312,10 @@ function SubscriptionDesigner(props) {
             .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
     }
 
-    return <Loader loading={isLoading || rawSubscription.isLoading}>
+    if (isLoading || rawSubscription.isLoading)
+        return <SimpleLoader />
+
+    return <>
         <PageTitle title={subscription.name} {...props}>
             <FeedbackButton
                 type="success"
@@ -331,7 +334,7 @@ function SubscriptionDesigner(props) {
                 flow={flow}
                 onChange={setSubscription} />
         </div>
-    </Loader>
+    </>
 }
 
 function NewSubscription(props) {
@@ -441,7 +444,10 @@ function NewSubscription(props) {
             })
     }
 
-    return <Loader loading={isLoading || templatesQuery.isLoading}>
+    if (isLoading || templatesQuery.isLoading)
+        return <SimpleLoader />
+
+    return <>
         <PageTitle title={subscription.name} {...props} />
         <div style={{
             maxWidth: 640,
@@ -473,7 +479,7 @@ function NewSubscription(props) {
                 text="Create"
             />
         </div>
-    </Loader>
+    </>
 }
 
 function RouteDesigner(props) {
@@ -609,10 +615,10 @@ function RouteDesigner(props) {
             .then(() => history.push(`/apis/${params.apiId}/routes`))
     }
 
-    if (!route)
-        return null
+    if (!route || isLoading || !schema)
+        return <SimpleLoader />
 
-    return <Loader loading={isLoading || !schema}>
+    return <>
         <PageTitle title={route.name || "Update the route"} {...props}>
             <FeedbackButton
                 type="success"
@@ -632,13 +638,14 @@ function RouteDesigner(props) {
                 schema={schema}
                 onChange={newValue => setRoute(newValue)} />
         </div>
-    </Loader>
+    </>
 }
 
 function NewRoute(props) {
     const params = useParams()
     const history = useHistory()
 
+    const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
 
     const [backends, setBackends] = useState([])
@@ -650,10 +657,10 @@ function NewRoute(props) {
             onSuccess: setBackends
         })
 
-    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     useEffect(() => {
-        if (item && !backendsQuery.isLoading) {
+        if (item && !backendsQuery.isLoading && !schema) {
             setSchema({
                 name: {
                     type: 'string',
@@ -771,7 +778,10 @@ function NewRoute(props) {
             }
         })
 
-    return <Loader loading={isLoading || !schema || templatesQuery.isLoading}>
+    if (isLoading || !schema || templatesQuery.isLoading)
+        return <SimpleLoader />
+
+    return <>
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
         <div style={{
             maxWidth: 640,
@@ -780,8 +790,8 @@ function NewRoute(props) {
             <NgForm
                 flow={flow}
                 schema={schema}
-                value={item}
-                onChange={setItem}
+                value={route}
+                onChange={setRoute}
             />
             <FeedbackButton
                 type="success"
@@ -791,7 +801,7 @@ function NewRoute(props) {
                 text="Create"
             />
         </div>
-    </Loader>
+    </>
 }
 
 function Consumers(props) {
@@ -823,8 +833,10 @@ function Consumers(props) {
     })
         .then(() => window.location.reload())
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
 
+    return <>
         <Table
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
@@ -859,7 +871,7 @@ function Consumers(props) {
                     {props.injectTopBar}
                 </div>
             )} />
-    </Loader>
+    </>
 }
 
 const TEMPLATES = {
@@ -963,8 +975,10 @@ function NewConsumer(props) {
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
 
+    return <>
         <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
 
         <div style={{
@@ -983,7 +997,7 @@ function NewConsumer(props) {
                 text="Create"
             />
         </div>
-    </Loader>
+    </>
 }
 
 function ConsumerDesigner(props) {
@@ -1078,8 +1092,10 @@ function ConsumerDesigner(props) {
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
 
+    return <>
         <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -1099,7 +1115,7 @@ function ConsumerDesigner(props) {
                 schema={schema}
                 onChange={newValue => setConsumer(newValue)} />
         </div>
-    </Loader>
+    </>
 }
 
 
@@ -1137,41 +1153,38 @@ function Routes(props) {
         })
     }
 
-    const fields = []
+    if (isLoading)
+        return <SimpleLoader />
 
-    return <Loader loading={isLoading}>
-
-        <Table
-            parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
-            selfUrl="routes"
-            defaultTitle="Route"
-            itemName="Route"
-            columns={columns}
-            fields={fields}
-            deleteItem={deleteItem}
-            fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(item.routes || [])}
-            defaultSort="name"
-            defaultSortDesc="true"
-            showActions={true}
-            showLink={false}
-            extractKey={(item) => item.id}
-            rowNavigation={true}
-            hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`}
-            rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
-            injectTopBar={() => (
-                <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="routes/new">
-                        <i className="fas fa-plus-circle" /> Create new route
-                    </Link>
-                    {props.injectTopBar}
-                </div>
-            )} />
-    </Loader>
+    return <Table
+        parentProps={{ params }}
+        navigateTo={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
+        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
+        selfUrl="routes"
+        defaultTitle="Route"
+        itemName="Route"
+        columns={columns}
+        deleteItem={deleteItem}
+        fetchTemplate={client.template}
+        fetchItems={() => Promise.resolve(item.routes || [])}
+        defaultSort="name"
+        defaultSortDesc="true"
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`}
+        rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+                <Link className="btn btn-primary btn-sm" to="routes/new">
+                    <i className="fas fa-plus-circle" /> Create new route
+                </Link>
+                {props.injectTopBar}
+            </div>
+        )} />
 }
 
 function Backends(props) {
@@ -1206,38 +1219,38 @@ function Backends(props) {
         backends: item.backends.filter(f => f.id !== newItem.id)
     })
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
 
-        <Table
-            parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
-            selfUrl="backends"
-            defaultTitle="Backend"
-            itemName="Backend"
-            columns={columns}
-            deleteItem={deleteItem}
-            fetchTemplate={client.template}
-            fetchItems={() => Promise.resolve(item.backends || [])}
-            defaultSort="name"
-            defaultSortDesc="true"
-            showActions={true}
-            showLink={false}
-            extractKey={(item) => item.id}
-            rowNavigation={true}
-            hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`}
-            rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
-            injectTopBar={() => (
-                <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="backends/new">
-                        <i className="fas fa-plus-circle" /> Create new backend
-                    </Link>
-                    {props.injectTopBar}
-                </div>
-            )} />
-    </Loader>
+    return <Table
+        parentProps={{ params }}
+        navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
+        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
+        selfUrl="backends"
+        defaultTitle="Backend"
+        itemName="Backend"
+        columns={columns}
+        deleteItem={deleteItem}
+        fetchTemplate={client.template}
+        fetchItems={() => Promise.resolve(item.backends || [])}
+        defaultSort="name"
+        defaultSortDesc="true"
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`}
+        rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+                <Link className="btn btn-primary btn-sm" to="backends/new">
+                    <i className="fas fa-plus-circle" /> Create new backend
+                </Link>
+                {props.injectTopBar}
+            </div>
+        )} />
 }
 
 function NewBackend(props) {
@@ -1251,7 +1264,10 @@ function NewBackend(props) {
     const saveBackend = () => {
         return updateItem({
             ...item,
-            backends: [...item.backends, backend]
+            backends: [...item.backends, {
+                ...backend,
+                ...backend.backend
+            }]
         })
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
@@ -1262,12 +1278,14 @@ function NewBackend(props) {
         onSuccess: (data) => setBackend({
             id: v4(),
             name: 'My new backend',
-            ...data.backend
+            backend: data.backend
         })
     });
 
-    return <Loader loading={templateQuery.isLoading || isLoading}>
+    if (templateQuery.isLoading || isLoading)
+        return <SimpleLoader />
 
+    return <>
         <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -1302,7 +1320,7 @@ function NewBackend(props) {
                 }}
                 onChange={setBackend} />
         </div>
-    </Loader>
+    </>
 }
 
 function EditBackend(props) {
@@ -1331,7 +1349,10 @@ function EditBackend(props) {
             .then(() => history.push(`/apis/${params.apiId}/backends`))
     }
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
+
+    return <>
         <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
@@ -1366,7 +1387,7 @@ function EditBackend(props) {
                 }}
                 onChange={setBackend} />
         </div>
-    </Loader>
+    </>
 }
 
 function Deployments(props) {
@@ -1401,31 +1422,32 @@ function Deployments(props) {
         return () => props.setTitle(undefined)
     }, [])
 
-    return <Loader loading={isLoading}>
-        <Table
-            navigateTo={item =>
-                window.wizard('Version', () => <PublisDraftModalContent
-                    draft={item}
-                    currentItem={item} />, {
-                    noCancel: true,
-                    okLabel: 'Close'
-                })
-            }
-            parentProps={{ params }}
-            selfUrl="deployments"
-            defaultTitle="Deployment"
-            itemName="Deployment"
-            columns={columns}
-            fetchTemplate={() => Promise.resolve({})}
-            fetchItems={() => Promise.resolve(item.deployments || [])}
-            defaultSort="version"
-            defaultSortDesc="true"
-            showActions={false}
-            extractKey={(item) => item.id}
-            rowNavigation={true}
-            hideAddItemAction={true}
-        />
-    </Loader>
+    if (isLoading)
+        return <SimpleLoader />
+
+    return <Table
+        navigateTo={item =>
+            window.wizard('Version', () => <PublisDraftModalContent
+                draft={item}
+                currentItem={item} />, {
+                noCancel: true,
+                okLabel: 'Close'
+            })
+        }
+        parentProps={{ params }}
+        selfUrl="deployments"
+        defaultTitle="Deployment"
+        itemName="Deployment"
+        columns={columns}
+        fetchTemplate={() => Promise.resolve({})}
+        fetchItems={() => Promise.resolve(item.deployments || [])}
+        defaultSort="version"
+        defaultSortDesc="true"
+        showActions={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+    />
 }
 
 function SidebarWithVersion({ params }) {
@@ -1519,7 +1541,10 @@ function NewFlow(props) {
             .then(() => history.push(`/apis/${params.apiId}/flows/${flow.id}`));
     }
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
+
+    return <>
         <Form
             schema={schema}
             flow={["name"]}
@@ -1532,7 +1557,7 @@ function NewFlow(props) {
             onClick={createFlow}
             text="Create"
         />
-    </Loader>
+    </>
 }
 
 function NewAPI(props) {
@@ -1621,7 +1646,10 @@ function NewAPI(props) {
             .then(() => history.push(`/apis/${value.id}`));
     }
 
-    return <Loader loading={template.isLoading}>
+    if (template.isLoading)
+        return <SimpleLoader />
+
+    return <>
         <Form
             schema={schema}
             flow={flow}
@@ -1634,7 +1662,7 @@ function NewAPI(props) {
             onClick={createApi}
             text="Create"
         />
-    </Loader>
+    </>
 }
 
 function Apis(props) {
@@ -1643,11 +1671,7 @@ function Apis(props) {
     const history = useHistory()
 
     useEffect(() => {
-        props.setTitle({
-            value: "Apis",
-            noThumbtack: true,
-            children: <VersionBadge />
-        })
+        props.setTitle('Apis')
         return () => props.setTitle(undefined)
     }, [])
 
@@ -1766,16 +1790,17 @@ function FlowDesigner(props) {
             .then(() => history.replace(`/apis/${params.apiId}/flows`))
     }
 
-    return <Loader loading={isLoading || !flow}>
-        <div className='designer'>
-            <Designer
-                history={history}
-                value={flow}
-                setValue={value => setFlow({ value })}
-                setSaveButton={() => { }}
-            />
-        </div>
-    </Loader>
+    if (isLoading || !flow)
+        return <SimpleLoader />
+
+    return <div className='designer'>
+        <Designer
+            history={history}
+            value={flow}
+            setValue={value => setFlow({ value })}
+            setSaveButton={() => { }}
+        />
+    </div>
 }
 
 function Flows(props) {
@@ -1809,38 +1834,39 @@ function Flows(props) {
         plugins: []
     })
 
-    return <Loader loading={isLoading}>
-        <Table
-            parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
-            selfUrl="flows"
-            defaultTitle="Flow"
-            itemName="Flow"
-            columns={columns}
-            deleteItem={(item) => console.log('delete item', item)}
-            defaultSort="name"
-            defaultSortDesc="true"
-            fetchItems={fetchItems}
-            fetchTemplate={fetchTemplate}
-            showActions={true}
-            showLink={false}
-            extractKey={(item) => item.id}
-            rowNavigation={true}
-            hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/flows/${i.id}`}
-            rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
-            injectTopBar={() => (
-                <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="flows/new">
-                        <i className="fas fa-plus-circle" /> Create new Flow
-                    </Link>
-                    {props.injectTopBar}
-                </div>
-            )}
-        />
-    </Loader>
+    if (isLoading)
+        return <SimpleLoader />
+
+    return <Table
+        parentProps={{ params }}
+        navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+        selfUrl="flows"
+        defaultTitle="Flow"
+        itemName="Flow"
+        columns={columns}
+        deleteItem={(item) => console.log('delete item', item)}
+        defaultSort="name"
+        defaultSortDesc="true"
+        fetchItems={fetchItems}
+        fetchTemplate={fetchTemplate}
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/flows/${i.id}`}
+        rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        injectTopBar={() => (
+            <div className="btn-group input-group-btn">
+                <Link className="btn btn-primary btn-sm" to="flows/new">
+                    <i className="fas fa-plus-circle" /> Create new Flow
+                </Link>
+                {props.injectTopBar}
+            </div>
+        )}
+    />
 }
 
 // function VersionManagerSelector({ createOrUpdate, setCreateOrUpdate }) {
@@ -2139,7 +2165,10 @@ function Informations(props) {
         }
     }, [item])
 
-    return <Loader loading={isLoading}>
+    if (isLoading)
+        return <SimpleLoader />
+
+    return <>
         <NgForm
             schema={schema}
             flow={flow}
@@ -2148,16 +2177,16 @@ function Informations(props) {
         />
         <Button
             type="success"
-            className="btn-sm ms-auto d-flex"
-            onClick={updateAPI}
-            text="Update"
-        />
-    </Loader>
+            className="btn-sm ms-auto d-flex align-items-center"
+            onClick={updateAPI}>
+            Update <VersionBadge size="xs" className="ms-2" />
+        </Button>
+    </>
 }
 
-function VersionBadge() {
+function VersionBadge({ size, className }) {
     const version = useSignalValue(signalVersion)
-    return <div className='m-0 ms-2' style={{ fontSize: '1rem' }}>
+    return <div className={className ? className : 'm-0 ms-2'} style={{ fontSize: size === 'xs' ? '.75rem' : '1rem' }}>
         <span className={`badge bg-xs ${version === 'Draft' ? 'bg-warning' : 'bg-danger'}`}>
             {version === 'Published' ? 'PROD' : 'DEV'}
         </span>
@@ -2185,33 +2214,50 @@ function DashboardTitle({ api, draft, ...props }) {
             }}
             options={api.versions?.length > 0 ? api.versions : ['0.0.1']} /> */}
 
-            {version === 'Draft' && <Button
-                text="Publish new version"
-                className="btn-sm mx-2"
-                type="primaryColor"
-                style={{
-                    borderColor: 'var(--color-primary)',
-                }}
-                onClick={() => {
-                    window
-                        .wizard('Version manager', (ok, cancel, state, setState) => {
-                            return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
-                        }, {
-                            style: { width: '100%' },
-                            noCancel: false,
-                            okClassName: 'ms-2',
-                            okLabel: 'I want to publish this API',
-                        })
-                        .then(deployment => {
-                            if (deployment) {
-                                fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
-                                    .then(res => {
-                                        console.log(res)
-                                    })
-                            }
-                        });
-                }}
-            />}
+            {version === 'Draft' && <div className='d-flex align-items-center'>
+                <Button
+                    text="Publish new version"
+                    className="btn-sm mx-2"
+                    type="primaryColor"
+                    style={{
+                        borderColor: 'var(--color-primary)',
+                    }}
+                    onClick={() => {
+                        window
+                            .wizard('Version manager', (ok, cancel, state, setState) => {
+                                return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
+                            }, {
+                                style: { width: '100%' },
+                                noCancel: false,
+                                okClassName: 'ms-2',
+                                okLabel: 'I want to publish this API',
+                            })
+                            .then(deployment => {
+                                if (deployment) {
+                                    fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                                        .then(res => {
+                                            console.log(res)
+                                        })
+                                }
+                            });
+                    }}
+                />
+                <Button
+                    text="Reset draft"
+                    className="btn-sm"
+                    type="danger"
+                    onClick={() => {
+                        window.newConfirm('Are you sure you reset the draft content to match the published version? All your modifications will be discarded.')
+                            .then((ok) => {
+                                if (ok) {
+                                    nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+                                        .deleteById(draft.id)
+                                        .then(() => window.location.reload())
+                                }
+                            })
+                    }}
+                />
+            </div>}
         </div>
     </div>
 }
@@ -2220,145 +2266,134 @@ function Dashboard(props) {
     const params = useParams()
     const history = useHistory()
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId),
-        {
-            retry: 0
-        })
-
-    const rawDraftAPI = useQuery(["getDraft", params.apiId],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(params.apiId),
-        {
-            retry: 0
-        })
-
-    const api = rawAPI.data
-    const draft = rawDraftAPI.data
+    const { item, draft, isLoading, version } = useDraftOfAPI()
 
     useEffect(() => {
-        if (!rawAPI.isLoading && !rawDraftAPI.isLoading) {
-            props.setTitle(<DashboardTitle {...props} api={api} draft={draft} />)
+        if (!isLoading && !!draft) {
+            props.setTitle(<DashboardTitle {...props} api={item} draft={draft} />)
         }
 
         return () => props.setTitle(undefined)
-    }, [api, draft])
+    }, [item, draft])
 
-    const hasCreateFlow = api && api.flows.length > 0
-    const hasCreateRoute = api && api.routes.length > 0
-    const hasCreateConsumer = api && api.consumers.length > 0
-    const isPublished = api && api.state === API_STATE.PUBLISHED
+    const hasCreateFlow = item && item.flows.length > 0
+    const hasCreateRoute = item && item.routes.length > 0
+    const hasCreateConsumer = item && item.consumers.length > 0
+    const isPublished = item && item.state === API_STATE.PUBLISHED
     const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || !isPublished
 
+    if (isLoading)
+        return <SimpleLoader />
+
     return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
-        <Loader loading={rawAPI.isLoading}>
+        {item && <>
+            <div className='d-flex gap-3'>
+                <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
+                    {showGettingStarted && <ContainerBlock full>
+                        <SectionHeader text="Getting Started" />
 
-            {api && <>
-                <div className='d-flex gap-3'>
-                    <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
-                        {showGettingStarted && <ContainerBlock full>
-                            <SectionHeader text="Getting Started" />
+                        {!isPublished && !hasCreateConsumer && <Card
+                            onClick={() => publishAPI(item)}
+                            title="Deploy your API"
+                            description={<>
+                                Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => publishAPI(item)}
+                                text="Start your API" />}
+                        />}
 
-                            {!isPublished && !hasCreateConsumer && <Card
-                                onClick={() => publishAPI(api)}
-                                title="Deploy your API"
-                                description={<>
-                                    Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
-                                </>}
-                                button={<FeedbackButton type="primaryColor"
-                                    className="ms-auto d-flex"
-                                    onPress={() => publishAPI(api)}
-                                    text="Start your API" />}
-                            />}
+                        {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
+                            to={`/apis/${params.apiId}/consumers/new`}
+                            title="Create your first API consumer"
+                            description={<>
+                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
 
-                            {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
-                                to={`/apis/${params.apiId}/consumers/new`}
-                                title="Create your first API consumer"
-                                description={<>
-                                    <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
-                                </>}
-                                button={<FeedbackButton type="primaryColor"
-                                    className="ms-auto d-flex"
-                                    onPress={() => { }}
-                                    text="Create" />}
-                            />}
+                        {hasCreateFlow && !hasCreateRoute && <Card
+                            to={`/apis/${params.apiId}/routes/new`}
+                            title="Create your first route"
+                            description={<>
+                                Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
 
-                            {hasCreateFlow && !hasCreateRoute && <Card
-                                to={`/apis/${params.apiId}/routes/new`}
-                                title="Create your first route"
-                                description={<>
-                                    Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
-                                </>}
-                                button={<FeedbackButton type="primaryColor"
-                                    className="ms-auto d-flex"
-                                    onPress={() => { }}
-                                    text="Create" />}
-                            />}
-
-                            {!hasCreateFlow && <Card
-                                to={`/apis/${params.apiId}/flows/new`}
-                                title="Create your first flow of plugins"
-                                description={<>
-                                    Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
-                                </>}
-                                button={<FeedbackButton type="primaryColor"
-                                    className="ms-auto d-flex"
-                                    onPress={() => { }}
-                                    text="Create" />}
-                            />}
-                        </ContainerBlock>}
-                        {api.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
-                            <APIHeader api={api} />
-                            <ApiStats url={`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${api.id}/live?every=2000`} />
+                        {!hasCreateFlow && <Card
+                            to={`/apis/${params.apiId}/flows/new`}
+                            title="Create your first flow of plugins"
+                            description={<>
+                                Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
+                            </>}
+                            button={<FeedbackButton type="primaryColor"
+                                className="ms-auto d-flex"
+                                onPress={() => { }}
+                                text="Create" />}
+                        />}
+                    </ContainerBlock>}
+                    {item.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
+                        <APIHeader api={item} version={version} />
+                        {version !== 'Draft' && <>
+                            <ApiStats url={`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000`} />
 
                             <Uptime
-                                health={api.health?.today}
+                                health={item.health?.today}
                                 stopTheCountUnknownStatus={false}
                             />
                             <Uptime
-                                health={api.health?.yesterday}
+                                health={item.health?.yesterday}
                                 stopTheCountUnknownStatus={false}
                             />
                             <Uptime
-                                health={api.health?.nMinus2}
+                                health={item.health?.nMinus2}
                                 stopTheCountUnknownStatus={false}
                             />
-                        </ContainerBlock>}
-                        {hasCreateConsumer && <ContainerBlock full>
-                            <SectionHeader
-                                text="Subscriptions"
-                                description={api.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
-                                actions={<Button
-                                    type="primaryColor"
-                                    text="Subscribe"
-                                    className='btn-sm'
-                                    onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
+                        </>}
+                    </ContainerBlock>}
+                    {hasCreateConsumer && <ContainerBlock full>
+                        <SectionHeader
+                            text="Subscriptions"
+                            description={item.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
+                            actions={<Button
+                                type="primaryColor"
+                                text="Subscribe"
+                                className='btn-sm'
+                                onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
 
-                            <SubscriptionsView api={api} />
-                        </ContainerBlock>}
+                        <SubscriptionsView api={item} />
+                    </ContainerBlock>}
 
-                        {hasCreateConsumer && <ContainerBlock full>
-                            <SectionHeader text="API Consumers"
-                                description={api.consumers.length <= 0 ? 'API consumers will appear here' : ''}
-                                actions={<Button
-                                    type="primaryColor"
-                                    text="New Consumer"
-                                    className='btn-sm'
-                                    onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
+                    {hasCreateConsumer && <ContainerBlock full>
+                        <SectionHeader text="API Consumers"
+                            description={item.consumers.length <= 0 ? 'API consumers will appear here' : ''}
+                            actions={<Button
+                                type="primaryColor"
+                                text="New Consumer"
+                                className='btn-sm'
+                                onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
 
-                            <ApiConsumersView api={api} />
-                        </ContainerBlock>}
-                    </div>
-                    {api.flows.length > 0 && api.routes.length > 0 && <ContainerBlock>
-                        <SectionHeader text="Build your API" description="Manage entities for this API" />
-                        <Entities>
-                            <FlowsCard flows={api.flows} />
-                            <BackendsCard backends={api.backends} />
-                            <RoutesCard routes={api.routes} />
-                        </Entities>
+                        <ApiConsumersView api={item} />
                     </ContainerBlock>}
                 </div>
-            </>}
-        </Loader>
+                {item.flows.length > 0 && item.routes.length > 0 && <ContainerBlock>
+                    <SectionHeader text="Build your API" description="Manage entities for this API" />
+                    <Entities>
+                        <FlowsCard flows={item.flows} />
+                        <BackendsCard backends={item.backends} />
+                        <RoutesCard routes={item.routes} />
+                    </Entities>
+                </ContainerBlock>}
+            </div>
+        </>}
     </div>
 }
 
@@ -2415,11 +2450,11 @@ function Consumer({ consumer }) {
         {!open && <>
             <div>{consumer.name}</div>
             <div>{consumer.description}</div>
-            <div className={`badge bg-${CONSUMER_STATUS_COLORS[consumer.status]}`} style={{
+            <div className={`badge custom-badge bg-${CONSUMER_STATUS_COLORS[consumer.status]}`} style={{
                 width: 'fit-content',
                 border: 'none'
             }}>{consumer.status}</div>
-            <div className="badge bg-success" style={{
+            <div className="badge custom-badge bg-success" style={{
                 border: 'none'
             }}>{consumer.consumer_kind}</div>
             <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
@@ -2497,7 +2532,7 @@ function Subscription({ subscription }) {
             <div>{subscription.name}</div>
             <div>{subscription.description}</div>
             <div>{moment(new Date(subscription.dates.created_at)).format('DD/MM/YY hh:mm')}</div>
-            <div className='badge bg-success' style={{ border: 'none' }}>{subscription.subscription_kind}</div>
+            <div className='badge custom-badge bg-success' style={{ border: 'none' }}>{subscription.subscription_kind}</div>
             <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
         </>}
     </div>
@@ -2524,7 +2559,7 @@ function publishAPI(api) {
         .then(() => window.location.reload())
 }
 
-function APIHeader({ api }) {
+function APIHeader({ api, version }) {
     const updateAPI = newAPI => {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.APIS)
@@ -2535,24 +2570,26 @@ function APIHeader({ api }) {
         <div className='d-flex align-items-center gap-3'>
             <h2 className='m-0'>{api.name}</h2>
             <APIState value={api.state} />
-            {api.state === API_STATE.STAGING && <Button
-                type='primaryColor'
-                onClick={() => publishAPI(api)}
-                className='btn-sm ms-auto'
-                text="Start you API" />}
-            {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
-                <Button
-                    type='quiet'
-                    onClick={() => {
-                        updateAPI({
-                            ...api,
-                            state: api.state === API_STATE.PUBLISHED ? API_STATE.DEPRECATED : API_STATE.PUBLISHED
-                        })
-                            .then(() => window.location.reload())
-                    }}
+
+            {version !== 'Draft' && <>
+                {api.state === API_STATE.STAGING && <Button
+                    type='primaryColor'
+                    onClick={() => publishAPI(api)}
                     className='btn-sm ms-auto'
-                    text={api.state === API_STATE.PUBLISHED ? "Deprecate your API" : "Publish your API"} />}
-            {/* {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
+                    text="Start you API" />}
+                {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
+                    <Button
+                        type='quiet'
+                        onClick={() => {
+                            updateAPI({
+                                ...api,
+                                state: api.state === API_STATE.PUBLISHED ? API_STATE.DEPRECATED : API_STATE.PUBLISHED
+                            })
+                                .then(() => window.location.reload())
+                        }}
+                        className='btn-sm ms-auto'
+                        text={api.state === API_STATE.PUBLISHED ? "Deprecate your API" : "Publish your API"} />}
+                {/* {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
                 <Button
                     type='danger'
                     onClick={() => {
@@ -2564,6 +2601,7 @@ function APIHeader({ api }) {
                     }}
                     className='btn-sm ms-auto'
                     text="Close your API" />} */}
+            </>}
         </div>
         <div className='d-flex align-items-center gap-1 mb-3'>
             <p className='m-0 me-2'>{api.description}</p>
@@ -2576,19 +2614,19 @@ function APIHeader({ api }) {
 
 function APIState({ value }) {
     if (value === API_STATE.STAGING)
-        return <span className='badge api-status-started'>
+        return <span className='badge custom-badge api-status-started'>
             <i className='fas fa-rocket me-2' />
             Staging
         </span>
 
     if (value === API_STATE.DEPRECATED)
-        return <span className='badge api-status-deprecated'>
+        return <span className='badge custom-badge api-status-deprecated'>
             <i className='fas fa-warning me-2' />
             Deprecated
         </span>
 
     if (value === API_STATE.PUBLISHED)
-        return <span className='badge api-status-published'>
+        return <span className='badge custom-badge api-status-published'>
             <i className='fas fa-check fa-xs me-2' />
             Published
         </span>
@@ -2639,7 +2677,7 @@ function BackendsCard({ backends }) {
     return <div onClick={() => history.push(`/apis/${params.apiId}/backends`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
-                Backends <span className='badge api-status-deprecated'>
+                Backends <span className='badge custom-badge api-status-deprecated'>
                     <i className='fas fa-microchip me-2' />
                     {backends.length}
                 </span>
@@ -2659,7 +2697,7 @@ function RoutesCard({ routes }) {
     return <div onClick={() => history.push(`/apis/${params.apiId}/routes`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
-                Routes <span className='badge api-status-deprecated'>
+                Routes <span className='badge custom-badge api-status-deprecated'>
                     <i className='fas fa-road me-2' />
                     {routes.length}
                 </span>
@@ -2679,7 +2717,7 @@ function FlowsCard({ flows }) {
     return <div onClick={() => history.push(`/apis/${params.apiId}/flows`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
-                Flows <span className='badge api-status-deprecated'>
+                Flows <span className='badge custom-badge api-status-deprecated'>
                     <i className='fas fa-road me-2' />
                     {flows.length}
                 </span>

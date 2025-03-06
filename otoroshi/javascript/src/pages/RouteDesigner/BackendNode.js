@@ -6,6 +6,8 @@ export class BackendForm extends React.Component {
     // console.log(this.props)
     const { form } = this.props.state;
 
+    console.log(form)
+
     return (
       <div>
         <NgForm

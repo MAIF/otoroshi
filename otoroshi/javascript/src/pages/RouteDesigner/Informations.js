@@ -15,7 +15,7 @@ const link = 'routes';
 const entityName = 'route'
 
 export const Informations = forwardRef(
-  ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
+  ({ isCreation, value, setValue, setSaveButton, routeId, ...props }, ref) => {
     const history = useHistory();
     const location = useLocation();
     const [showAdvancedForm, toggleAdvancedForm] = useState(false);
@@ -297,7 +297,7 @@ export const Informations = forwardRef(
         },
       },
       danger_zone: {
-        renderer: (props) => {
+        renderer: () => {
           const what = window.location.pathname.split('/')[3];
           const id = window.location.pathname.split('/')[4];
           const kind = nextClient.ENTITIES.ROUTES

@@ -1,13 +1,22 @@
 .editor {
 
-    .badge {
+    .bg-warning {
+        color: var(--text) !important;
+        background-color: var(--color-primary) !important;
+    }
+
+    .btn-warning {
+        border-color: var(--color-primary) !important;
+    }
+
+    .custom-badge {
         color: var(--text);
         border-radius: 1rem;
         border: 2px solid var(--text);
         padding: .25rem .75rem .25rem .5rem;
     }
 
-    .badge i {
+    .custom-badge i {
         background-color: var(--text);
         color: var(--reverse-text);
         border-radius: 50%;

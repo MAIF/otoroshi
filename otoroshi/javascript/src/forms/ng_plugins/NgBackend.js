@@ -1,4 +1,7 @@
+import React from 'react'
+
 import explainations from '../../explainations';
+import { LoadBalancingSelector } from '../../pages/ApiEditor/LoadBalancingSelector';
 
 export default {
   id: 'Backend',
@@ -221,14 +224,14 @@ export default {
       collapsed: true,
       schema: {
         enabled: {
-          label: 'enabled',
+          label: 'Enabled',
           type: 'box-bool',
           props: {
             description: 'To help failing fast, you can activate healthcheck on a specific URL.',
           },
         },
         url: {
-          label: 'url',
+          label: 'URL',
           type: 'string',
           help: "The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete.",
         },
@@ -516,19 +519,22 @@ export default {
       collapsed: true,
       schema: {
         type: {
-          type: 'select',
-          help: 'The load balancing algorithm used',
-          label: 'Type',
-          props: {
-            options: [
-              'BestResponseTime',
-              'IpAddressHash',
-              'Random',
-              'RoundRobin',
-              'Sticky',
-              'WeightedBestResponseTime',
-            ],
-          },
+          renderer: (props) => {
+            return <LoadBalancingSelector onChange={props.onChange} value={props.value} />
+          }
+          // type: 'select',
+          // help: 'The load balancing algorithm used',
+          // label: 'Type',
+          // props: {
+          //   options: [
+          //     'BestResponseTime',
+          //     'IpAddressHash',
+          //     'Random',
+          //     'RoundRobin',
+          //     'Sticky',
+          //     'WeightedBestResponseTime',
+          //   ],
+          // },
         },
         ratio: {
           label: 'ratio',
