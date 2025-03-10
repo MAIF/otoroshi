@@ -95,6 +95,68 @@ object AsyncUtils {
     promise.future
   }
 
+  def filterAsyncF[I](items: Seq[I])(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Seq[I]] = {
+
+    val promise = Promise[Seq[I]]()
+    var results = Seq.empty[I]
+
+    def next(all: Seq[I]): Unit = {
+      if (all.isEmpty) {
+        promise.trySuccess(results)
+      } else {
+        val head = all.head
+        f(head).andThen {
+          case Failure(e)     => promise.tryFailure(e)
+          case Success(false) => {
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
+          }
+          case Success(true) => {
+            results = results :+ head
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
+          }
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
+  def findAsyncF[I](items: Seq[I])(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[I]] = {
+
+    val promise = Promise[Option[I]]()
+
+    def next(all: Seq[I]): Unit = {
+      if (all.isEmpty) {
+        promise.trySuccess(None)
+      } else {
+        val head = all.head
+        f(head).andThen {
+          case Failure(e)     => promise.tryFailure(e)
+          case Success(false) => {
+            if (all.size == 1) {
+              promise.trySuccess(None)
+            } else {
+              next(all.tail)
+            }
+          }
+          case Success(true)  => promise.trySuccess(Some(head))
+        }
+      }
+    }
+
+    next(items)
+    promise.future
+  }
+
   def flatmapAsyncF[I, A](
       items: Seq[I]
   )(f: Function[I, Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {

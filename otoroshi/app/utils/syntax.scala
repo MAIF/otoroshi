@@ -712,6 +712,18 @@ object implicits {
       AsyncUtils.flatmapAsyncF[A, O](seq)(f)
     }
 
+    def filterAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+      AsyncUtils.filterAsyncF[A](seq)(f)
+    }
+
+    def findAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[A]] = {
+      AsyncUtils.findAsyncF[A](seq)(f)
+    }
+
+    def existsAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Boolean] = {
+      AsyncUtils.findAsyncF[A](seq)(f).map(_.isDefined)
+    }
+
     def foreachAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Unit] = {
       AsyncUtils.foreachAsyncF[A, O](seq)(f)
     }
