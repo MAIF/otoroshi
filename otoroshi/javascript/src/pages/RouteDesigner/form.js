@@ -339,6 +339,7 @@ export const schemas = {
             'Random',
             'Sticky',
             'IpAddressHash',
+            'Failover',
             'BestResponseTime',
             'WeightedBestResponseTime',
           ].map((e) => ({ value: e, label: e })),

@@ -527,6 +527,7 @@ export default {
               'RoundRobin',
               'Sticky',
               'WeightedBestResponseTime',
+              'Failover',
             ],
           },
         },

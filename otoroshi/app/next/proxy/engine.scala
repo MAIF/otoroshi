@@ -2292,7 +2292,8 @@ class ProxyEngine() extends RequestHandler {
               trackingId,
               request,
               targets,
-              route.cacheableId
+              route.cacheableId,
+              1
             )
         }
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
@@ -2515,7 +2516,8 @@ class ProxyEngine() extends RequestHandler {
               trackingId,
               request,
               targets,
-              route.cacheableId
+              route.cacheableId,
+              1
             )
         }
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)

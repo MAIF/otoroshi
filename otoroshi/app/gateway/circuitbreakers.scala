@@ -154,7 +154,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       reqId: String,
       trackingId: String,
       requestHeader: RequestHeader,
-      attrs: TypedMap
+      attrs: TypedMap,
+      attempts: Int,
   ): Option[(Target, AkkaCircuitBreaker)] = {
     chooseTargetNg(
       descriptor.id,
@@ -166,7 +167,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       reqId,
       trackingId,
       requestHeader,
-      attrs
+      attrs,
+      attempts,
     )
   }
 
@@ -181,7 +183,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       reqId: String,
       trackingId: String,
       requestHeader: RequestHeader,
-      attrs: TypedMap
+      attrs: TypedMap,
+      attempts: Int,
   ): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
@@ -193,7 +196,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     if (targets.isEmpty) {
       None
     } else {
-      val target = targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptorId)
+      val target = targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptorId, attempts)
       //val target = targets.apply(index.toInt)
 
       def buildBreaker(): Unit = {
@@ -373,7 +376,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             reqId,
             trackingId,
             requestHeader,
-            attrs
+            attrs,
+            attempts,
           ) match {
             case Some((target, breaker)) =>
               val alreadyFailed = new AtomicBoolean(false)

@@ -147,7 +147,8 @@ class NgDiscoveryTargetsSelector extends NgPreRouting {
             trackingId,
             ctx.request,
             targets,
-            ctx.route.id
+            ctx.route.id,
+            1,
           )
         ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
         Done.right

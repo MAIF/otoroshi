@@ -191,7 +191,8 @@ trait LoadBalancing {
       trackingId: String,
       requestHeader: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target
 }
 
@@ -201,6 +202,7 @@ object LoadBalancing {
     override def reads(json: JsValue): JsResult[LoadBalancing] =
       (json \ "type").asOpt[String] match {
         case Some("RoundRobin")               => JsSuccess(RoundRobin)
+        case Some("Failover")                 => JsSuccess(Failover)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
@@ -221,12 +223,29 @@ object RoundRobin extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
+}
 
+object Failover extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue             = Json.obj("type" -> "Failover")
+  override def select(
+    reqId: String,
+    trackingId: String,
+    req: RequestHeader,
+    targets: Seq[Target],
+    descId: String,
+    attempts: Int,
+  )(implicit env: Env): Target = {
+    val reqNumber = if (attempts > 0) attempts - 1 else 0
+    val index: Int = reqNumber % (if (targets.nonEmpty) targets.size else 1)
+    targets.apply(index)
+  }
 }
 
 object Random extends LoadBalancing {
@@ -238,7 +257,8 @@ object Random extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
@@ -253,7 +273,8 @@ object Sticky extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
@@ -269,7 +290,8 @@ object IpAddressHash extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val remoteAddress = req.theIpAddress
     val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
@@ -310,7 +332,8 @@ object BestResponseTime extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
@@ -339,7 +362,8 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      descId: String
+      descId: String,
+      attempts: Int,
   )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
