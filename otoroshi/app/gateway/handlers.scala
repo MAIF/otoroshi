@@ -595,6 +595,9 @@ class GatewayRequestHandler(
             env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
               super.routeRequest(request)
             )
+          case h if (h == env.adminApiExposedHost || env.adminApiDomains.contains(h) || h == env.adminApiHost) && !env.exposeAdminApi => {
+            Some(adminApiNotExposed())
+          }
           case _                                                                                                   => {
             if (relativeUri.startsWith("/.well-known/otoroshi/")) {
               env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(
@@ -1003,6 +1006,11 @@ class GatewayRequestHandler(
   def forbidden() =
     actionBuilder { req =>
       Forbidden(Json.obj("error" -> "forbidden"))
+    }
+
+  def adminApiNotExposed() =
+    actionBuilder { req =>
+      NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =
