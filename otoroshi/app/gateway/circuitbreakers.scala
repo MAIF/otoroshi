@@ -186,17 +186,35 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       attrs: TypedMap,
       attempts: Int,
   ): Option[(Target, AkkaCircuitBreaker)] = {
-    val targets = _targets
+    val raw_targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
-    if (targets.isEmpty) {
+    if (raw_targets.isEmpty) {
       None
     } else {
-      val target = targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptorId, attempts)
+      // this is where failover actually happens
+      val (primaryTargets, secondaryTargets) = raw_targets.partition(_.isPrimary)
+      val target: Target = if (primaryTargets.nonEmpty && secondaryTargets.isEmpty) {
+        targetsLoadBalancing.select(reqId, trackingId, requestHeader, primaryTargets, descriptorId, attempts)
+      } else if (primaryTargets.isEmpty && secondaryTargets.nonEmpty) {
+        targetsLoadBalancing.select(reqId, trackingId, requestHeader, secondaryTargets, descriptorId, attempts)
+      } else {
+        if (attempts <= primaryTargets.size) {
+          targetsLoadBalancing.select(reqId, trackingId, requestHeader, primaryTargets, descriptorId, attempts)
+        } else {
+          if (attempts > (primaryTargets.size + secondaryTargets.size)) {
+            // here i'm really not sure about what is the right thing to do, for now let say that is backup target are present,
+            // we retry only on them once all primary target are passed
+            targetsLoadBalancing.select(reqId, trackingId, requestHeader, secondaryTargets, descriptorId, attempts)
+          } else {
+            targetsLoadBalancing.select(reqId, trackingId, requestHeader, secondaryTargets, descriptorId, attempts)
+          }
+        }
+      }
       //val target = targets.apply(index.toInt)
 
       def buildBreaker(): Unit = {

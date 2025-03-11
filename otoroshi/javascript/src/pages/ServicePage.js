@@ -1813,10 +1813,6 @@ export class ServicePage extends Component {
                       value: 'WeightedBestResponseTime',
                       label: 'WeightedBestResponseTime',
                     },
-                    {
-                      value: 'Failover',
-                      label: 'Failover',
-                    },
                   ]}
                   help="The load balancing algorithm used"
                   onChange={(e) => this.changeTheValue('targetsLoadBalancing', { type: e })}

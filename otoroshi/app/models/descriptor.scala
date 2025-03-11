@@ -202,7 +202,7 @@ object LoadBalancing {
     override def reads(json: JsValue): JsResult[LoadBalancing] =
       (json \ "type").asOpt[String] match {
         case Some("RoundRobin")               => JsSuccess(RoundRobin)
-        case Some("Failover")                 => JsSuccess(Failover)
+        case Some("NaiveFailover")            => JsSuccess(Failover)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
@@ -233,7 +233,7 @@ object RoundRobin extends LoadBalancing {
 
 object Failover extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue             = Json.obj("type" -> "Failover")
+  override def toJson: JsValue             = Json.obj("type" -> "NaiveFailover")
   override def select(
     reqId: String,
     trackingId: String,
@@ -585,6 +585,7 @@ case class Target(
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     mtlsConfig: MtlsConfig = MtlsConfig(),
+    backup: Boolean = false,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty
 ) {
@@ -595,6 +596,8 @@ case class Target(
   def asKey         = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
   def asTargetStr   = s"$scheme://$host@${ipAddress.getOrElse(host)}"
   def asCleanTarget = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
+  def isPrimary: Boolean = !backup
+  def isSecondary: Boolean = backup
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt
@@ -625,6 +628,7 @@ object Target {
         // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "protocol"   -> o.protocol.value,
         "predicate"  -> o.predicate.toJson,
+        "backup"     -> o.backup,
         "ipAddress"  -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue]
       )
     override def reads(json: JsValue): JsResult[Target] =
@@ -642,6 +646,7 @@ object Target {
             .filterNot(_.trim.isEmpty)
             .map(s => HttpProtocols.parse(s))
             .getOrElse(HttpProtocols.HTTP_1_1),
+          backup = (json \ "backup").asOpt[Boolean].getOrElse(false),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -2391,7 +2396,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         Target(
           host = "changeme.cleverapps.io",
           scheme = "https",
-          mtlsConfig = MtlsConfig()
+          mtlsConfig = MtlsConfig(),
+          backup = false,
         )
       ),
       detectApiKeySooner = false,

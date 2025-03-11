@@ -317,7 +317,7 @@ class ReactivePgDataStores(
         forceHttps = false,
         enforceSecureCommunication = false,
         targets = Seq(
-          Target("mirror.opunmaif.io")
+          Target("mirror.otoroshi.io")
         )
       ).save()(reactivePgActorSystem.dispatcher, env)
     }(reactivePgActorSystem.dispatcher)

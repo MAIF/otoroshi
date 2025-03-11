@@ -359,7 +359,7 @@ object NgTreeRouter_Test {
         frontend =
           NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(s"test-tree-router-next-gen.oto.tools/api/$id"))),
         backend = NgBackend.empty
-          .copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
+          .copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))),
         backendRef = None,
         plugins = NgPlugins(Seq.empty)
       )
@@ -383,7 +383,7 @@ object NgTreeRouter_Test {
         groups = Seq("default"),
         frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(rpath)), stripPath = false),
         backend =
-          NgBackend.empty.copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
+          NgBackend.empty.copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))),
         backendRef = None,
         plugins = NgPlugins(Seq.empty)
       )
