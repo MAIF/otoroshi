@@ -17,7 +17,7 @@ import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices'
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgCodeRenderer, NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgCodeRenderer, NgDotsRenderer, NgForm, NgObjectRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
@@ -30,6 +30,8 @@ import { mergeData } from '../../components/Drafts/Compare/utils';
 import { effect, useSignalValue } from 'signals-react-safe';
 import { signalVersion } from './VersionSignal';
 import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
+import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
+import { PillButton } from '../../components/PillButton';
 
 const queryClient = new QueryClient({
     queries: {
@@ -72,6 +74,7 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/backends/:backendId/:action' component={EditBackend} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/deployments' component={Deployments} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/testing' component={Testing} props={props} />
 
                 <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
                 <RouteWithProps path='/apis/:apiId/informations' component={Informations} props={props} />
@@ -760,7 +763,7 @@ function NewRoute(props) {
                 }
             ]
         })
-            .then(() => history.push(`/apis/${params.apiId}/routes`))
+            .then(() => history.push(`/apis/${params.apiId}`))
     }
 
     const templatesQuery = useQuery(["getTemplates"],
@@ -805,7 +808,9 @@ function NewRoute(props) {
                 className="d-flex mt-3 ms-auto"
                 onPress={saveRoute}
                 disabled={!route.flow_ref}
-                text="Create"
+                text={<>
+                    Create <VersionBadge size="xs" />
+                </>}
             />
         </div>
     </>
@@ -890,8 +895,20 @@ const TEMPLATES = {
     keyless: {},
     oauth2: {},
     jwt: {
-        jwtVerifierRefs: []
+        verifier: undefined,
     }
+}
+
+function NewConsumerSettingsForm(props) {
+    return <NgForm
+        value={props.value}
+        onChange={settings => {
+            if (settings && JSON.stringify(props.value, null, 2) !== JSON.stringify(settings, null, 2))
+                props.onChange(settings)
+        }}
+        schema={JwtVerificationOnly.config_schema}
+        flow={JwtVerificationOnly.config_flow}
+    />
 }
 
 function NewConsumer(props) {
@@ -932,21 +949,6 @@ function NewConsumer(props) {
                             }}
                         />
                     </div>
-                    {/* <NgSelectRenderer
-                            value={props.value}
-                            onChange={newType => {
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    settings: TEMPLATES[newType],
-                                    consumer_kind: newType
-                                })
-                            }}
-                            label="Plan Type"
-                            ngOptions={{ spread: true }}
-                            margin={0}
-                            style={{ flex: 1 }}
-                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
-                        /> */}
                 </div>
             }
         },
@@ -988,14 +990,19 @@ function NewConsumer(props) {
         custom: {
             renderer: props => {
                 if (props.rootValue.consumer_kind === 'jwt') {
-                    return <NgForm
-                        onChange={newValue => console.log(newValue)}
-                        schema={JwtVerificationOnly.config_schema}
-                        flow={JwtVerificationOnly.config_flow}
+                    return <NewConsumerSettingsForm
+                        value={props.rootValue.settings}
+                        onChange={settings => {
+                            if (settings)
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    settings
+                                })
+                        }}
                     />
                 }
 
-                return 'copucou'
+                return null
             }
         }
     }
@@ -1014,7 +1021,7 @@ function NewConsumer(props) {
         {
             type: 'group',
             collapsable: false,
-            name: 'JWT verifier configuration',
+            name: 'Configuration',
             fields: (props) => {
                 return props.value.consumer_kind === 'jwt' ? ['custom'] : ['settings']
             },
@@ -1073,8 +1080,12 @@ function ConsumerDesigner(props) {
                 return <div className="row mb-3">
                     <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
                     <div className="col-sm-10">
-                        <NgSelectRenderer
+                        <NgDotsRenderer
                             value={props.value}
+                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
+                            ngOptions={{
+                                spread: true
+                            }}
                             onChange={newType => {
                                 props.rootOnChange({
                                     ...props.rootValue,
@@ -1082,11 +1093,6 @@ function ConsumerDesigner(props) {
                                     consumer_kind: newType
                                 })
                             }}
-                            label="Plan Type"
-                            ngOptions={{ spread: true }}
-                            margin={0}
-                            style={{ flex: 1 }}
-                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
                         />
                     </div>
                 </div>
@@ -1127,8 +1133,47 @@ function ConsumerDesigner(props) {
         settings: {
             type: 'json',
             label: 'Plan configuration'
+        },
+        custom: {
+            renderer: props => {
+                if (props.rootValue?.consumer_kind === 'jwt') {
+                    return <NewConsumerSettingsForm
+                        value={props.rootValue.settings}
+                        onChange={settings => {
+                            if (settings)
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    settings
+                                })
+                        }}
+                    />
+                }
+
+                return null
+            }
         }
     }
+
+    const flow = [
+        {
+            type: 'group',
+            collapsable: false,
+            name: 'Plan',
+            fields: ['name',
+                'consumer_kind',
+                'status',
+                'description',
+                'auto_validation',],
+        },
+        {
+            type: 'group',
+            collapsable: false,
+            name: 'Configuration',
+            fields: (props) => {
+                return props.value.consumer_kind === 'jwt' ? ['custom'] : ['settings']
+            },
+        }
+    ]
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -1150,7 +1195,7 @@ function ConsumerDesigner(props) {
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    if (isLoading)
+    if (isLoading || !consumer)
         return <SimpleLoader />
 
     return <>
@@ -1171,7 +1216,7 @@ function ConsumerDesigner(props) {
         }}>
             <NgForm
                 value={consumer}
-                // flow={flow}
+                flow={flow}
                 schema={schema}
                 onChange={newValue => setConsumer(newValue)} />
         </div>
@@ -1489,6 +1534,71 @@ function EditBackend(props) {
                     }
                 }}
                 onChange={setBackend} />
+        </div>
+    </>
+}
+
+function Testing(props) {
+    const { item, version, updateItem, setItem, isLoading } = useDraftOfAPI()
+
+    if (version === 'Published') {
+        return <div>
+            Testing mode is only available in the draft version
+        </div>
+    }
+
+    if (isLoading)
+        return null
+
+    const schema = {
+        enabled: {
+            type: 'box-bool',
+            label: 'Enabled',
+            props: {
+                description: 'When enabled, this option allows draft routes to be exposed. These routes can be accessed using a specific header, ensuring they remain available only for testing purposes.',
+            },
+        },
+        config: {
+            renderer: props => {
+                return <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+                        Configuration
+                    </label>
+                    <div className="col-sm-10">
+                        Add this header to your calls
+                        <div className='d-flex flex-column gap-2 mt-3'>
+                            <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+                            <input className="form-control" readOnly type="text" value={props.rootValue?.headerValue} />
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    return <>
+        <PageTitle title='Testing mode' {...props}>
+            <FeedbackButton
+                type="success"
+                className="d-flex ms-auto"
+                onPress={updateItem}
+                text={<>
+                    Update <VersionBadge size="xs" />
+                </>}
+            />
+        </PageTitle>
+        <div style={{
+            maxWidth: 640,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={item?.testing}
+                onChange={testing => setItem({
+                    ...item,
+                    testing
+                })}
+                schema={schema}
+            />
         </div>
     </>
 }
@@ -2021,7 +2131,10 @@ function VersionManager({ api, draft, owner, setState }) {
         apiRef: api.id,
         owner,
         at: Date.now(),
-        apiDefinition: draft.content,
+        apiDefinition: {
+            ...draft.content,
+            deployments: []
+        },
         draftId: draft.id,
         action: 'patch',
         version: semver.inc(api.version, 'patch')
@@ -2109,7 +2222,7 @@ function VersionManager({ api, draft, owner, setState }) {
         },
         {
             type: 'group',
-            name: !changed ? 'No changes' : `${result.length} elements has changed`,
+            name: !changed ? 'No changes' : `${result.filter(item => item.lineType !== 'none').length} elements has changed`,
             collapsed: true,
             fields: ['apiDefinition'],
         }
@@ -2287,7 +2400,7 @@ function VersionBadge({ size, className }) {
     </div>
 }
 
-function DashboardTitle({ api, draftWrapper, ...props }) {
+function DashboardTitle({ api, draftWrapper, draft, updateItem, ...props }) {
     const version = useSignalValue(signalVersion)
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
@@ -2343,7 +2456,7 @@ function DashboardTitle({ api, draftWrapper, ...props }) {
                             .then((ok) => {
                                 if (ok) {
                                     nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
-                                        .deleteById(draft.id)
+                                        .deleteById(draftWrapper.id)
                                         .then(() => window.location.reload())
                                 }
                             })
@@ -2358,11 +2471,16 @@ function Dashboard(props) {
     const params = useParams()
     const history = useHistory()
 
-    const { item, draft, draftWrapper, isLoading, version, api } = useDraftOfAPI()
+    const { item, draft, draftWrapper, isLoading, version, api, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         if (!isLoading && !!draft) {
-            props.setTitle(<DashboardTitle {...props} params={params} api={api} draftWrapper={draftWrapper} />)
+            props.setTitle(<DashboardTitle {...props}
+                params={params}
+                api={api}
+                draftWrapper={draftWrapper}
+                draft={draft}
+                updateItem={updateItem} />)
         }
 
         return () => props.setTitle(undefined)
@@ -2433,7 +2551,7 @@ function Dashboard(props) {
                         />}
                     </ContainerBlock>}
                     {item.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
-                        <APIHeader api={item} version={version} />
+                        <APIHeader api={item} version={version} draft={draft} />
                         {version !== 'Draft' && <>
                             <ApiStats url={`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000`} />
 
@@ -2472,7 +2590,6 @@ function Dashboard(props) {
                                 text="New Consumer"
                                 className='btn-sm'
                                 onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
-
                         <ApiConsumersView api={item} />
                     </ContainerBlock>}
                 </div>
@@ -2522,22 +2639,29 @@ function Consumer({ consumer }) {
             borderRadius: '.5rem',
             gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px'
         }}
-        onClick={() => setOpen(!open)}>
-        {open && <div style={{ position: 'relative' }}>
-            <Button type="primaryColor" className="btn-sm" text="Edit"
-                onClick={e => {
-                    e.stopPropagation()
-                    history.push(`/apis/${params.apiId}/consumers/${consumer.id}/edit`)
-                }} style={{
-                    position: 'absolute',
-                    top: '.5rem',
-                    right: 0
-                }} />
-            <NgCodeRenderer
-                raw
-                readOnly
-                label={undefined}
-                value={JSON.stringify(consumer, null, 2)} />
+        onClick={() => {
+            if (!open)
+                setOpen(true)
+        }}>
+        {open && <div className="d-flex justify-content-between gap-2 align-items-center">
+            <div style={{ position: 'relative', flex: 1 }}>
+                <Button type="primaryColor" className="btn-sm" text="Edit"
+                    onClick={e => {
+                        e.stopPropagation()
+                        history.push(`/apis/${params.apiId}/consumers/${consumer.id}/edit`)
+                    }} style={{
+                        position: 'absolute',
+                        top: '.5rem',
+                        right: '.5rem',
+                        zIndex: 100
+                    }} />
+                <JsonObjectAsCodeInput
+                    editorOnly
+                    showGutter={false}
+                    label={undefined}
+                    value={consumer} />
+            </div>
+            <i style={{ minWidth: 40 }} className="fas fa-chevron-up fa-lg short-table-navigate-icon" onClick={() => setOpen(false)} />
         </div>}
         {!open && <>
             <div>{consumer.name}</div>
@@ -2549,7 +2673,7 @@ function Consumer({ consumer }) {
             <div className="badge custom-badge bg-success" style={{
                 border: 'none'
             }}>{consumer.consumer_kind}</div>
-            <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
+            <i className="fas fa-chevron-right fa-lg short-table-navigate-icon" />
         </>}
     </div>
 }
@@ -2601,31 +2725,39 @@ function Subscription({ subscription }) {
             gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px',
             position: 'relative'
         }}
-        onClick={() => setOpen(!open)}>
-        {open && <>
-            <Button type="primaryColor" className="btn-sm" text="Edit"
-                onClick={e => {
-                    e.stopPropagation()
-                    history.push(`/apis/${params.apiId}/subscriptions/${subscription.id}/edit`)
-                }} style={{
-                    position: 'absolute',
-                    top: '1rem',
-                    right: '1rem'
-                }} />
-            <NgCodeRenderer
-                readOnly
-                style={{
-                    overflowX: 'hidden'
-                }}
-                label="Configuration"
-                value={JSON.stringify(subscription, null, 2)} />
-        </>}
+        onClick={() => {
+            if (!open)
+                setOpen(true)
+        }}>
+        {open && <div className="d-flex justify-content-between gap-2 align-items-center">
+            <div style={{ position: 'relative', flex: 1 }}>
+                <Button type="primaryColor" className="btn-sm" text="Edit"
+                    onClick={e => {
+                        e.stopPropagation()
+                        history.push(`/apis/${params.apiId}/subscriptions/${subscription.id}/edit`)
+                    }} style={{
+                        position: 'absolute',
+                        top: '.5rem',
+                        right: '.5rem',
+                        zIndex: 100
+                    }} />
+                <JsonObjectAsCodeInput
+                    editorOnly
+                    showGutter={false}
+                    label={undefined}
+                    value={subscription} />
+            </div>
+            <i
+                style={{ minWidth: 40 }}
+                className="fas fa-chevron-up fa-lg short-table-navigate-icon"
+                onClick={() => setOpen(false)} />
+        </div>}
         {!open && <>
             <div>{subscription.name}</div>
             <div>{subscription.description}</div>
             <div>{moment(new Date(subscription.dates.created_at)).format('DD/MM/YY hh:mm')}</div>
             <div className='badge custom-badge bg-success' style={{ border: 'none' }}>{subscription.subscription_kind}</div>
-            <i className={`fas fa-chevron-${open ? 'down' : 'right'} fa-lg short-table-navigate-icon`} />
+            <i className="fas fa-chevron-right fa-lg short-table-navigate-icon" />
         </>}
     </div>
 }
@@ -2651,7 +2783,7 @@ function publishAPI(api) {
         .then(() => window.location.reload())
 }
 
-function APIHeader({ api, version }) {
+function APIHeader({ api, version, draft }) {
     const updateAPI = newAPI => {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.APIS)
@@ -2661,6 +2793,15 @@ function APIHeader({ api, version }) {
     return <>
         <div className='d-flex align-items-center gap-3'>
             <h2 className='m-0'>{api.name}</h2>
+            <span className='badge custom-badge api-status-started' style={{
+                fontSize: '.75rem'
+            }}>
+                {api.version}
+            </span>
+            {version === 'Draft' && <span className='badge custom-badge api-status-started d-flex align-items-center gap-2'>
+                <div className={`testing-dot ${draft.testing ? 'testing-dot--enabled' : 'testing-dot--disabled'}`}></div>
+                {draft.testing ? 'Testing enabled' : 'Testing disabled'}
+            </span>}
             <APIState value={api.state} />
 
             {version !== 'Draft' && <>

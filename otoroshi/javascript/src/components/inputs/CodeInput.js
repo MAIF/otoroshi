@@ -30,7 +30,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -153,7 +153,7 @@ export default class CodeInput extends Component {
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}
         width="100%"
-        showGutter={true}
+        showGutter={this.props.showGutter !== undefined ? this.props.showGutter : true}
         highlightActiveLine={true}
         tabSize={2}
         enableBasicAutocompletion={true}

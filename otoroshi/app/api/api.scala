@@ -935,7 +935,7 @@ class OtoroshiResources(env: Env) {
       "draft",
       "proxy.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithState[Draft](
+      GenericResourceAccessApiWithStateAndWriteValidation[Draft](
         Draft.format,
         classOf[Draft],
         env.datastores.draftsDataStore.key,
@@ -945,7 +945,9 @@ class OtoroshiResources(env: Env) {
         (_v, _p) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq)
+        stateUpdate = seq => env.proxyState.updateDrafts(seq),
+        writeValidator = Draft.writeValidator,
+//        deleteValidator = Draft.deleteValidator,
       )
     ),
     //////

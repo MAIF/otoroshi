@@ -71,6 +71,13 @@ const LINKS = (id) =>
             title: 'Deployments',
             tab: 'deployments',
             tooltip: { ...createTooltip(`Show deployments tab`) },
+        },
+        {
+            to: `/apis/${id}/testing`,
+            icon: 'fa-play',
+            title: 'Testing',
+            tab: 'testing',
+            tooltip: { ...createTooltip(`Show testing tab`) },
         }
     ].filter((link) => !link.enabled);
 

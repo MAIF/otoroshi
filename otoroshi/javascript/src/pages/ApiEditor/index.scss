@@ -77,7 +77,7 @@
         font-weight: 100;
     }
 
-    .short-table-row div:last-child {
+    .short-table-row>div:last-child {
         text-align: center;
     }
 
@@ -258,4 +258,27 @@
     .metric-text-value span {
         font-size: .75rem;
     }
+
+    .ace_scrollbar {
+        display: none;
+    }
+
+    // .ace_editor:hover .ace_scrollbar {
+    //     display: block;
+    // }
+}
+
+.testing-dot {
+    height: 12px;
+    width: 12px !important;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.testing-dot--enabled {
+    background-color: var(--color-green);
+}
+
+.testing-dot--disabled {
+    background-color: var(--color-red);
 }

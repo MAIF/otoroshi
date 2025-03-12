@@ -725,6 +725,32 @@ object ApiBackendClient {
   }
 }
 
+case class ApiTesting(enabled: Boolean = false,
+                      headerKey: String = "X-API-VERSION",
+                      headerValue: String = IdGenerator.uuid)
+
+object ApiTesting {
+  val _fmt: Format[ApiTesting] = new Format[ApiTesting] {
+    override def writes(o: ApiTesting): JsValue             = Json.obj(
+      "enabled"           -> o.enabled,
+      "headerKey"         -> o.headerKey,
+      "headerValue"       -> o.headerValue,
+    )
+    override def reads(json: JsValue): JsResult[ApiTesting] = Try {
+      ApiTesting(
+        enabled = json.select("enabled").asOptBoolean.getOrElse(false),
+        headerKey = json.select("headerKey").asOptString.getOrElse("X-API-VERSION"),
+        headerValue = json.select("headerValue").asOptString.getOrElse(IdGenerator.uuid)
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
 case class Api(
     location: EntityLocation,
     id: String,
@@ -747,7 +773,8 @@ case class Api(
     clients: Seq[ApiBackendClient],
     documentation: Option[ApiDocumentation],
     consumers: Seq[ApiConsumer],
-    deployments: Seq[ApiDeployment]
+    deployments: Seq[ApiDeployment],
+    testing: ApiTesting
     // TODO: monitoring and heath ????
     //// ApiVersion
 ) extends EntityLocationSupport {
@@ -906,10 +933,8 @@ object Api {
            }
 
            newApi.consumers.foreach(consumer => {
-             println(s"applying operation for ${consumer.name} - ${api.consumers.find(_.id == consumer.id)}")
              api.consumers.find(_.id == consumer.id) match {
                case Some(oldConsumer) =>
-                 println("find consumer", consumer.name)
                  val result = updateConsumer(outApi, oldConsumer, consumer)
                  if (result.isDefined)
                    outApi = result.get
@@ -920,7 +945,6 @@ object Api {
                    ).leftf
                  }
                case None =>
-                 println("consumer not found", consumer.name)
                  // apply new consumer on API flows
                  applyConsumerRulesOnApi(consumer, outApi)
                    .map(result => outApi = result)
@@ -979,7 +1003,8 @@ object Api {
       "documentation"     -> o.documentation.map(ApiDocumentation._fmt.writes),
       "consumers"         -> o.consumers.map(ApiConsumer._fmt.writes),
       "deployments"       -> o.deployments.map(ApiDeployment._fmt.writes),
-      "versions"          -> o.versions
+      "versions"          -> o.versions,
+      "testing"           -> ApiTesting._fmt.writes(o.testing)
     )
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
@@ -1036,6 +1061,9 @@ object Api {
         versions    = json.select("versions")
           .asOpt[Seq[String]]
           .getOrElse(Seq.empty),
+        testing     = json.select("testing")
+          .asOpt(ApiTesting._fmt.reads)
+          .getOrElse(ApiTesting())
       )
     } match {
       case Failure(ex)    =>
@@ -1068,6 +1096,7 @@ trait ApiDataStore extends BasicStore[Api] {
       documentation = None,
       consumers = Seq.empty,
       deployments = Seq.empty,
+      testing = ApiTesting()
     )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
