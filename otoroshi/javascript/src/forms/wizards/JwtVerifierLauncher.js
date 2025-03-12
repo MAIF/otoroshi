@@ -36,12 +36,17 @@ export class JwtVerifierLauncher extends React.Component {
 
     if (!verifier) {
       return (
-        <Button
-          type="info"
-          text="Start by select or create a JWT verifier"
-          onClick={openComponent}
-          className="w-100"
-        />
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Verifier</label>
+          <div className="col-sm-10">
+            <Button
+              type="info"
+              text="Select a verifier"
+              onClick={openComponent}
+              className="w-100"
+            />
+          </div>
+        </div>
       );
     } else {
       return (

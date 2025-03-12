@@ -6,14 +6,17 @@ import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, ServiceDescriptor}
-import otoroshi.next.models._
-import otoroshi.next.plugins.NgApikeyCallsConfig
+import otoroshi.next.models.{NgPluginInstance, _}
+import otoroshi.next.plugins.api.NgPlugin
+import otoroshi.next.plugins.api.NgPluginHelper.pluginId
+import otoroshi.next.plugins.{ApikeyCalls, ForceHttpsTraffic, JwtVerificationOnly, NgApikeyCallsConfig, OIDCAccessTokenValidator}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 sealed trait ApiState {
@@ -498,10 +501,10 @@ object ApiConsumerSubscription {
         "http_status_code" -> 400
       ).left
 
-    def addSubscriptionToConsumer(api: Api): Future[Boolean] = {
-        env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
+    def addSubscriptionToConsumer(api: Api): Future[Option[ApiConsumer]] = {
+        val newApi = api.copy(consumers = api.consumers.map(consumer => {
           if (consumer.id == entity.consumerRef) {
-            if(action == WriteAction.Update) {
+            if (action == WriteAction.Update) {
               consumer.copy(subscriptions = consumer.subscriptions.map(subscription => {
                 if (subscription.ref == entity.id) {
                   subscription.copy(entity.id)
@@ -515,18 +518,24 @@ object ApiConsumerSubscription {
           } else {
             consumer
           }
-        })))
+        }))
+        env.datastores.apiDataStore.set(newApi).flatMap(result =>
+          if (result) {
+            api.consumers.find(consumer => consumer.id == entity.consumerRef).future
+          } else {
+            None.vfuture
+          }
+        )
     }
-
-//    println(s"write validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
 
     env.datastores.apiDataStore.findById(entity.apiRef) flatMap  {
       case Some(api)  => api.consumers.find(_.id == entity.consumerRef) match {
           case None => onError("consumer not found").vfuture
           case Some(consumer) if consumer.status == ApiConsumerStatus.Published =>
              addSubscriptionToConsumer(api).map {
-               case true => entity.right
-               case false => onError("failed to add subscription to api")
+               case Some(consumer) =>
+                 entity.right
+               case None => onError("failed to add subscription to api")
              }
           case _ => onError("wrong status").vfuture
         }
@@ -767,7 +776,6 @@ case class Api(
     }
   }
 
-
   def legacy: ServiceDescriptor = {
     NgRoute(
       location = location,
@@ -812,7 +820,7 @@ case class Api(
             frontend = apiRoute.frontend,
             backend = globalBackendEntity.map(_.backend).getOrElse(apiBackend.get.backend),
             backendRef = None,
-            plugins = flows.find(_.id == apiRoute.flowRef).get.plugins
+            plugins = flows.find(_.id == apiRoute.flowRef).map(_.plugins).getOrElse(NgPlugins.empty)
           ).some
         }
       case None => None.vfuture
@@ -821,7 +829,60 @@ case class Api(
 }
 
 object Api {
-   def writeValidator(newApi: Api,
+  def addPluginToFlows[T <: NgPlugin](api: Api)(implicit ct: ClassTag[T]): Api = {
+    api.copy(flows = api.flows.map(flow =>
+      if (!flow.plugins.hasPlugin[T]) {
+        flow.copy(plugins = flow.plugins.add(NgPluginInstance(
+          plugin = pluginId[T],
+          include = Seq.empty,
+          exclude = Seq.empty,
+          config = NgPluginInstanceConfig(Json.obj())
+        )))
+      } else {
+        flow
+      }
+    ))
+  }
+
+  def applyConsumerRulesOnApi(consumer: ApiConsumer, api: Api): Option[Api] = {
+    consumer.consumerKind match {
+      case ApiConsumerKind.Apikey   => addPluginToFlows[ApikeyCalls](api).some
+      case ApiConsumerKind.JWT      => addPluginToFlows[JwtVerificationOnly](api).some
+      case ApiConsumerKind.OAuth2   => addPluginToFlows[OIDCAccessTokenValidator](api).some
+      case _                        => None
+      //        case ApiConsumerKind.Mtls     =>
+      //        case ApiConsumerKind.Keyless  =>
+    }
+  }
+
+  def updateConsumer(api: Api, oldConsumer: ApiConsumer, consumer: ApiConsumer): Option[Api] = {
+    if (!updateConsumerStatus(oldConsumer, consumer)) {
+      None
+    } else {
+      applyConsumerRulesOnApi(consumer, api)
+    }
+  }
+
+  def removePluginToFlows[T <: NgPlugin](api: Api)(implicit ct: ClassTag[T]): Api = {
+    api.copy(flows = api.flows
+      .map(flow => flow.copy(plugins = NgPlugins(flow.plugins.slots.filter(plugin => {
+        val name = s"cp:${ct.runtimeClass.getName}"
+        plugin.plugin != name
+      })))))
+  }
+
+  private def deleteConsumerFromApi(api: Api, consumer: ApiConsumer) = {
+    consumer.consumerKind match {
+      case ApiConsumerKind.Apikey   => removePluginToFlows[ApikeyCalls](api).some
+      case ApiConsumerKind.JWT      => removePluginToFlows[JwtVerificationOnly](api).some
+      case ApiConsumerKind.OAuth2   => removePluginToFlows[OIDCAccessTokenValidator](api).some
+      case _                        => None
+      //        case ApiConsumerKind.Mtls     =>
+      //        case ApiConsumerKind.Keyless  =>
+    }
+  }
+
+  def writeValidator(newApi: Api,
                       _body: JsValue,
                       _singularName: String,
                       _id: Option[String],
@@ -830,11 +891,12 @@ object Api {
      implicit val ec: ExecutionContext = env.otoroshiExecutionContext
      implicit val e: Env = env
 
+     var outApi = newApi
+
      if(action == WriteAction.Update) {
        env.datastores.apiDataStore.findById(newApi.id)
          .map(_.get)
          .map(api => {
-
            // API needs to be published to have consumers
            if (newApi.consumers.nonEmpty && newApi.state == ApiStaging) {
                return Json.obj(
@@ -844,19 +906,36 @@ object Api {
            }
 
            newApi.consumers.foreach(consumer => {
-             api.consumers.find(_.id == consumer.id).map(oldConsumer => {
-               if (!updateConsumerStatus(oldConsumer, consumer)) {
-                return Json.obj(
-                   "error" -> s"api has rejected your demand : you can't get back to a consumer status",
-                   "http_status_code" -> 400
-                 ).leftf
-               }
-             })
+             println(s"applying operation for ${consumer.name} - ${api.consumers.find(_.id == consumer.id)}")
+             api.consumers.find(_.id == consumer.id) match {
+               case Some(oldConsumer) =>
+                 println("find consumer", consumer.name)
+                 val result = updateConsumer(outApi, oldConsumer, consumer)
+                 if (result.isDefined)
+                   outApi = result.get
+                 else {
+                   return Json.obj(
+                     "error" -> s"api has rejected your demand : you can't get back to a consumer status",
+                     "http_status_code" -> 400
+                   ).leftf
+                 }
+               case None =>
+                 println("consumer not found", consumer.name)
+                 // apply new consumer on API flows
+                 applyConsumerRulesOnApi(consumer, outApi)
+                   .map(result => outApi = result)
+                }
+           })
+
+           api.consumers.foreach(consumer => {
+             if (!newApi.consumers.exists(_.id == consumer.id)) {
+               deleteConsumerFromApi(outApi, consumer)
+                 .map(result => outApi = result)
+             }
            })
          })
      }
-
-     newApi.rightf
+     outApi.rightf
    }
 
   def updateConsumerStatus(oldConsumer: ApiConsumer, consumer: ApiConsumer): Boolean = {

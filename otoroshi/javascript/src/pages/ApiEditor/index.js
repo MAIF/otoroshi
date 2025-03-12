@@ -29,6 +29,7 @@ import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
 import { effect, useSignalValue } from 'signals-react-safe';
 import { signalVersion } from './VersionSignal';
+import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 
 const queryClient = new QueryClient({
     queries: {
@@ -45,9 +46,9 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
 );
 
 export default function ApiEditor(props) {
-
     return <div className='editor'>
         <SidebarComponent {...props} />
+
         <QueryClientProvider client={queryClient}>
             <Switch>
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
@@ -149,8 +150,10 @@ function useDraftOfAPI() {
     }
 
     return {
+        api,
         item: isPublished ? api : draft,
         draft,
+        draftWrapper,
         version,
         tag: version === 'Published' ? 'PROD' : 'DEV',
         setItem: isPublished ? setAPI : setDraft,
@@ -321,7 +324,9 @@ function SubscriptionDesigner(props) {
                 type="success"
                 className="d-flex ms-auto"
                 onPress={updateSubscription}
-                text="Update"
+                text={<>
+                    Update <VersionBadge size="xs" />
+                </>}
             />
         </PageTitle>
         <div style={{
@@ -474,9 +479,11 @@ function NewSubscription(props) {
             </div>}
             <FeedbackButton
                 type="success"
-                className="d-flex ms-auto mt-3"
+                className="d-flex ms-auto mt-3 d-flex align-items-center"
                 onPress={updateSubscription}
-                text="Create"
+                text={<>
+                    Create <VersionBadge size="xs" />
+                </>}
             />
         </div>
     </>
@@ -797,7 +804,7 @@ function NewRoute(props) {
                 type="success"
                 className="d-flex mt-3 ms-auto"
                 onPress={saveRoute}
-                disabled={!item.flow_ref}
+                disabled={!route.flow_ref}
                 text="Create"
             />
         </div>
@@ -831,7 +838,6 @@ function Consumers(props) {
         ...item,
         consumers: item.consumers.filter(f => f.id !== newItem.id)
     })
-        .then(() => window.location.reload())
 
     if (isLoading)
         return <SimpleLoader />
@@ -883,7 +889,9 @@ const TEMPLATES = {
     mtls: {},
     keyless: {},
     oauth2: {},
-    jwt: {}
+    jwt: {
+        jwtVerifierRefs: []
+    }
 }
 
 function NewConsumer(props) {
@@ -909,7 +917,22 @@ function NewConsumer(props) {
                 return <div className="row mb-3">
                     <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
                     <div className="col-sm-10">
-                        <NgSelectRenderer
+                        <NgDotsRenderer
+                            value={props.value}
+                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
+                            ngOptions={{
+                                spread: true
+                            }}
+                            onChange={newType => {
+                                props.rootOnChange({
+                                    ...props.rootValue,
+                                    settings: TEMPLATES[newType],
+                                    consumer_kind: newType
+                                })
+                            }}
+                        />
+                    </div>
+                    {/* <NgSelectRenderer
                             value={props.value}
                             onChange={newType => {
                                 props.rootOnChange({
@@ -923,8 +946,7 @@ function NewConsumer(props) {
                             margin={0}
                             style={{ flex: 1 }}
                             options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
-                        />
-                    </div>
+                        /> */}
                 </div>
             }
         },
@@ -962,8 +984,42 @@ function NewConsumer(props) {
         settings: {
             type: 'json',
             label: 'Plan configuration'
+        },
+        custom: {
+            renderer: props => {
+                if (props.rootValue.consumer_kind === 'jwt') {
+                    return <NgForm
+                        onChange={newValue => console.log(newValue)}
+                        schema={JwtVerificationOnly.config_schema}
+                        flow={JwtVerificationOnly.config_flow}
+                    />
+                }
+
+                return 'copucou'
+            }
         }
     }
+
+    const flow = [
+        {
+            type: 'group',
+            collapsable: false,
+            name: 'Plan',
+            fields: ['name',
+                'consumer_kind',
+                'status',
+                'description',
+                'auto_validation',],
+        },
+        {
+            type: 'group',
+            collapsable: false,
+            name: 'JWT verifier configuration',
+            fields: (props) => {
+                return props.value.consumer_kind === 'jwt' ? ['custom'] : ['settings']
+            },
+        }
+    ]
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -987,15 +1043,16 @@ function NewConsumer(props) {
         }}>
             <NgForm
                 value={consumer}
-                // flow={flow}
+                flow={flow}
                 schema={schema}
                 onChange={newValue => setConsumer(newValue)} />
             <Button
                 type="success"
-                className="btn-sm ms-auto d-flex"
+                className="btn-sm ms-auto d-flex align-items-center"
                 onClick={savePlan}
-                text="Create"
-            />
+            >
+                Create <VersionBadge size="xs" className="ms-2" />
+            </Button>
         </div>
     </>
 }
@@ -1039,7 +1096,8 @@ function ConsumerDesigner(props) {
             type: 'dots',
             label: "Status",
             props: {
-                options: ['staging', 'published', 'deprecated', 'closed'],
+                options: consumer?.status !== 'staging' ? ['published', 'deprecated', 'closed'] :
+                    ['staging', 'published', 'deprecated', 'closed'],
             },
         },
         description: {
@@ -1099,9 +1157,11 @@ function ConsumerDesigner(props) {
         <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
-                className="ms-2 mb-1"
+                className="ms-2 mb-1 d-flex align-items-center"
                 onPress={updatePlan}
-                text="Update"
+                text={<>
+                    Update <VersionBadge size="xs" className="ms-2" />
+                </>}
             />
         </PageTitle>
 
@@ -1129,7 +1189,26 @@ function Routes(props) {
             filterId: 'name',
             content: (item) => item.name,
         },
-        { title: 'Domains', filterId: 'frontend.domains', content: (item) => item.description },
+        {
+            title: 'Frontend',
+            filterId: 'frontend.domains.0',
+            cell: (item, a) => {
+                return (
+                    <>
+                        {item.frontend.domains[0] || '-'}{' '}
+                        {item.frontend.domains.length > 1 && (
+                            <span
+                                className="badge bg-secondary"
+                                style={{ cursor: 'pointer' }}
+                                title={item.frontend.domains.map((v) => ` - ${v}`).join('\n')}
+                            >
+                                {item.frontend.domains.length - 1} more
+                            </span>
+                        )}
+                    </>
+                );
+            },
+        },
     ];
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
@@ -1198,6 +1277,26 @@ function Backends(props) {
             content: (item) => item.name,
         },
         { title: 'Description', filterId: 'description', content: (item) => item.description },
+        //     title: 'Backend',
+        // filterId: 'backend.targets.0.hostname',
+        // cell: (item) => {
+        //   return (
+        //     <>
+        //       {item.backend.targets[0]?.hostname || '-'}{' '}
+        //       {item.backend.targets.length > 1 && (
+        //         <span
+        //           className="badge bg-secondary"
+        //           style={{ cursor: 'pointer' }}
+        //           title={item.backend.targets
+        //             .map((v) => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`)
+        //             .join('\n')}
+        //         >
+        //           {item.backend.targets.length - 1} more
+        //         </span>
+        //       )}
+        //     </>
+        //   );
+        // },
     ];
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
@@ -1289,9 +1388,11 @@ function NewBackend(props) {
         <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
-                className="ms-2 mb-1"
+                className="ms-2 mb-1 d-flex align-items-center"
                 onPress={saveBackend}
-                text="Create"
+                text={<>
+                    Create <VersionBadge size="xs" />
+                </>}
             />
         </PageTitle>
 
@@ -1356,9 +1457,11 @@ function EditBackend(props) {
         <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
             <FeedbackButton
                 type="success"
-                className="ms-2 mb-1"
+                className="ms-2 mb-1 d-flex align-items-center"
                 onPress={updateBackend}
-                text="Update"
+                text={<>
+                    Update <VersionBadge size="xs" />
+                </>}
             />
         </PageTitle>
 
@@ -1458,7 +1561,6 @@ function SidebarWithVersion({ params }) {
         if (queryVersion) {
             changeColor(queryVersion)
         }
-        return () => document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', '#f9b000')
     }, [queryVersion])
 
     const updateSignal = version => {
@@ -1471,8 +1573,6 @@ function SidebarWithVersion({ params }) {
         const queryParams = new URLSearchParams(window.location.search);
         queryParams.set("version", version);
         history.replaceState(null, null, "?" + queryParams.toString());
-
-        document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', version === 'Draft' ? '#f9b000' : '#d5443f')
     })
 
     const updateQueryParams = version => {
@@ -1482,7 +1582,6 @@ function SidebarWithVersion({ params }) {
     }
 
     const changeColor = version => {
-        document.querySelector('#otoroshi-container')?.style?.setProperty('--color-primary', version === 'Draft' ? '#f9b000' : '#d5443f')
         updateQueryParams(version)
         updateSignal(version)
     }
@@ -1553,10 +1652,11 @@ function NewFlow(props) {
         />
         <Button
             type="success"
-            className="btn-sm ms-auto d-flex"
+            className="btn-sm ms-auto d-flex align-items-center"
             onClick={createFlow}
-            text="Create"
-        />
+        >
+            Create <VersionBadge size="xs" className="ms-2" />
+        </Button>
     </>
 }
 
@@ -1763,9 +1863,11 @@ function FlowDesigner(props) {
                 >
                     <FeedbackButton
                         type="success"
-                        className="ms-2 mb-1"
+                        className="ms-2 mb-1 d-flex align-items-center"
                         onPress={saveFlow}
-                        text={isCreation ? 'Create a new flow' : 'Save'}
+                        text={<>
+                            {isCreation ? 'Create a new flow' : 'Save'} <VersionBadge size="xs" className="ms-2" />
+                        </>}
                     />
                 </PageTitle>
             );
@@ -1807,7 +1909,7 @@ function Flows(props) {
     const params = useParams()
     const history = useHistory()
 
-    const { item, isLoading } = useDraftOfAPI()
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const columns = [
         {
@@ -1834,6 +1936,13 @@ function Flows(props) {
         plugins: []
     })
 
+    const deleteItem = deletedFlow => {
+        return updateItem({
+            ...item,
+            flows: item.flows.filter(flow => flow.id !== deletedFlow.id)
+        })
+    }
+
     if (isLoading)
         return <SimpleLoader />
 
@@ -1841,11 +1950,11 @@ function Flows(props) {
         parentProps={{ params }}
         navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
         navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
-        selfUrl="flows"
+        selfUrl={`/apis/${params.apiId}/flows`}
         defaultTitle="Flow"
         itemName="Flow"
         columns={columns}
-        deleteItem={(item) => console.log('delete item', item)}
+        deleteItem={deleteItem}
         defaultSort="name"
         defaultSortDesc="true"
         fetchItems={fetchItems}
@@ -1906,8 +2015,6 @@ function Flows(props) {
 // }
 
 function VersionManager({ api, draft, owner, setState }) {
-
-    // const [createOrUpdate, setCreateOrUpdate] = useState()
 
     const [deployment, setDeployment] = useState({
         location: {},
@@ -2009,19 +2116,6 @@ function VersionManager({ api, draft, owner, setState }) {
     ]
 
     return <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 820 }}>
-        {/* {createOrUpdate && <Button
-            className='btn-quiet mt-3'
-            onClick={() => setCreateOrUpdate(undefined)}
-            style={{
-                width: 'fit-content'
-            }}>
-            <i className='fas fa-chevron-left me-2' />Back
-        </Button>} */}
-        {/* {!createOrUpdate && <VersionManagerSelector
-            createOrUpdate={createOrUpdate}
-            setCreateOrUpdate={setCreateOrUpdate} />} */}
-
-        {/* {createOrUpdate === 'create' &&  */}
         <NgForm
             value={deployment}
             onChange={data => {
@@ -2193,8 +2287,7 @@ function VersionBadge({ size, className }) {
     </div>
 }
 
-function DashboardTitle({ api, draft, ...props }) {
-
+function DashboardTitle({ api, draftWrapper, ...props }) {
     const version = useSignalValue(signalVersion)
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
@@ -2204,16 +2297,6 @@ function DashboardTitle({ api, draft, ...props }) {
             </h3>
         </div>
         <div className="d-flex align-item-center justify-content-between">
-            {/* <NgSelectRenderer
-            value={api.version}
-            ngOptions={{
-                spread: true,
-            }}
-            onChange={newVersion => {
-                console.log(newVersion)
-            }}
-            options={api.versions?.length > 0 ? api.versions : ['0.0.1']} /> */}
-
             {version === 'Draft' && <div className='d-flex align-items-center'>
                 <Button
                     text="Publish new version"
@@ -2223,23 +2306,32 @@ function DashboardTitle({ api, draft, ...props }) {
                         borderColor: 'var(--color-primary)',
                     }}
                     onClick={() => {
-                        window
-                            .wizard('Version manager', (ok, cancel, state, setState) => {
-                                return <VersionManager api={api} draft={draft} owner={props.globalEnv.user} setState={setState} />
-                            }, {
-                                style: { width: '100%' },
-                                noCancel: false,
-                                okClassName: 'ms-2',
-                                okLabel: 'I want to publish this API',
+                        nextClient
+                            .forEntityNext(nextClient.ENTITIES.APIS)
+                            .findById(props.params.apiId)
+                            .then(api => {
+                                window
+                                    .wizard('Version manager', (ok, cancel, state, setState) => {
+                                        return <VersionManager
+                                            api={api}
+                                            draft={draftWrapper}
+                                            owner={props.globalEnv.user}
+                                            setState={setState} />
+                                    }, {
+                                        style: { width: '100%' },
+                                        noCancel: false,
+                                        okClassName: 'ms-2',
+                                        okLabel: 'I want to publish this API',
+                                    })
+                                    .then(deployment => {
+                                        if (deployment) {
+                                            fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                                                .then(res => {
+                                                    console.log(res)
+                                                })
+                                        }
+                                    })
                             })
-                            .then(deployment => {
-                                if (deployment) {
-                                    fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
-                                        .then(res => {
-                                            console.log(res)
-                                        })
-                                }
-                            });
                     }}
                 />
                 <Button
@@ -2266,11 +2358,11 @@ function Dashboard(props) {
     const params = useParams()
     const history = useHistory()
 
-    const { item, draft, isLoading, version } = useDraftOfAPI()
+    const { item, draft, draftWrapper, isLoading, version, api } = useDraftOfAPI()
 
     useEffect(() => {
         if (!isLoading && !!draft) {
-            props.setTitle(<DashboardTitle {...props} api={item} draft={draft} />)
+            props.setTitle(<DashboardTitle {...props} params={params} api={api} draftWrapper={draftWrapper} />)
         }
 
         return () => props.setTitle(undefined)
