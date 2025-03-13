@@ -796,10 +796,24 @@ case class Api(
     if (state == ApiRemoved || state == ApiStaging) {
       Seq.empty.vfuture
     } else {
-      Future.sequence(routes.map(route => apiRouteToNgRoute(route.id)))
-        .map(routes => routes.collect {
-          case Some(value) => value
-        }.filter(_.enabled))
+      env.datastores.draftsDataStore.findById(id)
+        .flatMap(optDraft => {
+          val draftApis: Option[Api] = optDraft.map(draft => Api.format.reads(draft.content))
+            .collect { case JsSuccess(api, _) if api.testing.enabled =>
+              api.copy(routes = api.routes.map(route =>route.copy(
+              id = s"testing_route_${route.id}",
+              frontend =
+                route.frontend.copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue)))))
+            }
+
+          val draftRoutes = draftApis.map(api => api.routes.map(route => routeToNgRoute(route, api.some))).getOrElse(Seq.empty)
+
+          Future.sequence(routes.map(route => routeToNgRoute(route, this.some)) ++ draftRoutes)
+            .map(routes => routes.collect {
+              case Some(value) => value
+            }
+              .filter(_.enabled))
+        })
     }
   }
 
@@ -823,33 +837,41 @@ case class Api(
     ).legacy
   }
 
-  def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
+  private def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
+    for {
+      globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
+      apiBackend          <- backends.find(_.id == apiRoute.backend).vfuture
+    } yield {
+      NgRoute(
+        location = location,
+        id = apiRoute.id,
+        name = apiRoute.name + " - " + apiRoute.frontend.methods
+          .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
+        description = description,
+        tags = tags,
+        metadata = metadata,
+        enabled = apiRoute.enabled,
+        capture = capture,
+        debugFlow = debugFlow,
+        exportReporting = exportReporting,
+        groups = Seq.empty,
+        frontend = apiRoute.frontend,
+        backend = globalBackendEntity.map(_.backend).getOrElse(apiBackend.get.backend),
+        backendRef = None,
+        plugins = optApi.map(api => api).getOrElse(this)
+          .flows
+          .find(_.id == apiRoute.flowRef)
+          .map(_.plugins)
+          .getOrElse(NgPlugins.empty)
+      ).some
+    }
+  }
+
+  def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
     routes.find(_.id == routeId) match {
-      case Some(apiRoute) => for {
-          globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
-          apiBackend          <- backends.find(_.id == apiRoute.backend).vfuture
-        } yield {
-          NgRoute(
-            location = location,
-            id = apiRoute.id,
-            name = apiRoute.name + " - " + apiRoute.frontend.methods
-              .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
-            description = description,
-            tags = tags,
-            metadata = metadata,
-            enabled = apiRoute.enabled,
-            capture = capture,
-            debugFlow = debugFlow,
-            exportReporting = exportReporting,
-            groups = Seq.empty,
-            frontend = apiRoute.frontend,
-            backend = globalBackendEntity.map(_.backend).getOrElse(apiBackend.get.backend),
-            backendRef = None,
-            plugins = flows.find(_.id == apiRoute.flowRef).map(_.plugins).getOrElse(NgPlugins.empty)
-          ).some
-        }
+      case Some(apiRoute) => routeToNgRoute(apiRoute)
       case None => None.vfuture
     }
   }
@@ -876,7 +898,7 @@ object Api {
       case ApiConsumerKind.Apikey   => addPluginToFlows[ApikeyCalls](api).some
       case ApiConsumerKind.JWT      => addPluginToFlows[JwtVerificationOnly](api).some
       case ApiConsumerKind.OAuth2   => addPluginToFlows[OIDCAccessTokenValidator](api).some
-      case _                        => None
+      case _                        => api.some
       //        case ApiConsumerKind.Mtls     =>
       //        case ApiConsumerKind.Keyless  =>
     }

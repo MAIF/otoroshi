@@ -128,7 +128,10 @@ export default (props) => {
                         <Select
                             value={{ value: version, label: version }}
                             onChange={item => {
-                                signalVersion.value = item.value
+                                const queryParams = new URLSearchParams(window.location.search);
+                                queryParams.set("version", item.value);
+                                history.replaceState(null, null, "?" + queryParams.toString());
+                                window.location.reload()
                             }}
                             isClearable={false}
                             isSearchable={false}

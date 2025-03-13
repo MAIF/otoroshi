@@ -112,6 +112,7 @@ case class NgTreeRouter(
                   HttpListenerNames.Experimental
                 )
               )
+                .sortBy(item => !(item.frontend.query.nonEmpty || item.frontend.headers.nonEmpty))
             )
           case Some(listener) if forCurrentListenerOnly =>
             // println("should display on exclusive")
@@ -122,6 +123,7 @@ case class NgTreeRouter(
         }
         val routeIds               = finalRoutes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
+
         finalRoutes.find((r, matchedPath, pathParams, noMoreSegments) =>
           r.matches(
             request,

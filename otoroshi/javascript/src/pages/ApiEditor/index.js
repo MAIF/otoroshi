@@ -788,7 +788,7 @@ function NewRoute(props) {
             }
         })
 
-    if (isLoading || !schema || templatesQuery.isLoading)
+    if (isLoading || !schema || templatesQuery.isLoading || !route)
         return <SimpleLoader />
 
     return <>
@@ -1270,10 +1270,10 @@ function Routes(props) {
 
     const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS)
 
-    const deleteItem = item => {
-        updateItem({
+    const deleteItem = newItem => {
+        return updateItem({
             ...item,
-            routes: item.routes.filter(f => f.id !== item.id)
+            routes: item.routes.filter(f => f.id !== newItem.id)
         })
     }
 
@@ -2213,6 +2213,19 @@ function VersionManager({ api, draft, owner, setState }) {
 
     const { changed, result } = mergeData(api, draft.content)
 
+    const getChanges = () => {
+        try {
+            return result
+                .reduce((acc, item) => {
+                    return acc +
+                        (item.lineType !== 'none' ? 1 : 0) +
+                        (Array.isArray(item.value) ? item.value.reduce((a, i) => a + i.lineType !== 'none' ? 1 : 0, 0) : 0)
+                }, 0)
+        } catch (err) {
+            return "unknown"
+        }
+    }
+
     const flow = [
         {
             type: 'group',
@@ -2222,7 +2235,7 @@ function VersionManager({ api, draft, owner, setState }) {
         },
         {
             type: 'group',
-            name: !changed ? 'No changes' : `${result.filter(item => item.lineType !== 'none').length} elements has changed`,
+            name: !changed ? 'No changes' : `${getChanges()} elements has changed`,
             collapsed: true,
             fields: ['apiDefinition'],
         }
@@ -2887,10 +2900,13 @@ function Entities({ children }) {
 }
 
 function Card({ title, description, to, button, onClick }) {
-    return <Link
-        to={to}
+    const history = useHistory()
+
+    return <div
         className="cards apis-cards cards--large mb-3"
-        onClick={() => onClick ? onClick : {}}>
+        onClick={() => {
+            onClick ? onClick : history.push(to)
+        }}>
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 {title}
@@ -2900,7 +2916,7 @@ function Card({ title, description, to, button, onClick }) {
                 {button ? button : <i className='fas fa-chevron-right fa-lg navigate-icon' />}
             </p>
         </div>
-    </Link>
+    </div>
 }
 
 function BackendsCard({ backends }) {
