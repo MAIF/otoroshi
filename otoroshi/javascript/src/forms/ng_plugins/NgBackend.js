@@ -456,7 +456,7 @@ export default {
             hostname: 'request.otoroshi.io',
             protocol: 'HTTP/1.1',
             port: 443,
-            weight: 0,
+            weight: 1,
             tls: true,
             tls_config: {
               enabled: false,

@@ -5,7 +5,7 @@ import diffson.PatchOps
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, ServiceDescriptor}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, RoundRobin, ServiceDescriptor}
 import otoroshi.next.models.{NgPluginInstance, _}
 import otoroshi.next.plugins.api.NgPlugin
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
@@ -675,7 +675,16 @@ object ApiBackend {
   def empty(implicit env: Env): ApiBackend = ApiBackend(
     IdGenerator.namedId("api_flows", env),
     name = "empty_backend",
-    backend = NgBackend.empty
+    backend = NgBackend.empty.copy(
+        targets = Seq(
+          NgTarget(
+            id = "target_1",
+            hostname = "request.otoroshi.io",
+            port = 443,
+            tls = true
+          )
+        )
+    )
   )
 
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {

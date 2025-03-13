@@ -1669,7 +1669,8 @@ function SidebarWithVersion({ params }) {
 
     useEffect(() => {
         if (queryVersion) {
-            changeColor(queryVersion)
+            updateQueryParams(queryVersion)
+            updateSignal(queryVersion)
         }
     }, [queryVersion])
 
@@ -1677,23 +1678,10 @@ function SidebarWithVersion({ params }) {
         signalVersion.value = version
     }
 
-    effect(() => {
-        const version = signalVersion.value
-
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("version", version);
-        history.replaceState(null, null, "?" + queryParams.toString());
-    })
-
     const updateQueryParams = version => {
         const queryParams = new URLSearchParams(window.location.search);
         queryParams.set("version", version);
         history.replaceState(null, null, "?" + queryParams.toString());
-    }
-
-    const changeColor = version => {
-        updateQueryParams(version)
-        updateSignal(version)
     }
 
     return <Sidebar params={params} />
@@ -2515,7 +2503,7 @@ function Dashboard(props) {
                     {showGettingStarted && <ContainerBlock full>
                         <SectionHeader text="Getting Started" />
 
-                        {!isPublished && !hasCreateConsumer && <Card
+                        {!isPublished && !hasCreateConsumer && hasCreateRoute && <Card
                             onClick={() => publishAPI(item)}
                             title="Deploy your API"
                             description={<>
