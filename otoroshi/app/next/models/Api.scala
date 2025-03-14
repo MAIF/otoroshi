@@ -137,7 +137,7 @@ object ApiFlows {
     )
   }
 }
-// TODO - create event for each deployment
+
 case class ApiDeployment(
     id: String,
     apiRef: String,

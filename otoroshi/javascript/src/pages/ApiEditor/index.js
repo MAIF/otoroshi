@@ -33,6 +33,7 @@ import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
+import { components } from 'react-select';
 
 const queryClient = new QueryClient({
     queries: {
@@ -259,60 +260,6 @@ function SubscriptionDesigner(props) {
     if (isLoading || !subscription)
         return null
 
-    const schema = {
-        location: {
-            type: 'location'
-        },
-        name: {
-            type: 'string',
-            label: 'Name'
-        },
-        description: {
-            type: 'string',
-            label: 'Description'
-        },
-        enabled: {
-            type: 'boolean',
-            label: 'Enabled'
-        },
-        owner_ref: {
-            type: 'string',
-            label: 'Owner'
-        },
-        consumer_ref: {
-            type: 'select',
-            label: 'Consumer',
-            props: {
-                options: item.consumers,
-                optionsTransformer: {
-                    value: 'id',
-                    label: 'name'
-                }
-            }
-        },
-        token_refs: {
-            array: true,
-            label: 'Token refs',
-            type: 'string'
-        }
-    }
-
-    const flow = [
-        'location',
-        {
-            type: 'group',
-            name: 'Informations',
-            collapsable: false,
-            fields: ['name', 'description', 'enabled'],
-        },
-        {
-            type: 'group',
-            name: 'Ownership',
-            collapsable: false,
-            fields: ['owner_ref', 'consumer_ref', 'token_refs'],
-        },
-    ]
-
     const updateSubscription = () => {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
@@ -340,11 +287,71 @@ function SubscriptionDesigner(props) {
         }}>
             <NgForm
                 value={subscription}
-                schema={schema}
-                flow={flow}
+                schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+                flow={SUBSCRIPTION_FORM_SETTINGS.flow}
                 onChange={setSubscription} />
         </div>
     </>
+}
+
+const SUBSCRIPTION_FORM_SETTINGS = {
+    schema: item => ({
+        location: {
+            type: 'location'
+        },
+        name: {
+            type: 'string',
+            label: 'Name'
+        },
+        description: {
+            type: 'string',
+            label: 'Description'
+        },
+        enabled: {
+            type: 'boolean',
+            label: 'Enabled'
+        },
+        owner_ref: {
+            type: 'string',
+            label: 'Owner'
+        },
+        consumer_ref: {
+            type: 'select',
+            label: 'Published consumer',
+            props: {
+                options: item.consumers.filter(consumer => consumer.status === 'published'),
+                noOptionsMessage: ({ children, ...props }) => {
+                    return <components.NoOptionsMessage {...props}>
+                        No consumers are published
+                    </components.NoOptionsMessage>
+                },
+                optionsTransformer: {
+                    value: 'id',
+                    label: 'name'
+                }
+            }
+        },
+        token_refs: {
+            array: true,
+            label: 'Token refs',
+            type: 'string'
+        }
+    }),
+    flow: [
+        'location',
+        {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['name', 'description', 'enabled'],
+        },
+        {
+            type: 'group',
+            name: 'Ownership',
+            collapsable: false,
+            fields: ['owner_ref', 'consumer_ref', 'token_refs'],
+        },
+    ]
 }
 
 function NewSubscription(props) {
@@ -370,62 +377,6 @@ function NewSubscription(props) {
     // prevent schema to have a empty consumers list
     if (isLoading || !subscription)
         return null
-
-    const schema = {
-        location: {
-            type: 'location'
-        },
-        name: {
-            type: 'string',
-            label: 'Name'
-        },
-        description: {
-            type: 'string',
-            label: 'Description'
-        },
-        enabled: {
-            type: 'boolean',
-            label: 'Enabled'
-        },
-        owner_ref: {
-            type: 'string',
-            label: 'Owner'
-        },
-        consumer_ref: {
-            type: 'select',
-            label: 'Consumer',
-            props: {
-                options: item.consumers,
-                optionsTransformer: consumers => {
-                    return consumers.map(consumer => ({
-                        value: consumer.id,
-                        label: `${consumer.name} [${consumer.status}]`
-                    }))
-                }
-            }
-        },
-        token_refs: {
-            array: true,
-            label: 'Token refs',
-            type: 'string'
-        }
-    }
-
-    const flow = [
-        'location',
-        {
-            type: 'group',
-            name: 'Informations',
-            collapsable: false,
-            fields: ['name', 'description', 'enabled'],
-        },
-        {
-            type: 'group',
-            name: 'Ownership',
-            collapsable: false,
-            fields: ['owner_ref', 'consumer_ref', 'token_refs'],
-        },
-    ]
 
     const updateSubscription = () => {
         const consumer = item.consumers.find(consumer => consumer.id === subscription.consumer_ref)
@@ -465,8 +416,8 @@ function NewSubscription(props) {
         }}>
             <NgForm
                 value={subscription}
-                schema={schema}
-                flow={flow}
+                schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+                flow={SUBSCRIPTION_FORM_SETTINGS.flow}
                 onChange={newSub => {
                     setSubscription(newSub)
                     setError(undefined)
@@ -501,7 +452,7 @@ function RouteDesigner(props) {
     const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
 
-    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const [backends, setBackends] = useState([])
 
@@ -515,105 +466,9 @@ function RouteDesigner(props) {
     useEffect(() => {
         if (item && backendsQuery.data !== undefined) {
             setRoute(item.routes.find(route => route.id === params.routeId))
-            setSchema({
-                name: {
-                    type: 'string',
-                    label: 'Route name',
-                    placeholder: 'My users route'
-                },
-                frontend: {
-                    type: 'form',
-                    label: 'Frontend',
-                    schema: NgFrontend.schema,
-                    props: {
-                        v2: {
-                            folded: ['domains', 'methods'],
-                            flow: NgFrontend.flow,
-                        }
-                    }
-                    // flow: NgFrontend.flow,
-                },
-                flow_ref: {
-                    type: 'select',
-                    label: 'Flow',
-                    props: {
-                        options: item.flows,
-                        optionsTransformer: {
-                            label: 'name',
-                            value: 'id',
-                        }
-                    },
-                },
-                backend: {
-                    type: 'select',
-                    label: 'Backend',
-                    props: {
-                        options: [...item.backends, ...backends],
-                        optionsTransformer: {
-                            value: 'id',
-                            label: 'name'
-                        }
-                    }
-                    // return <BackendSelector
-                    //     enabled
-                    //     backends={[...data.backends, ...backends]}
-                    //     setUsingExistingBackend={e => {
-                    //         props.rootOnChange({
-                    //             ...props.rootValue,
-                    //             usingExistingBackend: e
-                    //         })
-                    //     }}
-                    //     onChange={backend_ref => {
-                    //         props.rootOnChange({
-                    //             ...props.rootValue,
-                    //             usingExistingBackend: true,
-                    //             backend: backend_ref
-                    //         })
-                    //     }}
-                    //     usingExistingBackend={props.rootValue.usingExistingBackend !== undefined ?
-                    //         props.rootValue.usingExistingBackend : (typeof props.rootValue.backend === 'string')
-                    //     }
-                    //     route={props.rootValue}
-                    // />
-                    // }
-                    // type: 'form',
-                    // label: 'Backend',
-                    // schema: NgBackend.schema,
-                    // flow: NgBackend.flow
-                }
-            })
+            setSchema(ROUTE_FORM_SETTINGS.schema(item))
         }
     }, [item, backendsQuery.data])
-
-    const flow = [
-        {
-            type: 'group',
-            name: 'Domains information',
-            collapsable: true,
-            fields: ['frontend']
-        },
-        {
-            type: 'group',
-            collapsable: true,
-            collapsed: false,
-            name: 'Selected flow',
-            fields: ['flow_ref'],
-        },
-        {
-            type: 'group',
-            collapsable: true,
-            collapsed: false,
-            name: 'Backend configuration',
-            fields: ['backend'],
-        },
-        {
-            type: 'group',
-            collapsable: true,
-            collapsed: false,
-            name: 'Additional informations',
-            fields: ['name'],
-        }
-    ]
 
     const updateRoute = () => {
         return updateItem({
@@ -646,128 +501,89 @@ function RouteDesigner(props) {
         }}>
             <NgForm
                 value={route}
-                flow={flow}
+                flow={ROUTE_FORM_SETTINGS.flow}
                 schema={schema}
                 onChange={newValue => setRoute(newValue)} />
         </div>
     </>
 }
 
-function NewRoute(props) {
-    const params = useParams()
-    const history = useHistory()
-
-    const [route, setRoute] = useState()
-    const [schema, setSchema] = useState()
-
-    const [backends, setBackends] = useState([])
-
-    const backendsQuery = useQuery(['getBackends'],
-        () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
-        {
-            enabled: backends.length <= 0,
-            onSuccess: setBackends
-        })
-
-    const { item, updateItem, isLoading } = useDraftOfAPI()
-
-    useEffect(() => {
-        if (item && !backendsQuery.isLoading && !schema) {
-            setSchema({
-                name: {
-                    type: 'string',
-                    label: 'Route name',
-                    placeholder: 'My users route'
-                },
-                frontend: {
-                    type: 'form',
-                    label: 'Frontend',
-                    schema: NgFrontend.schema,
-                    flow: NgFrontend.flow
-                },
-                flow_ref: {
-                    type: 'select',
-                    label: 'Flow',
-                    props: {
-                        options: item.flows,
-                        optionsTransformer: {
-                            label: 'name',
-                            value: 'id',
-                        }
-                    },
-                },
-                backend: {
-                    renderer: props => {
-                        // return <BackendSelector
-                        //     enabled
-                        //     backends={[...item.backends, ...backends]}
-                        //     setUsingExistingBackend={e => {
-                        //         props.rootOnChange({
-                        //             ...props.rootValue,
-                        //             usingExistingBackend: e
-                        //         })
-                        //     }}
-                        //     onChange={backend_ref => {
-                        //         props.rootOnChange({
-                        //             ...props.rootValue,
-                        //             usingExistingBackend: true,
-                        //             backend: backend_ref
-                        //         })
-                        //     }}
-                        //     usingExistingBackend={props.rootValue.usingExistingBackend}
-                        //     route={props.rootValue}
-                        // />
-                        return <div className="row mb-3">
-                            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Backend</label>
-                            <div className="col-sm-10">
-                                <NgSelectRenderer
-                                    id="backend_select"
-                                    value={props.rootValue.backend_ref || props.rootValue.backend}
-                                    placeholder="Select an existing backend"
-                                    label={' '}
-                                    ngOptions={{
-                                        spread: true,
-                                    }}
-                                    isClearable
-                                    onChange={backend_ref => {
-                                        props.rootOnChange({
-                                            ...props.rootValue,
-                                            usingExistingBackend: true,
-                                            backend: backend_ref
-                                        })
-                                    }}
-                                    components={{
-                                        Option: props => {
-                                            return <div className='d-flex align-items-center m-0 p-2' style={{ gap: '.5rem' }} onClick={() => {
-                                                props.selectOption(props.data)
-                                            }}>
-                                                <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
-                                                    {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                                                </span>{props.data.label}
-                                            </div>
-                                        },
-                                        SingleValue: (props) => {
-                                            return <div className='d-flex align-items-center m-0' style={{ gap: '.5rem' }}>
-                                                <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
-                                                    {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                                                </span>{props.data.label}
-                                            </div>
-                                        }
-                                    }}
-                                    options={[...item.backends, ...backends]}
-                                    optionsTransformer={(arr) =>
-                                        arr.map((item) => ({ label: item.name, value: item.id }))
-                                    }
-                                />
-                            </div>
-                        </div>
+const ROUTE_FORM_SETTINGS = {
+    schema: item => {
+        return {
+            name: {
+                type: 'string',
+                label: 'Route name',
+                placeholder: 'My users route'
+            },
+            frontend: {
+                type: 'form',
+                label: 'Frontend',
+                schema: NgFrontend.schema,
+                flow: NgFrontend.flow
+            },
+            flow_ref: {
+                type: 'select',
+                label: 'Flow',
+                props: {
+                    options: item.flows,
+                    optionsTransformer: {
+                        label: 'name',
+                        value: 'id',
                     }
+                },
+            },
+            backend: {
+                renderer: props => {
+                    return <div className="row mb-3">
+                        <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Backend</label>
+                        <div className="col-sm-10">
+                            <NgSelectRenderer
+                                id="backend_select"
+                                value={props.rootValue.backend_ref || props.rootValue.backend}
+                                placeholder="Select an existing backend"
+                                label={' '}
+                                ngOptions={{
+                                    spread: true,
+                                }}
+                                isClearable
+                                onChange={backend_ref => {
+                                    props.rootOnChange({
+                                        ...props.rootValue,
+                                        usingExistingBackend: true,
+                                        backend: backend_ref
+                                    })
+                                }}
+                                components={{
+                                    Option: props => {
+                                        return <div className='d-flex align-items-center m-0 p-2' style={{ gap: '.5rem' }} onClick={() => {
+                                            props.selectOption(props.data)
+                                        }}>
+                                            <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
+                                                {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                                            </span>{props.data.label}
+                                        </div>
+                                    },
+                                    SingleValue: (props) => {
+                                        return <div className='d-flex align-items-center m-0' style={{ gap: '.5rem' }}>
+                                            <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
+                                                {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                                            </span>{props.data.label}
+                                        </div>
+                                    }
+                                }}
+                                options={[...item.backends, ...backends]}
+                                optionsTransformer={(arr) =>
+                                    arr.map((item) => ({ label: item.name, value: item.id }))
+                                }
+                            />
+                        </div>
+                    </div>
                 }
-            })
+            }
         }
-    }, [item, backendsQuery])
-
-    const flow = [
+    },
+    flow: [
         {
             type: 'group',
             collapsable: true,
@@ -798,6 +614,33 @@ function NewRoute(props) {
             fields: ['name'],
         }
     ]
+}
+
+function NewRoute(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [route, setRoute] = useState()
+    const [schema, setSchema] = useState()
+
+    const [backends, setBackends] = useState([])
+
+    const backendsQuery = useQuery(['getBackends'],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+        {
+            enabled: backends.length <= 0,
+            onSuccess: setBackends
+        })
+
+    const { item, updateItem, isLoading } = useDraftOfAPI()
+
+    useEffect(() => {
+        if (item && !backendsQuery.isLoading && !schema) {
+            setSchema(ROUTE_FORM_SETTINGS.schema(item))
+        }
+    }, [item, backendsQuery])
+
+
 
     const saveRoute = () => {
         return updateItem({
@@ -844,7 +687,7 @@ function NewRoute(props) {
             margin: 'auto'
         }}>
             <NgForm
-                flow={flow}
+                flow={ROUTE_FORM_SETTINGS.flow}
                 schema={schema}
                 value={route}
                 onChange={setRoute}

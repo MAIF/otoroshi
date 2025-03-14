@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 import { NgSelectRenderer } from '../../components/nginputs';
-import Select from 'react-select';
+import Select, { components } from 'react-select';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
 
@@ -137,7 +137,7 @@ export default (props) => {
                             isSearchable={false}
                             components={{
                                 IndicatorSeparator: () => null,
-                                SingleValue: (props) => {
+                                SingleValue: ({ children, ...props }) => {
                                     return <div className='d-flex align-items-center m-0' style={{
                                         gap: '.5rem'
                                     }}>

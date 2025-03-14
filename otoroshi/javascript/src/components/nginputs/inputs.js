@@ -1198,6 +1198,15 @@ export class NgSelectRenderer extends Component {
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
 
+    let components = this.props.components || {}
+
+    if (props.noOptionsMessage) {
+      components = {
+        ...components,
+        NoOptionsMessage: props.noOptionsMessage
+      }
+    }
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
@@ -1226,7 +1235,7 @@ export class NgSelectRenderer extends Component {
             }}
             components={{
               IndicatorSeparator: () => null,
-              ...(props.components || {})
+              ...components
             }}
             styles={{
               control: (baseStyles) => ({

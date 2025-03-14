@@ -81,6 +81,15 @@ export class ReactSelectOverride extends React.Component {
   render() {
     const Component = this.props.creatable ? Creatable : Select;
 
+    let components = this.props.components || {}
+
+    if (this.props.noOptionsMessage) {
+      components = {
+        ...components,
+        noOptionsMessage: this.props.noOptionsMessage
+      }
+    }
+
     return (
       <Component
         {...this.props}
@@ -89,7 +98,7 @@ export class ReactSelectOverride extends React.Component {
         isClearable={this.props.isClearable}
         components={{
           IndicatorSeparator: () => null,
-          ...(this.props.components || {})
+          ...components
         }}
         styles={{
           control: (baseStyles) => ({
@@ -115,7 +124,7 @@ export class ReactSelectOverride extends React.Component {
             ...provided,
             color: 'var(--text)',
           }),
-          
+
           MenuList: (provided) => ({
             ...provided,
             background: 'red',
@@ -140,7 +149,7 @@ export class ReactSelectOverride extends React.Component {
           valueContainer: (baseStyles) => ({
             ...baseStyles,
             display: 'flex'
-        }),
+          }),
         }}
       />
     );
