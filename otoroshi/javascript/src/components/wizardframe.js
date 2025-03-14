@@ -12,7 +12,15 @@ function Header({ onClose, title }) {
 
 function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okClassName = '', state }) {
   return (
-    <div className="d-flex mt-auto justify-content-between align-items-center">
+    <div className="d-flex mt-auto justify-content-between align-items-center" style={{
+      position: 'sticky',
+      bottom: 0,
+      right: 0,
+      left: 0,
+      padding: '1rem',
+      background: 'var(--bg-color_level2)',
+      zIndex: 100
+    }}>
       {!noCancel && (
         <Button
           className="ms-auto"
@@ -50,7 +58,7 @@ export function WizardFrame(props) {
   return (
     <div className="wizard">
       <div className="wizard-container">
-        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem 0 0 2.5rem', flex: 1, position: 'relative' }}>
           <Header title={props.title} onClose={props.cancel} />
           {props.children
             ? props.schildren

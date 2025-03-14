@@ -34,6 +34,7 @@ import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import { components } from 'react-select';
+import { render } from 'react-dom';
 
 const queryClient = new QueryClient({
     queries: {
@@ -466,7 +467,7 @@ function RouteDesigner(props) {
     useEffect(() => {
         if (item && backendsQuery.data !== undefined) {
             setRoute(item.routes.find(route => route.id === params.routeId))
-            setSchema(ROUTE_FORM_SETTINGS.schema(item))
+            setSchema(ROUTE_FORM_SETTINGS.schema(item, backends))
         }
     }, [item, backendsQuery.data])
 
@@ -509,7 +510,7 @@ function RouteDesigner(props) {
 }
 
 const ROUTE_FORM_SETTINGS = {
-    schema: item => {
+    schema: (item, backends) => {
         return {
             name: {
                 type: 'string',
@@ -636,7 +637,7 @@ function NewRoute(props) {
 
     useEffect(() => {
         if (item && !backendsQuery.isLoading && !schema) {
-            setSchema(ROUTE_FORM_SETTINGS.schema(item))
+            setSchema(ROUTE_FORM_SETTINGS.schema(item, backends))
         }
     }, [item, backendsQuery])
 
@@ -1397,12 +1398,6 @@ function EditBackend(props) {
 function Testing(props) {
     const { item, version, updateItem, setItem, isLoading } = useDraftOfAPI()
 
-    if (version === 'Published') {
-        return <div>
-            Testing mode is only available in the draft version
-        </div>
-    }
-
     if (isLoading)
         return null
 
@@ -1434,28 +1429,33 @@ function Testing(props) {
 
     return <>
         <PageTitle title='Testing mode' {...props}>
-            <FeedbackButton
+            {version === 'Draft' && <FeedbackButton
                 type="success"
                 className="d-flex ms-auto"
                 onPress={updateItem}
                 text={<>
                     Update <VersionBadge size="xs" />
                 </>}
-            />
+            />}
         </PageTitle>
-        <div style={{
-            maxWidth: 640,
-            margin: 'auto'
-        }}>
-            <NgForm
-                value={item?.testing}
-                onChange={testing => setItem({
-                    ...item,
-                    testing
-                })}
-                schema={schema}
-            />
-        </div>
+        {version === 'Published' ?
+            <div>
+                Testing mode is only available in the draft version.
+            </div>
+            :
+            <div style={{
+                maxWidth: 640,
+                margin: 'auto'
+            }}>
+                <NgForm
+                    value={item?.testing}
+                    onChange={testing => setItem({
+                        ...item,
+                        testing
+                    })}
+                    schema={schema}
+                />
+            </div>}
     </>
 }
 
@@ -1984,6 +1984,14 @@ function VersionManager({ api, draft, owner, setState }) {
         version: semver.inc(api.version, 'patch')
     })
 
+    const getCompareStep = (field) => ({
+        renderer: () => {
+            return <PublisDraftModalContent
+                draft={draft.content[field]}
+                currentItem={api[field]} />
+        }
+    })
+
     const schema = {
         location: {
             type: 'location'
@@ -2046,6 +2054,12 @@ function VersionManager({ api, draft, owner, setState }) {
         at: {
             type: 'datetime'
         },
+        routes: getCompareStep('routes'),
+        flows: getCompareStep('flows'),
+        backends: getCompareStep('flows'),
+        consumers: getCompareStep('consumers'),
+        subscriptions: getCompareStep('subscriptions'),
+        deployments: getCompareStep('deployments'),
         apiDefinition: {
             renderer: () => {
                 return <PublisDraftModalContent
@@ -2055,20 +2069,12 @@ function VersionManager({ api, draft, owner, setState }) {
         }
     }
 
-    const { changed, result } = mergeData(api, draft.content)
-
-    const getChanges = () => {
-        try {
-            return result
-                .reduce((acc, item) => {
-                    return acc +
-                        (item.lineType !== 'none' ? 1 : 0) +
-                        (Array.isArray(item.value) ? item.value.reduce((a, i) => a + i.lineType !== 'none' ? 1 : 0, 0) : 0)
-                }, 0)
-        } catch (err) {
-            return "unknown"
-        }
-    }
+    const getCompareFlowGroup = name => ({
+        type: 'group',
+        name: `${name} ${!mergeData(api[name], draft.content[name]).changed ? '' : `: has changed`}`,
+        collapsed: true,
+        fields: [name],
+    })
 
     const flow = [
         {
@@ -2077,9 +2083,15 @@ function VersionManager({ api, draft, owner, setState }) {
             collapsable: false,
             fields: ['version', 'action', 'owner']
         },
+        getCompareFlowGroup('routes'),
+        getCompareFlowGroup('flows'),
+        getCompareFlowGroup('backends'),
+        getCompareFlowGroup('consumers'),
+        getCompareFlowGroup('subscriptions'),
+        getCompareFlowGroup('deployments'),
         {
             type: 'group',
-            name: !changed ? 'No changes' : `${getChanges()} elements has changed`,
+            name: `Global: ${!mergeData(api[name], draft.content[name]) ? 'No changes' : `has changed`}`,
             collapsed: true,
             fields: ['apiDefinition'],
         }
