@@ -297,7 +297,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
               case JsSuccess(deployment, _) =>
                 val updatedApi = api.copy(
                   versions = api.versions :+ deployment.version,
-                  deployments = api.deployments :+ deployment.copy(location = api.location),
+                  deployments = api.deployments :+ deployment,
                   version = deployment.version
                 )
                 env.datastores.apiDataStore.set(updatedApi)

@@ -1226,6 +1226,7 @@ export class NgSelectRenderer extends Component {
             }}
             components={{
               IndicatorSeparator: () => null,
+              ...(props.components || {})
             }}
             styles={{
               control: (baseStyles) => ({

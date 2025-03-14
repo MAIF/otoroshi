@@ -19,7 +19,7 @@ export default {
       format: null,
       label: 'Allowed issuer DNs',
     },
-    regexSubjectDN: {
+    regexSubjectDNs: {
       type: 'array',
       array: true,
       format: null,

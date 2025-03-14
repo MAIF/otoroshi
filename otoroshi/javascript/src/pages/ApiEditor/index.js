@@ -32,6 +32,8 @@ import { signalVersion } from './VersionSignal';
 import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { PillButton } from '../../components/PillButton';
+import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
+import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 
 const queryClient = new QueryClient({
     queries: {
@@ -101,7 +103,7 @@ function useDraftOfAPI() {
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
-        enabled: isPublished,
+        enabled: !api,
         onSuccess: setAPI
     })
 
@@ -110,6 +112,7 @@ function useDraftOfAPI() {
         .findById(params.apiId),
         {
             retry: 0,
+            enabled: !draft,
             onSuccess: data => {
                 if (data.error) {
                     Promise.all([
@@ -533,7 +536,7 @@ function RouteDesigner(props) {
                 },
                 flow_ref: {
                     type: 'select',
-                    label: 'Flow ID',
+                    label: 'Flow',
                     props: {
                         options: item.flows,
                         optionsTransformer: {
@@ -685,7 +688,7 @@ function NewRoute(props) {
                 },
                 flow_ref: {
                     type: 'select',
-                    label: 'Flow ID',
+                    label: 'Flow',
                     props: {
                         options: item.flows,
                         optionsTransformer: {
@@ -696,25 +699,69 @@ function NewRoute(props) {
                 },
                 backend: {
                     renderer: props => {
-                        return <BackendSelector
-                            enabled
-                            backends={[...item.backends, ...backends]}
-                            setUsingExistingBackend={e => {
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    usingExistingBackend: e
-                                })
-                            }}
-                            onChange={backend_ref => {
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    usingExistingBackend: true,
-                                    backend: backend_ref
-                                })
-                            }}
-                            usingExistingBackend={props.rootValue.usingExistingBackend}
-                            route={props.rootValue}
-                        />
+                        // return <BackendSelector
+                        //     enabled
+                        //     backends={[...item.backends, ...backends]}
+                        //     setUsingExistingBackend={e => {
+                        //         props.rootOnChange({
+                        //             ...props.rootValue,
+                        //             usingExistingBackend: e
+                        //         })
+                        //     }}
+                        //     onChange={backend_ref => {
+                        //         props.rootOnChange({
+                        //             ...props.rootValue,
+                        //             usingExistingBackend: true,
+                        //             backend: backend_ref
+                        //         })
+                        //     }}
+                        //     usingExistingBackend={props.rootValue.usingExistingBackend}
+                        //     route={props.rootValue}
+                        // />
+                        return <div className="row mb-3">
+                            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Backend</label>
+                            <div className="col-sm-10">
+                                <NgSelectRenderer
+                                    id="backend_select"
+                                    value={props.rootValue.backend_ref || props.rootValue.backend}
+                                    placeholder="Select an existing backend"
+                                    label={' '}
+                                    ngOptions={{
+                                        spread: true,
+                                    }}
+                                    isClearable
+                                    onChange={backend_ref => {
+                                        props.rootOnChange({
+                                            ...props.rootValue,
+                                            usingExistingBackend: true,
+                                            backend: backend_ref
+                                        })
+                                    }}
+                                    components={{
+                                        Option: props => {
+                                            return <div className='d-flex align-items-center m-0 p-2' style={{ gap: '.5rem' }} onClick={() => {
+                                                props.selectOption(props.data)
+                                            }}>
+                                                <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
+                                                    {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                                                </span>{props.data.label}
+                                            </div>
+                                        },
+                                        SingleValue: (props) => {
+                                            return <div className='d-flex align-items-center m-0' style={{ gap: '.5rem' }}>
+                                                <span className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}>
+                                                    {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                                                </span>{props.data.label}
+                                            </div>
+                                        }
+                                    }}
+                                    options={[...item.backends, ...backends]}
+                                    optionsTransformer={(arr) =>
+                                        arr.map((item) => ({ label: item.name, value: item.id }))
+                                    }
+                                />
+                            </div>
+                        </div>
                     }
                 }
             })
@@ -775,7 +822,7 @@ function NewRoute(props) {
             },
         }),
         {
-            enabled: !isLoading,
+            enabled: !isLoading && !!item,
             onSuccess: (frontendTemplate) => {
                 setRoute({
                     ...route,
@@ -887,15 +934,27 @@ function Consumers(props) {
 
 const TEMPLATES = {
     apikey: {
-        throttlingQuota: 1000,
-        dailyQuota: 1000,
-        monthlyQuota: 1000
+        wipe_backend_request: true,
+        validate: true,
+        mandatory: true,
+        pass_with_user: false,
+        update_quotas: true,
     },
-    mtls: {},
+    mtls: {
+        serialNumbers: [],
+        subjectDNs: [],
+        issuerDNs: [],
+        regexSubjectDNs: [],
+        regexIssuerDNs: [],
+    },
     keyless: {},
-    oauth2: {},
+    oauth2: {
+        expiration: 3600000,
+        default_key_pair: "otoroshi-jwt-signing"
+    },
     jwt: {
         verifier: undefined,
+        fail_if_absent: false
     }
 }
 
@@ -906,25 +965,13 @@ function NewConsumerSettingsForm(props) {
             if (settings && JSON.stringify(props.value, null, 2) !== JSON.stringify(settings, null, 2))
                 props.onChange(settings)
         }}
-        schema={JwtVerificationOnly.config_schema}
-        flow={JwtVerificationOnly.config_flow}
+        schema={props.schema}
+        flow={props.flow}
     />
 }
 
-function NewConsumer(props) {
-    const params = useParams()
-    const history = useHistory()
-
-    const [consumer, setConsumer] = useState({
-        id: v4(),
-        name: "New consumer",
-        consumer_kind: "apikey",
-        settings: TEMPLATES.apikey,
-        status: "staging",
-        subscriptions: []
-    })
-
-    const schema = {
+const CONSUMER_FORM_SETTINGS = {
+    schema: {
         name: {
             type: 'string',
             label: 'Name'
@@ -984,49 +1031,119 @@ function NewConsumer(props) {
             }
         },
         settings: {
-            type: 'json',
-            label: 'Plan configuration'
-        },
-        custom: {
             renderer: props => {
-                if (props.rootValue.consumer_kind === 'jwt') {
-                    return <NewConsumerSettingsForm
-                        value={props.rootValue.settings}
-                        onChange={settings => {
-                            if (settings)
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    settings
-                                })
-                        }}
-                    />
+                const kind = props.rootValue.consumer_kind
+
+                const kinds = {
+                    jwt: {
+                        schema: JwtVerificationOnly.config_schema,
+                        flow: JwtVerificationOnly.config_flow,
+                    },
+                    oauth2: {
+                        schema: NgClientCredentialTokenEndpoint.config_schema,
+                        flow: NgClientCredentialTokenEndpoint.config_flow,
+                    },
+                    mtls: {
+                        schema: NgHasClientCertMatchingValidator.config_schema,
+                        flow: NgHasClientCertMatchingValidator.config_flow,
+                    },
+                    apikey: {
+                        schema: {
+                            wipe_backend_request: {
+                                label: 'Wipe backend request',
+                                type: 'box-bool',
+                                props: {
+                                    description: 'Remove the apikey fromcall made to downstream service',
+                                },
+                            },
+                            update_quotas: {
+                                label: 'Update quotas',
+                                type: 'box-bool',
+                                props: {
+                                    description: 'Each call with an apikey will update its quota',
+                                },
+                            },
+                            pass_with_user: {
+                                label: 'Pass with user',
+                                type: 'box-bool',
+                                props: {
+                                    description: 'Allow the path to be accessed via an Authentication module',
+                                },
+                            },
+                            mandatory: {
+                                label: 'Mandatory',
+                                type: 'box-bool',
+                                props: {
+                                    description:
+                                        'Allow an apikey and and authentication module to be used on a same path. If disabled, the route can be called without apikey.',
+                                },
+                            },
+                            validate: {
+                                label: 'Validate',
+                                type: 'box-bool',
+                                props: {
+                                    description:
+                                        'Check that the api key has not expired, has not reached its quota limits and is authorized to call the Otoroshi service',
+                                },
+                            },
+                        }
+                    }
                 }
 
-                return null
+                const onChange = settings => {
+                    if (settings)
+                        props.rootOnChange({
+                            ...props.rootValue,
+                            settings
+                        })
+                }
+
+                if (kinds[kind])
+                    return <NewConsumerSettingsForm
+                        schema={kinds[kind].schema}
+                        flow={kinds[kind].flow}
+                        value={props.rootValue.settings}
+                        onChange={onChange}
+                    />
+
+                return <JsonObjectAsCodeInput
+                    label='Additional informations'
+                    onChange={onChange}
+                    value={props.rootValue.settings} />
             }
         }
-    }
+    },
+    flow: [{
+        type: 'group',
+        collapsable: false,
+        name: 'Plan',
+        fields: ['name',
+            'consumer_kind',
+            'status',
+            'description',
+            'auto_validation'
+        ],
+    },
+    {
+        type: 'group',
+        collapsable: false,
+        name: 'Configuration',
+        fields: ['settings'],
+    }]
+}
 
-    const flow = [
-        {
-            type: 'group',
-            collapsable: false,
-            name: 'Plan',
-            fields: ['name',
-                'consumer_kind',
-                'status',
-                'description',
-                'auto_validation',],
-        },
-        {
-            type: 'group',
-            collapsable: false,
-            name: 'Configuration',
-            fields: (props) => {
-                return props.value.consumer_kind === 'jwt' ? ['custom'] : ['settings']
-            },
-        }
-    ]
+function NewConsumer(props) {
+    const params = useParams()
+    const history = useHistory()
+
+    const [consumer, setConsumer] = useState({
+        id: v4(),
+        name: "New consumer",
+        consumer_kind: "apikey",
+        settings: TEMPLATES.apikey,
+        status: "staging",
+        subscriptions: []
+    })
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -1050,8 +1167,8 @@ function NewConsumer(props) {
         }}>
             <NgForm
                 value={consumer}
-                flow={flow}
-                schema={schema}
+                flow={CONSUMER_FORM_SETTINGS.flow}
+                schema={CONSUMER_FORM_SETTINGS.schema}
                 onChange={newValue => setConsumer(newValue)} />
             <Button
                 type="success"
@@ -1069,111 +1186,6 @@ function ConsumerDesigner(props) {
     const history = useHistory()
 
     const [consumer, setConsumer] = useState()
-
-    const schema = {
-        name: {
-            type: 'string',
-            label: 'Name'
-        },
-        consumer_kind: {
-            renderer: props => {
-                return <div className="row mb-3">
-                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Consumer kind</label>
-                    <div className="col-sm-10">
-                        <NgDotsRenderer
-                            value={props.value}
-                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
-                            ngOptions={{
-                                spread: true
-                            }}
-                            onChange={newType => {
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    settings: TEMPLATES[newType],
-                                    consumer_kind: newType
-                                })
-                            }}
-                        />
-                    </div>
-                </div>
-            }
-        },
-        status: {
-            type: 'dots',
-            label: "Status",
-            props: {
-                options: consumer?.status !== 'staging' ? ['published', 'deprecated', 'closed'] :
-                    ['staging', 'published', 'deprecated', 'closed'],
-            },
-        },
-        description: {
-            renderer: ({ rootValue }) => {
-                const descriptions = {
-                    staging: "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users",
-                    published: "When your plan is finalized, you can publish it to allow API consumers to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable",
-                    deprecated: "Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API consumers",
-                    closed: "Closing a plan terminates all associated subscriptions, and this action is irreversible. API consumers previously subscribed to the plan will no longer have access to the API"
-                };
-
-                return <div className="row mb-3" style={{ marginTop: "-1rem" }}>
-                    <label className="col-xs-12 col-sm-2 col-form-label" />
-                    <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
-                        {descriptions[rootValue?.status]}
-                    </div>
-                </div>
-            }
-        },
-        auto_validation: {
-            type: 'box-bool',
-            label: 'Auto-validation',
-            props: {
-                description: "When creating a customer, you can enable subscription auto-validation to immediately approve subscription requests. If Auto validate subscription is disabled, the API publisher must approve all subscription requests."
-            }
-        },
-        settings: {
-            type: 'json',
-            label: 'Plan configuration'
-        },
-        custom: {
-            renderer: props => {
-                if (props.rootValue?.consumer_kind === 'jwt') {
-                    return <NewConsumerSettingsForm
-                        value={props.rootValue.settings}
-                        onChange={settings => {
-                            if (settings)
-                                props.rootOnChange({
-                                    ...props.rootValue,
-                                    settings
-                                })
-                        }}
-                    />
-                }
-
-                return null
-            }
-        }
-    }
-
-    const flow = [
-        {
-            type: 'group',
-            collapsable: false,
-            name: 'Plan',
-            fields: ['name',
-                'consumer_kind',
-                'status',
-                'description',
-                'auto_validation',],
-        },
-        {
-            type: 'group',
-            collapsable: false,
-            name: 'Configuration',
-            fields: (props) => {
-                return props.value.consumer_kind === 'jwt' ? ['custom'] : ['settings']
-            },
-        }
-    ]
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -1216,8 +1228,8 @@ function ConsumerDesigner(props) {
         }}>
             <NgForm
                 value={consumer}
-                flow={flow}
-                schema={schema}
+                flow={CONSUMER_FORM_SETTINGS.flow}
+                schema={CONSUMER_FORM_SETTINGS.schema}
                 onChange={newValue => setConsumer(newValue)} />
         </div>
     </>
@@ -2490,8 +2502,8 @@ function Dashboard(props) {
     const hasCreateFlow = item && item.flows.length > 0
     const hasCreateRoute = item && item.routes.length > 0
     const hasCreateConsumer = item && item.consumers.length > 0
-    const isPublished = item && item.state === API_STATE.PUBLISHED
-    const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || !isPublished
+    const isStaging = item && item.state === API_STATE.STAGING
+    const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging
 
     if (isLoading)
         return <SimpleLoader />
@@ -2503,7 +2515,7 @@ function Dashboard(props) {
                     {showGettingStarted && <ContainerBlock full>
                         <SectionHeader text="Getting Started" />
 
-                        {!isPublished && !hasCreateConsumer && hasCreateRoute && <Card
+                        {isStaging && !hasCreateConsumer && hasCreateRoute && <Card
                             onClick={() => publishAPI(item)}
                             title="Deploy your API"
                             description={<>
@@ -2515,7 +2527,7 @@ function Dashboard(props) {
                                 text="Start your API" />}
                         />}
 
-                        {isPublished && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
+                        {!isStaging && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
                             to={`/apis/${params.apiId}/consumers/new`}
                             title="Create your first API consumer"
                             description={<>
@@ -2543,7 +2555,7 @@ function Dashboard(props) {
                             to={`/apis/${params.apiId}/flows/new`}
                             title="Create your first flow of plugins"
                             description={<>
-                                Create flows of plufins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
+                                Create group of plugins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
                             </>}
                             button={<FeedbackButton type="primaryColor"
                                 className="ms-auto d-flex"
@@ -2960,7 +2972,7 @@ function FlowsCard({ flows }) {
                 </span>
             </div>
             <p className="cards-description relative">
-                Create flows of <HighlighedPluginsText plural /> to apply rules, transformations, and restrictions on <HighlighedRouteText plural />, enabling advanced traffic control and customization.
+                Create groups of <HighlighedPluginsText plural /> to apply rules, transformations, and restrictions on <HighlighedRouteText plural />, enabling advanced traffic control and customization.
                 <i className='fas fa-chevron-right fa-lg navigate-icon' />
             </p>
         </div>

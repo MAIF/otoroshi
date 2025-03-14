@@ -7,9 +7,9 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, RoundRobin, ServiceDescriptor}
 import otoroshi.next.models.{NgPluginInstance, _}
-import otoroshi.next.plugins.api.NgPlugin
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.{ApikeyCalls, ForceHttpsTraffic, JwtVerificationOnly, NgApikeyCallsConfig, OIDCAccessTokenValidator}
+import otoroshi.next.plugins.{ApikeyCalls, ForceHttpsTraffic, JwtVerificationOnly, NgApikeyCallsConfig, NgClientCredentialTokenEndpoint, NgClientCredentialTokenEndpointConfig, NgHasClientCertMatchingValidator, NgHasClientCertMatchingValidatorConfig, NgJwtVerificationOnlyConfig, OIDCAccessTokenValidator}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
@@ -137,29 +137,20 @@ object ApiFlows {
     )
   }
 }
-
+// TODO - create event for each deployment
 case class ApiDeployment(
-    location: EntityLocation,
     id: String,
     apiRef: String,
     owner: String,
     at: DateTime,
     apiDefinition: JsValue,
     version: String
-) extends EntityLocationSupport {
-  override def internalId: String               = id
-  override def json: JsValue                    = ApiDeployment._fmt.writes(this)
-  override def theName: String                  = id
-  override def theDescription: String           = id
-  override def theTags: Seq[String]             = Seq.empty
-  override def theMetadata: Map[String, String] = Map.empty
-}
+)
 
 object ApiDeployment {
   val _fmt: Format[ApiDeployment] = new Format[ApiDeployment] {
     override def reads(json: JsValue): JsResult[ApiDeployment] = Try {
       ApiDeployment(
-        location = json.select("location").asOpt(EntityLocation.format).getOrElse(EntityLocation.default),
         id = json.select("id").asOptString.getOrElse(IdGenerator.namedId("api_deployment", IdGenerator.uuid)),
         apiRef = json.select("apiRef").asString,
         owner = json.select("owner").asString,
@@ -174,7 +165,6 @@ object ApiDeployment {
       case Success(value) => JsSuccess(value)
     }
     override def writes(o: ApiDeployment): JsValue             = Json.obj(
-      "location"    -> o.location.json,
       "id"          -> o.id,
       "apiRef"      -> o.apiRef,
       "owner"       -> o.owner,
@@ -337,25 +327,23 @@ object ApiConsumer {
           case "jwt"     => ApiConsumerKind.JWT
         },
         settings = json.select("consumer_kind").asString.toLowerCase  match {
-          case "apikey"   => {
-            ApiConsumerSettings.Apikey(
-              throttlingQuota = (json \ "settings" \ "throttlingQuota").as[Long],
-              monthlyQuota = (json \ "settings" \ "monthlyQuota").as[Long],
-              dailyQuota = (json \ "settings" \ "dailyQuota").as[Long],
-              name = "apikey")
-          }
-          case "mtls"     => ApiConsumerSettings.Mtls(
-            caRefs = (json \ "settings" \ "caRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            certRefs = (json \ "settings" \ "certRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            name = "mtls"
+          case "apikey"   => ApiConsumerSettings.Apikey(
+            wipeBackendRequest = (json \ "settings" \ "wipeBackendRequest").asOptBoolean.getOrElse(true),
+            validate = (json \ "settings" \ "validate").asOptBoolean.getOrElse(true),
+            mandatory = (json \ "settings" \ "mandatory").asOptBoolean.getOrElse(true),
+            passWithUser = (json \ "settings" \ "passWithUser").asOptBoolean.getOrElse(false),
+            updateQuotas = (json \ "settings" \ "updateQuotas").asOptBoolean.getOrElse(true),
           )
-          case "keyless"  => ApiConsumerSettings.Keyless(name = "Keyless")
+          case "mtls"     => ApiConsumerSettings.Mtls(
+            consumerConfig = (json \ "settings").asOpt(NgHasClientCertMatchingValidatorConfig.format)
+          )
+          case "keyless"  => ApiConsumerSettings.Keyless()
           case "oauth2"   => ApiConsumerSettings.OAuth2(
-            config = (json \ "settings").as[JsValue],
-            name = "oauth2")
+            consumerConfig = (json \ "settings").asOpt(NgClientCredentialTokenEndpointConfig.format)
+          )
           case "jwt"      => ApiConsumerSettings.JWT(
-            jwtVerifierRefs = (json \ "settings" \ "jwtVerifierRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            name = "jwt")
+            consumerConfig = (json \ "settings").asOpt(NgJwtVerificationOnlyConfig.format)
+          )
         },
         status = json.select("status").asString.toLowerCase match {
           case "staging"      => ApiConsumerStatus.Staging
@@ -612,36 +600,36 @@ object ApiConsumerKind {
 }
 
 trait ApiConsumerSettings {
-  def name: String
-  def json: JsValue
+  def config: Option[NgPluginConfig] = None
+  def json: JsValue = config
+      .map(_.json.asObject)
+      .getOrElse(Json.obj())
 }
 object ApiConsumerSettings {
-  case class Apikey(name: String,
-                    throttlingQuota: Long = RemainingQuotas.MaxValue,
-                    dailyQuota: Long = RemainingQuotas.MaxValue,
-                    monthlyQuota: Long = RemainingQuotas.MaxValue)              extends ApiConsumerSettings {
-    def json: JsValue = Json.obj(
-      "throttlingQuota"  -> throttlingQuota,
-      "dailyQuota"      -> dailyQuota,
-      "monthlyQuota"    -> monthlyQuota
+  case class Apikey(
+    wipeBackendRequest: Boolean = true,
+    validate: Boolean = true,
+    mandatory: Boolean = true,
+    passWithUser: Boolean = false,
+    updateQuotas: Boolean = true)         extends ApiConsumerSettings {
+    override def json: JsValue = Json.obj(
+      "wipeBackendRequest" -> wipeBackendRequest,
+      "validate" -> validate,
+      "mandatory" -> mandatory,
+      "passWithUser" -> passWithUser,
+      "updateQuotas" -> updateQuotas,
     )
   }
-  case class Mtls(name: String, caRefs: Seq[String], certRefs: Seq[String]) extends ApiConsumerSettings {
-    def json: JsValue = Json.obj(
-      "caRefs"    -> caRefs,
-      "certRefs"  -> certRefs,
-    )
+  case class Mtls(consumerConfig: Option[NgHasClientCertMatchingValidatorConfig])                          extends ApiConsumerSettings {
+    override def config = consumerConfig
   }
-  case class Keyless(name: String)                                          extends ApiConsumerSettings {
-    def json: JsValue = Json.obj()
+  case class Keyless()                       extends ApiConsumerSettings {
   }
-  case class OAuth2(name: String, config: JsValue)              extends ApiConsumerSettings { // using client credential stuff
-    def json: JsValue = Json.obj()
+  case class OAuth2(consumerConfig: Option[NgClientCredentialTokenEndpointConfig])                        extends ApiConsumerSettings {
+    override def config: Option[NgClientCredentialTokenEndpointConfig] = consumerConfig
   }
-  case class JWT(name: String, jwtVerifierRefs: Seq[String])                extends ApiConsumerSettings {
-    def json: JsValue = Json.obj(
-      "jwtVerifierRefs" -> jwtVerifierRefs
-    )
+  case class JWT(consumerConfig: Option[NgJwtVerificationOnlyConfig])                           extends ApiConsumerSettings {
+    override def config: Option[NgJwtVerificationOnlyConfig] = consumerConfig
   }
 }
 
@@ -887,15 +875,15 @@ case class Api(
 }
 
 object Api {
-  def addPluginToFlows[T <: NgPlugin](api: Api)(implicit ct: ClassTag[T]): Api = {
+  def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
     api.copy(flows = api.flows.map(flow =>
       if (!flow.plugins.hasPlugin[T]) {
-        flow.copy(plugins = flow.plugins.add(NgPluginInstance(
-          plugin = pluginId[T],
-          include = Seq.empty,
-          exclude = Seq.empty,
-          config = NgPluginInstanceConfig(Json.obj())
-        )))
+          flow.copy(plugins = flow.plugins.add(NgPluginInstance(
+            plugin = pluginId[T],
+            include = Seq.empty,
+            exclude = Seq.empty,
+            config = NgPluginInstanceConfig(consumer.settings.config.map(_.json.asObject).getOrElse(Json.obj()))
+          )))
       } else {
         flow
       }
@@ -904,11 +892,11 @@ object Api {
 
   def applyConsumerRulesOnApi(consumer: ApiConsumer, api: Api): Option[Api] = {
     consumer.consumerKind match {
-      case ApiConsumerKind.Apikey   => addPluginToFlows[ApikeyCalls](api).some
-      case ApiConsumerKind.JWT      => addPluginToFlows[JwtVerificationOnly](api).some
-      case ApiConsumerKind.OAuth2   => addPluginToFlows[OIDCAccessTokenValidator](api).some
+      case ApiConsumerKind.Apikey   => addPluginToFlows[ApikeyCalls](api, consumer).some
+      case ApiConsumerKind.JWT      => addPluginToFlows[JwtVerificationOnly](api, consumer).some
+      case ApiConsumerKind.OAuth2   => addPluginToFlows[NgClientCredentialTokenEndpoint](api, consumer).some
+      case ApiConsumerKind.Mtls     => addPluginToFlows[NgHasClientCertMatchingValidator](api, consumer).some
       case _                        => api.some
-      //        case ApiConsumerKind.Mtls     =>
       //        case ApiConsumerKind.Keyless  =>
     }
   }

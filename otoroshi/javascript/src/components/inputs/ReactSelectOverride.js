@@ -89,6 +89,7 @@ export class ReactSelectOverride extends React.Component {
         isClearable={this.props.isClearable}
         components={{
           IndicatorSeparator: () => null,
+          ...(this.props.components || {})
         }}
         styles={{
           control: (baseStyles) => ({
@@ -114,6 +115,7 @@ export class ReactSelectOverride extends React.Component {
             ...provided,
             color: 'var(--text)',
           }),
+          
           MenuList: (provided) => ({
             ...provided,
             background: 'red',
@@ -135,6 +137,10 @@ export class ReactSelectOverride extends React.Component {
             ...provided,
             color: 'var(--text)',
           }),
+          valueContainer: (baseStyles) => ({
+            ...baseStyles,
+            display: 'flex'
+        }),
         }}
       />
     );
