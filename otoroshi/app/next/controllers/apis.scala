@@ -2,18 +2,18 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiRemoved, ApiState}
+import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished}
+import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.events.{AdminApiEvent, Audit}
-import otoroshi.next.controllers.Stats
+import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
+import scala.+:
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
@@ -78,22 +78,19 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                   dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(route.id)
                   dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(route.id)
                   concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-                  membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
-                } yield RouteStats(
-                  calls                     = calls,
-                  dataIn                    = dataIn,
-                  dataOut                   = dataOut,
-                  rate                      = Stats.sumDouble(rate, _.rate, membersStats),
-                  duration                  = Stats.avgDouble(duration, _.duration, membersStats),
-                  overhead                  = Stats.avgDouble(overhead, _.overhead, membersStats),
-                  dataInRate                = Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
-                  dataOutRate               = Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
-                  Stats.sumDouble(
-                    concurrentHandledRequests.toDouble,
-                    _.concurrentHandledRequests.toDouble,
-                    membersStats
-                  ).toLong
-                )
+                } yield {
+                  RouteStats(
+                    calls                     = calls,
+                    dataIn                    = dataIn,
+                    dataOut                   = dataOut,
+                    rate                      = rate,
+                    duration                  = duration,
+                    overhead                  = overhead,
+                    dataInRate                = dataInRate,
+                    dataOutRate               = dataOutRate,
+                    concurrentHandledRequests
+                  )
+                }
               ))).map(stats => stats.foldLeft(RouteStats()) { case (acc, item) => acc.copy(
                 calls  = acc.calls + item.calls,
                 dataIn  = acc.dataIn + item.dataIn,
@@ -297,18 +294,30 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
               case JsSuccess(deployment, _) =>
                 val updatedApi = api.copy(
                   versions = api.versions :+ deployment.version,
-                  deployments = api.deployments :+ deployment,
+                  deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
                   version = deployment.version
                 )
                 env.datastores.apiDataStore.set(updatedApi)
-                  .map(result =>
+                  .map(result => {
+                    ApiDeploymentEvent(
+                      `@id` = env.snowflakeGenerator.nextIdStr(),
+                      `@timestamp` = DateTime.now(),
+                      apiRef = deployment.apiRef,
+                      owner = if (deployment.owner.isEmpty) ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner) else deployment.owner,
+                      at = deployment.at,
+                      apiDefinition = deployment.apiDefinition,
+                      version = deployment.version,
+                      `@service` = api.name,
+                      `@serviceId` = apiId
+                    ).toAnalytics()
+
                     if (result) {
                       ctx.request.body.select("draftId").asOptString
                         .map(draftId => env.datastores.draftsDataStore.delete(draftId))
                       Results.Created(updatedApi.json)
                     } else
                       Results.BadRequest(Json.obj("error" -> "something wrong happened"))
-                  )
+                  })
             }
         }
       }

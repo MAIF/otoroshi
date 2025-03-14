@@ -8,7 +8,7 @@ import { Link, Switch, Route, useParams, useHistory, useLocation } from 'react-r
 import { Uptime } from '../../components/Status';
 import { Form, Table } from '../../components/inputs';
 import { v4 as uuid, v4 } from 'uuid';
-import Designer, { BackendSelector } from '../RouteDesigner/Designer';
+import Designer from '../RouteDesigner/Designer';
 import SimpleLoader from './SimpleLoader';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
@@ -17,7 +17,7 @@ import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices'
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgCodeRenderer, NgDotsRenderer, NgForm, NgObjectRenderer, NgSelectRenderer } from '../../components/nginputs';
+import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
@@ -27,11 +27,10 @@ import semver from 'semver'
 import { ApiStats } from './ApiStats';
 import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
-import { effect, useSignalValue } from 'signals-react-safe';
+import { useSignalValue } from 'signals-react-safe';
 import { signalVersion } from './VersionSignal';
 import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
-import { PillButton } from '../../components/PillButton';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 
@@ -891,7 +890,7 @@ function Consumers(props) {
         consumers: item.consumers.filter(f => f.id !== newItem.id)
     })
 
-    if (isLoading)
+    if (isLoading || !item)
         return <SimpleLoader />
 
     return <>
@@ -959,6 +958,7 @@ const TEMPLATES = {
 }
 
 function NewConsumerSettingsForm(props) {
+    console.log(props.value)
     return <NgForm
         value={props.value}
         onChange={settings => {
@@ -1209,6 +1209,7 @@ function ConsumerDesigner(props) {
 
     if (isLoading || !consumer)
         return <SimpleLoader />
+
 
     return <>
         <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
@@ -2812,8 +2813,8 @@ function APIHeader({ api, version, draft }) {
                 {api.version}
             </span>
             {version === 'Draft' && <span className='badge custom-badge api-status-started d-flex align-items-center gap-2'>
-                <div className={`testing-dot ${draft.testing ? 'testing-dot--enabled' : 'testing-dot--disabled'}`}></div>
-                {draft.testing ? 'Testing enabled' : 'Testing disabled'}
+                <div className={`testing-dot ${draft.testing?.enabled ? 'testing-dot--enabled' : 'testing-dot--disabled'}`}></div>
+                {draft.testing?.enabled ? 'Testing enabled' : 'Testing disabled'}
             </span>}
             <APIState value={api.state} />
 

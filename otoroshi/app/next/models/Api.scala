@@ -613,11 +613,11 @@ object ApiConsumerSettings {
     passWithUser: Boolean = false,
     updateQuotas: Boolean = true)         extends ApiConsumerSettings {
     override def json: JsValue = Json.obj(
-      "wipeBackendRequest" -> wipeBackendRequest,
-      "validate" -> validate,
-      "mandatory" -> mandatory,
-      "passWithUser" -> passWithUser,
-      "updateQuotas" -> updateQuotas,
+      "validate"             -> validate,
+      "mandatory"            -> mandatory,
+      "pass_with_user"       -> passWithUser,
+      "wipe_backend_request" -> wipeBackendRequest,
+      "update_quotas"        -> updateQuotas
     )
   }
   case class Mtls(consumerConfig: Option[NgHasClientCertMatchingValidatorConfig])                          extends ApiConsumerSettings {
@@ -877,16 +877,12 @@ case class Api(
 object Api {
   def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
     api.copy(flows = api.flows.map(flow =>
-      if (!flow.plugins.hasPlugin[T]) {
-          flow.copy(plugins = flow.plugins.add(NgPluginInstance(
-            plugin = pluginId[T],
-            include = Seq.empty,
-            exclude = Seq.empty,
-            config = NgPluginInstanceConfig(consumer.settings.config.map(_.json.asObject).getOrElse(Json.obj()))
-          )))
-      } else {
-        flow
-      }
+        flow.copy(plugins = flow.plugins.remove(pluginId[T]).add(NgPluginInstance(
+          plugin = pluginId[T],
+          include = Seq.empty,
+          exclude = Seq.empty,
+          config = NgPluginInstanceConfig(consumer.settings.json.asObject)
+        )))
     ))
   }
 

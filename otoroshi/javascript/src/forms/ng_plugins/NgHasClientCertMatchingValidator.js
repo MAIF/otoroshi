@@ -1,36 +1,36 @@
 export default {
   id: 'cp:otoroshi.next.plugins.NgHasClientCertMatchingValidator',
   config_schema: {
-    serialNumbers: {
+    serial_numbers: {
       type: 'array',
       array: true,
       format: null,
       label: 'Allowed serial numbers',
     },
-    subjectDNs: {
+    subject_dns: {
       type: 'array',
       array: true,
       format: null,
       label: 'Allowed subject DNs',
     },
-    issuerDNs: {
+    issuer_dns: {
       type: 'array',
       array: true,
       format: null,
       label: 'Allowed issuer DNs',
     },
-    regexSubjectDNs: {
+    regex_subject_dns: {
       type: 'array',
       array: true,
       format: null,
       label: 'Allowed subject DNs (regex)',
     },
-    regexIssuerDNs: {
+    regex_issuer_dns: {
       type: 'array',
       array: true,
       format: null,
       label: 'Allowed issuer DNs (regex)',
     },
   },
-  config_flow: ['serialNumbers', 'subjectDNs', 'issuerDNs', 'regexSubjectDNs', 'regexIssuerDNs'],
+  config_flow: ['serial_numbers', 'subject_dns', 'issuer_dns', 'regex_subject_dns', 'regex_issuer_dns'],
 };
