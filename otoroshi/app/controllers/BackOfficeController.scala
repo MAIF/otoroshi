@@ -48,7 +48,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, future}
 import scala.util.{Failure, Success, Try}
 
 case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
@@ -947,7 +947,8 @@ class BackOfficeController(
                 tags = Seq.empty,
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues,
-                clientSideSessionEnabled = true
+                clientSideSessionEnabled = true,
+                location = EntityLocation.fromBackOffice(ctx)(env)
               ).asJson
             )
           )
@@ -1019,7 +1020,8 @@ class BackOfficeController(
                             None,
                             MtlsConfig.default
                           )
-                        )
+                        ),
+                        location = EntityLocation.fromBackOffice(ctx)(env)
                       )
                       .asJson
                   )
@@ -1036,7 +1038,8 @@ class BackOfficeController(
                       tags = Seq.empty,
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues,
-                      clientSideSessionEnabled = true
+                      clientSideSessionEnabled = true,
+                      location = EntityLocation.fromBackOffice(ctx)(env)
                     ).asJson
                   )
                 }
@@ -1053,7 +1056,8 @@ class BackOfficeController(
                     tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
-                    clientSideSessionEnabled = true
+                    clientSideSessionEnabled = true,
+                    location = EntityLocation.fromBackOffice(ctx)(env)
                   ).asJson
                 )
               }
@@ -1862,6 +1866,17 @@ class BackOfficeController(
         }
       }
     }
+  }
+
+  def getOwnEntityLocation() = BackOfficeActionAuth.async { ctx =>
+    Ok(EntityLocation(
+      tenant = ctx.currentTenant,
+      teams = env.proxyState.allTeams()
+        .filter(item => ctx.currentTenant.value == item.location.tenant.value || ctx.currentTenant == TenantId.all)
+        .filter(item => ctx.canUserRead(item))
+        .map(_.id)
+        .slice(0, 1)
+    ).json).future
   }
 
   def updateUiMode() = BackOfficeActionAuth.async(parse.json) { ctx =>

@@ -25,8 +25,6 @@ export const entityContentSignal = signal(undefined);
 export const updateEntityURLSignal = signal(undefined);
 
 export const resetDraftSignal = (props = {}) => {
-  console.log('reset draft signal');
-
   draftSignal.value = {
     ...DRAFT_SIGNAL_TEMPLATE,
     processCallback: props.processCallback,
@@ -39,7 +37,6 @@ export const resetDraftSignal = (props = {}) => {
 const saveDraft = debounce(() => {
   if (draftSignal.value.initialized) {
     if (mergeData(draftSignal.value.rawDraft?.content, draftSignal.value.draft).changed) {
-      console.log('save draft', draftSignal.value);
       const { draft, processCallback } = draftSignal.value;
 
       let newValue = draft;

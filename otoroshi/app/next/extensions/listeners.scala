@@ -13,6 +13,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
+import otoroshi.actions.ApiActionContext
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -150,8 +151,8 @@ case class HttpListener(
 
 object HttpListener {
   val logger  = Logger("otoroshi-http-listeners")
-  val default = HttpListener(
-    location = EntityLocation.default,
+  def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env) = HttpListener(
+    location = EntityLocation.ownEntityLocation(ctx)(env),
     id = "http-listener_" + UUID.randomUUID().toString,
     name = "http listener",
     description = "A new http listener",
@@ -348,7 +349,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.httpListenerDatastore.extractId(c),
             json => json.select("id").asString,
             () => "id",
-            tmpl = (a, b) => HttpListener.default.json,
+            tmpl = (a, b, ctx) => HttpListener.default(ctx)(env).json,
             stateAll = () => states.allHttpListeners(),
             stateOne = id => states.httpListener(id),
             stateUpdate = values => states.updateHttpListeners(values)

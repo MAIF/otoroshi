@@ -158,7 +158,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.workflowsDatastore.extractId(c),
             json => json.select("id").asString,
             () => "id",
-            tmpl = (v, p) => Workflow.template().json,
+            tmpl = (v, p, _ctx) => Workflow.template().json,
             stateAll = () => states.allWorkflows(),
             stateOne = id => states.workflow(id),
             stateUpdate = values => states.updateWorkflows(values)
