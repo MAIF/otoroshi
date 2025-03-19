@@ -59,12 +59,17 @@
 
     .short-table-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr) 54px 32px;
+        grid-template-columns: repeat(2, 1fr) 62px 32px;
         align-items: center;
         gap: 1rem;
         padding: .5rem 2rem .5rem 1rem;
-        margin-bottom: .4rem;
+        margin-bottom: .2rem;
         color: var(--text);
+    }
+
+    .routes-table-row {
+        padding: 0 .5rem 0 .5rem;
+        grid-template-columns: minmax(120px, 180px) 1fr 62px auto;
     }
 
     .short-table-row pre {
@@ -162,6 +167,12 @@
 
     .relative {
         position: relative;
+    }
+
+    .absolute {
+        position: absolute;
+        top: 0;
+        left: 0;
     }
 
     .flex-grow {
@@ -347,7 +358,7 @@
         justify-content: space-around;
         gap: 1rem;
         padding: 0 2rem;
-    
+
         border-radius: .5rem;
         min-width: 18rem;
     }

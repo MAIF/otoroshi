@@ -100,7 +100,7 @@ DELETE  /bo/api/graphqlproxy                                  otoroshi.controlle
 PATCH   /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 
 GET     /bo/api/routes/:routeId/entries                       otoroshi.controllers.BackOfficeController.routeEntries(routeId: String)
-GET     /bo/api/routes/:routeId/ports                         otoroshi.controllers.BackOfficeController.ports(routeId: String)
+GET     /bo/api/env/ports                                     otoroshi.controllers.BackOfficeController.ports()
 POST    /bo/api/graphql_to_json                               otoroshi.controllers.BackOfficeController.graphQLToJson()
 POST    /bo/api/json_to_graphql_schema                        otoroshi.controllers.BackOfficeController.jsonToGraphqlSchema()
 POST    /bo/api/json_to_yaml                                  otoroshi.controllers.BackOfficeController.toYaml()

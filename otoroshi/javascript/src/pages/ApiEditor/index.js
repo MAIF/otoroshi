@@ -13,7 +13,7 @@ import SimpleLoader from './SimpleLoader';
 import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
-import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices';
+import { fetchWrapperNext, nextClient, routePorts } from '../../services/BackOfficeServices';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
@@ -34,6 +34,8 @@ import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import { components } from 'react-select';
+import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
+import { unsecuredCopyToClipboard } from '../../util';
 
 const queryClient = new QueryClient({
     queries: {
@@ -49,7 +51,13 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
     />
 );
 
+const MAX_WIDTH = 720
+
 export default function ApiEditor(props) {
+    useEffect(() => {
+        document.getElementById("otoroshi-toasts")?.remove()
+    }, [])
+
     return <div className='editor'>
         <QueryClientProvider client={queryClient}>
             <SidebarComponent {...props} />
@@ -214,8 +222,8 @@ function Subscriptions(props) {
 
     return <Table
         parentProps={{ params }}
-        navigateTo={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
-        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+        navigateTo={(item) => historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
+        navigateOnEdit={(item) => historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)}
         selfUrl="subscriptions"
         defaultTitle="Subscription"
         itemName="Subscription"
@@ -230,7 +238,7 @@ function Subscriptions(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`)}
         rawEditUrl={true}
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
@@ -250,6 +258,7 @@ function Subscriptions(props) {
 function SubscriptionDesigner(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [subscription, setSubscription] = useState()
 
@@ -270,7 +279,7 @@ function SubscriptionDesigner(props) {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
             .update(subscription)
-            .then(() => history.push(`/apis/${params.apiId}/subscriptions`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/subscriptions`))
     }
 
     if (isLoading || rawSubscription.isLoading)
@@ -288,7 +297,7 @@ function SubscriptionDesigner(props) {
             />
         </PageTitle>
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -363,6 +372,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
 function NewSubscription(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [subscription, setSubscription] = useState()
     const [error, setError] = useState()
@@ -406,7 +416,7 @@ function NewSubscription(props) {
                     }
                     throw res.error
                 } else {
-                    history.push(`/apis/${params.apiId}/subscriptions`)
+                    historyPush(history, location, `/apis/${params.apiId}/subscriptions`)
                 }
             })
     }
@@ -417,7 +427,7 @@ function NewSubscription(props) {
     return <>
         <PageTitle title={subscription.name} {...props} />
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -454,6 +464,7 @@ function NewSubscription(props) {
 function RouteDesigner(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
@@ -485,7 +496,7 @@ function RouteDesigner(props) {
                 return item
             })
         })
-            .then(() => history.push(`/apis/${params.apiId}/routes`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/routes`))
     }
 
     if (!route || isLoading || !schema)
@@ -504,7 +515,7 @@ function RouteDesigner(props) {
             />
         </PageTitle>
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -627,6 +638,7 @@ const ROUTE_FORM_SETTINGS = {
 function NewRoute(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
@@ -660,7 +672,7 @@ function NewRoute(props) {
                 }
             ]
         })
-            .then(() => history.push(`/apis/${params.apiId}`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}`))
     }
 
     useEffect(() => {
@@ -686,7 +698,7 @@ function NewRoute(props) {
     return <>
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -743,8 +755,8 @@ function Consumers(props) {
     return <>
         <Table
             parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
-            navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/consumers/${item.id}/edit`)}
+            navigateTo={(item) => historyPush(history, location, `/apis/${params.apiId}/consumers/${item.id}/edit`)}
+            navigateOnEdit={(item) => historyPush(history, location, `/apis/${params.apiId}/consumers/${item.id}/edit`)}
             selfUrl="consumers"
             defaultTitle="Consumer"
             itemName="Consumer"
@@ -764,7 +776,7 @@ function Consumers(props) {
             extractKey={(item) => item.id}
             rowNavigation={true}
             hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/consumers/${i.id}/edit`}
+            itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/consumers/${i.id}/edit`)}
             rawEditUrl={true}
             displayTrash={(item) => item.id === props.globalEnv.adminApiId}
             injectTopBar={() => (
@@ -985,6 +997,7 @@ const CONSUMER_FORM_SETTINGS = {
 function NewConsumer(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [consumer, setConsumer] = useState({
         id: v4(),
@@ -1002,7 +1015,7 @@ function NewConsumer(props) {
             ...item,
             consumers: [...item.consumers, consumer]
         })
-            .then(() => history.push(`/apis/${params.apiId}`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}`))
     }
 
     if (isLoading)
@@ -1012,7 +1025,7 @@ function NewConsumer(props) {
         <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
 
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -1034,6 +1047,7 @@ function NewConsumer(props) {
 function ConsumerDesigner(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [consumer, setConsumer] = useState()
 
@@ -1054,7 +1068,7 @@ function ConsumerDesigner(props) {
                 return item
             })
         })
-            .then(() => history.push(`/apis/${params.apiId}`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}`))
     }
 
     if (isLoading || !consumer)
@@ -1074,7 +1088,7 @@ function ConsumerDesigner(props) {
         </PageTitle>
 
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <NgForm
@@ -1146,8 +1160,8 @@ function Routes(props) {
 
     return <Table
         parentProps={{ params }}
-        navigateTo={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
-        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/routes/${item.id}/edit`)}
+        navigateTo={(item) => historyPush(history, location, `/apis/${params.apiId}/routes/${item.id}/edit`)}
+        navigateOnEdit={(item) => historyPush(history, location, `/apis/${params.apiId}/routes/${item.id}/edit`)}
         selfUrl="routes"
         defaultTitle="Route"
         itemName="Route"
@@ -1162,7 +1176,7 @@ function Routes(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`)}
         rawEditUrl={true}
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
@@ -1237,8 +1251,8 @@ function Backends(props) {
 
     return <Table
         parentProps={{ params }}
-        navigateTo={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
-        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/backends/${item.id}/edit`)}
+        navigateTo={(item) => historyPush(history, location, `/apis/${params.apiId}/backends/${item.id}/edit`)}
+        navigateOnEdit={(item) => historyPush(history, location, `/apis/${params.apiId}/backends/${item.id}/edit`)}
         selfUrl="backends"
         defaultTitle="Backend"
         itemName="Backend"
@@ -1253,7 +1267,7 @@ function Backends(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`)}
         rawEditUrl={true}
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
@@ -1272,6 +1286,7 @@ function Backends(props) {
 function NewBackend(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const [backend, setBackend] = useState()
 
@@ -1285,7 +1300,7 @@ function NewBackend(props) {
                 ...backend.backend
             }]
         })
-            .then(() => history.push(`/apis/${params.apiId}/backends`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/backends`))
     }
 
     const templateQuery = useQuery(["getTemplate"],
@@ -1314,7 +1329,7 @@ function NewBackend(props) {
         </PageTitle>
 
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <BackendForm
@@ -1344,6 +1359,7 @@ function NewBackend(props) {
 function EditBackend(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -1364,7 +1380,7 @@ function EditBackend(props) {
                 return item
             })
         })
-            .then(() => history.push(`/apis/${params.apiId}/backends`))
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/backends`))
     }
 
     if (isLoading)
@@ -1383,7 +1399,7 @@ function EditBackend(props) {
         </PageTitle>
 
         <div style={{
-            maxWidth: 640,
+            maxWidth: MAX_WIDTH,
             margin: 'auto'
         }}>
             <BackendForm
@@ -1411,12 +1427,15 @@ function EditBackend(props) {
 }
 
 function Testing(props) {
-    const params = useParams()
-    const history = useHistory()
-
     const { item, version, updateItem, setItem, isLoading } = useDraftOfAPI()
 
-    if (isLoading)
+    useEffect(() => {
+        props.setTitle('Testing mode')
+
+        return () => props.setTitle(undefined)
+    }, [])
+
+    if (isLoading || !item)
         return <SimpleLoader />
 
     const schema = {
@@ -1442,41 +1461,77 @@ function Testing(props) {
                     </div>
                 </div>
             }
+        },
+        routes: {
+            renderer: () => {
+                return <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+                        Configuration
+                    </label>
+                    <div className="col-sm-10">
+                        <div className='relative'>
+                            <RoutesView api={item} />
+                        </div>
+                    </div>
+                </div>
+            }
         }
     }
 
-    return <>
-        <PageTitle title='Testing mode' {...props} />
-        {version === 'Published' ?
-            <div>
-                Testing mode is only available in the draft version.
-            </div>
-            :
-            <div style={{
-                maxWidth: 640,
-                margin: 'auto'
+    let flow = [
+        "enabled",
+        "config",
+    ]
+
+    if (item.testing.enabled)
+        flow = [...flow, "routes"]
+
+    if (version === 'Published')
+        return <div className='alert alert-warning'>
+            Testing mode is only available in the draft version.
+        </div>
+
+    if (item.consumers.length === 0)
+        return <>
+            <div className='alert alert-secondary' role="alert" style={{
+                background: 'var(--bg-color_level2)',
+                borderColor: 'var(--bg-color_level2)'
             }}>
-                <NgForm
-                    value={item?.testing}
-                    onChange={testing => {
-                        if (testing)
-                            setItem({
-                                ...item,
-                                testing
-                            })
-                    }}
-                    schema={schema}
-                />
-                <FeedbackButton
-                    type="success"
-                    className="d-flex mt-3 ms-auto"
-                    onPress={() => updateItem()
-                        .then(() => history.push(`/apis/${params.apiId}`))}
-                    text={<div className='d-flex align-items-center'>
-                        Update <VersionBadge size="xs" />
-                    </div>}
-                />
-            </div>}
+                <h4 class="alert-heading" style={{ color: 'var(--text)' }}>Well done!</h4>
+                <p style={{ color: 'var(--text)' }}>
+                    Testing mode can't be enabled until you have created consumers.
+                </p>
+                <hr />
+                <ConsumerCard item={item} />
+            </div>
+        </>
+
+    return <>
+        <div style={{
+            maxWidth: MAX_WIDTH,
+            margin: 'auto'
+        }}>
+            <NgForm
+                value={item.testing}
+                onChange={testing => {
+                    if (testing)
+                        setItem({
+                            ...item,
+                            testing
+                        })
+                }}
+                schema={schema}
+                flow={flow}
+            />
+            <FeedbackButton
+                type="success"
+                className="d-flex mt-3 ms-auto"
+                onPress={() => updateItem()}
+                text={<div className='d-flex align-items-center'>
+                    Update <VersionBadge size="xs" />
+                </div>}
+            />
+        </div>
     </>
 }
 
@@ -1594,6 +1649,7 @@ function EditFlow(props) {
 function NewFlow(props) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
 
     useEffect(() => {
         props.setTitle({
@@ -1618,7 +1674,7 @@ function NewFlow(props) {
             ...item,
             flows: [...item.flows, flow]
         })
-            .then(() => history.push(`/apis/${params.apiId}/flows/${flow.id}`));
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/flows/${flow.id}`));
     }
 
     if (isLoading)
@@ -1659,6 +1715,7 @@ function NewFlow(props) {
 
 function NewAPI(props) {
     const history = useHistory()
+    const location = useLocation()
 
     useEffect(() => {
         props.setTitle({
@@ -1727,7 +1784,7 @@ function NewAPI(props) {
     const createApi = () => {
         nextClient.forEntityNext(nextClient.ENTITIES.APIS)
             .create(value)
-            .then(() => history.push(`/apis/${value.id}`));
+            .then(() => historyPush(history, location, `/apis/${value.id}`));
     }
 
     if (template.isLoading)
@@ -1784,8 +1841,8 @@ function Apis(props) {
         <Table
             ref={ref}
             parentProps={{ params }}
-            navigateTo={(item) => history.push(`/apis/${item.id}`)}
-            navigateOnEdit={(item) => history.push(`/apis/${item.id}`)}
+            navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
+            navigateOnEdit={(item) => historyPush(history, location, `/apis/${item.id}`)}
             selfUrl="apis"
             defaultTitle="Api"
             itemName="Api"
@@ -1804,7 +1861,7 @@ function Apis(props) {
             extractKey={(item) => item.id}
             rowNavigation={true}
             hideAddItemAction={true}
-            itemUrl={(i) => `/bo/dashboard/apis/${i.id}`}
+            itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${i.id}`)}
             rawEditUrl={true}
             displayTrash={(item) => item.id === props.globalEnv.adminApiId}
             injectTopBar={() => (
@@ -1892,6 +1949,17 @@ function FlowDesigner(props) {
     </div>
 }
 
+function historyPush(history, location, link) {
+    history.push({
+        pathname: link,
+        search: location.search
+    })
+}
+
+function linkWithQuery(link) {
+    return `${link}${window.location.search}`
+}
+
 function Flows(props) {
     const params = useParams()
     const history = useHistory()
@@ -1912,7 +1980,7 @@ function Flows(props) {
             },
             notFilterable: true,
             cell: (_, item) => <Button className="btn-sm" onClick={() => {
-                history.push(`/apis/${params.apiId}/flows/${item.id}/designer`)
+                historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/designer`)
             }}>
                 <i className='fas fa-pencil-ruler' />
             </Button>
@@ -1949,8 +2017,8 @@ function Flows(props) {
 
     return <Table
         parentProps={{ params }}
-        navigateTo={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
-        navigateOnEdit={(item) => history.push(`/apis/${params.apiId}/flows/${item.id}/edit`)}
+        navigateTo={(item) => historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/edit`)}
+        navigateOnEdit={(item) => historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/edit`)}
         selfUrl={`/apis/${params.apiId}/flows`}
         defaultTitle="Flow"
         itemName="Flow"
@@ -1965,7 +2033,7 @@ function Flows(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(i) => `/bo/dashboard/apis/${params.apiId}/flows/${i.id}`}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/flows/${i.id}`)}
         rawEditUrl={true}
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
@@ -2126,6 +2194,7 @@ function VersionManager({ api, draft, owner, setState }) {
 
 function Informations(props) {
     const history = useHistory()
+    const location = useLocation()
 
     const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
 
@@ -2195,7 +2264,7 @@ function Informations(props) {
                                                         .forEntityNext(nextClient.ENTITIES.APIS)
                                                         .deleteById(inputProps.rootValue?.id)
                                                         .then(() => {
-                                                            history.push('/');
+                                                            historyPush(history, location, '/');
                                                         });
                                                 }
                                             });
@@ -2240,7 +2309,7 @@ function Informations(props) {
 
     const updateAPI = () => {
         updateItem()
-            .then(() => history.push(`/apis/${item.id}`));
+            .then(() => historyPush(history, location, `/apis/${item.id}`));
     }
 
     useEffect(() => {
@@ -2288,7 +2357,7 @@ function DashboardTitle({ api, draftWrapper, draft, updateItem, ...props }) {
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
         <div className="d-flex">
-            <h3 className="m-0 d-flex align-items-center">Dashboard
+            <h3 className="m-0 d-flex align-items-center">{api?.name}
                 <VersionBadge />
             </h3>
         </div>
@@ -2353,6 +2422,7 @@ function DashboardTitle({ api, draftWrapper, draft, updateItem, ...props }) {
 function Dashboard(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const { item, draft, draftWrapper, isLoading, version, api, updateItem } = useDraftOfAPI()
 
@@ -2444,7 +2514,7 @@ function Dashboard(props) {
         {item && <>
             <div className='d-flex gap-3'>
                 <div className='d-flex flex-column flex-grow gap-3' style={{ flex: 1 }}>
-                    {item.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
+                    <ContainerBlock full highlighted>
                         <APIHeader api={item} version={version} draft={draft} />
 
                         <ApiStats url={version === 'Published' ?
@@ -2464,15 +2534,20 @@ function Dashboard(props) {
                             health={item.health?.nMinus2}
                             stopTheCountUnknownStatus={false}
                         />
-                    </ContainerBlock>}
+                    </ContainerBlock>
 
-                    {hasCreateRoute && <ContainerBlock full>
+                    {hasCreateRoute && <ContainerBlock style={{
+                        width: 'initial'
+                    }}>
                         <SectionHeader text="Routes"
-                            description="This API is exposed on"
+                            description="This API exposes the following routes"
                         />
+                        <RoutesView api={item} />
                     </ContainerBlock>}
 
-                    {hasCreateConsumer && <ContainerBlock full>
+                    {hasCreateConsumer && <ContainerBlock style={{
+                        width: 'initial'
+                    }}>
                         <SectionHeader
                             text="Subscriptions"
                             description={item.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
@@ -2480,19 +2555,21 @@ function Dashboard(props) {
                                 type="primaryColor"
                                 text="Subscribe"
                                 className='btn-sm'
-                                onClick={() => history.push(`/apis/${params.apiId}/subscriptions/new`)} />} />
+                                onClick={() => historyPush(history, location, `/apis/${params.apiId}/subscriptions/new`)} />} />
 
                         <SubscriptionsView api={item} />
                     </ContainerBlock>}
 
-                    {hasCreateConsumer && <ContainerBlock full>
+                    {hasCreateConsumer && <ContainerBlock style={{
+                        width: 'initial'
+                    }}>
                         <SectionHeader text="Consumers"
                             description={item.consumers.length <= 0 ? 'API consumers will appear here' : ''}
                             actions={<Button
                                 type="primaryColor"
                                 text="New Consumer"
                                 className='btn-sm'
-                                onClick={() => history.push(`/apis/${params.apiId}/consumers/new`)} />} />
+                                onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers/new`)} />} />
                         <ApiConsumersView api={item} />
                     </ContainerBlock>}
                 </div>
@@ -2528,6 +2605,7 @@ function ApiConsumersView({ api }) {
 function Consumer({ consumer }) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
     const [open, setOpen] = useState(false)
 
     const CONSUMER_STATUS_COLORS = {
@@ -2553,7 +2631,7 @@ function Consumer({ consumer }) {
                 <Button type="primaryColor" className="btn-sm" text="Edit"
                     onClick={e => {
                         e.stopPropagation()
-                        history.push(`/apis/${params.apiId}/consumers/${consumer.id}/edit`)
+                        historyPush(history, location, `/apis/${params.apiId}/consumers/${consumer.id}/edit`)
                     }} style={{
                         position: 'absolute',
                         top: '.5rem',
@@ -2580,6 +2658,129 @@ function Consumer({ consumer }) {
             }}>{consumer.consumer_kind}</div>
             <i className="fas fa-chevron-right fa-lg short-table-navigate-icon" />
         </>}
+    </div>
+}
+
+function RouteItem({ item, api, ports }) {
+    const { frontend } = item
+
+    const params = useParams()
+    const location = useLocation()
+    const history = useHistory()
+
+    const version = useSignalValue(signalVersion)
+
+    const routeEntries = (idx) => {
+        const isSecured = api.flows.some(r => r.plugins.find((p) => p.plugin.includes('ForceHttpsTraffic')));
+
+        const domain = item.frontend.domains[idx];
+
+        const domainParts = domain.split('/');
+        const hasPath = domainParts.length > 1;
+
+        if (isSecured)
+            return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+
+        return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+    }
+
+    const rawMethods = (frontend.methods || []).filter((m) => m.length)
+
+    const allMethods =
+        rawMethods && rawMethods.length > 0
+            ? rawMethods.map((m, i) => (
+                <span
+                    key={`frontendmethod-${i}`}
+                    className={`badge me-1`}
+                    style={{ backgroundColor: HTTP_COLORS[m] }}
+                >
+                    {m}
+                </span>
+            ))
+            : [<span className="badge bg-success">ALL</span>]
+
+    const copy = (value, method, setCopyIconName) => {
+        let command = value
+
+        if (version === 'Draft' || version === 'staging') {
+            command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`
+        }
+
+        if (window.isSecureContext && navigator.clipboard) {
+            navigator.clipboard.writeText(command)
+        } else {
+            unsecuredCopyToClipboard(command)
+        }
+        setCopyIconName('fas fa-check')
+
+        setTimeout(() => {
+            setCopyIconName('fas fa-copy')
+        }, 2000)
+    }
+
+    const goTo = (idx) => window.open(routeEntries(idx), '_blank')
+
+    return frontend.domains.map((domain, idx) => {
+        const [copyIconName, setCopyIconName] = useState('fas fa-copy')
+        const exact = frontend.exact
+        const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*'
+        const start = 'http://';
+        return allMethods.map((method, i) => {
+            return <div className='short-table-row routes-table-row' key={`allmethods-${i}`}>
+                <div>{item.name}</div>
+                <span style={{
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    maxWidth: 310
+                }}>
+                    {routeEntries(idx)}
+                    {end}
+                </span>
+                <div style={{ minWidth: 60 }}>{method}</div>
+                {!api.testing.enabled ?
+                    <Button type="primaryColor"
+                        className='btn btn-sm'
+                        onClick={() => historyPush(history, location, `/apis/${params.apiId}/testing`)}>
+                        Enable API testing
+                    </Button> :
+                    <div className="d-flex align-items-center justify-content-start">
+                        <Button
+                            className="btn btn-sm"
+                            type="primaryColor"
+                            title="Copy URL"
+                            onClick={() => copy(routeEntries(idx), rawMethods[i], setCopyIconName)}
+                        >
+                            <i className={copyIconName} />
+                        </Button>
+                        {rawMethods[i] === 'GET' && <Button
+                            className="btn btn-sm ms-1"
+                            type="primaryColor"
+                            title={`Go to ${start}${domain}`}
+                            onClick={() => goTo(idx)}
+                        >
+                            <i className="fas fa-external-link-alt" />
+                        </Button>}
+                    </div>}
+            </div>
+        });
+    })
+}
+
+function RoutesView({ api }) {
+    const ports = useQuery(['getPorts'], routePorts)
+
+    if (ports.isLoading)
+        return <SimpleLoader />
+
+    return <div>
+        <div className='short-table-row routes-table-row'>
+            <div>Name</div>
+            <div>Frontend</div>
+            <div>Methods</div>
+            <div>Actions</div>
+        </div>
+        {api.routes.map(route => <RouteItem item={route} api={api} key={route.id} ports={ports.data} />)}
     </div>
 }
 
@@ -2619,6 +2820,8 @@ function SubscriptionsView({ api }) {
 function Subscription({ subscription }) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
+
     const [open, setOpen] = useState(false)
 
     return <div key={subscription.id}
@@ -2639,7 +2842,7 @@ function Subscription({ subscription }) {
                 <Button type="primaryColor" className="btn-sm" text="Edit"
                     onClick={e => {
                         e.stopPropagation()
-                        history.push(`/apis/${params.apiId}/subscriptions/${subscription.id}/edit`)
+                        historyPush(history, location, `/apis/${params.apiId}/subscriptions/${subscription.id}/edit`)
                     }} style={{
                         position: 'absolute',
                         top: '.5rem',
@@ -2852,6 +3055,7 @@ function ProgressCard({ children, step }) {
 
 function ObjectiveCard({ title, description, icon, to, onClick }) {
     const history = useHistory()
+    const location = useLocation()
 
     return <div
         className="objective-card">
@@ -2861,28 +3065,8 @@ function ObjectiveCard({ title, description, icon, to, onClick }) {
         <div className='objective-card-body'>
             <p>{title}</p>
             <p onClick={() => {
-                onClick ? onClick() : history.push(to)
+                onClick ? onClick() : historyPush(history, location, to)
             }}>{description}</p>
-        </div>
-    </div>
-}
-
-function Card({ title, description, to, button, onClick }) {
-    const history = useHistory()
-
-    return <div
-        className="cards apis-cards cards--large"
-        onClick={() => {
-            onClick ? onClick : history.push(to)
-        }}>
-        <div className="cards-body">
-            <div className='cards-title d-flex align-items-center justify-content-between'>
-                {title}
-            </div>
-            <p className="cards-description" style={{ position: 'relative' }}>
-                {description}
-                {button ? button : <i className='fas fa-chevron-right fa-lg navigate-icon' />}
-            </p>
         </div>
     </div>
 }
@@ -2890,8 +3074,9 @@ function Card({ title, description, to, button, onClick }) {
 function BackendsCard({ backends }) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
-    return <div onClick={() => history.push(`/apis/${params.apiId}/backends`)} className="cards apis-cards">
+    return <div onClick={() => historyPush(history, location, `/apis/${params.apiId}/backends`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Backends <span className='badge custom-badge api-status-deprecated'>
@@ -2907,11 +3092,33 @@ function BackendsCard({ backends }) {
     </div>
 }
 
+function ConsumerCard({ item }) {
+    const params = useParams()
+    const history = useHistory()
+    const location = useLocation()
+
+    return <div onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers/new`)} className="cards apis-cards">
+        <div className="cards-body">
+            <div className='cards-title d-flex align-items-center justify-content-between'>
+                Consumers <span className='badge custom-badge api-status-deprecated'>
+                    <i className='fas fa-list me-2' />
+                    {item.consumers.length}
+                </span>
+            </div>
+            <p className="cards-description" style={{ position: 'relative' }}>
+                Defines usage limits, features, and access levels for consuming your API.
+                <i className='fas fa-chevron-right fa-lg navigate-icon' />
+            </p>
+        </div>
+    </div>
+}
+
 function RoutesCard({ routes }) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
-    return <div onClick={() => history.push(`/apis/${params.apiId}/routes`)} className="cards apis-cards">
+    return <div onClick={() => historyPush(history, location, `/apis/${params.apiId}/routes`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Routes <span className='badge custom-badge api-status-deprecated'>
@@ -2930,8 +3137,9 @@ function RoutesCard({ routes }) {
 function FlowsCard({ flows }) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
-    return <div onClick={() => history.push(`/apis/${params.apiId}/flows`)} className="cards apis-cards">
+    return <div onClick={() => historyPush(history, location, `/apis/${params.apiId}/flows`)} className="cards apis-cards">
         <div className="cards-body">
             <div className='cards-title d-flex align-items-center justify-content-between'>
                 Flows <span className='badge custom-badge api-status-deprecated'>

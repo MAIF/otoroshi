@@ -25,7 +25,7 @@ import {
 } from './DesignerConfig';
 import Loader from '../../components/Loader';
 import { FeedbackButton } from './FeedbackButton';
-import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
+import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase, unsecuredCopyToClipboard } from '../../util';
 import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -612,7 +612,7 @@ class Designer extends React.Component {
       ),
       getOldPlugins(),
       getPlugins(),
-      routePorts(this.props.routeId),
+      routePorts(),
     ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       if (route.error) {
         this.setState({
@@ -1854,20 +1854,6 @@ const UnselectedNode = ({
           </span>
         ))
         : [<span className="badge bg-success">ALL</span>];
-
-    const unsecuredCopyToClipboard = (text) => {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-      } catch (err) {
-        console.error('Unable to copy to clipboard', err);
-      }
-      document.body.removeChild(textArea);
-    };
 
     const copy = (value, setCopyIconName) => {
       if (window.isSecureContext && navigator.clipboard) {

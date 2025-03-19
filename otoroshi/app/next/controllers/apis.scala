@@ -354,7 +354,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                           versions = api.versions :+ deployment.version,
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
                           version = deployment.version,
-                          id = api.id
+                          id = api.id,
+                          routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod"))
                         )
                         env.datastores.apiDataStore.set(updatedApi)
                           .map(result => {

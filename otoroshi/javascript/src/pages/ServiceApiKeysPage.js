@@ -8,7 +8,7 @@ import { Restrictions } from '../components/Restrictions';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
-import { firstLetterUppercase } from '../util';
+import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
@@ -56,9 +56,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,11 +255,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -342,25 +340,11 @@ class CopyCredentials extends Component {
     copyIconName: 'fas fa-copy',
   };
 
-  unsecuredCopyToClipboard = (text) => {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-    } catch (err) {
-      console.error('Unable to copy to clipboard', err);
-    }
-    document.body.removeChild(textArea);
-  };
-
   copy = (value) => {
     if (window.isSecureContext && navigator.clipboard) {
       navigator.clipboard.writeText(value);
     } else {
-      this.unsecuredCopyToClipboard(value);
+      unsecuredCopyToClipboard(value);
     }
     this.setState({
       copyIconName: 'fas fa-check',
@@ -402,20 +386,6 @@ class CopyCredentials extends Component {
 
 function CopyFromLineItem({ item }) {
   const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-
-  const unsecuredCopyToClipboard = (text) => {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-    } catch (err) {
-      console.error('Unable to copy to clipboard', err);
-    }
-    document.body.removeChild(textArea);
-  };
 
   const copy = (value) => {
     if (window.isSecureContext && navigator.clipboard) {
@@ -862,9 +832,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -951,8 +920,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+        .forEntityNext(nextClient.ENTITIES.SERVICES)
+        .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -1012,7 +981,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-                `routes/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
