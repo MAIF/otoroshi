@@ -34,7 +34,6 @@ import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import { components } from 'react-select';
-import { render } from 'react-dom';
 
 const queryClient = new QueryClient({
     queries: {
@@ -173,6 +172,7 @@ function useDraftOfAPI() {
 function Subscriptions(props) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
 
     const columns = [
         {
@@ -235,7 +235,11 @@ function Subscriptions(props) {
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
-                <Link className="btn btn-primary btn-sm" to="subscriptions/new">
+                <Link className="btn btn-primary btn-sm"
+                    to={{
+                        pathname: "subscriptions/new",
+                        search: location.search
+                    }}>
                     <i className="fas fa-plus-circle" /> Create new subscription
                 </Link>
                 {props.injectTopBar}
@@ -278,9 +282,9 @@ function SubscriptionDesigner(props) {
                 type="success"
                 className="d-flex ms-auto"
                 onPress={updateSubscription}
-                text={<>
+                text={<div className='d-flex align-items-center'>
                     Update <VersionBadge size="xs" />
-                </>}
+                </div>}
             />
         </PageTitle>
         <div style={{
@@ -494,7 +498,9 @@ function RouteDesigner(props) {
                 className="d-flex ms-auto"
                 onPress={updateRoute}
                 disabled={!route.flow_ref}
-                text="Update"
+                text={<div className='d-flex align-items-center'>
+                    Update <VersionBadge size="xs" />
+                </div>}
             />
         </PageTitle>
         <div style={{
@@ -657,29 +663,24 @@ function NewRoute(props) {
             .then(() => history.push(`/apis/${params.apiId}`))
     }
 
-    const templatesQuery = useQuery(["getTemplates"],
-        () => fetch(`/bo/api/proxy/api/frontends/_template`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                Accept: 'application/json',
-            },
-        }),
-        {
-            enabled: !isLoading && !!item,
-            onSuccess: (frontendTemplate) => {
-                setRoute({
-                    ...route,
-                    name: 'My first route',
-                    frontend: frontendTemplate,
-                    backend: item.backends.length && item.backends[0].id,
-                    usingExistingBackend: true,
-                    flow_ref: item.flows.length && item.flows[0].id,
+    useEffect(() => {
+        if (!isLoading && item) {
+            nextClient.forEntityNext(nextClient.ENTITIES.ROUTES)
+                .template()
+                .then(({ frontend }) => {
+                    setRoute({
+                        ...route,
+                        name: 'My first route',
+                        frontend,
+                        backend: item.backends.length && item.backends[0].id,
+                        usingExistingBackend: true,
+                        flow_ref: item.flows.length && item.flows[0].id,
+                    })
                 })
-            }
-        })
+        }
+    }, [isLoading, item])
 
-    if (isLoading || !schema || templatesQuery.isLoading || !route)
+    if (isLoading || !schema || !route)
         return <SimpleLoader />
 
     return <>
@@ -699,9 +700,9 @@ function NewRoute(props) {
                 className="d-flex mt-3 ms-auto"
                 onPress={saveRoute}
                 disabled={!route.flow_ref}
-                text={<>
+                text={<div className='d-flex align-items-center'>
                     Create <VersionBadge size="xs" />
-                </>}
+                </div>}
             />
         </div>
     </>
@@ -710,6 +711,7 @@ function NewRoute(props) {
 function Consumers(props) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
 
     const columns = [
         {
@@ -767,7 +769,11 @@ function Consumers(props) {
             displayTrash={(item) => item.id === props.globalEnv.adminApiId}
             injectTopBar={() => (
                 <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="consumers/new">
+                    <Link className="btn btn-primary btn-sm"
+                        to={{
+                            pathname: "consumers/new",
+                            search: location.search
+                        }}>
                         <i className="fas fa-plus-circle" /> Create new consumer
                     </Link>
                     {props.injectTopBar}
@@ -803,7 +809,6 @@ const TEMPLATES = {
 }
 
 function NewConsumerSettingsForm(props) {
-    console.log(props.value)
     return <NgForm
         value={props.value}
         onChange={settings => {
@@ -828,7 +833,7 @@ const CONSUMER_FORM_SETTINGS = {
                     <div className="col-sm-10">
                         <NgDotsRenderer
                             value={props.value}
-                            options={['apikey', 'mtls', 'keyless', 'oauth2', 'jwt']}
+                            options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
                             ngOptions={{
                                 spread: true
                             }}
@@ -1085,6 +1090,7 @@ function ConsumerDesigner(props) {
 function Routes(props) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
 
     const columns = [
         {
@@ -1161,7 +1167,11 @@ function Routes(props) {
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
-                <Link className="btn btn-primary btn-sm" to="routes/new">
+                <Link className="btn btn-primary btn-sm"
+                    to={{
+                        pathname: "routes/new",
+                        search: location.search
+                    }}>
                     <i className="fas fa-plus-circle" /> Create new route
                 </Link>
                 {props.injectTopBar}
@@ -1172,6 +1182,7 @@ function Routes(props) {
 function Backends(props) {
     const history = useHistory()
     const params = useParams()
+    const location = useLocation()
 
     const columns = [
         {
@@ -1247,7 +1258,10 @@ function Backends(props) {
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
-                <Link className="btn btn-primary btn-sm" to="backends/new">
+                <Link className="btn btn-primary btn-sm" to={{
+                    pathname: "backends/new",
+                    search: location.search
+                }}>
                     <i className="fas fa-plus-circle" /> Create new backend
                 </Link>
                 {props.injectTopBar}
@@ -1397,10 +1411,13 @@ function EditBackend(props) {
 }
 
 function Testing(props) {
+    const params = useParams()
+    const history = useHistory()
+
     const { item, version, updateItem, setItem, isLoading } = useDraftOfAPI()
 
     if (isLoading)
-        return null
+        return <SimpleLoader />
 
     const schema = {
         enabled: {
@@ -1429,16 +1446,7 @@ function Testing(props) {
     }
 
     return <>
-        <PageTitle title='Testing mode' {...props}>
-            {version !== 'Published' && <FeedbackButton
-                type="success"
-                className="d-flex ms-auto"
-                onPress={updateItem}
-                text={<>
-                    Update <VersionBadge size="xs" />
-                </>}
-            />}
-        </PageTitle>
+        <PageTitle title='Testing mode' {...props} />
         {version === 'Published' ?
             <div>
                 Testing mode is only available in the draft version.
@@ -1450,11 +1458,23 @@ function Testing(props) {
             }}>
                 <NgForm
                     value={item?.testing}
-                    onChange={testing => setItem({
-                        ...item,
-                        testing
-                    })}
+                    onChange={testing => {
+                        if (testing)
+                            setItem({
+                                ...item,
+                                testing
+                            })
+                    }}
                     schema={schema}
+                />
+                <FeedbackButton
+                    type="success"
+                    className="d-flex mt-3 ms-auto"
+                    onPress={() => updateItem()
+                        .then(() => history.push(`/apis/${params.apiId}`))}
+                    text={<div className='d-flex align-items-center'>
+                        Update <VersionBadge size="xs" />
+                    </div>}
                 />
             </div>}
     </>
@@ -1604,8 +1624,6 @@ function NewFlow(props) {
     if (isLoading)
         return <SimpleLoader />
 
-    console.log(item.consumers)
-
     return <>
         <Form
             schema={{
@@ -1735,6 +1753,7 @@ function Apis(props) {
     const ref = useRef()
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     useEffect(() => {
         props.setTitle('Apis')
@@ -1790,7 +1809,10 @@ function Apis(props) {
             displayTrash={(item) => item.id === props.globalEnv.adminApiId}
             injectTopBar={() => (
                 <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to="apis/new">
+                    <Link className="btn btn-primary btn-sm" to={{
+                        pathname: "apis/new",
+                        search: location.search
+                    }}>
                         <i className="fas fa-plus-circle" /> Create new API
                     </Link>
                     {props.injectTopBar}
@@ -1873,6 +1895,7 @@ function FlowDesigner(props) {
 function Flows(props) {
     const params = useParams()
     const history = useHistory()
+    const location = useLocation()
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
@@ -1947,7 +1970,10 @@ function Flows(props) {
         displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
-                <Link className="btn btn-primary btn-sm" to="flows/new">
+                <Link className="btn btn-primary btn-sm" to={{
+                    pathname: "flows/new",
+                    search: location.search
+                }}>
                     <i className="fas fa-plus-circle" /> Create new Flow
                 </Link>
                 {props.injectTopBar}
@@ -2417,26 +2443,35 @@ function Dashboard(props) {
         </ProgressCard>}
         {item && <>
             <div className='d-flex gap-3'>
-                <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
+                <div className='d-flex flex-column flex-grow gap-3' style={{ flex: 1 }}>
                     {item.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
                         <APIHeader api={item} version={version} draft={draft} />
-                        {version !== 'Draft' && <>
-                            <ApiStats url={`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000`} />
 
-                            <Uptime
-                                health={item.health?.today}
-                                stopTheCountUnknownStatus={false}
-                            />
-                            <Uptime
-                                health={item.health?.yesterday}
-                                stopTheCountUnknownStatus={false}
-                            />
-                            <Uptime
-                                health={item.health?.nMinus2}
-                                stopTheCountUnknownStatus={false}
-                            />
-                        </>}
+                        <ApiStats url={version === 'Published' ?
+                            `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000` :
+                            `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
+                        } />
+
+                        <Uptime
+                            health={item.health?.today}
+                            stopTheCountUnknownStatus={false}
+                        />
+                        <Uptime
+                            health={item.health?.yesterday}
+                            stopTheCountUnknownStatus={false}
+                        />
+                        <Uptime
+                            health={item.health?.nMinus2}
+                            stopTheCountUnknownStatus={false}
+                        />
                     </ContainerBlock>}
+
+                    {hasCreateRoute && <ContainerBlock full>
+                        <SectionHeader text="Routes"
+                            description="This API is exposed on"
+                        />
+                    </ContainerBlock>}
+
                     {hasCreateConsumer && <ContainerBlock full>
                         <SectionHeader
                             text="Subscriptions"
@@ -2461,7 +2496,9 @@ function Dashboard(props) {
                         <ApiConsumersView api={item} />
                     </ContainerBlock>}
                 </div>
-                {item.flows.length > 0 && item.routes.length > 0 && <ContainerBlock>
+                {item.flows.length > 0 && item.routes.length > 0 && <ContainerBlock style={{
+                    // flex: .5
+                }}>
                     <SectionHeader text="Build your API" description="Manage entities for this API" />
                     <Entities>
                         <FlowsCard flows={item.flows} />
@@ -2936,5 +2973,9 @@ function HighlighedFlowsText({ plural }) {
 }
 
 function HighlighedText({ text, link }) {
-    return <Link to={link} className="highlighted-text">{text}</Link>
+    const location = useLocation()
+    return <Link to={{
+        pathname: link,
+        search: location.search
+    }} className="highlighted-text">{text}</Link>
 }

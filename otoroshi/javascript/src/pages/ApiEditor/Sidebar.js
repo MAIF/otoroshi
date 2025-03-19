@@ -182,7 +182,10 @@ export default (props) => {
                     {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
                         <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
                             <Link
-                                to={to}
+                                to={{
+                                    pathname: to,
+                                    search: location.search
+                                }}
                                 {...(tooltip || {})}
                                 className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
                                     } m-0 ${isActive(tab)}`}>

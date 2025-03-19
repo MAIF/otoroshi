@@ -7,6 +7,7 @@ import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
+import otoroshi.next.models.NgRoute
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
@@ -47,6 +48,89 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     )
   }
 
+  def draftLiveStats(id: String, every: Option[Int]) =
+    ApiAction.async { ctx =>
+      ctx.canReadService(id) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_LIVESTATS_OF_DRAFT",
+            "User accessed draft livestats",
+            ctx.from,
+            ctx.ua,
+            Json.obj("draftId" -> id)
+          )
+        )
+
+         def fetch(): Future[JsObject] = {
+            env.datastores.draftsDataStore.findById(id) flatMap  {
+              case None => Json.obj().vfuture
+              case Some(api) => Api.format.reads(api.content)
+                  .get
+                  .toRoutes.flatMap(routes =>
+                  Future.sequence(routes.map(getStatsOfRoute)))
+                  .map(stats => foldStats(stats).json)
+            }
+        }
+
+        every match {
+          case Some(millis) =>
+            Ok.chunked(
+                Source
+                  .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
+                  .flatMapConcat(_ => Source.future(fetch()))
+                  .map(json => s"data: ${Json.stringify(json)}\n\n")
+              ).as("text/event-stream")
+              .future
+          case None         =>
+            Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json").future
+        }
+      }
+    }
+
+  def foldStats(stats: Seq[RouteStats]) = {
+    stats.foldLeft(RouteStats()) { case (acc, item) => acc.copy(
+      calls  = acc.calls + item.calls,
+      dataIn  = acc.dataIn + item.dataIn,
+      dataOut  = acc.dataOut + item.dataOut,
+      rate  = acc.rate + item.rate,
+      duration  = acc.duration + item.duration,
+      overhead  = acc.overhead + item.overhead,
+      dataInRate  = acc.dataInRate + item.dataInRate,
+      dataOutRate  = acc.dataOutRate + item.dataOutRate,
+      concurrentHandleRequests = acc.concurrentHandleRequests + item.concurrentHandleRequests
+    )}
+  }
+
+  def getStatsOfRoute(route: NgRoute) = {
+    for {
+      calls                     <- env.datastores.serviceDescriptorDataStore.calls(route.id)
+      dataIn                    <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
+      dataOut                   <- env.datastores.serviceDescriptorDataStore.dataOutFor(route.id)
+      rate                      <- env.datastores.serviceDescriptorDataStore.callsPerSec(route.id)
+      duration                  <- env.datastores.serviceDescriptorDataStore.callsDuration(route.id)
+      overhead                  <- env.datastores.serviceDescriptorDataStore.callsOverhead(route.id)
+      dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(route.id)
+      dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(route.id)
+      concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
+    } yield {
+      RouteStats(
+        calls                     = calls,
+        dataIn                    = dataIn,
+        dataOut                   = dataOut,
+        rate                      = rate,
+        duration                  = duration,
+        overhead                  = overhead,
+        dataInRate                = dataInRate,
+        dataOutRate               = dataOutRate,
+        concurrentHandledRequests
+      )
+    }
+  }
+
   def liveStats(id: String, every: Option[Int]) =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
@@ -67,41 +151,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         def fetch(): Future[JsObject] = {
             env.datastores.apiDataStore.findById(id) flatMap  {
               case None => Json.obj().vfuture
-              case Some(api) => api.toRoutes.flatMap(routes => Future.sequence(routes.map(route =>
-                for {
-                  calls                     <- env.datastores.serviceDescriptorDataStore.calls(route.id)
-                  dataIn                    <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
-                  dataOut                   <- env.datastores.serviceDescriptorDataStore.dataOutFor(route.id)
-                  rate                      <- env.datastores.serviceDescriptorDataStore.callsPerSec(route.id)
-                  duration                  <- env.datastores.serviceDescriptorDataStore.callsDuration(route.id)
-                  overhead                  <- env.datastores.serviceDescriptorDataStore.callsOverhead(route.id)
-                  dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(route.id)
-                  dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(route.id)
-                  concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-                } yield {
-                  RouteStats(
-                    calls                     = calls,
-                    dataIn                    = dataIn,
-                    dataOut                   = dataOut,
-                    rate                      = rate,
-                    duration                  = duration,
-                    overhead                  = overhead,
-                    dataInRate                = dataInRate,
-                    dataOutRate               = dataOutRate,
-                    concurrentHandledRequests
-                  )
-                }
-              ))).map(stats => stats.foldLeft(RouteStats()) { case (acc, item) => acc.copy(
-                calls  = acc.calls + item.calls,
-                dataIn  = acc.dataIn + item.dataIn,
-                dataOut  = acc.dataOut + item.dataOut,
-                rate  = acc.rate + item.rate,
-                duration  = acc.duration + item.duration,
-                overhead  = acc.overhead + item.overhead,
-                dataInRate  = acc.dataInRate + item.dataInRate,
-                dataOutRate  = acc.dataOutRate + item.dataOutRate,
-                concurrentHandleRequests = acc.concurrentHandleRequests + item.concurrentHandleRequests
-              )}.json)
+              case Some(api) => api.toRoutes.flatMap(routes =>
+                  Future.sequence(routes.map(getStatsOfRoute)))
+                  .map(stats => foldStats(stats).json)
             }
         }
 

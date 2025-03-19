@@ -554,11 +554,6 @@ PATCH   /api/backends/:id                      otoroshi.next.controllers.adminap
 GET     /api/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.findAllEntitiesAction()
 POST    /api/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.createAction()
 
-## Frontends
-## TODO - remove this endpoint
-GET     /api/frontends/_form                     otoroshi.next.controllers.adminapi.NgFrontendsController.form()
-GET     /api/frontends/_template                 otoroshi.next.controllers.adminapi.NgFrontendsController.template()
-
 ## Plugins
 GET     /api/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()
 GET     /api/plugins/steps                     otoroshi.next.controllers.NgPluginsController.steps()
@@ -615,6 +610,7 @@ GET     /apis/cluster/node/health                             otoroshi.api.Gener
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
 
+GET     /apis/proxy.otoroshi.io/v1/drafts/:id/live             otoroshi.next.controllers.adminapi.ApisController.draftLiveStats(id, every: Option[Int])
 GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)

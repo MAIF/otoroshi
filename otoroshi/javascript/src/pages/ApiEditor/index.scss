@@ -215,15 +215,16 @@
 
     .row-metrics {
         display: flex;
-        gap: .5rem;
+        gap: 1rem;
         margin-bottom: .5rem;
     }
 
     .row-metrics .metric {
         height: initial;
-        width: initial;
+        width: initial !important;
         flex: 1;
         margin: initial;
+        border-radius: .5rem;
         align-items: start;
         justify-content: space-around;
         background-color: var(--bg-color_level3);
@@ -348,7 +349,7 @@
         padding: 0 2rem;
     
         border-radius: .5rem;
-        min-width: 20rem;
+        min-width: 18rem;
     }
 
     .objective-card-body {
