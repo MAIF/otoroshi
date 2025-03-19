@@ -1,5 +1,4 @@
 .editor {
-
     .bg-warning {
         color: var(--text) !important;
         background-color: var(--color-primary) !important;
@@ -98,6 +97,11 @@
         background-color: hsla(0, 0%, 35%, .5);
     }
 
+    .apis-cards:hover button {
+        background-color: var(--color-primary);
+        color: var(--text);
+    }
+
     .highlighted-text {
         color: var(--color-primary);
         font-weight: bold;
@@ -107,7 +111,7 @@
     .container {
         width: fit-content;
         background-color: var(--bg-color_level2);
-        padding: 2rem;
+        padding: 1rem;
         border-radius: 1rem;
     }
 
@@ -118,7 +122,7 @@
     }
 
     .container--highlighted {
-        background-color: var(--bg-color_level3);
+        background-color: var(--bg-color_level2);
     }
 
     h3 {
@@ -222,6 +226,7 @@
         margin: initial;
         align-items: start;
         justify-content: space-around;
+        background-color: var(--bg-color_level3);
     }
 
     .row-metrics * {
@@ -266,6 +271,105 @@
     // .ace_editor:hover .ace_scrollbar {
     //     display: block;
     // }
+
+    .progress {
+        height: .5rem;
+        background: var(--bg-color_level3);
+        width: 250px;
+        border-radius: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--color-primary);
+    }
+
+    .progress-childs {
+        scrollbar-color: #888 transparent;
+    }
+
+    .progress-childs::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .progress-childs::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+
+    .progress-childs {
+        display: flex;
+        gap: .5rem;
+        overflow-x: scroll;
+        // margin-left: auto;
+        // justify-content: flex-end;
+        // flex: 1;
+        // scrollbar-width: none;
+    }
+
+
+    .objective-link {
+        text-decoration: underline;
+    }
+
+    .objective-card-icon {
+        color: var(--text);
+        border-radius: 50%;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        border: 2px solid var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(249, 181, 47, 0.18);
+        border: none;
+
+    }
+
+    .objective-card-icon i {
+        color: var(--color-primary);
+        font-size: 1.6rem;
+        border-radius: 50%;
+    }
+
+    .objective-card {
+        // margin-left: auto;
+        background-color: var(--bg-color_level3);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 1rem;
+        padding: 0 2rem;
+    
+        border-radius: .5rem;
+        min-width: 20rem;
+    }
+
+    .objective-card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: .2rem;
+    }
+
+    .objective-card-body p {
+        margin: 0;
+    }
+
+    .objective-card-body>p:first-child {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .objective-card-body>p:last-child {
+        cursor: pointer;
+    }
 }
 
 .testing-dot {

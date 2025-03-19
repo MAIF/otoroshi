@@ -52,9 +52,9 @@ const RouteWithProps = ({ component: Component, ...rest }) => (
 
 export default function ApiEditor(props) {
     return <div className='editor'>
-        <SidebarComponent {...props} />
-
         <QueryClientProvider client={queryClient}>
+            <SidebarComponent {...props} />
+
             <Switch>
                 <RouteWithProps exact path='/apis/:apiId/routes' component={Routes} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/routes/new' component={NewRoute} props={props} />
@@ -70,7 +70,8 @@ export default function ApiEditor(props) {
 
                 <RouteWithProps exact path='/apis/:apiId/flows' component={Flows} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/flows/new' component={NewFlow} props={props} />
-                <RouteWithProps exact path='/apis/:apiId/flows/:flowId/:action' component={FlowDesigner} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/flows/:flowId/designer' component={FlowDesigner} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/flows/:flowId/:action' component={EditFlow} props={props} />
 
                 <RouteWithProps exact path='/apis/:apiId/backends' component={Backends} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/backends/new' component={NewBackend} props={props} />
@@ -100,7 +101,7 @@ function useDraftOfAPI() {
     const draftClient = nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS);
 
-    const isPublished = !version || version === 'Published'
+    const isDraft = version && (version === 'Draft' || version === 'staging')
 
     const rawAPI = useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
@@ -158,14 +159,14 @@ function useDraftOfAPI() {
 
     return {
         api,
-        item: isPublished ? api : draft,
+        item: isDraft ? draft : api,
         draft,
         draftWrapper,
         version,
         tag: version === 'Published' ? 'PROD' : 'DEV',
-        setItem: isPublished ? setAPI : setDraft,
-        updateItem: isPublished ? updateAPI : updateDraft,
-        isLoading: isPublished ? rawAPI.isLoading : query.isLoading
+        setItem: isDraft ? setDraft : setAPI,
+        updateItem: isDraft ? updateDraft : updateAPI,
+        isLoading: isDraft ? query.isLoading : rawAPI.isLoading
     }
 }
 
@@ -1429,7 +1430,7 @@ function Testing(props) {
 
     return <>
         <PageTitle title='Testing mode' {...props}>
-            {version === 'Draft' && <FeedbackButton
+            {version !== 'Published' && <FeedbackButton
                 type="success"
                 className="d-flex ms-auto"
                 onPress={updateItem}
@@ -1519,9 +1520,9 @@ function Deployments(props) {
     />
 }
 
-function SidebarWithVersion({ params }) {
+function SidebarWithVersion({ params, state }) {
     const queryParams = new URLSearchParams(window.location.search)
-    const queryVersion = queryParams.get('version')
+    const queryVersion = state === 'staging' ? 'staging' : (queryParams.get('version') ? queryParams.get('version') : 'Published')
 
     useEffect(() => {
         if (queryVersion) {
@@ -1547,14 +1548,27 @@ function SidebarComponent(props) {
     const params = useParams()
     const location = useLocation()
 
+    const [state, setState] = useState()
+
+    useQuery(["getAPI", params.apiId],
+        () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
+        onSuccess: api => {
+            setState(api.state)
+        }
+    })
+
     useEffect(() => {
         if (location.pathname !== '/apis') {
-            props.setSidebarContent(<SidebarWithVersion params={params} />);
+            props.setSidebarContent(<SidebarWithVersion params={params} state={state} />);
         }
         return () => props.setSidebarContent(null)
-    }, [params])
+    }, [params, state])
 
     return null
+}
+
+function EditFlow(props) {
+
 }
 
 function NewFlow(props) {
@@ -1577,13 +1591,6 @@ function NewFlow(props) {
         plugins: []
     })
 
-    const schema = {
-        name: {
-            type: 'string',
-            props: { label: 'Name' },
-        }
-    }
-
     const { item, updateItem, isLoading } = useDraftOfAPI()
 
     const createFlow = () => {
@@ -1597,10 +1604,28 @@ function NewFlow(props) {
     if (isLoading)
         return <SimpleLoader />
 
+    console.log(item.consumers)
+
     return <>
         <Form
-            schema={schema}
-            flow={["name"]}
+            schema={{
+                name: {
+                    type: 'string',
+                    props: { label: 'Name' },
+                },
+                consumers: {
+                    type: 'select',
+                    props: {
+                        label: 'Consumers',
+                    },
+                    options: item.consumers,
+                    optionsTransformer: {
+                        label: 'name',
+                        value: 'id'
+                    }
+                }
+            }}
+            flow={["name", "consumers"]}
             value={flow}
             onChange={setFlow}
         />
@@ -1631,21 +1656,8 @@ function NewAPI(props) {
     const template = useQuery(["getTemplate"],
         nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
         retry: 0,
-        onSuccess: (data) => {
-            setValue(data)
-        }
+        onSuccess: (data) => setValue(data)
     });
-
-    // version: String,
-    // state: ApiState,
-    // blueprint: ApiBlueprint,
-    // routes: Seq[ApiRoute],
-    // backends: Seq[NgBackend],
-    // flows: Seq[ApiFlows],
-    // clients: Seq[ApiBackendClient],
-    // documentation: Option[ApiDocumentation],
-    // consumers: Seq[ApiConsumer],
-    // deployments: Seq[ApiDeployment]
 
     const schema = {
         location: {
@@ -1869,6 +1881,19 @@ function Flows(props) {
         {
             title: 'Name',
             content: item => item.name
+        },
+        {
+            title: 'Designer',
+            style: {
+                textAlign: 'center',
+                width: 90
+            },
+            notFilterable: true,
+            cell: (_, item) => <Button className="btn-sm" onClick={() => {
+                history.push(`/apis/${params.apiId}/flows/${item.id}/designer`)
+            }}>
+                <i className='fas fa-pencil-ruler' />
+            </Button>
         }
     ];
 
@@ -1931,42 +1956,6 @@ function Flows(props) {
         )}
     />
 }
-
-// function VersionManagerSelector({ createOrUpdate, setCreateOrUpdate }) {
-//     return <div className='d-flex flex-column mt-3'
-//         style={{ gap: '.25rem' }}>
-//         {[
-//             {
-//                 kind: 'create',
-//                 title: 'NEW',
-//                 text: 'Create a new version from the current draft',
-//             },
-//             {
-//                 kind: 'update',
-//                 title: 'UPDATE',
-//                 text: 'Erase the current published version',
-//             }
-//         ].map(({ kind, title, text }) => (
-//             <button
-//                 type="button"
-//                 className={`btn py-3 wizard-route-chooser  ${createOrUpdate === kind ? 'btn-primaryColor' : 'btn-quiet'}`}
-//                 onClick={() => setCreateOrUpdate(kind)}
-//                 key={kind}
-//             >
-//                 <h3 className="wizard-h3--small">{title}</h3>
-//                 <span
-//                     style={{
-//                         flex: 1,
-//                         display: 'flex',
-//                         alignItems: 'center',
-//                     }}
-//                 >
-//                     {text}
-//                 </span>
-//             </button>
-//         ))}
-//     </div>
-// }
 
 function VersionManager({ api, draft, owner, setState }) {
 
@@ -2263,7 +2252,7 @@ function Informations(props) {
 function VersionBadge({ size, className }) {
     const version = useSignalValue(signalVersion)
     return <div className={className ? className : 'm-0 ms-2'} style={{ fontSize: size === 'xs' ? '.75rem' : '1rem' }}>
-        <span className={`badge bg-xs ${version === 'Draft' ? 'bg-warning' : 'bg-danger'}`}>
+        <span className={`badge bg-xs ${version === 'Published' ? 'bg-danger' : 'bg-warning'}`}>
             {version === 'Published' ? 'PROD' : 'DEV'}
         </span>
     </div>
@@ -2355,70 +2344,81 @@ function Dashboard(props) {
         return () => props.setTitle(undefined)
     }, [item, draft])
 
-    const hasCreateFlow = item && item.flows.length > 0
+    const hasCreateFlow = item && item.flows.filter(f => f.name !== 'default_flow').length > 0
+    const hasCreateBackend = item && item.backends.filter(f => f.name !== 'default_backend').length > 0
     const hasCreateRoute = item && item.routes.length > 0
     const hasCreateConsumer = item && item.consumers.length > 0
+    const hasTestingEnabled = item && item.testing.enabled
+
     const isStaging = item && item.state === API_STATE.STAGING
     const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging
 
-    if (isLoading)
+    const getStep = () => {
+        return Number(hasCreateFlow) +
+            Number(hasCreateRoute) +
+            Number(hasCreateBackend) +
+            Number(hasCreateConsumer) +
+            Number(hasTestingEnabled) +
+            Number(item?.state === API_STATE.PUBLISHED)
+    }
+
+    if (isLoading || !item)
         return <SimpleLoader />
 
-    return <div className='d-flex flex-column gap-3' style={{ maxWidth: 1280 }}>
+    const currentStep = getStep()
+
+    return <div className='d-flex flex-column gap-3 pb-10' style={{ maxWidth: 1280 }}>
+        {showGettingStarted && <ProgressCard step={currentStep}>
+
+            {!hasCreateConsumer && hasCreateRoute && <ObjectiveCard
+                to={`/apis/${params.apiId}/consumers/new`}
+                title="Create a consumer"
+                description={<p className='objective-link'>Consumers apply security measures to the API</p>}
+                icon={<i className='fas fa-list' />}
+            />}
+
+            {!hasCreateRoute && <ObjectiveCard
+                to={`/apis/${params.apiId}/routes/new`}
+                title="Your own route"
+                description={<p className='objective-link'>Create a new Route</p>}
+                icon={<i className='fas fa-road' />}
+            />}
+
+            {hasCreateRoute && !hasCreateBackend && currentStep === 4 && <ObjectiveCard
+                to={`/apis/${params.apiId}/backends/new`}
+                title="Your own backend"
+                description={<p className='objective-link'>Create a new Backend</p>}
+                icon={<i className='fas fa-road' />}
+            />}
+
+            {hasCreateRoute && hasCreateConsumer && !item.testing.enabled && <ObjectiveCard
+                to={`/apis/${params.apiId}/testing`}
+                title="Test your API"
+                description={<p className='objective-link'>Learn about testing API</p>}
+                icon={<i className='fas fa-road' />}
+            />}
+
+            {!hasCreateFlow && item.state === API_STATE.PUBLISHED && <ObjectiveCard
+                to={`/apis/${params.apiId}/flows/new`}
+                title="Create a flow"
+                description={<p className='objective-link'>
+                    Create group of plugins to apply rules
+                </p>}
+                icon={<i className='fas fa-project-diagram' />}
+            />}
+
+            {currentStep === 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
+                onClick={() => publishAPI(item)}
+                title="Deploy your API"
+                description={<p className='objective-link'>
+                    Publish your API to the production
+                </p>}
+                icon={<i className='fas fa-rocket' />}
+            />}
+        </ProgressCard>}
         {item && <>
             <div className='d-flex gap-3'>
                 <div className='d-flex flex-column flex-grow gap-3' style={{ maxWidth: 640 }}>
-                    {showGettingStarted && <ContainerBlock full>
-                        <SectionHeader text="Getting Started" />
-
-                        {isStaging && !hasCreateConsumer && hasCreateRoute && <Card
-                            onClick={() => publishAPI(item)}
-                            title="Deploy your API"
-                            description={<>
-                                Start your API and write your first <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} />
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => publishAPI(item)}
-                                text="Start your API" />}
-                        />}
-
-                        {!isStaging && hasCreateFlow && hasCreateRoute && !hasCreateConsumer && <Card
-                            to={`/apis/${params.apiId}/consumers/new`}
-                            title="Create your first API consumer"
-                            description={<>
-                                <HighlighedText text="API consumer" link={`/apis/${params.apiId}/consumers`} /> allows users or machines to subscribe to your API
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
-
-                        {hasCreateFlow && !hasCreateRoute && <Card
-                            to={`/apis/${params.apiId}/routes/new`}
-                            title="Create your first route"
-                            description={<>
-                                Compose your API with your first <HighlighedText text="Route" link={`/apis/${params.apiId}/routes`} />
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
-
-                        {!hasCreateFlow && <Card
-                            to={`/apis/${params.apiId}/flows/new`}
-                            title="Create your first flow of plugins"
-                            description={<>
-                                Create group of plugins to apply rules, transformations, and restrictions on routes, enabling advanced traffic control and customization.
-                            </>}
-                            button={<FeedbackButton type="primaryColor"
-                                className="ms-auto d-flex"
-                                onPress={() => { }}
-                                text="Create" />}
-                        />}
-                    </ContainerBlock>}
                     {item.state !== API_STATE.STAGING && <ContainerBlock full highlighted>
                         <APIHeader api={item} version={version} draft={draft} />
                         {version !== 'Draft' && <>
@@ -2452,7 +2452,7 @@ function Dashboard(props) {
                     </ContainerBlock>}
 
                     {hasCreateConsumer && <ContainerBlock full>
-                        <SectionHeader text="API Consumers"
+                        <SectionHeader text="Consumers"
                             description={item.consumers.length <= 0 ? 'API consumers will appear here' : ''}
                             actions={<Button
                                 type="primaryColor"
@@ -2631,12 +2631,13 @@ function Subscription({ subscription }) {
     </div>
 }
 
-function ContainerBlock({ children, full, highlighted }) {
+function ContainerBlock({ children, full, highlighted, style = {} }) {
     return <div className={`container ${full ? 'container--full' : ''} ${highlighted ? 'container--highlighted' : ''}`}
         style={{
             margin: 0,
             position: 'relative',
-            height: 'fit-content'
+            height: 'fit-content',
+            ...style
         }}>
         {children}
     </div>
@@ -2649,7 +2650,16 @@ function publishAPI(api) {
             ...api,
             state: API_STATE.PUBLISHED
         })
-        .then(() => window.location.reload())
+        .then(() => nextClient
+            .forEntityNext(nextClient.ENTITIES.DRAFTS)
+            .deleteById(api.id)
+        )
+        .then(() => {
+            const queryParams = new URLSearchParams(window.location.search);
+            queryParams.delete("version");
+            history.replaceState(null, null, "?" + queryParams.toString());
+            window.location.reload()
+        })
 }
 
 function APIHeader({ api, version, draft }) {
@@ -2667,13 +2677,13 @@ function APIHeader({ api, version, draft }) {
             }}>
                 {api.version}
             </span>
-            {version === 'Draft' && <span className='badge custom-badge api-status-started d-flex align-items-center gap-2'>
+            {version !== 'Published' && <span className='badge custom-badge api-status-started d-flex align-items-center gap-2'>
                 <div className={`testing-dot ${draft.testing?.enabled ? 'testing-dot--enabled' : 'testing-dot--disabled'}`}></div>
                 {draft.testing?.enabled ? 'Testing enabled' : 'Testing disabled'}
             </span>}
             <APIState value={api.state} />
 
-            {version !== 'Draft' && <>
+            {version === 'Published' && <>
                 {api.state === API_STATE.STAGING && <Button
                     type='primaryColor'
                     onClick={() => publishAPI(api)}
@@ -2681,7 +2691,7 @@ function APIHeader({ api, version, draft }) {
                     text="Start you API" />}
                 {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
                     <Button
-                        type='quiet'
+                        type='primaryColor'
                         onClick={() => {
                             updateAPI({
                                 ...api,
@@ -2755,11 +2765,77 @@ function Entities({ children }) {
     </div>
 }
 
+function ProgressCard({ children, step }) {
+    const steps = 6
+
+    const ref = useRef()
+
+    useEffect(() => {
+        const handleWheel = (event) => {
+            event.preventDefault();
+
+            ref.current.scrollBy({
+                left: event.deltaY < 0 ? -35 : 35,
+
+            });
+        }
+
+        ref.current?.addEventListener('wheel', handleWheel)
+
+        return () => {
+            ref.current?.removeEventListener('wheel', handleWheel)
+        }
+    }, [ref])
+
+    return <ContainerBlock full style={{ minWidth: '100%' }}>
+        <div className='d-flex'>
+            <div className='me-4'>
+                <div className='cards-title d-flex align-items-center justify-content-between'>
+                    Get started with API
+                </div>
+                <div className='d-flex align-items-center gap-2 mb-3 mt-1'>
+                    <div className='progress'>
+                        <div className='progress-bar' style={{
+                            right: `${(1 - (step / steps)) * 100}%`
+                        }}></div>
+                    </div>
+                    <span>{step}/{steps}</span>
+                </div>
+                <p className="cards-description" style={{ position: 'relative' }}>
+                    <i className='fas fa-hand-spock fa-lg me-1' style={{
+                        color: 'var(--color-primary)'
+                    }} /> Let's build your first API!
+                </p>
+            </div>
+            <div className='d-flex progress-childs' ref={ref}>
+                {children}
+            </div>
+        </div>
+    </ContainerBlock>
+}
+
+function ObjectiveCard({ title, description, icon, to, onClick }) {
+    const history = useHistory()
+
+    return <div
+        className="objective-card">
+        <div className='objective-card-icon'>
+            {icon}
+        </div>
+        <div className='objective-card-body'>
+            <p>{title}</p>
+            <p onClick={() => {
+                onClick ? onClick() : history.push(to)
+            }}>{description}</p>
+        </div>
+    </div>
+}
+
 function Card({ title, description, to, button, onClick }) {
     const history = useHistory()
 
     return <div
-        className="cards apis-cards cards--large mb-3"
+        className="cards apis-cards cards--large"
         onClick={() => {
             onClick ? onClick : history.push(to)
         }}>

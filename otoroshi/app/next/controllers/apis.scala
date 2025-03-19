@@ -292,32 +292,41 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             ApiDeployment._fmt.reads(ctx.request.body) match {
               case JsError(_) => Results.BadRequest(Json.obj("error" -> "bad entity")).future
               case JsSuccess(deployment, _) =>
-                val updatedApi = api.copy(
-                  versions = api.versions :+ deployment.version,
-                  deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
-                  version = deployment.version
-                )
-                env.datastores.apiDataStore.set(updatedApi)
-                  .map(result => {
-                    ApiDeploymentEvent(
-                      `@id` = env.snowflakeGenerator.nextIdStr(),
-                      `@timestamp` = DateTime.now(),
-                      apiRef = deployment.apiRef,
-                      owner = if (deployment.owner.isEmpty) ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner) else deployment.owner,
-                      at = deployment.at,
-                      apiDefinition = deployment.apiDefinition,
-                      version = deployment.version,
-                      `@service` = api.name,
-                      `@serviceId` = apiId
-                    ).toAnalytics()
+                env.datastores.draftsDataStore.findById(apiId) flatMap {
+                  case None => Results.NotFound.future
+                  case Some(draftWrapper) =>
+                    Api.format.reads(draftWrapper.content) match {
+                      case JsError(_) => Results.NotFound.future
+                      case JsSuccess(apiDraft, _) =>
+                        val updatedApi = apiDraft.copy(
+                          versions = api.versions :+ deployment.version,
+                          deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
+                          version = deployment.version,
+                          id = api.id
+                        )
+                        env.datastores.apiDataStore.set(updatedApi)
+                          .map(result => {
+                            ApiDeploymentEvent(
+                              `@id` = env.snowflakeGenerator.nextIdStr(),
+                              `@timestamp` = DateTime.now(),
+                              apiRef = deployment.apiRef,
+                              owner = if (deployment.owner.isEmpty) ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner) else deployment.owner,
+                              at = deployment.at,
+                              apiDefinition = deployment.apiDefinition,
+                              version = deployment.version,
+                              `@service` = api.name,
+                              `@serviceId` = apiId
+                            ).toAnalytics()
 
-                    if (result) {
-                      ctx.request.body.select("draftId").asOptString
-                        .map(draftId => env.datastores.draftsDataStore.delete(draftId))
-                      Results.Created(updatedApi.json)
-                    } else
-                      Results.BadRequest(Json.obj("error" -> "something wrong happened"))
-                  })
+                            if (result) {
+                              ctx.request.body.select("draftId").asOptString
+                                .map(draftId => env.datastores.draftsDataStore.delete(draftId))
+                              Results.Created(updatedApi.json)
+                            } else
+                              Results.BadRequest(Json.obj("error" -> "something wrong happened"))
+                          })
+                    }
+                }
             }
         }
       }

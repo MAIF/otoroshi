@@ -17,6 +17,7 @@ function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okCla
       bottom: 0,
       right: 0,
       left: 0,
+      marginLeft: '-50px',
       padding: '1rem',
       background: 'var(--bg-color_level2)',
       zIndex: 100

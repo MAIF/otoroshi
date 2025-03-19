@@ -9,7 +9,7 @@ import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, Re
 import otoroshi.next.models.{NgPluginInstance, _}
 import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.{ApikeyCalls, ForceHttpsTraffic, JwtVerificationOnly, NgApikeyCallsConfig, NgClientCredentialTokenEndpoint, NgClientCredentialTokenEndpointConfig, NgHasClientCertMatchingValidator, NgHasClientCertMatchingValidatorConfig, NgJwtVerificationOnlyConfig, OIDCAccessTokenValidator}
+import otoroshi.next.plugins.{ApikeyCalls, ForceHttpsTraffic, JwtVerificationOnly, NgApikeyCallsConfig, NgClientCredentialTokenEndpoint, NgClientCredentialTokenEndpointConfig, NgHasClientCertMatchingValidator, NgHasClientCertMatchingValidatorConfig, NgJwtVerificationOnlyConfig, OIDCAccessTokenValidator, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
@@ -107,13 +107,24 @@ object ApiRoute {
   }
 }
 
-case class ApiPredicate()
-
-case class ApiFlows(id: String, name: String, /*predicate: ApiPredicate,*/ plugins: NgPlugins)
+case class ApiFlows(id: String,
+                    name: String,
+                    consumers: Seq[ApiConsumer] = Seq.empty,
+                    plugins: NgPlugins)
 
 object ApiFlows {
-
-  def empty(implicit env: Env): ApiFlows = ApiFlows(IdGenerator.namedId("api_flows", env), "empty flow", NgPlugins.empty)
+  def empty(implicit env: Env): ApiFlows = ApiFlows(
+    IdGenerator.namedId("api_flows", env),
+    "default_flow",
+    plugins = NgPlugins.apply(
+      slots = Seq(NgPluginInstance(
+        plugin = pluginId[OverrideHost],
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = NgPluginInstanceConfig()
+      ))
+    )
+  )
 
   val _fmt = new Format[ApiFlows] {
 
@@ -121,7 +132,11 @@ object ApiFlows {
       ApiFlows(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        plugins = NgPlugins.readFrom(json.select("plugins"))
+        plugins = NgPlugins.readFrom(json.select("plugins")),
+        consumers = (json \ "consumers")
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v => ApiConsumer._fmt.reads(v).asOpt))
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    =>
@@ -662,7 +677,7 @@ object ApiBackend {
 
   def empty(implicit env: Env): ApiBackend = ApiBackend(
     IdGenerator.namedId("api_flows", env),
-    name = "empty_backend",
+    name = "default_backend",
     backend = NgBackend.empty.copy(
         targets = Seq(
           NgTarget(
@@ -723,7 +738,7 @@ object ApiBackendClient {
 }
 
 case class ApiTesting(enabled: Boolean = false,
-                      headerKey: String = "X-API-VERSION",
+                      headerKey: String = "X-OTOROSHI-TESTING",
                       headerValue: String = IdGenerator.uuid)
 
 object ApiTesting {
@@ -736,7 +751,7 @@ object ApiTesting {
     override def reads(json: JsValue): JsResult[ApiTesting] = Try {
       ApiTesting(
         enabled = json.select("enabled").asOptBoolean.getOrElse(false),
-        headerKey = json.select("headerKey").asOptString.getOrElse("X-API-VERSION"),
+        headerKey = json.select("headerKey").asOptString.getOrElse("X-OTOROSHI-TESTING"),
         headerValue = json.select("headerValue").asOptString.getOrElse(IdGenerator.uuid)
       )
     } match {
@@ -756,9 +771,7 @@ case class Api(
     tags: Seq[String],
     metadata: Map[String, String],
     version: String,
-    // or versions: Seq[ApiVersion] with ApiVersion being the following ?
-     versions: Seq[String] = Seq("0.0.1"),
-    //// ApiVersion
+    versions: Seq[String] = Seq("0.0.1"),
     debugFlow: Boolean,
     capture: Boolean,
     exportReporting: Boolean,
@@ -773,7 +786,6 @@ case class Api(
     deployments: Seq[ApiDeployment],
     testing: ApiTesting
     // TODO: monitoring and heath ????
-    //// ApiVersion
 ) extends EntityLocationSupport {
   override def internalId: String = id
 
@@ -790,7 +802,7 @@ case class Api(
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
 
-    if (state == ApiRemoved || state == ApiStaging) {
+    if (state == ApiRemoved) {
       Seq.empty.vfuture
     } else {
       env.datastores.draftsDataStore.findById(id)
@@ -939,14 +951,6 @@ object Api {
        env.datastores.apiDataStore.findById(newApi.id)
          .map(_.get)
          .map(api => {
-           // API needs to be published to have consumers
-           if (newApi.consumers.nonEmpty && newApi.state == ApiStaging) {
-               return Json.obj(
-                 "error" -> s"api is not accessible by consumers. Publish your API to continue",
-                 "http_status_code" -> 400
-               ).leftf
-           }
-
            newApi.consumers.foreach(consumer => {
              api.consumers.find(_.id == consumer.id) match {
                case Some(oldConsumer) =>

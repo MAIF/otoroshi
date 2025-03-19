@@ -332,7 +332,7 @@ export default function ({ route, hide }) {
           )}
       </div>
       {testerView === 'graphql' ? (
-        <div style={{ minHeight: 'calc(100vh - 162px)' }}>
+        <div style={{ minHeight: 'calc(100vh - 164px)' }}>
           <Provider store={store}>
             <Playground
               settings={{

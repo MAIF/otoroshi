@@ -125,7 +125,7 @@ export default (props) => {
                 {!isOnApisHome && <>
                     {openedSidebar && <p className="sidebar-title mt-3">General</p>}
                     <div className='me-1 my-2'>
-                        <Select
+                        {openedSidebar && version !== 'staging' && <Select
                             value={{ value: version, label: version }}
                             onChange={item => {
                                 const queryParams = new URLSearchParams(window.location.search);
@@ -177,7 +177,7 @@ export default (props) => {
                                     background: 'red',
                                 })
                             }}
-                        />
+                        />}
                     </div>
                     {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
                         <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
