@@ -1775,7 +1775,6 @@ function Apis(props) {
             columns={columns}
             deleteItem={(item) => nextClient
                 .forEntityNext(nextClient.ENTITIES.APIS).deleteById(item.id)
-                .then(() => window.location.reload())
             }
             defaultSort="name"
             defaultSortDesc="true"
