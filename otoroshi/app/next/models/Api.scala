@@ -109,7 +109,7 @@ object ApiRoute {
 
 case class ApiFlows(id: String,
                     name: String,
-                    consumers: Seq[ApiConsumer] = Seq.empty,
+                    consumers: Seq[String] = Seq.empty,
                     plugins: NgPlugins)
 
 object ApiFlows {
@@ -134,8 +134,7 @@ object ApiFlows {
         name = json.select("name").asString,
         plugins = NgPlugins.readFrom(json.select("plugins")),
         consumers = (json \ "consumers")
-          .asOpt[Seq[JsValue]]
-          .map(_.flatMap(v => ApiConsumer._fmt.reads(v).asOpt))
+          .asOpt[Seq[String]]
           .getOrElse(Seq.empty)
       )
     } match {
@@ -148,7 +147,8 @@ object ApiFlows {
     override def writes(o: ApiFlows): JsValue = Json.obj(
       "id" -> o.id,
       "name" -> o.name,
-      "plugins" -> o.plugins.json
+      "plugins" -> o.plugins.json,
+      "consumers" -> o.consumers,
     )
   }
 }

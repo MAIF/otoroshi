@@ -125,7 +125,7 @@ export default (props) => {
                 {!isOnApisHome && <>
                     {openedSidebar && <p className="sidebar-title mt-3">General</p>}
                     <div className='me-1 my-2'>
-                        {openedSidebar && version !== 'staging' && <Select
+                        {openedSidebar && version && version !== 'staging' && <Select
                             value={{ value: version, label: version }}
                             onChange={item => {
                                 const queryParams = new URLSearchParams(window.location.search);

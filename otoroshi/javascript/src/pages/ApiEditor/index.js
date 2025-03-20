@@ -1644,7 +1644,107 @@ function SidebarComponent(props) {
 }
 
 function EditFlow(props) {
+    const history = useHistory()
+    const params = useParams()
+    const location = useLocation()
 
+    const { item, updateItem, isLoading } = useDraftOfAPI()
+
+    const [flow, setFlow] = useState()
+
+    useEffect(() => {
+        if (item && !flow) {
+            const currentFlow = item.flows.find(flow => flow.id === params.flowId)
+
+            if (currentFlow) {
+                props.setTitle({
+                    value: `Update ${currentFlow.name}`,
+                    noThumbtack: true,
+                    children: <VersionBadge />
+                })
+
+                setFlow({
+                    ...currentFlow,
+                    consumers: item.consumers.reduce((acc, item) => ({
+                        ...acc,
+                        [item.id]: currentFlow.consumers.includes(item.id)
+                    }), {})
+                })
+            }
+        }
+        return () => props.setTitle(undefined)
+    }, [item])
+
+    const updateFlow = () => {
+        return updateItem({
+            ...item,
+            flows: item.flows.map(ite => {
+                if (ite.id === params.flowId) {
+                    return {
+                        ...flow,
+                        consumers: Object.entries(flow.consumers).filter(f => f[1]).map(f => f[0])
+                    }
+                } else {
+                    return ite
+                }
+            })
+        })
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/flows`));
+    }
+
+    if (isLoading || !item)
+        return <SimpleLoader />
+
+    return <div style={{
+        maxWidth: MAX_WIDTH,
+        margin: 'auto'
+    }}>
+        <NgForm
+            schema={FLOW_FORM_SETTINGS.schema(item)}
+            flow={FLOW_FORM_SETTINGS.flow}
+            value={flow}
+            onChange={setFlow}
+        />
+        <Button
+            type="success"
+            className="btn-sm ms-auto d-flex align-items-center"
+            onClick={updateFlow}
+        >
+            Update <VersionBadge size="xs" className="ms-2" />
+        </Button>
+    </div>
+}
+
+const FLOW_FORM_SETTINGS = {
+    schema: item => ({
+        name: {
+            type: 'string',
+            props: { label: 'Name' },
+        },
+        consumers: {
+            type: 'form',
+            label: 'Enabled consumers',
+            schema: item.consumers.reduce((acc, item) => ({
+                ...acc,
+                [item.id]: {
+                    type: 'box-bool',
+                    label: item.name,
+                    props: {
+                        description: item.description || item.consumer_kind
+                    }
+                }
+            }), {}),
+        }
+    }),
+    flow: [
+        {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ["name"]
+        },
+        'consumers'
+    ]
 }
 
 function NewFlow(props) {
@@ -1665,7 +1765,8 @@ function NewFlow(props) {
     const [flow, setFlow] = useState({
         id: v4(),
         name: 'New flow name',
-        plugins: []
+        plugins: [],
+        consumers: []
     })
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
@@ -1673,34 +1774,24 @@ function NewFlow(props) {
     const createFlow = () => {
         return updateItem({
             ...item,
-            flows: [...item.flows, flow]
+            flows: [...item.flows, {
+                ...flow,
+                consumers: Object.entries(flow.consumers).filter(f => f[1]).map(f => f[0])
+            }]
         })
             .then(() => historyPush(history, location, `/apis/${params.apiId}/flows/${flow.id}`));
     }
 
-    if (isLoading)
+    if (isLoading || !item)
         return <SimpleLoader />
 
-    return <>
-        <Form
-            schema={{
-                name: {
-                    type: 'string',
-                    props: { label: 'Name' },
-                },
-                consumers: {
-                    type: 'select',
-                    props: {
-                        label: 'Consumers',
-                    },
-                    options: item.consumers,
-                    optionsTransformer: {
-                        label: 'name',
-                        value: 'id'
-                    }
-                }
-            }}
-            flow={["name", "consumers"]}
+    return <div style={{
+        maxWidth: MAX_WIDTH,
+        margin: 'auto'
+    }}>
+        <NgForm
+            schema={FLOW_FORM_SETTINGS.schema(item)}
+            flow={FLOW_FORM_SETTINGS.flow}
             value={flow}
             onChange={setFlow}
         />
@@ -1711,7 +1802,7 @@ function NewFlow(props) {
         >
             Create <VersionBadge size="xs" className="ms-2" />
         </Button>
-    </>
+    </div>
 }
 
 function NewAPI(props) {
