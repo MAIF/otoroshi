@@ -377,7 +377,7 @@ function NewSubscription(props) {
     const [subscription, setSubscription] = useState()
     const [error, setError] = useState()
 
-    const { item, isLoading } = useDraftOfAPI()
+    const { item, isLoading, version } = useDraftOfAPI()
 
     const templatesQuery = useQuery(["getTemplate"],
         () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
@@ -405,7 +405,8 @@ function NewSubscription(props) {
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
             .create({
                 ...subscription,
-                api_ref: params.apiId
+                api_ref: params.apiId,
+                draft: version === 'staging' || version === 'draft'
             })
             .then(res => {
                 if (res && res.error) {
@@ -2590,7 +2591,9 @@ function Dashboard(props) {
 
 function ApiConsumersView({ api }) {
     return <div>
-        <div className='short-table-row'>
+        <div className='short-table-row' style={{
+            gridTemplateColumns: 'repeat(3, 1fr) 54px 32px'
+        }}>
             <div>Name</div>
             <div>Description</div>
             <div>Status</div>
@@ -2805,7 +2808,10 @@ function SubscriptionsView({ api }) {
             .then(raw => setSubscriptions(raw.data))
     }, [])
     return <div>
-        <div className='short-table-row'>
+        <div className='short-table-row'
+            style={{
+                gridTemplateColumns: 'repeat(3, 1fr) 54px 32px'
+            }}>
             <div>Name</div>
             <div>Description</div>
             <div>Created At</div>

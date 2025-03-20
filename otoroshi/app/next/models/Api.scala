@@ -5,7 +5,7 @@ import diffson.PatchOps
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, RoundRobin, ServiceDescriptor}
+import otoroshi.models.{Draft, EntityLocation, EntityLocationSupport, LoadBalancing, RemainingQuotas, RoundRobin, ServiceDescriptor}
 import otoroshi.next.models.{NgPluginInstance, _}
 import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
@@ -466,82 +466,95 @@ case class ApiConsumerSubscription(
 object ApiConsumerSubscription {
 
   def deleteValidator(entity: ApiConsumerSubscription,
-                        body: JsValue,
-                        singularName: String,
-                        id: String,
-                        action: DeleteAction,
-                        env: Env):  Future[Either[JsValue, Unit]] = {
+                      body: JsValue,
+                      singularName: String,
+                      id: String,
+                      action: DeleteAction,
+                      env: Env): Future[Either[JsValue, Unit]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     implicit val e: Env = env
 
-     env.datastores.apiDataStore.findById(entity.apiRef) flatMap  {
-       case Some(api) => env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
-            if (consumer.id == entity.consumerRef) {
-              consumer.copy(subscriptions = consumer.subscriptions.filter(_.ref != id))
-            }
-            else
-              consumer
-          }))).map(_ => ().right)
-       case None => Json.obj(
+    env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
+      case Some(api) => env.datastores.apiDataStore.set(api.copy(consumers = api.consumers.map(consumer => {
+        if (consumer.id == entity.consumerRef) {
+          consumer.copy(subscriptions = consumer.subscriptions.filter(_.ref != id))
+        }
+        else
+          consumer
+      }))).map(_ => ().right)
+      case None => Json.obj(
         "error" -> "api not found",
         "http_status_code" -> 404
       ).as[JsValue].left.vfuture
-     }
+    }
   }
 
   def writeValidator(entity: ApiConsumerSubscription,
-                                                body: JsValue,
-                                                singularName: String,
-                                                id: Option[String],
-                                                action: WriteAction,
-                                                env: Env): Future[Either[JsValue, ApiConsumerSubscription]] = {
+                     body: JsValue,
+                     singularName: String,
+                     id: Option[String],
+                     action: WriteAction,
+                     env: Env): Future[Either[JsValue, ApiConsumerSubscription]] = {
 
     implicit val ec = env.otoroshiExecutionContext
     implicit val e = env
 
     def onError(error: String): Either[JsValue, ApiConsumerSubscription] = Json.obj(
-        "error" -> s"api consumer has rejected your demand : $error",
-        "http_status_code" -> 400
-      ).left
+      "error" -> s"api consumer has rejected your demand : $error",
+      "http_status_code" -> 400
+    ).left
+
+
+    val isDraft = body.select("draft").asOptBoolean.getOrElse(false)
 
     def addSubscriptionToConsumer(api: Api): Future[Option[ApiConsumer]] = {
-        val newApi = api.copy(consumers = api.consumers.map(consumer => {
-          if (consumer.id == entity.consumerRef) {
-            if (action == WriteAction.Update) {
-              consumer.copy(subscriptions = consumer.subscriptions.map(subscription => {
-                if (subscription.ref == entity.id) {
-                  subscription.copy(entity.id)
-                } else {
-                  subscription
-                }
-              }))
-            } else {
-              consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
-            }
+      val newApi = api.copy(consumers = api.consumers.map(consumer => {
+        if (consumer.id == entity.consumerRef) {
+          if (action == WriteAction.Update) {
+            consumer.copy(subscriptions = consumer.subscriptions.map(subscription => {
+              if (subscription.ref == entity.id) {
+                subscription.copy(entity.id)
+              } else {
+                subscription
+              }
+            }))
           } else {
-            consumer
+            consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
           }
-        }))
-        env.datastores.apiDataStore.set(newApi).flatMap(result =>
-          if (result) {
-            api.consumers.find(consumer => consumer.id == entity.consumerRef).future
-          } else {
-            None.vfuture
-          }
+        } else {
+          consumer
+        }
+      }))
+
+      (if (isDraft) {
+        env.datastores.draftsDataStore.findById(entity.apiRef)
+          .map(_.get)
+          .flatMap(draft => env.datastores.draftsDataStore.set(draft.copy(content = newApi.json)))
+      } else {
+        env.datastores.apiDataStore.set(newApi)
+      }) flatMap (result =>
+        if (result) {
+          api.consumers.find(consumer => consumer.id == entity.consumerRef).future
+        } else {
+          None.vfuture
+        }
         )
     }
 
-    env.datastores.apiDataStore.findById(entity.apiRef) flatMap  {
-      case Some(api)  => api.consumers.find(_.id == entity.consumerRef) match {
-          case None => onError("consumer not found").vfuture
-          case Some(consumer) if consumer.status == ApiConsumerStatus.Published =>
-             addSubscriptionToConsumer(api).map {
-               case Some(consumer) =>
-                 entity.right
-               case None => onError("failed to add subscription to api")
-             }
-          case _ => onError("wrong status").vfuture
-        }
+    (if (!isDraft) {
+      env.datastores.apiDataStore.findById(entity.apiRef)
+    } else {
+      env.datastores.draftsDataStore.findById(entity.apiRef).map(_.map(draft => Api.format.reads(draft.content).get))
+    }) flatMap {
+      case Some(api) => api.consumers.find(_.id == entity.consumerRef) match {
+        case None => onError("consumer not found").vfuture
+        case Some(consumer) if consumer.status == ApiConsumerStatus.Published =>
+          addSubscriptionToConsumer(api).map {
+            case Some(consumer) => entity.right
+            case None => onError("failed to add subscription to api")
+          }
+        case _ => onError("wrong status").vfuture
+      }
       case _ => onError("api not found").vfuture
     }
   }
