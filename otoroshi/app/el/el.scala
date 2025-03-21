@@ -336,6 +336,10 @@ object GlobalExpressionLanguage {
               user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
             case "user.tokens.expires_in" if user.isDefined                                      =>
               user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
+            case r"user.tokens.$field@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(s"no-${field}")
+            case r"user.tokens.$field@(.*):$dv@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(dv)
             case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined                         =>
               user
                 .flatMap(_.otoroshiData)
