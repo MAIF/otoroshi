@@ -2153,7 +2153,7 @@ const UnselectedNode = ({
                   : target.hostname;
                 const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
                 const start = target.tls ? 'https://' : 'http://';
-                const backup = target.backup ? ' (backup)': '';
+                const backup = target.backup ? (<span className="badge bg-secondary" style={{ fontSize: '.75rem', marginRight: 10 }}>backup</span>) : '';
                 const mtls =
                   target.tls_config &&
                   target.tls_config.enabled &&
@@ -2187,10 +2187,10 @@ const UnselectedNode = ({
                         </span>
                       </div>
                       {mtls}
+                      {backup}
                       {start}
                       {hostname}:{target.port}
                       {end}
-                      {backup}
                     </span>
 
                     <div className="d-flex align-items-center ms-auto">
