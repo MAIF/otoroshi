@@ -189,7 +189,10 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                         >
                           <div className="d-flex items-center">
                             <label className={`col-xs-12 col-form-label`}>
-                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(/_/g, ' ')}{' '}
+                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(
+                                /_/g,
+                                ' '
+                              )}{' '}
                             </label>
                             {coreFields && !coreFields.includes(column) && (
                               <Button

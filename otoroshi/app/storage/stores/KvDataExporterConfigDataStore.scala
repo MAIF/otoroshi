@@ -80,7 +80,10 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             tlsTrustCertsFilePath = None,
             tenant = "public",
             namespace = "default",
-            topic = "otoroshi"
+            topic = "otoroshi",
+            token = None,
+            username = None,
+            password = None
           )
         )
       case Some("kafka")          =>

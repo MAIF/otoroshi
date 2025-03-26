@@ -12,6 +12,7 @@ import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-graphqlschema';
 import 'ace-builds/src-noconflict/mode-html';
 import 'ace-builds/src-noconflict/mode-xml';
+import 'ace-builds/src-noconflict/mode-prolog';
 
 import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/ext-searchbox';
@@ -31,6 +32,38 @@ export class JsonObjectAsCodeInput extends Component {
           try {
             this.props.onChange(JSON.parse(e));
           } catch (ex) { }
+        }}
+      />
+    );
+  }
+}
+
+export class JsonObjectAsCodeInputUpdatable extends Component {
+  state = {
+    value: this.props.value,
+  };
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log('componentDidUpdate');
+    if (prevProps.value !== this.props.value) {
+      console.log('trigger');
+      this.setState({ value: this.props.value });
+    }
+  }
+
+  render() {
+    return (
+      <CodeInput
+        {...this.props}
+        mode="json"
+        value={JSON.stringify(this.state.value, null, 2)}
+        onChange={(e) => {
+          try {
+            const value = JSON.parse(e);
+            this.setState({ value }, () => {
+              this.props.onChange(value);
+            });
+          } catch (ex) {}
         }}
       />
     );

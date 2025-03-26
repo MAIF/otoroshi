@@ -327,7 +327,8 @@ class NgProxyState(env: Env) {
                 id = "mirror-1",
                 hostname = "request.otoroshi.io",
                 port = 443,
-                tls = true
+                tls = true,
+                backup = false,
               )
             ),
             root = s"/gen-${idx}",
@@ -395,7 +396,8 @@ class NgProxyState(env: Env) {
                 id = "mirror-1",
                 hostname = "request.otoroshi.io",
                 port = 443,
-                tls = true
+                tls = true,
+                backup = false,
               )
             ),
             root = s"/path-${idx}",
@@ -457,7 +459,8 @@ class NgProxyState(env: Env) {
                 id = "mirror-1",
                 hostname = "request.otoroshi.io",
                 port = 443,
-                tls = true
+                tls = true,
+                backup = false,
               )
             ),
             root = s"/path-${idx}",
@@ -518,7 +521,8 @@ class NgProxyState(env: Env) {
                 id = "www.dataaccess.com",
                 hostname = "www.dataaccess.com",
                 port = 443,
-                tls = true
+                tls = true,
+                backup = false,
               )
             ),
             root = s"/webservicesserver/numberconversion.wso",

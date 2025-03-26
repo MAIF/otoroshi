@@ -52,7 +52,7 @@ class InMemoryDataStores(
   val _optimized       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
   val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
-  lazy val swredis      = if (_modern) {
+  lazy val swredis     = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)

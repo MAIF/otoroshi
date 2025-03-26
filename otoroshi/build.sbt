@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.23.0-dev"
+version := "16.25.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -141,7 +141,7 @@ libraryDependencies ++= Seq(
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                        % "jsoup"                                     % "1.15.3",
-  "org.biscuitsec"                   % "biscuit"                                   % "3.0.1",
+  "org.biscuitsec"                   % "biscuit"                                   % "4.0.0",
   "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",

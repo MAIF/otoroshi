@@ -37,12 +37,12 @@ case object Unreachable extends DataStoreHealth
 trait DataStoresBuilder extends NamedPlugin {
   override def pluginType: PluginType = PluginType.CompositeType
   def build(
-             configuration: Configuration,
-             environment: Environment,
-             lifecycle: ApplicationLifecycle,
-             clusterMode: ClusterMode,
-             env: Env
-           ): DataStores
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle,
+      clusterMode: ClusterMode,
+      env: Env
+  ): DataStores
 }
 
 trait DataStores {
@@ -140,14 +140,14 @@ trait BasicStore[T] {
   def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   // Streaming
   def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
-                                                                                                         ec: ExecutionContext,
-                                                                                                         mat: Materializer,
-                                                                                                         env: Env
+      ec: ExecutionContext,
+      mat: Materializer,
+      env: Env
   ): Source[T, NotUsed]
   def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
-                                                                                                               ec: ExecutionContext,
-                                                                                                               mat: Materializer,
-                                                                                                               env: Env
+      ec: ExecutionContext,
+      mat: Materializer,
+      env: Env
   ): Future[Seq[T]]
   def clearFromCache(id: String)(implicit env: Env): Unit
   def clearCache(id: String)(implicit env: Env): Unit
@@ -165,14 +165,14 @@ trait RedisLike {
   def get(key: String): Future[Option[ByteString]]
   def mget(keys: String*): Future[Seq[Option[ByteString]]] // multi key op ?
   def set(
-           key: String,
-           value: String,
-           exSeconds: Option[Long] = None,
-           pxMilliseconds: Option[Long] = None
-         ): Future[Boolean]
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean]
   def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                 ec: ExecutionContext,
-                                                                 env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     // no comment !!!
     exists(key).flatMap {
@@ -181,11 +181,11 @@ trait RedisLike {
     }
   }
   def setBS(
-             key: String,
-             value: ByteString,
-             exSeconds: Option[Long] = None,
-             pxMilliseconds: Option[Long] = None
-           ): Future[Boolean]
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean]
   def del(keys: String*): Future[Long] // multi key op ?
   def incr(key: String): Future[Long]
   def incrby(key: String, increment: Long): Future[Long]
@@ -219,23 +219,23 @@ trait RedisLike {
 trait OptimizedRedisLike {
   def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]]
   def serviceDescriptors_findByHost(
-                                     query: ServiceDescriptorQuery
-                                   )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+      query: ServiceDescriptorQuery
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     FastFuture.failed(new NotImplementedError())
   }
   def serviceDescriptors_findByEnv(
-                                    ev: String
-                                  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+      ev: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.env == ev))
   }
   def serviceDescriptors_findByGroup(
-                                      id: String
-                                    )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+      id: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.groups.contains(id)))
   }
   def apiKeys_findByService(
-                             service: ServiceDescriptor
-                           )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+      service: ServiceDescriptor
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.apiKeyDataStore.findAll().map { keys =>
       keys.filter { key =>
         key.authorizedOnService(service.id) || key.authorizedOnOneGroupFrom(service.groups)
@@ -377,68 +377,68 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
     /*env.metrics.withTimerAsync("otoroshi.core.store.find-all")*/ {
 
-    def actualFindAll() = {
+      def actualFindAll() = {
 
-      @inline
-      def oldSchoolFind() = {
-        redisLike
-          .keys(key("*"))
-          .flatMap(keys =>
-            if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-            else redisLike.mget(keys: _*)
-          )
-          .map(seq =>
-            seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
-              case JsSuccess(i, _) => i
-            }
-          )
-      }
+        @inline
+        def oldSchoolFind() = {
+          redisLike
+            .keys(key("*"))
+            .flatMap(keys =>
+              if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+              else redisLike.mget(keys: _*)
+            )
+            .map(seq =>
+              seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
+                case JsSuccess(i, _) => i
+              }
+            )
+        }
 
-      if (redisLike.optimized) {
-        val optRedis = redisLike.asInstanceOf[OptimizedRedisLike]
-        val kindKey  = key("")
-        optRedis.extractKind(kindKey, env).map { kind =>
-          optRedis.findAllOptimized(kind, kindKey).map { seq =>
-            seq.map(v => fromJsonSafe(v)).collect { case JsSuccess(i, _) =>
-              i
+        if (redisLike.optimized) {
+          val optRedis = redisLike.asInstanceOf[OptimizedRedisLike]
+          val kindKey  = key("")
+          optRedis.extractKind(kindKey, env).map { kind =>
+            optRedis.findAllOptimized(kind, kindKey).map { seq =>
+              seq.map(v => fromJsonSafe(v)).collect { case JsSuccess(i, _) =>
+                i
+              }
             }
+          } getOrElse {
+            oldSchoolFind()
           }
-        } getOrElse {
+        } else {
           oldSchoolFind()
         }
-      } else {
-        oldSchoolFind()
       }
-    }
 
-    if (_findAllCached) {
-      val time = System.currentTimeMillis
-      val ref  = findAllCache.get()
-      if (ref == null) {
-        lastFindAllCache.set(time)
-        actualFindAll().andThen { case Success(services) =>
-          findAllCache.set(services)
+      if (_findAllCached) {
+        val time = System.currentTimeMillis
+        val ref  = findAllCache.get()
+        if (ref == null) {
+          lastFindAllCache.set(time)
+          actualFindAll().andThen { case Success(services) =>
+            findAllCache.set(services)
+          }
+        } else {
+          if (force || (lastFindAllCache.get() + env.cacheTtl) < time) {
+            lastFindAllCache.set(time)
+            actualFindAll().andThen { case Success(services) =>
+              findAllCache.set(services)
+            }
+          } else if ((lastFindAllCache.get() + (env.cacheTtl - 1000)) < time) {
+            lastFindAllCache.set(time)
+            actualFindAll().andThen { case Success(services) =>
+              findAllCache.set(services)
+            }
+            FastFuture.successful(ref)
+          } else {
+            FastFuture.successful(ref)
+          }
         }
       } else {
-        if (force || (lastFindAllCache.get() + env.cacheTtl) < time) {
-          lastFindAllCache.set(time)
-          actualFindAll().andThen { case Success(services) =>
-            findAllCache.set(services)
-          }
-        } else if ((lastFindAllCache.get() + (env.cacheTtl - 1000)) < time) {
-          lastFindAllCache.set(time)
-          actualFindAll().andThen { case Success(services) =>
-            findAllCache.set(services)
-          }
-          FastFuture.successful(ref)
-        } else {
-          FastFuture.successful(ref)
-        }
+        actualFindAll()
       }
-    } else {
-      actualFindAll()
     }
-  }
   def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
     ids match {
       case keys if keys.isEmpty                                 => FastFuture.successful(Seq.empty[T])
@@ -490,9 +490,9 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                       = exists(extractId(value))
   // Streamed
   def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 1, pageSize: Int = Int.MaxValue)(implicit
-                                                                                                         ec: ExecutionContext,
-                                                                                                         mat: Materializer,
-                                                                                                         env: Env
+      ec: ExecutionContext,
+      mat: Materializer,
+      env: Env
   ): Source[T, NotUsed] = {
     if (fetchSize <= 0) {
       throw new RuntimeException("FetchSize should be positive")
@@ -520,9 +520,9 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       .take(pageSize)
   }
   def streamedFindAndMat(predicate: T => Boolean, fetchSize: Int, page: Int = 0, pageSize: Int = Int.MaxValue)(implicit
-                                                                                                               ec: ExecutionContext,
-                                                                                                               mat: Materializer,
-                                                                                                               env: Env
+      ec: ExecutionContext,
+      mat: Materializer,
+      env: Env
   ): Future[Seq[T]]                                                                                                    =
     streamedFind(predicate, fetchSize, page, pageSize).runWith(Sink.seq[T])
 }
@@ -577,20 +577,20 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
     redis.mget(keys: _*)
   }
   override def set(
-                    key: String,
-                    value: String,
-                    exSeconds: Option[Long] = None,
-                    pxMilliseconds: Option[Long] = None
-                  ): Future[Boolean] = {
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long] = None,
-                      pxMilliseconds: Option[Long] = None
-                    ): Future[Boolean] = {
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
@@ -703,8 +703,8 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
     redis.scard(key)
   }
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     countWrite(key, "srem")
     redis.setnxBS(key, value, ttl)
@@ -712,7 +712,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
 }
 
 class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env)
-  extends RedisLike
+    extends RedisLike
     with MetricsWrapper
     with SwappableRedis {
 
@@ -740,20 +740,20 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     redis.mget(keys: _*)
   }
   override def set(
-                    key: String,
-                    value: String,
-                    exSeconds: Option[Long] = None,
-                    pxMilliseconds: Option[Long] = None
-                  ): Future[Boolean] = {
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long] = None,
-                      pxMilliseconds: Option[Long] = None
-                    ): Future[Boolean] = {
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
@@ -870,8 +870,8 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     redis.scard(key)
   }
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     countWrite(key, "setnx")
     redis.setnxBS(key, value, ttl)
@@ -881,13 +881,13 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
 }
 
 case class IncrOptimizerItem(
-                              ops: Int,
-                              time: Int,
-                              last: AtomicLong,
-                              incr: AtomicLong,
-                              current: AtomicLong,
-                              curOps: AtomicInteger
-                            ) {
+    ops: Int,
+    time: Int,
+    last: AtomicLong,
+    incr: AtomicLong,
+    current: AtomicLong,
+    curOps: AtomicInteger
+) {
   def setCurrent(value: Long): Unit = current.set(value)
   def incrBy(increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
     val elapsed     = System.currentTimeMillis() - last.get()

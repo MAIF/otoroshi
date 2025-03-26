@@ -32,7 +32,7 @@ class PrivateAppsSessionManager(env: Env) {
       signatureAlgorithm = jwtconfig.getOptionalWithFileSupport[String]("signatureAlgorithm").getOrElse("HS256"),
       expiresAfter = jwtconfig.getOptionalWithFileSupport[FiniteDuration]("expiresAfter"),
       clockSkew = jwtconfig.getOptionalWithFileSupport[FiniteDuration]("clockSkew").getOrElse(30.seconds),
-      dataClaim = jwtconfig.getOptionalWithFileSupport[String]("dataClaim").getOrElse("data"),
+      dataClaim = jwtconfig.getOptionalWithFileSupport[String]("dataClaim").getOrElse("data")
     )
   )
 
@@ -73,6 +73,7 @@ class PrivateAppsSessionManager(env: Env) {
 }
 
 object implicits {
+
   implicit class RequestHeaderWithPrivateAppSession(val rh: RequestHeader) extends AnyVal {
     def privateAppSession(implicit env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
@@ -82,6 +83,7 @@ object implicits {
       }
     }
   }
+
   implicit class ResultWithPrivateAppSession(val result: Result) extends AnyVal {
     def privateAppSession(implicit request: RequestHeader, env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
@@ -90,27 +92,41 @@ object implicits {
         request.session
       }
     }
-    def withPrivateAppSession(session: Session)(implicit env: Env): Result = {
+
+    def withPrivateAppSession(session: Session)(implicit env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         result.withCookies(env.privateAppsSessionManager.encodeAsCookie(session))
       } else {
         result.withSession(session)
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        result
     }
-    def addingToPrivateAppSession(values: (String, String)*)(implicit request: RequestHeader, env: Env): Result = {
+
+    def addingToPrivateAppSession(values: (String, String)*)(implicit request: RequestHeader, env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data ++ values.toMap))
       } else {
-        result.withSession(values: _*)
+        result.addingToSession(values: _*)
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        result
     }
 
-    def removingFromPrivateAppSession(keys: String*)(implicit request: RequestHeader, env: Env): Result = {
+    def removingFromPrivateAppSession(keys: String*)(implicit request: RequestHeader, env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data -- keys))
       } else {
-        result.removingFromPrivateAppSession(keys: _*)
+        result.removingFromSession(keys: _*)
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        result
     }
   }
 }

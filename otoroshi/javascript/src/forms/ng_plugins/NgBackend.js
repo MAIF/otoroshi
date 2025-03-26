@@ -347,6 +347,14 @@ export default {
             defaultValue: 'changeme.oto.tools',
           },
         },
+        backup: {
+          label: 'backup',
+          type: 'bool',
+          help: 'Tell if this target is a backup one (a secondary one). Backup targets are only used when all the primary targets have failed',
+          props: {
+            defaultValue: false,
+          }
+        },
         protocol: {
           type: 'dots',
           label: 'Protocol',
@@ -470,7 +478,7 @@ export default {
               type: 'AlwaysMatch',
             },
           },
-          folded: ['hostname', 'port', 'protocol'],
+          folded: ['hostname', 'port', 'protocol', 'backup'],
           flow: [
             'hostname',
             'port',
@@ -478,6 +486,7 @@ export default {
             'weight',
             'ip_address',
             'tls',
+            'backup',
             'predicate',
             'tls_config',
           ],

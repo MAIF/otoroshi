@@ -1263,7 +1263,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.23.0-dev"
+  lazy val otoroshiVersion    = "16.25.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1616,7 +1616,9 @@ class Env(
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  lazy val sessionDomain = if (privateAppsSessionManager.isEnabled) privateAppsSessionManager.sessionDomain else configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
+  lazy val sessionDomain =
+    if (privateAppsSessionManager.isEnabled) privateAppsSessionManager.sessionDomain
+    else configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
   lazy val playSecret    = configuration.getOptionalWithFileSupport[String]("play.http.secret.key").get
 
   def sign(message: String): String =

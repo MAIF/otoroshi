@@ -129,8 +129,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       config: otoroshi.models.GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
-      _         <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), env.throttlingWindow) }
-      secCalls  <- redisCli.incrby(throttlingKey(), 1L)
+      _        <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ =>
+                    redisCli.expire(throttlingKey(), env.throttlingWindow)
+                  }
+      secCalls <- redisCli.incrby(throttlingKey(), 1L)
       fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
 

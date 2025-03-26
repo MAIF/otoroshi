@@ -62,17 +62,20 @@ object RemainingQuotas {
   val MaxValue: Long = 10000000L
   implicit val fmt   = new Format[RemainingQuotas] {
 
-    override def reads(json: JsValue): JsResult[RemainingQuotas] =  Try {
+    override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
       RemainingQuotas(
-        authorizedCallsPerWindow = json.select("authorizedCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
-        throttlingCallsPerWindow = json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
-        remainingCallsPerWindow = json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        authorizedCallsPerWindow =
+          json.select("authorizedCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        throttlingCallsPerWindow =
+          json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
+        remainingCallsPerWindow =
+          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
         authorizedCallsPerDay = json.select("authorizedCallsPerDay").asLong,
         currentCallsPerDay = json.select("currentCallsPerDay").asLong,
         remainingCallsPerDay = json.select("remainingCallsPerDay").asLong,
         authorizedCallsPerMonth = json.select("authorizedCallsPerMonth").asLong,
         currentCallsPerMonth = json.select("currentCallsPerMonth").asLong,
-        remainingCallsPerMonth = json.select("remainingCallsPerMonth").asLong,
+        remainingCallsPerMonth = json.select("remainingCallsPerMonth").asLong
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -82,13 +85,13 @@ object RemainingQuotas {
     override def writes(o: RemainingQuotas): JsValue = Json.obj(
       "authorizedCallsPerWindow" -> o.authorizedCallsPerWindow,
       "throttlingCallsPerWindow" -> o.throttlingCallsPerWindow,
-      "remainingCallsPerWindow" -> o.remainingCallsPerWindow,
-      "authorizedCallsPerDay" -> o.authorizedCallsPerDay,
-      "currentCallsPerDay" -> o.currentCallsPerDay,
-      "remainingCallsPerDay" -> o.remainingCallsPerDay,
-      "authorizedCallsPerMonth" -> o.authorizedCallsPerMonth,
-      "currentCallsPerMonth" -> o.currentCallsPerMonth,
-      "remainingCallsPerMonth" -> o.remainingCallsPerMonth,
+      "remainingCallsPerWindow"  -> o.remainingCallsPerWindow,
+      "authorizedCallsPerDay"    -> o.authorizedCallsPerDay,
+      "currentCallsPerDay"       -> o.currentCallsPerDay,
+      "remainingCallsPerDay"     -> o.remainingCallsPerDay,
+      "authorizedCallsPerMonth"  -> o.authorizedCallsPerMonth,
+      "currentCallsPerMonth"     -> o.currentCallsPerMonth,
+      "remainingCallsPerMonth"   -> o.remainingCallsPerMonth
     )
   }
 }
@@ -1930,9 +1933,9 @@ object ApiKeyHelper {
                         .build
                     Try(verifier.verify(jwt))
                       .filter { token =>
-                        val aud = Option(token.getAudience).flatMap(_.asScala.headOption.filter(v =>
-                          v.startsWith("http://") || v.startsWith("https://")
-                        ))
+                        val aud = Option(token.getAudience).flatMap(
+                          _.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
+                        )
                         if (aud.isDefined) {
                           val currentUrl = req.theUrl
                           val audience   = aud.get

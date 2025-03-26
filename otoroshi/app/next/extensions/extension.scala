@@ -405,7 +405,10 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(ApiAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.apiKey, None) })
         case None                                       => f
       }
-    } else if (hasExtensions && request.path.startsWith("/api/extensions/") && adminApiRoutes.nonEmpty) {
+    } else if (
+      hasExtensions && (request.path
+        .startsWith("/api/extensions/") || request.path.startsWith("/apis/extensions/")) && adminApiRoutes.nonEmpty
+    ) {
       adminApiRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(ApiAction.async(sourceBodyParser) { ctx =>

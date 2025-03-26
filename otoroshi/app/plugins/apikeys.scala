@@ -1145,7 +1145,7 @@ class ClientCredentialService extends RequestSink {
             val biscuitConf: BiscuitConf = conf.biscuit
 
             val symbols           = new SymbolTable()
-            val authority_builder = new Block(0, symbols)
+            val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
 
             authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
             authority_builder.add_fact(
@@ -1205,7 +1205,7 @@ class ClientCredentialService extends RequestSink {
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
               Biscuit
-                .make(rng, keypair, symbols, authority_builder.build())
+                .make(rng, keypair, authority_builder.build(symbols))
                 .serialize_b64url()
             }
 

@@ -70,7 +70,11 @@ class AuthController(
         if (logger.isDebugEnabled) logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse("--")
       case _                                                                 =>
-        req.getQueryString("hash").orElse(req.privateAppSession.get("hash")).orElse(req.session.get("hash")).getOrElse("--")
+        req
+          .getQueryString("hash")
+          .orElse(req.privateAppSession.get("hash"))
+          .orElse(req.session.get("hash"))
+          .getOrElse("--")
     }
 
     val expected = env.sign(s"${auth.id}:::$descId")
@@ -640,13 +644,19 @@ class AuthController(
                     }
                     if (webauthn) {
                       Ok(Json.obj("location" -> setCookiesRedirect))
-                        .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                          "desc"
+                        )
                         .withCookies(
                           env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
                         )
                     } else {
                       Redirect(setCookiesRedirect)
-                        .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                          "desc"
+                        )
                         .withCookies(
                           env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
                         )
@@ -888,13 +898,16 @@ class AuthController(
       ((desc, stt) match {
         case (Some(serviceId), _) if !isRoute =>
           processService(serviceId).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
-        case (Some(routeId), _) if isRoute    => processRoute(routeId).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+        case (Some(routeId), _) if isRoute    =>
+          processRoute(routeId).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
-            case Some(route) if isRoute    => processRoute(route).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
-            case Some(service) if !isRoute => processService(service).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+            case Some(route) if isRoute    =>
+              processRoute(route).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+            case Some(service) if !isRoute =>
+              processService(service).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case _                         =>
               NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
           }

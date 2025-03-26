@@ -516,12 +516,11 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   override def get(key: String): Future[Option[ByteString]] = {
     //memory.getTyped[ByteString](key).future
     memory.get(key) match {
-      case Some(bs: ByteString) => bs.some.vfuture
+      case Some(bs: ByteString)      => bs.some.vfuture
       case Some(counter: AtomicLong) => ByteString(counter.get().toString).some.vfuture
-      case _ => None.vfuture
+      case _                         => None.vfuture
     }
   }
-
 
   override def set(
       key: String,
@@ -555,10 +554,10 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def incrby(key: String, increment: Long): Future[Long] = {
     (memory.get(key) match {
-      case Some(bs: ByteString) => {
+      case Some(bs: ByteString)  => {
         val asLng = bs.utf8String.toLong
-        val cnt = new AtomicLong(asLng)
-        val fcnt = cnt.addAndGet(increment)
+        val cnt   = new AtomicLong(asLng)
+        val fcnt  = cnt.addAndGet(increment)
         memory.put(key, cnt)
         fcnt
       }
@@ -567,12 +566,12 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
         memory.put(key, cnt)
         fcnt
       }
-      case _ => {
+      case _                     => {
         val cnt = new AtomicLong(increment)
         memory.put(key, cnt) match {
           case Some(bs: ByteString) => cnt.addAndGet(bs.utf8String.toLong)
-          case Some(c: AtomicLong) => cnt.addAndGet(c.get())
-          case _ => increment
+          case Some(c: AtomicLong)  => cnt.addAndGet(c.get())
+          case _                    => increment
         }
       }
     }).vfuture

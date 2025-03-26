@@ -479,6 +479,10 @@ object Exporters {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       Option(clientRef.get()).map { cli =>
+        if (!cli.isConnected) {
+          logger.info("restarting pulsar connection as the previous one is closed !")
+          start()
+        }
         Source(events.toList)
           .mapAsync(10)(evt => cli.sendAsync(evt))
           .runWith(Sink.ignore)(env.analyticsMaterializer)
