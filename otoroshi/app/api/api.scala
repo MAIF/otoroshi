@@ -79,7 +79,9 @@ case class ResourceVersion(
     schema.getOrElse {
       Try(
         Json.parse(
-          org.json4s.jackson.JsonMethods.pretty(fi.oph.scalaschema.SchemaFactory.default.createSchema(clazz).toJson)
+          org.json4s.jackson.JsonMethods.pretty(
+            fi.oph.scalaschema.SchemaFactory.default.createSchema(clazz).toJson
+          )
         )
       ) match {
         case Failure(e) => {
@@ -2471,7 +2473,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   def openapi() = Action { req =>
-    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"))
+    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 }
