@@ -387,27 +387,18 @@ const Feature = ({ title, description, img, link, icon }) => {
     : null;
   const zeIcon = iconValue ? _.isString(iconValue) ? <i className={className} /> : iconValue : null;
   return (
-    <AutoLink
-      to={link}
-      className="cards"
-    >
+    <AutoLink to={link} className="cards">
       <div
-      className="cards-header"
+        className="cards-header"
         style={{
-          background: `url(${img})`
+          background: `url(${img})`,
         }}
       ></div>
-      <div
-        className="cards-body"
-      >
-        <div
-          className="cards-title"
-        >
+      <div className="cards-body">
+        <div className="cards-title">
           {zeIcon} {title}
         </div>
-        <div
-          className="cards-description"
-        >
+        <div className="cards-description">
           <p>{description}</p>
         </div>
       </div>

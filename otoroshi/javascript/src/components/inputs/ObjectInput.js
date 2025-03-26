@@ -1,5 +1,6 @@
 import React from 'react';
 import { Help } from './Help';
+import bcrypt from 'bcryptjs';
 
 export class ObjectInput extends React.Component {
   state = {
@@ -103,6 +104,17 @@ export class ObjectInput extends React.Component {
     }
   };
 
+  disableBcrypt = (value) => {
+    if (!value) return false;
+    return (
+      value.startsWith('$2a$') ||
+      value.startsWith('$2$') ||
+      value.startsWith('$2b$') ||
+      value.startsWith('$2x$') ||
+      value.startsWith('$2y$')
+    );
+  };
+
   render() {
     const { data } = this.state;
     const props = this.props;
@@ -160,14 +172,30 @@ export class ObjectInput extends React.Component {
                     {props.valueRenderer &&
                       props.valueRenderer(key, value, idx, (e) => this.changeValue(idx, key, e))}
                     {!props.valueRenderer && (
-                      <input
-                        disabled={props.disabled}
-                        type="text"
-                        className="form-control"
-                        placeholder={props.placeholderValue}
-                        value={value}
-                        onChange={(e) => this.changeValue(idx, key, e)}
-                      />
+                      <>
+                        <input
+                          disabled={props.disabled}
+                          type="text"
+                          className="form-control"
+                          placeholder={props.placeholderValue}
+                          value={value}
+                          onChange={(e) => this.changeValue(idx, key, e)}
+                        />
+                        {props.bcryptable ? (
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            disabled={this.disableBcrypt(value)}
+                            onClick={(e) => {
+                              this.changeValue(idx, key, {
+                                target: { value: bcrypt.hashSync(value, 10) },
+                              });
+                            }}
+                          >
+                            bcrypt
+                          </button>
+                        ) : null}
+                      </>
                     )}
                   </>
                 )}

@@ -8,9 +8,24 @@ import otoroshi.env.Env
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
 import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPublicKeyInfo}
 import org.bouncycastle.cert.X509CertificateHolder
-import org.bouncycastle.cert.ocsp.{BasicOCSPRespBuilder, CertificateID, CertificateStatus, OCSPReq, OCSPResp, OCSPRespBuilder, Req, RespID, RevokedStatus, UnknownStatus}
+import org.bouncycastle.cert.ocsp.{
+  BasicOCSPRespBuilder,
+  CertificateID,
+  CertificateStatus,
+  OCSPReq,
+  OCSPResp,
+  OCSPRespBuilder,
+  Req,
+  RespID,
+  RevokedStatus,
+  UnknownStatus
+}
 import org.bouncycastle.operator.{ContentSigner, DefaultDigestAlgorithmIdentifierFinder, DigestCalculatorProvider}
-import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
+import org.bouncycastle.operator.jcajce.{
+  JcaContentSignerBuilder,
+  JcaContentVerifierProviderBuilder,
+  JcaDigestCalculatorProviderBuilder
+}
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
 import otoroshi.ssl._
@@ -123,7 +138,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
           case Success(v) => v
         }
       } match {
-        case None => Results.NotFound("").as("application/pkix-cert").future
+        case None       => Results.NotFound("").as("application/pkix-cert").future
         case Some(cert) => Results.Ok(cert.certificate.get.asPem).as("application/pkix-cert").future
       }
     } else {
@@ -131,7 +146,9 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(implicit ec: ExecutionContext): Future[Result] = {
+  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(implicit
+      ec: ExecutionContext
+  ): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
       if (bs.isEmpty) {
         FastFuture.successful(
@@ -143,9 +160,10 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
         if (ocspReq.isSigned && !isSignatureValid(ocspReq)) {
           Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded).future
         } else {
-          manageRequest(ocspReq, possibleCerts.flatMap(id => env.proxyState.certificate(id).flatMap(_.serialNumberLng))).map { response =>
-            Results.Ok(response.getEncoded)
-          } recover { case e: Throwable =>
+          manageRequest(ocspReq, possibleCerts.flatMap(id => env.proxyState.certificate(id).flatMap(_.serialNumberLng)))
+            .map { response =>
+              Results.Ok(response.getEncoded)
+            } recover { case e: Throwable =>
             logger.error("error while checking certificate", e)
             Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.INTERNAL_ERROR, null).getEncoded)
           }
@@ -217,7 +235,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
       request: Req,
       issuingCertificate: JcaX509CertificateHolder,
       digestCalculatorProvider: DigestCalculatorProvider,
-      possibleCerts: Seq[BigInteger],
+      possibleCerts: Seq[BigInteger]
   ): Unit = {
     val certificateID = request.getCertID
 
@@ -243,10 +261,12 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
       )
 
     } else {
-      val r = DynamicSSLEngineProvider._ocspProjectionCertificates.get(certificateID.getSerialNumber)
-      val certificateStatus = if (possibleCerts.isEmpty) r else {
-        if (possibleCerts.contains(certificateID.getSerialNumber)) r else None
-      }
+      val r                 = DynamicSSLEngineProvider._ocspProjectionCertificates.get(certificateID.getSerialNumber)
+      val certificateStatus =
+        if (possibleCerts.isEmpty) r
+        else {
+          if (possibleCerts.contains(certificateID.getSerialNumber)) r else None
+        }
       getOCSPCertificateStatus(certificateStatus).foreach(value => {
         responseBuilder.addResponse(request.getCertID, value._1, value._2.toDate, value._3.toDate, extensions)
       })

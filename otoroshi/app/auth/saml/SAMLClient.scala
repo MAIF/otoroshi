@@ -32,6 +32,7 @@ import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
 import org.w3c.dom.ls.DOMImplementationLS
 import org.w3c.dom.{Document, Node}
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
@@ -115,7 +116,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
           }
           Redirect(redirectUrl)
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirectTo,
               "hash"                                                            -> env.sign(s"${authConfig.id}:::${descriptor.id}"),
               "desc"                                                            -> descriptor.id,
@@ -784,7 +785,7 @@ case class SamlAuthModuleConfig(
     sessionCookieValues: SessionCookieValues,
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata

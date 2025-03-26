@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
+import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
@@ -194,7 +195,7 @@ case class GenericOauth2ModuleConfig(
     otoroshiRightsField: String = "otoroshi_rights",
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
@@ -351,7 +352,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
     Redirect(
       if (authConfig.noWildcardRedirectURI) s"$loginUrl&state=$state" else loginUrl
-    ).addingToSession(
+    ).addingToPrivateAppSession(
       sessionParams ++ Map(
         // s"${authConfig.id}-desc"                                          -> descriptor.id,
         "route"                                                           -> s"$isRoute",
@@ -687,7 +688,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               clientSecret,
               redirectUri,
               config,
-              request.session.get(s"${authConfig.id}-code_verifier")
+              request.privateAppSession.get(s"${authConfig.id}-code_verifier")
             )
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]

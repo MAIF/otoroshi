@@ -40,7 +40,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         //  .getOrElse(
         routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
         //  )
-      ) //.removingFromSession("pa-redirect-after-login")
+      ) //.removingFromPrivateAppSession("pa-redirect-after-login")
     }
 
   def error(message: Option[String] = None) =

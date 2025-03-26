@@ -154,6 +154,7 @@ class TryItController(
             port = if (isHttps) env.httpsPort else env.port,
             tls = isHttps,
             ipAddress = "127.0.0.1".some,
+            backup = false,
             tlsConfig = NgTlsConfig(
               certs = clientCert.toSeq,
               enabled = true,

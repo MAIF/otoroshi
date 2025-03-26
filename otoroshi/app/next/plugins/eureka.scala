@@ -49,7 +49,8 @@ object EurekaInstance {
       hostname = instance.hostname,
       tls = instance.isSecured,
       ipAddress = Some(instance.ipAddr),
-      port = if (instance.isSecured) instance.securePort else instance.port
+      port = if (instance.isSecured) instance.securePort else instance.port,
+      backup = false,
     )
   }
 

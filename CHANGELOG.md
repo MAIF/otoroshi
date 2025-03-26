@@ -6,6 +6,176 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [16.24.0] - 2025-02-26
+
+
+https://github.com/MAIF/otoroshi/milestone/111?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.2...v16.24.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.24.0
+
+
+### Added 
+
+- CORS plugin: Accept * as Access-Control-Allow-Headers (#2099)       
+      
+### Changed 
+
+- enhance secret vaults doc (#2090)
+- No Route data in GatewayEvent logs when a call is blocked by Otoroshi (#2092)
+- Ensure correct tenant and teams are displayed when creating new entities (#2096)
+- Ensure the correct tenant and teams are displayed when using 'Get from OIDC config' (#2097)       
+      
+### Fixed 
+
+- fix kubernetes vault implementation (#2091)
+- pulsar connector cannot use basic or token auth. (#2110)       
+      
+### Documentation 
+
+- enhance secret vaults doc (#2090)       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @dmorvant-altima
+
+## [16.23.2] - 2025-02-04
+
+
+https://github.com/MAIF/otoroshi/milestone/109?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.1...v16.23.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.2
+
+
+### Added 
+
+- add sidebar category for WAF (#2084)
+- upgrade coraza to use latest CRS (#2085)
+- Allow extensions to use CodeInput (#2088)       
+      
+### Changed 
+
+- enhance WAF UI (#2087)       
+      
+### Fixed 
+
+- recursive call in the privateapp session manager (#2086)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [16.23.1] - 2025-01-31
+
+
+https://github.com/MAIF/otoroshi/milestone/110?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.23.0...v16.23.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.1
+
+
+### Added 
+
+- allow to define vaults using environment variables (#2083)       
+      
+
+
+
+### Contributors
+
+* @mathieuancelin
+
+## [16.23.0] - 2025-01-30
+
+
+https://github.com/MAIF/otoroshi/milestone/108?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.22.0...v16.23.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.23.0
+
+
+### Added 
+
+- plugin to add cookie in a request (#2057)
+- plugin to add cookie in a response (#2058)
+- plugin to add cookie in a request if missing (#2059)
+- plugin to add cookie in a response if missing (#2060)
+- plugin to validate cookie values (#2061)
+- plugin to remove cookie from a request (#2062)
+- plugin to add cookie in a response (#2063)
+- admin. extensions should be able to provide public keys that can be exposed in /.well-known/jwks.json (#2074)
+- support write validation on generic API entities (#2078)
+- support delete validation on generic API entities (#2079)
+- Add support for client certificate in expression language (#2082)       
+      
+### Changed 
+
+- use a separate session for every interactions happening on the sso domain (#2056)
+- JQ plugins filter must be a code input in UI (#2065)       
+      
+### Fixed 
+
+- weight ratio in LoadBalancing section of Backend should only be visible for WeightedBestResponseTime strategy (#2064)
+- Quotas Consumptions are wrong (#2066)
+- Throttling quota doesn't block request ? (#2067)
+- Prevent JWT validation failure as an API key when the audience is null  (#2072)
+- None.get error on unknown entity using generic admin APIs (#2077)
+- client_credentials plugin should not accept any kind of apikey, only the one authorized on the route (#2081)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @cbois
+
+## [16.22.0] - 2024-12-16
+
+
+https://github.com/MAIF/otoroshi/milestone/107?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.21.0...v16.22.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.22.0
+
+
+### Added 
+
+- add user allowed/denied list to auth. modules (#2031)
+- add version endpoint on the new admin api (#2039)
+- add infos endpoint on the new admin api (#2040)
+- add health endpoint on the new admin api (#2041)
+- add metrics endpoint on the new admin api (#2042)
+- add cluster members endpoint on the new admin api (#2043)
+- new plugin to provide OCSP Responder as a user endpoint (#2044)
+- new plugin to provide Authority Information Access as a user endpoint (#2045)
+- new plugin to provide Otoroshi JWKS as a user endpoint  (#2046)
+- new plugin to provide Otoroshi Health informations as a user endpoint (#2047)
+- new plugin to provide Otoroshi Metrics as a user endpoint (#2048)
+- add env. variable for session sameSite attribute (#2054)
+- plugin to add very simple basic auth. without complex user management (#2055)       
+      
+### Changed 
+
+- support a limited certificate set for the OCSP responder plugin (#2049)
+- support filter config for the otoroshi metrics endpoint plugin (#2050)
+- support a limited certificate set for the AIA plugin (#2051)       
+      
+### Fixed 
+
+- handle request domain as case insensitive in router (#2029)
+- static assets plugin does not use the right host header (#2030)
+- apikeys table doesn't work anymore (#2032)
+- Routes exports as JwtVerifiers from the UI (#2033)
+- command + clic on routes doesn't work anymore (#2034)
+- Support pagination server and client side (#2035)
+- Admin API generates badly labeled AdminApiEvent (#2052)
+- Redirection if already logged in to a auth. modules creates a redirection loop (#2053)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [16.21.0] - 2024-11-27
 
 

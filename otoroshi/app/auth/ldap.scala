@@ -5,6 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 
@@ -281,7 +282,7 @@ case class LdapAuthModuleConfig(
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty,
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
   def humanName: String = "Ldap auth. provider"
@@ -806,7 +807,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           Results
             .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
@@ -842,7 +843,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 env
               )
           )
-          .addingToSession(
+          .addingToPrivateAppSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )

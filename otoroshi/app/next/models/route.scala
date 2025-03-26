@@ -98,7 +98,9 @@ case class NgRoute(
       val methodPasses = if (frontend.methods.isEmpty) true else frontend.methods.contains(method)
       if (methodPasses) {
         val res      = frontend.domains
-          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain)))
+          .applyOnIf(!skipDomainVerif)(
+            _.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain))
+          )
           .applyOn { seq =>
             if (frontend.exact) {
               noMoreSegments
@@ -727,7 +729,8 @@ object NgRoute {
           id = "tls://request.otoroshi.io:443",
           hostname = "request.otoroshi.io",
           port = 443,
-          tls = true
+          tls = true,
+          backup = false,
         )
       ),
       root = "/",
@@ -1314,7 +1317,8 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
             id = "target_1",
             hostname = "request.otoroshi.io",
             port = 443,
-            tls = true
+            tls = true,
+            backup = false,
           )
         ),
         root = "/",

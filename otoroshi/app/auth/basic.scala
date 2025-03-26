@@ -15,6 +15,7 @@ import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -165,7 +166,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -189,7 +190,7 @@ case class BasicAuthModuleConfig(
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     allowedUsers: Seq[String] = Seq.empty,
-    deniedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String                                                    = "basic"
   def humanName: String                                                 = "In memory auth. provider"
@@ -339,7 +340,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           Results
             .Unauthorized("")
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
@@ -382,7 +383,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 env
               )
           )
-          .addingToSession(
+          .addingToPrivateAppSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )

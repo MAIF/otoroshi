@@ -595,6 +595,9 @@ class GatewayRequestHandler(
             env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
               super.routeRequest(request)
             )
+          case h if (h == env.adminApiExposedHost || env.adminApiDomains.contains(h) || h == env.adminApiHost) && !env.exposeAdminApi => {
+            Some(adminApiNotExposed())
+          }
           case _                                                                                                   => {
             if (relativeUri.startsWith("/.well-known/otoroshi/")) {
               env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(
@@ -707,9 +710,13 @@ class GatewayRequestHandler(
 
   def jwks() =
     actionBuilder.async { req =>
-      JWKSHelper.jwks(req, Seq.empty).map {
-        case Left(body)  => Results.NotFound(body)
-        case Right(body) => Results.Ok(body)
+      env.adminExtensions.publicKeys().flatMap { extensionsPublicKeys =>
+        JWKSHelper.jwks(req, Seq.empty).map {
+          case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)
+          case Left(_) if extensionsPublicKeys.isEmpty    =>
+            Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
+          case Right(keys)                                => Results.Ok(JsArray(keys ++ extensionsPublicKeys.map(_.raw)))
+        }
       }
     }
 
@@ -999,6 +1006,11 @@ class GatewayRequestHandler(
   def forbidden() =
     actionBuilder { req =>
       Forbidden(Json.obj("error" -> "forbidden"))
+    }
+
+  def adminApiNotExposed() =
+    actionBuilder { req =>
+      NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =

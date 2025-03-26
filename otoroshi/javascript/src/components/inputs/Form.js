@@ -13,7 +13,7 @@ import {
 // import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
-import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix
+import { JsonObjectAsCodeInput, JsonObjectAsCodeInputUpdatable } from './CodeInput'; // TODO: fix
 
 import isFunction from 'lodash/isFunction';
 import cloneDeep from 'lodash/cloneDeep';
@@ -274,6 +274,18 @@ export class Form extends Component {
               />
             </Suspense>
           );
+        } else if (type === 'jsonobjectcodeupdatable') {
+          component = (
+            <Suspense fallback={<div>loading ...</div>}>
+              <JsonObjectAsCodeInputUpdatable
+                disabled={disabled}
+                key={name}
+                value={this.getValue(name, '')}
+                {...props}
+                onChange={(v) => this.changeValue(name, v)}
+              />
+            </Suspense>
+          );
         } else if (type === 'text') {
           component = (
             <TextareaInput
@@ -296,6 +308,8 @@ export class Form extends Component {
           );
         } else if (type === 'label') {
           component = <LabelInput key={name} value={this.getValue(name, '')} {...props} />;
+        } else if (type === 'display') {
+          component = <LabelInput key={name} value={props.value} {...props} />;
         } else if (type === 'number') {
           component = (
             <NumberInput

@@ -29,6 +29,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Working with Eureka](./working-with-eureka.md)
 * @ref:[Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
 * @ref:[Quickly expose a website and static files](./zip-backend-plugin.md)
+* @ref:[Calling Otoroshi from a frontend](./calling-otoroshi-from-a-frontend.md)
 
 @@@ index
 
@@ -59,4 +60,5 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Working with Eureka](./working-with-eureka.md)
 * [Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
 * [Zip Backend plugin](./zip-backend-plugin.md) 
+* [Calling Otoroshi from a frontend](./calling-otoroshi-from-a-frontend.md)
 @@@

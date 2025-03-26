@@ -212,18 +212,18 @@ export class ServiceEventsPage extends Component {
     { title: 'Headers Count', content: (item) => item.headers.length, filterable: false },
     {
       title: 'Calls per sec',
-      filterId: 'remainingQuotas.currentCallsPerSec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerSec),
+      filterId: 'remainingQuotas.throttlingCallsPerWindow',
+      content: (item) => safe(item.remainingQuotas, (i) => i.throttlingCallsPerWindow),
     },
     {
       title: 'Auth. calls per sec',
-      filterId: 'remainingQuotas.authorizedCallsPerSec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerSec),
+      filterId: 'remainingQuotas.authorizedCallsPerWindow',
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerWindow),
     },
     {
       title: 'Rem. calls per sec',
-      filterId: 'remainingQuotas.remainingCallsPerSec',
-      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerSec),
+      filterId: 'remainingQuotas.remainingCallsPerWindow',
+      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerWindow),
     },
     {
       title: 'Calls per day',

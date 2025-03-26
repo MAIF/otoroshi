@@ -13,7 +13,7 @@ import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
+import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
@@ -189,7 +189,7 @@ object implicits {
       if (f) seq ++ other else seq
   }
 
-  implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
+  implicit class BetterSyntax[A](private val obj: A)           extends AnyVal {
     def seq: Seq[A]                                                 = Seq(obj)
     def set: Set[A]                                                 = Set(obj)
     def list: List[A]                                               = List(obj)
@@ -254,7 +254,7 @@ object implicits {
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
-  implicit class BetterString(private val obj: String)                 extends AnyVal {
+  implicit class BetterString(private val obj: String)         extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String                            = obj.slug
     def slugifyWithSlash: String                   = obj.slug2
@@ -285,18 +285,18 @@ object implicits {
         .asInstanceOf[X509Certificate]
     }
   }
-  implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
+  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
     def sha256: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
     def sha512: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
-  implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
+  implicit class BetterBoolean(private val obj: Boolean)       extends AnyVal {
     def json: JsValue = JsBoolean(obj)
   }
-  implicit class BetterDouble(private val obj: Double)                 extends AnyVal {
+  implicit class BetterDouble(private val obj: Double)         extends AnyVal {
     def json: JsValue = JsNumber(obj)
   }
-  implicit class BetterInt(private val obj: Int)                       extends AnyVal {
+  implicit class BetterInt(private val obj: Int)               extends AnyVal {
     def json: JsValue         = JsNumber(obj)
     def atomic: AtomicInteger = new AtomicInteger(obj)
     def bytes: Array[Byte] = {
@@ -308,7 +308,7 @@ object implicits {
       )
     }
   }
-  implicit class BetterLong(private val obj: Long)                     extends AnyVal {
+  implicit class BetterLong(private val obj: Long)             extends AnyVal {
     def json: JsValue      = JsNumber(obj)
     def atomic: AtomicLong = new AtomicLong(obj)
     def bytes: Array[Byte] = {
@@ -324,11 +324,15 @@ object implicits {
       )
     }
   }
-  implicit class BetterJsValue(private val obj: JsValue)               extends AnyVal {
-    def stringify: String                    = Json.stringify(obj)
-    def prettify: String                     = Json.prettyPrint(obj)
-    def select(name: String): JsLookupResult = obj \ name
-    def select(index: Int): JsLookupResult   = obj \ index
+  implicit class BetterJsValue(private val obj: JsValue)       extends AnyVal {
+    def stringify: String                              = Json.stringify(obj)
+    def prettify: String                               = Json.prettyPrint(obj)
+    def select(name: String): JsLookupResult           = obj \ name
+    def select(index: Int): JsLookupResult             = obj \ index
+    def multiSelect(snakeCase: String): JsLookupResult = select(snakeToCamel(snakeCase)) match {
+      case res @ JsDefined(_) => res
+      case _: JsUndefined     => select(snakeCase)
+    }
     def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
       parts.foldLeft(Option(obj)) {
@@ -359,6 +363,16 @@ object implicits {
         case Some(value) => JsDefined(value)
       }
     }
+
+    private def snakeToCamel(s: String): String = s
+      .split("_")
+      .zipWithIndex
+      .map { case (word, index) =>
+        if (index == 0) word
+        else word.capitalize
+      }
+      .mkString
+
   }
   implicit class BetterJsValueOption(private val obj: Option[JsValue]) extends AnyVal {
     def orJsNull: JsValue = obj.getOrElse(JsNull)
@@ -665,6 +679,7 @@ object implicits {
     def containsAll(elems: Seq[A]): Boolean = {
       elems.forall(e => seq.contains(e))
     }
+
     def avgBy(f: A => Int): Double = {
       if (seq.isEmpty) 0.0
       else {
@@ -674,6 +689,7 @@ object implicits {
         sum / seq.size
       }
     }
+
     def findFirstSome[B](f: A => Option[B]): Option[B] = {
       if (seq.isEmpty) {
         None
@@ -686,6 +702,40 @@ object implicits {
         }
         None
       }
+    }
+
+    def mapAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+      AsyncUtils.mapAsyncF[A, O](seq)(f)
+    }
+
+    def flatmapAsync[O](f: Function[A, Future[Seq[O]]])(implicit ec: ExecutionContext): Future[Seq[O]] = {
+      AsyncUtils.flatmapAsyncF[A, O](seq)(f)
+    }
+
+    def filterAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+      AsyncUtils.filterAsyncF[A](seq)(f)
+    }
+
+    def findAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[A]] = {
+      AsyncUtils.findAsyncF[A](seq)(f)
+    }
+
+    def existsAsync(f: Function[A, Future[Boolean]])(implicit ec: ExecutionContext): Future[Boolean] = {
+      AsyncUtils.findAsyncF[A](seq)(f).map(_.isDefined)
+    }
+
+    def foreachAsync[O](f: Function[A, Future[O]])(implicit ec: ExecutionContext): Future[Unit] = {
+      AsyncUtils.foreachAsyncF[A, O](seq)(f)
+    }
+
+    def chainAsync[I](input: I)(f: Function2[A, I, Future[I]])(implicit ec: ExecutionContext): Future[I] = {
+      AsyncUtils.chainAsyncF[A, I](seq)(input)(f)
+    }
+
+    def chainAsyncE[Err, I](
+        input: I
+    )(f: Function2[A, I, Future[Either[Err, I]]])(implicit ec: ExecutionContext): Future[Either[Err, I]] = {
+      AsyncUtils.chainAsyncFE[Err, A, I](seq)(input)(f)
     }
   }
 

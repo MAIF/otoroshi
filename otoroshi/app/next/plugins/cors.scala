@@ -99,8 +99,8 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       ctx: NgPreRoutingContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req  = ctx.request
-    // val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
+
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
       // handle cors preflight request
       if (cors.legacy.shouldNotPass(req)) {
@@ -136,10 +136,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
-    val req         = ctx.request
-    val cors        =
-      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
-    val corsHeaders = cors
+    val req  = ctx.request
+    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
+
+    val corsHeaders = cors.legacy
       .asHeaders(req)
       .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
       .map(v =>
@@ -165,10 +165,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def transformError(
       ctx: NgTransformerErrorContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
-    val req         = ctx.request
-    val cors        =
-      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
-    val corsHeaders = cors
+    val req  = ctx.request
+    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
+
+    val corsHeaders = cors.legacy
       .asHeaders(req)
       .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
       .map(v =>

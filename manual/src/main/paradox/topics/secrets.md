@@ -12,27 +12,30 @@ By default secrets management is disbaled. You can enable it by setting `otorosh
 
 ## Global configuration
 
-Secrets management can be only configured using otoroshi static configuration file (also using jvm args mechanism). 
+Secrets management can be configured using otoroshi **static configuration file** (also using **jvm args mechanism**). 
 The configuration is located at `otoroshi.vaults` where you can find the global configuration of the secrets management system and the configurations for each enabled secrets management backends. Basically it looks like
 
 ```conf
-vaults {
-  enabled = false
-  enabled = ${?OTOROSHI_VAULTS_ENABLED}
-  secrets-ttl = 300000 # 5 minutes
-  secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
-  cached-secrets = 10000
-  cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
-  read-timeout = 10000 # 10 seconds
-  read-timeout = ${?OTOROSHI_VAULTS_READ_TIMEOUT}
-  # if enabled, only leader nodes fetches the secrets.
-  # entities with secret values filled are then sent to workers when they poll the cluster state.
-  # only works if `otoroshi.cluster.autoUpdateState=true`
-  leader-fetch-only = false
-  leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
-  env {
-    type = "env"
-    prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+otoroshi {
+  ...
+  vaults {
+    enabled = false
+    enabled = ${?OTOROSHI_VAULTS_ENABLED}
+    secrets-ttl = 300000 # 5 minutes
+    secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    cached-secrets = 10000
+    cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
+    read-timeout = 10000 # 10 seconds
+    read-timeout = ${?OTOROSHI_VAULTS_READ_TIMEOUT}
+    # if enabled, only leader nodes fetches the secrets.
+    # entities with secret values filled are then sent to workers when they poll the cluster state.
+    # only works if `otoroshi.cluster.autoUpdateState=true`
+    leader-fetch-only = false
+    leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
+    env {
+      type = "env"
+      prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
   }
 }
 ```
@@ -44,6 +47,16 @@ The configuration keys can be used for
 - `secrets-ttl`: the amount of milliseconds before the secret value is read again from backend
 - `cached-secrets`: the number of secrets that will be cached on an otoroshi instance
 - `read-timeout`: the timeout (in milliseconds) to read a secret from a backend
+
+You can also use **env. variables to configure a vault**. Do do that you need to define an env. variable named like `OTOROSHI_VAULTS_INSTANCES_NAME_OF_THE_VAULT` and containing the vault configuration as JSON value:
+
+```sh
+export OTOROSHI_VAULTS_INSTANCES_MYVAULT='{"type":"kubernetes"}'
+```
+
+in the previous example, we instanciate a vault of type `kubernetes` with name `MYVAULT`. So you can use it with a vault expression like:
+
+`${vault://MYVAULT/namespace/secret_name/secret_key}`
 
 ## Entities with secrets management
 
@@ -70,13 +83,16 @@ in the previously listed entities, you can define, almost everywhere, references
 let say I define a new apikey with the following value as secret `${vault://my_env/apikey_secret}` with the following secrets management configuration
 
 ```conf
-vaults {
-  enabled = true
-  secrets-ttl = 300000
-  cached-secrets = 10000
-  read-ttl = 10000
-  my_env {
-    type = "env"
+otoroshi {
+  ...
+  vaults {
+    enabled = true
+    secrets-ttl = 300000
+    cached-secrets = 10000
+    read-ttl = 10000
+    my_env {
+      type = "env"
+    }
   }
 }
 ```
@@ -96,11 +112,14 @@ Otoroshi comes with the support of several secrets management backends.
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "env"
-    prefix = "the_prefix_added_to_the_name_of_the_env_variable"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "env"
+      prefix = "the_prefix_added_to_the_name_of_the_env_variable"
+    }
   }
 }
 ```
@@ -110,16 +129,21 @@ vaults {
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "local"
-    root = "the_root_path/in_otoroshi/environment"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "local"
+      root = "the_root_path/in_otoroshi/environment"
+    }
   }
 }
 ```
 
-value of this vault can be configured in the danger zone > Global metadata > Otoroshi environment.
+values of this vault can be configured in the danger zone > Global metadata > Otoroshi environment.
+
+there is an editor of a freeform JSON object where any key can be accessed through the `local` vault.
 
 ### Infisical
 
@@ -128,16 +152,19 @@ a backend for the awesome open source project [Infisical](https://infisical.com/
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "infisical"
-    baseUrl = "https://app.infisical.com" # optional, the base url of your infisical server, fallbacks to https://app.infisical.com
-    serviceToken = "st.xxxx.yyyy.zzzz" # the service token for your projet
-    e2ee = true # are you secrets end to end encrypted
-    defaultSecretType = "shared" # optional, fallbacks to shared
-    defaultWorkspaceId = "xxxxxx" # optional, value can be passed in the secret address
-    defaultEnvironment = "dev" # optional, value can be passed in the secret address
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "infisical"
+      baseUrl = "https://app.infisical.com" # optional, the base url of your infisical server, fallbacks to https://app.infisical.com
+      serviceToken = "st.xxxx.yyyy.zzzz" # the service token for your projet
+      e2ee = true # are you secrets end to end encrypted
+      defaultSecretType = "shared" # optional, fallbacks to shared
+      defaultWorkspaceId = "xxxxxx" # optional, value can be passed in the secret address
+      defaultEnvironment = "dev" # optional, value can be passed in the secret address
+    }
   }
 }
 ```
@@ -153,14 +180,17 @@ a backend for [Hashicorp Vault](https://www.vaultproject.io/). Right now we only
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "hashicorp-vault"
-    url = "http://127.0.0.1:8200"
-    mount = "kv" # the name of the secret store in vault
-    kv = "v2" # the version of the kv store (v1 or v2)
-    token = "root" # the token that can access to your secrets
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "hashicorp-vault"
+      url = "http://127.0.0.1:8200"
+      mount = "kv" # the name of the secret store in vault
+      kv = "v2" # the version of the kv store (v1 or v2)
+      token = "root" # the token that can access to your secrets
+    }
   }
 }
 ```
@@ -175,16 +205,19 @@ a backend for [Azure Key Vault](https://azure.microsoft.com/en-en/services/key-v
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "azure"
-    url = "https://keyvaultname.vault.azure.net"
-    api-version = "7.2" # the api version of the vault
-    tenant = "xxxx-xxx-xxx" # your azure tenant id, optional
-    client_id = "xxxxx" # your azure client_id
-    client_secret = "xxxxx" # your azure client_secret
-    # token = "xxx" possible if you have a long lived existing token. will take over tenant / client_id / client_secret
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "azure"
+      url = "https://keyvaultname.vault.azure.net"
+      api-version = "7.2" # the api version of the vault
+      tenant = "xxxx-xxx-xxx" # your azure tenant id, optional
+      client_id = "xxxxx" # your azure client_id
+      client_secret = "xxxxx" # your azure client_secret
+      # token = "xxx" possible if you have a long lived existing token. will take over tenant / client_id / client_secret
+    }
   }
 }
 ```
@@ -204,13 +237,16 @@ a backend for [AWS Secrets Manager](https://aws.amazon.com/en/secrets-manager/)
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "aws"
-    access-key = "key"
-    access-key-secret = "secret"
-    region = "eu-west-3" # the aws region of your secrets management
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "aws"
+      access-key = "key"
+      access-key-secret = "secret"
+      region = "eu-west-3" # the aws region of your secrets management
+    }
   }
 }
 ```
@@ -224,12 +260,15 @@ a backend for [Google Cloud Secrets Manager](https://cloud.google.com/secret-man
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "gcloud"
-    url = "https://secretmanager.googleapis.com"
-    apikey = "secret"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "gcloud"
+      url = "https://secretmanager.googleapis.com"
+      apikey = "secret"
+    }
   }
 }
 ```
@@ -243,13 +282,16 @@ a backend for [AlibabaCloud Secrets Manager](https://www.alibabacloud.com/help/e
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "alibaba-cloud"
-    url = "https://kms.eu-central-1.aliyuncs.com"
-    access-key-id = "access-key"
-    access-key-secret = "secret"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "alibaba-cloud"
+      url = "https://kms.eu-central-1.aliyuncs.com"
+      access-key-id = "access-key"
+      access-key-secret = "secret"
+    }
   }
 }
 ```
@@ -264,19 +306,21 @@ a backend for [Kubernetes secrets](https://kubernetes.io/en/docs/concepts/config
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "kubernetes"
-    # see the configuration of the kubernetes plugin, 
-    # by default if the pod if well configured, 
-    # you don't have to setup anything
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "kubernetes"
+      # see the configuration of the kubernetes plugin, 
+      # by default if the pod if well configured, 
+      # you don't have to setup anything
+    }
   }
 }
 ```
 
-you should define your references like `${vault://k8s_vault/namespace/secret_name/key_name}`. `key_name` is optional. if present, otoroshi will try to lookup `key_name` in the secrets `stringData`, if not defined the secrets `data` will be base64 decoded and used.
-
+you should define your references like `${vault://k8s_vault/namespace/secret_name/key_name}`. if no secret data with `key_name` is present, then otoroshi try to lookup `key_name` in the secrets `stringData`.
 
 ### Izanami config.
 
@@ -286,13 +330,16 @@ a backend for [Izanami config.](https://maif.github.io/izanami/manual/)
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "izanami"
-    url = "http://127.0.0.1:8200"
-    client-id = "client"
-    client-secret = "secret"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "izanami"
+      url = "http://127.0.0.1:8200"
+      client-id = "client"
+      client-secret = "secret"
+    }
   }
 }
 ```
@@ -307,14 +354,17 @@ a backend for [Spring Cloud Config.](https://docs.spring.io/spring-cloud-config/
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "spring-cloud"
-    url = "http://127.0.0.1:8000"
-    root = "myapp/prod"
-    headers {
-      authorization = "Basic xxxx"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "spring-cloud"
+      url = "http://127.0.0.1:8000"
+      root = "myapp/prod"
+      headers {
+        authorization = "Basic xxxx"
+      }
     }
   }
 }
@@ -329,13 +379,16 @@ a backend for that uses the result of an http endpoint
 the configuration of this backend should be like
 
 ```conf
-vaults {
+otoroshi {
   ...
-  name_of_the_vault {
-    type = "http"
-    url = "http://127.0.0.1:8000/endpoint/for/config"
-    headers {
-      authorization = "Basic xxxx"
+  vaults {
+    ...
+    name_of_the_vault {
+      type = "http"
+      url = "http://127.0.0.1:8000/endpoint/for/config"
+      headers {
+        authorization = "Basic xxxx"
+      }
     }
   }
 }

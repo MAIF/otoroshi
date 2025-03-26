@@ -193,7 +193,8 @@ object NgRouteComposition {
           id = serverUrl,
           hostname = serverDomain,
           port = port,
-          tls = tls
+          tls = tls,
+          backup = false,
         )
       }
       val paths                       = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())

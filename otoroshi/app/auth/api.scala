@@ -106,18 +106,22 @@ trait ValidableUser { self =>
       isRoute: Boolean,
       authModuleConfig: AuthModuleConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
-    val jsonuser = json
+    val jsonuser     = json
     val allowedUsers = authModuleConfig.allowedUsers
-    val deniedUsers = authModuleConfig.deniedUsers
+    val deniedUsers  = authModuleConfig.deniedUsers
     if (allowedUsers.nonEmpty && !allowedUsers.exists(str => strMatch(email, str))) {
-      Left(ErrorReason("User not allowed", Json.obj("error" -> "user blocked by allowed list of auth module").some)).vfuture
+      Left(
+        ErrorReason("User not allowed", Json.obj("error" -> "user blocked by allowed list of auth module").some)
+      ).vfuture
     } else if (deniedUsers.nonEmpty && deniedUsers.exists(str => strMatch(email, str))) {
-      Left(ErrorReason("User not allowed", Json.obj("error" -> "user blocked by denied list of auth module").some)).vfuture
+      Left(
+        ErrorReason("User not allowed", Json.obj("error" -> "user blocked by denied list of auth module").some)
+      ).vfuture
     } else {
       val validators = authModuleConfig.userValidators
       jsonPathValidate(jsonuser, validators) match {
         case Left(err) => Left(err).vfuture
-        case Right(_) =>
+        case Right(_)  =>
           val remoteValidators = authModuleConfig.remoteValidators
           remoteValidation(jsonuser, remoteValidators, desc, isRoute, authModuleConfig)
       }

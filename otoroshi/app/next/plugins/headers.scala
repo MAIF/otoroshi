@@ -152,7 +152,9 @@ class OverrideLocationHeader extends NgRequestTransformer {
               val oldLocationHost = oldLocation.authority.host.toString()
               if (oldLocationHost.equalsIgnoreCase(backendHost)) {
                 val frontendHost =
-                  Option(ctx.request.domain).filterNot(_.isBlank).getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
+                  Option(ctx.request.domain)
+                    .filterNot(_.isBlank)
+                    .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
                 val newLocation  =
                   oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
                 val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)

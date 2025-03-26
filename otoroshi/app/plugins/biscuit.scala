@@ -263,10 +263,10 @@ class BiscuitExtractor extends PreRouting {
     val rng               = new SecureRandom()
     val root              = new KeyPair(rng)
     val symbols           = new SymbolTable()
-    val authority_builder = new Block(0, symbols)
+    val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
     authority_builder.add_fact(fact("client_id", Seq(s("authority"), string(client_id)).asJava))
     authority_builder.add_fact(fact("client_sign", Seq(s("authority"), string(signed)).asJava))
-    val biscuit           = Biscuit.make(rng, root, new SymbolTable(), authority_builder.build())
+    val biscuit           = Biscuit.make(rng, root, authority_builder.build(symbols))
     // println(s"public_key: ${root.public_key().toHex}")
     // println(s"curl http://biscuit.oto.tools:9999 -H 'Authorization: Bearer ${biscuit.serialize_b64url()}'")
   }

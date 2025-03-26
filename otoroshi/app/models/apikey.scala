@@ -45,15 +45,9 @@ import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
-    // secCalls: Long = RemainingQuotas.MaxValue,
-    // secCallsRemaining: Long = RemainingQuotas.MaxValue,
-    // dailyCalls: Long = RemainingQuotas.MaxValue,
-    // dailyCallsRemaining: Long = RemainingQuotas.MaxValue,
-    // monthlyCalls: Long = RemainingQuotas.MaxValue,
-    // monthlyCallsRemaining: Long = RemainingQuotas.MaxValue
-    authorizedCallsPerSec: Long = RemainingQuotas.MaxValue,
-    currentCallsPerSec: Long = RemainingQuotas.MaxValue,
-    remainingCallsPerSec: Long = RemainingQuotas.MaxValue,
+    authorizedCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    throttlingCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    remainingCallsPerWindow: Long = RemainingQuotas.MaxValue,
     authorizedCallsPerDay: Long = RemainingQuotas.MaxValue,
     currentCallsPerDay: Long = RemainingQuotas.MaxValue,
     remainingCallsPerDay: Long = RemainingQuotas.MaxValue,
@@ -61,12 +55,45 @@ case class RemainingQuotas(
     currentCallsPerMonth: Long = RemainingQuotas.MaxValue,
     remainingCallsPerMonth: Long = RemainingQuotas.MaxValue
 ) {
-  def toJson: JsObject = RemainingQuotas.fmt.writes(this)
+  def toJson: JsObject = RemainingQuotas.fmt.writes(this).as[JsObject]
 }
 
 object RemainingQuotas {
   val MaxValue: Long = 10000000L
-  implicit val fmt   = Json.format[RemainingQuotas]
+  implicit val fmt   = new Format[RemainingQuotas] {
+
+    override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
+      RemainingQuotas(
+        authorizedCallsPerWindow =
+          json.select("authorizedCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        throttlingCallsPerWindow =
+          json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
+        remainingCallsPerWindow =
+          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        authorizedCallsPerDay = json.select("authorizedCallsPerDay").asLong,
+        currentCallsPerDay = json.select("currentCallsPerDay").asLong,
+        remainingCallsPerDay = json.select("remainingCallsPerDay").asLong,
+        authorizedCallsPerMonth = json.select("authorizedCallsPerMonth").asLong,
+        currentCallsPerMonth = json.select("currentCallsPerMonth").asLong,
+        remainingCallsPerMonth = json.select("remainingCallsPerMonth").asLong
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: RemainingQuotas): JsValue = Json.obj(
+      "authorizedCallsPerWindow" -> o.authorizedCallsPerWindow,
+      "throttlingCallsPerWindow" -> o.throttlingCallsPerWindow,
+      "remainingCallsPerWindow"  -> o.remainingCallsPerWindow,
+      "authorizedCallsPerDay"    -> o.authorizedCallsPerDay,
+      "currentCallsPerDay"       -> o.currentCallsPerDay,
+      "remainingCallsPerDay"     -> o.remainingCallsPerDay,
+      "authorizedCallsPerMonth"  -> o.authorizedCallsPerMonth,
+      "currentCallsPerMonth"     -> o.currentCallsPerMonth,
+      "remainingCallsPerMonth"   -> o.remainingCallsPerMonth
+    )
+  }
 }
 
 case class ApiKeyRotation(
@@ -244,7 +271,7 @@ case class ApiKey(
       quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield {
-      val within = (quotas.currentCallsPerSec <= (throttlingQuota * env.throttlingWindow)) &&
+      val within = quotas.remainingCallsPerWindow > 0 &&
         (quotas.currentCallsPerDay < dailyQuota) &&
         (quotas.currentCallsPerMonth < monthlyQuota)
       (within, rotation, quotas)
@@ -1906,8 +1933,8 @@ object ApiKeyHelper {
                         .build
                     Try(verifier.verify(jwt))
                       .filter { token =>
-                        val aud = token.getAudience.asScala.headOption.filter(v =>
-                          v.startsWith("http://") || v.startsWith("https://")
+                        val aud = Option(token.getAudience).flatMap(
+                          _.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
                         )
                         if (aud.isDefined) {
                           val currentUrl = req.theUrl

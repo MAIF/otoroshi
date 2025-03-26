@@ -478,11 +478,13 @@ export class Oauth2ModuleConfig extends Component {
         <ArrayInput
           label="Allowed users"
           value={settings.allowedUsers}
-          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
         <ArrayInput
           label="Denied users"
           value={settings.deniedUsers}
-          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1126,11 +1128,13 @@ export class BasicModuleConfig extends Component {
         <ArrayInput
           label="Allowed users"
           value={settings.allowedUsers}
-          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
         <ArrayInput
           label="Denied users"
           value={settings.deniedUsers}
-          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1226,11 +1230,13 @@ export class WasmAuthModuleConfig extends Component {
         <ArrayInput
           label="Allowed users"
           value={settings.allowedUsers}
-          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
         <ArrayInput
           label="Denied users"
           value={settings.deniedUsers}
-          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -1590,11 +1596,13 @@ export class LdapModuleConfig extends Component {
         <ArrayInput
           label="Allowed users"
           value={settings.allowedUsers}
-          onChange={(v) => changeTheValue(path + '.allowedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
         <ArrayInput
           label="Denied users"
           value={settings.deniedUsers}
-          onChange={(v) => changeTheValue(path + '.deniedUsers', v)} />
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
         <ArrayInput
           label="User validators"
           component={UserValidator}
@@ -2090,17 +2098,17 @@ export class SamlModuleConfig extends Component {
         help: 'Should SAML Assertions to be decrypted ?',
       },
     },
-    'allowedUsers': {
+    allowedUsers: {
       type: 'array',
       props: {
         label: 'Allowed users',
-      }
+      },
     },
-    'deniedUsers': {
+    deniedUsers: {
       type: 'array',
       props: {
         label: 'Denied users',
-      }
+      },
     },
     credentials: {
       type: ({}) => {
@@ -2502,17 +2510,17 @@ export class OAuth1ModuleConfig extends Component {
       type: 'string',
       props: { label: 'Consumer secret', placeholder: 'Consumer secret' },
     },
-    'allowedUsers': {
+    allowedUsers: {
       type: 'array',
       props: {
         label: 'Allowed users',
-      }
+      },
     },
-    'deniedUsers': {
+    deniedUsers: {
       type: 'array',
       props: {
         label: 'Denied users',
-      }
+      },
     },
     userValidators: {
       type: 'array',

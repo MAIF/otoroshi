@@ -373,7 +373,8 @@ class DiscoveryTargetsSelector extends PreRouting {
             trackingId,
             ctx.request,
             targets,
-            ctx.descriptor.id
+            ctx.descriptor.id,
+            1
           )
         ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
       }

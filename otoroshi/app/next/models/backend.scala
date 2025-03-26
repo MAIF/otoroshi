@@ -418,8 +418,12 @@ case class NgTarget(
     protocol: HttpProtocol = HttpProtocols.HTTP_1_1,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
-    tlsConfig: NgTlsConfig = NgTlsConfig()
+    tlsConfig: NgTlsConfig = NgTlsConfig(),
+    backup: Boolean = false,
 ) {
+  def isPrimary: Boolean = !backup
+  def isSecondary: Boolean = backup
+
   lazy val baseUrl: String                  = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
   lazy val defaultPortString                = port match {
     case 443 => ""
@@ -436,7 +440,8 @@ case class NgTarget(
     ipAddress = ipAddress,
     mtlsConfig = tlsConfig.legacy,
     tags = Seq(id),
-    metadata = Map.empty
+    metadata = Map.empty,
+    backup = backup,
   )
   def json: JsValue                         = Json.obj(
     "id"         -> id,
@@ -444,6 +449,7 @@ case class NgTarget(
     "port"       -> port,
     "tls"        -> tls,
     "weight"     -> weight,
+    "backup"     -> backup,
     "predicate"  -> predicate.toJson,
     "protocol"   -> protocol.value,
     "ip_address" -> ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -461,7 +467,8 @@ object NgTarget {
     protocol = HttpProtocols.HTTP_1_1,
     predicate = AlwaysMatch,
     ipAddress = None,
-    tlsConfig = NgTlsConfig.default
+    tlsConfig = NgTlsConfig.default,
+    backup = false,
   )
   def parse(str: String): NgTarget = {
     val uri  = Uri(str)
@@ -478,7 +485,8 @@ object NgTarget {
       protocol = HttpProtocols.HTTP_1_1,
       predicate = AlwaysMatch,
       ipAddress = None,
-      tlsConfig = NgTlsConfig.default
+      tlsConfig = NgTlsConfig.default,
+      backup = false,
     )
   }
   def fromLegacy(target: Target): NgTarget = fromTarget(target)
@@ -492,7 +500,8 @@ object NgTarget {
       protocol = target.protocol,
       predicate = target.predicate,
       ipAddress = target.ipAddress,
-      tlsConfig = NgTlsConfig.fromLegacy(target.mtlsConfig)
+      tlsConfig = NgTlsConfig.fromLegacy(target.mtlsConfig),
+      backup = target.backup,
     )
   }
   def readFrom(obj: JsValue): NgTarget = {
@@ -516,7 +525,8 @@ object NgTarget {
         .map(s => HttpProtocols.parse(s))
         .getOrElse(HttpProtocols.HTTP_1_1),
       predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
-      ipAddress = ipAddress
+      ipAddress = ipAddress,
+      backup = obj.select("backup").asOpt[Boolean].getOrElse(false),
     )
   }
   val fmt                                  = new Format[NgTarget] {

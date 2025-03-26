@@ -542,7 +542,6 @@ export class NewExporterForm extends Component {
     if (ns.config && ns.config.clusterUri) {
       delete ns.config.clusterUri;
     }
-
     this.props.onChange(ns);
   };
 
@@ -1128,6 +1127,9 @@ const possibleExporterConfigFormValues = {
       'tenant',
       'namespace',
       'topic',
+      'token',
+      'username',
+      'password',
     ],
     schema: {
       uri: {
@@ -1163,6 +1165,27 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'Pulsar topic',
           help: 'Topic on the pulsar server',
+        },
+      },
+      token: {
+        type: 'string',
+        props: {
+          label: 'Pulsar access token',
+          help: 'The token to access pulsar server (optional)',
+        },
+      },
+      username: {
+        type: 'string',
+        props: {
+          label: 'Pulsar access username',
+          help: 'The username to access pulsar server (optional). Use it combined to password.',
+        },
+      },
+      password: {
+        type: 'string',
+        props: {
+          label: 'Pulsar access password',
+          help: 'The password to access pulsar server (optional). Use it combined to username.',
         },
       },
       'mtlsConfig.mtls': {

@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import org.joda.time.DateTime
+import otoroshi.api.WriteAction
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
@@ -1583,7 +1584,14 @@ object KubernetesCRDsJob {
                 v => v.select("id").asString,
                 v =>
                   resource.access
-                    .create(resource.version.name, resource.singularName, v.select("id").asOptString, v)
+                    .create(
+                      resource.version.name,
+                      resource.singularName,
+                      v.select("id").asOptString,
+                      v,
+                      WriteAction.Update,
+                      None
+                    )
                     .map(_.isRight)
               )
             }.flatten

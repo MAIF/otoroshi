@@ -12,9 +12,12 @@ import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
+import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
+import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -58,9 +61,10 @@ object GlobalExpressionLanguage {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
-        val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
-        val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
-        val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        val userAgentDetails                       = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
+        val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
+        val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
             case r"item.$field@(.*)"              =>
@@ -332,6 +336,10 @@ object GlobalExpressionLanguage {
               user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
             case "user.tokens.expires_in" if user.isDefined                                      =>
               user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
+            case r"user.tokens.$field@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(s"no-${field}")
+            case r"user.tokens.$field@(.*):$dv@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(dv)
             case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined                         =>
               user
                 .flatMap(_.otoroshiData)
@@ -418,7 +426,19 @@ object GlobalExpressionLanguage {
             case r"nbf"                                                                          => "{nbf}"
             case r"iat"                                                                          => "{iat}"
             case r"exp"                                                                          => "{exp}"
-            case expr                                                                            => "bad-expr" //s"$${$expr}"
+
+            case "req.client_cert.dn" if req.isDefined && headCert.isDefined                                         =>
+              DN(headCert.get.getSubjectDN.getName).stringify
+            case "req.client_cert.id" if req.isDefined && headCert.isDefined                                         =>
+              headCert.get.getSerialNumber.toString(16)
+            case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined     =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
+              DN(headCert.get.getIssuerDN.getName).stringify
+
+            case expr => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)

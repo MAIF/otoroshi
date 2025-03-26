@@ -140,10 +140,10 @@ object HealthController {
   }
 
   def fetchMetrics(
-    format: Option[String],
-    acceptsJson: Boolean,
-    acceptsProm: Boolean,
-    filter: Option[String]
+      format: Option[String],
+      acceptsJson: Boolean,
+      acceptsProm: Boolean,
+      filter: Option[String]
   )(implicit env: Env, ec: ExecutionContext): Result = {
     if (format.contains("old_json") || format.contains("old")) {
       Results.Ok(env.metrics.jsonExport(filter)).as("application/json")
@@ -186,7 +186,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
 
   def fetchHealth() = {
     HealthController.fetchHealth().map {
-      case Left(payload) => ServiceUnavailable(payload)
+      case Left(payload)  => ServiceUnavailable(payload)
       case Right(payload) => Ok(payload)
     }
   }
@@ -197,7 +197,9 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     val acceptsJson = req.accepts("application/json")
     val acceptsProm = req.accepts("application/prometheus")
     if (env.metricsEnabled) {
-      withSecurity(req, env.metricsAccessKey)(HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter).future)
+      withSecurity(req, env.metricsAccessKey)(
+        HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter).future
+      )
     } else {
       FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
     }

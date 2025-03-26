@@ -868,6 +868,7 @@ export class NgObjectRenderer extends Component {
             ngOptions={{
               spread: true,
             }}
+            bcryptable={props.bcryptable}
             label={null}
             placeholderKey={props.placeholderKey}
             placeholderValue={props.placeholderValue}
