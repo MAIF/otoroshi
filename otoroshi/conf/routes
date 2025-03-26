@@ -630,7 +630,10 @@ GET     /apis/:group/:version/:entity                         otoroshi.api.Gener
 POST    /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.create(group, version, entity)
 DELETE  /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.deleteAll(group, version, entity)
 GET     /apis/entities                                        otoroshi.api.GenericApiController.entities()
-GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapi()
+GET     /apis/openapi.yaml                                    otoroshi.api.GenericApiController.openapiYaml()
+GET     /apis/openapi.yml                                     otoroshi.api.GenericApiController.openapiYaml()
+GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapiJson()
+GET     /apis/openapi                                         otoroshi.api.GenericApiController.openapi()
 
 ########################################################################################################################
 
