@@ -7,3 +7,4 @@ stats.json
 /playwright/.cache/
 /playwright/.auth/
 tests/playwright
+playwright-report
