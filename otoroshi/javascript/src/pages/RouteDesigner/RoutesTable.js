@@ -361,7 +361,6 @@ export function RoutesTable(props) {
           hideAddItemAction={true}
           itemUrl={(i) => `/bo/dashboard/routes/${i.id}?tab=flow`}
           rawEditUrl={true}
-          displayTrash={(item) => item.id === props.globalEnv.adminApiId}
           injectTopBar={() => (
             <div className="btn-group input-group-btn">
               <Link className="btn btn-primary btn-sm" to={`routes/new?tab=informations`}>

@@ -690,7 +690,7 @@ case class ApiBackend(id: String, name: String, backend: NgBackend)
 object ApiBackend {
 
   def empty(implicit env: Env): ApiBackend = ApiBackend(
-    IdGenerator.namedId("api_flows", env),
+    IdGenerator.namedId("api_backend", env),
     name = "default_backend",
     backend = NgBackend.empty.copy(
         targets = Seq(
@@ -860,7 +860,7 @@ case class Api(
     ).legacy
   }
 
-  private def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
+  def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     for {
@@ -902,14 +902,20 @@ case class Api(
 
 object Api {
   def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
-    api.copy(flows = api.flows.map(flow =>
-        flow.copy(plugins = flow.plugins.remove(pluginId[T]).add(NgPluginInstance(
-          plugin = pluginId[T],
-          include = Seq.empty,
-          exclude = Seq.empty,
-          config = NgPluginInstanceConfig(consumer.settings.json.asObject)
-        )))
-    ))
+    api.copy(flows = api.flows.map(flow => addPluginToFlow[T](consumer, flow)))
+  }
+
+  private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit ct: ClassTag[T]): ApiFlows = {
+    if (flow.consumers.contains(consumer.id)) {
+      flow.copy(plugins = flow.plugins.remove(pluginId[T]).add(NgPluginInstance(
+        plugin = pluginId[T],
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = NgPluginInstanceConfig(consumer.settings.json.asObject)
+      )))
+    } else {
+      flow
+    }
   }
 
   def applyConsumerRulesOnApi(consumer: ApiConsumer, api: Api): Option[Api] = {
@@ -923,27 +929,47 @@ object Api {
     }
   }
 
-  def updateConsumer(api: Api, oldConsumer: ApiConsumer, consumer: ApiConsumer): Option[Api] = {
-    if (!updateConsumerStatus(oldConsumer, consumer)) {
-      None
-    } else {
-      applyConsumerRulesOnApi(consumer, api)
+  def applyConsumersOnFlow(flow: ApiFlows, api: Api): ApiFlows = {
+    flow.consumers.foldLeft(flow) { case (flow, item) =>
+      api.consumers.find(_.id == item) match {
+        case Some(consumer) =>
+          consumer.consumerKind match {
+            case ApiConsumerKind.Apikey   => addPluginToFlow[ApikeyCalls](consumer, flow)
+            case ApiConsumerKind.JWT      => addPluginToFlow[JwtVerificationOnly](consumer, flow)
+            case ApiConsumerKind.OAuth2   => addPluginToFlow[NgClientCredentialTokenEndpoint](consumer, flow)
+            case ApiConsumerKind.Mtls     => addPluginToFlow[NgHasClientCertMatchingValidator](consumer, flow)
+            //        case ApiConsumerKind.Keyless  =>
+          }
+        case None => flow
+      }
     }
+    //    if (!updateConsumerStatus(oldConsumer, consumer)) {
+    //      None
+    //    } else {
+    //      applyConsumerRulesOnApi(consumer, api)
+    //    }
   }
 
-  def removePluginToFlows[T <: NgPlugin](api: Api)(implicit ct: ClassTag[T]): Api = {
+  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
     api.copy(flows = api.flows
-      .map(flow => flow.copy(plugins = NgPlugins(flow.plugins.slots.filter(plugin => {
-        val name = s"cp:${ct.runtimeClass.getName}"
-        plugin.plugin != name
-      })))))
+      .map(flow => {
+        if (flow.consumers.contains(consumer.id)) {
+          flow.copy(plugins = NgPlugins(flow.plugins.slots.filter(plugin => {
+            val name = s"cp:${ct.runtimeClass.getName}"
+            plugin.plugin != name
+          })))
+        } else {
+          flow
+        }
+      }))
   }
 
   private def deleteConsumerFromApi(api: Api, consumer: ApiConsumer) = {
     consumer.consumerKind match {
-      case ApiConsumerKind.Apikey   => removePluginToFlows[ApikeyCalls](api).some
-      case ApiConsumerKind.JWT      => removePluginToFlows[JwtVerificationOnly](api).some
-      case ApiConsumerKind.OAuth2   => removePluginToFlows[OIDCAccessTokenValidator](api).some
+      case ApiConsumerKind.Apikey   => removePluginToFlows[ApikeyCalls](api, consumer).some
+      case ApiConsumerKind.JWT      => removePluginToFlows[JwtVerificationOnly](api, consumer).some
+      case ApiConsumerKind.OAuth2   => removePluginToFlows[OIDCAccessTokenValidator](api, consumer).some
+      case ApiConsumerKind.Mtls     => removePluginToFlows[NgHasClientCertMatchingValidator](api, consumer).some
       case _                        => None
       //        case ApiConsumerKind.Mtls     =>
       //        case ApiConsumerKind.Keyless  =>
@@ -966,24 +992,25 @@ object Api {
        env.datastores.apiDataStore.findById(newApi.id)
          .map(_.get)
          .map(api => {
-           newApi.consumers.foreach(consumer => {
-             api.consumers.find(_.id == consumer.id) match {
-               case Some(oldConsumer) =>
-                 val result = updateConsumer(outApi, oldConsumer, consumer)
-                 if (result.isDefined)
-                   outApi = result.get
-                 else {
-                   return Json.obj(
-                     "error" -> s"api has rejected your demand : you can't get back to a consumer status",
-                     "http_status_code" -> 400
-                   ).leftf
-                 }
-               case None =>
-                 // apply new consumer on API flows
-                 applyConsumerRulesOnApi(consumer, outApi)
-                   .map(result => outApi = result)
-                }
-           })
+           outApi = newApi.copy(flows = newApi.flows.map(flow => {
+             applyConsumersOnFlow(flow, api)
+//             api.consumers.find(_.id == consumer.id) match {
+//               case Some(oldConsumer) =>
+//                 val result = updateConsumer(outApi, oldConsumer, consumer)
+//                 if (result.isDefined)
+//                   outApi = result.get
+//                 else {
+//                   return Json.obj(
+//                     "error" -> s"api has rejected your demand : you can't get back to a consumer status",
+//                     "http_status_code" -> 400
+//                   ).leftf
+//                 }
+//               case None =>
+//                 // apply new consumer on API flows
+//                 applyConsumerRulesOnApi(consumer, outApi)
+//                   .map(result => outApi = result)
+//                }
+           }))
 
            api.consumers.foreach(consumer => {
              if (!newApi.consumers.exists(_.id == consumer.id)) {

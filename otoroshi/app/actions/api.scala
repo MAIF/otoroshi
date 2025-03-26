@@ -200,11 +200,26 @@ trait ApiActionContextCapable {
       serviceId: String
   )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
     def getRouteCompositions = {
-      env.datastores.routeCompositionDataStore.findById(serviceId) map {
-        case Some(service) => service.toRoutes.head.legacy.some
-        case None => None
+      env.datastores.routeCompositionDataStore.findById(serviceId) flatMap  {
+        case Some(service) => service.toRoutes.head.legacy.some.vfuture
+        case None => getDraftRoutes
       }
     }
+
+    def getDraftRoutes: Future[Option[ServiceDescriptor]] = {
+      env.datastores.draftsDataStore.findById(serviceId) flatMap {
+        case Some(service) =>
+          val api = Api.format.reads(service.content).get
+          if (api.routes.isEmpty)  {
+            None.vfuture
+          } else {
+            api.routeToNgRoute(api.routes.head).map(_.get.legacy.some)
+          }
+        case None =>
+          None.vfuture
+      }
+    }
+
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case Some(service) => service.some.vfuture
       case None          =>

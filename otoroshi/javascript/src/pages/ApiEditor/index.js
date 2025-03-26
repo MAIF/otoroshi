@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import './index.scss'
 
@@ -25,7 +25,7 @@ import moment from 'moment';
 import semver from 'semver'
 
 import { ApiStats } from './ApiStats';
-import { PublisDraftModalContent } from '../../components/Drafts/DraftEditor';
+import { PublisDraftModalContent, queryClient } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
 import { useSignalValue } from 'signals-react-safe';
 import { signalVersion } from './VersionSignal';
@@ -36,13 +36,6 @@ import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClient
 import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
-
-const queryClient = new QueryClient({
-    queries: {
-        retry: false,
-        refetchOnWindowFocus: false
-    },
-});
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
     <Route
@@ -87,10 +80,11 @@ export default function ApiEditor(props) {
                 <RouteWithProps exact path='/apis/:apiId/deployments' component={Deployments} props={props} />
                 <RouteWithProps exact path='/apis/:apiId/testing' component={Testing} props={props} />
 
-                <RouteWithProps path='/apis/new' component={NewAPI} props={props} />
+                <RouteWithProps exact path='/apis/:apiId/new' component={NewAPI} props={props} />
+
                 <RouteWithProps path='/apis/:apiId/informations' component={Informations} props={props} />
-                <RouteWithProps path='/apis/:apiId' component={Dashboard} props={props} />
                 <RouteWithProps exact path='/apis' component={Apis} props={props} />
+                <RouteWithProps path='/apis/:apiId' component={Dashboard} props={props} />
             </Switch>
         </QueryClientProvider>
     </div>
@@ -127,20 +121,29 @@ function useDraftOfAPI() {
                     Promise.all([
                         nextClient
                             .forEntityNext(nextClient.ENTITIES.APIS)
-                            .findById(params.apiId),
+                            .template(),
                         draftClient.template()
                     ])
-                        .then(([api, template]) => {
+                        .then(([apiTemplate, template]) => {
+
+                            const draftApi = {
+                                ...apiTemplate,
+                                id: params.apiId
+                            }
+
                             const newDraft = {
                                 ...template,
-                                kind: api.id.split('_')[1],
-                                id: api.id,
-                                name: api.name,
-                                content: api,
+                                kind: apiTemplate.id.split('_')[1],
+                                id: params.apiId,
+                                name: apiTemplate.name,
+                                content: draftApi
                             }
+
                             draftClient.create(newDraft)
-                            setDraftWrapper(newDraft)
-                            setDraft(api)
+                                .then(() => {
+                                    setDraft(draftApi)
+                                    setDraftWrapper(newDraft)
+                                })
                         })
                 } else {
                     setDraftWrapper(data)
@@ -240,7 +243,7 @@ function Subscriptions(props) {
         hideAddItemAction={true}
         itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`)}
         rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
                 <Link className="btn btn-primary btn-sm"
@@ -653,14 +656,13 @@ function NewRoute(props) {
             onSuccess: setBackends
         })
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         if (item && !backendsQuery.isLoading && !schema) {
             setSchema(ROUTE_FORM_SETTINGS.schema(item, backends))
         }
     }, [item, backendsQuery])
-
 
 
     const saveRoute = () => {
@@ -677,7 +679,7 @@ function NewRoute(props) {
     }
 
     useEffect(() => {
-        if (!isLoading && item) {
+        if (item) {
             nextClient.forEntityNext(nextClient.ENTITIES.ROUTES)
                 .template()
                 .then(({ frontend }) => {
@@ -691,10 +693,11 @@ function NewRoute(props) {
                     })
                 })
         }
-    }, [isLoading, item])
+    }, [item])
 
-    if (isLoading || !schema || !route)
+    if (!schema || !route)
         return <SimpleLoader />
+
 
     return <>
         <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
@@ -779,7 +782,7 @@ function Consumers(props) {
             hideAddItemAction={true}
             itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/consumers/${i.id}/edit`)}
             rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+
             injectTopBar={() => (
                 <div className="btn-group input-group-btn">
                     <Link className="btn btn-primary btn-sm"
@@ -1003,8 +1006,8 @@ function NewConsumer(props) {
     const [consumer, setConsumer] = useState({
         id: v4(),
         name: "New consumer",
-        consumer_kind: "apikey",
-        settings: TEMPLATES.apikey,
+        consumer_kind: "keyless",
+        settings: TEMPLATES.keyless,
         status: "staging",
         subscriptions: []
     })
@@ -1179,7 +1182,7 @@ function Routes(props) {
         hideAddItemAction={true}
         itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`)}
         rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
                 <Link className="btn btn-primary btn-sm"
@@ -1205,27 +1208,28 @@ function Backends(props) {
             filterId: 'name',
             content: (item) => item.name,
         },
-        { title: 'Description', filterId: 'description', content: (item) => item.description },
-        //     title: 'Backend',
-        // filterId: 'backend.targets.0.hostname',
-        // cell: (item) => {
-        //   return (
-        //     <>
-        //       {item.backend.targets[0]?.hostname || '-'}{' '}
-        //       {item.backend.targets.length > 1 && (
-        //         <span
-        //           className="badge bg-secondary"
-        //           style={{ cursor: 'pointer' }}
-        //           title={item.backend.targets
-        //             .map((v) => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`)
-        //             .join('\n')}
-        //         >
-        //           {item.backend.targets.length - 1} more
-        //         </span>
-        //       )}
-        //     </>
-        //   );
-        // },
+        {
+            title: 'Backend',
+            filterId: 'backend.targets.0.hostname',
+            cell: (item) => {
+                return (
+                    <>
+                        {item.backend.targets[0]?.hostname || '-'}{' '}
+                        {item.backend.targets.length > 1 && (
+                            <span
+                                className="badge bg-secondary"
+                                style={{ cursor: 'pointer' }}
+                                title={item.backend.targets
+                                    .map((v) => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`)
+                                    .join('\n')}
+                            >
+                                {item.backend.targets.length - 1} more
+                            </span>
+                        )}
+                    </>
+                );
+            }
+        }
     ];
 
     const { item, updateItem, isLoading } = useDraftOfAPI()
@@ -1270,7 +1274,7 @@ function Backends(props) {
         hideAddItemAction={true}
         itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`)}
         rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        hideEditButton={item => item.name === 'default_backend'}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
                 <Link className="btn btn-primary btn-sm" to={{
@@ -1498,7 +1502,6 @@ function Testing(props) {
                 background: 'var(--bg-color_level2)',
                 borderColor: 'var(--bg-color_level2)'
             }}>
-                <h4 class="alert-heading" style={{ color: 'var(--text)' }}>Well done!</h4>
                 <p style={{ color: 'var(--text)' }}>
                     Testing mode can't be enabled until you have created consumers.
                 </p>
@@ -1808,6 +1811,7 @@ function NewFlow(props) {
 function NewAPI(props) {
     const history = useHistory()
     const location = useLocation()
+    const params = useParams()
 
     useEffect(() => {
         props.setTitle({
@@ -1823,8 +1827,11 @@ function NewAPI(props) {
     const template = useQuery(["getTemplate"],
         nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
         retry: 0,
-        onSuccess: (data) => setValue(data)
-    });
+        onSuccess: (data) => setValue({
+            ...data,
+            id: params.apiId
+        })
+    })
 
     const schema = {
         location: {
@@ -1871,7 +1878,7 @@ function NewAPI(props) {
         },
     }
 
-    const flow = ['location', 'name', 'description']
+    const flow = ['location', 'id', 'name', 'description']
 
     const createApi = () => {
         nextClient.forEntityNext(nextClient.ENTITIES.APIS)
@@ -1955,13 +1962,17 @@ function Apis(props) {
             hideAddItemAction={true}
             itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${i.id}`)}
             rawEditUrl={true}
-            displayTrash={(item) => item.id === props.globalEnv.adminApiId}
             injectTopBar={() => (
                 <div className="btn-group input-group-btn">
-                    <Link className="btn btn-primary btn-sm" to={{
-                        pathname: "apis/new",
-                        search: location.search
-                    }}>
+                    <Link
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                            nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+                                .template()
+                                .then(api => {
+                                    history.push(`apis/${api.id}/new?version=staging`)
+                                })
+                        }}>
                         <i className="fas fa-plus-circle" /> Create new API
                     </Link>
                     {props.injectTopBar}
@@ -2071,11 +2082,15 @@ function Flows(props) {
                 width: 90
             },
             notFilterable: true,
-            cell: (_, item) => <Button className="btn-sm" onClick={() => {
-                historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/designer`)
-            }}>
-                <i className='fas fa-pencil-ruler' />
-            </Button>
+            cell: (_, item) => {
+                if (item.name === 'default_flow')
+                    return null
+                return <Button className="btn-sm" onClick={() => {
+                    historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/designer`)
+                }}>
+                    <i className='fas fa-pencil-ruler' />
+                </Button>
+            }
         }
     ];
 
@@ -2127,7 +2142,7 @@ function Flows(props) {
         hideAddItemAction={true}
         itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/flows/${i.id}`)}
         rawEditUrl={true}
-        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
+        hideEditButton={(item) => item.name == 'default_flow'}
         injectTopBar={() => (
             <div className="btn-group input-group-btn">
                 <Link className="btn btn-primary btn-sm" to={{
@@ -2444,8 +2459,10 @@ function VersionBadge({ size, className }) {
     </div>
 }
 
-function DashboardTitle({ api, draftWrapper, draft, updateItem, ...props }) {
+function DashboardTitle({ api, draftWrapper, draft, step, ...props }) {
     const version = useSignalValue(signalVersion)
+
+    console.log(step)
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
         <div className="d-flex">
@@ -2454,7 +2471,7 @@ function DashboardTitle({ api, draftWrapper, draft, updateItem, ...props }) {
             </h3>
         </div>
         <div className="d-flex align-item-center justify-content-between">
-            {version === 'Draft' && <div className='d-flex align-items-center'>
+            {(version !== 'Published' && step > 3) && <div className='d-flex align-items-center'>
                 <Button
                     text="Publish new version"
                     className="btn-sm mx-2"
@@ -2516,20 +2533,7 @@ function Dashboard(props) {
     const history = useHistory()
     const location = useLocation()
 
-    const { item, draft, draftWrapper, isLoading, version, api, updateItem } = useDraftOfAPI()
-
-    useEffect(() => {
-        if (!isLoading && !!draft) {
-            props.setTitle(<DashboardTitle {...props}
-                params={params}
-                api={api}
-                draftWrapper={draftWrapper}
-                draft={draft}
-                updateItem={updateItem} />)
-        }
-
-        return () => props.setTitle(undefined)
-    }, [item, draft])
+    const { item, draft, draftWrapper, isLoading, version, api } = useDraftOfAPI()
 
     const hasCreateFlow = item && item.flows.filter(f => f.name !== 'default_flow').length > 0
     const hasCreateBackend = item && item.backends.filter(f => f.name !== 'default_backend').length > 0
@@ -2548,6 +2552,19 @@ function Dashboard(props) {
             Number(hasTestingEnabled) +
             Number(item?.state === API_STATE.PUBLISHED)
     }
+
+    useEffect(() => {
+        if (draft && api) {
+            props.setTitle(<DashboardTitle {...props}
+                params={params}
+                api={api}
+                draftWrapper={draftWrapper}
+                draft={draft}
+                step={getStep()} />)
+        }
+
+        return () => props.setTitle(undefined)
+    }, [api, draft])
 
     if (isLoading || !item)
         return <SimpleLoader />
@@ -2628,12 +2645,10 @@ function Dashboard(props) {
                         />
                     </ContainerBlock>
 
-                    {hasCreateRoute && <ContainerBlock style={{
+                    {hasCreateRoute && hasCreateConsumer && <ContainerBlock style={{
                         width: 'initial'
                     }}>
-                        <SectionHeader text="Routes"
-                            description="This API exposes the following routes"
-                        />
+                        <SectionHeader text="Routes" description="This API exposes the following routes" />
                         <RoutesView api={item} />
                     </ContainerBlock>}
 
@@ -2980,21 +2995,33 @@ function ContainerBlock({ children, full, highlighted, style = {} }) {
 }
 
 function publishAPI(api) {
-    return nextClient
-        .forEntityNext(nextClient.ENTITIES.APIS)
-        .update({
-            ...api,
-            state: API_STATE.PUBLISHED
+    window.newConfirm(<>
+        Upgrading an API from staging to production makes it fully available to clients without testing headers.
+        <p>Clients will use the API with real data in a reliable environment.</p>
+    </>,
+        {
+            title: 'Production environment',
+            yesText: 'Publish and expose to the world',
         })
-        .then(() => nextClient
-            .forEntityNext(nextClient.ENTITIES.DRAFTS)
-            .deleteById(api.id)
-        )
-        .then(() => {
-            const queryParams = new URLSearchParams(window.location.search);
-            queryParams.delete("version");
-            history.replaceState(null, null, "?" + queryParams.toString());
-            window.location.reload()
+        .then((ok) => {
+            if (ok) {
+                nextClient
+                    .forEntityNext(nextClient.ENTITIES.APIS)
+                    .update({
+                        ...api,
+                        state: API_STATE.PUBLISHED
+                    })
+                    .then(() => nextClient
+                        .forEntityNext(nextClient.ENTITIES.DRAFTS)
+                        .deleteById(api.id)
+                    )
+                    .then(() => {
+                        const queryParams = new URLSearchParams(window.location.search);
+                        queryParams.delete("version");
+                        history.replaceState(null, null, "?" + queryParams.toString());
+                        window.location.reload()
+                    })
+            }
         })
 }
 
@@ -3029,11 +3056,22 @@ function APIHeader({ api, version, draft }) {
                     <Button
                         type='primaryColor'
                         onClick={() => {
-                            updateAPI({
-                                ...api,
-                                state: api.state === API_STATE.PUBLISHED ? API_STATE.DEPRECATED : API_STATE.PUBLISHED
-                            })
-                                .then(() => window.location.reload())
+                            window.newConfirm(api.state === API_STATE.PUBLISHED ? `New clients will be not allowed to subscribe to any consumers` :
+                                `API will be available again`,
+                                {
+                                    title: api.state === API_STATE.PUBLISHED ? 'Confirm API deprecation' : 'Confirm API publication',
+                                    yesText: api.state === API_STATE.PUBLISHED ? 'Deprecate the API' : 'Publish the API'
+                                }
+                            )
+                                .then(ok => {
+                                    if (ok) {
+                                        updateAPI({
+                                            ...api,
+                                            state: api.state === API_STATE.PUBLISHED ? API_STATE.DEPRECATED : API_STATE.PUBLISHED
+                                        })
+                                            .then(() => window.location.reload())
+                                    }
+                                })
                         }}
                         className='btn-sm ms-auto'
                         text={api.state === API_STATE.PUBLISHED ? "Deprecate your API" : "Publish your API"} />}

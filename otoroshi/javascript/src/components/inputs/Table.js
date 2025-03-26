@@ -460,8 +460,15 @@ class TableComponent extends Component {
   };
 
   gotoItem = (e, item) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.props.navigateTo(item);
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+
+    if ((typeof this.props.hideEditButton === 'function' ?
+      !this.props.hideEditButton(item) :
+      !this.props.hideEditButton)) {
+      this.props.navigateTo(item);
+    }
   };
 
   closeAddForm = (e) => {
@@ -521,25 +528,33 @@ class TableComponent extends Component {
   };
 
   showEditForm = (e, item) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.mountShortcuts();
-
-    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
-
-    if (this.props.rawEditUrl) {
-      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
 
-    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+    if ((typeof this.props.hideEditButton === 'function' ?
+      !this.props.hideEditButton(item) :
+      !this.props.hideEditButton)) {
 
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(
-        `Update a ${this.props.itemName}`,
-        this.updateItemAndStay,
-        item
-      );
+      this.mountShortcuts();
+
+      let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+
+      if (this.props.rawEditUrl) {
+        routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+      }
+
+      window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
     }
-    this.setState({ currentItem: item, showEditForm: true });
   };
 
   deleteItem = (e, item) => {
@@ -767,7 +782,12 @@ class TableComponent extends Component {
                     }
                   }
                 }}
-                style={{ cursor: 'pointer', width: '100%' }}
+                style={{
+                  cursor: ((typeof this.props.hideEditButton === 'function' ?
+                    !this.props.hideEditButton(value) :
+                    !this.props.hideEditButton)) ? 'pointer' : 'initial',
+                  width: '100%'
+                }}
               >
                 {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
               </div>
@@ -788,7 +808,9 @@ class TableComponent extends Component {
         accessor: (item) => (
           <div style={{ textAlign: 'left' }}>
             <div>
-              {!this.props.hideEditButton && (
+              {(typeof this.props.hideEditButton === 'function' ?
+                !this.props.hideEditButton(item) :
+                !this.props.hideEditButton) &&
                 <button
                   type="button"
                   className="btn btn-sm btn-success me-2"
@@ -801,7 +823,7 @@ class TableComponent extends Component {
                 >
                   <i className="fas fa-pencil-alt" />
                 </button>
-              )}
+              }
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -812,7 +834,7 @@ class TableComponent extends Component {
                   <i className="fas fa-link" />
                 </a>
               )}
-              {this.props.displayTrash && this.props.displayTrash(item) && (
+              {this.props.displayTrash && !this.props.displayTrash(item) && (
                 <button
                   type="button"
                   className="btn btn-sm btn-danger me-2"
@@ -822,7 +844,7 @@ class TableComponent extends Component {
                   <i className="fas fa-trash" />
                 </button>
               )}
-              {this.props.displayTrash && !this.props.displayTrash(item) && (
+              {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
                   type="button"
                   className="btn btn-sm btn-danger me-2"

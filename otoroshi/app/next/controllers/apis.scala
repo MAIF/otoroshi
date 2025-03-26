@@ -66,12 +66,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         )
 
          def fetch(): Future[JsObject] = {
-            env.datastores.draftsDataStore.findById(id) flatMap  {
+            env.datastores.draftsDataStore.findById(id) flatMap {
               case None => Json.obj().vfuture
               case Some(api) => Api.format.reads(api.content)
                   .get
-                  .toRoutes.flatMap(routes =>
-                  Future.sequence(routes.map(getStatsOfRoute)))
+                  .toRoutes.flatMap(routes => Future.sequence(routes.map(getStatsOfRoute)))
                   .map(stats => foldStats(stats).json)
             }
         }
@@ -372,8 +371,6 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                             ).toAnalytics()
 
                             if (result) {
-                              ctx.request.body.select("draftId").asOptString
-                                .map(draftId => env.datastores.draftsDataStore.delete(draftId))
                               Results.Created(updatedApi.json)
                             } else
                               Results.BadRequest(Json.obj("error" -> "something wrong happened"))
