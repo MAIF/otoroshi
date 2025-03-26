@@ -1021,9 +1021,10 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = (entity, body, singularName, id, action, env) => Api.writeValidator(
+        writeValidator = (entity, body, oldEntity, singularName, id, action, env) => Api.writeValidator(
           entity,
           body,
+          oldEntity,
           singularName,
           id,
           action,

@@ -70,6 +70,7 @@ object Draft {
 
   def writeValidator(newDraft: Draft,
                       _body: JsValue,
+                      oldEntity: Option[(Draft, JsValue)],
                       _singularName: String,
                       _id: Option[String],
                       action: WriteAction,
@@ -78,7 +79,7 @@ object Draft {
 
     Api.format.reads(newDraft.content) match {
       case JsSuccess(api, _) =>
-         Api.writeValidator(api, _body, _singularName, _id, action, env)
+         Api.writeValidator(api, _body, None, _singularName, _id, action, env)
            .flatMap {
              case Left(value) => value.leftf
              case Right(newApi) => newDraft.copy(content = newApi.json).rightf

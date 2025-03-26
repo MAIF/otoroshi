@@ -491,6 +491,7 @@ object ApiConsumerSubscription {
 
   def writeValidator(entity: ApiConsumerSubscription,
                      body: JsValue,
+                     oldEntity: Option[(ApiConsumerSubscription, JsValue)],
                      singularName: String,
                      id: Option[String],
                      action: WriteAction,
@@ -951,6 +952,7 @@ object Api {
 
   def writeValidator(newApi: Api,
                       _body: JsValue,
+                      oldEntity: Option[(Api, JsValue)],
                       _singularName: String,
                       _id: Option[String],
                       action: WriteAction,
