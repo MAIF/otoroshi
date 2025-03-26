@@ -46,7 +46,7 @@ function Metric({ time, value, ...props }) {
             }}
         >
             <span className="metric-text-title">{props.legend}</span>
-            <div className="metric-box">
+            {/* <div className="metric-box">
                 <Sparklines data={values} limit={values.length} height={65}>
                     <SparklinesLine
                         color={mode === 'dark' ? 'var(--color-primary)' : 'black'}
@@ -54,7 +54,7 @@ function Metric({ time, value, ...props }) {
                     />
                     <SparklinesSpots />
                 </Sparklines>
-            </div>
+            </div> */}
             <span className="metric-text-value">{value}<span>{props.unit}</span></span>
         </div>
     )
@@ -138,28 +138,21 @@ export class ApiStats extends Component {
         if (!this.state.firstDone) {
             return <CircleLoader />
         }
-        return <>
+        return <div className='d-flex gap-3'>
             <div className="row-metrics">
                 <Metric time={Date.now()} value={this.state.rate} legend="Requests" unit="/sec" />
-                <Metric time={Date.now()} value={this.state.duration} legend="Per request" unit="ms" />
-                <Metric time={Date.now()} value={this.state.overhead} legend="Overhead per request" unit="ms" />
-            </div>
-            <div className="row-metrics">
-                {/* <Metric time={Date.now()} value={this.state.dataInRate} />
-                <Metric time={Date.now()} value={this.state.dataOutRate} /> */}
-
-            </div>
-            <div className="row-metrics">
                 <Metric time={Date.now()} value={this.state.requests} legend="Requests served" />
                 <Metric
                     time={Date.now()}
                     value={this.state.concurrentHandledRequests}
                     legend="Concurrent requests"
                 />
-                {/* <Metric time={Date.now()} value={this.state.dataIn} />
-                <Metric time={Date.now()} value={this.state.dataOut} /> */}
             </div>
-        </>
+            <div className="row-metrics">
+                <Metric time={Date.now()} value={this.state.duration} legend="Time per request" unit="ms" />
+                <Metric time={Date.now()} value={this.state.overhead} legend="Overhead per request" unit="ms" />
+            </div>
+        </div>
     }
 }
 

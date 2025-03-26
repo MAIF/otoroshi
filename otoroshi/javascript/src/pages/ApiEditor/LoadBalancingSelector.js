@@ -3,13 +3,7 @@ import React from 'react'
 export function LoadBalancingSelector({ onChange, value }) {
 
     return <div>
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-            }}
-        >
+        <div className='d-flex flex-column gap-2 m-2'>
             {[
 
                 {
@@ -44,7 +38,7 @@ export function LoadBalancingSelector({ onChange, value }) {
                 }].map(({ key, text, advice }) => (
                     <button
                         type="button"
-                        className={`btn d-flex flex-column ${value === key ? 'btn-primaryColor' : 'btn-quiet'}`}
+                        className={`btn d-flex flex-column ${value === key ? 'btn-primaryColor' : 'btn-quiet'} pb-3`}
                         onClick={() => onChange(key)}
                         key={key}
                     >

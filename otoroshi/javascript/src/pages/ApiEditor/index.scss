@@ -226,6 +226,7 @@
 
     .row-metrics {
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: .5rem;
     }
@@ -239,6 +240,7 @@
         align-items: start;
         justify-content: space-around;
         background-color: var(--bg-color_level3);
+        padding: .5rem 0;
     }
 
     .row-metrics * {
@@ -246,9 +248,9 @@
         font-family: Raleway, Helvetica, sans-serif;
     }
 
-    .metric {
-        position: relative;
-    }
+    // .metric {
+    //     position: relative;
+    // }
 
     .metric-box {
         height: inherit;
@@ -257,6 +259,7 @@
 
     .metric-text-title,
     .metric-text-value {
+        white-space: nowrap;
         text-shadow: none;
         color: var(--text);
         font-size: 1rem;
@@ -264,8 +267,8 @@
     }
 
     .metric-text-title {
-        position: absolute;
-        top: 6px;
+        // position: absolute;
+        // top: 6px;
     }
 
     .metric-text-value {

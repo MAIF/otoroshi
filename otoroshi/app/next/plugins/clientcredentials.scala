@@ -678,7 +678,6 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       .cachedConfig(internalName)(NgClientCredentialTokenEndpointConfig.format)
       .getOrElse(NgClientCredentialTokenEndpointConfig.default)
     handleBody(ctx) { body =>
-      println("body", body)
       (
         body.get("grant_type"),
         body.get("client_id"),
