@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-//  "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "3.7.0" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (

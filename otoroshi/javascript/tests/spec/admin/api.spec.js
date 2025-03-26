@@ -11,17 +11,15 @@ test.afterAll(async () => {
     await context.close();
 });
 
-async function deleteAPI() {
+async function deleteAPI(page) {
     await page.getByRole('link', { name: ' Informations' }).click();
     await page.locator('div').filter({ hasText: /^Danger zone$/ }).nth(1).click();
     await page.getByRole('button', { name: 'Delete this API' }).click();
     await page.getByRole('button', { name: 'Ok' }).click();
 }
 
-async function createAPI() {
-    const page = await context.newPage();
-    await page.goto('http://otoroshi.oto.tools:9999/bo/dashboard/apis')
-
+async function createAPI(page) {
+    await page.goto('/bo/dashboard/apis')
     await page.getByRole('link', { name: ' Create new API' }).click();
     await page.getByRole('textbox', { name: 'Name' }).click();
     await page.getByRole('textbox', { name: 'Name' }).press('ControlOrMeta+a');
@@ -35,13 +33,14 @@ async function createAPI() {
 }
 
 test('Should be able to create an API', async () => {
-    await createAPI()
-    await deleteAPI()
+    const page = await context.newPage();
+    await createAPI(page)
+    await deleteAPI(page)
 });
 
 test('Should be able to create a route, a consumer and to publish an API', async () => {
-    await createAPI()
-
+    const page = await context.newPage();
+    await createAPI(page)
 
     await page.getByText('Create a new Route').click();
     await page.getByRole('textbox').click();
@@ -54,7 +53,6 @@ test('Should be able to create a route, a consumer and to publish an API', async
     await expect(page.getByText('LOCALdefault_backend')).toBeVisible();
     await page.locator('div').filter({ hasText: /^4\. Additional informations$/ }).nth(1).click();
     await page.getByRole('textbox', { name: 'My users route' }).click();
-    await page.getByRole('textbox', { name: 'My users route' }).press('ControlOrMeta+a');
     await page.getByRole('textbox', { name: 'My users route' }).fill('My first API route');
     await page.getByRole('button', { name: 'Create DEV' }).click();
     await expect(page.locator('div').filter({ hasText: /^Routes 1$/ }).locator('span')).toBeVisible();
@@ -62,16 +60,6 @@ test('Should be able to create a route, a consumer and to publish an API', async
     await page.getByText('Consumers apply security').click();
     await page.getByRole('button', { name: 'keyless' }).click();
     await page.locator('#content-scroll-container input[type="text"]').click();
-    await page.locator('#content-scroll-container input[type="text"]').press('ControlOrMeta+a');
-    await page.locator('#content-scroll-container input[type="text"]').fill('My first ');
-    await page.locator('#content-scroll-container input[type="text"]').press('ControlOrMeta+a');
-    await page.locator('#content-scroll-container input[type="text"]').fill('my first keless');
-    await page.locator('#content-scroll-container input[type="text"]').press('Alt+Shift+ArrowLeft');
-    await page.locator('#content-scroll-container input[type="text"]').fill('my first ketyle');
-    await page.locator('#content-scroll-container input[type="text"]').press('Alt+Shift+ArrowLeft');
-    await page.locator('#content-scroll-container input[type="text"]').fill('my first keyless consummer');
-    await page.locator('#content-scroll-container input[type="text"]').press('ArrowLeft');
-    await page.locator('#content-scroll-container input[type="text"]').press('ArrowLeft');
     await page.locator('#content-scroll-container input[type="text"]').fill('my first keyless consumer');
     await page.getByRole('button', { name: 'Create DEV' }).click();
 
@@ -80,9 +68,11 @@ test('Should be able to create a route, a consumer and to publish an API', async
     await page.getByRole('button', { name: 'Update DEV' }).click();
 
     await page.getByRole('link', { name: ' Overview' }).click();
+
     await page.getByText('Publish your API to the').click();
+    await page.getByRole('button', { name: 'Publish and expose to the' }).click();
+    await expect(page.getByRole('heading', { name: 'New API PROD' }).locator('span')).toBeVisible();
+    await expect(page.locator('div').filter({ hasText: /^PRODPublished$/ }).nth(2)).toBeVisible();
 
-    
-
-    await deleteAPI()
+    await deleteAPI(page)
 });
