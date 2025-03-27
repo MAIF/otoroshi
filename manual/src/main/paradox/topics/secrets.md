@@ -6,9 +6,11 @@ Secrets are generally confidential values that should not appear in plain text i
 
 A secret can be anything you want like an apikey secret, a certificate private key or password, a jwt verifier signing key, a password to a proxy, a value for a header, etc.
 
-## Enable secrets management in otoroshi
+## Toggle secrets management in otoroshi
 
-By default secrets management is disbaled. You can enable it by setting `otoroshi.vaults.enabled` or `${OTOROSHI_VAULTS_ENABLED}` to `true`.
+By default secrets management feature is `enabled`. 
+
+You can disable it by setting `otoroshi.vaults.enabled` or `${OTOROSHI_VAULTS_ENABLED}` to `false`.
 
 ## Global configuration
 
