@@ -21,14 +21,20 @@ The configuration is located at `otoroshi.vaults` where you can find the global 
 otoroshi {
   ...
   vaults {
-    enabled = false
+    enabled = true
     enabled = ${?OTOROSHI_VAULTS_ENABLED}
-    secrets-ttl = 300000 # 5 minutes
+    secrets-ttl = 300000 # 5 minutes between each secret read
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    secrets-error-ttl = 20000 # wait 20000 before retrying on error
+    secrets-error-ttl = ${?OTOROSHI_VAULTS_SECRETS_ERROR_TTL}
     cached-secrets = 10000
     cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
-    read-timeout = 10000 # 10 seconds
-    read-timeout = ${?OTOROSHI_VAULTS_READ_TIMEOUT}
+		read-ttl = 10000 # 10 seconds
+    read-timeout = ${?otoroshi.vaults.read-ttl}
+		read-timeout = ${?OTOROSHI_VAULTS_READ_TTL}
+		read-timeout = ${?OTOROSHI_VAULTS_READ_TIMEOUT}
+    parallel-fetchs = 4
+    parallel-fetchs = ${?OTOROSHI_VAULTS_PARALLEL_FETCHS}
     # if enabled, only leader nodes fetches the secrets.
     # entities with secret values filled are then sent to workers when they poll the cluster state.
     # only works if `otoroshi.cluster.autoUpdateState=true`
@@ -37,6 +43,10 @@ otoroshi {
     env {
       type = "env"
       prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    local {
+    	type = "local"
+    	root = ${?OTOROSHI_VAULTS_LOCAL_ROOT}
     }
   }
 }
