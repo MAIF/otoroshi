@@ -1848,19 +1848,20 @@ object ApiKeyHelper {
       constraints: ApiKeyConstraints,
       service: String,
       attrs: TypedMap
-  )(implicit env: Env): Either[Option[ApiKey], ApiKey] = {
+  )(implicit env: Env): Either[(Option[ApiKey], Option[String]), ApiKey] = {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyKey) match {
       case Some(either) => either
       case None         => {
         env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
-          case None         => None.left
+          case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>
             apikeyTuple match {
               case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                  => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)            => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)          => apikey.some.left
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)          =>
+                (apikey.some, s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some).left
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer)  => apikey.right
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => apikey.some.left
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
@@ -1988,13 +1989,13 @@ object ApiKeyHelper {
                           )
                         )
                         apikey.right
-                      case Failure(e) => apikey.some.left
+                      case Failure(e) => (apikey.some, "None".some).left
                     }
                   }
-                  case None            => apikey.some.left
+                  case None            => (apikey.some, "JWT alg does not match supported ones".some).left
                 }
               }
-              case _                                                                             => apikey.some.left
+              case _                                                                             => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.json.stringify})".some).left
             }
         }
       }
@@ -2015,9 +2016,20 @@ object ApiKeyHelper {
 
     val config = env.datastores.globalConfigDataStore.latest()
 
-    def error(status: Results.Status, message: String, code: String): Future[Either[Result, ApiKey]] = {
+    def error(status: Results.Status, message: String, code: String, extraAnalyticsMessage: Option[String]): Future[Either[Result, ApiKey]] = {
+      val finalAttrs = extraAnalyticsMessage match {
+        case None => attrs
+        case Some(message) => {
+          val key = "apikey_rejection_reason"
+          attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
+            case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> message)
+            case Some(other) => other
+            case None => Json.obj(key -> message)
+          }
+        }
+      }
       Errors
-        .craftResponseResult(message, status, req, None /* TODO: pass the service None */, code.some, attrs = attrs)
+        .craftResponseResult(message, status, req, None /* TODO: pass the service None */, code.some, attrs = finalAttrs)
         .map(Left.apply)
     }
 
@@ -2076,15 +2088,15 @@ object ApiKeyHelper {
     }
 
     detectApikeyTuple(req, constraints, attrs) match {
-      case None              => error(Results.BadRequest, "no apikey", "errors.no.api.key")
+      case None              => error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
       case Some(apikeyTuple) =>
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
-          case Left(None)                                                                                          => error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key")
-          case Left(Some(apikey))                                                                                  =>
+          case Left((None, additionalMessage))                                                                                  => error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)
+          case Left((Some(apikey), additionalMessage))                                                                                  =>
             sendRevokedApiKeyAlert(apikey)
-            error(Results.Unauthorized, "bad apikey", "errors.bad.api.key")
+            error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)
           case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints)                                =>
-            error(Results.Unauthorized, "invalid apikey", "errors.invalid.api.key")
+            error(Results.Unauthorized, "invalid apikey", "errors.invalid.api.key", s"apikey '${apikey.clientId}' routing did not match".some)
           case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 => {
             apikey.restrictions
               .handleRestrictions(service, None, Some(apikey), req, attrs)
@@ -2109,7 +2121,7 @@ object ApiKeyHelper {
                 }
               case (false, _, quotas)            =>
                 sendQuotasExceededError(apikey, quotas)
-                error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+                error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests", s"apikey '${apikey.clientId}' quotas exceeded".some)
             }
           }
         }
