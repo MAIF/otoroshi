@@ -865,30 +865,31 @@ case class Api(
 
     for {
       globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
-      apiBackend          <- backends.find(_.id == apiRoute.backend).vfuture
+      apiBackend          <- backends.find(_.id == apiRoute.backend).map(_.backend).vfuture
     } yield {
-      NgRoute(
-        location = location,
-        id = apiRoute.id,
-        name = apiRoute.name + " - " + apiRoute.frontend.methods
-          .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
-        description = description,
-        tags = tags,
-        metadata = metadata,
-        enabled = apiRoute.enabled,
-        capture = capture,
-        debugFlow = debugFlow,
-        exportReporting = exportReporting,
-        groups = Seq.empty,
-        frontend = apiRoute.frontend,
-        backend = globalBackendEntity.map(_.backend).getOrElse(apiBackend.get.backend),
-        backendRef = None,
-        plugins = optApi.map(api => api).getOrElse(this)
-          .flows
-          .find(_.id == apiRoute.flowRef)
-          .map(_.plugins)
-          .getOrElse(NgPlugins.empty)
-      ).some
+      globalBackendEntity.map(_.backend).orElse(apiBackend).map(backend =>
+          NgRoute(
+            location = location,
+            id = apiRoute.id,
+            name = apiRoute.name + " - " + apiRoute.frontend.methods
+              .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
+            description = description,
+            tags = tags,
+            metadata = metadata,
+            enabled = apiRoute.enabled,
+            capture = capture,
+            debugFlow = debugFlow,
+            exportReporting = exportReporting,
+            groups = Seq.empty,
+            frontend = apiRoute.frontend,
+            backend = backend,
+            backendRef = None,
+            plugins = optApi.map(api => api).getOrElse(this)
+              .flows
+              .find(_.id == apiRoute.flowRef)
+              .map(_.plugins)
+              .getOrElse(NgPlugins.empty)
+          ))
     }
   }
 
@@ -906,6 +907,7 @@ object Api {
   }
 
   private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit ct: ClassTag[T]): ApiFlows = {
+    println("add plugin to flow", consumer.name, flow.name)
     if (flow.consumers.contains(consumer.id)) {
       flow.copy(plugins = flow.plugins.remove(pluginId[T]).add(NgPluginInstance(
         plugin = pluginId[T],
@@ -918,19 +920,18 @@ object Api {
     }
   }
 
-  def applyConsumerRulesOnApi(consumer: ApiConsumer, api: Api): Option[Api] = {
-    consumer.consumerKind match {
-      case ApiConsumerKind.Apikey   => addPluginToFlows[ApikeyCalls](api, consumer).some
-      case ApiConsumerKind.JWT      => addPluginToFlows[JwtVerificationOnly](api, consumer).some
-      case ApiConsumerKind.OAuth2   => addPluginToFlows[NgClientCredentialTokenEndpoint](api, consumer).some
-      case ApiConsumerKind.Mtls     => addPluginToFlows[NgHasClientCertMatchingValidator](api, consumer).some
-      case _                        => api.some
-      //        case ApiConsumerKind.Keyless  =>
-    }
-  }
-
   def applyConsumersOnFlow(flow: ApiFlows, api: Api): ApiFlows = {
-    flow.consumers.foldLeft(flow) { case (flow, item) =>
+
+    val outFlow = api.consumers.foldLeft(flow) { case (flow, consumer) => flow.copy(plugins = consumer.consumerKind match {
+        case ApiConsumerKind.Apikey => flow.plugins.remove(pluginId[ApikeyCalls])
+        case ApiConsumerKind.JWT => flow.plugins.remove(pluginId[JwtVerificationOnly])
+        case ApiConsumerKind.OAuth2 => flow.plugins.remove(pluginId[NgClientCredentialTokenEndpoint])
+        case ApiConsumerKind.Mtls => flow.plugins.remove(pluginId[NgHasClientCertMatchingValidator])
+        case _ => flow.plugins
+      })
+    }
+
+    flow.consumers.foldLeft(outFlow) { case (flow, item) =>
       api.consumers.find(_.id == item) match {
         case Some(consumer) =>
           consumer.consumerKind match {
@@ -989,35 +990,12 @@ object Api {
      var outApi = newApi
 
      if(action == WriteAction.Update) {
-       env.datastores.apiDataStore.findById(newApi.id)
-         .map(_.get)
+       oldEntity.map(_._1.vfuture)
+         .getOrElse(env.datastores.apiDataStore.findById(newApi.id).map(_.get))
          .map(api => {
            outApi = newApi.copy(flows = newApi.flows.map(flow => {
              applyConsumersOnFlow(flow, api)
-//             api.consumers.find(_.id == consumer.id) match {
-//               case Some(oldConsumer) =>
-//                 val result = updateConsumer(outApi, oldConsumer, consumer)
-//                 if (result.isDefined)
-//                   outApi = result.get
-//                 else {
-//                   return Json.obj(
-//                     "error" -> s"api has rejected your demand : you can't get back to a consumer status",
-//                     "http_status_code" -> 400
-//                   ).leftf
-//                 }
-//               case None =>
-//                 // apply new consumer on API flows
-//                 applyConsumerRulesOnApi(consumer, outApi)
-//                   .map(result => outApi = result)
-//                }
            }))
-
-           api.consumers.foreach(consumer => {
-             if (!newApi.consumers.exists(_.id == consumer.id)) {
-               deleteConsumerFromApi(outApi, consumer)
-                 .map(result => outApi = result)
-             }
-           })
          })
      }
      outApi.rightf

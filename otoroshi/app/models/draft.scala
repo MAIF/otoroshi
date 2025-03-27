@@ -79,7 +79,10 @@ object Draft {
 
     Api.format.reads(newDraft.content) match {
       case JsSuccess(api, _) =>
-         Api.writeValidator(api, _body, None, _singularName, _id, action, env)
+         Api.writeValidator(api,
+             Json.obj(),
+             oldEntity.map(oldDraft => (Api.format.reads(oldDraft._1.content).get, Json.obj())),
+             _singularName, _id, action, env)
            .flatMap {
              case Left(value) => value.leftf
              case Right(newApi) => newDraft.copy(content = newApi.json).rightf

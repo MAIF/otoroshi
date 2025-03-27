@@ -153,6 +153,8 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def remove(pluginId: String): NgPlugins = copy(slots = slots.filterNot(_.plugin == pluginId))
 
+  def removeAll(pluginIds: Seq[String]): NgPlugins = copy(slots = slots.filter(slot => !pluginIds.contains(slot.plugin)))
+
   def json: JsValue = JsArray(slots.map(_.json))
 
   def hasPlugin[A](implicit ct: ClassTag[A]): Boolean = getPluginByClass[A](ct).isDefined
