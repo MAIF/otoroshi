@@ -663,6 +663,7 @@
 .wizard-h3--small {
     font-size: 1.25em !important;
     color: #eee;
+
     +label {
         color: #eee;
     }
@@ -892,14 +893,15 @@
     }
 }
 
-  
-  @keyframes routePlugin {
+
+@keyframes routePlugin {
     from {
         opacity: 0;
         transform: translateY(20px);
-      }
-      to {
+    }
+
+    to {
         opacity: 1;
         transform: translateY(0);
-      }
-  }
+    }
+}
