@@ -42,6 +42,13 @@ import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import { PillButton } from '../../components/PillButton';
 import { BackendForm } from './BackendNode';
+import {
+  draftSignal,
+  draftVersionSignal,
+  updateEntityURLSignal,
+} from '../../components/Drafts/DraftEditorSignal';
+import { useSignalValue } from 'signals-react-safe';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -255,8 +262,8 @@ const Modal = ({ question, onOk, onCancel }) => (
         Cancel
       </button>
       <button type="button" className="btn btn-sm btn-success" onClick={onOk}>
-        <i className="fas fa-check me-1" />
-        Delete
+        <i className=" me-1" />
+        Remove
       </button>
     </div>
   </div>
@@ -493,6 +500,14 @@ const PluginsContainer = ({
   </div>
 );
 
+function SaveButton({ saveRoute, state }) {
+  const draftContext = useSignalValue(draftVersionSignal);
+
+  if (draftContext.version === 'draft') return null;
+
+  return <FeedbackButton type="success" className="ms-2 mb-1" onPress={saveRoute} text="Save" />;
+}
+
 class Designer extends React.Component {
   state = {
     backends: [],
@@ -562,17 +577,7 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
-    const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
-
-    this.props.setSaveButton(
-      <FeedbackButton
-        type="success"
-        className="ms-2 mb-1"
-        onPress={this.saveRoute}
-        text="Save"
-        _disabled={isEqual(this.state.route, this.state.originalRoute)}
-      />
-    );
+    this.props.setSaveButton(<SaveButton saveRoute={this.saveRoute} state={this.state} />);
   };
 
   injectOverrideRoutePluginsForm = () => (
@@ -614,7 +619,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -630,7 +635,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -641,15 +646,18 @@ class Designer extends React.Component {
     }
   };
 
-  loadData = () => {
+  loadData = (incomingRoute) => {
     Promise.all([
-      nextClient.find(nextClient.ENTITIES.BACKENDS),
-      this.props.value
-        ? Promise.resolve(this.props.value)
-        : nextClient.fetch(
-          this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-          this.props.routeId
-        ),
+      nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).findAll(),
+      incomingRoute
+        ? Promise.resolve(incomingRoute)
+        : this.props.value
+          ? Promise.resolve(this.props.value)
+          : nextClient
+              .forEntityNext(
+                this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
+              )
+              .findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -657,26 +665,26 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                showAdvancedDesignerView: (pluginName) => {
-                  this.setState({ advancedDesignerView: pluginName });
-                },
-              })
+                  showAdvancedDesignerView: (pluginName) => {
+                    this.setState({ advancedDesignerView: pluginName });
+                  },
+                })
               : plugin.config_schema,
           };
         })
       ),
       getOldPlugins(),
       getPlugins(),
-    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins]) => {
-
+      routePorts(this.props.routeId),
+    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-            ...r,
-            overridePlugins: true,
-            plugins: [],
-            ...r.routes[~~this.props.viewPlugins],
-          }
+              ...r,
+              overridePlugins: true,
+              plugins: [],
+              ...r.routes[~~this.props.viewPlugins],
+            }
           : r;
 
       if (route.error) {
@@ -721,7 +729,7 @@ class Designer extends React.Component {
         }));
       const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
-      const routeWithNodeId = {
+      let routeWithNodeId = {
         ...route,
         plugins: route.plugins
           .filter((ref) =>
@@ -739,42 +747,47 @@ class Designer extends React.Component {
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
 
-      routePorts(route.id).then((ports) => {
-        this.setState(
-          {
-            ports,
-            backends,
-            loading: false,
-            categories: categories.filter((category) => !['Job'].includes(category)),
-            route: { ...routeWithNodeId },
-            originalRoute: { ...routeWithNodeId },
-            plugins: formattedPlugins.map((p) => ({
-              ...p,
-              selected: p.plugin_multi_inst
-                ? false
-                : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-            })),
-            nodes,
-            frontend: {
-              ...Frontend,
-              config_schema: toUpperCaseLabels(Frontend.schema),
-              config_flow: Frontend.flow,
-              nodeId: 'Frontend',
-            },
-            backend: {
-              ...Backend,
-              config_schema: toUpperCaseLabels(Backend.schema),
-              config_flow: Backend.flow,
-              nodeId: 'Backend',
-            },
-            selectedNode: this.getSelectedNodeFromLocation(
-              routeWithNodeId.plugins,
-              formattedPlugins
-            ),
+      if (
+        routeWithNodeId.backend_ref &&
+        !backends.find((back) => back.id === routeWithNodeId.backend_ref)
+      ) {
+        routeWithNodeId = {
+          ...routeWithNodeId,
+          backend_ref: undefined,
+        };
+      }
+
+      this.setState(
+        {
+          ports,
+          backends,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...Frontend,
+            config_schema: toUpperCaseLabels(Frontend.schema),
+            config_flow: Frontend.flow,
+            nodeId: 'Frontend',
           },
-          this.injectNavbarMenu
-        );
-      });
+          backend: {
+            ...Backend,
+            config_schema: toUpperCaseLabels(Backend.schema),
+            config_flow: Backend.flow,
+            nodeId: 'Backend',
+          },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+        },
+        this.injectNavbarMenu
+      );
     });
   };
 
@@ -914,7 +927,7 @@ class Designer extends React.Component {
     this.setState({
       alertModal: {
         show: true,
-        question: `Delete this plugin ?`,
+        question: `Remove this plugin ?`,
         onCancel: (e) => {
           e.stopPropagation();
           this.setState({
@@ -988,14 +1001,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                    plugin: newNode.id,
-                    // [newNode.configRoot]: {
-                    ...newNode.config,
-                    // },
-                  }
+                      plugin: newNode.id,
+                      // [newNode.configRoot]: {
+                      ...newNode.config,
+                      // },
+                    }
                   : {
-                    ...newNode.config,
-                  },
+                      ...newNode.config,
+                    },
               },
             ],
           },
@@ -1030,13 +1043,16 @@ class Designer extends React.Component {
   deleteRoute = () => {
     window.newConfirm('are you sure you want to delete this route ?', (ok) => {
       if (ok) {
-        nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
-          if (history) {
-            history.push('/routes');
-          } else {
-            window.location = '/bo/dashboard/routes';
-          }
-        });
+        nextClient
+          .forEntityNext(nextClient.ENTITIES.ROUTES)
+          .deleteById(this.state.route.id)
+          .then(() => {
+            if (history) {
+              history.push('/routes');
+            } else {
+              window.location = '/bo/dashboard/routes';
+            }
+          });
       }
     });
   };
@@ -1232,8 +1248,8 @@ class Designer extends React.Component {
     });
   };
 
-  saveRoute = () => {
-    const { route, originalRoute } = this.state;
+  processRouteBeforeUpdate = (route) => {
+    const { originalRoute } = this.state;
 
     let newRoute;
 
@@ -1258,21 +1274,31 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-              {}
+                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+                {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
       };
     }
 
-    if (this.props.setValue) this.props.setValue(newRoute);
+    return newRoute;
+  };
+
+  saveRoute = () => {
+    const { route } = this.state;
+
+    const newRoute = this.processRouteBeforeUpdate(route);
+
+    if (this.props.setValue) {
+      this.props.setValue(newRoute);
+    }
 
     return nextClient
-      .update(
-        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-        newRoute
+      .forEntityNext(
+        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES
       )
+      .update(newRoute)
       .then((r) => {
         if (r.error) throw r.error;
         else {
@@ -1297,8 +1323,9 @@ class Designer extends React.Component {
       });
     });
 
-  isPluginEnabled = (value) =>
-    this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  isPluginEnabled = (value) => {
+    return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
+  };
 
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
@@ -1375,7 +1402,6 @@ class Designer extends React.Component {
       .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest);
 
     return [matchRoute, preRoute, validateAccess, transformRequest].map((nodes, i) => {
-      console.log(nodes, i)
       if (nodes.length === 0) return null;
 
       return (
@@ -1504,7 +1530,7 @@ class Designer extends React.Component {
     else {
       const arrows = {
         up: node.plugin_index[step] === 0 ? false : true,
-        down: nodes[nodes.length - 1]?.nodeId !== node.nodeId ? true : false,
+        down: nodes[nodes.length - 1].nodeId !== node.nodeId ? true : false,
       };
 
       if (step === 'TransformResponse')
@@ -1543,17 +1569,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1573,6 +1599,23 @@ class Designer extends React.Component {
 
     return (
       <Loader loading={loading}>
+        <DraftStateDaemon
+          processDraft={this.processRouteBeforeUpdate}
+          value={this.state.route}
+          setValue={(route) => {
+            this.props.setValue(route);
+            this.setState(
+              {
+                route,
+                selectedNode: undefined,
+              },
+              () => this.loadData(this.state.route)
+            );
+          }}
+          updateEntityURL={() => {
+            updateEntityURLSignal.value = this.saveRoute;
+          }}
+        />
         <Container
           showTryIt={showTryIt}
           onClick={() => {
@@ -1640,7 +1683,10 @@ class Designer extends React.Component {
               })
             }
           />
-          <div className="relative-container" style={{ flex: 9 }}>
+          <div
+            className="relative-container"
+            style={{ flex: 9, marginLeft: preview.enabled ? '1rem' : '.5rem' }}
+          >
             {preview.enabled ? (
               <EditView
                 addNode={this.addNode}
@@ -1772,7 +1818,6 @@ class Designer extends React.Component {
                   }
                   originalRoute={originalRoute}
                   alertModal={alertModal}
-                  disabledSaveButton={isEqual(route, originalRoute)}
                 />
               </div>
             )}
@@ -1915,14 +1960,14 @@ const UnselectedNode = ({
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
+              {m}
+            </span>
+          ))
         : [<span className="badge bg-success">ALL</span>];
 
     const unsecuredCopyToClipboard = (text) => {
@@ -1957,9 +2002,13 @@ const UnselectedNode = ({
 
       const domain = route.frontend.domains[idx];
 
-      if (isSecured) return `https://${domain}:${ports.https}`;
+      const domainParts = domain.split('/');
+      const hasPath = domainParts.length > 1;
 
-      return `http://${domain}:${ports.http}`;
+      if (isSecured)
+        return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+
+      return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
     };
 
     const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -2005,8 +2054,8 @@ const UnselectedNode = ({
               return allMethods.map((method, i) => {
                 return (
                   <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ width: 60 }}>{method}</div>
-                    <span style={{ fontFamily: 'monospace' }}>
+                    <div style={{ minWidth: 60 }}>{method}</div>
+                    <span style={{ fontSize: 15 }}>
                       {routeEntries(idx)}
                       {end}
                     </span>
@@ -2018,13 +2067,15 @@ const UnselectedNode = ({
                       >
                         <i className={copyIconName} />
                       </button>
-                      <button
-                        className="btn btn-sm btn-quiet ms-1"
-                        title={`Go to ${start}${domain}`}
-                        onClick={() => goTo(idx)}
-                      >
-                        <i className="fas fa-arrow-right" />
-                      </button>
+                      {draftVersionSignal.value.version === 'published' && (
+                        <button
+                          className="btn btn-sm btn-quiet ms-1"
+                          title={`Go to ${start}${domain}`}
+                          onClick={() => goTo(idx)}
+                        >
+                          <i className="fas fa-external-link-alt" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -2041,7 +2092,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2062,7 +2113,7 @@ const UnselectedNode = ({
                   padding: 10,
                   marginTop: 10,
                   backgroundColor: '#555',
-                  fontFamily: 'monospace',
+                  fontSize: 15,
                   borderRadius: 3,
                 }}
               >
@@ -2102,11 +2153,12 @@ const UnselectedNode = ({
                   : target.hostname;
                 const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
                 const start = target.tls ? 'https://' : 'http://';
+                const backup = target.backup ? (<span className="badge bg-secondary" style={{ fontSize: '.75rem', marginRight: 10 }}>backup</span>) : '';
                 const mtls =
                   target.tls_config &&
-                    target.tls_config.enabled &&
-                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                      .length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                    .length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2128,13 +2180,14 @@ const UnselectedNode = ({
                     }}
                     key={`backend-targets${i}`}
                   >
-                    <span style={{ fontFamily: 'monospace' }} className="d-flex align-items-center">
-                      <div style={{ width: 60 }}>
+                    <span style={{ fontSize: 15 }} className="d-flex align-items-center">
+                      <div style={{ minWidth: 60 }}>
                         <span className="badge bg-success" style={{ fontSize: '.75rem' }}>
                           ALL
                         </span>
                       </div>
                       {mtls}
+                      {backup}
                       {start}
                       {hostname}:{target.port}
                       {end}
@@ -2155,7 +2208,7 @@ const UnselectedNode = ({
                         title={`Go to ${backendURL}`}
                         onClick={() => window.open(backendURL, '_blank')}
                       >
-                        <i className="fas fa-arrow-right" />
+                        <i className="fas fa-external-link-alt" />
                       </button>
                     </div>
                   </div>
@@ -2189,8 +2242,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -2314,7 +2368,7 @@ class EditView extends React.Component {
 
   onScroll = () => {
     this.setState({
-      offset: window.pageYOffset,
+      offset: window.scrollY,
     });
   };
 
@@ -2450,8 +2504,6 @@ class EditView extends React.Component {
       readOnly,
       addNode,
       hidePreview,
-      disabledSaveButton,
-      saveRoute,
     } = this.props;
 
     const { id, name, icon } = selectedNode;
@@ -2543,12 +2595,7 @@ class EditView extends React.Component {
                       }}
                     />
                   ) : (
-                    <Actions
-                      disabledSaveButton={disabledSaveButton}
-                      valid={saveRoute}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
+                    <Actions selectedNode={selectedNode} onRemove={onRemove} />
                   )}
                 </>
               )}
@@ -2594,13 +2641,11 @@ class EditView extends React.Component {
           )}
           {!notOnBackendNode && (
             <div className="d-flex justify-content-end p-3">
-              <FeedbackButton
-                text="Save"
-                icon={() => <i className="fas fa-paper-plane" />}
-                onPress={saveRoute}
-              />
               {route.backend_ref && (
-                <Link className="btn btn-primary ms-2" to={`/backends/edit/${route.backend_ref}/`}>
+                <Link
+                  className="btn btn-sm btn-primary ms-2"
+                  to={`/backends/edit/${route.backend_ref}/`}
+                >
                   <i className="fas fa-microchip me-1" />
                   Edit this backend
                 </Link>
@@ -2613,16 +2658,9 @@ class EditView extends React.Component {
   }
 }
 
-const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
+const Actions = ({ selectedNode, onRemove }) => (
   <div className="d-flex mt-4 justify-content-end">
     {!['Frontend', 'Backend'].includes(selectedNode.id) && <RemoveComponent onRemove={onRemove} />}
-    <FeedbackButton
-      text="Save"
-      className="ms-2"
-      // disabled={disabledSaveButton}
-      icon={() => <i className="far fa-paper-plane" />}
-      onPress={valid}
-    />
   </div>
 );
 
@@ -2655,6 +2693,7 @@ const BackendSelector = ({
               ngOptions={{
                 spread: true,
               }}
+              isClearable
               onChange={(backend_ref) =>
                 setRoute({
                   ...route,
@@ -2686,17 +2725,9 @@ export const Description = ({ text, steps, legacy }) => {
 
   return (
     <>
-      {content && content.toLowerCase() !== '...' && (
-        <MarkdownInput
-          className="form-description"
-          readOnly={true}
-          preview={true}
-          value={content}
-        />
-      )}
       {steps.length > 0 && (
-        <div className="steps" style={{ paddingLeft: 12 }}>
-          active on{' '}
+        <div className="steps py-2" style={{ paddingLeft: 12 }}>
+          Active on steps{' '}
           {steps.map((step, i) => (
             <span
               className="badge bg-warning text-dark"
@@ -2710,11 +2741,19 @@ export const Description = ({ text, steps, legacy }) => {
       )}
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-          this plugin is a{' '}
+          This plugin is a{' '}
           <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>
+      )}
+      {content && content.toLowerCase() !== '...' && (
+        <MarkdownInput
+          className="form-description"
+          readOnly={true}
+          preview={true}
+          value={content}
+        />
       )}
       {overflows && (
         <button
