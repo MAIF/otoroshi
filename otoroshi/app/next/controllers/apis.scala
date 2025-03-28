@@ -41,7 +41,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       "overhead" -> round(overhead)
     )
 
-    private def round(value: Double): Double = (value * 100).round / 100.toDouble
+    private def round(value: Double): Double = {
+      if (value == 0) {
+          0
+      } else {
+          (value * 100).round / 100.toDouble
+      }
+    }
   }
 
   def draftLiveStats(id: String, every: Option[Int]) =

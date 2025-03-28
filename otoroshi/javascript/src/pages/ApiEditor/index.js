@@ -104,13 +104,13 @@ function useDraftOfAPI() {
 
     const isDraft = version && (version === 'Draft' || version === 'staging')
 
-    const rawAPI = useQuery(["getAPI", params.apiId],
+    useQuery(["getAPI", params.apiId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(params.apiId), {
         enabled: !api,
         onSuccess: setAPI
     })
 
-    const query = useQuery(['findDraftById', params.apiId, version], () => nextClient
+    useQuery(['findDraftById', params.apiId, version], () => nextClient
         .forEntityNext(nextClient.ENTITIES.DRAFTS)
         .findById(params.apiId),
         {
@@ -157,7 +157,10 @@ function useDraftOfAPI() {
         return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
             .update({
                 ...draftWrapper,
-                content: optDraft ? optDraft : draft
+                content: {
+                    ...(optDraft ? optDraft : draft),
+                    enabled: true
+                }
             })
             .then(() => setDraft(optDraft ? optDraft : draft))
     }
@@ -2190,7 +2193,6 @@ function Flows(props) {
 function VersionManager({ api, draft, owner, setState }) {
 
     const [deployment, setDeployment] = useState({
-        location: {},
         apiRef: api.id,
         owner,
         at: Date.now(),
@@ -2341,13 +2343,20 @@ function Informations(props) {
             props: {},
         },
         id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
+        enabled: {
+            type: 'box-bool',
+            label: 'Enabled API',
+            props: {
+                description: "It determines whether the API is globally enabled or not. If you disable your API, neither the draft nor the production environment will be available. All calls will result in a `Routes not found` error."
+            }
+        },
         name: {
             type: 'string',
-            props: { label: 'Name' },
+            label: 'Name'
         },
         description: {
             type: 'string',
-            props: { label: 'Description' },
+            label: 'Description'
         },
         metadata: {
             type: 'object',
@@ -2421,6 +2430,7 @@ function Informations(props) {
             type: 'group',
             name: 'Route',
             fields: [
+                'enabled',
                 'name',
                 'description',
             ],
@@ -2638,7 +2648,7 @@ function Dashboard(props) {
                 />}
 
                 {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
-                    onClick={() => publishAPI(item)}
+                    onClick={() => publishAPI(draft, item)}
                     title="Deploy your API"
                     description={<p className='objective-link'>
                         Publish your API to the production
@@ -3023,7 +3033,7 @@ function ContainerBlock({ children, full, highlighted, style = {} }) {
     </div>
 }
 
-function publishAPI(api) {
+function publishAPI(draft, api) {
     window.newConfirm(<>
         Upgrading an API from staging to production makes it fully available to clients without testing headers.
         <p>Clients will use the API with real data in a reliable environment.</p>
@@ -3034,11 +3044,21 @@ function publishAPI(api) {
         })
         .then((ok) => {
             if (ok) {
-                nextClient
-                    .forEntityNext(nextClient.ENTITIES.APIS)
-                    .update({
-                        ...api,
-                        state: API_STATE.PUBLISHED
+                const deployment = {
+                    apiRef: api.id,
+                    owner: window.__user?.profile?.name || window.__userid,
+                    at: Date.now(),
+                    apiDefinition: {
+                        ...draft.content,
+                        deployments: []
+                    },
+                    draftId: draft.id,
+                    action: 'patch',
+                    version: semver.inc(api.version, 'patch')
+                }
+                fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                    .then(() => {
+                        history.push(`/apis/${api.id}`)
                     })
                     .then(() => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
                         .deleteById(api.id))
@@ -3048,6 +3068,13 @@ function publishAPI(api) {
                         history.replaceState(null, null, "?" + queryParams.toString());
                         window.location.reload()
                     })
+                // nextClient
+                //     .forEntityNext(nextClient.ENTITIES.APIS)
+                //     .update({
+                //         ...api,
+                //         state: API_STATE.PUBLISHED
+                //     })
+
             }
         })
 }
@@ -3076,7 +3103,7 @@ function APIHeader({ api, version, draft }) {
             {version === 'Published' && <>
                 {api.state === API_STATE.STAGING && <Button
                     type='primaryColor'
-                    onClick={() => publishAPI(api)}
+                    onClick={() => publishAPI(draft, api)}
                     className='btn-sm ms-auto'
                     text="Start you API" />}
                 {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&

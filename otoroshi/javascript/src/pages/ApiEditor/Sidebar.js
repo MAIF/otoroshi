@@ -101,7 +101,7 @@ export default (props) => {
 
     const isOnApisHome = location.pathname.endsWith("/apis")
 
-    const isOnNewAPIView = location.pathname.endsWith('/new')
+    const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`)
 
     const version = useSignalValue(signalVersion)
 

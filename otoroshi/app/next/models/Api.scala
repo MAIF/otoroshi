@@ -817,7 +817,7 @@ case class Api(
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
 
-    if (state == ApiRemoved) {
+    if (state == ApiRemoved || !enabled) {
       Seq.empty.vfuture
     } else {
       env.datastores.draftsDataStore.findById(id)
@@ -947,7 +947,7 @@ object Api {
             case ApiConsumerKind.JWT      => addPluginToFlow[JwtVerificationOnly](consumer, flow)
             case ApiConsumerKind.OAuth2   => addPluginToFlow[NgClientCredentialTokenEndpoint](consumer, flow)
             case ApiConsumerKind.Mtls     => addPluginToFlow[NgHasClientCertMatchingValidator](consumer, flow)
-            //        case ApiConsumerKind.Keyless  =>
+            case ApiConsumerKind.Keyless  => flow
           }
         case None => flow
       }
