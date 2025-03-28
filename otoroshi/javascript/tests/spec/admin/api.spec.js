@@ -43,12 +43,14 @@ async function publishedDraftAPI(page) {
     await page.getByRole('textbox').press('ControlOrMeta+ArrowLeft')
     await page.getByRole('textbox').press('Alt+Shift+ArrowRight')
     await page.getByRole('textbox').fill('my-frst-api.oto.tools')
-    await page.locator('div').filter({ hasText: /^2\. Add plugins to your route by selecting a flow$/ }).nth(1).click()
+    
+    await page.getByText('3. Add plugins to your route').click();
     await expect(page.getByText('default_flow')).toBeVisible()
-    await page.locator('div').filter({ hasText: /^3\. Configure the backend$/ }).nth(1).click()
 
+    await page.getByText('4. Configure the backend').click();
     await expect(page.getByText('LOCALdefault_backend')).toBeVisible()
-    await page.locator('div').filter({ hasText: /^4\. Additional informations$/ }).nth(1).click()
+
+    await page.getByText('5. Additional informations').click();    
     await page.getByRole('textbox', { name: 'My users route' }).click()
     await page.getByRole('textbox', { name: 'My users route' }).fill('My first API route')
     await page.getByRole('button', { name: 'Create DEV' }).click()
@@ -134,7 +136,7 @@ test('Draft version should be promote in production environment', async () => {
     await createAPI(page)
     await publishedDraftAPI(page)
 
-    
+
     await page.locator('#sidebar svg').nth(1).click();
     await page.getByRole('option', { name: 'Draft' }).click();
     await page.getByRole('link', { name: ' Informations' }).click();

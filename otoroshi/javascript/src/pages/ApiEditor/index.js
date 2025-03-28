@@ -2666,7 +2666,7 @@ function Dashboard(props) {
                 />}
 
                 {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
-                    onClick={() => publishAPI(draft, item)}
+                    onClick={() => publishAPI(draft, item, history)}
                     title="Deploy your API"
                     description={<p className='objective-link'>
                         Publish your API to the production
@@ -3051,7 +3051,7 @@ function ContainerBlock({ children, full, highlighted, style = {} }) {
     </div>
 }
 
-function publishAPI(draft, api) {
+function publishAPI(draft, api, history) {
     window.newConfirm(<>
         Upgrading an API from staging to production makes it fully available to clients without testing headers.
         <p>Clients will use the API with real data in a reliable environment.</p>
@@ -3076,16 +3076,15 @@ function publishAPI(draft, api) {
                 }
                 fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
                     .then(() => {
+                        const queryParams = new URLSearchParams(window.location.search);
+                        queryParams.delete("version");
+                        window.history.replaceState(null, null, "?" + queryParams.toString());
+                        window.location.reload()
+                        
                         history.push(`/apis/${api.id}`)
                     })
                     .then(() => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
                         .deleteById(api.id))
-                    .then(() => {
-                        const queryParams = new URLSearchParams(window.location.search);
-                        queryParams.delete("version");
-                        history.replaceState(null, null, "?" + queryParams.toString());
-                        window.location.reload()
-                    })
                 // nextClient
                 //     .forEntityNext(nextClient.ENTITIES.APIS)
                 //     .update({
@@ -3098,6 +3097,8 @@ function publishAPI(draft, api) {
 }
 
 function APIHeader({ api, version, draft }) {
+    const history = useHistory()
+
     const updateAPI = newAPI => {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.APIS)
@@ -3121,7 +3122,7 @@ function APIHeader({ api, version, draft }) {
             {version === 'Published' && <>
                 {api.state === API_STATE.STAGING && <Button
                     type='primaryColor'
-                    onClick={() => publishAPI(draft, api)}
+                    onClick={() => publishAPI(draft, api, history)}
                     className='btn-sm ms-auto'
                     text="Start you API" />}
                 {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&

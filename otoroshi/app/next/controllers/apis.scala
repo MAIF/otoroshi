@@ -2,7 +2,7 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished}
+import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiStaging}
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
@@ -345,7 +345,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
                           version = deployment.version,
                           id = api.id,
-                          routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod"))
+                          routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
+                          state = if(apiDraft.state == ApiStaging) ApiPublished else api.state
                         )
                         env.datastores.apiDataStore.set(updatedApi)
                           .map(result => {
