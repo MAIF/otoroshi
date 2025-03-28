@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -115,7 +114,7 @@ object InHeader                                        extends FromJson[InHeader
       Right(
         InHeader(
           (json \ "name").as[String],
-          (json \ "remove").as[String]
+          (json \ "remove").asOpt[String].getOrElse("")
         )
       )
     } recover { case e =>
