@@ -94,12 +94,7 @@ test('Subscribers can only subscribe to published consumers', async () => {
     await deleteAPI(page)
 })
 
-test('API keys consumer selected in a flow should apply the API Keys plugin.', async () => {
-    const page = await context.newPage()
-    await createAPI(page)
-    await publishedDraftAPI(page)
-
-    // create and published a new consumer
+async function createApikeyConsumer(page) {
     await page.getByRole('link', { name: ' Consumers' }).click();
     await page.getByRole('link', { name: ' Create new consumer' }).click();
     await page.locator('#content-scroll-container input[type="text"]').click();
@@ -107,8 +102,9 @@ test('API keys consumer selected in a flow should apply the API Keys plugin.', a
     await page.getByRole('button', { name: 'published' }).click();
     await page.getByRole('button', { name: 'apikey' }).click();
     await page.getByRole('button', { name: 'Create PROD' }).click();
-    
-    // create a new flow and select the consumer
+}
+
+async function assignConsumerOnFlow(page) {
     await page.getByRole('link', { name: ' Flows' }).click();
     await page.getByRole('link', { name: ' Create new Flow' }).click();
     await page.getByText('apikeyOff').click();
@@ -117,7 +113,42 @@ test('API keys consumer selected in a flow should apply the API Keys plugin.', a
     await page.getByRole('button', { name: '' }).nth(0).click();
     await expect(page.locator('div').filter({ hasText: /^Apikeys$/ }).first()).toBeVisible();
     await page.getByRole('link', { name: ' Flows' }).click();
-    await page.getByRole('link', { name: ' Flows' }).click();
-    
+}
+
+test('API keys consumer selected in a flow should apply the API Keys plugin.', async () => {
+    const page = await context.newPage()
+    await createAPI(page)
+    await publishedDraftAPI(page)
+
+    // create and published a new consumer
+    await createApikeyConsumer(page)
+
+    // create a new flow and select the consumer
+    await assignConsumerOnFlow(page)
+
     await deleteAPI(page)
+})
+
+test('Draft version should be promote in production environment', async () => {
+    const page = await context.newPage()
+    await createAPI(page)
+    await publishedDraftAPI(page)
+
+    
+    await page.locator('#sidebar svg').nth(1).click();
+    await page.getByRole('option', { name: 'Draft' }).click();
+    await page.getByRole('link', { name: ' Informations' }).click();
+    await page.getByRole('textbox').first().click();
+    await page.getByRole('textbox').first().press('ControlOrMeta+a');
+    await page.getByRole('textbox').first().fill('my draft version');
+    await page.getByRole('button', { name: 'Update DEV' }).click();
+    await page.getByRole('button', { name: 'Publish new version' }).click();
+    await page.getByRole('button', { name: 'major' }).click();
+
+    await page.getByRole('button', { name: 'I want to publish this API' }).click();
+
+
+    await expect(page.getByRole('heading', { name: 'my draft version PROD' })).toBeVisible();
+
+    // await deleteAPI(page)
 })

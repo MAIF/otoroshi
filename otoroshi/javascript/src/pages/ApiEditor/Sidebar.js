@@ -101,12 +101,15 @@ export default (props) => {
 
     const isOnApisHome = location.pathname.endsWith("/apis")
 
+    const isOnNewAPIView = location.pathname.endsWith('/new')
+
     const version = useSignalValue(signalVersion)
 
     return (
         <div style={{
             padding: openedSidebar ? 'inherit' : '12px 0 6px',
         }}>
+            <p className="sidebar-title">Shortcuts</p>
             <ul className="nav flex-column nav-sidebar">
                 <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="APIs">
                     <Link
@@ -123,8 +126,8 @@ export default (props) => {
                     </Link>
                 </li>
                 {!isOnApisHome && <>
-                    {openedSidebar && <p className="sidebar-title mt-3">General</p>}
-                    <div className='me-1 my-2'>
+                    {openedSidebar && <p className="sidebar-title mt-3" aria-disabled={isOnNewAPIView}>General</p>}
+                    <div className='me-1 my-2' aria-disabled={isOnNewAPIView}>
                         {openedSidebar && version && version !== 'staging' && <Select
                             value={{ value: version, label: version }}
                             onChange={item => {
@@ -180,7 +183,9 @@ export default (props) => {
                         />}
                     </div>
                     {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
-                        <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+                        <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
+                            key={title}
+                            aria-disabled={isOnNewAPIView}>
                             <Link
                                 to={{
                                     pathname: to,
@@ -196,7 +201,7 @@ export default (props) => {
                             </Link>
                         </li>
                     ))}
-                    {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>}
+                    {/* {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>} */}
                 </>}
             </ul>
         </div>

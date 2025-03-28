@@ -2428,7 +2428,7 @@ function Informations(props) {
         {
             type: 'group',
             name: 'Misc.',
-            collapsed: true,
+            collapsed: false,
             fields: ['tags', 'metadata',
                 {
                     type: 'grid',
@@ -2489,14 +2489,13 @@ function VersionBadge({ size, className }) {
     </div>
 }
 
-function DashboardTitle({ api, draftWrapper, draft, step, ...props }) {
+function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
     const version = useSignalValue(signalVersion)
-
-    console.log(step)
+    const history = useHistory()
 
     return <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
         <div className="d-flex">
-            <h3 className="m-0 d-flex align-items-center">{api?.name}
+            <h3 className="m-0 d-flex align-items-center">{item?.name}
                 <VersionBadge />
             </h3>
         </div>
@@ -2531,8 +2530,8 @@ function DashboardTitle({ api, draftWrapper, draft, step, ...props }) {
                                         .then(deployment => {
                                             if (deployment) {
                                                 fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
-                                                    .then(res => {
-                                                        console.log(res)
+                                                    .then(() => {
+                                                        history.push(`/apis/${api.id}`)
                                                     })
                                             }
                                         })
@@ -2584,146 +2583,143 @@ function Dashboard(props) {
             Number(item?.state === API_STATE.PUBLISHED)
     }
 
-    useEffect(() => {
-        if (draft && api) {
-            props.setTitle(<DashboardTitle {...props}
-                params={params}
-                api={api}
-                draftWrapper={draftWrapper}
-                draft={draft}
-                step={getStep()} />)
-        }
-
-        return () => props.setTitle(undefined)
-    }, [api, draft])
-
     if (!draft || !item)
         return <SimpleLoader />
 
     const currentStep = getStep()
 
-    return <div className='d-flex flex-column gap-3 pb-10' style={{ maxWidth: 1280 }}>
-        {showGettingStarted && <ProgressCard step={currentStep}>
+    return <>
+        <DashboardTitle
+            {...props}
+            params={params}
+            item={item}
+            api={api}
+            draftWrapper={draftWrapper}
+            draft={draft}
+            step={getStep()} />
+        <div className='d-flex flex-column gap-3 pb-10' style={{ maxWidth: 1280 }}>
+            {showGettingStarted && <ProgressCard step={currentStep}>
 
-            {!hasCreateConsumer && hasCreateRoute && <ObjectiveCard
-                to={`/apis/${params.apiId}/consumers/new`}
-                title="Create a consumer"
-                description={<p className='objective-link'>Consumers apply security measures to the API</p>}
-                icon={<i className='fas fa-list' />}
-            />}
+                {!hasCreateConsumer && hasCreateRoute && <ObjectiveCard
+                    to={`/apis/${params.apiId}/consumers/new`}
+                    title="Create a consumer"
+                    description={<p className='objective-link'>Consumers apply security measures to the API</p>}
+                    icon={<i className='fas fa-list' />}
+                />}
 
-            {!hasCreateRoute && <ObjectiveCard
-                to={`/apis/${params.apiId}/routes/new`}
-                title="Your own route"
-                description={<p className='objective-link'>Create a new Route</p>}
-                icon={<i className='fas fa-road' />}
-            />}
+                {!hasCreateRoute && <ObjectiveCard
+                    to={`/apis/${params.apiId}/routes/new`}
+                    title="Your own route"
+                    description={<p className='objective-link'>Create a new Route</p>}
+                    icon={<i className='fas fa-road' />}
+                />}
 
-            {hasCreateRoute && !hasCreateBackend && currentStep >= 4 && <ObjectiveCard
-                to={`/apis/${params.apiId}/backends/new`}
-                title="Your own backend"
-                description={<p className='objective-link'>Create a new Backend</p>}
-                icon={<i className='fas fa-road' />}
-            />}
+                {hasCreateRoute && !hasCreateBackend && currentStep >= 4 && <ObjectiveCard
+                    to={`/apis/${params.apiId}/backends/new`}
+                    title="Your own backend"
+                    description={<p className='objective-link'>Create a new Backend</p>}
+                    icon={<i className='fas fa-road' />}
+                />}
 
-            {hasCreateRoute && hasCreateConsumer && !item.testing.enabled && <ObjectiveCard
-                to={`/apis/${params.apiId}/testing`}
-                title="Test your API"
-                description={<p className='objective-link'>Learn about testing API</p>}
-                icon={<i className='fas fa-road' />}
-            />}
+                {hasCreateRoute && hasCreateConsumer && !item.testing.enabled && <ObjectiveCard
+                    to={`/apis/${params.apiId}/testing`}
+                    title="Test your API"
+                    description={<p className='objective-link'>Learn about testing API</p>}
+                    icon={<i className='fas fa-road' />}
+                />}
 
-            {!hasCreateFlow && item.state === API_STATE.PUBLISHED && <ObjectiveCard
-                to={`/apis/${params.apiId}/flows/new`}
-                title="Create a flow"
-                description={<p className='objective-link'>
-                    Create group of plugins to apply rules
-                </p>}
-                icon={<i className='fas fa-project-diagram' />}
-            />}
+                {!hasCreateFlow && item.state === API_STATE.PUBLISHED && <ObjectiveCard
+                    to={`/apis/${params.apiId}/flows/new`}
+                    title="Create a flow"
+                    description={<p className='objective-link'>
+                        Create group of plugins to apply rules
+                    </p>}
+                    icon={<i className='fas fa-project-diagram' />}
+                />}
 
-            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
-                onClick={() => publishAPI(item)}
-                title="Deploy your API"
-                description={<p className='objective-link'>
-                    Publish your API to the production
-                </p>}
-                icon={<i className='fas fa-rocket' />}
-            />}
-        </ProgressCard>}
-        {item && <>
-            <div className='d-flex gap-3'>
-                <div className='d-flex flex-column flex-grow gap-3' style={{ flex: 1 }}>
-                    <ContainerBlock full highlighted>
-                        <APIHeader api={item} version={version} draft={draft} />
+                {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
+                    onClick={() => publishAPI(item)}
+                    title="Deploy your API"
+                    description={<p className='objective-link'>
+                        Publish your API to the production
+                    </p>}
+                    icon={<i className='fas fa-rocket' />}
+                />}
+            </ProgressCard>}
+            {item && <>
+                <div className='d-flex gap-3'>
+                    <div className='d-flex flex-column flex-grow gap-3' style={{ flex: 1 }}>
+                        <ContainerBlock full highlighted>
+                            <APIHeader api={item} version={version} draft={draft} />
 
-                        <ApiStats url={version === 'Published' ?
-                            `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000` :
-                            `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
-                        } />
+                            <ApiStats url={version === 'Published' ?
+                                `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000` :
+                                `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
+                            } />
 
-                        <Uptime
-                            health={item.health?.today}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={item.health?.yesterday}
-                            stopTheCountUnknownStatus={false}
-                        />
-                        <Uptime
-                            health={item.health?.nMinus2}
-                            stopTheCountUnknownStatus={false}
-                        />
-                    </ContainerBlock>
+                            <Uptime
+                                health={item.health?.today}
+                                stopTheCountUnknownStatus={false}
+                            />
+                            <Uptime
+                                health={item.health?.yesterday}
+                                stopTheCountUnknownStatus={false}
+                            />
+                            <Uptime
+                                health={item.health?.nMinus2}
+                                stopTheCountUnknownStatus={false}
+                            />
+                        </ContainerBlock>
 
-                    {hasCreateRoute && hasCreateConsumer && <ContainerBlock style={{
-                        width: 'initial'
+                        {hasCreateRoute && hasCreateConsumer && <ContainerBlock style={{
+                            width: 'initial'
+                        }}>
+                            <SectionHeader text="Routes" description="This API exposes the following routes" />
+                            <RoutesView api={item} />
+                        </ContainerBlock>}
+
+                        {hasCreateConsumer && <ContainerBlock style={{
+                            width: 'initial'
+                        }}>
+                            <SectionHeader
+                                text="Subscriptions"
+                                description={item.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
+                                actions={<Button
+                                    type="primaryColor"
+                                    text="Subscribe"
+                                    className='btn-sm'
+                                    onClick={() => historyPush(history, location, `/apis/${params.apiId}/subscriptions/new`)} />} />
+
+                            <SubscriptionsView api={item} />
+                        </ContainerBlock>}
+
+                        {hasCreateConsumer && <ContainerBlock style={{
+                            width: 'initial'
+                        }}>
+                            <SectionHeader text="Consumers"
+                                description={item.consumers.length <= 0 ? 'API consumers will appear here' : ''}
+                                actions={<Button
+                                    type="primaryColor"
+                                    text="New Consumer"
+                                    className='btn-sm'
+                                    onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers/new`)} />} />
+                            <ApiConsumersView api={item} />
+                        </ContainerBlock>}
+                    </div>
+                    {item.flows.length > 0 && item.routes.length > 0 && <ContainerBlock style={{
+                        // flex: .5
                     }}>
-                        <SectionHeader text="Routes" description="This API exposes the following routes" />
-                        <RoutesView api={item} />
-                    </ContainerBlock>}
-
-                    {hasCreateConsumer && <ContainerBlock style={{
-                        width: 'initial'
-                    }}>
-                        <SectionHeader
-                            text="Subscriptions"
-                            description={item.consumers.flatMap(c => c.subscriptions).length <= 0 ? 'Souscriptions will appear here' : ''}
-                            actions={<Button
-                                type="primaryColor"
-                                text="Subscribe"
-                                className='btn-sm'
-                                onClick={() => historyPush(history, location, `/apis/${params.apiId}/subscriptions/new`)} />} />
-
-                        <SubscriptionsView api={item} />
-                    </ContainerBlock>}
-
-                    {hasCreateConsumer && <ContainerBlock style={{
-                        width: 'initial'
-                    }}>
-                        <SectionHeader text="Consumers"
-                            description={item.consumers.length <= 0 ? 'API consumers will appear here' : ''}
-                            actions={<Button
-                                type="primaryColor"
-                                text="New Consumer"
-                                className='btn-sm'
-                                onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers/new`)} />} />
-                        <ApiConsumersView api={item} />
+                        <SectionHeader text="Build your API" description="Manage entities for this API" />
+                        <Entities>
+                            <FlowsCard flows={item.flows} />
+                            <BackendsCard backends={item.backends} />
+                            <RoutesCard routes={item.routes} />
+                        </Entities>
                     </ContainerBlock>}
                 </div>
-                {item.flows.length > 0 && item.routes.length > 0 && <ContainerBlock style={{
-                    // flex: .5
-                }}>
-                    <SectionHeader text="Build your API" description="Manage entities for this API" />
-                    <Entities>
-                        <FlowsCard flows={item.flows} />
-                        <BackendsCard backends={item.backends} />
-                        <RoutesCard routes={item.routes} />
-                    </Entities>
-                </ContainerBlock>}
-            </div>
-        </>}
-    </div>
+            </>}
+        </div>
+    </>
 }
 
 function ApiConsumersView({ api }) {

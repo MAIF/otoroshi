@@ -2,8 +2,15 @@ export default {
   id: 'cp:otoroshi.next.plugins.NgClientCredentialTokenEndpoint',
   config_schema: {
     default_key_pair: {
-      type: 'string',
       label: 'Default keypair id',
+      type: 'select',
+      props: {
+        optionsFrom: "/bo/api/proxy/api/certificates?keypair=true",
+        optionsTransformer: {
+          label: 'name',
+          value: 'id',
+        },
+      }
     },
     expiration: {
       type: 'number',

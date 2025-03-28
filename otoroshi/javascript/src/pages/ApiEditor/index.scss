@@ -392,6 +392,12 @@
     }
 }
 
+[aria-disabled~=true],
+[aria-disabled~=true] * {
+    opacity: .75;
+    pointer-events: none;
+}
+
 .testing-dot {
     height: 12px;
     width: 12px !important;

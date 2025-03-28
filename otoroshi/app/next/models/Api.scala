@@ -910,7 +910,6 @@ object Api {
   private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit ct: ClassTag[T]): ApiFlows = {
     if (flow.consumers.contains(consumer.id)) {
       if (flow.plugins.slots.exists(_.plugin == pluginId[T])) {
-        println("add plugin to flow : hasPlugin true", consumer.name)
         flow.copy(plugins = flow.plugins.copy(slots = flow.plugins.slots.map(slot =>
           if (slot.plugin == pluginId) {
             slot.copy(enabled = true, config = slot.config.copy(slot.config.raw.deepMerge(consumer.settings.json.asObject)))
@@ -918,7 +917,6 @@ object Api {
             slot
           })))
       } else {
-        println("add plugin to flow : need to add a new one", consumer.name)
         flow.copy(plugins = flow.plugins.add(NgPluginInstance(
           plugin = pluginId[T],
           include = Seq.empty,
