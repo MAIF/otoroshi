@@ -115,7 +115,7 @@ function useDraftOfAPI() {
         .findById(params.apiId),
         {
             retry: 0,
-            enabled: !draft,
+            enabled: !draft && !!api,
             onSuccess: data => {
                 if (data.error) {
                     Promise.all([
@@ -124,7 +124,8 @@ function useDraftOfAPI() {
                             .template(),
                         draftClient.template()
                     ])
-                        .then(([apiTemplate, template]) => {
+                        .then(([rawTemplate, template]) => {
+                            const apiTemplate = api ? api : rawTemplate
 
                             const draftApi = {
                                 ...apiTemplate,
@@ -176,7 +177,6 @@ function useDraftOfAPI() {
         tag: version === 'Published' ? 'PROD' : 'DEV',
         setItem: isDraft ? setDraft : setAPI,
         updateItem: isDraft ? updateDraft : updateAPI,
-        isLoading: isDraft ? query.isLoading : rawAPI.isLoading
     }
 }
 
@@ -219,8 +219,7 @@ function Subscriptions(props) {
     const deleteItem = item => client.delete(item)
         .then(() => window.location.reload())
 
-
-    if (rawSubscriptions.isLoading)
+    if (rawSubscriptions.isLoading || !item)
         return <SimpleLoader />
 
     return <Table
@@ -265,7 +264,7 @@ function SubscriptionDesigner(props) {
 
     const [subscription, setSubscription] = useState()
 
-    const { item, isLoading } = useDraftOfAPI()
+    const { item } = useDraftOfAPI()
 
     const rawSubscription = useQuery(["getSubscription", params.subscriptionId],
         () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).findById(params.subscriptionId),
@@ -274,10 +273,6 @@ function SubscriptionDesigner(props) {
         }
     )
 
-    // prevent schema to have a empty consumers list
-    if (isLoading || !subscription)
-        return null
-
     const updateSubscription = () => {
         return nextClient
             .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
@@ -285,7 +280,7 @@ function SubscriptionDesigner(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}/subscriptions`))
     }
 
-    if (isLoading || rawSubscription.isLoading)
+    if (!item || rawSubscription.isLoading)
         return <SimpleLoader />
 
     return <>
@@ -380,7 +375,7 @@ function NewSubscription(props) {
     const [subscription, setSubscription] = useState()
     const [error, setError] = useState()
 
-    const { item, isLoading, version } = useDraftOfAPI()
+    const { item, version } = useDraftOfAPI()
 
     const templatesQuery = useQuery(["getTemplate"],
         () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
@@ -393,9 +388,8 @@ function NewSubscription(props) {
         }
     )
 
-    // prevent schema to have a empty consumers list
-    if (isLoading || !subscription)
-        return null
+    if (!item || !subscription)
+        return <SimpleLoader />
 
     const updateSubscription = () => {
         const consumer = item.consumers.find(consumer => consumer.id === subscription.consumer_ref)
@@ -424,9 +418,6 @@ function NewSubscription(props) {
                 }
             })
     }
-
-    if (isLoading || templatesQuery.isLoading)
-        return <SimpleLoader />
 
     return <>
         <PageTitle title={subscription.name} {...props} />
@@ -473,7 +464,7 @@ function RouteDesigner(props) {
     const [route, setRoute] = useState()
     const [schema, setSchema] = useState()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const [backends, setBackends] = useState([])
 
@@ -503,7 +494,7 @@ function RouteDesigner(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}/routes`))
     }
 
-    if (!route || isLoading || !schema)
+    if (!route || !item || !schema)
         return <SimpleLoader />
 
     return <>
@@ -737,7 +728,7 @@ function Consumers(props) {
         }
     ];
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         props.setTitle({
@@ -753,7 +744,7 @@ function Consumers(props) {
         consumers: item.consumers.filter(f => f.id !== newItem.id)
     })
 
-    if (isLoading || !item)
+    if (!item)
         return <SimpleLoader />
 
     return <>
@@ -1012,7 +1003,7 @@ function NewConsumer(props) {
         subscriptions: []
     })
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const savePlan = () => {
         return updateItem({
@@ -1022,7 +1013,7 @@ function NewConsumer(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}`))
     }
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <>
@@ -1055,7 +1046,7 @@ function ConsumerDesigner(props) {
 
     const [consumer, setConsumer] = useState()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         if (item && !consumer) {
@@ -1075,7 +1066,7 @@ function ConsumerDesigner(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}`))
     }
 
-    if (isLoading || !consumer)
+    if (!item || !consumer)
         return <SimpleLoader />
 
 
@@ -1138,7 +1129,7 @@ function Routes(props) {
         },
     ];
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         props.setTitle({
@@ -1159,7 +1150,7 @@ function Routes(props) {
         })
     }
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <Table
@@ -1232,7 +1223,7 @@ function Backends(props) {
         }
     ];
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         props.setTitle({
@@ -1251,7 +1242,7 @@ function Backends(props) {
         backends: item.backends.filter(f => f.id !== newItem.id)
     })
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <Table
@@ -1295,7 +1286,7 @@ function NewBackend(props) {
 
     const [backend, setBackend] = useState()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const saveBackend = () => {
         return updateItem({
@@ -1308,7 +1299,7 @@ function NewBackend(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}/backends`))
     }
 
-    const templateQuery = useQuery(["getTemplate"],
+    useQuery(["getTemplate"],
         nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
         retry: 0,
         onSuccess: (data) => setBackend({
@@ -1318,7 +1309,7 @@ function NewBackend(props) {
         })
     });
 
-    if (templateQuery.isLoading || isLoading)
+    if (!backend || !item)
         return <SimpleLoader />
 
     return <>
@@ -1366,7 +1357,7 @@ function EditBackend(props) {
     const history = useHistory()
     const location = useLocation()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const [backend, setBackend] = useState()
 
@@ -1388,7 +1379,7 @@ function EditBackend(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}/backends`))
     }
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <>
@@ -1431,8 +1422,39 @@ function EditBackend(props) {
     </>
 }
 
+function TestingConfiguration(props) {
+    return <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            Configuration
+        </label>
+        <div className="col-sm-10">
+            Enable testing on your API to allow you to call all enabled routes. You just need to pass the following specific header when making the calls. This security measure, enforced by Otoroshi, prevents unauthorized users from accessing your draft API.
+            <div className='d-flex flex-column gap-2 mt-3'>
+                <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+                <div className="input-group">
+                    <input className="form-control" disabled type="text" value={props.rootValue?.headerValue} />
+
+                    <span
+                        className="input-group-text"
+                        style={{ cursor: 'pointer' }}
+                        title="copy bearer"
+                        onClick={() => {
+                            props.onSecretRotation({
+                                ...props.item.testing,
+                                headerValue: v4()
+                            })
+                        }}
+                    >
+                        <i className='fas fa-rotate' />
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 function Testing(props) {
-    const { item, version, updateItem, setItem, isLoading } = useDraftOfAPI()
+    const { item, version, updateItem } = useDraftOfAPI()
 
     useEffect(() => {
         props.setTitle('Testing mode')
@@ -1440,7 +1462,7 @@ function Testing(props) {
         return () => props.setTitle(undefined)
     }, [])
 
-    if (isLoading || !item)
+    if (!item)
         return <SimpleLoader />
 
     const schema = {
@@ -1452,20 +1474,12 @@ function Testing(props) {
             },
         },
         config: {
-            renderer: props => {
-                return <div className="row mb-3">
-                    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-                        Configuration
-                    </label>
-                    <div className="col-sm-10">
-                        Add this header to your calls
-                        <div className='d-flex flex-column gap-2 mt-3'>
-                            <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
-                            <input className="form-control" readOnly type="text" value={props.rootValue?.headerValue} />
-                        </div>
-                    </div>
-                </div>
-            }
+            renderer: props => <TestingConfiguration {...props} item={item} onSecretRotation={testing => {
+                updateItem({
+                    ...item,
+                    testing
+                })
+            }} />
         },
         routes: {
             renderer: () => {
@@ -1519,7 +1533,7 @@ function Testing(props) {
                 value={item.testing}
                 onChange={testing => {
                     if (testing)
-                        setItem({
+                        updateItem({
                             ...item,
                             testing
                         })
@@ -1527,14 +1541,14 @@ function Testing(props) {
                 schema={schema}
                 flow={flow}
             />
-            <FeedbackButton
+            {/* <FeedbackButton
                 type="success"
                 className="d-flex mt-3 ms-auto"
                 onPress={() => updateItem()}
                 text={<div className='d-flex align-items-center'>
                     Update <VersionBadge size="xs" />
                 </div>}
-            />
+            /> */}
         </div>
     </>
 }
@@ -1560,7 +1574,7 @@ function Deployments(props) {
         },
     ];
 
-    const { item, isLoading } = useDraftOfAPI()
+    const { item } = useDraftOfAPI()
 
     useEffect(() => {
         props.setTitle({
@@ -1571,7 +1585,7 @@ function Deployments(props) {
         return () => props.setTitle(undefined)
     }, [])
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <Table
@@ -1651,7 +1665,7 @@ function EditFlow(props) {
     const params = useParams()
     const location = useLocation()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const [flow, setFlow] = useState()
 
@@ -1695,7 +1709,7 @@ function EditFlow(props) {
             .then(() => historyPush(history, location, `/apis/${params.apiId}/flows`));
     }
 
-    if (isLoading || !item)
+    if (!item)
         return <SimpleLoader />
 
     return <div style={{
@@ -1772,7 +1786,7 @@ function NewFlow(props) {
         consumers: []
     })
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const createFlow = () => {
         return updateItem({
@@ -1782,10 +1796,10 @@ function NewFlow(props) {
                 consumers: Object.entries(flow.consumers).filter(f => f[1]).map(f => f[0])
             }]
         })
-            .then(() => historyPush(history, location, `/apis/${params.apiId}/flows/${flow.id}`));
+            .then(() => historyPush(history, location, `/apis/${params.apiId}/flows/${flow.id}/designer`));
     }
 
-    if (isLoading || !item)
+    if (!item)
         return <SimpleLoader />
 
     return <div style={{
@@ -1824,7 +1838,7 @@ function NewAPI(props) {
 
     const [value, setValue] = useState({})
 
-    const template = useQuery(["getTemplate"],
+    useQuery(["getTemplate"],
         nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
         retry: 0,
         onSuccess: (data) => setValue({
@@ -1886,7 +1900,7 @@ function NewAPI(props) {
             .then(() => historyPush(history, location, `/apis/${value.id}`));
     }
 
-    if (template.isLoading)
+    if (!value || !item)
         return <SimpleLoader />
 
     return <>
@@ -1922,8 +1936,23 @@ function Apis(props) {
             content: item => item.name
         },
         {
-            title: 'Id',
-            content: item => item.id
+            title: 'Description',
+            content: item => item.description
+        },
+        {
+            title: 'Enabled',
+            id: 'enabled',
+            style: { textAlign: 'center', width: 90 },
+            notFilterable: true,
+            cell: (enabled) =>
+                enabled ? <span className="fas fa-check-circle" style={{ color: 'var(--color-green)' }} />
+                    : <span className="fas fa-times" style={{ color: 'var(--color-red)' }} />
+        },
+        {
+            title: 'State',
+            content: item => item.state,
+            notFilterable: true,
+            cell: (value) => <APIState value={value} />
         },
     ];
 
@@ -1987,7 +2016,7 @@ function FlowDesigner(props) {
 
     const isCreation = params.action === 'new';
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const [flow, setFlow] = useState()
     const ref = useRef(flow)
@@ -2039,7 +2068,7 @@ function FlowDesigner(props) {
             .then(() => history.replace(`/apis/${params.apiId}/flows`))
     }
 
-    if (isLoading || !flow)
+    if (!item || !flow)
         return <SimpleLoader />
 
     return <div className='designer'>
@@ -2068,7 +2097,7 @@ function Flows(props) {
     const history = useHistory()
     const location = useLocation()
 
-    const { item, updateItem, isLoading } = useDraftOfAPI()
+    const { item, updateItem } = useDraftOfAPI()
 
     const columns = [
         {
@@ -2085,6 +2114,7 @@ function Flows(props) {
             cell: (_, item) => {
                 if (item.name === 'default_flow')
                     return null
+
                 return <Button className="btn-sm" onClick={() => {
                     historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/designer`)
                 }}>
@@ -2104,7 +2134,7 @@ function Flows(props) {
         return () => props.setTitle(undefined)
     }, [])
 
-    const fetchItems = (paginationState) => Promise.resolve(item.flows)
+    const fetchItems = (_) => Promise.resolve(item.flows)
 
     const fetchTemplate = () => Promise.resolve({
         id: uuid(),
@@ -2119,7 +2149,7 @@ function Flows(props) {
         })
     }
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <Table
@@ -2303,7 +2333,7 @@ function Informations(props) {
     const history = useHistory()
     const location = useLocation()
 
-    const { item, setItem, updateItem, isLoading } = useDraftOfAPI()
+    const { item, setItem, updateItem } = useDraftOfAPI()
 
     const schema = {
         location: {
@@ -2431,7 +2461,7 @@ function Informations(props) {
         }
     }, [item])
 
-    if (isLoading)
+    if (!item)
         return <SimpleLoader />
 
     return <>
@@ -2471,59 +2501,60 @@ function DashboardTitle({ api, draftWrapper, draft, step, ...props }) {
             </h3>
         </div>
         <div className="d-flex align-item-center justify-content-between">
-            {(version !== 'Published' && step > 3) && <div className='d-flex align-items-center'>
-                <Button
-                    text="Publish new version"
-                    className="btn-sm mx-2"
-                    type="primaryColor"
-                    style={{
-                        borderColor: 'var(--color-primary)',
-                    }}
-                    onClick={() => {
-                        nextClient
-                            .forEntityNext(nextClient.ENTITIES.APIS)
-                            .findById(props.params.apiId)
-                            .then(api => {
-                                window
-                                    .wizard('Version manager', (ok, cancel, state, setState) => {
-                                        return <VersionManager
-                                            api={api}
-                                            draft={draftWrapper}
-                                            owner={props.globalEnv.user}
-                                            setState={setState} />
-                                    }, {
-                                        style: { width: '100%' },
-                                        noCancel: false,
-                                        okClassName: 'ms-2',
-                                        okLabel: 'I want to publish this API',
-                                    })
-                                    .then(deployment => {
-                                        if (deployment) {
-                                            fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
-                                                .then(res => {
-                                                    console.log(res)
-                                                })
-                                        }
-                                    })
-                            })
-                    }}
-                />
-                <Button
-                    text="Reset draft"
-                    className="btn-sm"
-                    type="danger"
-                    onClick={() => {
-                        window.newConfirm('Are you sure you reset the draft content to match the published version? All your modifications will be discarded.')
-                            .then((ok) => {
-                                if (ok) {
-                                    nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
-                                        .deleteById(draftWrapper.id)
-                                        .then(() => window.location.reload())
-                                }
-                            })
-                    }}
-                />
-            </div>}
+            {(version !== 'Published' && step > 3) &&
+                <div className='d-flex align-items-center'>
+                    <Button
+                        text="Publish new version"
+                        className="btn-sm mx-2"
+                        type="primaryColor"
+                        style={{
+                            borderColor: 'var(--color-primary)',
+                        }}
+                        onClick={() => {
+                            nextClient
+                                .forEntityNext(nextClient.ENTITIES.APIS)
+                                .findById(props.params.apiId)
+                                .then(api => {
+                                    window
+                                        .wizard('Version manager', (ok, cancel, state, setState) => {
+                                            return <VersionManager
+                                                api={api}
+                                                draft={draftWrapper}
+                                                owner={props.globalEnv.user}
+                                                setState={setState} />
+                                        }, {
+                                            style: { width: '100%' },
+                                            noCancel: false,
+                                            okClassName: 'ms-2',
+                                            okLabel: 'I want to publish this API',
+                                        })
+                                        .then(deployment => {
+                                            if (deployment) {
+                                                fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/${api.id}/deployments`, 'POST', deployment, 'apis.otoroshi.io')
+                                                    .then(res => {
+                                                        console.log(res)
+                                                    })
+                                            }
+                                        })
+                                })
+                        }}
+                    />
+                    <Button
+                        text="Reset draft"
+                        className="btn-sm"
+                        type="danger"
+                        onClick={() => {
+                            window.newConfirm('Are you sure you reset the draft content to match the published version? All your modifications will be discarded.')
+                                .then((ok) => {
+                                    if (ok) {
+                                        nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+                                            .deleteById(draftWrapper.id)
+                                            .then(() => window.location.reload())
+                                    }
+                                })
+                        }}
+                    />
+                </div>}
         </div>
     </div>
 }
@@ -2533,7 +2564,7 @@ function Dashboard(props) {
     const history = useHistory()
     const location = useLocation()
 
-    const { item, draft, draftWrapper, isLoading, version, api } = useDraftOfAPI()
+    const { item, draft, draftWrapper, version, api } = useDraftOfAPI()
 
     const hasCreateFlow = item && item.flows.filter(f => f.name !== 'default_flow').length > 0
     const hasCreateBackend = item && item.backends.filter(f => f.name !== 'default_backend').length > 0
@@ -2566,7 +2597,7 @@ function Dashboard(props) {
         return () => props.setTitle(undefined)
     }, [api, draft])
 
-    if (isLoading || !item)
+    if (!draft || !item)
         return <SimpleLoader />
 
     const currentStep = getStep()
@@ -2588,7 +2619,7 @@ function Dashboard(props) {
                 icon={<i className='fas fa-road' />}
             />}
 
-            {hasCreateRoute && !hasCreateBackend && currentStep === 4 && <ObjectiveCard
+            {hasCreateRoute && !hasCreateBackend && currentStep >= 4 && <ObjectiveCard
                 to={`/apis/${params.apiId}/backends/new`}
                 title="Your own backend"
                 description={<p className='objective-link'>Create a new Backend</p>}
@@ -2611,7 +2642,7 @@ function Dashboard(props) {
                 icon={<i className='fas fa-project-diagram' />}
             />}
 
-            {currentStep === 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
+            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && <ObjectiveCard
                 onClick={() => publishAPI(item)}
                 title="Deploy your API"
                 description={<p className='objective-link'>
@@ -2813,6 +2844,8 @@ function RouteItem({ item, api, ports }) {
 
         if (version === 'Draft' || version === 'staging') {
             command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`
+        } else {
+            command = `curl ${method ? `-X ${method}` : ''} ${value}`
         }
 
         if (window.isSecureContext && navigator.clipboard) {
@@ -3011,10 +3044,8 @@ function publishAPI(api) {
                         ...api,
                         state: API_STATE.PUBLISHED
                     })
-                    .then(() => nextClient
-                        .forEntityNext(nextClient.ENTITIES.DRAFTS)
-                        .deleteById(api.id)
-                    )
+                    .then(() => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+                        .deleteById(api.id))
                     .then(() => {
                         const queryParams = new URLSearchParams(window.location.search);
                         queryParams.delete("version");

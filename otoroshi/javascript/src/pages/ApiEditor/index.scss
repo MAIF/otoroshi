@@ -12,7 +12,11 @@
         color: var(--text);
         border-radius: 1rem;
         border: 2px solid var(--text);
-        padding: .25rem .75rem .25rem .5rem;
+        padding: 0 .5rem;
+        width: fit-content;
+        height: 1.75rem;
+        display: flex;
+        align-items: center;
     }
 
     .custom-badge i {
@@ -227,6 +231,7 @@
     .row-metrics {
         display: flex;
         flex-wrap: wrap;
+        flex: 1;
         gap: 1rem;
         margin-bottom: .5rem;
     }

@@ -343,11 +343,11 @@ object ApiConsumer {
         },
         settings = json.select("consumer_kind").asString.toLowerCase  match {
           case "apikey"   => ApiConsumerSettings.Apikey(
-            wipeBackendRequest = (json \ "settings" \ "wipeBackendRequest").asOptBoolean.getOrElse(true),
+            wipeBackendRequest = (json \ "settings" \ "wipe_backend_request").asOptBoolean.getOrElse(true),
             validate = (json \ "settings" \ "validate").asOptBoolean.getOrElse(true),
             mandatory = (json \ "settings" \ "mandatory").asOptBoolean.getOrElse(true),
-            passWithUser = (json \ "settings" \ "passWithUser").asOptBoolean.getOrElse(false),
-            updateQuotas = (json \ "settings" \ "updateQuotas").asOptBoolean.getOrElse(true),
+            passWithUser = (json \ "settings" \ "pass_with_user").asOptBoolean.getOrElse(false),
+            updateQuotas = (json \ "settings" \ "update_quotas").asOptBoolean.getOrElse(true),
           )
           case "mtls"     => ApiConsumerSettings.Mtls(
             consumerConfig = (json \ "settings").asOpt(NgHasClientCertMatchingValidatorConfig.format)
@@ -790,6 +790,7 @@ case class Api(
     capture: Boolean,
     exportReporting: Boolean,
     state: ApiState,
+    enabled: Boolean = true,
     blueprint: ApiBlueprint,
     routes: Seq[ApiRoute],
     backends: Seq[ApiBackend],
@@ -865,7 +866,7 @@ case class Api(
 
     for {
       globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
-      apiBackend          <- backends.find(_.id == apiRoute.backend).map(_.backend).vfuture
+      apiBackend          <- optApi.map(api => api).getOrElse(this).backends.find(_.id == apiRoute.backend).map(_.backend).vfuture
     } yield {
       globalBackendEntity.map(_.backend).orElse(apiBackend).map(backend =>
           NgRoute(
@@ -902,31 +903,40 @@ case class Api(
 }
 
 object Api {
-  def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
-    api.copy(flows = api.flows.map(flow => addPluginToFlow[T](consumer, flow)))
-  }
+//  def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
+//    api.copy(flows = api.flows.map(flow => addPluginToFlow[T](consumer, flow)))
+//  }
 
   private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit ct: ClassTag[T]): ApiFlows = {
-    println("add plugin to flow", consumer.name, flow.name)
     if (flow.consumers.contains(consumer.id)) {
-      flow.copy(plugins = flow.plugins.remove(pluginId[T]).add(NgPluginInstance(
-        plugin = pluginId[T],
-        include = Seq.empty,
-        exclude = Seq.empty,
-        config = NgPluginInstanceConfig(consumer.settings.json.asObject)
-      )))
+      if (flow.plugins.slots.exists(_.plugin == pluginId[T])) {
+        println("add plugin to flow : hasPlugin true", consumer.name)
+        flow.copy(plugins = flow.plugins.copy(slots = flow.plugins.slots.map(slot =>
+          if (slot.plugin == pluginId) {
+            slot.copy(enabled = true, config = slot.config.copy(slot.config.raw.deepMerge(consumer.settings.json.asObject)))
+          } else {
+            slot
+          })))
+      } else {
+        println("add plugin to flow : need to add a new one", consumer.name)
+        flow.copy(plugins = flow.plugins.add(NgPluginInstance(
+          plugin = pluginId[T],
+          include = Seq.empty,
+          exclude = Seq.empty,
+          config = NgPluginInstanceConfig(consumer.settings.json.asObject)
+        )))
+      }
     } else {
       flow
     }
   }
 
   def applyConsumersOnFlow(flow: ApiFlows, api: Api): ApiFlows = {
-
     val outFlow = api.consumers.foldLeft(flow) { case (flow, consumer) => flow.copy(plugins = consumer.consumerKind match {
-        case ApiConsumerKind.Apikey => flow.plugins.remove(pluginId[ApikeyCalls])
-        case ApiConsumerKind.JWT => flow.plugins.remove(pluginId[JwtVerificationOnly])
-        case ApiConsumerKind.OAuth2 => flow.plugins.remove(pluginId[NgClientCredentialTokenEndpoint])
-        case ApiConsumerKind.Mtls => flow.plugins.remove(pluginId[NgHasClientCertMatchingValidator])
+        case ApiConsumerKind.Apikey => flow.plugins.togglePluginState(pluginId[ApikeyCalls], enabled = false)
+        case ApiConsumerKind.JWT => flow.plugins.togglePluginState(pluginId[JwtVerificationOnly], enabled = false)
+        case ApiConsumerKind.OAuth2 => flow.plugins.togglePluginState(pluginId[NgClientCredentialTokenEndpoint], enabled = false)
+        case ApiConsumerKind.Mtls => flow.plugins.togglePluginState(pluginId[NgHasClientCertMatchingValidator], enabled = false)
         case _ => flow.plugins
       })
     }
@@ -951,31 +961,19 @@ object Api {
     //    }
   }
 
-  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
-    api.copy(flows = api.flows
-      .map(flow => {
-        if (flow.consumers.contains(consumer.id)) {
-          flow.copy(plugins = NgPlugins(flow.plugins.slots.filter(plugin => {
-            val name = s"cp:${ct.runtimeClass.getName}"
-            plugin.plugin != name
-          })))
-        } else {
-          flow
-        }
-      }))
-  }
-
-  private def deleteConsumerFromApi(api: Api, consumer: ApiConsumer) = {
-    consumer.consumerKind match {
-      case ApiConsumerKind.Apikey   => removePluginToFlows[ApikeyCalls](api, consumer).some
-      case ApiConsumerKind.JWT      => removePluginToFlows[JwtVerificationOnly](api, consumer).some
-      case ApiConsumerKind.OAuth2   => removePluginToFlows[OIDCAccessTokenValidator](api, consumer).some
-      case ApiConsumerKind.Mtls     => removePluginToFlows[NgHasClientCertMatchingValidator](api, consumer).some
-      case _                        => None
-      //        case ApiConsumerKind.Mtls     =>
-      //        case ApiConsumerKind.Keyless  =>
-    }
-  }
+//  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
+//    api.copy(flows = api.flows
+//      .map(flow => {
+//        if (flow.consumers.contains(consumer.id)) {
+//          flow.copy(plugins = NgPlugins(flow.plugins.slots.filter(plugin => {
+//            val name = s"cp:${ct.runtimeClass.getName}"
+//            plugin.plugin != name
+//          })))
+//        } else {
+//          flow
+//        }
+//      }))
+//  }
 
   def writeValidator(newApi: Api,
                       _body: JsValue,
@@ -987,18 +985,15 @@ object Api {
      implicit val ec: ExecutionContext = env.otoroshiExecutionContext
      implicit val e: Env = env
 
-     var outApi = newApi
-
      if(action == WriteAction.Update) {
        oldEntity.map(_._1.vfuture)
          .getOrElse(env.datastores.apiDataStore.findById(newApi.id).map(_.get))
          .map(api => {
-           outApi = newApi.copy(flows = newApi.flows.map(flow => {
-             applyConsumersOnFlow(flow, api)
-           }))
+           newApi.copy(flows = newApi.flows.map(flow => applyConsumersOnFlow(flow, api))).right
          })
+     } else {
+      newApi.rightf
      }
-     outApi.rightf
    }
 
   def updateConsumerStatus(oldConsumer: ApiConsumer, consumer: ApiConsumer): Boolean = {
@@ -1033,6 +1028,7 @@ object Api {
       "capture"           -> o.capture,
       "export_reporting"  -> o.exportReporting,
       "state"             -> o.state.name,
+      "enabled"           -> o.enabled,
       "blueprint"         -> o.blueprint.name,
       "routes"            -> o.routes.map(ApiRoute._fmt.writes),
       "backends"          -> o.backends.map(ApiBackend._fmt.writes),
@@ -1064,6 +1060,7 @@ object Api {
           case "removed" => ApiRemoved
           case _ => ApiStaging
         }.getOrElse(ApiStaging),
+        enabled = (json \ "enabled").asOptBoolean.getOrElse(true),
         blueprint = (json \ " blueprint").asOptString.map {
           case "REST"      => ApiBlueprint.REST
           case "GraphQL"   => ApiBlueprint.GraphQL

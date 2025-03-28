@@ -31,21 +31,17 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                         dataOut: Long = 0,
                         rate: Double = 0.0,
                         duration: Double = 0.0,
-                        overhead: Double = 0.0,
-                        dataInRate: Double = 0.0,
-                        dataOutRate: Double = 0.0,
-                        concurrentHandleRequests: Long = 0) {
+                        overhead: Double = 0.0) {
     def json = Json.obj(
       "calls" -> calls,
       "dataIn" -> dataIn,
       "dataOut" -> dataOut,
-      "rate" -> rate,
-      "duration" -> duration,
-      "overhead" -> overhead,
-      "dataInRate" -> dataInRate,
-      "dataOutRate" -> dataOutRate,
-      "concurrentHandleRequests" -> concurrentHandleRequests
+      "rate" -> round(rate),
+      "duration" -> round(duration),
+      "overhead" -> round(overhead)
     )
+
+    private def round(value: Double): Double = (value * 100).round / 100.toDouble
   }
 
   def draftLiveStats(id: String, every: Option[Int]) =
@@ -93,14 +89,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
   def foldStats(stats: Seq[RouteStats]) = {
     stats.foldLeft(RouteStats()) { case (acc, item) => acc.copy(
       calls  = acc.calls + item.calls,
-      dataIn  = acc.dataIn + item.dataIn,
-      dataOut  = acc.dataOut + item.dataOut,
       rate  = acc.rate + item.rate,
       duration  = acc.duration + item.duration,
       overhead  = acc.overhead + item.overhead,
-      dataInRate  = acc.dataInRate + item.dataInRate,
-      dataOutRate  = acc.dataOutRate + item.dataOutRate,
-      concurrentHandleRequests = acc.concurrentHandleRequests + item.concurrentHandleRequests
     )}
   }
 
@@ -112,9 +103,6 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       rate                      <- env.datastores.serviceDescriptorDataStore.callsPerSec(route.id)
       duration                  <- env.datastores.serviceDescriptorDataStore.callsDuration(route.id)
       overhead                  <- env.datastores.serviceDescriptorDataStore.callsOverhead(route.id)
-      dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(route.id)
-      dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(route.id)
-      concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
     } yield {
       RouteStats(
         calls                     = calls,
@@ -122,10 +110,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         dataOut                   = dataOut,
         rate                      = rate,
         duration                  = duration,
-        overhead                  = overhead,
-        dataInRate                = dataInRate,
-        dataOutRate               = dataOutRate,
-        concurrentHandledRequests
+        overhead                  = overhead
       )
     }
   }

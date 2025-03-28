@@ -120,6 +120,7 @@ test('API keys consumer selected in a flow should apply the API Keys plugin.', a
     await page.getByRole('button', { name: '' }).nth(0).click();
     await expect(page.locator('div').filter({ hasText: /^Apikeys$/ }).first()).toBeVisible();
     await page.getByRole('link', { name: ' Flows' }).click();
+    await page.getByRole('link', { name: ' Flows' }).click();
     
     await deleteAPI(page)
 })
