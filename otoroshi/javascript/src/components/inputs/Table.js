@@ -90,8 +90,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
-            <div className="d-flex justify-content-between">
-              <div className="d-flex items-center">
+            <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex align-items-center">
                 <i
                   className="fa fa-chevron-left me-3"
                   style={{ cursor: 'pointer' }}

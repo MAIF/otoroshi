@@ -39,6 +39,8 @@ import JQRequest from './JQRequest';
 import JQResponse from './JQResponse';
 import JsonToXmlRequest from './JsonToXmlRequest';
 import JsonToXmlResponse from './JsonToXmlResponse';
+import JweExtractor from './JweExtractor';
+import JweSigner from './JweSigner';
 import JwtSigner from './JwtSigner';
 import JwtVerification from './JwtVerification';
 import JwtVerificationOnly from './JwtVerificationOnly';
@@ -196,6 +198,8 @@ const pluginsArray = [
   JQResponse,
   JsonToXmlRequest,
   JsonToXmlResponse,
+  JweExtractor,
+  JweSigner,
   JwtSigner,
   JwtVerification,
   JwtVerificationOnly,

@@ -2528,8 +2528,28 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
   }
 
-  def openapi() = Action { req =>
+  def openapiJson() = Action { req =>
     val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def openapiYaml() = Action { req =>
+    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
+    Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def openapi() = Action { req =>
+    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
+    val accepted = req.acceptedTypes.map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0)))).filter {
+      case ("application/json", _) => true
+      case ("application/yaml", _) => true
+      case ("text/yaml", _) => true
+      case _ => false
+    }.sortWith((a, b) => a._2.compareTo(b._2) > 0).map(_._1).headOption
+    accepted match {
+      case Some("application/yaml") => Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+      case Some("text/yaml") =>        Ok(Yaml.write(Json.parse(body))).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+      case _ =>                        Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
+    }
   }
 }

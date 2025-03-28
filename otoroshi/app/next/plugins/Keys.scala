@@ -17,7 +17,7 @@ object Keys {
   val RouteKey                   = TypedKey[NgRoute]("otoroshi.next.core.Route")
   val BackendKey                 = TypedKey[NgTarget]("otoroshi.next.core.Backend")
   val PossibleBackendsKey        = TypedKey[NgBackend]("otoroshi.next.core.PossibleBackends")
-  val PreExtractedApikeyKey      = TypedKey[Either[Option[ApiKey], ApiKey]]("otoroshi.next.core.PreExtractedApikey")
+  val PreExtractedApikeyKey      = TypedKey[Either[(Option[ApiKey], Option[String]), ApiKey]]("otoroshi.next.core.PreExtractedApikey")
   val PreExtractedApikeyTupleKey = TypedKey[ApikeyTuple]("otoroshi.next.core.PreExtractedApikeyTuple")
   val BodyAlreadyConsumedKey     = TypedKey[AtomicBoolean]("otoroshi.next.core.BodyAlreadyConsumed")
   val JwtInjectionKey            = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
