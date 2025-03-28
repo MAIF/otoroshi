@@ -386,8 +386,8 @@ export function registerWizard() {
         <WizardFrame
           body={fn}
           title={title}
-          ok={(inputValue) => {
-            success(inputValue);
+          ok={(inputValue, state) => {
+            success(state ? state : inputValue);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
           }}
           cancel={() => {

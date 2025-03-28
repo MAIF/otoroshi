@@ -43,6 +43,7 @@ import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
+import ApiEditorPage from '../pages/ApiEditor';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
 import { AtomicDesignPage } from '../pages/AtomicDesignPage';
@@ -293,16 +294,15 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}>
+          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }} id="otoroshi-container">
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -464,9 +464,7 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path={[
                           '/routes/:routeId',
-                          '/routes',
-                          '/route-compositions/:routeId',
-                          '/route-compositions',
+                          '/routes'
                         ]}
                         component={(props) => (
                           <RouteDesignerPage
@@ -474,6 +472,22 @@ class BackOfficeAppContainer extends Component {
                             reloadEnv={this.reloadEnv}
                             // setTitle={(t) => DynamicTitle.setContent(t)}
                             // getTitle={() => DynamicTitle.getContent()}
+                            setTitle={(t) => (dynamicTitleContent.value = t)}
+                            getTitle={() => dynamicTitleContent.value}
+                            setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            {...props}
+                          />
+                        )}
+                      />
+                      <Route
+                        path={[
+                          '/apis/:apiId',
+                          '/apis',
+                        ]}
+                        component={(props) => (
+                          <ApiEditorPage
+                            globalEnv={this.state.env}
+                            reloadEnv={this.reloadEnv}
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}

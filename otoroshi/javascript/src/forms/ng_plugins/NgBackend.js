@@ -1,4 +1,7 @@
+import React from 'react'
+
 import explainations from '../../explainations';
+import { LoadBalancingSelector } from '../../pages/ApiEditor/LoadBalancingSelector';
 
 export default {
   id: 'Backend',
@@ -7,7 +10,7 @@ export default {
   field: 'backend',
   schema: {
     root: {
-      label: 'root',
+      label: 'Root',
       type: 'string',
       help: 'The root URL of the target service',
     },
@@ -221,14 +224,14 @@ export default {
       collapsed: true,
       schema: {
         enabled: {
-          label: 'enabled',
+          label: 'Enabled',
           type: 'box-bool',
           props: {
             description: 'To help failing fast, you can activate healthcheck on a specific URL.',
           },
         },
         url: {
-          label: 'url',
+          label: 'URL',
           type: 'string',
           help: "The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete.",
         },
@@ -461,7 +464,7 @@ export default {
             hostname: 'request.otoroshi.io',
             protocol: 'HTTP/1.1',
             port: 443,
-            weight: 0,
+            weight: 1,
             tls: true,
             tls_config: {
               enabled: false,
@@ -519,25 +522,28 @@ export default {
       type: 'bool',
     },
     load_balancing: {
-      label: 'load_balancing',
+      label: 'Load Balancing',
       type: 'form',
       collapsable: true,
       collapsed: true,
       schema: {
         type: {
-          type: 'select',
-          help: 'The load balancing algorithm used',
-          props: {
-            label: 'type',
-            options: [
-              'BestResponseTime',
-              'IpAddressHash',
-              'Random',
-              'RoundRobin',
-              'Sticky',
-              'WeightedBestResponseTime',
-            ],
-          },
+          renderer: (props) => {
+            return <LoadBalancingSelector onChange={props.onChange} value={props.value} />
+          }
+          // type: 'select',
+          // help: 'The load balancing algorithm used',
+          // label: 'Type',
+          // props: {
+          //   options: [
+          //     'BestResponseTime',
+          //     'IpAddressHash',
+          //     'Random',
+          //     'RoundRobin',
+          //     'Sticky',
+          //     'WeightedBestResponseTime',
+          //   ],
+          // },
         },
         ratio: {
           label: 'ratio',
@@ -546,7 +552,7 @@ export default {
         },
       },
       flow: (item) => {
-        if (item.type === 'WeightedBestResponseTime') {
+        if (item?.type === 'WeightedBestResponseTime') {
           return ['type', 'ratio'];
         } else {
           return ['type'];

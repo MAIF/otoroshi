@@ -139,11 +139,6 @@ export class GlobalStatusPage extends Component {
                           <h3>{health.service}</h3>
                         </Link>
                       )}
-                      {health.kind === 'route-compositions' && (
-                        <Link to={`/route-compositions/${health.descriptor}/health`}>
-                          <h3>{health.service}</h3>
-                        </Link>
-                      )}
                       {health.kind === 'service' && (
                         <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
                           <h3>{health.service}</h3>

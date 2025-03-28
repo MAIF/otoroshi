@@ -69,12 +69,6 @@ export function ImportServiceDescriptor({ hide }) {
         });
       });
     });
-    /*
-    convertAsRoute(service).then((res) => {
-      history.push(`/routes/${res.id}?tab=informations`, {
-        routeFromService: res,
-      });
-    })*/
   }
 
   return (

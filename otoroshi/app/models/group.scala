@@ -1,5 +1,6 @@
 package otoroshi.models
 
+import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json._
@@ -75,8 +76,8 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
-  def template(env: Env): ServiceGroup = initiateNewGroup(env)
-  def initiateNewGroup(env: Env): ServiceGroup = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = initiateNewGroup(env, ctx)
+  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = {
     val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
       name = "product-group",
@@ -84,6 +85,7 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
       metadata = Map.empty,
       tags = Seq.empty
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

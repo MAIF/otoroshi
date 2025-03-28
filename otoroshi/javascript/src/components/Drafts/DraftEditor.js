@@ -15,7 +15,14 @@ import { PillButton } from '../PillButton';
 import JsonViewCompare from './Compare';
 import { Button } from '../Button';
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false
+    }
+  }
+});
 
 function findDraftByEntityId(id) {
   return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(id);
@@ -181,13 +188,15 @@ export const DraftStateDaemon = withRouter(
   }
 );
 
-function PublisDraftModalContent() {
+export function PublisDraftModalContent({ draft, currentItem }) {
   const draftContext = useSignalValue(draftSignal);
   const entityContent = useSignalValue(entityContentSignal);
 
   return (
     <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
-      <JsonViewCompare oldData={entityContent} newData={draftContext.draft} />
+      <JsonViewCompare
+        oldData={currentItem || entityContent}
+        newData={draft || draftContext.draft} />
     </div>
   );
 }
@@ -202,7 +211,6 @@ export function PublisDraftButton(props) {
     if (isFirstRender.current) {
       isFirstRender.current = false;
     } else {
-      console.log('reset after pathname changed', pathname);
       resetDraftSignal();
     }
   }, [pathname]);

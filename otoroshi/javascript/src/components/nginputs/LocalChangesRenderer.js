@@ -44,7 +44,7 @@ export class LocalChangesRenderer extends React.Component {
               // bottom: 0,
               margin: 'auto',
               right: 12,
-              height: 32,
+              // height: 32,
             }}
             onClick={() => {
               this.setState({ folded: false });

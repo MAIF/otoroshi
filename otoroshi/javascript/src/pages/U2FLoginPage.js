@@ -220,7 +220,6 @@ export class U2FLoginPage extends Component {
             })
               .then((r) => r.json(), this.handleError('Authentication error, sorry ...'))
               .then((data) => {
-                console.log(data);
                 this.setState(
                   { error: null, email: '', password: '', message: `Login successfully` },
                   () => {

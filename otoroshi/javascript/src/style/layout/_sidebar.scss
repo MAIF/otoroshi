@@ -21,7 +21,7 @@
     height: 32px;
 
     &.active {
-      color: var(--color-primary);
+      color: var(--color-primary) !important;
     }
 
     &:hover {
@@ -91,7 +91,7 @@
   max-width: 52px;
 }
 
-.sidebar-title{
+.sidebar-title {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 0;

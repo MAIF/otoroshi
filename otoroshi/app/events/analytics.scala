@@ -929,3 +929,36 @@ object WasmLogEvent {
       "level"      -> o.level
     )
 }
+
+case class ApiDeploymentEvent(
+    `@type`: String = "ApiDeploymentEvent",
+    `@id`: String,
+    `@timestamp`: DateTime,
+    apiRef: String,
+    owner: String,
+    at: DateTime,
+    apiDefinition: JsValue,
+    version: String,
+    `@service`: String,
+    `@serviceId`: String,
+) extends AnalyticEvent {
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+  def toJson(implicit _env: Env): JsValue    = ApiDeploymentEvent.writes(this, _env)
+}
+
+object ApiDeploymentEvent {
+  def writes(o: ApiDeploymentEvent, env: Env): JsValue =
+    Json.obj(
+      "@type"         -> o.`@type`,
+      "@id"           -> o.`@id`,
+      "@timestamp"    -> o.`@timestamp`,
+      "@serviceId"    -> o.`@serviceId`,
+      "@service"      -> o.`@service`,
+      "apiRef"        -> o.apiRef,
+      "owner"         -> o.owner,
+      "at"            -> o.at,
+      "apiDefinition" -> o.apiDefinition,
+      "version"       -> o.version
+    )
+}

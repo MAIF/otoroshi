@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.jayway.jsonpath.{Configuration, JsonPath}
-import net.minidev.json.{JSONArray, JSONObject}
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import play.api.Logger

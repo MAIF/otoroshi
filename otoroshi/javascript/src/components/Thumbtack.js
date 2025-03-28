@@ -108,7 +108,7 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
       disabled={shortcutDisabled}
       title="Add current page to sidebar shortcuts"
       onClick={addShortcut}
-      className="ms-3 btn-sm align-self-center"
+      className="ms-3 btn-sm align-self-center thumbtack"
     >
       <i className="fas fa-thumbtack"></i>
     </Button>

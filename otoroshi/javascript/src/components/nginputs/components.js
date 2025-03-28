@@ -102,7 +102,6 @@ export class NgFormRenderer extends Component {
           : true) &&
         value !== undefined &&
         (typeof value === 'boolean' ? true : value && value.length > 0);
-
       if (subFilter) {
         return isNotAnObject && expectedSummaryFields.find((f) => f.startsWith(key));
       } else {
@@ -252,7 +251,6 @@ export class NgFormRenderer extends Component {
               ...(this.props.style || {}),
               ...(rawSchema.style || {}),
             }}
-            className={showChildren ? '' : 'btn btn-quiet'}
             onClick={() => {
               if (clickable) this.setBreadcrumb();
             }}

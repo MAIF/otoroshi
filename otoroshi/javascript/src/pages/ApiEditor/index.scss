@@ -1,0 +1,414 @@
+.editor {
+    .bg-warning {
+        color: var(--text) !important;
+        background-color: var(--color-primary) !important;
+    }
+
+    .btn-warning {
+        border-color: var(--color-primary) !important;
+    }
+
+    .custom-badge {
+        color: var(--text);
+        border-radius: 1rem;
+        border: 2px solid var(--text);
+        padding: 0 .5rem;
+        width: fit-content;
+        height: 1.75rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .custom-badge i {
+        background-color: var(--text);
+        color: var(--reverse-text);
+        border-radius: 50%;
+        padding: .25rem;
+    }
+
+    .api-status-published {
+        background-color: hsla(150, 52%, 81%, 0.18);
+        border-color: hsla(150, 52%, 51%, 0.4);
+    }
+
+    .api-status-published i {
+        background-color: hsla(150, 52%, 51%, 1);
+        color: var(--text);
+    }
+
+    .api-status-deprecated {
+        background-color: hsla(40, 94%, 58%, 0.18);
+        border-color: hsla(40, 94%, 58%, 0.4);
+    }
+
+    .api-status-deprecated i {
+        background: none;
+        color: hsla(40, 94%, 58%, 1);
+    }
+
+    .api-status-started i {
+        background: none;
+        color: hsl(184, 9%, 62%);
+    }
+
+    .api-status-started {
+        background-color: hsla(184, 9%, 62%, 0.18);
+        border-color: hsla(184, 9%, 62%, 0.4);
+    }
+
+    .cards {
+        margin: 0;
+        min-height: initial;
+    }
+
+    .short-table-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr) 62px 32px;
+        align-items: center;
+        gap: 1rem;
+        padding: .5rem 2rem .5rem 1rem;
+        margin-bottom: .2rem;
+        color: var(--text);
+    }
+
+    .routes-table-row {
+        padding: 0 .5rem 0 .5rem;
+        grid-template-columns: minmax(120px, 180px) 1fr 62px auto;
+    }
+
+    .short-table-row pre {
+        text-align: start;
+    }
+
+    .short-table-row:first-child {
+        text-transform: uppercase;
+        font-weight: 100;
+    }
+
+    .short-table-row>div:last-child {
+        text-align: center;
+    }
+
+    .cards--large {
+        max-width: inherit;
+    }
+
+    .cards-title {
+        font-size: 1.5rem !important;
+        color: var(--text) !important;
+    }
+
+    .apis-cards {
+        cursor: pointer;
+    }
+
+    .apis-cards:hover .cards-body {
+        background-color: hsla(0, 0%, 35%, .5);
+    }
+
+    .apis-cards:hover button {
+        background-color: var(--color-primary);
+        color: var(--text);
+    }
+
+    .highlighted-text {
+        color: var(--color-primary);
+        font-weight: bold;
+        text-decoration: underline;
+    }
+
+    .container {
+        width: fit-content;
+        background-color: var(--bg-color_level2);
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+
+    .container--full {
+        flex: 1;
+        margin: 0;
+        width: inherit;
+    }
+
+    .container--highlighted {
+        background-color: var(--bg-color_level2);
+    }
+
+    h3 {
+        color: var(--text) !important;
+    }
+
+    .short-table-navigate-icon {
+        transition: all .2s;
+        opacity: .85;
+        padding-left: 0;
+        text-align: end;
+    }
+
+    .short-table-row:hover {
+        cursor: pointer;
+    }
+
+    .short-table-row:hover .short-table-navigate-icon {
+        opacity: 1;
+        color: var(--text);
+        padding-left: 1.5rem;
+    }
+
+    .navigate-icon {
+        position: absolute;
+        bottom: 0rem;
+        right: .2rem;
+        transition: all .2s;
+        opacity: .85;
+    }
+
+    .cards:hover .navigate-icon {
+        right: -.25rem;
+        color: var(--text);
+        opacity: 1;
+    }
+
+    .relative {
+        position: relative;
+    }
+
+    .absolute {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .flex-grow {
+        flex-grow: 1;
+    }
+
+    .health-container {
+        background: hsla(0, 0%, 25%, .3);
+        box-shadow: none;
+        padding: 1rem;
+        margin: 0;
+        margin-bottom: 1rem;
+        border-radius: 1rem;
+    }
+
+    .uptime-avg {
+        color: var(--text) !important;
+    }
+
+    .health-container .uptime-avg {
+        color: var(--color-primary);
+    }
+
+    .status.orange,
+    .status.light-orange {
+        background-color: var(--color-primary);
+    }
+
+    .status {
+        height: 1.5rem;
+        border-radius: .5rem;
+    }
+
+    .cards-header {
+        min-height: 170px;
+        background-size: cover !important;
+        padding: 2.5rem 2.5rem 1rem 2.5rem;
+        background-origin: content-box !important;
+    }
+
+    .tag {
+        color: var(--reverse-text);
+        font-size: .8rem;
+        border-radius: 1rem;
+        border: 1px solid var(--text);
+        background-color: var(--text);
+        padding: .1rem .3rem;
+        min-width: 3rem;
+        text-align: center;
+    }
+
+    .row-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        flex: 1;
+        gap: 1rem;
+        margin-bottom: .5rem;
+    }
+
+    .row-metrics .metric {
+        height: initial;
+        width: initial !important;
+        flex: 1;
+        margin: initial;
+        border-radius: .5rem;
+        align-items: start;
+        justify-content: space-around;
+        background-color: var(--bg-color_level3);
+        padding: .5rem 0;
+    }
+
+    .row-metrics * {
+        font-size: initial;
+        font-family: Raleway, Helvetica, sans-serif;
+    }
+
+    // .metric {
+    //     position: relative;
+    // }
+
+    .metric-box {
+        height: inherit;
+        margin-top: 32px;
+    }
+
+    .metric-text-title,
+    .metric-text-value {
+        white-space: nowrap;
+        text-shadow: none;
+        color: var(--text);
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .metric-text-title {
+        // position: absolute;
+        // top: 6px;
+    }
+
+    .metric-text-value {
+        font-size: 2rem;
+    }
+
+    .metric-text-value span {
+        font-size: .75rem;
+    }
+
+    .ace_scrollbar {
+        display: none;
+    }
+
+    // .ace_editor:hover .ace_scrollbar {
+    //     display: block;
+    // }
+
+    .progress {
+        height: .5rem;
+        background: var(--bg-color_level3);
+        width: 250px;
+        border-radius: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--color-primary);
+    }
+
+    .progress-childs {
+        scrollbar-color: #888 transparent;
+    }
+
+    .progress-childs::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .progress-childs::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+
+    .progress-childs {
+        display: flex;
+        gap: .5rem;
+        overflow-x: scroll;
+        // margin-left: auto;
+        // justify-content: flex-end;
+        // flex: 1;
+        // scrollbar-width: none;
+    }
+
+
+    .objective-link {
+        text-decoration: underline;
+    }
+
+    .objective-card-icon {
+        color: var(--text);
+        border-radius: 50%;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        border: 2px solid var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(249, 181, 47, 0.18);
+        border: none;
+
+    }
+
+    .objective-card-icon i {
+        color: var(--color-primary);
+        font-size: 1.6rem;
+        border-radius: 50%;
+    }
+
+    .objective-card {
+        // margin-left: auto;
+        background-color: var(--bg-color_level3);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 1rem;
+        padding: 0 2rem;
+
+        border-radius: .5rem;
+        min-width: 18rem;
+    }
+
+    .objective-card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: .2rem;
+    }
+
+    .objective-card-body p {
+        margin: 0;
+    }
+
+    .objective-card-body>p:first-child {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .objective-card-body>p:last-child {
+        cursor: pointer;
+    }
+}
+
+[aria-disabled~=true],
+[aria-disabled~=true] * {
+    opacity: .75;
+    pointer-events: none;
+}
+
+.testing-dot {
+    height: 12px;
+    width: 12px !important;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.testing-dot--enabled {
+    background-color: var(--color-green);
+}
+
+.testing-dot--disabled {
+    background-color: var(--color-red);
+}

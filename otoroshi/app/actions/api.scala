@@ -6,6 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
+import next.models.Api
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, _}
@@ -198,15 +199,46 @@ trait ApiActionContextCapable {
   private def findServiceById(
       serviceId: String
   )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+    def getRouteCompositions = {
+      env.datastores.routeCompositionDataStore.findById(serviceId) flatMap  {
+        case Some(service) => service.toRoutes.head.legacy.some.vfuture
+        case None => getDraftRoutes
+      }
+    }
+
+    def getDraftRoutes: Future[Option[ServiceDescriptor]] = {
+      env.datastores.draftsDataStore.findById(serviceId) flatMap {
+        case Some(service) =>
+          val api = Api.format.reads(service.content).get
+          if (api.routes.isEmpty)  {
+            None.vfuture
+          } else {
+            api.routeToNgRoute(api.routes.head).map(_.get.legacy.some)
+          }
+        case None =>
+          None.vfuture
+      }
+    }
+
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case Some(service) => service.some.vfuture
       case None          =>
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.routeCompositionDataStore.findById(serviceId) map {
-              case Some(service) => service.toRoutes.head.legacy.some
-              case None          => None
+            env.datastores.apiDataStore.findById(serviceId) flatMap {
+              case Some(api) => api.legacy.some.vfuture
+              case None      =>
+                env.datastores.apiDataStore.findAll() flatMap {
+                  apis =>
+                    apis.find(api => api.routes.exists(_.id == serviceId)) match {
+                      case Some(api) => api.apiRouteToNgRoute(serviceId).flatMap {
+                        case Some(route)  => route.legacy.some.future
+                        case _            => getRouteCompositions
+                      }
+                      case None      => getRouteCompositions
+                    }
+                }
             }
         }
     }

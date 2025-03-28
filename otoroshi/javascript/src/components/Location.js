@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { SelectInput, ArrayInput } from './inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { LabelAndInput } from './nginputs';
+import { LabelAndInput, NgSelectRenderer } from './nginputs';
 import { Link } from 'react-router-dom';
 
 export class Location extends Component {
@@ -98,6 +98,14 @@ export class Location extends Component {
                 })}
                 help="The organization where this entity will belong"
               />
+              // <NgSelectRenderer
+              //   value={this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'}
+              //   onChange={this.onChangeTenant}
+              //   options={this.state.possibleTenants}
+              //   optionsTransformer={tenants => tenants.map((a) => ({
+              //     value: a.id,
+              //     label: a.name + ' - ' + a.description,
+              //   }))} />
             )
           }
           {/* TODO: only show to tenant admins ????? */}

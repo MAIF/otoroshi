@@ -18,12 +18,6 @@ export class NotFoundPage extends Component {
     //   label: 'Routes',
     //   value: 'Routes',
     // },
-    // {
-    //   action: () => this.routeTo('/route-compositions'),
-    //   icon:<span className="fas fa-road" />,
-    //   label: 'Route compositions',
-    //   value: 'compositions',
-    // },
     {
       label: 'Routes',
       icon: 'fa-road',

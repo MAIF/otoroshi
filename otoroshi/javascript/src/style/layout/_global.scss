@@ -4,8 +4,10 @@ body {
   background-color: var(--bg-color_level1);
   color: var(--color_level1);
 }
+
 #app {
   padding-top: 52px;
+
   @media screen and (max-width: 767px) {
     padding-top: 80px;
   }
@@ -59,4 +61,9 @@ h4 {
 
 .view-stats:hover button {
   background-color: var(--bg-color_level3);
+}
+
+h1,
+h2 {
+  color: var(--text);
 }

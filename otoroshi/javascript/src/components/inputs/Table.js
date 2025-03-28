@@ -74,11 +74,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
     <>
       <div
         className={`wizard ${!open ? 'wizard--hidden' : ''}`}
-        style={{
-          background: 'none',
-        }}
-        onClick={closeTab}
-      >
+        style={{ background: 'none' }}
+        onClick={closeTab}>
         <div
           className={`wizard-container ${!open ? 'wizard--hidden' : ''}`}
           style={{
@@ -244,23 +241,23 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
 }
 
 class TableComponent extends Component {
-  static propTypes = {
-    itemName: PropTypes.string.isRequired,
-    columns: PropTypes.array.isRequired,
-    fetchItems: PropTypes.func.isRequired,
-    updateItem: PropTypes.func,
-    deleteItem: PropTypes.func,
-    createItem: PropTypes.func,
-    navigateTo: PropTypes.func,
-    stayAfterSave: PropTypes.bool.isRequired,
-    showActions: PropTypes.bool.isRequired,
-    showLink: PropTypes.bool.isRequired,
-    formSchema: PropTypes.object,
-    formFlow: PropTypes.array,
-    extractKey: PropTypes.func.isRequired,
-    defaultValue: PropTypes.func,
-    rowNavigation: PropTypes.bool.isRequired,
-  };
+  // static propTypes = {
+  //   itemName: PropTypes.string.isRequired,
+  //   columns: PropTypes.array.isRequired,
+  //   fetchItems: PropTypes.func.isRequired,
+  //   updateItem: PropTypes.func,
+  //   deleteItem: PropTypes.func,
+  //   createItem: PropTypes.func,
+  //   navigateTo: PropTypes.func,
+  //   stayAfterSave: PropTypes.bool.isRequired,
+  //   showActions: PropTypes.bool.isRequired,
+  //   showLink: PropTypes.bool.isRequired,
+  //   formSchema: PropTypes.object,
+  //   formFlow: PropTypes.array,
+  //   extractKey: PropTypes.func.isRequired,
+  //   defaultValue: PropTypes.func,
+  //   rowNavigation: PropTypes.bool.isRequired,
+  // };
 
   static defaultProps = {
     rowNavigation: false,
@@ -378,10 +375,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -460,8 +457,15 @@ class TableComponent extends Component {
   };
 
   gotoItem = (e, item) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.props.navigateTo(item);
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+
+    if ((typeof this.props.hideEditButton === 'function' ?
+      !this.props.hideEditButton(item) :
+      !this.props.hideEditButton)) {
+      this.props.navigateTo(item);
+    }
   };
 
   closeAddForm = (e) => {
@@ -521,25 +525,33 @@ class TableComponent extends Component {
   };
 
   showEditForm = (e, item) => {
-    if (e && e.preventDefault) e.preventDefault();
-    this.mountShortcuts();
-
-    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
-
-    if (this.props.rawEditUrl) {
-      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
 
-    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+    if ((typeof this.props.hideEditButton === 'function' ?
+      !this.props.hideEditButton(item) :
+      !this.props.hideEditButton)) {
 
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(
-        `Update a ${this.props.itemName}`,
-        this.updateItemAndStay,
-        item
-      );
+      this.mountShortcuts();
+
+      let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+
+      if (this.props.rawEditUrl) {
+        routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+      }
+
+      window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
     }
-    this.setState({ currentItem: item, showEditForm: true });
   };
 
   deleteItem = (e, item) => {
@@ -767,7 +779,12 @@ class TableComponent extends Component {
                     }
                   }
                 }}
-                style={{ cursor: 'pointer', width: '100%' }}
+                style={{
+                  cursor: ((typeof this.props.hideEditButton === 'function' ?
+                    !this.props.hideEditButton(value) :
+                    !this.props.hideEditButton)) ? 'pointer' : 'initial',
+                  width: '100%'
+                }}
               >
                 {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
               </div>
@@ -788,7 +805,9 @@ class TableComponent extends Component {
         accessor: (item) => (
           <div style={{ textAlign: 'left' }}>
             <div>
-              {!this.props.hideEditButton && (
+              {(typeof this.props.hideEditButton === 'function' ?
+                !this.props.hideEditButton(item) :
+                !this.props.hideEditButton) &&
                 <button
                   type="button"
                   className="btn btn-sm btn-success me-2"
@@ -801,7 +820,7 @@ class TableComponent extends Component {
                 >
                   <i className="fas fa-pencil-alt" />
                 </button>
-              )}
+              }
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -812,7 +831,7 @@ class TableComponent extends Component {
                   <i className="fas fa-link" />
                 </a>
               )}
-              {this.props.displayTrash && this.props.displayTrash(item) && (
+              {this.props.displayTrash && !this.props.displayTrash(item) && (
                 <button
                   type="button"
                   className="btn btn-sm btn-danger me-2"
@@ -822,7 +841,7 @@ class TableComponent extends Component {
                   <i className="fas fa-trash" />
                 </button>
               )}
-              {this.props.displayTrash && !this.props.displayTrash(item) && (
+              {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
                   type="button"
                   className="btn btn-sm btn-danger me-2"
@@ -873,7 +892,13 @@ class TableComponent extends Component {
             <div className="row">
               <div
                 className=""
-                style={{ position: 'absolute', right: 0, top: 34, width: 'fit-content' }}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '1.15rem',
+                  width: 'fit-content',
+                  paddingRight: 0
+                }}
               >
                 <button
                   type="button"
@@ -913,6 +938,9 @@ class TableComponent extends Component {
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
+                style={{
+                  scrollbarWidth: 'none'
+                }}
                 manual
                 page={this.state.page}
                 pages={this.state.pages}

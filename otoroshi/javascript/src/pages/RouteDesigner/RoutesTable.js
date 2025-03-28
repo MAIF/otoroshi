@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
-import { firstLetterUppercase, useEntityFromURI } from '../../util';
+import { firstLetterUppercase } from '../../util';
 import Loader from '../../components/Loader';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
@@ -26,7 +26,6 @@ const CORE_FIELDS = [
 export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
-  const entity = useEntityFromURI();
 
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
@@ -200,8 +199,8 @@ export function RoutesTable(props) {
     metadataColumn,
     groupsColumn,
     pluginsColumn,
-    entity.lowercase == 'route' ? domainColumn : undefined,
-    entity.lowercase == 'route' ? targetColumn : undefined,
+    domainColumn,
+    targetColumn,
     exposedColumn,
     updatedAtColumn,
     createdAtColumn,
@@ -239,7 +238,7 @@ export function RoutesTable(props) {
           if (ok1) {
             window.newConfirm(`Are you sure you really want to do that ?`).then((ok2) => {
               if (ok1 && ok2) {
-                nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
+                nextClient.remove(nextClient.ENTITIES.ROUTES, item).then(() => {
                   // table.update();
                 });
               }
@@ -247,14 +246,14 @@ export function RoutesTable(props) {
           }
         });
     } else {
-      return nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
+      return nextClient.remove(nextClient.ENTITIES.ROUTES, item).then(() => {
         // table.update();
       });
     }
   };
 
   const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).findAllWithPagination({
+    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
       fields: [
         'backend.targets',
@@ -268,7 +267,7 @@ export function RoutesTable(props) {
     });
 
   const fetchTemplate = () =>
-    nextClient.forEntityNext(nextClient.ENTITIES[entity.fetchName]).template();
+    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
 
   const ref = useRef();
 
@@ -318,11 +317,11 @@ export function RoutesTable(props) {
         <Table
           ref={ref}
           parentProps={{ params }}
-          navigateTo={(item) => history.push(`/${entity.link}/${item.id}?tab=flow`)}
-          navigateOnEdit={(item) => history.push(`/${entity.link}/${item.id}?tab=informations`)}
-          selfUrl={entity.link}
-          defaultTitle={entity.capitalizePlural}
-          itemName={entity.capitalize}
+          navigateTo={(item) => history.push(`/routes/${item.id}?tab=flow`)}
+          navigateOnEdit={(item) => history.push(`/routes/${item.id}?tab=informations`)}
+          selfUrl="routes"
+          defaultTitle="Routes"
+          itemName="Route"
           formSchema={null}
           formFlow={null}
           columns={columns}
@@ -362,11 +361,10 @@ export function RoutesTable(props) {
           hideAddItemAction={true}
           itemUrl={(i) => `/bo/dashboard/routes/${i.id}?tab=flow`}
           rawEditUrl={true}
-          displayTrash={(item) => item.id === props.globalEnv.adminApiId}
           injectTopBar={() => (
             <div className="btn-group input-group-btn">
-              <Link className="btn btn-primary btn-sm" to={`${entity.link}/new?tab=informations`}>
-                <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
+              <Link className="btn btn-primary btn-sm" to={`routes/new?tab=informations`}>
+                <i className="fas fa-plus-circle" /> Create new route
               </Link>
               {props.injectTopBar}
             </div>

@@ -1,71 +1,69 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
-import { useEntityFromURI } from '../../util';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 
-const LINKS = (entity, route) =>
+const LINKS = route =>
   [
     {
-      to: `/${entity}/${route.id}?tab=informations`,
+      to: `/routes/${route.id}?tab=informations`,
       icon: 'fa-file-alt',
       title: 'Informations',
       tab: 'informations',
       tooltip: { ...createTooltip(`Show informations tab`) },
     },
     {
-      to: `/${entity}/${route.id}?tab=flow`,
+      to: `/routes/${route.id}?tab=flow`,
       icon: 'fa-pencil-ruler',
       title: 'Designer',
       tab: 'flow',
       tooltip: { ...createTooltip(`Show designer tab`) },
     },
     {
-      to: `/${entity}/${route.id}?tab=flow&showTryIt=true`,
+      to: `/routes/${route.id}?tab=flow&showTryIt=true`,
       icon: 'fa-vials',
       title: 'Tester',
       tab: 'showTryIt',
       tooltip: { ...createTooltip(`Show tester tab`) },
     },
     {
-      to: `/${entity}/${route.id}/health`,
+      to: `/routes/${route.id}/health`,
       icon: 'fa-heart',
       title: 'Health',
       tab: 'health',
       tooltip: { ...createTooltip(`Show healthcheck report`) },
     },
     {
-      to: `/${entity}/${route.id}/stats`,
+      to: `/routes/${route.id}/stats`,
       icon: 'fa-chart-bar',
       title: 'Live metrics',
       tab: 'stats',
       tooltip: { ...createTooltip(`Show live metrics report`) },
     },
     {
-      to: `/${entity}/${route.id}/analytics`,
+      to: `/routes/${route.id}/analytics`,
       icon: 'fa-signal',
       title: 'Analytics',
       tab: 'analytics',
       tooltip: { ...createTooltip(`Show analytics report`) },
     },
     {
-      to: `/${entity}/${route.id}/events`,
+      to: `/routes/${route.id}/events`,
       icon: 'fa-list',
       title: 'Events',
       tab: 'events',
       tooltip: { ...createTooltip(`Show raw events report`) },
     },
     {
-      to: `/${entity}/${route.id}/apikeys`,
+      to: `/routes/${route.id}/apikeys`,
       icon: 'fa-key',
       title: 'API Keys',
       tab: 'apikeys',
       tooltip: { ...createTooltip(`Manage all API keys that can access`) },
     },
-  ].filter((link) => !link.enabled || link.enabled.includes(entity));
+  ].filter((link) => !link.enabled);
 
 export default ({ route }) => {
-  const entity = useEntityFromURI();
   const location = useLocation();
   const { openedSidebar } = useContext(SidebarContext);
 
@@ -74,7 +72,6 @@ export default ({ route }) => {
     const params = new URLSearchParams(window.location.search);
     const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
     const queryTab = params.get('tab');
-    // console.log(currentTab, tab, onTryIt, queryTab)
 
     if (onTryIt) {
       return onTryIt === tab ? 'active' : '';
@@ -106,14 +103,13 @@ export default ({ route }) => {
           </Link>
         </li>
         {openedSidebar && <p className="sidebar-title">Route</p>}
-        {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
+        {LINKS(route).map(({ to, icon, title, tooltip, tab }) => (
           <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
               to={to}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                openedSidebar ? 'ms-3' : ''
-              } m-0 ${isActive(tab)}`}
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                } m-0 ${isActive(tab)}`}
             >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
@@ -126,17 +122,15 @@ export default ({ route }) => {
         {openedSidebar && <p className="sidebar-title mt-3">Extensions</p>}
         {Otoroshi.extensions()
           .flatMap((ext) => ext.routeDesignerTabs || [])
-          //               visible: () => (item.visible ? item.visible(entity, value, isOnViewPlugins) : true),
           .map((item) => {
-            const to = `/${entity.link}/${route.id}?tab=${item.id}`;
+            const to = `/routes/${route.id}?tab=${item.id}`;
             const tab = ''; // todo
             return (
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

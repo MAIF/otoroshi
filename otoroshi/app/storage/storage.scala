@@ -5,6 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
+import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env
@@ -82,6 +83,8 @@ trait DataStores {
   def backendsDataStore: StoredNgBackendDataStore
   def wasmPluginsDataStore: WasmPluginDataStore
   def draftsDataStore: DraftDataStore
+  def apiDataStore: ApiDataStore
+  def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]

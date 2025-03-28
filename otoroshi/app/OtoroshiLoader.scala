@@ -133,7 +133,6 @@ package object modules {
     lazy val routesController              = wire[NgRoutesController]
     lazy val ngRouteCompositionsController = wire[NgRouteCompositionsController]
     lazy val backendsController            = wire[NgBackendsController]
-    lazy val frontendsController           = wire[NgFrontendsController]
     lazy val pluginsController             = wire[NgPluginsController]
     lazy val tryItController               = wire[TryItController]
     lazy val tunnelController              = wire[TunnelController]
@@ -141,6 +140,7 @@ package object modules {
     lazy val errorTemplatesController      = wire[ErrorTemplatesController]
     lazy val genericApiController          = wire[GenericApiController]
     lazy val infosApiController            = wire[InfosApiController]
+    lazy val apisController                = wire[ApisController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

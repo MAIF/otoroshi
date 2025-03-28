@@ -46,11 +46,10 @@ export class ErrorTemplatesPage extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>
@@ -149,43 +148,29 @@ export class ErrorTemplatesPage extends Component {
         pageSize: 999,
         fields: ['id', 'name'],
       }).then((routes) => {
-        BackOfficeServices.findAllRouteCompositionsWithPagination({
-          page: 1,
-          pageSize: 999,
-          fields: ['id', 'name'],
-        }).then((routeCompositions) => {
-          const list = [
-            {
-              label: <div>All routes and services</div>,
-              value: 'global',
-            },
-            ...services.data.map((s) => ({
-              label: (
-                <div>
-                  <span className="badge bg-warning">service</span> {s.name}
-                </div>
-              ),
-              value: s.id,
-            })),
-            ...routes.data.map((s) => ({
-              label: (
-                <div>
-                  <span className="badge bg-info">route</span> {s.name}
-                </div>
-              ),
-              value: s.id,
-            })),
-            ...routeCompositions.data.map((s) => ({
-              label: (
-                <div>
-                  <span className="badge bg-secondary">route-comp.</span> {s.name}
-                </div>
-              ),
-              value: s.id,
-            })),
-          ];
-          this.setState({ list, fetched: true });
-        });
+        const list = [
+          {
+            label: <div>All routes and services</div>,
+            value: 'global',
+          },
+          ...services.data.map((s) => ({
+            label: (
+              <div>
+                <span className="badge bg-warning">service</span> {s.name}
+              </div>
+            ),
+            value: s.id,
+          })),
+          ...routes.data.map((s) => ({
+            label: (
+              <div>
+                <span className="badge bg-info">route</span> {s.name}
+              </div>
+            ),
+            value: s.id,
+          })),
+        ];
+        this.setState({ list, fetched: true });
       });
     });
   }

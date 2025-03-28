@@ -47,6 +47,7 @@ GET     /bo/api/eureka-servers/:id/apps                       otoroshi.controlle
 # GET     /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.privateAppsSessions()
 # DELETE  /bo/api/papps/sessions/:id                          otoroshi.controllers.BackOfficeController.discardPrivateAppsSession(id)
 # DELETE  /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.discardAllPrivateAppsSessions()
+GET     /bo/api/location                                      otoroshi.controllers.BackOfficeController.getOwnEntityLocation()
 POST    /bo/api/ui-mode                                       otoroshi.controllers.BackOfficeController.updateUiMode()
 POST    /bo/api/panic                                         otoroshi.controllers.BackOfficeController.panicMode()
 GET     /bo/api/events/audit                                  otoroshi.controllers.BackOfficeController.auditEvents()
@@ -100,7 +101,7 @@ DELETE  /bo/api/graphqlproxy                                  otoroshi.controlle
 PATCH   /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 
 GET     /bo/api/routes/:routeId/entries                       otoroshi.controllers.BackOfficeController.routeEntries(routeId: String)
-GET     /bo/api/routes/:routeId/ports                         otoroshi.controllers.BackOfficeController.ports(routeId: String)
+GET     /bo/api/env/ports                                     otoroshi.controllers.BackOfficeController.ports()
 POST    /bo/api/graphql_to_json                               otoroshi.controllers.BackOfficeController.graphQLToJson()
 POST    /bo/api/json_to_graphql_schema                        otoroshi.controllers.BackOfficeController.jsonToGraphqlSchema()
 POST    /bo/api/json_to_yaml                                  otoroshi.controllers.BackOfficeController.toYaml()
@@ -554,9 +555,6 @@ PATCH   /api/backends/:id                      otoroshi.next.controllers.adminap
 GET     /api/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.findAllEntitiesAction()
 POST    /api/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.createAction()
 
-## Frontends
-GET     /api/frontends/_form                     otoroshi.next.controllers.adminapi.NgFrontendsController.form()
-
 ## Plugins
 GET     /api/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()
 GET     /api/plugins/steps                     otoroshi.next.controllers.NgPluginsController.steps()
@@ -572,7 +570,7 @@ GET     /api/events/_template                                 otoroshi.controlle
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
 GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
-GET     /api/entities/:entity/:id                otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
+GET     /api/entities/:entity/:id                             otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
 
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               otoroshi.controllers.adminapi.UsersController.discardSession(id)
@@ -612,6 +610,16 @@ GET     /apis/cluster/node/version                            otoroshi.controlle
 GET     /apis/cluster/node/health                             otoroshi.api.GenericApiController.health()
 GET     /apis/cluster/node/metrics                            otoroshi.api.GenericApiController.metrics()
 GET     /apis/cluster                                         otoroshi.controllers.adminapi.ClusterController.getClusterMembers()
+
+GET     /apis/proxy.otoroshi.io/v1/drafts/:id/live             otoroshi.next.controllers.adminapi.ApisController.draftLiveStats(id, every: Option[Int])
+GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
+GET     /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
+GET     /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)
+
+POST    /apis/apis.otoroshi.io/v1/apis/:apiId/deployments                                 otoroshi.next.controllers.adminapi.ApisController.createNewVersion(apiId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)
+GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_close                otoroshi.next.controllers.adminapi.ApisController.closeConsumer(apiId, consumerId)
 
 # New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)

@@ -1,6 +1,8 @@
 package otoroshi.models
 
+import next.models.Api
 import otoroshi.actions.ApiAction
+import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -8,7 +10,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class Draft(
@@ -65,6 +67,39 @@ object Draft {
       case Success(value) => JsSuccess(value)
     }
   }
+
+  def writeValidator(newDraft: Draft,
+                      _body: JsValue,
+                      oldEntity: Option[(Draft, JsValue)],
+                      _singularName: String,
+                      _id: Option[String],
+                      action: WriteAction,
+                      env: Env): Future[Either[JsValue, Draft]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+    Api.format.reads(newDraft.content) match {
+      case JsSuccess(api, _) =>
+         Api.writeValidator(api,
+             Json.obj(),
+             oldEntity.map(oldDraft => (Api.format.reads(oldDraft._1.content).get, Json.obj())),
+             _singularName, _id, action, env)
+           .flatMap {
+             case Left(value) => value.leftf
+             case Right(newApi) => newDraft.copy(content = newApi.json).rightf
+           }
+
+      case JsError(_) => newDraft.rightf
+    }
+  }
+
+//  def deleteValidator(entity: Draft,
+//                        body: JsValue,
+//                        singularName: String,
+//                        id: String,
+//                        action: DeleteAction,
+//                        env: Env):  Future[Either[JsValue, Unit]] = {
+//    ???
+//  }
 }
 
 trait DraftDataStore extends BasicStore[Draft] {
