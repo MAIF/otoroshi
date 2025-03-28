@@ -16,7 +16,7 @@ In this tutorial, you create an cluster of Otoroshi.
 Let's start by downloading the latest jar of Otoroshi.
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.19.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.25.0-dev/otoroshi.jar'
 ```
 
 Then create an instance of Otoroshi and indicates with the `otoroshi.cluster.mode` environment variable that it will be the leader.
@@ -87,7 +87,7 @@ docker (on windows)
 
 The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.
 
-Create this route, exposed on `http://api.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+Create this route, exposed on `http://api.oto.tools:xxxx`, which will forward all requests to the mirror `https://request.otoroshi.io`.
 
 ```sh
 curl -X POST 'http://otoroshi-api.oto.tools:8091/api/routes' \
@@ -102,7 +102,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8091/api/routes' \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }

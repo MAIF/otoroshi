@@ -1134,7 +1134,8 @@ class ReverseProxyAction(env: Env) {
                                                               trackingId,
                                                               req,
                                                               targets,
-                                                              descriptor.id
+                                                              descriptor.id,
+                                                              1
                                                             )
                                                         }
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
@@ -1279,7 +1280,7 @@ object ReverseProxyHelper {
       val quota                                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
       val (restrictionsNotPassing, restrictionsResponse) =
         descriptor.restrictions.handleRestrictions(descriptor.id, descriptor.some, None, req, attrs)
-      if (secCalls > (quota * 10L)) {
+      if (secCalls > quota) {
         errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
       } else {
         if (!isSecured && descriptor.forceHttps) {

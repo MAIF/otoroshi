@@ -176,13 +176,13 @@ module.exports = (env, argv) => {
       new MiniCssExtractPlugin({
         filename: '[name].css',
         chunkFilename: '[id].css'
-      }),
+      })
     ],
     resolve: {
       fallback: {
         crypto: require.resolve("crypto-browserify"),
         stream: require.resolve("stream-browserify")
-      }
+      },
     }
   };
   if (isProd) {

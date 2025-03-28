@@ -185,7 +185,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
       routes = Seq(
         NgMinimalRoute(
           frontend = NgFrontend(
-            domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+            domains = Seq(NgDomainAndPath(env.routeBaseDomain)),
             headers = Map.empty,
             query = Map.empty,
             methods = Seq.empty,
@@ -196,9 +196,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
             targets = Seq(
               NgTarget(
                 id = "target_1",
-                hostname = "mirror.otoroshi.io",
+                hostname = "request.otoroshi.io",
                 port = 443,
-                tls = true
+                tls = true,
+                backup = false,
               )
             ),
             root = "/",

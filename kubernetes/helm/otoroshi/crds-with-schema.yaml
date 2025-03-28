@@ -2316,7 +2316,7 @@ spec:
               throttlingQuota:
                 type: "integer"
                 format: "int64"
-                description: "Authorized number of calls per second globally, measured\
+                description: "Authorized number of calls per window globally, measured\
                   \ on 10 seconds"
               anonymousReporting:
                 type: "boolean"
@@ -3325,7 +3325,7 @@ spec:
               perIpThrottlingQuota:
                 type: "integer"
                 format: "int64"
-                description: "Authorized number of calls per second globally per IP\
+                description: "Authorized number of calls per window globally per IP\
                   \ address, measured on 10 seconds"
               useCircuitBreakers:
                 type: "boolean"
@@ -3501,7 +3501,7 @@ spec:
               throttlingQuota:
                 type: "integer"
                 format: "int64"
-                description: "Authorized number of calls per second, measured on 10\
+                description: "Authorized number of calls per window, measured on 10\
                   \ seconds"
               constrainedServicesOnly:
                 type: "boolean"

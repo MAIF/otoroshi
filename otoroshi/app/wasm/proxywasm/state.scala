@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class ProxyWasmState(
     val rootContextId: Int,
     val contextId: AtomicInteger,
-    logCallback: Option[Function2[org.slf4j.event.Level, String, Unit]],
+    logCallback: Option[Function3[org.slf4j.event.Level, String, VmData, Unit]],
     env: Env
 ) extends Api {
 
@@ -32,7 +32,13 @@ class ProxyWasmState(
     throw new NotImplementedError(s"proxy state method '${name}' is not implemented")
   }
 
-  override def proxyLog(plugin: ExtismCurrentPlugin, logLevel: Int, messageData: Int, messageSize: Int): Result = {
+  override def proxyLog(
+      plugin: ExtismCurrentPlugin,
+      logLevel: Int,
+      messageData: Int,
+      messageSize: Int,
+      data: VmData
+  ): Result = {
     // println(s"proxyLog: $logLevel - $messageData - $messageSize")
     getMemory(plugin, messageData, messageSize)
       .fold(
@@ -42,19 +48,19 @@ class ProxyWasmState(
           logLevel match {
             case 0 =>
               logger.trace(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.TRACE, message))
+              logCallback.foreach(_.apply(org.slf4j.event.Level.TRACE, message, data))
             case 1 =>
               logger.debug(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.DEBUG, message))
+              logCallback.foreach(_.apply(org.slf4j.event.Level.DEBUG, message, data))
             case 2 =>
               logger.info(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.INFO, message))
+              logCallback.foreach(_.apply(org.slf4j.event.Level.INFO, message, data))
             case 3 =>
               logger.warn(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.WARN, message))
+              logCallback.foreach(_.apply(org.slf4j.event.Level.WARN, message, data))
             case _ =>
               logger.error(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.ERROR, message))
+              logCallback.foreach(_.apply(org.slf4j.event.Level.ERROR, message, data))
           }
           ResultOk
         }

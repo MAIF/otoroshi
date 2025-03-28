@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -529,7 +531,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     durableWrites = true
     durableWrites = ${?CASSANDRA_DURABLE_WRITES}
     durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
-    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
+    basic.contact-points = [ ${otoroshi.cassandra.host}&quot;:&quot;${otoroshi.cassandra.port} ]
     basic.session-name = &quot;otoroshi&quot;
     basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
     basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
@@ -881,7 +883,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 http.port = 8080
 
-app {
+otoroshi {
   storage = &quot;inmemory&quot;
   importFrom = &quot;./my-state.json&quot;
   env = &quot;prod&quot;
@@ -953,6 +955,8 @@ play.http {
   domain = &quot;oto.tools&quot; # default domain for basic otoroshi services
   domain = ${?APP_DOMAIN} # default domain for basic otoroshi services
   domain = ${?OTOROSHI_DOMAIN} # default domain for basic otoroshi services
+  routeBaseDomain = &quot;newroute.oto.tools&quot; # default domain for new otoroshi routes
+  routeBaseDomain = ${?OTOROSHI_ROUTE_BASE_DOMAIN} # default domain for new otoroshi routes
   commitId = &quot;HEAD&quot;
   commitId = ${?COMMIT_ID}
   commitId = ${?OTOROSHI_COMMIT_ID}
@@ -1084,6 +1088,28 @@ play.http {
       exp = 86400000 # the privateapps cookie expiration
       exp = ${?APP_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
       exp = ${?OTOROSHI_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
+      enabled = false                  
+      enabled = ${?OTOROSHI_PRIVATEAPPS_SESSION_ENABLED}                          
+      secure = false                                             # the cookie for otoroshi privateapps should be exhanged over https only
+      secure = ${?OTOROSHI_PRIVATEAPPS_SESSION_SECURE_ONLY}      # the cookie for otoroshi privateapps should be exhanged over https only
+      httpOnly = true                                            # the cookie for otoroshi privateapps is not accessible from javascript
+      maxAge = 259200000                                         # the cookie for otoroshi privateapps max age
+      maxAge = ${?OTOROSHI_PRIVATEAPPS_SESSION_MAX_AGE}          # the cookie for otoroshi privateapps max age
+      domain = ${app.privateapps.subdomain}&quot;.&quot;${otoroshi.domain} # the cookie for otoroshi privateapps domain
+      domain = ${?OTOROSHI_PRIVATEAPPS_SESSION_DOMAIN}           # the cookie for otoroshi privateapps domain
+      #cookieName = &quot;otoroshi-sso-session&quot;                       # the cookie for otoroshi privateapps name
+      cookieName = ${play.http.session.cookieName}&quot;-sso&quot;         # the cookie for otoroshi privateapps name
+      cookieName = ${?OTOROSHI_PRIVATEAPPS_SESSION_NAME}         # the cookie for otoroshi privateapps name
+      sameSite = &quot;lax&quot;
+      sameSite = ${?OTOROSHI_PRIVATEAPPS_SESSION_SAMESITE}
+      jwt {
+        signatureAlgorithm = &quot;HS256&quot;
+        signatureAlgorithm = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_ALG}
+        clockSkew = &quot;30s&quot;
+        clockSkew = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_CLOCK_SKEW}
+        dataClaim = &quot;data&quot;
+        dataClaim = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_DATA_CLAIM}
+      }
     }
   }
   adminapi {
@@ -1924,6 +1950,12 @@ otoroshi {
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
     allowRedirectQueryParamOnLogin = false
     allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
+    maxHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_BACKEND}
+    maxHeaderSizeToClient = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_CLIENT}
+    limitHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_BACKEND}
+    limitHeaderSizeToClient = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_CLIENT}
+    defaultPrettyAdminApi = true
+    defaultPrettyAdminApi = ${?OTOROSHI_OPTIONS_DEFAULT_PRETTY_ADMIN_API}
   }
   wasm {
   	cache {
@@ -1997,7 +2029,6 @@ otoroshi {
     every = 30000
     every = ${?OTOROSHI_METRICS_EVERY}
     accessKey = ${?app.health.accessKey}
-    accessKey = ${?OTOROSHI_app.health.accessKey}
     accessKey = ${?OTOROSHI_METRICS_ACCESS_KEY}
   }
   plugins {
@@ -2234,7 +2265,7 @@ otoroshi {
       swapStrategy = &quot;Merge&quot; # the internal memory store strategy, can be Replace or Merge
       swapStrategy = ${?CLUSTER_WORKER_SWAP_STRATEGY} # the internal memory store strategy, can be Replace or Merge
       swapStrategy = ${?OTOROSHI_CLUSTER_WORKER_SWAP_STRATEGY} # the internal memory store strategy, can be Replace or Merge
-      modern = false # use a modern store implementation
+      modern = true # use a modern store implementation
       modern = ${?CLUSTER_WORKER_STORE_MODERN}
       modern = ${?OTOROSHI_CLUSTER_WORKER_STORE_MODERN}
       useWs = false
@@ -2378,7 +2409,7 @@ otoroshi {
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
   }
   vaults {
-    enabled = false
+    enabled = true
     enabled = ${?OTOROSHI_VAULTS_ENABLED}
     secrets-ttl = 300000 # 5 minutes between each secret read
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
@@ -2475,6 +2506,7 @@ otoroshi {
 }
 
 
+
 http.port = 8080                       # the main http port for the otoroshi server
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server
 http.port = ${?PORT}                   # the main http port for the otoroshi server
@@ -2542,6 +2574,9 @@ play.http {
     cookieName = &quot;otoroshi-session&quot;   # the cookie for otoroshi backoffice name
     cookieName = ${?SESSION_NAME}     # the cookie for otoroshi backoffice name
     cookieName = ${?OTOROSHI_SESSION_NAME}     # the cookie for otoroshi backoffice name
+    sameSite = &quot;lax&quot;
+    sameSite = ${?SESSION_SAMESITE}
+    sameSite = ${?OTOROSHI_SESSION_SAMESITE}
   }
 }
 
@@ -2682,6 +2717,7 @@ akka { # akka specific configuration
   env = ${?OTOROSHI_ENV} # env name, should always be prod except in dev mode
   domain = ${?APP_DOMAIN} # default domain for basic otoroshi services
   domain = ${?OTOROSHI_DOMAIN} # default domain for basic otoroshi services
+  routeBaseDomain = ${?OTOROSHI_ROUTE_BASE_DOMAIN} # default domain for new otoroshi routes
   commitId = ${?COMMIT_ID}
   commitId = ${?OTOROSHI_COMMIT_ID}
   rootScheme = ${?APP_ROOT_SCHEME} # default root scheme when composing urls
@@ -2769,6 +2805,19 @@ akka { # akka specific configuration
     session {
       exp = ${?APP_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
       exp = ${?OTOROSHI_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
+      enabled = ${?OTOROSHI_PRIVATEAPPS_SESSION_ENABLED}                          
+      secure = ${?OTOROSHI_PRIVATEAPPS_SESSION_SECURE_ONLY}      # the cookie for otoroshi privateapps should be exhanged over https only
+      maxAge = ${?OTOROSHI_PRIVATEAPPS_SESSION_MAX_AGE}          # the cookie for otoroshi privateapps max age
+      domain = ${app.privateapps.subdomain}&quot;.&quot;${otoroshi.domain} # the cookie for otoroshi privateapps domain
+      domain = ${?OTOROSHI_PRIVATEAPPS_SESSION_DOMAIN}           # the cookie for otoroshi privateapps domain
+      cookieName = ${play.http.session.cookieName}&quot;-sso&quot;         # the cookie for otoroshi privateapps name
+      cookieName = ${?OTOROSHI_PRIVATEAPPS_SESSION_NAME}         # the cookie for otoroshi privateapps name
+      sameSite = ${?OTOROSHI_PRIVATEAPPS_SESSION_SAMESITE}
+      jwt {
+        signatureAlgorithm = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_ALG}
+        clockSkew = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_CLOCK_SKEW}
+        dataClaim = ${?OTOROSHI_PRIVATEAPPS_SESSION_JWT_DATA_CLAIM}
+      }
     }
   }
   adminapi {
@@ -3270,6 +3319,11 @@ otoroshi {
     enable-json-media-type-with-open-charset = ${?OTOROSHI_OPTIONS_ENABLE_JSON_MEDIA_TYPE_WITH_OPEN_CHARSET}
     dynamicBodySizeCompute = ${?OTOROSHI_OPTIONS_DYNAMIC_BODY_SIZE_COMPUTE}
     allowRedirectQueryParamOnLogin = ${?OTOROSHI_OPTIONS_ALLOW_REDIRECT_QUERY_PARAM_ON_LOGIN}
+    maxHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_BACKEND}
+    maxHeaderSizeToClient = ${?OTOROSHI_OPTIONS_MAX_HEADER_SIZE_TO_CLIENT}
+    limitHeaderSizeToBackend = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_BACKEND}
+    limitHeaderSizeToClient = ${?OTOROSHI_OPTIONS_LIMIT_HEADER_SIZE_TO_CLIENT}
+    defaultPrettyAdminApi = ${?OTOROSHI_OPTIONS_DEFAULT_PRETTY_ADMIN_API}
   }
   wasm {
   	cache {
@@ -3323,7 +3377,6 @@ otoroshi {
     enabled = ${?OTOROSHI_METRICS_ENABLED}
     every = ${?OTOROSHI_METRICS_EVERY}
     accessKey = ${?app.health.accessKey}
-    accessKey = ${?OTOROSHI_app.health.accessKey}
     accessKey = ${?OTOROSHI_METRICS_ACCESS_KEY}
   }
   plugins {
@@ -3680,6 +3733,8 @@ play.http {
     domain = ${?OTOROSHI_SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     cookieName = ${?SESSION_NAME}     # the cookie for otoroshi backoffice name
     cookieName = ${?OTOROSHI_SESSION_NAME}     # the cookie for otoroshi backoffice name
+    sameSite = ${?SESSION_SAMESITE}
+    sameSite = ${?OTOROSHI_SESSION_SAMESITE}
   }
 }
 akka { # akka specific configuration
@@ -3796,7 +3851,7 @@ akka { # akka specific configuration
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2024</span>
+<span class="text">&copy; 2025</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

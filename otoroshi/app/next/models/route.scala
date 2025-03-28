@@ -98,7 +98,9 @@ case class NgRoute(
       val methodPasses = if (frontend.methods.isEmpty) true else frontend.methods.contains(method)
       if (methodPasses) {
         val res      = frontend.domains
-          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
+          .applyOnIf(!skipDomainVerif)(
+            _.filter(d => d.domainLowerCase == domain || RegexPool(d.domainLowerCase).matches(domain))
+          )
           .applyOn { seq =>
             if (frontend.exact) {
               noMoreSegments
@@ -244,7 +246,7 @@ case class NgRoute(
       domain = "--",
       subdomain = "--",
       targets = backend.allTargets.map(_.toTarget),
-      hosts = frontend.domains.map(_.domain),
+      hosts = frontend.domains.map(_.domainLowerCase),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
       clientConfig = backend.client.legacy,
@@ -724,10 +726,11 @@ object NgRoute {
     backend = NgBackend(
       targets = Seq(
         NgTarget(
-          id = "tls://mirror.otoroshi.io:443",
-          hostname = "mirror.otoroshi.io",
+          id = "tls://request.otoroshi.io:443",
+          hostname = "request.otoroshi.io",
           port = 443,
-          tls = true
+          tls = true,
+          backup = false,
         )
       ),
       root = "/",
@@ -1287,7 +1290,50 @@ object NgRoute {
 
 trait NgRouteDataStore extends BasicStore[NgRoute] {
   def template(env: Env): NgRoute = {
-    val default = NgRoute.default
+    // val default = NgRoute.default
+    val default = NgRoute(
+      location = EntityLocation.default,
+      id = s"route_${IdGenerator.uuid}",
+      name = "New route",
+      description = "A new route",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq("default"),
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath(env.routeBaseDomain)),
+        headers = Map.empty,
+        query = Map.empty,
+        methods = Seq.empty,
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          NgTarget(
+            id = "target_1",
+            hostname = "request.otoroshi.io",
+            port = 443,
+            tls = true,
+            backup = false,
+          )
+        ),
+        root = "/",
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          )
+        )
+      )
+    )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

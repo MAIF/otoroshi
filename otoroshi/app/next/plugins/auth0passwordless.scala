@@ -11,6 +11,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results
 
@@ -252,6 +253,8 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   override def configFlow: Seq[String]                     = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject]              = Auth0PasswordlessAuthConfig.configSchema
 
+  private val logger = Logger("otoroshi-plugin-auth0-passwordless")
+
   def doEndFlow(
       ctx: NgbBackendCallContext,
       params: JsObject,
@@ -314,14 +317,21 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
               metadata = oauthConfig.metadata,
               location = oauthConfig.location
             )
-              .validate(oauthConfig.userValidators) match {
+              .validate(
+                ctx.route.legacy,
+                isRoute = true,
+                oauthConfig
+              ) flatMap {
               case Left(err)   =>
+                logger.error(
+                  s"login remote validation failed: ${err.display} - ${err.internal.map(_.stringify).getOrElse("")}"
+                )
                 BackendCallResponse(
                   NgPluginHttpResponse.fromResult(
                     Results.Unauthorized(
                       Json.obj(
                         "error"             -> "unauthorized",
-                        "error_description" -> err
+                        "error_description" -> err.display
                       )
                     )
                   ),

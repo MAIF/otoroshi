@@ -5,8 +5,10 @@ import { Location } from '../Location';
 import { ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
-import ReactTooltip from 'react-tooltip';
 import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
+
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { v4 as uuid } from 'uuid';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -256,6 +258,8 @@ export function LabelAndInput(_props) {
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
+  const helpId = uuid();
+
   return (
     <div className={`row ${margin}`} style={style}>
       <label
@@ -265,10 +269,14 @@ export function LabelAndInput(_props) {
         }}
       >
         {label.replace(/_/g, ' ')}{' '}
-        {_props.help && (
+        {help && (
           <span>
-            <i className="far fa-question-circle" data-tip={_props.help} />
-            <ReactTooltip />
+            <i
+              className="far fa-question-circle"
+              data-tooltip-id={helpId}
+              data-tooltip-content={help}
+            />
+            <ReactTooltip id={helpId} />
           </span>
         )}
       </label>
@@ -411,9 +419,15 @@ export class NgNumberRenderer extends Component {
     // avoid to have both value and defaultValue props
     const { defaultValue, unit, ...inputProps } = props;
 
+    const initialValue = this.state.touched
+      ? this.props.value
+      : this.props.value !== undefined && this.props.value !== null
+        ? this.props.value
+        : defaultValue;
+
     return (
       <LabelAndInput {...this.props}>
-        {readOnly && <ReadOnlyField value={this.props.value || defaultValue} />}
+        {readOnly && <ReadOnlyField value={initialValue} />}
         <div style={{ ...(props.style || {}) }}>
           <div
             style={{
@@ -427,8 +441,12 @@ export class NgNumberRenderer extends Component {
                 className="form-control"
                 placeholder={props.placeholder}
                 title={props.help}
-                value={this.state.touched ? this.props.value : this.props.value || defaultValue}
+                defaultValue={initialValue}
                 onChange={(e) => {
+                  if (('' + e.target.value).length === 0) {
+                    this.props.onChange(0);
+                    return;
+                  }
                   this.props.onChange(~~e.target.value);
                   if (!this.state.touched) this.setState({ touched: true });
                 }}
@@ -601,7 +619,6 @@ export class NgBoxBooleanRenderer extends Component {
           className="d-flex"
           style={{
             border: 'var(--bg-color_level2) solid 1px',
-            borderRadius: 6,
             padding: '5px',
             margin: '5px 0px',
             width: this.props.width || '100%',
@@ -851,6 +868,7 @@ export class NgObjectRenderer extends Component {
             ngOptions={{
               spread: true,
             }}
+            bcryptable={props.bcryptable}
             label={null}
             placeholderKey={props.placeholderKey}
             placeholderValue={props.placeholderValue}

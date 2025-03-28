@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import otoroshi.utils.RegexPool
+import otoroshi.utils.syntax.implicits.BetterJsValue
 
 import java.util.concurrent.TimeUnit
 import play.api.libs.json._
@@ -49,10 +50,23 @@ case class CorsSettings(
     val methodOpt                          = req.headers.get("Access-Control-Request-Method")
     val passOrigin: Boolean                =
       originOpt.map(_.toLowerCase()).map(o => allowOrigin == "*" || o == allowOrigin).getOrElse(allowOrigin == "*")
-    val passAllowedRequestHeaders: Boolean = headersOpt
-      .map(h => h.split(",").map(_.trim.toLowerCase()))
-      .map(headers => headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _))
-      .getOrElse(!headersOpt.isDefined)
+    // The value * only counts as a special wildcard value for requests without credentials
+    // (requests without HTTP cookies or HTTP authentication information).
+    val passAllowedRequestHeaders: Boolean =
+      if (
+        req.cookies.isEmpty &&
+        !req.headers.hasHeader("Authorization") &&
+        allowHeaders.contains("*")
+      ) {
+        true
+      } else {
+        headersOpt
+          .map(h => h.split(",").map(_.trim.toLowerCase()))
+          .map(headers =>
+            headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _)
+          )
+          .getOrElse(!headersOpt.isDefined)
+      }
     val passAllowedRequestMethod: Boolean  = methodOpt
       .map(_.trim.toLowerCase())
       .map(m => allowMethods.map(n => n.trim.toLowerCase()).contains(m.trim.toLowerCase()))
@@ -90,13 +104,13 @@ object CorsSettings extends FromJson[CorsSettings] {
       Right(
         CorsSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          allowOrigin = (json \ "allowOrigin").asOpt[String].getOrElse("*"),
-          exposeHeaders = (json \ "exposeHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowHeaders = (json \ "allowHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowMethods = (json \ "allowMethods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          maxAge = (json \ "maxAge").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
-          allowCredentials = (json \ "allowCredentials").asOpt[Boolean].getOrElse(true)
+          allowOrigin = json.multiSelect("allow_origin").asOpt[String].getOrElse("*"),
+          exposeHeaders = json.multiSelect("expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allowHeaders = json.multiSelect("allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allowMethods = json.multiSelect("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = json.multiSelect("excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          maxAge = json.multiSelect("max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
+          allowCredentials = json.multiSelect("allow_credentials").asOpt[Boolean].getOrElse(true)
         )
       )
     } recover { case e =>

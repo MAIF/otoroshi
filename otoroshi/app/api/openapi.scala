@@ -885,10 +885,10 @@ object OpenApi {
     finalSchemas
   }
 
-  def generate(env: Env, version: Option[String]): String = {
+  def generate(env: Env, version: Option[String], extensionGroup: Option[String]): String = {
     // TODO: missing live metrics api
     // TODO: missing analytics api
-    if (env.isDev) {
+    val finalDoc = if (env.isDev) {
       val additionalPathsFile = env.environment.resourceAsStream("/schemas/additionalPaths.json").get
       val additionalPathsRaw  = new String(additionalPathsFile.readAllBytes(), StandardCharsets.UTF_8)
       val additionalPathsJson = Json.parse(additionalPathsRaw).asObject
@@ -901,7 +901,7 @@ object OpenApi {
         "singleton", {
           val resources                      = env.allResources.resources.filter(_.version.served).filterNot(_.version.deprecated)
           val _schemas: Map[String, JsValue] = resources
-            .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)))
+            .map(res => (s"${res.group}.${res.kind}", res.version.finalSchema(res.kind, res.access.clazz)(env)))
             .toMap
           val schemas: Map[String, JsValue]  = cleanupSchemas(_schemas)
           val paths: Map[String, JsValue]    = resources.flatMap(buildPaths).toMap
@@ -977,6 +977,53 @@ object OpenApi {
           Json.parse(openapiRaw).asObject.prettify
         }
       )
+    }
+
+    extensionGroup match {
+      case None => finalDoc
+      case Some(group) => {
+        cache.getOrElseUpdate(
+          group, {
+
+            env.logger.info(s"Compute sub openapi.json document for group: '${group}'")
+
+            def findNeededComponents(js: JsValue): Set[String] = {
+              js.stringify.split("#/components/schemas/").map(str => str.split(""""""").head).toSet
+            }
+
+            def buildFilteredComponentsSchema(initialObj: JsValue, componentsSchema: JsObject): JsObject = {
+              var previousNeededComponents: Set[String] = Set.empty
+              var previousComponents: JsValue = Json.obj("paths" -> initialObj, "schemas" -> Json.obj())
+              var run = true
+              while (run) {
+                val neededComponents = findNeededComponents(previousComponents)
+                if (neededComponents.size == previousNeededComponents.size) {
+                  run = false
+                } else {
+                  previousComponents = Json.obj("paths" -> initialObj, "schemas" -> JsObject(componentsSchema.value.filter {
+                    case (key, _) if neededComponents.contains(key) => true
+                    case _ => false
+                  }))
+                  previousNeededComponents = neededComponents
+                }
+              }
+              previousComponents.select("schemas").asObject
+            }
+
+            val json = Json.parse(finalDoc).asObject
+            val paths = json.select("paths").asObject
+            val tags = json.select("tags").asArray
+            val components = json.select("components").asObject
+            val componentsSchema = json.select("components").select("schemas").asObject
+            val filteredPaths = JsObject(paths.value.filter(_._1.startsWith(s"/apis/${group}")))
+            val filteredTags = JsArray(tags.value.filter(_.select("name").asString.startsWith(group)))
+            val filteredComponentsSchema = buildFilteredComponentsSchema(filteredPaths, componentsSchema)
+            val customComponents = components ++ Json.obj("schemas" -> filteredComponentsSchema)
+            val customDoc = json ++ Json.obj("tags" -> filteredTags, "paths" -> filteredPaths, "components" -> customComponents)
+            customDoc.prettify
+          }
+        )
+      }
     }
   }
 }

@@ -41,18 +41,13 @@ import otoroshi.utils.syntax.implicits.{
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
-    // secCalls: Long = RemainingQuotas.MaxValue,
-    // secCallsRemaining: Long = RemainingQuotas.MaxValue,
-    // dailyCalls: Long = RemainingQuotas.MaxValue,
-    // dailyCallsRemaining: Long = RemainingQuotas.MaxValue,
-    // monthlyCalls: Long = RemainingQuotas.MaxValue,
-    // monthlyCallsRemaining: Long = RemainingQuotas.MaxValue
-    authorizedCallsPerSec: Long = RemainingQuotas.MaxValue,
-    currentCallsPerSec: Long = RemainingQuotas.MaxValue,
-    remainingCallsPerSec: Long = RemainingQuotas.MaxValue,
+    authorizedCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    throttlingCallsPerWindow: Long = RemainingQuotas.MaxValue,
+    remainingCallsPerWindow: Long = RemainingQuotas.MaxValue,
     authorizedCallsPerDay: Long = RemainingQuotas.MaxValue,
     currentCallsPerDay: Long = RemainingQuotas.MaxValue,
     remainingCallsPerDay: Long = RemainingQuotas.MaxValue,
@@ -60,12 +55,45 @@ case class RemainingQuotas(
     currentCallsPerMonth: Long = RemainingQuotas.MaxValue,
     remainingCallsPerMonth: Long = RemainingQuotas.MaxValue
 ) {
-  def toJson: JsObject = RemainingQuotas.fmt.writes(this)
+  def toJson: JsObject = RemainingQuotas.fmt.writes(this).as[JsObject]
 }
 
 object RemainingQuotas {
   val MaxValue: Long = 10000000L
-  implicit val fmt   = Json.format[RemainingQuotas]
+  implicit val fmt   = new Format[RemainingQuotas] {
+
+    override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
+      RemainingQuotas(
+        authorizedCallsPerWindow =
+          json.select("authorizedCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        throttlingCallsPerWindow =
+          json.select("throttlingCallsPerWindow").asOpt[Long].getOrElse(json.select("currentCallsPerSec").asLong),
+        remainingCallsPerWindow =
+          json.select("remainingCallsPerWindow").asOpt[Long].getOrElse(json.select("authorizedCallsPerSec").asLong),
+        authorizedCallsPerDay = json.select("authorizedCallsPerDay").asLong,
+        currentCallsPerDay = json.select("currentCallsPerDay").asLong,
+        remainingCallsPerDay = json.select("remainingCallsPerDay").asLong,
+        authorizedCallsPerMonth = json.select("authorizedCallsPerMonth").asLong,
+        currentCallsPerMonth = json.select("currentCallsPerMonth").asLong,
+        remainingCallsPerMonth = json.select("remainingCallsPerMonth").asLong
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: RemainingQuotas): JsValue = Json.obj(
+      "authorizedCallsPerWindow" -> o.authorizedCallsPerWindow,
+      "throttlingCallsPerWindow" -> o.throttlingCallsPerWindow,
+      "remainingCallsPerWindow"  -> o.remainingCallsPerWindow,
+      "authorizedCallsPerDay"    -> o.authorizedCallsPerDay,
+      "currentCallsPerDay"       -> o.currentCallsPerDay,
+      "remainingCallsPerDay"     -> o.remainingCallsPerDay,
+      "authorizedCallsPerMonth"  -> o.authorizedCallsPerMonth,
+      "currentCallsPerMonth"     -> o.currentCallsPerMonth,
+      "remainingCallsPerMonth"   -> o.remainingCallsPerMonth
+    )
+  }
 }
 
 case class ApiKeyRotation(
@@ -243,7 +271,7 @@ case class ApiKey(
       quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield {
-      val within = (quotas.currentCallsPerSec <= (throttlingQuota * env.throttlingWindow)) &&
+      val within = quotas.remainingCallsPerWindow > 0 &&
         (quotas.currentCallsPerDay < dailyQuota) &&
         (quotas.currentCallsPerMonth < monthlyQuota)
       (within, rotation, quotas)
@@ -981,8 +1009,9 @@ object ApiKeyHelper {
       } getOrElse FastFuture.successful(None)
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val id     = auth.split(":").headOption.map(_.trim)
-      val secret = auth.split(":").lastOption.map(_.trim)
+      val parts  = auth.split(":")
+      val id     = parts.headOption.map(_.trim)
+      val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
         case (Some(apiKeyClientId), Some(apiKeySecret)) => {
           env.datastores.apiKeyDataStore
@@ -1574,8 +1603,9 @@ object ApiKeyHelper {
       } getOrElse errorResult(Unauthorized, s"Invalid ApiKey provided", "errors.invalid.api.key")
     } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
       val auth   = authBasic.get
-      val id     = auth.split(":").headOption.map(_.trim)
-      val secret = auth.split(":").lastOption.map(_.trim)
+      val parts  = auth.split(":")
+      val id     = parts.headOption.map(_.trim)
+      val secret = if (parts.length > 1) parts.tail.mkString(":").trim.some else None
       (id, secret) match {
         case (Some(apiKeyClientId), Some(apiKeySecret)) => {
           env.datastores.apiKeyDataStore
@@ -1739,7 +1769,10 @@ object ApiKeyHelper {
               )
           )
           .map(_.split(":"))
-          .filter(_.size == 2)
+          .collect {
+            case arr if arr.length == 2 => arr
+            case arr if arr.length > 2  => Array(arr.head, arr.tail.mkString(":"))
+          }
           .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some, otoBearer = None))
         val authByCustomHeaders: Option[ApikeyTuple]        = req.headers
           .get(
@@ -1899,6 +1932,18 @@ object ApiKeyHelper {
                         .acceptLeeway(10)
                         .build
                     Try(verifier.verify(jwt))
+                      .filter { token =>
+                        val aud = Option(token.getAudience).flatMap(
+                          _.asScala.headOption.filter(v => v.startsWith("http://") || v.startsWith("https://"))
+                        )
+                        if (aud.isDefined) {
+                          val currentUrl = req.theUrl
+                          val audience   = aud.get
+                          currentUrl.startsWith(audience)
+                        } else {
+                          true
+                        }
+                      }
                       .filter { token =>
                         val xsrfToken       = token.getClaim("xsrfToken")
                         val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")

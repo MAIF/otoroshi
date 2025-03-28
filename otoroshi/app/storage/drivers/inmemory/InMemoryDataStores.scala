@@ -49,14 +49,13 @@ class InMemoryDataStores(
     )
   val materializer     = Materializer(actorSystem)
   val _optimized       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(false)
+  val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
-  lazy val _redis      = if (_modern) {
+  lazy val swredis     = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
-  lazy val swredis     = if (env.isDev) new SwappableRedisLikeMetricsWrapper(_redis, env) else _redis
 
   def redis(): otoroshi.storage.RedisLike = swredis
 
@@ -160,6 +159,9 @@ class InMemoryDataStores(
 
   private lazy val _wasmPluginDataStore                  = new KvWasmPluginDataStore(redis, env)
   override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
+
+  private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
+  override def draftsDataStore: DraftDataStore = _draftDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

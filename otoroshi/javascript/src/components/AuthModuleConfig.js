@@ -172,6 +172,8 @@ export class Oauth2ModuleConfig extends Component {
     dataOverride: {},
     rightsOverride: {},
     adminEntityValidatorsOverride: {},
+    allowedUsers: [],
+    deniedUsers: [],
     mtlsConfig: {
       mtls: false,
       loose: false,
@@ -474,6 +476,16 @@ export class Oauth2ModuleConfig extends Component {
         />
         <Separator title="Users" />
         <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
@@ -481,6 +493,17 @@ export class Oauth2ModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
         <Suspense fallback={<div>loading ...</div>}>
@@ -737,15 +760,22 @@ export class User extends Component {
             className="btn btn-sm btn-success"
             title="Set password"
             onClick={(e) => {
-              window.newPrompt('Type password', { type: 'password' }).then((value1) => {
-                window.newPrompt('Re-type password', { type: 'password' }).then((value2) => {
-                  if (value1 && value2 && value1 === value2) {
-                    this.props.hashPassword(this.props.user.email, value1);
-                  } else {
-                    window.newAlert('Passwords does not match !', 'Error');
-                  }
+              window
+                .newPrompt('Type password', { type: 'password', title: 'Set the password' })
+                .then((value1) => {
+                  window
+                    .newPrompt('Re-type password', {
+                      type: 'password',
+                      title: 'Confirm the password',
+                    })
+                    .then((value2) => {
+                      if (value1 && value2 && value1 === value2) {
+                        this.props.hashPassword(this.props.user.email, value1);
+                      } else {
+                        window.newAlert('Passwords does not match !', 'Error');
+                      }
+                    });
                 });
-              });
             }}
           >
             <i className="fas fa-edit" /> Set password
@@ -1096,6 +1126,16 @@ export class BasicModuleConfig extends Component {
           </Suspense>
         )}
         <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
@@ -1103,6 +1143,17 @@ export class BasicModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
       </div>
@@ -1177,6 +1228,16 @@ export class WasmAuthModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
         />
         <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
@@ -1184,6 +1245,17 @@ export class WasmAuthModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
       </div>
@@ -1522,6 +1594,16 @@ export class LdapModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.metadataField', v)}
         />
         <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
@@ -1529,6 +1611,17 @@ export class LdapModuleConfig extends Component {
           defaultValue={{
             path: '$.profile.admin',
             value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
           }}
         />
         <Suspense fallback={<div>loading ...</div>}>
@@ -1883,8 +1976,12 @@ export class SamlModuleConfig extends Component {
     'validateSignature',
     'validateAssertions',
     'validatingCertificates',
+    'allowedUsers',
+    'deniedUsers',
     'userValidators',
+    'remoteValidators',
     'adminEntityValidatorsOverride',
+    'extraMetadata',
   ];
 
   changeTheValue = (name, value) => {
@@ -1908,6 +2005,18 @@ export class SamlModuleConfig extends Component {
         defaultValue: {
           path: '$.profile.admin',
           value: true,
+        },
+      },
+    },
+    remoteValidators: {
+      type: 'array',
+      props: {
+        label: 'Remote validators',
+        component: RemoteValidator,
+        defaultValue: {
+          url: 'https://validator.oto.tools:3005/user_validation',
+          headers: {},
+          timeout: 3000,
         },
       },
     },
@@ -1987,6 +2096,18 @@ export class SamlModuleConfig extends Component {
       props: {
         label: 'Validate Assertions Signature',
         help: 'Should SAML Assertions to be decrypted ?',
+      },
+    },
+    allowedUsers: {
+      type: 'array',
+      props: {
+        label: 'Allowed users',
+      },
+    },
+    deniedUsers: {
+      type: 'array',
+      props: {
+        label: 'Denied users',
       },
     },
     credentials: {
@@ -2186,6 +2307,31 @@ export class SamlModuleConfig extends Component {
         label: 'Admin entity validators override',
       },
     },
+    extraMetadata: {
+      type: ({}) => (
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Extra metadata"
+            mode="json"
+            value={JSON.stringify(this.props.value.extraMetadata, null, 2)}
+            onChange={(e) => {
+              if (e.trim() === '') {
+                this.changeTheValue('.extraMetadata', {});
+              } else {
+                this.changeTheValue('.extraMetadata', JSON.parse(e));
+              }
+            }}
+            example={{
+              provider: 'Keycloak',
+              foo: 'bar',
+            }}
+          />
+        </Suspense>
+      ),
+      props: {
+        label: 'Extra metadata',
+      },
+    },
   };
 
   fetchFromURL = () => {
@@ -2308,7 +2454,10 @@ export class OAuth1ModuleConfig extends Component {
     'accessTokenURL',
     'profileURL',
     'callbackURL',
+    'allowedUsers',
+    'deniedUsers',
     'userValidators',
+    'remoteValidators',
     'rightsOverride',
     'adminEntityValidatorsOverride',
   ];
@@ -2361,6 +2510,18 @@ export class OAuth1ModuleConfig extends Component {
       type: 'string',
       props: { label: 'Consumer secret', placeholder: 'Consumer secret' },
     },
+    allowedUsers: {
+      type: 'array',
+      props: {
+        label: 'Allowed users',
+      },
+    },
+    deniedUsers: {
+      type: 'array',
+      props: {
+        label: 'Denied users',
+      },
+    },
     userValidators: {
       type: 'array',
       props: {
@@ -2369,6 +2530,18 @@ export class OAuth1ModuleConfig extends Component {
         defaultValue: {
           path: '$.profile.admin',
           value: true,
+        },
+      },
+    },
+    remoteValidators: {
+      type: 'array',
+      props: {
+        label: 'Remote validators',
+        component: RemoteValidator,
+        defaultValue: {
+          url: 'https://validator.oto.tools:3005/user_validation',
+          headers: {},
+          timeout: 3000,
         },
       },
     },
@@ -2542,6 +2715,40 @@ const UserValidator = (props) => {
             changeTheValue('value', v);
           }
         }}
+      />
+    </>
+  );
+};
+
+const RemoteValidator = (props) => {
+  const validator = props.itemValue;
+
+  function changeTheValue(field, value) {
+    const arr = props.value;
+    arr[props.idx][field] = value;
+    props.onChange(arr);
+  }
+
+  return (
+    <>
+      <TextInput
+        label="URL"
+        value={validator.url}
+        help="The remote validator url"
+        onChange={(v) => changeTheValue('url', v)}
+      />
+      <ObjectInput
+        label="Headers"
+        value={validator.headers}
+        help="The remote validator headers"
+        onChange={(v) => changeTheValue('headers', v)}
+      />
+      <NumberInput
+        label="Timeout"
+        value={validator.timeout}
+        help="The remote validator timeout"
+        suffix="millis."
+        onChange={(v) => changeTheValue('timeout', v)}
       />
     </>
   );

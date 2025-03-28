@@ -106,7 +106,7 @@ export class GroupsPage extends Component {
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
-        kubernetesKind="ServiceGroup"
+        kubernetesKind="organize.otoroshi.io/ServiceGroup"
       />
     );
   }

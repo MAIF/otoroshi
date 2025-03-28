@@ -420,7 +420,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
-                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
                 .getOrElse(Map.empty[String, String])
               f(map)
             }
@@ -438,7 +438,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
-                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
                 .getOrElse(Map.empty[String, String])
               f(map)
             }
@@ -772,7 +772,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
-                      .map(v => (v.head, v.last))
+                      .map(v => (v.head, v.tail.mkString(":")))
                       .map { case (clientId, clientSecret) =>
                         handleTokenRequest(
                           ClientCredentialFlowBody(
@@ -814,7 +814,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
-                      .map(v => (v.head, v.last))
+                      .map(v => (v.head, v.tail.mkString(":")))
                       .map { case (clientId, clientSecret) =>
                         handleTokenRequest(
                           ClientCredentialFlowBody(
@@ -1038,7 +1038,7 @@ class ClientCredentialService extends RequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -1056,7 +1056,7 @@ class ClientCredentialService extends RequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
             .getOrElse(Map.empty[String, String])
           f(map)
         }
@@ -1073,7 +1073,7 @@ class ClientCredentialService extends RequestSink {
   ): Future[Result] = {
     JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq).map {
       case Left(body)  => Results.NotFound(body)
-      case Right(body) => Results.Ok(body)
+      case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
     }
   }
 
@@ -1145,7 +1145,7 @@ class ClientCredentialService extends RequestSink {
             val biscuitConf: BiscuitConf = conf.biscuit
 
             val symbols           = new SymbolTable()
-            val authority_builder = new Block(0, symbols)
+            val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
 
             authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
             authority_builder.add_fact(
@@ -1205,7 +1205,7 @@ class ClientCredentialService extends RequestSink {
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
               Biscuit
-                .make(rng, keypair, symbols, authority_builder.build())
+                .make(rng, keypair, authority_builder.build(symbols))
                 .serialize_b64url()
             }
 
@@ -1344,7 +1344,7 @@ class ClientCredentialService extends RequestSink {
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
-            .map(v => (v.head, v.last))
+            .map(v => (v.head, v.tail.mkString(":")))
             .map { case (clientId, clientSecret) =>
               handleTokenRequest(
                 ClientCredentialFlowBody(
@@ -1430,7 +1430,8 @@ class ApikeyAuthModule extends PreRouting {
     Option(base64)
       .map(decodeBase64)
       .map(_.split(":").toSeq)
-      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+      .filter(v => v.nonEmpty && v.length > 1)
+      .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
   def unauthorized(ctx: PreRoutingContext): Future[Unit] = {

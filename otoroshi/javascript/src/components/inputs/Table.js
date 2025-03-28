@@ -1,12 +1,25 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Form } from '.';
+import { Form, OffSwitch, OnSwitch } from '.';
 import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
+import get from 'lodash/get';
+import orderBy from 'lodash/orderBy';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
-import { NgSelectRenderer } from '../nginputs';
+import {
+  LabelAndInput,
+  NgCodeRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+  NgTextRenderer,
+} from '../nginputs';
 import _ from 'lodash';
+import { Button } from '../Button';
+import { firstLetterUppercase } from '../../util';
+import { DraftEditorContainer, DraftStateDaemon } from '../Drafts/DraftEditor';
+import { updateEntityURLSignal } from '../Drafts/DraftEditorSignal';
+import { withRouter } from 'react-router-dom';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -28,7 +41,209 @@ function LoadingComponent(props) {
   );
 }
 
-export class Table extends Component {
+function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeField, coreFields }) {
+  const [open, setOpen] = useState(false);
+  const [isCustomFieldView, showCustomField] = useState(false);
+
+  const [template, setTemplate] = useState();
+
+  const [fieldPath, setFieldPath] = useState('');
+  const [fieldExampleValue, setFieldExampleValue] = useState('');
+
+  useEffect(() => {
+    if (!template) fetchTemplate().then(setTemplate);
+  }, []);
+
+  useEffect(() => {
+    if (template)
+      setFieldExampleValue(fieldPath.split('.').reduce((r, k) => (r ? r[k] : {}), template));
+  }, [fieldPath]);
+
+  const closeTab = () => {
+    setOpen(false);
+    showCustomField(false);
+  };
+
+  const stringifiedExampleValue = JSON.stringify(
+    fieldExampleValue !== undefined ? fieldExampleValue : {},
+    null,
+    2
+  );
+
+  return (
+    <>
+      <div
+        className={`wizard ${!open ? 'wizard--hidden' : ''}`}
+        style={{
+          background: 'none',
+        }}
+        onClick={closeTab}
+      >
+        <div
+          className={`wizard-container ${!open ? 'wizard--hidden' : ''}`}
+          style={{
+            maxWidth: isCustomFieldView ? '50vw' : '30vw',
+            minWidth: '360px',
+            zIndex: 1000,
+            border: 'var(--bg-color_level2) solid 1px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
+            <div className="d-flex justify-content-between">
+              <div className="d-flex items-center">
+                <i
+                  className="fa fa-chevron-left me-3"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    if (isCustomFieldView) showCustomField(false);
+                    else closeTab();
+                  }}
+                />
+                <h3 style={{ fontSize: '1.5rem' }} className="text-center">
+                  {isCustomFieldView ? 'New column' : 'Columns'}
+                </h3>
+              </div>
+              <Button type="quiet" text="X" onClick={closeTab} className="btn-sm" />
+            </div>
+
+            <div className="wizard-content">
+              {isCustomFieldView && (
+                <>
+                  <NgStringRenderer label="Field path" onChange={setFieldPath} value={fieldPath} />
+                  <Button
+                    type="save"
+                    text="Add this column"
+                    onClick={() => addField(fieldPath)}
+                    className="my-2"
+                    disabled={stringifiedExampleValue.length <= 0}
+                  />
+
+                  <div
+                    style={{
+                      border: 'var(--bg-color_level2) solid 1px',
+                      borderRadius: '4px',
+                    }}
+                    className="p-2 mb-2"
+                  >
+                    <NgCodeRenderer
+                      label="Field value (example)"
+                      value={stringifiedExampleValue}
+                      readOnly
+                      rawSchema={{
+                        props: {
+                          editorOnly: true,
+                          height: '100%',
+                          ace_config: {
+                            fontSize: 14,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      border: 'var(--bg-color_level2) solid 1px',
+                      borderRadius: '4px',
+                    }}
+                    className="p-2"
+                  >
+                    <NgCodeRenderer
+                      label="Content"
+                      readOnly
+                      rawSchema={{
+                        props: {
+                          editorOnly: true,
+                          height: '100%',
+                          ace_config: {
+                            fontSize: 14,
+                          },
+                        },
+                      }}
+                      value={JSON.stringify(template, null, 2)}
+                    />
+                  </div>
+                </>
+              )}
+              {!isCustomFieldView && (
+                <>
+                  <div
+                    className="d-flex flex-column hidden-scrollbar"
+                    style={{ overflowY: 'scroll' }}
+                  >
+                    {Object.entries(fields).map(([column, enabled]) => {
+                      const columnParts = column.split('.');
+
+                      return (
+                        <div
+                          className="mb-1 p-1 px-3 d-flex"
+                          style={{
+                            border: 'var(--bg-color_level2) solid 1px',
+                            width: '100%',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            justifyContent: 'space-between',
+                          }}
+                          onClick={() => onChange(column, !enabled)}
+                          key={column}
+                        >
+                          <div className="d-flex items-center">
+                            <label className={`col-xs-12 col-form-label`}>
+                              {firstLetterUppercase(columnParts.slice(-1)[0]).replace(
+                                /_/g,
+                                ' '
+                              )}{' '}
+                            </label>
+                            {coreFields && !coreFields.includes(column) && (
+                              <Button
+                                className="btn-sm ms-2"
+                                type="danger"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeField(column);
+                                }}
+                              >
+                                <i className="fa fa-trash" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="">
+                            {enabled && <OnSwitch onChange={() => onChange(column, false)} />}
+                            {!enabled && <OffSwitch onChange={() => onChange(column, true)} />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    className="d-flex items-center mt-1 py-2"
+                    style={{
+                      justifyContent: 'space-between',
+                    }}
+                    onClick={() => showCustomField(true)}
+                  >
+                    Add a column
+                    <i className="fa fa-chevron-right ms-1" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      <Button
+        type="info"
+        className="ms-auto btn-sm d-flex align-items-center mb-1"
+        onClick={() => setOpen(true)}
+      >
+        <i className="fas fa-table-columns me-1" />
+        Columns
+      </Button>
+    </>
+  );
+}
+
+class TableComponent extends Component {
   static propTypes = {
     itemName: PropTypes.string.isRequired,
     columns: PropTypes.array.isRequired,
@@ -74,6 +289,7 @@ export class Table extends Component {
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
+
     this.readRoute();
   }
 
@@ -102,12 +318,14 @@ export class Table extends Component {
   };
 
   readRoute = () => {
-    if (this.props.parentProps.params.taction) {
-      const action = this.props.parentProps.params.taction;
+    const { parentProps } = this.props;
+    const action = parentProps.params?.taction || parentProps.match?.params.taction;
+    const item = parentProps.params?.titem || parentProps.match?.params.titem;
+
+    if (action) {
       if (action === 'add') {
         this.showAddForm();
       } else if (action === 'edit') {
-        const item = this.props.parentProps.params.titem;
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
@@ -143,10 +361,19 @@ export class Table extends Component {
     }
   };
 
+  getValueAtPath = (item, filterId) => {
+    let value = get(item, filterId.toLowerCase());
+    if (!value) {
+      return get(item, filterId);
+    }
+    return value;
+  };
+
   update = debounce((paginationState = {}) => {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
+
     return (
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
@@ -157,21 +384,80 @@ export class Table extends Component {
           })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
+        const sortedItems = [...rawItems];
+        if (paginationState.sorted) {
+          paginationState.sorted.map((sort) => {
+            sortedItems.sort((_a, _b) => {
+              const a = this.getValueAtPath(_a, sort.id);
+              const b = this.getValueAtPath(_b, sort.id);
+
+              try {
+                if (~~sort.desc) {
+                  return a?.localeCompare(b);
+                } else {
+                  return b?.localeCompare(a);
+                }
+              } catch (_err) {
+                if ('boolean' === typeof a || 'boolean' === typeof b) {
+                  if (~~sort.desc) return a === b ? 0 : a ? -1 : 1;
+                  else return a === b ? 0 : a ? 1 : -1;
+                }
+                if (~~sort.desc) {
+                  return a - b;
+                } else {
+                  return b - a;
+                }
+              }
+            });
+          });
+        }
+
+        const newItems = sortedItems
+          .filter((item) => {
+            if (paginationState.filtered) {
+              if (paginationState.filtered.length === 0) {
+                return true;
+              } else {
+                return paginationState.filtered.reduce((acc, filter) => {
+                  const value = this.getValueAtPath(item, filter.id);
+                  return (
+                    acc && String(value).toLowerCase().indexOf(filter.value.toLowerCase()) > -1
+                  );
+                }, true);
+              }
+            }
+            return true;
+          })
+          .slice(this.state.rowsPerPage * page, this.state.rowsPerPage * (page + 1));
+
         this.setState({
-          items: rawItems,
+          items: newItems,
           loading: false,
+          pages: Math.ceil(rawItems.length / this.state.rowsPerPage),
           page,
         });
       } else {
         this.setState({
           items: rawItems.data,
-          pages: rawItems.pages,
+          pages: this.calculateMaximumPages(rawItems),
           loading: false,
           page,
         });
       }
     });
   }, 200);
+
+  calculateMaximumPages = (response) => {
+    const { pages } = this.state;
+
+    if (!isNaN(response.pages)) {
+      return response.pages;
+    }
+
+    if (response.ngPages !== -1) return response.ngPages;
+
+    return pages;
+  };
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -244,19 +530,16 @@ export class Table extends Component {
       routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    // console.log(window.location.pathname, routeTo);
-    if (window.location.pathname !== routeTo) {
-      window.location.href = routeTo;
-    } else {
-      if (this.props.parentProps.setTitle) {
-        this.props.parentProps.setTitle(
-          `Update a ${this.props.itemName}`,
-          this.updateItemAndStay,
-          item
-        );
-      }
-      this.setState({ currentItem: item, showEditForm: true });
+    window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+
+    if (this.props.parentProps.setTitle) {
+      this.props.parentProps.setTitle(
+        `Update a ${this.props.itemName}`,
+        this.updateItemAndStay,
+        item
+      );
     }
+    this.setState({ currentItem: item, showEditForm: true });
   };
 
   deleteItem = (e, item) => {
@@ -408,7 +691,10 @@ export class Table extends Component {
       },
       body: JSON.stringify({
         apiVersion: 'proxy.otoroshi.io/v1',
-        kind: this.props.kubernetesKind,
+        kind:
+          this.props.kubernetesKind.indexOf('/') > -1
+            ? this.props.kubernetesKind.split('/')[1]
+            : this.props.kubernetesKind,
         metadata: {
           name,
         },
@@ -502,18 +788,20 @@ export class Table extends Component {
         accessor: (item) => (
           <div style={{ textAlign: 'left' }}>
             <div>
-              <button
-                type="button"
-                className="btn btn-sm btn-success me-2"
-                {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                onClick={(e) =>
-                  this.props.navigateOnEdit
-                    ? this.props.navigateOnEdit(item)
-                    : this.showEditForm(e, item)
-                }
-              >
-                <i className="fas fa-pencil-alt" />
-              </button>
+              {!this.props.hideEditButton && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success me-2"
+                  {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
+                  onClick={(e) => {
+                    this.props.navigateOnEdit
+                      ? this.props.navigateOnEdit(item)
+                      : this.showEditForm(e, item);
+                  }}
+                >
+                  <i className="fas fa-pencil-alt" />
+                </button>
+              )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -559,8 +847,27 @@ export class Table extends Component {
         ),
       });
     }
+
     return (
       <div>
+        {this.state.currentItem && !this.state.showAddForm && (
+          <>
+            <DraftEditorContainer
+              className="mb-3"
+              entityId={this.props.extractKey(this.state.currentItem)}
+              value={this.state.currentItem}
+            />
+
+            <DraftStateDaemon
+              value={this.state.currentItem}
+              setValue={(currentItem) => this.setState({ currentItem })}
+              updateEntityURL={() => {
+                updateEntityURLSignal.value = this.updateItemAndStay;
+              }}
+            />
+          </>
+        )}
+
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
             <div className="row">
@@ -590,11 +897,24 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow" style={{ position: 'relative', marginTop: 20 }}>
+            <div className="rrow me-1" style={{ position: 'relative' }}>
+              {this.props.fields && (
+                <ColumnsSelector
+                  fetchTemplate={this.props.fetchTemplate}
+                  onChange={this.props.onToggleField}
+                  addField={this.props.addField}
+                  removeField={this.props.removeField}
+                  coreFields={this.props.coreFields}
+                  fields={Object.keys(this.props.fields)
+                    .sort()
+                    .reduce((r, k) => ((r[k] = this.props.fields[k]), r), {})}
+                />
+              )}
               <ReactTable
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 manual
+                page={this.state.page}
                 pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
@@ -603,22 +923,19 @@ export class Table extends Component {
                 filterAll={true}
                 defaultSorted={[
                   {
-                    id: this.props.defaultSort || this.props.columns[0].title,
+                    id: this.props.defaultSort || this.props.columns[0]?.title,
                     desc: this.props.defaultSortDesc || false,
                   },
                 ]}
                 defaultFiltered={
                   this.props.search
-                    ? [{ id: this.props.columns[0].title, value: this.props.search }]
+                    ? [{ id: this.props.columns[0]?.title, value: this.props.search }]
                     : []
                 }
                 onFetchData={(state, instance) => {
-                  // console.log(state, instance)
-                  // console.log('onFetchData')
                   this.update(state);
                 }}
                 onFilteredChange={(column, value) => {
-                  // console.log('onFilteredChange')
                   if (this.state.lastFocus) document.getElementById(this.state.lastFocus)?.focus();
                 }}
                 columns={columns}
@@ -650,7 +967,15 @@ export class Table extends Component {
                       value={this.state.rowsPerPage}
                       label={' '}
                       ngOptions={{ spread: true }}
-                      onChange={(rowsPerPage) => this.setState({ rowsPerPage }, this.update)}
+                      onChange={(rowsPerPage) =>
+                        this.setState(
+                          {
+                            rowsPerPage,
+                            page: 0,
+                          },
+                          this.update
+                        )
+                      }
                       options={[5, 15, 20, 50, 100]}
                     />
                   </div>
@@ -899,3 +1224,5 @@ export class Table extends Component {
     );
   }
 }
+
+export const Table = withRouter(TableComponent);

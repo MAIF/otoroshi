@@ -7,36 +7,37 @@ import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
+import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
-    extends AbstractController(cc) {
+object HealthController {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
-
-  lazy val logger = Logger("otoroshi-health-api")
-
-  def withSecurity(req: RequestHeader, _key: Option[String])(f: => Future[Result]): Future[Result] = {
-    ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), _key) match {
-      case (_, _, None)                                  => f
-      case (Some(header), _, Some(key)) if header == key => f
-      case (_, Some(header), Some(key)) if header == key => f
-      case _                                             => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
-    }) map { res =>
-      res.withHeaders(
-        env.Headers.OtoroshiStateResp -> req.headers
-          .get(env.Headers.OtoroshiState)
-          .getOrElse("--")
-      )
+  private def transformToArray(input: String): JsValue = {
+    val metrics = Json.parse(input)
+    metrics match {
+      case JsObject(value) =>
+        value.toSeq.foldLeft(Json.arr()) {
+          case (arr, (key, JsObject(value))) =>
+            arr ++ value.toSeq.foldLeft(Json.arr()) {
+              case (arr2, (key2, value2 @ JsObject(_))) =>
+                arr2 ++ Json.arr(
+                  value2 ++ Json.obj(
+                    "name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")),
+                    "type" -> key
+                  )
+                )
+              case (arr2, (key2, value2))               => arr2
+            }
+          case (arr, (key, value))           => arr
+        }
+      case a               => a
     }
   }
 
-  def fetchHealth() = {
+  def fetchHealth()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
     val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
       env.datastores.clusterStateDataStore.getMembers()
     } else {
@@ -131,32 +132,10 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
         !workerReady ||
         !DynamicSSLEngineProvider.isFirstSetupDone
       if (err) {
-        ServiceUnavailable(payload)
+        Left(payload)
       } else {
-        Ok(payload)
+        Right(payload)
       }
-    }
-  }
-
-  def transformToArray(input: String): JsValue = {
-    val metrics = Json.parse(input)
-    metrics match {
-      case JsObject(value) =>
-        value.toSeq.foldLeft(Json.arr()) {
-          case (arr, (key, JsObject(value))) =>
-            arr ++ value.toSeq.foldLeft(Json.arr()) {
-              case (arr2, (key2, value2 @ JsObject(_))) =>
-                arr2 ++ Json.arr(
-                  value2 ++ Json.obj(
-                    "name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")),
-                    "type" -> key
-                  )
-                )
-              case (arr2, (key2, value2))               => arr2
-            }
-          case (arr, (key, value))           => arr
-        }
-      case a               => a
     }
   }
 
@@ -165,19 +144,50 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
       acceptsJson: Boolean,
       acceptsProm: Boolean,
       filter: Option[String]
-  ): Result = {
+  )(implicit env: Env, ec: ExecutionContext): Result = {
     if (format.contains("old_json") || format.contains("old")) {
-      Ok(env.metrics.jsonExport(filter)).as("application/json")
+      Results.Ok(env.metrics.jsonExport(filter)).as("application/json")
     } else if (format.contains("json")) {
-      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+      Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
     } else if (format.contains("prometheus") || format.contains("prom")) {
-      Ok(env.metrics.prometheusExport(filter)).as("text/plain")
+      Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")
     } else if (acceptsJson) {
-      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+      Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
     } else if (acceptsProm) {
-      Ok(env.metrics.prometheusExport(filter)).as("text/plain")
+      Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")
     } else {
-      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+      Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+    }
+  }
+}
+
+class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
+    extends AbstractController(cc) {
+
+  implicit lazy val ec  = env.otoroshiExecutionContext
+  implicit lazy val mat = env.otoroshiMaterializer
+
+  lazy val logger = Logger("otoroshi-health-api")
+
+  def withSecurity(req: RequestHeader, _key: Option[String])(f: => Future[Result]): Future[Result] = {
+    ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), _key) match {
+      case (_, _, None)                                  => f
+      case (Some(header), _, Some(key)) if header == key => f
+      case (_, Some(header), Some(key)) if header == key => f
+      case _                                             => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
+    }) map { res =>
+      res.withHeaders(
+        env.Headers.OtoroshiStateResp -> req.headers
+          .get(env.Headers.OtoroshiState)
+          .getOrElse("--")
+      )
+    }
+  }
+
+  def fetchHealth() = {
+    HealthController.fetchHealth().map {
+      case Left(payload)  => ServiceUnavailable(payload)
+      case Right(payload) => Ok(payload)
     }
   }
 
@@ -187,14 +197,16 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     val acceptsJson = req.accepts("application/json")
     val acceptsProm = req.accepts("application/prometheus")
     if (env.metricsEnabled) {
-      withSecurity(req, env.metricsAccessKey)(fetchMetrics(format, acceptsJson, acceptsProm, filter).future)
+      withSecurity(req, env.metricsAccessKey)(
+        HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter).future
+      )
     } else {
       FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
     }
   }
 
   def backofficeMetrics() = BackOfficeActionAuth { ctx =>
-    fetchMetrics("json".some, true, false, None)
+    HealthController.fetchMetrics("json".some, true, false, None)
   }
 
   def health() =

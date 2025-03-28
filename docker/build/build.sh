@@ -86,7 +86,7 @@ build_and_push_jar_templates () {
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "11"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "17"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "21"
-  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "22"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "24"
 }
 
 setup_docker_builder () {
@@ -124,7 +124,7 @@ case "${1}" in
   build-and-push-dev)
     OTO_VERSION="dev"
     copy_build
-    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "22"
+    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "21"
     cleanup
     ;;
   build-dev)
@@ -139,7 +139,7 @@ case "${1}" in
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
-    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "22"
+    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "21"
     cleanup
     ;;
   build-snapshots)

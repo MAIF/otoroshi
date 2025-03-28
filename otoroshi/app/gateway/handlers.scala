@@ -7,6 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
+import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
@@ -41,7 +42,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NoStackTrace
 
 case class ProxyDone(
@@ -173,7 +174,7 @@ object GatewayRequestHandler {
       val u: Future[Option[PrivateAppsUser]] = auth match {
         case _: SamlAuthModuleConfig =>
           request.cookies
-            .find(c => c.name.startsWith("oto-papps-"))
+            .find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
             .flatMap(env.extractPrivateSessionId)
             .map {
               env.datastores.privateAppsUserDataStore.findById(_)
@@ -190,9 +191,12 @@ object GatewayRequestHandler {
           case Right(value) =>
             value match {
               case None            => {
-                val cookieOpt     = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt     =
+                  request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-                  env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                  env.datastores.privateAppsUserDataStore.findById(id).map { user =>
+                    user.foreach(_.delete())
+                  }
                 }
                 val finalRedirect =
                   req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
@@ -205,7 +209,8 @@ object GatewayRequestHandler {
                   .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
               }
               case Some(logoutUrl) => {
-                val cookieOpt         = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                val cookieOpt         =
+                  request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
                 cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                   env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                 }
@@ -308,8 +313,6 @@ class GatewayRequestHandler(
   }
 
   val reqCounter = new AtomicInteger(0)
-
-  val ocspResponder = OcspResponder(env, ec)
 
   val headersInFiltered = Seq(
     env.Headers.OtoroshiState,
@@ -516,18 +519,19 @@ class GatewayRequestHandler(
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) {
               Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
             }
-
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  =>
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/login")                               =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) {
               Some(setPrivateAppsCookies())
             }
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/logout") =>
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/logout")                              =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) {
               Some(removePrivateAppsCookies())
             }
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     =>
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/me")                                  =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(myProfile()) }
-          case _ if relativeUri.startsWith("/.well-known/acme-challenge/") =>
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/consumers/")                          =>
+            env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(consumer()) }
+          case _ if relativeUri.startsWith("/.well-known/acme-challenge/")                              =>
             env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser) { Some(letsEncrypt()) }
 
           case _ if ipRegex.matches(request.theHost) && monitoring => super.routeRequest(request)
@@ -591,6 +595,9 @@ class GatewayRequestHandler(
             env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
               super.routeRequest(request)
             )
+          case h if (h == env.adminApiExposedHost || env.adminApiDomains.contains(h) || h == env.adminApiHost) && !env.exposeAdminApi => {
+            Some(adminApiNotExposed())
+          }
           case _                                                                                                   => {
             if (relativeUri.startsWith("/.well-known/otoroshi/")) {
               env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(
@@ -703,20 +710,24 @@ class GatewayRequestHandler(
 
   def jwks() =
     actionBuilder.async { req =>
-      JWKSHelper.jwks(req, Seq.empty).map {
-        case Left(body)  => Results.NotFound(body)
-        case Right(body) => Results.Ok(body)
+      env.adminExtensions.publicKeys().flatMap { extensionsPublicKeys =>
+        JWKSHelper.jwks(req, Seq.empty).map {
+          case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)
+          case Left(_) if extensionsPublicKeys.isEmpty    =>
+            Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
+          case Right(keys)                                => Results.Ok(JsArray(keys ++ extensionsPublicKeys.map(_.raw)))
+        }
       }
     }
 
   def ocsp() =
     actionBuilder.async(sourceBodyParser) { req =>
-      ocspResponder.respond(req, req.body)
+      env.ocspResponder.respond(req, req.body, Seq.empty)
     }
 
   def aia(id: String) =
     actionBuilder.async { req =>
-      ocspResponder.aia(id, req)
+      env.ocspResponder.aia(id, req, Seq.empty)
     }
 
   def letsEncrypt() =
@@ -840,6 +851,43 @@ class GatewayRequestHandler(
     }
   }
 
+  def consumer() = actionBuilder.async { req =>
+    val rnd = req.thePath.replaceFirst("/.well-known/otoroshi/consumers/", "")
+    req.getQueryString("t") match {
+      case None           => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+      case Some(tokenRaw) => {
+        Try(JWT.require(env.sha256Alg).acceptLeeway(10).build().verify(tokenRaw)) match {
+          case Failure(e)     => {
+            logger.error("error validation token", e)
+            Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+          }
+          case Success(token) => {
+            if (rnd == Option(token.getClaim("r").asString()).map(v => env.aesDecrypt(v)).getOrElse("--")) {
+              val id = Option(token.getClaim("i").asString()).map(v => env.aesDecrypt(v)).getOrElse("--")
+              Option(token.getClaim("k").asString()).getOrElse("--") match {
+                case "apikey" => {
+                  env.proxyState.apikey(id) match {
+                    case None         => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+                    case Some(apikey) => Results.Ok(apikey.lightJson).vfuture
+                  }
+                }
+                case "user"   => {
+                  env.proxyState.privateAppsSession(id) match {
+                    case None          => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+                    case Some(session) => Results.Ok(session.lightJson).vfuture
+                  }
+                }
+                case _        => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+              }
+            } else {
+              Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
+            }
+          }
+        }
+      }
+    }
+  }
+
   def myProfile() =
     actionBuilder.async { req =>
       val attrs = TypedMap.empty
@@ -958,6 +1006,11 @@ class GatewayRequestHandler(
   def forbidden() =
     actionBuilder { req =>
       Forbidden(Json.obj("error" -> "forbidden"))
+    }
+
+  def adminApiNotExposed() =
+    actionBuilder { req =>
+      NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =

@@ -1,9 +1,9 @@
 package otoroshi.actions
 
 import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
+import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.cluster._
 import otoroshi.env.Env
@@ -13,13 +13,14 @@ import play.api.mvc._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 case class PrivateAppsActionContext[A](
     request: Request[A],
-    user: Option[PrivateAppsUser],
+    users: Seq[PrivateAppsUser],
     globalConfig: otoroshi.models.GlobalConfig
 ) {
-  def connected: Boolean              = user.isDefined
+  def connected: Boolean              = users.nonEmpty
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 }
@@ -39,37 +40,51 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     def perform() = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
-        cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-          // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
+        val cookies      = request.cookies.filter(c => c.name.startsWith("oto-papps-")).toSeq
+        val validCookies = cookies.flatMap(env.extractPrivateSessionId)
+        if (validCookies.nonEmpty) {
           if (Cluster.logger.isDebugEnabled)
-            Cluster.logger.debug(s"private apps session checking for $id - from action")
-          env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-            case Some(user)                                           =>
-              user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
-              block(PrivateAppsActionContext(request, Some(user), globalConfig))
-            case None if env.clusterConfig.mode == ClusterMode.Worker => {
-              if (Cluster.logger.isDebugEnabled)
-                Cluster.logger.debug(s"private apps session $id not found locally - from action")
-              env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
-                case Some(user) =>
-                  user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
-                  block(PrivateAppsActionContext(request, Some(user), globalConfig))
-                case None       => block(PrivateAppsActionContext(request, None, globalConfig))
-              }
+            Cluster.logger.debug(s"private apps session checking for ${validCookies.mkString(", ")} - from action")
+          Source(validCookies.toList)
+            .mapAsync(1) { id =>
+              env.datastores.privateAppsUserDataStore.findById(id).map(opt => (id, opt))
             }
-            case None                                                 => block(PrivateAppsActionContext(request, None, globalConfig))
-          }
-        } getOrElse {
-          cookieOpt match {
-            case None         => block(PrivateAppsActionContext(request, None, globalConfig))
-            case Some(cookie) =>
-              block(PrivateAppsActionContext(request, None, globalConfig)).fast
-                .map(
-                  _.discardingCookies(
-                    env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", "")): _*
-                  )
-                )
+            .mapAsync(1) {
+              case (_, Some(user))                                            => {
+                user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
+                user.some.vfuture
+              }
+              case (id, None) if env.clusterConfig.mode == ClusterMode.Worker => {
+                if (Cluster.logger.isDebugEnabled)
+                  Cluster.logger.debug(s"private apps session $id not found locally - from action")
+                env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
+                  case Some(user) =>
+                    user
+                      .save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                      .map(_.some)
+                  case None       => None.vfuture
+                }
+              }
+              case (_, None)                                                  => None.vfuture
+            }
+            .collect { case Some(user) =>
+              user
+            }
+            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .flatMap { users =>
+              block(PrivateAppsActionContext(request, users, globalConfig))
+            }
+        } else {
+          if (cookies.nonEmpty) {
+            block(PrivateAppsActionContext(request, Seq.empty, globalConfig)).fast
+              .map { result =>
+                val discardingCookies: Seq[DiscardingCookie] = cookies.flatMap { cookie =>
+                  env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", ""))
+                }
+                result.discardingCookies(discardingCookies: _*)
+              }
+          } else {
+            block(PrivateAppsActionContext(request, Seq.empty, globalConfig))
           }
         }
       }

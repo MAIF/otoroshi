@@ -12,9 +12,12 @@ import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
+import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
+import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -58,9 +61,10 @@ object GlobalExpressionLanguage {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
-        val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
-        val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
-        val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        val userAgentDetails                       = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
+        val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
+        val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
             case r"item.$field@(.*)"              =>
@@ -265,21 +269,21 @@ object GlobalExpressionLanguage {
                 )
                 .getOrElse(s"no-config-$field")
 
-            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"         =>
+            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"                              =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"          =>
+            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"                               =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"                            =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"                            =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)"              =>
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)"                                   =>
               context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                       =>
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                                            =>
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
-            case r"ctx.$field@(.*):$dv@(.*)"                                => context.getOrElse(field, dv)
-            case r"ctx.$field@(.*)"                                         => context.getOrElse(field, s"no-ctx-$field")
-            case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined =>
+            case r"ctx.$field@(.*):$dv@(.*)"                                                     => context.getOrElse(field, dv)
+            case r"ctx.$field@(.*)"                                                              => context.getOrElse(field, s"no-ctx-$field")
+            case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined                      =>
               val lookup: JsLookupResult = userAgentDetails.get.\(field)
               lookup
                 .asOpt[String]
@@ -287,7 +291,7 @@ object GlobalExpressionLanguage {
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
-            case r"ctx.geolocation.$field@(.*)" if geolocDetails.isDefined  =>
+            case r"ctx.geolocation.$field@(.*)" if geolocDetails.isDefined                       =>
               val lookup: JsLookupResult = geolocDetails.get.\(field)
               lookup
                 .asOpt[String]
@@ -295,18 +299,18 @@ object GlobalExpressionLanguage {
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
-            case r"vault://$path@(.*)"                                      =>
+            case r"vault://$path@(.*)"                                                           =>
               Await.result(
                 env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext),
                 5.seconds
               )
-            case r"global_config.metadata.$name@(.*)"                       =>
+            case r"global_config.metadata.$name@(.*)"                                            =>
               env.datastores.globalConfigDataStore
                 .latest()(env.otoroshiExecutionContext, env)
                 .metadata
                 .get(name)
                 .getOrElse(s"no-metadata-${name}")
-            case r"global_config.env.$path@(.*)"                            =>
+            case r"global_config.env.$path@(.*)"                                                 =>
               env.datastores.globalConfigDataStore
                 .latest()(env.otoroshiExecutionContext, env)
                 .env
@@ -320,19 +324,23 @@ object GlobalExpressionLanguage {
                   case o               => o.stringify
                 }
                 .getOrElse(s"no-global-env-at-$path")
-            case "user.name" if user.isDefined                              => user.get.name
-            case "user.email" if user.isDefined                             => user.get.email
-            case "user.tokens.id_token" if user.isDefined                   =>
+            case "user.name" if user.isDefined                                                   => user.get.name
+            case "user.email" if user.isDefined                                                  => user.get.email
+            case "user.tokens.id_token" if user.isDefined                                        =>
               user.get.token.select("id_token").asOpt[String].getOrElse("no-id_token")
-            case "user.tokens.access_token" if user.isDefined               =>
+            case "user.tokens.access_token" if user.isDefined                                    =>
               user.get.token.select("access_token").asOpt[String].getOrElse("no-access_token")
-            case "user.tokens.refresh_token" if user.isDefined              =>
+            case "user.tokens.refresh_token" if user.isDefined                                   =>
               user.get.token.select("refresh_token").asOpt[String].getOrElse("no-refresh_token")
-            case "user.tokens.token_type" if user.isDefined                 =>
+            case "user.tokens.token_type" if user.isDefined                                      =>
               user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
-            case "user.tokens.expires_in" if user.isDefined                 =>
+            case "user.tokens.expires_in" if user.isDefined                                      =>
               user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
-            case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined    =>
+            case r"user.tokens.$field@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(s"no-${field}")
+            case r"user.tokens.$field@(.*):$dv@(.*)" if user.isDefined                                      =>
+              user.get.token.select(field).asOpt[String].getOrElse(dv)
+            case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined                         =>
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
@@ -344,7 +352,7 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(dv)
-            case r"user.metadata.$field@(.*)" if user.isDefined             =>
+            case r"user.metadata.$field@(.*)" if user.isDefined                                  =>
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
@@ -356,7 +364,7 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-meta-$field")
-            case r"user.profile.$field@(.*):$dv@(.*)" if user.isDefined     =>
+            case r"user.profile.$field@(.*):$dv@(.*)" if user.isDefined                          =>
               user
                 .map(_.profile)
                 .map(json =>
@@ -368,7 +376,7 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(dv)
-            case r"user.profile.$field@(.*)" if user.isDefined              =>
+            case r"user.profile.$field@(.*)" if user.isDefined                                   =>
               user
                 .map(_.profile)
                 .map(json =>
@@ -380,10 +388,57 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-profile-$field")
-            case r"nbf"                                                     => "{nbf}"
-            case r"iat"                                                     => "{iat}"
-            case r"exp"                                                     => "{exp}"
-            case expr                                                       => "bad-expr" //s"$${$expr}"
+            case "consumer.id" if user.isDefined                                                 => user.get.email
+            case "consumer.id" if apiKey.isDefined                                               => apiKey.get.clientId
+            case "consumer.long_id" if user.isDefined                                            => s"${user.get.realm}-${user.get.email}"
+            case "consumer.long_id" if apiKey.isDefined                                          => apiKey.get.clientId
+            case "consumer.name" if user.isDefined                                               => user.get.name
+            case "consumer.name" if apiKey.isDefined                                             => apiKey.get.clientName
+            case "consumer.kind" if user.isDefined                                               => "user"
+            case "consumer.kind" if apiKey.isDefined                                             => "apikey"
+            case "consumer.kind" if apiKey.isEmpty && user.isEmpty                               => "public"
+            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
+              user
+                .flatMap(_.otoroshiData)
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .map(json =>
+                  (json \ field).asOpt[JsValue] match {
+                    case Some(JsNumber(number)) => number.toString()
+                    case Some(JsString(str))    => str
+                    case Some(JsBoolean(b))     => b.toString
+                    case _                      => dv
+                  }
+                )
+                .getOrElse(dv)
+            case r"consumer.metadata.$field@(.*)" if user.isDefined || apiKey.isDefined          =>
+              user
+                .flatMap(_.otoroshiData)
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .map(json =>
+                  (json \ field).asOpt[JsValue] match {
+                    case Some(JsNumber(number)) => number.toString()
+                    case Some(JsString(str))    => str
+                    case Some(JsBoolean(b))     => b.toString
+                    case _                      => s"no-meta-$field"
+                  }
+                )
+                .getOrElse(s"no-meta-$field")
+            case r"nbf"                                                                          => "{nbf}"
+            case r"iat"                                                                          => "{iat}"
+            case r"exp"                                                                          => "{exp}"
+
+            case "req.client_cert.dn" if req.isDefined && headCert.isDefined                                         =>
+              DN(headCert.get.getSubjectDN.getName).stringify
+            case "req.client_cert.id" if req.isDefined && headCert.isDefined                                         =>
+              headCert.get.getSerialNumber.toString(16)
+            case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined     =>
+              headCert.get.rawDomain.get
+            case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
+              DN(headCert.get.getIssuerDN.getName).stringify
+
+            case expr => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)

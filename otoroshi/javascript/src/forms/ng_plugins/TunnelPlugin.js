@@ -8,7 +8,7 @@ export default {
         optionsFrom: '/bo/api/proxy/api/tunnels',
         optionsTransformer: {
           label: 'name',
-          value: 'id',
+          value: 'tunnel_id',
         },
       },
     },

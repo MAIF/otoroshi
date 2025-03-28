@@ -28,7 +28,7 @@ You can test to get the same values than the right part by creating these follow
 
 ```sh
 # Let's start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.19.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.25.0-dev/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
@@ -43,7 +43,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
 EOF
 
 
-# Create a proxy of the mirror.otoroshi.io on http://api.oto.tools:8080
+# Create a proxy of the request.otoroshi.io on http://api.oto.tools:8080
 curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -H 'Content-Type: application/json; charset=utf-8' \
@@ -60,7 +60,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
     "backend": {
         "targets": [
             {
-                "hostname": "mirror.otoroshi.io",
+                "hostname": "request.otoroshi.io",
                 "port": 443,
                 "tls": true
             }

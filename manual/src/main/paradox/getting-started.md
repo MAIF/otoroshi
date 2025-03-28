@@ -5,7 +5,7 @@
 
 Download the latest jar of Otoroshi
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.19.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.25.0-dev/otoroshi.jar'
 ```
 
 Once downloading, run Otoroshi.
@@ -22,7 +22,7 @@ Yes, that command is all it took to start it up.
 <a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
 </div>
 
-Create a new route, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+Create a new route, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://request.otoroshi.io`.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
@@ -37,7 +37,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }
@@ -97,7 +97,7 @@ curl 'http://myapi.oto.tools:8080' -u my-first-apikey-id:my-first-apikey-secret
   "method": "GET",
   "path": "/",
   "headers": {
-    "host": "mirror.otoroshi.io",
+    "host": "request.otoroshi.io",
     "accept": "*/*",
     "user-agent": "curl/7.64.1",
     "authorization": "Basic bXktZmlyc3QtYXBpLWtleS1pZDpteS1maXJzdC1hcGkta2V5LXNlY3JldA==",

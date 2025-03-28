@@ -333,15 +333,15 @@ export class VerticalTextInput extends Component {
                   onDrop={this.props.onDrop || this.onDrop}
                   onDragOver={(e) => e.preventDefault()}
                 />
-                {this.props.prefix && (
+                {this.props.suffix && (
                   <span
                     className="input-group-text"
                     onClick={
                       this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined
                     }
-                    style={this.props.prefixStyle || {}}
+                    style={this.props.suffixStyle || {}}
                   >
-                    {this.props.prefix}
+                    {this.props.suffix}
                   </span>
                 )}
               </div>

@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import org.joda.time.DateTime
+import otoroshi.api.WriteAction
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
@@ -389,6 +390,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       case "tcp-service"        => env.datastores.tcpServiceDataStore.template(env).json.asObject
       case "script"             => env.datastores.scriptDataStore.template(env).json.asObject
       case "wasm-plugin"        => env.datastores.wasmPluginsDataStore.template(env).json.asObject
+      case "draft"              => env.datastores.draftsDataStore.template(env).json.asObject
       case "team"               =>
         env.datastores.teamDataStore
           .template(
@@ -421,7 +423,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val template           =
       if (useDefaultTemplate) getDefaultTemplate(templateName, _spec)
       else (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
-    val spec               = if (client.config.crdsOverride) {
+
+    val spec = if (client.config.crdsOverride) {
       template.deepMerge(_spec.as[JsObject])
     } else {
       template.deepMerge(
@@ -1581,7 +1584,14 @@ object KubernetesCRDsJob {
                 v => v.select("id").asString,
                 v =>
                   resource.access
-                    .create(resource.version.name, resource.singularName, v.select("id").asOptString, v)
+                    .create(
+                      resource.version.name,
+                      resource.singularName,
+                      v.select("id").asOptString,
+                      v,
+                      WriteAction.Update,
+                      None
+                    )
                     .map(_.isRight)
               )
             }.flatten

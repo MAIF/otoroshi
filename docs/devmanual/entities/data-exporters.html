@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -347,59 +349,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>The rules apply with the previous example as event.</p><div id="filtering">
 <p>&nbsp;</p></div>
-<p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p>
-<p>Let&rsquo;s say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events</p>
-<pre class="prettyprint"><code class="language-json">{
- &quot;@type&quot;: true,
- &quot;@timestamp&quot;: true,
- &quot;@id&quot;: true
-}
-</code></pre>
-<p>An other possibility is to <strong>rename</strong> the exported field. This value will be the same but the exported field will have a different name.</p>
-<p>Let&rsquo;s say we want to rename all <code>@id</code> field with <code>unique-id</code> as key</p>
-<pre class="prettyprint"><code class="language-json">{ &quot;@id&quot;: &quot;unique-id&quot; }
-</code></pre>
-<p>The last possiblity is to retrieve a sub-object of an event. Let&rsquo;s say we want to get the name of each exported user of events.</p>
-<pre class="prettyprint"><code class="language-json">{ &quot;user&quot;: { &quot;name&quot;: true } }
-</code></pre>
-<p>You can also expand the entire source object with </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;$spread&quot;: true
-}
-</code></pre>
-<p>and the remove fields you don&rsquo;t want with </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;fieldthatidontwant&quot;: false
-}
-</code></pre>
-<p>Projections allows object modification using jspath, for instance, this example will create a new <code>otoroshiHeaderKeys</code> field to exported events. This field will contains a string array containing every request header name.</p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;otoroshiHeaderKeys&quot;: {
-     &quot;$path&quot;: &quot;$.otoroshiHeadersIn.*.key&quot;
-  }
-}
-</code></pre>
-<p>Alternativerly, projections also allow to use JQ to transform exported events</p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;headerKeys&quot;: {
-     &quot;$jq&quot;: &quot;[.headers[].key]&quot;
-  }
-}
-</code></pre>
-<p>JQ filter also allows conditionnal filtering : transformation is applied only if given predicate is match. In the following example, <code>headerKeys</code> field will be valued only if <code>target.scheme</code> is <code>https</code>.</p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;headerKeys&quot;: {
-    &quot;$jqIf&quot;: {
-      &quot;filter&quot;: &quot;[.headers[].key]&quot;,
-      &quot;predicate&quot;: {
-        &quot;path&quot;: &quot;target.scheme&quot;,
-        &quot;value&quot;: &quot;https&quot;
-      }
-    }
-  }
-}
-</code></pre>
-<p>See <a href="https://jqlang.github.io/jq/manual/">JQ manual</a> for complete syntax reference.</p>
+<p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p><div id="projection">
+<p>&nbsp;</p></div>
 <h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
 <p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
 <ul>
@@ -605,7 +556,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2024</span>
+<span class="text">&copy; 2025</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

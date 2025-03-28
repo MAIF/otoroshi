@@ -5,6 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 
@@ -133,6 +134,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
                 .getOrElse(Seq.empty[GroupFilter])
           },
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -162,6 +165,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty),
+          remoteValidators = (json \ "remoteValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
@@ -248,6 +255,7 @@ case class LdapAuthModuleConfig(
     sessionMaxAge: Int = 86400,
     clientSideSessionEnabled: Boolean,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
+    remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     basicAuth: Boolean = false,
     allowEmptyPassword: Boolean = false,
     serverUrls: Seq[String] = Seq.empty,
@@ -272,7 +280,9 @@ case class LdapAuthModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     adminEntityValidatorsOverride: Map[String, Map[String, Seq[JsonValidator]]] = Map.empty,
-    groupRights: Map[String, GroupRights] = Map.empty
+    groupRights: Map[String, GroupRights] = Map.empty,
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String    = "ldap"
   def humanName: String = "Ldap auth. provider"
@@ -298,6 +308,7 @@ case class LdapAuthModuleConfig(
       "clientSideSessionEnabled"      -> clientSideSessionEnabled,
       "sessionMaxAge"                 -> sessionMaxAge,
       "userValidators"                -> JsArray(userValidators.map(_.json)),
+      "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
       "serverUrls"                    -> serverUrls,
       "searchBase"                    -> searchBase,
       "userBase"                      -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -318,6 +329,8 @@ case class LdapAuthModuleConfig(
       "extractProfileFilterNot"       -> extractProfileFilterNot,
       "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"                  -> JsObject(dataOverride),
+      "allowedUsers"                  -> allowedUsers,
+      "deniedUsers"                   -> deniedUsers,
       "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))))
@@ -671,12 +684,14 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     Option(base64)
       .map(decodeBase64)
       .map(_.split(":").toSeq)
-      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+      .filter(v => v.nonEmpty && v.length > 1)
+      .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
-      env: Env
-  ): Either[String, PrivateAppsUser] = {
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         PrivateAppsUser(
@@ -694,8 +709,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           tags = Seq.empty,
           metadata = Map.empty,
           location = authConfig.location
-        ).validate(authConfig.userValidators)
-      case None       => Left(s"You're not authorized here")
+        ).validate(descriptor, isRoute = true, authConfig)
+      case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
 
@@ -707,7 +722,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
-  def bindAdminUser(username: String, password: String)(implicit env: Env): Either[String, BackOfficeUser] = {
+  def bindAdminUser(username: String, password: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         BackOfficeUser(
@@ -754,8 +772,12 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             },
           location = authConfig.location,
           adminEntityValidators = user.adminEntityValidators
-        ).validate(authConfig.userValidators)
-      case None       => Left(s"You're not authorized here")
+        ).validate(
+          env.backOfficeServiceDescriptor,
+          isRoute = false,
+          authConfig
+        )
+      case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
 
@@ -785,7 +807,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           Results
             .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
@@ -797,7 +819,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             extractUsernamePassword(auth) match {
               case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
               case Some((username, password)) =>
-                bindUser(username, password, descriptor) match {
+                bindUser(username, password, descriptor) flatMap {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
@@ -821,7 +843,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 env
               )
           )
-          .addingToSession(
+          .addingToPrivateAppSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )
@@ -844,7 +866,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]] = {
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
@@ -852,25 +874,30 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           env.datastores.authConfigsDataStore
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
-            .map {
-              case Some(user) => user.validate(authConfig.userValidators)
-              case None       => Left("No user found")
+            .flatMap {
+              case Some(user) =>
+                user.validate(
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
+              case None       => Left(ErrorReason("No user found")).vfuture
             }
-        case _           => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None       => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left(ErrorReason("No Authorization form here")))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
-              env.datastores.authConfigsDataStore.validateLoginToken(token).map {
-                case false => Left("Bad token")
+              env.datastores.authConfigsDataStore.validateLoginToken(token).flatMap {
+                case false => Left(ErrorReason("Bad token")).vfuture
                 case true  => bindUser(username, password, descriptor)
               }
             }
             case _                                             => {
-              FastFuture.successful(Left("Authorization form is not complete"))
+              FastFuture.successful(Left(ErrorReason("Authorization form is not complete")))
             }
           }
         }
@@ -904,7 +931,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             extractUsernamePassword(auth) match {
               case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
               case Some((username, password)) =>
-                bindAdminUser(username, password) match {
+                bindAdminUser(username, password) flatMap {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).vfuture
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
@@ -935,7 +962,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
@@ -945,23 +972,23 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .map(_.flatMap(a => BackOfficeUser.fmt.reads(a).asOpt))
             .map {
               case Some(user) => Right(user)
-              case None       => Left("No user found")
+              case None       => Left(ErrorReason("No user found"))
             }
-        case _           => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None       => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left(ErrorReason("No Authorization form here")))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
-              env.datastores.authConfigsDataStore.validateLoginToken(token).map {
-                case false => Left("Bad token")
+              env.datastores.authConfigsDataStore.validateLoginToken(token).flatMap {
+                case false => Left(ErrorReason("Bad token")).vfuture
                 case true  => bindAdminUser(username, password)
               }
             }
             case _                                             => {
-              FastFuture.successful(Left("Authorization form is not complete"))
+              FastFuture.successful(Left(ErrorReason("Authorization form is not complete")))
             }
           }
         }

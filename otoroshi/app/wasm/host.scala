@@ -235,7 +235,7 @@ object Http extends AwaitCapable {
         {
           val context = Json.parse(Utils.contextParamsToString(plugin, params: _*))
 
-          val url          = (context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io")
+          val url          = (context \ "url").asOpt[String].getOrElse("https://request.otoroshi.io")
           val allowedHosts = hostData.config.allowedHosts
           val urlHost      = Uri(url).authority.host.toString()
           val allowed      = allowedHosts.isEmpty || allowedHosts.contains("*") || allowedHosts.exists(h =>
@@ -886,7 +886,8 @@ object State {
             "privateAppsSessions" -> JsArray(proxyState.allPrivateAppsSessions().map(_.json)),
             "tcpServices"         -> JsArray(proxyState.allTcpServices().map(_.json)),
             "scripts"             -> JsArray(proxyState.allScripts().map(_.json)),
-            "wasmPlugins"         -> JsArray(proxyState.allWasmPlugins().map(_.json))
+            "wasmPlugins"         -> JsArray(proxyState.allWasmPlugins().map(_.json)),
+            "drafts"              -> JsArray(proxyState.allDrafts().map(_.json))
           )
           .stringify
 

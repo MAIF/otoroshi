@@ -24,10 +24,11 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: sbt/setup-sbt@v1.1.5
       - name: setup node
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
       - name: setup release dir
         run: |
           mkdir -p ./release-${{ inputs.version_to }}

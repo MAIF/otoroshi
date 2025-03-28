@@ -27,7 +27,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean            = false
+  override def multiInstance: Boolean            = true
   override def core: Boolean                     = true
 
   override def name: String                = "Global per ip address throttling "
@@ -63,7 +63,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
   ): Future[NgAccess] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val quota        = quotas.maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-    if (quotas.secCalls > (quota * 10L)) {
+    if (quotas.secCalls > quota) {
       errorResult(ctx, Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
     } else {
       NgAccess.NgAllowed.vfuture
@@ -91,7 +91,7 @@ class GlobalThrottling extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -152,7 +152,7 @@ class ApikeyQuotas extends NgAccessValidator {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -266,7 +266,7 @@ class NgServiceQuotas extends NgAccessValidator {
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore
       .get(throttlingKey(route.id))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
   private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
       ec: ExecutionContext,
@@ -559,7 +559,7 @@ object NgCustomThrottling {
     for {
       secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(expr, group), increment)
       secTtl   <- env.datastores.rawDataStore.pttl(throttlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), ttl) // env.throttlingWindow * 1000)
+                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), ttl) // env.throttlingWindow * 1000
                   }
     } yield ()
   }
@@ -593,7 +593,7 @@ class NgCustomThrottling extends NgAccessValidator {
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomThrottling.throttlingKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
   }
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {

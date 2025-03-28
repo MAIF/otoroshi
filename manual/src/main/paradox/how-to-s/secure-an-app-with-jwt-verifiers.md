@@ -56,7 +56,7 @@ This should output a json with `X-JWT-Token` in headers field. Its value is exac
   "method": "GET",
   "path": "/",
   "headers": {
-    "host": "mirror.otoroshi.io",
+    "host": "request.otoroshi.io",
     "X-JWT-Token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.ipDFgkww51mSaSg_199BMRj4gK20LGz_czozu3u8rCFFO1X20MwcabSqEzUc0q4qQ4rjTxjoR4HeUDVcw8BxoQ",
     ...
   }

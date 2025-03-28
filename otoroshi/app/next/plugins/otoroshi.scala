@@ -4,14 +4,25 @@ import akka.Done
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
 import org.joda.time.DateTime
+import otoroshi.controllers.HealthController
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
-import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
+import otoroshi.models.ApiKey.toJson
+import otoroshi.models.{
+  AlgoSettings,
+  ApiKey,
+  DataExporterConfigFiltering,
+  HSAlgoSettings,
+  SecComInfoTokenVersion,
+  SecComVersion
+}
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
+import otoroshi.utils.jwk.JWKSHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -87,6 +98,7 @@ case class NgOtoroshiInfoConfig(
     secComTtl: FiniteDuration,
     headerName: Option[String],
     addFields: Option[AddFieldsSettings],
+    projection: JsObject = Json.obj(),
     algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
@@ -101,9 +113,12 @@ object NgOtoroshiInfoConfig {
       ).getOrElse(SecComInfoTokenVersion.Latest)
       lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String].filterNot(_.trim.isEmpty)
-      lazy val addFields: Option[AddFieldsSettings]  =
+
+      lazy val projection = (raw \ "projection").asOpt[JsObject].getOrElse(Json.obj())
+
+      lazy val addFields: Option[AddFieldsSettings] =
         raw.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m))
-      lazy val algo: AlgoSettings                    = AlgoSettings
+      lazy val algo: AlgoSettings                   = AlgoSettings
         .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
       NgOtoroshiInfoConfig(
@@ -111,7 +126,8 @@ object NgOtoroshiInfoConfig {
         secComTtl = secComTtl,
         headerName = headerName,
         addFields = addFields,
-        algo = algo
+        algo = algo,
+        projection = projection
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -122,6 +138,7 @@ object NgOtoroshiInfoConfig {
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
       "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
+      "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
   }
@@ -142,7 +159,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true
@@ -404,7 +421,7 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = false
+  override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = true
@@ -423,7 +440,8 @@ class OtoroshiInfos extends NgRequestTransformer {
     val config = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
-    val claim  = InfoTokenHelper.generateInfoToken(
+
+    var claim = InfoTokenHelper.generateInfoToken(
       ctx.route.name,
       config.secComVersion,
       config.secComTtl,
@@ -451,6 +469,15 @@ class OtoroshiInfos extends NgRequestTransformer {
       )
     )
 
+    try {
+      if (config.projection.value.nonEmpty) {
+        claim = claim.copy(metadata = otoroshi.utils.Projection.project(claim.metadata, config.projection, identity))
+      }
+    } catch {
+      case t: Throwable =>
+        logger.error("error while projecting apikey", t)
+    }
+
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
@@ -458,5 +485,257 @@ class OtoroshiInfos extends NgRequestTransformer {
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)
 
     ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right
+  }
+}
+
+case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
+  override def json: JsValue = PossibleCerts.format.writes(this)
+}
+
+object PossibleCerts {
+  val default                        = PossibleCerts(Seq.empty)
+  val format                         = new Format[PossibleCerts] {
+    override def writes(o: PossibleCerts): JsValue             = Json.obj(
+      "cert_ids" -> o.certIds
+    )
+    override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
+      PossibleCerts(
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+  }
+  val configFlow: Seq[String]        = Seq("cert_ids")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "cert_ids" -> Json.obj(
+        "type"  -> "select",
+        "array" -> true,
+        "label" -> s"Allowed certificates",
+        "props" -> Json.obj(
+          "optionsFrom"        -> s"/bo/api/proxy/api/certificates",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      )
+    )
+  )
+}
+
+class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi OCSP Responder endpoint"
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to act as the Otoroshi OCSP Responder".some
+  override def defaultConfigObject: Option[NgPluginConfig] = PossibleCerts.default.some
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = PossibleCerts.configFlow
+  override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
+    env.ocspResponder.respond(ctx.rawRequest, ctx.request.body, config.certIds).map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    }
+  }
+}
+
+class OtoroshiAIAEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi AIA endpoint"
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates".some
+  override def defaultConfigObject: Option[NgPluginConfig] = PossibleCerts.default.some
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = PossibleCerts.configFlow
+  override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
+    ctx.attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey) match {
+      case None               =>
+        Left(
+          NgProxyEngineError.NgResultProxyEngineError(
+            Results.InternalServerError(Json.obj("error" -> "matched route not found"))
+          )
+        ).vfuture
+      case Some(matchedRoute) => {
+        matchedRoute.pathParams.get("id").orElse(matchedRoute.pathParams.get("cert_id")) match {
+          case None     =>
+            Right(
+              BackendCallResponse(
+                NgPluginHttpResponse.fromResult(BadRequest(Json.obj("error" -> "cert id not available"))),
+                None
+              )
+            ).vfuture
+          case Some(id) =>
+            env.ocspResponder.aia(id, ctx.rawRequest, config.certIds).map { res =>
+              Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+            }
+        }
+      }
+    }
+  }
+}
+
+class OtoroshiJWKSEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi JWKS endpoint"
+  override def description: Option[String]                 = "This plugin provide an endpoint to return Otoroshi JWKS data".some
+  override def defaultConfigObject: Option[NgPluginConfig] = PossibleCerts.default.some
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = PossibleCerts.configFlow
+  override def configSchema: Option[JsObject]              = PossibleCerts.configSchema
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
+    JWKSHelper.jwks(ctx.rawRequest, config.certIds).map {
+      case Left(body)  => Results.NotFound(body)
+      case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
+    } map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    }
+  }
+}
+
+class OtoroshiHealthEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi Health endpoint"
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi Health informations data for the current node".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = Seq.empty
+  override def configSchema: Option[JsObject]              = None
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    HealthController.fetchHealth().map {
+      case Left(payload)  => ServiceUnavailable(payload)
+      case Right(payload) => Ok(payload)
+    } map { res =>
+      Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
+    }
+  }
+}
+
+case class OtoroshiMetricsEndpointConfig(filter: Option[String]) extends NgPluginConfig {
+  override def json: JsValue = OtoroshiMetricsEndpointConfig.format.writes(this)
+}
+
+object OtoroshiMetricsEndpointConfig {
+  val default                        = OtoroshiMetricsEndpointConfig(None)
+  val format                         = new Format[OtoroshiMetricsEndpointConfig] {
+    override def writes(o: OtoroshiMetricsEndpointConfig): JsValue             = Json.obj(
+      "filter" -> o.filter.map(_.json).getOrElse(JsNull).asValue
+    )
+    override def reads(json: JsValue): JsResult[OtoroshiMetricsEndpointConfig] = Try {
+      OtoroshiMetricsEndpointConfig(
+        filter = json.select("filter").asOpt[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+  }
+  val configFlow: Seq[String]        = Seq("filter")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "filter" -> Json.obj(
+        "type"  -> "string",
+        "label" -> s"Filter metrics"
+      )
+    )
+  )
+}
+
+class OtoroshiMetricsEndpoint extends NgBackendCall {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Otoroshi internals"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Otoroshi Metrics endpoint"
+  override def description: Option[String]                 =
+    "This plugin provide an endpoint to return Otoroshi metrics data for the current node".some
+  override def defaultConfigObject: Option[NgPluginConfig] = OtoroshiMetricsEndpointConfig.default.some
+  override def useDelegates: Boolean                       = false
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = OtoroshiMetricsEndpointConfig.configFlow
+  override def configSchema: Option[JsObject]              = OtoroshiMetricsEndpointConfig.configSchema
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config      = ctx
+      .cachedConfig(internalName)(OtoroshiMetricsEndpointConfig.format)
+      .getOrElse(OtoroshiMetricsEndpointConfig.default)
+    val format      = ctx.rawRequest.getQueryString("format")
+    val filter      = ctx.rawRequest.getQueryString("filter").orElse(config.filter)
+    val acceptsJson = ctx.rawRequest.accepts("application/json")
+    val acceptsProm = ctx.rawRequest.accepts("application/prometheus")
+    val res         = HealthController.fetchMetrics(format, acceptsJson, acceptsProm, filter)
+    Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None)).vfuture
   }
 }

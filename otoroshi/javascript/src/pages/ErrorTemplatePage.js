@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { Table, Form } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
+import isFunction from 'lodash/isFunction';
+import AceEditor from 'react-ace';
 
 export class ErrorTemplatesPage extends Component {
   state = { list: [], fetched: false };
@@ -153,6 +155,10 @@ export class ErrorTemplatesPage extends Component {
           fields: ['id', 'name'],
         }).then((routeCompositions) => {
           const list = [
+            {
+              label: <div>All routes and services</div>,
+              value: 'global',
+            },
             ...services.data.map((s) => ({
               label: (
                 <div>
@@ -201,6 +207,7 @@ export class ErrorTemplatesPage extends Component {
     'template50x',
     'templateBuild',
     'templateMaintenance',
+    'genericTemplates',
     'messages',
   ];
 
@@ -253,6 +260,55 @@ export class ErrorTemplatesPage extends Component {
         placeholder: 'template for maintenance errors',
       },
     },
+    genericTemplates: {
+      type: 'object',
+      props: {
+        label: 'Generic templates',
+        placeholderKey: 'template causeId',
+        itemRenderer: (key, value, idx, onKeyChange, onChange) => (
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+            }}
+          >
+            <div style={{ width: '50%' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Template causeId"
+                value={key}
+                onChange={onKeyChange}
+                style={{ marginRight: 2 }}
+              />
+            </div>
+            <div style={{ width: '50%' }}>
+              <AceEditor
+                theme={document.body.classList.contains('white-mode') ? 'xcode' : 'monokai'}
+                mode="html"
+                onChange={(e) => {
+                  console.log(e);
+                  onChange({ target: { value: e } });
+                }}
+                value={value || ''}
+                name="scriptParam"
+                editorProps={{ $blockScrolling: true }}
+                height={'300px'}
+                width="100%"
+                showGutter={true}
+                highlightActiveLine={true}
+                tabSize={2}
+                enableBasicAutocompletion={true}
+                enableLiveAutocompletion={true}
+              />
+            </div>
+          </div>
+        ),
+      },
+    },
     messages: { type: 'object', props: { label: 'messages' } },
   });
 
@@ -290,9 +346,9 @@ export class ErrorTemplatesPage extends Component {
           extractKey={(item) => {
             return item.serviceId;
           }}
-          itemUrl={(i) => `/bo/dashboard/error-templates/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/error-templates/edit/${i.serviceId || i.id}`}
           export={true}
-          kubernetesKind="ErrorTemplate"
+          kubernetesKind="proxy.otoroshi.io/ErrorTemplate"
         />
       </div>
     );

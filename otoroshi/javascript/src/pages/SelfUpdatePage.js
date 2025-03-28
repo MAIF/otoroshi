@@ -416,16 +416,11 @@ export class SelfUpdatePage extends Component {
           <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
-              <button type="button" className="btn" style={{ marginLeft: 0 }} onClick={this.save}>
+              <button type="button" className="btn me-2" onClick={this.save}>
                 Update name and/or password
               </button>
               {this.state.webauthn && (
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ marginLeft: 0 }}
-                  onClick={this.registerWebAuthn}
-                >
+                <button type="button" className="btn" onClick={this.registerWebAuthn}>
                   {this.state.hasWebauthnDeviceReg
                     ? 'Register another webauthn device'
                     : 'Register a new webauthn device'}

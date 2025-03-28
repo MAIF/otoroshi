@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -311,13 +313,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <button id="instructions-toggle-button">close</button>
 </div>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.18.4/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.24.0/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://request.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -330,7 +332,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
@@ -352,7 +354,7 @@ EOF
     &quot;accept&quot;: &quot;*/*&quot;,
     &quot;user-agent&quot;: &quot;curl/7.64.1&quot;,
     &quot;x-forwarded-port&quot;: &quot;443&quot;,
-    &quot;opun-proxied-host&quot;: &quot;mirror.otoroshi.io&quot;,
+    &quot;opun-proxied-host&quot;: &quot;request.otoroshi.io&quot;,
     &quot;otoroshi-request-id&quot;: &quot;1463145856319359618&quot;,
     &quot;otoroshi-proxied-host&quot;: &quot;myservice.oto.tools:8080&quot;,
     &quot;opun-gateway-request-id&quot;: &quot;1463145856554240100&quot;,
@@ -426,7 +428,7 @@ how to fix it, please visit the web page mentioned above.
     &quot;accept&quot;: &quot;*/*&quot;,
     &quot;user-agent&quot;: &quot;curl/7.64.1&quot;,
     &quot;x-forwarded-port&quot;: &quot;443&quot;,
-    &quot;opun-proxied-host&quot;: &quot;mirror.otoroshi.io&quot;,
+    &quot;opun-proxied-host&quot;: &quot;request.otoroshi.io&quot;,
     &quot;otoroshi-request-id&quot;: &quot;1463158439730479893&quot;,
     &quot;otoroshi-proxied-host&quot;: &quot;myservice.oto.tools:8443&quot;,
     &quot;opun-gateway-request-id&quot;: &quot;1463158439558515871&quot;,
@@ -478,7 +480,7 @@ how to fix it, please visit the web page mentioned above.
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2024</span>
+<span class="text">&copy; 2025</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -523,6 +523,7 @@ case class DefaultTemplates(
     authConfig: Option[JsObject] = Json.obj().some,   // Option[AuthModuleConfig],
     certificate: Option[JsObject] = Json.obj().some,  // Option[Cert],
     script: Option[JsObject] = Json.obj().some,       // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,        // Option[Draft],
     tcpService: Option[JsObject] = Json.obj().some,   // Option[TcpService],
     dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
     tenant: Option[JsObject] = Json.obj().some,       // Option[Tenant],
@@ -548,6 +549,7 @@ object DefaultTemplates {
           authConfig = json.select("authConfig").asOpt[JsObject],
           certificate = json.select("certificate").asOpt[JsObject],
           script = json.select("script").asOpt[JsObject],
+          draft = json.select("draft").asOpt[JsObject],
           tcpService = json.select("tcpService").asOpt[JsObject],
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
@@ -571,6 +573,7 @@ object DefaultTemplates {
       "authConfig"   -> o.authConfig.getOrElse(JsNull).asValue,
       "certificate"  -> o.certificate.getOrElse(JsNull).asValue,
       "script"       -> o.script.getOrElse(JsNull).asValue,
+      "draft"        -> o.draft.getOrElse(JsNull).asValue,
       "tcpService"   -> o.tcpService.getOrElse(JsNull).asValue,
       "dataExporter" -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"       -> o.tenant.getOrElse(JsNull).asValue,
@@ -678,20 +681,30 @@ case class GlobalConfig(
     extensions: Map[String, JsValue] = Map.empty
 ) extends Entity {
 
-  def internalId: String               = "global"
-  def json: play.api.libs.json.JsValue = toJson
-  def theMetadata: Map[String, String] = metadata
-  def theTags: Seq[String]             = tags
-  def theDescription: String           = "The global config for otoroshi"
-  def theName: String                  = "otoroshi-global-config"
+  def internalId: String = "global"
 
-  def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.globalConfigDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.exists(this)
-  def toJson                                                                            = GlobalConfig.toJson(this)
+  def json: play.api.libs.json.JsValue = toJson
+
+  def theMetadata: Map[String, String] = metadata
+
+  def theTags: Seq[String] = tags
+
+  def theDescription: String = "The global config for otoroshi"
+
+  def theName: String = "otoroshi-global-config"
+
+  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.set(this)
+
+  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
+
+  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
+
+  def toJson = GlobalConfig.toJson(this)
+
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
-  def cleverClient(implicit env: Env): Option[CleverCloudClient]                        =
+
+  def cleverClient(implicit env: Env): Option[CleverCloudClient] =
     cleverSettings match {
       case None           => None
       case Some(settings) => {
@@ -706,6 +719,7 @@ case class GlobalConfig(
         Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
       }
     }
+
   def matchesEndlessIpAddresses(ipAddress: String): Boolean = {
     if (endlessIpAddresses.nonEmpty) {
       endlessIpAddresses.exists { ip =>
@@ -719,6 +733,8 @@ case class GlobalConfig(
       false
     }
   }
+
+  lazy val incomingRequestValidators = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
 }
 
 object GlobalConfig {
@@ -1010,7 +1026,7 @@ object GlobalConfig {
 }
 
 trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
-  def incrementCallsForIpAddressWithTTL(ip: String, ttl: Int = 10)(implicit ec: ExecutionContext): Future[Long]
+  def incrementCallsForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Long]
   def quotaForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Option[Long]]
   def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean]
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
@@ -1051,7 +1067,8 @@ case class OtoroshiExport(
     routeCompositions: Seq[NgRouteComposition] = Seq.empty,
     backends: Seq[StoredNgBackend] = Seq.empty,
     wasmPlugins: Seq[WasmPlugin] = Seq.empty,
-    extensions: Map[String, Map[String, Seq[JsValue]]]
+    extensions: Map[String, Map[String, Seq[JsValue]]],
+    drafts: Seq[Draft] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1198,6 +1215,13 @@ case class OtoroshiExport(
         _.select("id").asString,
         _.id
       ),
+      drafts = customizeAndMergeArray[Draft](
+        drafts,
+        customization.select("drafts").asOpt[JsArray].getOrElse(Json.arr()),
+        Draft.format,
+        _.select("id").asString,
+        _.id
+      ),
       routeCompositions = customizeAndMergeArray[NgRouteComposition](
         routeCompositions,
         customization.select("routeCompositions").asOpt[JsArray].getOrElse(Json.arr()),
@@ -1252,6 +1276,7 @@ case class OtoroshiExport(
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
       "wasmPlugins"        -> JsArray(wasmPlugins.map(_.json)),
+      "drafts"             -> JsArray(drafts.map(_.json)),
       "extensions"         -> extensions
     )
   }

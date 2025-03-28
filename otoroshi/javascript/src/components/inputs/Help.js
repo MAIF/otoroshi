@@ -16,6 +16,7 @@ export class Help extends Component {
           data-bs-toggle="tooltip"
           data-bs-placement="top"
           title={this.props.text}
+          data-bs-html="true"
           style={{ color: this.props.iconColor }}
         />
       );

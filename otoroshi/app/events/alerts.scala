@@ -12,7 +12,19 @@ import otoroshi.env.Env
 import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsResult, JsString, JsSuccess, JsValue, Json, Writes}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsError,
+  JsNull,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json,
+  Writes
+}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
 import otoroshi.ssl.Cert
@@ -27,6 +39,37 @@ import otoroshi.utils.syntax.implicits._
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
+}
+
+object AlertEvent {
+  def generic(alert: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+      additionalPayload: JsObject
+  )(implicit env: Env): GenericAlert = {
+    GenericAlert(alert, env, `@service`, `@serviceId`)(additionalPayload)
+  }
+}
+
+case class GenericAlert(alert: String, env: Env, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
+    additionalPayload: JsObject
+) extends AlertEvent {
+
+  val `@id`: String                 = env.snowflakeGenerator.nextIdStr()
+  val `@timestamp`: DateTime        = DateTime.now()
+  val fromOrigin: Option[String]    = None
+  val fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = {
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> `@type`,
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "@env"       -> env.env,
+      "alert"      -> alert
+    ) ++ additionalPayload
+  }
 }
 
 case class ApiKeySecretWillRotate(
@@ -569,6 +612,29 @@ case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
       "@service"    -> `@service`,
       "@env"        -> `@env`,
       "audit"       -> "CertExpiredAlert",
+      "certificate" -> cert.toJson
+    )
+}
+
+case class CertAlmostExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
+    extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id"         -> `@id`,
+      "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"       -> `@type`,
+      "@product"    -> _env.eventsName,
+      "@serviceId"  -> `@serviceId`,
+      "@service"    -> `@service`,
+      "@env"        -> `@env`,
+      "audit"       -> "CertAlmostExpiredAlert",
       "certificate" -> cert.toJson
     )
 }

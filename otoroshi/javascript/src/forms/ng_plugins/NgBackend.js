@@ -344,6 +344,14 @@ export default {
             defaultValue: 'changeme.oto.tools',
           },
         },
+        backup: {
+          label: 'backup',
+          type: 'bool',
+          help: 'Tell if this target is a backup one (a secondary one). Backup targets are only used when all the primary targets have failed',
+          props: {
+            defaultValue: false,
+          }
+        },
         protocol: {
           type: 'dots',
           label: 'Protocol',
@@ -375,7 +383,6 @@ export default {
           type: 'form',
           collapsable: true,
           collapsed: true,
-          label: 'Custom TLS setup',
           schema: Object.entries({
             enabled: {
               label: 'enabled',
@@ -451,7 +458,7 @@ export default {
         shouldKeepFirstItem: true,
         v2: {
           template: {
-            hostname: 'mirror.otoroshi.io',
+            hostname: 'request.otoroshi.io',
             protocol: 'HTTP/1.1',
             port: 443,
             weight: 0,
@@ -468,7 +475,7 @@ export default {
               type: 'AlwaysMatch',
             },
           },
-          folded: ['hostname', 'port', 'protocol'],
+          folded: ['hostname', 'port', 'protocol', 'backup'],
           flow: [
             'hostname',
             'port',
@@ -476,6 +483,7 @@ export default {
             'weight',
             'ip_address',
             'tls',
+            'backup',
             'predicate',
             'tls_config',
           ],
@@ -537,7 +545,13 @@ export default {
           help: 'The percentage of targets in with the best response in the whole target pool to choose. If 0,5, then more than 50% of the calls will happen on the target with the best response time.',
         },
       },
-      flow: ['type', 'ratio'],
+      flow: (item) => {
+        if (item.type === 'WeightedBestResponseTime') {
+          return ['type', 'ratio'];
+        } else {
+          return ['type'];
+        }
+      },
     },
   },
   flow: ['root', 'rewrite', 'targets', 'client', 'load_balancing', 'health_check'],

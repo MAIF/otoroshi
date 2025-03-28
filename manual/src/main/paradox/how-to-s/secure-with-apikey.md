@@ -17,7 +17,7 @@
 2. Give a name to your route
 3. Save your route
 4. Set `myservice.oto.tools` as frontend domains
-5. Set `https://mirror.otoroshi.io` as backend target (hostname: `mirror.otoroshi.io`, port: `443`, Tls: `Enabled`)
+5. Set `https://request.otoroshi.io` as backend target (hostname: `request.otoroshi.io`, port: `443`, Tls: `Enabled`)
 
 **From Admin API**
 
@@ -35,7 +35,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }
@@ -68,7 +68,7 @@ curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/myservice \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }

@@ -12,7 +12,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
@@ -513,7 +513,14 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   def rawGet(key: String): Future[Option[Any]] = memory.get(key).future
 
-  override def get(key: String): Future[Option[ByteString]] = memory.getTyped[ByteString](key).future
+  override def get(key: String): Future[Option[ByteString]] = {
+    //memory.getTyped[ByteString](key).future
+    memory.get(key) match {
+      case Some(bs: ByteString)      => bs.some.vfuture
+      case Some(counter: AtomicLong) => ByteString(counter.get().toString).some.vfuture
+      case _                         => None.vfuture
+    }
+  }
 
   override def set(
       key: String,
@@ -546,10 +553,32 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   override def incr(key: String): Future[Long] = incrby(key, 1L)
 
   override def incrby(key: String, increment: Long): Future[Long] = {
-    val value: Long    = memory.getTyped[ByteString](key).map(_.utf8String.toLong).getOrElse(0L)
-    val newValue: Long = value + increment
-    memory.put(key, ByteString(newValue.toString))
-    newValue.future
+    (memory.get(key) match {
+      case Some(bs: ByteString)  => {
+        val asLng = bs.utf8String.toLong
+        val cnt   = new AtomicLong(asLng)
+        val fcnt  = cnt.addAndGet(increment)
+        memory.put(key, cnt)
+        fcnt
+      }
+      case Some(cnt: AtomicLong) => {
+        val fcnt = cnt.addAndGet(increment)
+        memory.put(key, cnt)
+        fcnt
+      }
+      case _                     => {
+        val cnt = new AtomicLong(increment)
+        memory.put(key, cnt) match {
+          case Some(bs: ByteString) => cnt.addAndGet(bs.utf8String.toLong)
+          case Some(c: AtomicLong)  => cnt.addAndGet(c.get())
+          case _                    => increment
+        }
+      }
+    }).vfuture
+    // val value: Long    = memory.getTyped[ByteString](key).map(_.utf8String.toLong).getOrElse(0L)
+    // val newValue: Long = value + increment
+    // memory.put(key, ByteString(newValue.toString))
+    // newValue.future
   }
 
   override def exists(key: String): Future[Boolean] = memory.containsKey(key).future

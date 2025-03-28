@@ -896,7 +896,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "clientName"         -> SimpleStringType ~~> "The name of the api key, for humans ;-)",
         "authorizedEntities" -> SimpleArrayType ~~> "The group/service ids (prefixed by group_ or service_ on which the key is authorized",
         "enabled"            -> SimpleBooleanType ~~> "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
-        "throttlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per second, measured on 10 seconds",
+        "throttlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per window, measured on 10 seconds",
         "dailyQuota"         -> SimpleLongType ~~> "Authorized number of calls per day",
         "monthlyQuota"       -> SimpleLongType ~~> "Authorized number of calls per month",
         "metadata"           -> SimpleObjectType ~~> "Bunch of metadata for the key"
@@ -990,8 +990,8 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "apiReadOnly"             -> SimpleBooleanType ~~> "If enabled, Admin API won't be able to write/update/delete entities",
         "u2fLoginOnly"            -> SimpleBooleanType ~~> "If enabled, login to backoffice through Auth0 will be disabled",
         "ipFiltering"             -> Ref("IpFiltering"),
-        "throttlingQuota"         -> SimpleLongType ~~> "Authorized number of calls per second globally, measured on 10 seconds",
-        "perIpThrottlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per second globally per IP address, measured on 10 seconds",
+        "throttlingQuota"         -> SimpleLongType ~~> "Authorized number of calls per window globally",
+        "perIpThrottlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per window globally per IP address",
         "elasticWritesConfigs"    -> ArrayOf(Ref("ElasticConfig")) ~~> "Configs. for Elastic writes",
         "elasticReadsConfig"      -> Ref("ElasticConfig") ~~> "Config. for elastic reads",
         "analyticsWebhooks"       -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all internal Otoroshi events",
@@ -1176,9 +1176,9 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       "description" -> "Quotas state for an api key on a service group",
       "type"        -> "object",
       "required"    -> Json.arr(
-        "authorizedCallsPerSec",
-        "currentCallsPerSec",
-        "remainingCallsPerSec",
+        "authorizedCallsPerWindow",
+        "throttlingCallsPerWindow",
+        "remainingCallsPerWindow",
         "authorizedCallsPerDay",
         "currentCallsPerDay",
         "remainingCallsPerDay",
@@ -1187,15 +1187,15 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "remainingCallsPerMonth"
       ),
       "properties"  -> Json.obj(
-        "authorizedCallsPerSec"   -> SimpleLongType ~~> "The number of authorized calls per second",
-        "currentCallsPerSec"      -> SimpleLongType ~~> "The current number of calls per second",
-        "remainingCallsPerSec"    -> SimpleLongType ~~> "The remaining number of calls per second",
-        "authorizedCallsPerDay"   -> SimpleLongType ~~> "The number of authorized calls per day",
-        "currentCallsPerDay"      -> SimpleLongType ~~> "The current number of calls per day",
-        "remainingCallsPerDay"    -> SimpleLongType ~~> "The remaining number of calls per day",
-        "authorizedCallsPerMonth" -> SimpleLongType ~~> "The number of authorized calls per month",
-        "currentCallsPerMonth"    -> SimpleLongType ~~> "The current number of calls per month",
-        "remainingCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month"
+        "authorizedCallsPerWindow" -> SimpleLongType ~~> "The number of authorized calls per window",
+        "throttlingCallsPerWindow" -> SimpleLongType ~~> "The current number of calls per window",
+        "remainingCallsPerWindow"  -> SimpleLongType ~~> "The remaining number of calls per window",
+        "authorizedCallsPerDay"    -> SimpleLongType ~~> "The number of authorized calls per day",
+        "currentCallsPerDay"       -> SimpleLongType ~~> "The current number of calls per day",
+        "remainingCallsPerDay"     -> SimpleLongType ~~> "The remaining number of calls per day",
+        "authorizedCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month",
+        "currentCallsPerMonth"     -> SimpleLongType ~~> "The current number of calls per month",
+        "remainingCallsPerMonth"   -> SimpleLongType ~~> "The number of authorized calls per month"
       )
     )
 
@@ -2887,7 +2887,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Json.obj(
       "openapi"      -> "3.0.0",
       "info"         -> Json.obj(
-        "version"     -> "16.19.0-dev",
+        "version"     -> "16.25.0-dev",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact"     -> Json.obj(

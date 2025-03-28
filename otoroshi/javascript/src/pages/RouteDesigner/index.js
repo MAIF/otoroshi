@@ -16,12 +16,29 @@ import { RouteWizard } from './RouteWizard';
 import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
-import { HelpWrapper } from '../../components/inputs';
 import { FeedbackButton } from './FeedbackButton';
-import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 import _ from 'lodash';
 import { Button } from '../../components/Button';
+import { DraftEditorContainer, PublisDraftButton } from '../../components/Drafts/DraftEditor';
+import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
+
+import PageTitle from '../../components/PageTitle';
+import { Dropdown } from '../../components/Dropdown';
+import { YAMLExportButton } from '../../components/exporters/YAMLButton';
+import { JsonExportButton } from '../../components/exporters/JSONButton';
+
+function DuplicateModalContent({ value }) {
+  return (
+    <pre style={{ height: 'inherit' }}>
+      Frontend: {value.frontend.domains[0]}
+      <br />
+      Backend: {value.backend.targets[0].hostname}
+      <br />
+      Plugins: {value.plugins.length}
+    </pre>
+  );
+}
 
 function DuplicateButton({ value, history }) {
   return (
@@ -34,21 +51,27 @@ function DuplicateButton({ value, history }) {
         const prefix = (id.split('_')[0] || what) + '_';
         const newId = `${prefix}${v4()}`;
         const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-        window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
-          if (ok) {
-            nextClient
-              .create(kind, {
-                ...value,
-                name: value.name + ' (duplicated)',
-                id: newId,
-                enabled: false,
-              })
-              .then(() => {
-                // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
-                history.push('/' + what + '/' + newId + '?tab=informations');
-              });
-          }
-        });
+        window
+          .newConfirm(<DuplicateModalContent value={value} />, {
+            title: `Duplicate ${value.name}`,
+            yesText: 'I want to duplicate this route',
+          })
+          .then((ok) => {
+            if (ok) {
+              nextClient
+                .forEntityNext(kind)
+                .create({
+                  ...value,
+                  name: value.name + ' (duplicated)',
+                  id: newId,
+                  enabled: false,
+                })
+                .then(() => {
+                  // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+                  history.push('/' + what + '/' + newId + '?tab=informations');
+                });
+            }
+          });
       }}
     >
       <i className="fas fa-copy" /> Duplicate route
@@ -104,83 +127,11 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  const handleSelect = (e) => {
-    const kind = e.target.value;
-
-    if (kind === 'json') {
-      const what = window.location.pathname.split('/')[3];
-      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const itemName = entityKind
-        ? entityKind.toLowerCase()
-        : what === 'routes'
-          ? 'route'
-          : 'route-composition';
-      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-      const json = JSON.stringify({ ...value, kind }, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.id = String(Date.now());
-      a.style.display = 'none';
-      a.download = `${itemName}-${name}-${Date.now()}.json`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    } else {
-      const what = window.location.pathname.split('/')[3];
-      const entityKind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const itemName = entityKind
-        ? entityKind.toLowerCase()
-        : what === 'routes'
-          ? 'route'
-          : 'route-composition';
-      const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
-      const name = value.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-
-      fetch('/bo/api/json_to_yaml', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiVersion: 'proxy.otoroshi.io/v1',
-          kind,
-          metadata: {
-            name,
-          },
-          spec: value,
-        }),
-      })
-        .then((r) => r.text())
-        .then((yaml) => {
-          const blob = new Blob([yaml], { type: 'application/yaml' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.id = String(Date.now());
-          a.style.display = 'none';
-          a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-          a.href = url;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => document.body.removeChild(a), 300);
-        });
-    }
-  };
-
   return (
     <div className="mb-1 d-flex" style={{ gap: '.5rem' }}>
       <DuplicateButton value={value} history={history} />
-      <select
-        className="form-select selectSkin btn-primary"
-        aria-label="Choose export"
-        onChange={handleSelect}
-      >
-        <option value="export">Export</option>
-        <option value="json">JSON</option>
-        <option value="yaml">YAML</option>
-      </select>
+      <YAMLExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
+      <JsonExportButton value={value} entityKind="proxy.otoroshi.io/Route" />
       {menu}
     </div>
   );
@@ -234,6 +185,7 @@ function ManagerTitle({
     .flatMap((ext) => ext.routeDesignerTabs || [])
     .find((item) => item.id === query);
   const maybeExtensionTabLabel = maybeExtensionTab ? maybeExtensionTab.label : '';
+
   return (
     <PageTitle
       style={{
@@ -249,15 +201,32 @@ function ManagerTitle({
       }
       {...props}
     >
-      {!isCreation &&
-        tabs
-          .filter((tab) => !tab.visible || tab.visible())
-          .filter((tab) => (location.state?.routeFromService ? tab.tab === 'Informations' : true))
-          .map(({ component }, i) => {
-            const Tab = component;
-            return <Tab key={`tab-${i}`} />;
-          })}
+      {!isOnViewPlugins && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            margin: 'auto',
+            bottom: '1.25rem',
+            width: 'fit-content',
+          }}
+        >
+          <DraftEditorContainer entityId={value.id} value={value} />
+        </div>
+      )}
+      <Dropdown className="mb-1">
+        {!isCreation &&
+          tabs
+            .filter((tab) => !tab.visible || tab.visible())
+            .filter((tab) => (location.state?.routeFromService ? tab.tab === 'Informations' : true))
+            .map(({ component }, i) => {
+              const Tab = component;
+              return <Tab key={`tab-${i}`} />;
+            })}
+      </Dropdown>
       {saveButton}
+      <PublisDraftButton className="ms-2 mb-1" />
     </PageTitle>
   );
 }
@@ -283,9 +252,12 @@ class Manager extends React.Component {
   }
 
   loadRoute = () => {
-    nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
-      this.setState({ value, loading: false, template: value });
-    });
+    nextClient
+      .forEntityNext(nextClient.ENTITIES[this.props.entity.fetchName])
+      .template()
+      .then((value) => {
+        this.setState({ value, loading: false, template: value });
+      });
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -325,7 +297,8 @@ class Manager extends React.Component {
     const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
     const url = p.url;
 
-    this.props.setTitle(() => (
+    // this.props.setTitle(
+    dynamicTitleContent.value = (
       <ManagerTitle
         pathname={location.pathname}
         menu={this.state.menu}
@@ -345,7 +318,8 @@ class Manager extends React.Component {
         reloadEnv={this.props.reloadEnv}
         getTitle={this.props.getTitle}
       />
-    ));
+    );
+    // );
   };
 
   updateSidebar = () => {
@@ -367,7 +341,7 @@ class Manager extends React.Component {
   };
 
   render() {
-    const { entity, history, location } = this.props;
+    const { history, location } = this.props;
 
     let query = new URLSearchParams(location.search).get('tab');
 
@@ -391,7 +365,9 @@ class Manager extends React.Component {
             tab={query}
             history={history}
             value={this.state.value}
-            setValue={(v) => this.setState({ value: v }, this.setTitle)}
+            setValue={(v) => {
+              this.setState({ value: v }, this.setTitle);
+            }}
             setSaveButton={(n) => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
             setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })}
@@ -541,12 +517,13 @@ class RouteDesigner extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.match.params.routeId !== prevProps.match.params.routeId) this.loadRoute();
+    if (this.props.match.params.routeId !== prevProps.match.params.routeId) {
+      this.loadRoute();
+    }
   }
 
   loadRoute = () => {
     const { routeId } = this.props.match.params || { routeId: undefined };
-
     if (
       routeId === 'new' ||
       (this.props.location.state && this.props.location.state.routeFromService)
@@ -554,7 +531,8 @@ class RouteDesigner extends React.Component {
       this.setState({ loading: false });
     } else if (routeId) {
       nextClient
-        .fetch(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName], routeId)
+        .forEntityNext(nextClient.ENTITIES[entityFromURI(this.props.location).fetchName])
+        .findById(routeId)
         .then((res) => {
           if (!res.error) {
             this.setState({ value: res, loading: false });
@@ -568,7 +546,8 @@ class RouteDesigner extends React.Component {
 
     const entity = entityFromURI(location);
 
-    // console.log(this.props, this.state, location.state)
+    // if (!this.state.value)
+    //   return null
 
     if (Object.keys(match.params).length === 0)
       return <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />;

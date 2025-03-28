@@ -18,10 +18,12 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: install sbt
+      uses: sbt/setup-sbt@v1.1.5
      # setup node to use yarn
     - uses: actions/setup-node@v2
       with:
-        node-version: '16'
+        node-version: '18'
     #test oto
     - uses: coursier/cache-action@v5
     - name: run-tests

@@ -209,7 +209,7 @@ export function fetchRemainingApikeyQuotas(clientId) {
   }).then((r) => r.json());
 }
 
-export function resetRemainingApikeyQuotas(groupId, clientId) {
+export function resetRemainingApikeyQuotas(clientId) {
   return fetch(`/bo/api/proxy/api/apikeys/${clientId}/quotas`, {
     method: 'DELETE',
     credentials: 'include',
@@ -1643,7 +1643,7 @@ export function createErrorTemplate(ak) {
 }
 
 export function updateErrorTemplate(ak) {
-  return fetch(`/bo/api/proxy/api/error-templates/${ak.id}`, {
+  return fetch(`/bo/api/proxy/api/error-templates/${ak.serviceId}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -2117,14 +2117,27 @@ const fetchWrapperNext = (url, method = 'GET', body) => {
   }).then((r) => r.json());
 };
 
+const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
+  const headers = {
+    Accept: 'application/json',
+  };
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return fetch(`/bo/api/proxy/apis/${group}/v1${url}`, {
+    method,
+    credentials: 'include',
+    headers: headers,
+    body: body ? JSON.stringify(body) : undefined,
+  }).then((r) => r.json());
+};
+
 export const findAllWithPagination = (
   route,
-  { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
+  { page, pageSize, fields, filtered, sorted } = { page: 1 },
   prefix = ''
 ) => {
   let url = route;
-
-  // console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;
@@ -2152,10 +2165,13 @@ export const findAllWithPagination = (
     const xOffset = ~~headers.get('X-Offset');
     const xCount = ~~headers.get('X-Count');
     const xPageSize = ~~headers.get('X-Page-Size');
+    const pages = ~~headers.get('X-Pages');
+
     return res.json().then((rows) => ({
       data: rows,
       pages: Math.ceil(xCount / xPageSize),
       offset: xOffset,
+      ngPages: pages,
     }));
   });
 };
@@ -2166,6 +2182,8 @@ export const nextClient = {
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
     SERVICES: 'route-compositions',
+    APIKEYS: 'apikeys',
+    DRAFTS: 'drafts',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -2200,14 +2218,34 @@ export const nextClient = {
   },
   forEntityNext: (entity) => {
     return {
+      findAllWithPagination: (paginationState) =>
+        findAllWithPagination(entity, paginationState, '/bo/api/proxy/apis/any/v1/'),
       findAll: () => fetchWrapperNext(`/${entity}`),
       create: (content) => fetchWrapperNext(`/${entity}`, 'POST', content),
-      update: (content) => fetchWrapperNext(`/${entity}/${content.id}`, 'PUT', content),
+      update: (content, fieldId = 'id') =>
+        fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'PUT', content),
       findById: (entityId) => fetchWrapperNext(`/${entity}/${entityId}`),
-      delete: (content) => fetchWrapperNext(`/${entity}/${content.id}`, 'DELETE'),
+      delete: (content, fieldId = 'id') =>
+        fetchWrapperNext(`/${entity}/${content[fieldId]}`, 'DELETE'),
       deleteById: (id) => fetchWrapperNext(`/${entity}/${id}`, 'DELETE'),
+      deleteAll: () => fetchWrapperNext(`/${entity}`, 'DELETE'),
       template: () => fetchWrapperNext(`/${entity}/_template`),
+      schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
+      fetch: (path) => fetchWrapperNext(`/${entity}${path}`),
+    };
+  },
+  forEntityNextWithGroup: (group, entity) => {
+    return {
+      findAll: () => fetchWrapperNextWithGroup(group, `/${entity}`),
+      create: (content) => fetchWrapperNextWithGroup(group, `/${entity}`, 'POST', content),
+      update: (content) =>
+        fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'PUT', content),
+      findById: (entityId) => fetchWrapperNextWithGroup(group, `/${entity}/${entityId}`),
+      delete: (content) => fetchWrapperNextWithGroup(group, `/${entity}/${content.id}`, 'DELETE'),
+      deleteById: (id) => fetchWrapperNextWithGroup(group, `/${entity}/${id}`, 'DELETE'),
+      template: () => fetchWrapperNextWithGroup(group, `/${entity}/_template`),
+      form: () => fetchWrapperNextWithGroup(group, `/${entity}/_form`),
     };
   },
 };

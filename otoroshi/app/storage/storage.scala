@@ -81,6 +81,7 @@ trait DataStores {
   def routeCompositionDataStore: NgRouteCompositionDataStore
   def backendsDataStore: StoredNgBackendDataStore
   def wasmPluginsDataStore: WasmPluginDataStore
+  def draftsDataStore: DraftDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
@@ -764,9 +765,9 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     }(env.otoroshiExecutionContext)
   }
   override def incrby(key: String, increment: Long): Future[Long] = {
-    incropt.incrBy(key, increment) { _ =>
+    incropt.incrBy(key, increment) { by =>
       countWrite(key, "incrby")
-      redis.incrby(key, increment)
+      redis.incrby(key, by)
     }(env.otoroshiExecutionContext)
   }
   override def exists(key: String): Future[Boolean] = {

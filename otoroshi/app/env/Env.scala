@@ -13,7 +13,7 @@ import otoroshi.metrics.{HasMetrics, Metrics}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
 import otoroshi.cluster._
 import otoroshi.events._
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
@@ -30,7 +30,7 @@ import otoroshi.script.plugins.Plugins
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
 import otoroshi.storage.{DataStores, DataStoresBuilder}
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
@@ -195,6 +195,15 @@ class Env(
   private lazy val halloweenStop  =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
+  lazy val maxHeaderSizeToBackend   =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToBackend")
+  lazy val maxHeaderSizeToClient    =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.maxHeaderSizeToClient")
+  lazy val limitHeaderSizeToBackend =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToBackend")
+  lazy val limitHeaderSizeToClient  =
+    configuration.getOptionalWithFileSupport[Long]("otoroshi.options.limitHeaderSizeToClient")
+
   lazy val jsonPathNullReadIsJsNull =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.jsonPathNullReadIsJsNull").getOrElse(false)
 
@@ -316,6 +325,12 @@ class Env(
   lazy val clusterConfig: ClusterConfig           = ClusterConfig.fromRoot(configuration, this)
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
+
+  lazy val routeBaseDomain =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.routeBaseDomain").getOrElse("newroute.oto.tools")
+
+  lazy val defaultPrettyAdminApi: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.defaultPrettyAdminApi").getOrElse(true)
 
   lazy val bypassUserRightsCheck: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
@@ -1138,6 +1153,12 @@ class Env(
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
     .getOrElse(httpsPort)
 
+  lazy val bestExposedPort: String = if (exposedRootSchemeIsHttps) {
+    exposedHttpsPort
+  } else {
+    exposedHttpPort
+  }
+
   lazy val proxyState = new NgProxyState(this)
 
   lazy val http2ClientProxyEnabled = configuration
@@ -1145,6 +1166,8 @@ class Env(
     .getOrElse(false)
   lazy val http2ClientProxyPort    =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
+
+  lazy val privateAppsSessionManager: PrivateAppsSessionManager = new PrivateAppsSessionManager(this)
 
   lazy val defaultConfig = GlobalConfig(
     initWithNewEngine = true,
@@ -1240,7 +1263,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "16.19.0-dev"
+  lazy val otoroshiVersion    = "16.25.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1255,6 +1278,8 @@ class Env(
     svr.start()
     logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
   }
+
+  val ocspResponder = OcspResponder(this, otoroshiExecutionContext)
 
   def beforeListening(): Future[Unit] = {
     ().vfuture
@@ -1314,6 +1339,8 @@ class Env(
     setupLoggers()
 
     DynamicSSLEngineProvider.setCurrentEnv(this)
+
+    privateAppsSessionManager.printStatus()
 
     clusterAgent.warnAboutHttpLeaderUrls()
     if (clusterConfig.mode == ClusterMode.Leader) {
@@ -1589,7 +1616,9 @@ class Env(
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  lazy val sessionDomain = configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
+  lazy val sessionDomain =
+    if (privateAppsSessionManager.isEnabled) privateAppsSessionManager.sessionDomain
+    else configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
   lazy val playSecret    = configuration.getOptionalWithFileSupport[String]("play.http.secret.key").get
 
   def sign(message: String): String =
@@ -1625,6 +1654,8 @@ class Env(
   }
 
   lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
+  lazy val sha256Alg     = Algorithm.HMAC256(otoroshiSecret)
+  lazy val sha512Alg     = Algorithm.HMAC512(otoroshiSecret)
 
   def encryptedJwt(user: PrivateAppsUser): String = {
     val added   = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
@@ -1636,7 +1667,7 @@ class Env(
       .withExpiresAt(DateTime.now().plusSeconds(added).toDate)
       .withClaim("sessid", user.randomId)
       .withClaim("sess", session)
-      .sign(Algorithm.HMAC512(otoroshiSecret))
+      .sign(sha512Alg)
   }
 
   def aesEncrypt(content: String): String = {

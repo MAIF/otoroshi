@@ -323,7 +323,7 @@
         // z-index: 100;
         left: 12px;
         right: 0;
-        padding-bottom: 80px;
+        padding-bottom: 130px;
     }
 
     .editor-view-informations {
@@ -601,6 +601,11 @@
     right: 0;
     z-index: 1050;
     background-color: #494948a6;
+    transition: all .2s ease-in-out;
+}
+
+.wizard--hidden {
+    margin-left: 100vw;
 }
 
 .wizard-container {
@@ -639,6 +644,10 @@
     gap: 12px;
     max-height: 80px !important;
     min-height: 80px;
+
+    // color: var(--color_level2);
+    // background-color: var(--bg-color_level2);
+    // border-color: var(--bg-color_level1);
 }
 
 .wizard-route-chooser h3 {
@@ -654,6 +663,9 @@
 .wizard-h3--small {
     font-size: 1.25em !important;
     color: #eee;
+    +label {
+        color: #eee;
+    }
 }
 
 .designer-modal-dialog {
@@ -879,3 +891,15 @@
         background-position: 0 0;
     }
 }
+
+  
+  @keyframes routePlugin {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  }

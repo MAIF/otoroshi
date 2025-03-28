@@ -4,12 +4,15 @@ import isFunction from 'lodash/isFunction';
 
 import AceEditor from 'react-ace';
 
+import 'ace-builds/webpack-resolver';
+
 import 'ace-builds/src-noconflict/mode-scala';
 import 'ace-builds/src-noconflict/mode-javascript';
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-graphqlschema';
 import 'ace-builds/src-noconflict/mode-html';
 import 'ace-builds/src-noconflict/mode-xml';
+import 'ace-builds/src-noconflict/mode-prolog';
 
 import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/ext-searchbox';
@@ -28,6 +31,38 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
+          } catch (ex) {}
+        }}
+      />
+    );
+  }
+}
+
+export class JsonObjectAsCodeInputUpdatable extends Component {
+  state = {
+    value: this.props.value,
+  };
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log('componentDidUpdate');
+    if (prevProps.value !== this.props.value) {
+      console.log('trigger');
+      this.setState({ value: this.props.value });
+    }
+  }
+
+  render() {
+    return (
+      <CodeInput
+        {...this.props}
+        mode="json"
+        value={JSON.stringify(this.state.value, null, 2)}
+        onChange={(e) => {
+          try {
+            const value = JSON.parse(e);
+            this.setState({ value }, () => {
+              this.props.onChange(value);
+            });
           } catch (ex) {}
         }}
       />
@@ -96,6 +131,12 @@ export default class CodeInput extends Component {
     let clean_source = e;
     if (this.props.mode === 'json') {
       clean_source = e.replace('}{}', '}');
+
+      if (clean_source.length === 0) {
+        this.props.onChange('{}');
+        return;
+      }
+
       try {
         const parsed = JSON.parse(clean_source);
         this.setState({ value: clean_source }, () => {
@@ -139,7 +180,7 @@ export default class CodeInput extends Component {
         mode={mode}
         theme={this.state.theme}
         onChange={this.onChange}
-        value={code || ''}
+        defaultValue={code || ''}
         name="scriptParam"
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}

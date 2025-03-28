@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -311,7 +313,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.19.0-dev/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.24.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
@@ -324,7 +326,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Give a name to your route</li>
   <li>Save your route</li>
   <li>Set <code>myservice.oto.tools</code> as frontend domains</li>
-  <li>Set <code>https://mirror.otoroshi.io</code> as backend target (hostname: <code>mirror.otoroshi.io</code>, port: <code>443</code>, Tls: <code>Enabled</code>)</li>
+  <li>Set <code>https://request.otoroshi.io</code> as backend target (hostname: <code>request.otoroshi.io</code>, port: <code>443</code>, Tls: <code>Enabled</code>)</li>
 </ol>
 <p><strong>From Admin API</strong></p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
@@ -340,7 +342,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
@@ -366,7 +368,7 @@ EOF
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
@@ -560,7 +562,7 @@ EOF
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2024</span>
+<span class="text">&copy; 2025</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

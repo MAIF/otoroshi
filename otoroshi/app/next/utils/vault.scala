@@ -10,6 +10,7 @@ import com.amazonaws.services.secretsmanager.model.{GetSecretValueRequest, GetSe
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.JWK
+import com.typesafe.config.{ConfigFactory, ConfigParseOptions, ConfigResolveOptions, ConfigSyntax}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
@@ -27,8 +28,8 @@ import java.net.URLEncoder
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import javax.crypto.Cipher
 import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
-import javax.crypto.{Cipher, KeyGenerator}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -575,16 +576,20 @@ class KubernetesVault(name: String, configuration: Configuration, env: Env) exte
       .map {
         case None         => CachedVaultSecretStatus.SecretNotFound
         case Some(secret) => {
-          if (parts.size > 2 && secret.hasStringData) {
-            val valueName = parts.tail.tail.head
-            secret.stringData.getOrElse(Map.empty).get(valueName) match {
-              case None        => CachedVaultSecretStatus.SecretValueNotFound
+          if (parts.size == 3) {
+            val valueName = parts.tail.tail.headOption.getOrElse("default")
+            secret.data.get(valueName) match {
+              case None        =>
+                secret.stringData.getOrElse(Map.empty).get(valueName) match {
+                  case None        => CachedVaultSecretStatus.SecretValueNotFound
+                  case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
+                }
               case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
             }
-          } else if (parts.size > 2) {
-            CachedVaultSecretStatus.SecretValueNotFound
           } else {
-            CachedVaultSecretStatus.SecretReadSuccess(secret.data)
+            CachedVaultSecretStatus.SecretReadError(
+              "Bad secret reference. A good reference should be composed like vault://vault_name/namespace/secret_name/secret_key"
+            )
           }
         }
       }
@@ -1041,9 +1046,34 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
 
 class Vaults(env: Env) {
 
-  private val logger              = Logger("otoroshi-vaults")
-  private val vaultConfig         =
-    env._configuration.getOptionalWithFileSupport[Configuration]("otoroshi.vaults").getOrElse(Configuration.empty)
+  private val logger                                  = Logger("otoroshi-vaults")
+  private val envVaultConfig: Seq[(String, JsObject)] =
+    sys.env.filter(_._1.startsWith("OTOROSHI_VAULTS_INSTANCES_")).toSeq.map {
+      case (key, value) => {
+        val name = key.replaceFirst("OTOROSHI_VAULTS_INSTANCES_", "").toLowerCase()
+        (name, Json.parse(value).asObject)
+      }
+    }
+  private val vaultConfig: Configuration              =
+    env._configuration
+      .getOptionalWithFileSupport[Configuration]("otoroshi.vaults")
+      .getOrElse(Configuration.empty)
+      .applyOn { conf =>
+        var newConf = conf
+        envVaultConfig.foreach { case (name, json) =>
+          val fb = Configuration(
+            ConfigFactory
+              .parseString(
+                Json.obj(name -> json).prettify,
+                ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)
+              )
+              .resolve(ConfigResolveOptions.defaults())
+          )
+          newConf = newConf.withFallback(fb)
+        }
+        newConf
+      }
+
   private val secretsTtl          = vaultConfig
     .getOptionalWithFileSupport[Long]("secrets-ttl")
     .map(_.milliseconds)

@@ -67,14 +67,14 @@ export class BackendsPage extends Component {
         updateItem={(item) => client.update(item)}
         createItem={(item) => client.create(item)}
         navigateTo={(item) => {
-          window.location = `/bo/dashboard/backends/edit/${item.id}`;
+          this.props.history.push(`/backends/edit/${item.id}`);
         }}
         itemUrl={(item) => `/bo/dashboard/backends/edit/${item.id}`}
         showActions={true}
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
-        kubernetesKind="Backend"
+        kubernetesKind="proxy.otoroshi.io/Backend"
         formFunction={(opts) => {
           const { value, onChange, flow, schema } = opts;
           return (

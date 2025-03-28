@@ -493,15 +493,16 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       ctx.request.body.select("content").asOpt[JsValue] match {
         case Some(JsArray(values))                              => {
           Source(values.toList)
-            .mapAsync(1) { v => createResource(v) }
+            .mapAsync(1) { v => createResource(v, ctx.request) }
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
-        case Some(content @ JsObject(_))                        => createResource(content).map(created => Ok(Json.obj("created" -> created)))
+        case Some(content @ JsObject(_))                        =>
+          createResource(content, ctx.request).map(created => Ok(Json.obj("created" -> created)))
         case Some(JsString(content)) if content.contains("---") => {
           Source(splitContent(content).toList)
             .flatMapConcat(s => Source(Yaml.parse(s).toList))
-            .mapAsync(1) { v => createResource(v) }
+            .mapAsync(1) { v => createResource(v, ctx.request) }
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
@@ -511,7 +512,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               e.printStackTrace()
               // Yaml.write(env.datastores.globalConfigDataStore.latest().json).debugPrintln
               BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
-            case Right(yaml) => createResource(yaml).map(created => Ok(Json.obj("created" -> created)))
+            case Right(yaml) => createResource(yaml, ctx.request).map(created => Ok(Json.obj("created" -> created)))
           }
         case _                                                  => BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
       }
@@ -536,16 +537,39 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     out
   }
 
-  private def createResource(content: JsValue): Future[JsValue] = {
+  private def createResource(content: JsValue, request: RequestHeader): Future[JsValue] = {
     scala.util.Try {
       val resource = (content \ "spec").asOpt[JsObject] match {
         case None       => content.as[JsObject] - "kind"
         case Some(spec) => spec - "kind"
       }
 
-      val kind = (content \ "kind").as[String]
+      val kind =
+        (content \ "kind").asOpt[String].orElse(content.select("spec").select("kind").asOpt[String]).getOrElse("--")
       (kind match {
-        case "DataExporter"      =>
+        case groupKind if kind.contains("/") => {
+          val parts = groupKind.split("/")
+          val group = parts(0)
+          val kind  = parts(1)
+          env.allResources.resources.find(r => r.kind == kind && r.group == group) match {
+            case None      => {
+              Json
+                .obj(
+                  "error" -> s"resource kind '${kind}' unknown",
+                  "name"  -> JsString((content \ "name").asOpt[String].getOrElse("Unknown"))
+                )
+                .vfuture
+            }
+            case Some(res) => {
+              res.access
+                .template("v1", request.queryString.mapValues(_.last))
+                .as[JsObject]
+                .deepMerge(resource)
+                .vfuture
+            }
+          }
+        }
+        case "DataExporter"                  =>
           FastFuture.successful(
             DataExporterConfig
               .fromJsons(
@@ -557,7 +581,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               )
               .json
           )
-        case "ServiceDescriptor" =>
+        case "ServiceDescriptor"             =>
           FastFuture.successful(
             ServiceDescriptor
               .fromJsons(
@@ -565,35 +589,35 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               )
               .json
           )
-        case "ServiceGroup"      =>
+        case "ServiceGroup"                  =>
           FastFuture.successful(
             ServiceGroup
               .fromJsons(env.datastores.serviceGroupDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "Certificate"       =>
+        case "Certificate"                   =>
           env.datastores.certificatesDataStore
             .nakedTemplate(env)
             .map(c => Cert.fromJsons(c.json.as[JsObject].deepMerge(resource)).json)
-        case "Tenant"            =>
+        case "Tenant"                        =>
           FastFuture.successful(
             Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
-        case "Organization"      =>
+        case "Organization"                  =>
           FastFuture.successful(
             Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
-        case "GlobalConfig"      =>
+        case "GlobalConfig"                  =>
           FastFuture.successful(
             GlobalConfig
               .fromJsons(env.datastores.globalConfigDataStore.template.json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "ApiKey"            =>
+        case "ApiKey"                        =>
           FastFuture.successful(
             ApiKey.fromJsons(env.datastores.apiKeyDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
-        case "Team"              =>
+        case "Team"                          =>
           FastFuture.successful(
             Team
               .fromJsons(
@@ -605,13 +629,13 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               )
               .json
           )
-        case "TcpService"        =>
+        case "TcpService"                    =>
           FastFuture.successful(
             TcpService
               .fromJsons(env.datastores.tcpServiceDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "AuthModule"        =>
+        case "AuthModule"                    =>
           FastFuture.successful(
             AuthModuleConfig
               .fromJsons(
@@ -623,27 +647,27 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               )
               .json
           )
-        case "JwtVerifier"       =>
+        case "JwtVerifier"                   =>
           FastFuture.successful(
             GlobalJwtVerifier
               .fromJsons(env.datastores.globalJwtVerifierDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "Admin"             =>
+        case "Admin"                         =>
           FastFuture.successful(
             SimpleOtoroshiAdmin.fmt
               .reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .get
               .json
           )
-        case "SimpleAdmin"       =>
+        case "SimpleAdmin"                   =>
           FastFuture.successful(
             SimpleOtoroshiAdmin.fmt
               .reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .get
               .json
           )
-        case "Backend"           =>
+        case "Backend"                       =>
           val tmpl = env.datastores.backendsDataStore.template(env).json.as[JsObject]
           FastFuture.successful(
             StoredNgBackend.format
@@ -651,25 +675,31 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .get
               .json
           )
-        case "Route"             =>
+        case "Route"                         =>
           FastFuture.successful(
             NgRoute
               .fromJsons(env.datastores.routeDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "RouteComposition"  =>
+        case "RouteComposition"              =>
           FastFuture.successful(
             NgRoute
               .fromJsons(env.datastores.routeCompositionDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "WasmPlugin"        =>
+        case "WasmPlugin"                    =>
           FastFuture.successful(
             WasmPlugin
               .fromJsons(env.datastores.wasmPluginsDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "ClientValidator"   =>
+        case "Draft"                         =>
+          FastFuture.successful(
+            Draft
+              .fromJsons(env.datastores.draftsDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .json
+          )
+        case "ClientValidator"               =>
           FastFuture.successful(
             ClientCertificateValidator
               .fromJsons(
@@ -677,11 +707,11 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               )
               .json
           )
-        case "Script"            =>
+        case "Script"                        =>
           FastFuture.successful(
             Script.fromJsons(env.datastores.scriptDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
-        case "ErrorTemplate"     => FastFuture.successful(ErrorTemplate.fromJsons(resource).toJson.as[JsObject])
+        case "ErrorTemplate"                 => FastFuture.successful(ErrorTemplate.fromJsons(resource).toJson.as[JsObject])
       })
         .map(resource => {
           Json.obj(

@@ -34,8 +34,6 @@ object Errors {
     404 -> ("The page you're looking for does not exist", "notFound.gif")
   )
 
-  private val cache = Scaffeine().expireAfterWrite(60.seconds).maximumSize(100).build[String, Option[ErrorTemplate]]()
-
   private def sendAnalytics(
       headers: Seq[Header],
       errorId: String,
@@ -53,7 +51,8 @@ object Errors {
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
   )(implicit env: Env, ec: ExecutionContext): Unit = {
-    (maybeDescriptor, maybeRoute) match {
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    (maybeDescriptor, finalMaybeRoute) match {
       case (Some(descriptor), _) => {
         val fromLbl          = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
         // TODO : mark as error ???
@@ -73,7 +72,7 @@ object Errors {
           else _target.host,
           Some(req),
           Some(descriptor),
-          maybeRoute,
+          finalMaybeRoute,
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
           attrs.get(otoroshi.plugins.Keys.UserKey),
           attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -86,7 +85,7 @@ object Errors {
           s"$scheme://$host${descriptor.root}$uri",
           Some(req),
           Some(descriptor),
-          maybeRoute,
+          finalMaybeRoute,
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
           attrs.get(otoroshi.plugins.Keys.UserKey),
           attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -371,50 +370,45 @@ object Errors {
       emptyBody: Boolean,
       errorId: String
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    env.datastores.errorTemplateDataStore.findById(descriptorId).map {
-      case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
-      case Some(errorTemplate) => {
-        val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
-        if (accept.contains("text/html")) { // in a browser
-          status
-            .apply(
-              errorTemplate
-                .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
-            )
-            .as("text/html")
-            .withHeaders(
-              env.Headers.OtoroshiGatewayError -> "true",
-              env.Headers.OtoroshiErrorMsg     -> message,
-              env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-            )
-        } else {
-          status
-            .apply(
-              errorTemplate
-                .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
-            )
-            .withHeaders(
-              env.Headers.OtoroshiGatewayError -> "true",
-              env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-            )
+    env.datastores.errorTemplateDataStore
+      .findById(descriptorId)
+      .flatMap {
+        case Some(tmpl) => tmpl.some.vfuture
+        case None       => env.datastores.errorTemplateDataStore.findById("global")
+      }
+      .map {
+        case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
+        case Some(errorTemplate) => {
+          val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
+          if (accept.contains("text/html")) { // in a browser
+            status
+              .apply(
+                errorTemplate
+                  .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
+              )
+              .as("text/html")
+              .withHeaders(
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+              )
+          } else {
+            status
+              .apply(
+                errorTemplate
+                  .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
+              )
+              .withHeaders(
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+              )
+          }
         }
       }
-    }
   }
 
   private def errorTemplate(descriptorId: String)(implicit env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
-    cache.getIfPresent(descriptorId) match {
-      case Some(opt) => opt
-      case None      =>
-        env.proxyState.errorTemplate(descriptorId) match {
-          case None                =>
-            cache.put(descriptorId, None)
-            None
-          case Some(errorTemplate) =>
-            cache.put(descriptorId, errorTemplate.some)
-            errorTemplate.some
-        }
-    }
+    env.proxyState.errorTemplate(descriptorId).orElse(env.proxyState.errorTemplate("global"))
   }
 
   private def customResultSync(
@@ -474,8 +468,9 @@ object Errors {
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val errorId = env.snowflakeGenerator.nextIdStr()
-    ((maybeDescriptor, maybeRoute) match {
+    val errorId                          = env.snowflakeGenerator.nextIdStr()
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    ((maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {
         customResult(desc.id, req, status, message, maybeCauseId, emptyBody, errorId).flatMap { res =>
           val ctx = TransformerErrorContext(
@@ -549,7 +544,12 @@ object Errors {
           route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
       }
-      case _                => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
+      case _                =>
+        env.proxyState.errorTemplate("global") match {
+          case None    => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
+          case Some(_) => customResult("global", req, status, message, maybeCauseId, emptyBody, errorId)
+        }
+
     }) andThen {
       case scala.util.Success(resp) if sendEvent =>
         sendAnalytics(
@@ -567,7 +567,7 @@ object Errors {
           emptyBody,
           sendEvent,
           attrs,
-          maybeRoute
+          finalMaybeRoute
         )
     }
   }
@@ -589,8 +589,9 @@ object Errors {
       maybeRoute: Option[NgRoute] = None,
       modern: Boolean = false
   )(implicit ec: ExecutionContext, env: Env): Result = {
-    val errorId = env.snowflakeGenerator.nextIdStr()
-    (maybeDescriptor, maybeRoute) match {
+    val errorId                          = env.snowflakeGenerator.nextIdStr()
+    val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
+    (maybeDescriptor, finalMaybeRoute) match {
       case (Some(desc), _)  => {
         val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId, modern)
         // val ctx      = TransformerErrorContext(
@@ -641,7 +642,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         finalRes
       }
@@ -694,7 +695,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         finalRes
       }
@@ -716,7 +717,7 @@ object Errors {
             emptyBody,
             sendEvent,
             attrs,
-            maybeRoute
+            finalMaybeRoute
           )
         resp
       }

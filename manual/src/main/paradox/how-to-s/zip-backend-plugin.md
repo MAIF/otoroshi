@@ -75,7 +75,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
   "backend": {
     "targets": [
       {
-        "hostname": "mirror.otoroshi.io",
+        "hostname": "request.otoroshi.io",
         "port": 443,
         "tls": true
       }

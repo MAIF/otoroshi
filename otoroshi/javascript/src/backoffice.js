@@ -28,6 +28,7 @@ import { registerAlert, registerConfirm, registerPrompt, registerPopup } from '.
 import { setupGreenScoreExtension } from './extensions/greenscore';
 import { setupCorazaExtension } from './extensions/coraza';
 import { setupHttpListenersExtension } from './extensions/httplisteners';
+import { setupWorkflowsExtension } from './extensions/workflows';
 
 import * as Forms from './forms/ng_plugins/index';
 
@@ -76,7 +77,7 @@ window.fetch = function (...params) {
       if (url.indexOf('/bo/simple/login') === -1) {
         throw new Error("You're not allowed to do that !");
       }
-    } else if (r.status > 399 && window.toast) {
+    } else if (r.status > 404 && window.toast) {
       return r.text().then((text) => {
         window.toast('Server error', 'An error occured server side: ' + text, 'error');
         throw new Error(text);
@@ -255,4 +256,5 @@ function setupLocalExtensions() {
   setupGreenScoreExtension(registerExtension);
   setupCorazaExtension(registerExtension);
   setupHttpListenersExtension(registerExtension);
+  setupWorkflowsExtension(registerExtension);
 }

@@ -3,6 +3,7 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.gzip.GzipFlow
@@ -12,9 +13,18 @@ import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class NgHtmlPatcherConfig(appendHead: Seq[String] = Seq.empty, appendBody: Seq[String] = Seq.empty)
-    extends NgPluginConfig {
-  def json: JsValue = Json.obj("append_head" -> appendHead, "append_body" -> appendBody)
+case class NgHtmlPatcherConfig(
+    appendHead: Seq[String] = Seq.empty,
+    appendBody: Seq[String] = Seq.empty,
+    prependHead: Seq[String] = Seq.empty,
+    prependBody: Seq[String] = Seq.empty
+) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "append_head"  -> appendHead,
+    "append_body"  -> appendBody,
+    "prepend_head" -> prependHead,
+    "prepend_body" -> prependBody
+  )
 }
 
 class NgHtmlPatcher extends NgRequestTransformer {
@@ -36,6 +46,20 @@ class NgHtmlPatcher extends NgRequestTransformer {
     "This plugin can inject elements in html pages (in the body or in the head) returned by the service".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHtmlPatcherConfig().some
 
+  private def applyEl(str: String, ctx: NgTransformerResponseContext)(implicit env: Env): String = {
+    GlobalExpressionLanguage(
+      value = str,
+      req = ctx.request.some,
+      service = ctx.route.legacy.some,
+      route = ctx.route.some,
+      apiKey = ctx.apikey,
+      user = ctx.user,
+      context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+      attrs = ctx.attrs,
+      env = env
+    )
+  }
+
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
@@ -49,22 +73,36 @@ class NgHtmlPatcher extends NgRequestTransformer {
             .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
             .runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>
-              val body          = bodyRaw.utf8String
-              val appendHead    = ctx.config
+              val body                = bodyRaw.utf8String
+              val appendHead          = ctx.config
                 .select("appendHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
-              val appendBody    = ctx.config
+              val prependHead         = ctx.config
+                .select("prependHead")
+                .asOpt[Seq[String]]
+                .orElse(ctx.config.select("prepend_head").asOpt[Seq[String]])
+                .getOrElse(Seq.empty)
+              val appendBody          = ctx.config
                 .select("appendBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
                 .getOrElse(Seq.empty)
-              val headInjection = appendHead.mkString("")
-              val bodyInjection = appendBody.mkString("")
-              val newBody       = body
-                .replace("</head>", s"${headInjection}</head>")
-                .replace("</body>", s"${bodyInjection}</body>")
+              val prependBody         = ctx.config
+                .select("prependBody")
+                .asOpt[Seq[String]]
+                .orElse(ctx.config.select("prepend_body").asOpt[Seq[String]])
+                .getOrElse(Seq.empty)
+              val beforeHeadInjection = applyEl(prependHead.mkString(""), ctx)
+              val afterHeadInjection  = applyEl(appendHead.mkString(""), ctx)
+              val beforeBodyInjection = applyEl(prependBody.mkString(""), ctx)
+              val afterBodyInjection  = applyEl(appendBody.mkString(""), ctx)
+              val newBody             = body
+                .replace("<head>", s"<head>${beforeHeadInjection}")
+                .replace("</head>", s"${afterHeadInjection}</head>")
+                .replace("<body>", s"<body>${beforeBodyInjection}")
+                .replace("</body>", s"${afterBodyInjection}</body>")
               ByteString(newBody)
             }
         )

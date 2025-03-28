@@ -12,7 +12,9 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
@@ -79,11 +81,16 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
   private lazy val pluginConfigurationSize = rules.stringify.byteString.length
   private lazy val contextId               = new AtomicInteger(0)
   private lazy val state                   =
-    new ProxyWasmState(CorazaPlugin.rootContextIds.incrementAndGet(), contextId, Some((l, m) => logCallback(l, m)), env)
+    new ProxyWasmState(
+      CorazaPlugin.rootContextIds.incrementAndGet(),
+      contextId,
+      Some((l, m, vmd) => logCallback(l, m, vmd)),
+      env
+    )
   private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
-  def logCallback(level: org.slf4j.event.Level, msg: String): Unit = {
-    CorazaTrailEvent(level, msg).toAnalytics()
+  def logCallback(level: org.slf4j.event.Level, msg: String, data: VmData): Unit = {
+    CorazaTrailEvent(level, msg, data.request, data.route).debug(evt => evt.toJson.prettify.debugPrintln).toAnalytics()
   }
 
   def isStarted(): Boolean = started.get()
@@ -217,7 +224,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs)(env)
+    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
     val endOfStream = 1
     val sizeHeaders = 0
     val prs         = new Parameters(3).pushInts(contextId, sizeHeaders, endOfStream)
@@ -249,7 +256,7 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
       attrs: TypedMap
   ): Future[Either[play.api.mvc.Result, Unit]] = {
     val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs)(env)
+    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
     data.bodyInRef.set(body_bytes)
     val endOfStream = 1
     val sizeBody    = body_bytes.size.bytes.length
@@ -437,28 +444,11 @@ object NgCorazaWAFConfig {
   }
 }
 
-class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
-
-  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Coraza WAF"
-  override def description: Option[String]                 = "Coraza WAF plugin".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
-
-  override def isAccessAsync: Boolean            = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
-  override def usesCallbacks: Boolean            = true
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
+object NgCorazaWAF {
 
   private val plugins = new UnboundedTrieMap[String, CorazaPlugin]()
 
-  private def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
+  def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
     val config     = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash = config.json.stringify.sha512
     val key        = s"ref=${ref}&hash=${configHash}"
@@ -466,8 +456,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      //val url = s"http://127.0.0.1:${env.httpPort}/__otoroshi_assets/wasm/coraza-proxy-wasm-v0.5.0.wasm?$key"
-      val url = "wasm/coraza-proxy-wasm-v0.5.0.wasm"
+      val url = "wasm/coraza-proxy-wasm-v31a1e6a187ee07a476d737342ebb731fb2171e25.wasm"
       val p   = new CorazaPlugin(
         WasmConfig(
           source = WasmSource(
@@ -501,12 +490,32 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
     }
     plugin
   }
+}
+
+class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Coraza WAF"
+  override def description: Option[String]                 = "Coraza WAF plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = true
+  override def isTransformResponseAsync: Boolean = true
+  override def usesCallbacks: Boolean            = true
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = false
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin = getPlugin(config.ref, ctx.attrs)
+    val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.start(ctx.attrs)
   }
 
@@ -519,7 +528,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin = getPlugin(config.ref, ctx.attrs)
+    val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.runRequestPath(ctx.request, ctx.attrs)
   }
 
@@ -527,7 +536,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
     val config                             = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin                             = getPlugin(config.ref, ctx.attrs)
+    val plugin                             = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val hasBody                            = ctx.request.theHasBody
     val bytesf: Future[Option[ByteString]] =
       if (!plugin.config.inspectBody) None.vfuture
@@ -557,7 +566,7 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
     val config                             = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin                             = getPlugin(config.ref, ctx.attrs)
+    val plugin                             = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val bytesf: Future[Option[ByteString]] =
       if (!plugin.config.inspectBody) None.vfuture
       else ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map(_.some)
@@ -575,6 +584,34 @@ class NgCorazaWAF extends NgAccessValidator with NgRequestTransformer {
           case Left(result) => Left(result)
           case Right(_)     => Right(res)
         }
+    }
+  }
+}
+
+class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
+
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Coraza WAF - Incoming Request Validator"
+  override def description: Option[String]                 = "Coraza WAF - Incoming Request Validator plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+
+  override def access(
+      ctx: NgIncomingRequestValidatorContext
+  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    ctx.config.select("ref").asOpt[String] match {
+      case None      => NgAccess.NgAllowed.vfuture
+      case Some(ref) => {
+        val plugin = NgCorazaWAF.getPlugin(ref, ctx.attrs)
+        plugin.start(ctx.attrs).flatMap { _ =>
+          val res = plugin.runRequestPath(ctx.request, ctx.attrs)
+          ctx.attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).foreach(_.release())
+          res
+        }
+      }
     }
   }
 }
@@ -729,7 +766,12 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String) extends AnalyticEvent {
+case class CorazaTrailEvent(
+    level: org.slf4j.event.Level,
+    msg: String,
+    request: Option[RequestHeader],
+    route: Option[NgRoute]
+) extends AnalyticEvent {
 
   override def `@service`: String            = "--"
   override def `@serviceId`: String          = "--"
@@ -768,7 +810,9 @@ case class CorazaTrailEvent(level: org.slf4j.event.Level, msg: String) extends A
       "level"      -> level.name(),
       "raw"        -> msg,
       "msg"        -> txt,
-      "fields"     -> JsObject(fields.mapValues(JsString.apply))
+      "fields"     -> JsObject(fields.mapValues(JsString.apply)),
+      "route"      -> route.map(_.json).getOrElse(JsNull).asValue,
+      "request"    -> request.map(JsonHelpers.requestToJson).getOrElse(JsNull).asValue
     )
   }
 }

@@ -381,7 +381,7 @@ export class TcpServicesPage extends Component {
           }}
           itemUrl={(i) => `/bo/dashboard/tcp/services/edit/${i.id}`}
           export={true}
-          kubernetesKind="TcpService"
+          kubernetesKind="proxy.otoroshi.io/TcpService"
         />
       </div>
     );

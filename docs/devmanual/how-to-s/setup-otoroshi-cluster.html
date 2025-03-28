@@ -123,6 +123,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -317,7 +319,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Validate the installation by adding a header on the requests</li>
 </ol>
 <p>Let&rsquo;s start by downloading the latest jar of Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.19.0-dev/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.24.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>Then create an instance of Otoroshi and indicates with the <code>otoroshi.cluster.mode</code> environment variable that it will be the leader.</p>
 <pre class="prettyprint"><code class="language-sh">java -Dhttp.port=8091 -Dhttps.port=9091 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
@@ -376,7 +378,7 @@ backend back_http_nodes
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-sh">docker run -p 8080:8080 -v $(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy</code></pre></dd>
 </dl>
 <p>The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.</p>
-<p>Create this route, exposed on <code>http://api.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
+<p>Create this route, exposed on <code>http://api.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://request.otoroshi.io</code>.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8091/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -389,7 +391,7 @@ backend back_http_nodes
   &quot;backend&quot;: {
     &quot;targets&quot;: [
       {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;hostname&quot;: &quot;request.otoroshi.io&quot;,
         &quot;port&quot;: 443,
         &quot;tls&quot;: true
       }
@@ -476,7 +478,7 @@ EOF
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2024</span>
+<span class="text">&copy; 2025</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

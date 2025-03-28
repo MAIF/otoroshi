@@ -155,7 +155,13 @@ export class NgFormRenderer extends Component {
 
     if (!this.props.embedded) {
       return (
-        <form style={this.props.style} className={this.props.className}>
+        <form
+          style={this.props.style}
+          className={this.props.className}
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+        >
           {this.props.children}
         </form>
       );
@@ -230,7 +236,11 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              border: clickable ? '1px solid var(--bg-color_level2)' : 'none',
+              border: clickable
+                ? showChildren
+                  ? '1px solid var(--color-primary)'
+                  : '1px solid var(--bg-color_level2)'
+                : 'none',
               borderRadius: 6,
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',
@@ -238,12 +248,15 @@ export class NgFormRenderer extends Component {
               flexDirection: 'column',
               width: 'calc(100% - 2px)',
               marginLeft: '1px',
+              cursor: 'pointer',
               ...(this.props.style || {}),
               ...(rawSchema.style || {}),
             }}
+            className={showChildren ? '' : 'btn btn-quiet'}
             onClick={() => {
               if (clickable) this.setBreadcrumb();
             }}
+            className={showChildren ? '' : 'component_collapsable'}
           >
             <div
               style={{

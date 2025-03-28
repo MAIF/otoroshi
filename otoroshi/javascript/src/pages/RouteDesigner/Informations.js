@@ -7,6 +7,8 @@ import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
+import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
+import { draftSignal, draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
@@ -32,20 +34,25 @@ export const Informations = forwardRef(
           className="ms-2 mb-1"
           onPress={saveRoute}
           text={isCreation ? `Create ${entityName}` : `Save`}
-          icon={() => <i className="fas fa-paper-plane" />}
         />
       );
     }, [value]);
 
-    function saveRoute() {
+    function saveRoute(customValue) {
+      const finalValue = customValue || value;
+
       if (isCreation || location.state?.routeFromService) {
         return nextClient
-          .create(nextClient.ENTITIES[fetchName], value)
-          .then(() => history.push(`/${link}/${value.id}?tab=flow`));
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .create(finalValue)
+          .then(() => history.push(`/${link}/${finalValue.id}?tab=flow`));
       } else {
-        return nextClient.update(nextClient.ENTITIES[fetchName], value).then((res) => {
-          if (!res.error) setValue(res);
-        });
+        return nextClient
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .update(finalValue)
+          .then((res) => {
+            if (!res.error) setValue(res);
+          });
       }
     }
 
@@ -62,9 +69,52 @@ export const Informations = forwardRef(
         // constraints: [constraints.required()],
       },
       enabled: {
-        type: 'bool',
-        label: 'Enabled',
-        props: {},
+        renderer: (props) => {
+          return (
+            <>
+              <div className="d-flex align-items-baseline">
+                <p className="ms-2">Exposition of the route</p>
+                <div className="d-flex flex-column gap-3 ms-3">
+                  <span
+                    className={`badge bg-${props.value ? 'success' : 'danger'}`}
+                    style={{ width: 'fit-content' }}
+                  >
+                    {props.value ? 'Exposed' : 'Disabled'}
+                  </span>
+                  {props.value ? (
+                    <Button
+                      type="danger"
+                      className="btn-sm mb-3"
+                      text="Disable this route"
+                      onClick={() => {
+                        window
+                          .newConfirm(
+                            'Are you sure you disable this route ? Traffic will be stop immediately.'
+                          )
+                          .then((ok) => {
+                            if (ok) {
+                              saveRoute({ ...value, enabled: false }).then(() =>
+                                window.location.reload()
+                              );
+                            }
+                          });
+                      }}
+                    />
+                  ) : (
+                    <Button
+                      type="success"
+                      className="btn-sm mb-3"
+                      text="Publish this route"
+                      onClick={() => {
+                        saveRoute({ ...value, enabled: true }).then(() => window.location.reload());
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </>
+          );
+        },
       },
       capture: {
         type: 'bool',
@@ -140,8 +190,8 @@ export const Informations = forwardRef(
             },
             {
               key: 'otoroshi-core-issue-lets-encrypt-certificate',
-              label: 'Issue a Lets Encrypt Certificate',
-              description: 'Flag to automatically issue a lets encrypt cert for this service',
+              label: `Issue a Let's Encrypt Certificate`,
+              description: `Flag to automatically issue a Let's Encrypt cert for this service`,
             },
             {
               key: 'otoroshi-core-issue-certificate',
@@ -267,7 +317,7 @@ export const Informations = forwardRef(
                     type="danger"
                     onClick={() => {
                       window
-                        .newConfirm('are you sure you want to delete this entity ?')
+                        .newConfirm('Are you sure you want to delete this entity ?')
                         .then((ok) => {
                           if (ok) {
                             nextClient.deleteById(kind, id).then(() => {
@@ -324,6 +374,8 @@ export const Informations = forwardRef(
 
     return (
       <>
+        <DraftStateDaemon value={value} setValue={setValue} />
+
         {showAdvancedForm ? (
           <RouteForm
             routeId={routeId}

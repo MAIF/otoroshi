@@ -10,7 +10,7 @@ export default {
       type: 'select',
       label: 'Token Version',
       props: {
-        options: ['Legacy', 'Latest'],
+        options: ['Legacy', 'Latest', 'Url'],
       },
     },
     ttl: {
@@ -23,6 +23,14 @@ export default {
     add_fields: {
       type: 'object',
       label: 'add fields',
+    },
+    filtering: {
+      type: 'json',
+      label: 'Filtering metadata',
+    },
+    projection: {
+      type: 'json',
+      label: 'Projection metadata',
     },
     algo: {
       type: 'form',
@@ -182,10 +190,9 @@ export default {
           },
         },
         certId: {
-          type: 'array-select',
-          help: 'The keypair used to sign/verify token',
+          type: 'select',
+          label: 'Cert. id',
           props: {
-            label: 'Certificates',
             optionsFrom: '/bo/api/proxy/api/certificates',
             optionsTransformer: {
               label: 'name',
@@ -220,5 +227,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo', 'projection'],
 };

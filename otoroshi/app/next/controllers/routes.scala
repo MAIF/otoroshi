@@ -181,7 +181,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       exportReporting = false,
       groups = Seq("default"),
       frontend = NgFrontend(
-        domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+        domains = Seq(NgDomainAndPath(env.routeBaseDomain)),
         headers = Map.empty,
         query = Map.empty,
         methods = Seq.empty,
@@ -192,9 +192,10 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         targets = Seq(
           NgTarget(
             id = "target_1",
-            hostname = "mirror.otoroshi.io",
+            hostname = "request.otoroshi.io",
             port = 443,
-            tls = true
+            tls = true,
+            backup = false,
           )
         ),
         root = "/",
@@ -226,7 +227,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     import otoroshi.ssl.SSLImplicits._
 
     val routes           = env.proxyState.allRoutes()
-    val domains          = routes.flatMap(_.frontend.domains).map(_.domain).distinct
+    val domains          = routes.flatMap(_.frontend.domains).map(_.domainLowerCase).distinct
     val certs            = env.proxyState.allCertificates()
     val jsonDomains      = domains
       .map { domain =>

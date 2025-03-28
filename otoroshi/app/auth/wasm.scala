@@ -43,6 +43,9 @@ object WasmAuthModuleConfig {
       "clientSideSessionEnabled" -> o.clientSideSessionEnabled,
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(o.sessionCookieValues),
       "userValidators"           -> JsArray(o.userValidators.map(_.json)),
+      "remoteValidators"         -> JsArray(o.remoteValidators.map(_.json)),
+      "allowedUsers"             -> o.allowedUsers,
+      "deniedUsers"              -> o.deniedUsers,
       "wasmRef"                  -> o.wasmRef.map(JsString.apply).getOrElse(JsNull).asValue
     )
     override def reads(json: JsValue): JsResult[WasmAuthModuleConfig] = Try {
@@ -55,11 +58,17 @@ object WasmAuthModuleConfig {
         sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
         sessionCookieValues =
           (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
+          .getOrElse(Seq.empty),
+        remoteValidators = (json \ "remoteValidators")
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
           .getOrElse(Seq.empty),
         wasmRef = json.select("wasmRef").asOpt[String].filter(_.trim.nonEmpty)
       )
@@ -81,7 +90,10 @@ case class WasmAuthModuleConfig(
     clientSideSessionEnabled: Boolean,
     sessionCookieValues: SessionCookieValues,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
-    wasmRef: Option[String]
+    remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
+    wasmRef: Option[String],
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
 
   override def authModule(config: GlobalConfig): AuthModule = new WasmAuthModule(this)
@@ -242,7 +254,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]] = {
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, false)
       val input = Json.obj(
@@ -253,11 +265,11 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, route)
       env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
-        case None          => "plugin not found !".leftf
+        case None          => ErrorReason("plugin not found !").leftf
         case Some((vm, _)) =>
           vm.callExtismFunction("pa_callback", input.stringify)
-            .map {
-              case Left(err)     => err.stringify.left
+            .flatMap {
+              case Left(err)     => ErrorReason.format.reads(err).asOpt.getOrElse(ErrorReason(err.stringify)).left.vfuture
               case Right(output) => {
                 val response = {
                   try {
@@ -269,8 +281,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   }
                 }
                 PrivateAppsUser.fmt.reads(response) match {
-                  case JsError(errors)    => errors.toString().left
-                  case JsSuccess(user, _) => user.validate(authConfig.userValidators)
+                  case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      descriptor,
+                      isRoute = true,
+                      authConfig
+                    )
                 }
               }
             }
@@ -279,7 +296,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             }
       }
     } getOrElse {
-      "wasm module not found".left.vfuture
+      ErrorReason("wasm module not found").left.vfuture
     }
   }
 
@@ -402,7 +419,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
   override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, BackOfficeUser]] = {
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val input = Json.obj(
         "request"       -> JsonHelpers.requestToJson(request),
@@ -410,11 +427,11 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
       env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
-        case None          => "plugin not found !".leftf
+        case None          => ErrorReason("plugin not found !").leftf
         case Some((vm, _)) =>
           vm.callExtismFunction("bo_callback", input.stringify)
-            .map {
-              case Left(err)     => err.stringify.left
+            .flatMap {
+              case Left(err)     => ErrorReason.format.reads(err).asOpt.getOrElse(ErrorReason(err.stringify)).left.vfuture
               case Right(output) => {
                 val response = {
                   try {
@@ -426,8 +443,13 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                   }
                 }
                 BackOfficeUser.fmt.reads(response) match {
-                  case JsError(errors)    => errors.toString().left
-                  case JsSuccess(user, _) => user.validate(authConfig.userValidators)
+                  case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      env.backOfficeServiceDescriptor,
+                      isRoute = false,
+                      authConfig
+                    )
                 }
               }
             }
@@ -436,7 +458,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             }
       }
     } getOrElse {
-      "wasm module not found".left.vfuture
+      ErrorReason("wasm module not found").left.vfuture
     }
   }
 }

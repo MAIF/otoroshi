@@ -15,6 +15,7 @@ import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -159,7 +160,13 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty),
+          remoteValidators = (json \ "remoteValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
+            .getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -175,12 +182,15 @@ case class BasicAuthModuleConfig(
     clientSideSessionEnabled: Boolean,
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
+    remoteValidators: Seq[RemoteUserValidatorSettings] = Seq.empty,
     basicAuth: Boolean = false,
     webauthn: Boolean = false,
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    allowedUsers: Seq[String] = Seq.empty,
+    deniedUsers: Seq[String] = Seq.empty
 ) extends AuthModuleConfig {
   def `type`: String                                                    = "basic"
   def humanName: String                                                 = "In memory auth. provider"
@@ -201,7 +211,10 @@ case class BasicAuthModuleConfig(
       "tags"                     -> JsArray(tags.map(JsString.apply)),
       "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "userValidators"           -> JsArray(userValidators.map(_.json))
+      "userValidators"           -> JsArray(userValidators.map(_.json)),
+      "allowedUsers"             -> this.allowedUsers,
+      "deniedUsers"              -> this.deniedUsers,
+      "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"basic-auth-$id"
@@ -237,13 +250,15 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     Option(base64)
       .map(decodeBase64)
       .map(_.split(":").toSeq)
-      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+      .filter(v => v.nonEmpty && v.length > 1)
+      .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
 
   }
 
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
-      env: Env
-  ): Either[String, PrivateAppsUser] = {
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
@@ -264,12 +279,15 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           tags = Seq.empty,
           metadata = Map.empty,
           location = authConfig.location
-        ).validate(authConfig.userValidators)
-      case None       => Left(s"You're not authorized here")
+        ).validate(descriptor, isRoute = true, authConfig)
+      case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
 
-  def bindAdminUser(username: String, password: String)(implicit env: Env): Either[String, BackOfficeUser] = {
+  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.users
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
@@ -291,8 +309,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           rights = user.rights,
           adminEntityValidators = user.adminEntityValidators,
           location = authConfig.location
-        ).validate(authConfig.userValidators)
-      case None       => Left(s"You're not authorized here")
+        ).validate(descriptor, isRoute = true, authConfig)
+      case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
     }
   }
 
@@ -322,7 +340,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           Results
             .Unauthorized("")
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-            .addingToSession(
+            .addingToPrivateAppSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                 routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
@@ -334,7 +352,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             extractUsernamePassword(auth) match {
               case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
-                bindUser(username, password, descriptor) match {
+                bindUser(username, password, descriptor) flatMap {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
@@ -365,7 +383,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 env
               )
           )
-          .addingToSession(
+          .addingToPrivateAppSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )
@@ -388,7 +406,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[String, PrivateAppsUser]] = {
+  ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
@@ -396,20 +414,25 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           env.datastores.authConfigsDataStore
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
-            .map {
-              case Some(user) => user.validate(authConfig.userValidators)
-              case None       => Left("No user found")
+            .flatMap {
+              case Some(user) =>
+                user.validate(
+                  descriptor,
+                  isRoute = true,
+                  authConfig
+                )
+              case None       => Left(ErrorReason("No user found")).vfuture
             }
-        case _           => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None       => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left(ErrorReason("No Authorization form here")))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
-              env.datastores.authConfigsDataStore.validateLoginToken(token).map {
-                case false => Left("Bad token")
+              env.datastores.authConfigsDataStore.validateLoginToken(token).flatMap {
+                case false => Left(ErrorReason("Bad token")).vfuture
                 case true  =>
                   authConfig.users
                     .find(u => u.email == username)
@@ -431,13 +454,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                         tags = Seq.empty,
                         metadata = Map.empty,
                         location = authConfig.location
-                      ).validate(authConfig.userValidators)
-                    case None       => Left(s"You're not authorized here")
+                      ).validate(
+                        descriptor,
+                        isRoute = true,
+                        authConfig
+                      )
+                    case None       => Left(ErrorReason(s"You're not authorized here")).vfuture
                   }
               }
             }
             case _                                             => {
-              FastFuture.successful(Left("Authorization form is not complete"))
+              FastFuture.successful(Left(ErrorReason("Authorization form is not complete")))
             }
           }
         }
@@ -471,7 +498,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             extractUsernamePassword(auth) match {
               case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
-                bindAdminUser(username, password) match {
+                bindAdminUser(username, password, env.backOfficeServiceDescriptor) flatMap {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
@@ -505,7 +532,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
@@ -515,23 +542,23 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .map(_.flatMap(a => BackOfficeUser.fmt.reads(a).asOpt))
             .map {
               case Some(user) => Right(user)
-              case None       => Left("No user found")
+              case None       => Left(ErrorReason("No user found"))
             }
-        case _           => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left(ErrorReason("Forbidden access")))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None       => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left(ErrorReason("No Authorization form here")))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
-              env.datastores.authConfigsDataStore.validateLoginToken(token).map {
-                case false => Left("Bad token")
-                case true  => bindAdminUser(username, password)
+              env.datastores.authConfigsDataStore.validateLoginToken(token).flatMap {
+                case false => Left(ErrorReason("Bad token")).vfuture
+                case true  => bindAdminUser(username, password, env.backOfficeServiceDescriptor)
               }
             }
             case _                                             => {
-              FastFuture.successful(Left("Authorization form is not complete"))
+              FastFuture.successful(Left(ErrorReason("Authorization form is not complete")))
             }
           }
         }
@@ -583,7 +610,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(password)) => {
-        bindUser(username, password, descriptor).toOption match {
+        bindUser(username, password, descriptor).map(_.toOption) flatMap {
           case Some(_) => {
             val rpIdentity: RelyingPartyIdentity =
               RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
@@ -652,7 +679,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(password)) => {
-        bindAdminUser(username, password).toOption match {
+        bindAdminUser(username, password, env.backOfficeServiceDescriptor).map(_.toOption) flatMap {
           case Some(_) => {
             val rpIdentity: RelyingPartyIdentity =
               RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
@@ -691,7 +718,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def webAuthnLoginFinish(
       body: JsValue,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, PrivateAppsUser]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
     import collection.JavaConverters._
 
@@ -727,15 +754,15 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(pass)) => {
         users.find(u => u.username == username) match {
-          case None       => FastFuture.successful(Left("Bad user"))
+          case None       => FastFuture.successful(Left(ErrorReason("Bad user")))
           case Some(user) => {
             env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-              case None             => FastFuture.successful(Left("bad request"))
+              case None             => FastFuture.successful(Left(ErrorReason("bad request")))
               case Some(rawRequest) => {
                 val request =
                   jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
 
-                bindUser(username, pass, descriptor) match {
+                bindUser(username, pass, descriptor) flatMap {
                   case Left(err)   => FastFuture.successful(Left(err))
                   case Right(user) => {
                     val rpIdentity: RelyingPartyIdentity =
@@ -756,9 +783,9 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                       )
                     ) match {
                       case Failure(e)                           =>
-                        FastFuture.successful(Left("bad request"))
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) if !result.isSuccess =>
-                        FastFuture.successful(Left("bad request"))
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) if result.isSuccess  => {
                         FastFuture.successful(Right(user))
                       }
@@ -770,13 +797,13 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           }
         }
       }
-      case (_, _)                       => FastFuture.successful(Left("Not Authorized"))
+      case (_, _)                       => FastFuture.successful(Left(ErrorReason("Not Authorized")))
     }
   }
 
   def webAuthnAdminLoginFinish(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, BackOfficeUser]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
 
     import collection.JavaConverters._
 
@@ -812,15 +839,15 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(pass)) => {
         users.find(u => u.username == username) match {
-          case None       => FastFuture.successful(Left("Bad user"))
+          case None       => FastFuture.successful(Left(ErrorReason("Bad user")))
           case Some(user) => {
             env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-              case None             => FastFuture.successful(Left("bad request"))
+              case None             => FastFuture.successful(Left(ErrorReason("bad request")))
               case Some(rawRequest) => {
                 val request =
                   jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
 
-                bindAdminUser(username, pass) match {
+                bindAdminUser(username, pass, env.backOfficeServiceDescriptor) flatMap {
                   case Left(err)   => FastFuture.successful(Left(err))
                   case Right(user) => {
                     val rpIdentity: RelyingPartyIdentity =
@@ -841,9 +868,9 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                       )
                     ) match {
                       case Failure(e)                           =>
-                        FastFuture.successful(Left("bad request"))
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) if !result.isSuccess =>
-                        FastFuture.successful(Left("bad request"))
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) if result.isSuccess  => {
                         FastFuture.successful(Right(user))
                       }
@@ -855,7 +882,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           }
         }
       }
-      case (_, _)                       => FastFuture.successful(Left("Not Authorized"))
+      case (_, _)                       => FastFuture.successful(Left(ErrorReason("Not Authorized")))
     }
   }
 

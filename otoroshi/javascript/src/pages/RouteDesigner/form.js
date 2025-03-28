@@ -377,8 +377,8 @@ export const schemas = {
           help: 'The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures',
           component: Target,
           defaultValue: {
-            id: 'mirror.otoroshi.io',
-            hostname: 'mirror.otoroshi.io',
+            id: 'request.otoroshi.io',
+            hostname: 'request.otoroshi.io',
             port: 443,
             tls: true,
             weight: 1,

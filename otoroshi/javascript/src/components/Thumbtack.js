@@ -36,44 +36,46 @@ export default function Thumbtack({ env, getTitle, reloadEnv }) {
         }
       }
     });
-    window.newPrompt('Shortcut title ?', { value: title }).then((newTitle) => {
-      if (newTitle) {
-        fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
-        }).then((r) => {
-          if (r.status === 200) {
-            return r.json().then((shortcurts) => {
-              const found = shortcurts.find((s) => {
-                if (_.isObject(s)) {
-                  return s.link === link;
-                } else {
-                  return false;
+    window
+      .newPrompt('Shortcut title ?', { value: title, title: 'Add a shortcut' })
+      .then((newTitle) => {
+        if (newTitle) {
+          fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+          }).then((r) => {
+            if (r.status === 200) {
+              return r.json().then((shortcurts) => {
+                const found = shortcurts.find((s) => {
+                  if (_.isObject(s)) {
+                    return s.link === link;
+                  } else {
+                    return false;
+                  }
+                });
+                let newShortCuts = [...shortcurts, { title: newTitle, link, icon }];
+                if (found) {
+                  newShortCuts = [...shortcurts];
                 }
+                fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(newShortCuts),
+                }).then((r) => {
+                  reloadEnv();
+                });
               });
-              let newShortCuts = [...shortcurts, { title: newTitle, link, icon }];
-              if (found) {
-                newShortCuts = [...shortcurts];
-              }
-              fetch('/bo/api/me/preferences/backoffice_sidebar_shortcuts', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newShortCuts),
-              }).then((r) => {
-                reloadEnv();
-              });
-            });
-          }
-        });
-      }
-    });
+            }
+          });
+        }
+      });
   };
 
   const uri = (window.location.pathname + window.location.search + window.location.hash).replace(

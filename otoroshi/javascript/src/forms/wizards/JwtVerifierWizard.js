@@ -1027,6 +1027,7 @@ function LoaderItem({ text, timeout, started }) {
       <div
         style={{
           fontWeight: loading ? 'normal' : 'bold',
+          color: 'var(--color_level2)',
         }}
       >
         <div>{text}</div>

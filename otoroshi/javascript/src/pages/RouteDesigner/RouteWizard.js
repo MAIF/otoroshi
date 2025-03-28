@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
 import { Plugins } from '../../forms/ng_plugins';
-import Loader from '../../components/Loader';
 import { Button } from '../../components/Button';
 
 const RouteNameStep = ({ state, onChange }) => (
@@ -38,7 +37,11 @@ const RouteChooser = ({ state, onChange }) => (
       }}
     >
       {[
-        { kind: 'empty', title: 'BLANK ROUTE', text: 'From scratch, no plugin added' },
+        {
+          kind: 'empty',
+          title: 'BLANK ROUTE',
+          text: 'From scratch, no plugin added',
+        },
         {
           kind: 'api',
           title: 'REST API',
@@ -67,9 +70,9 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${
-            state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          className={`btn py-3 wizard-route-chooser  ${
+            state.route.kind === kind ? 'btn-primaryColor' : 'btn-quiet'
+          }`}
           onClick={() => onChange(kind)}
           key={kind}
         >
@@ -150,7 +153,6 @@ const BackendStep = ({ state, onChange, onError, error }) => {
 };
 
 const ProcessStep = ({ state, history }) => {
-  const [loading, setLoading] = useState(true);
   const [createdRoute, setCreatedRoute] = useState({});
 
   const API_PLUGINS = [
@@ -236,7 +238,7 @@ const ProcessStep = ({ state, history }) => {
               {
                 ...template.backend.targets[0],
                 hostname: url.hostname,
-                port: ~~url.port || (secured ? 443 : 80),
+                port: url.port === 0 ? 0 : ~~url.port || (secured ? 443 : 80),
                 tls: secured,
                 tls_config: {
                   ...template.backend.targets[0].tls_config,
@@ -247,17 +249,14 @@ const ProcessStep = ({ state, history }) => {
           },
         })
         .then((r) => {
-          setLoading(false);
           setCreatedRoute(r);
         });
     });
   }, []);
 
-  const pluginsLength = PLUGINS[state.route.kind].length;
-
-  const timers = PLUGINS[state.route.kind].reduce((acc, _, i) => {
-    if (i === 0) return [100 + Math.floor(Math.random() * 300)];
-    return [...acc, acc[i - 1] + 100 + Math.floor(Math.random() * 300)];
+  const timers = [...PLUGINS[state.route.kind], {}, {}].reduce((acc, _, i) => {
+    if (i === 0) return [100 + Math.floor(Math.random() * 250)];
+    return [...acc, acc[i - 1] + 100 + Math.floor(Math.random() * 250)];
   }, []);
 
   return (
@@ -273,68 +272,92 @@ const ProcessStep = ({ state, history }) => {
           key={plugin}
         />
       ))}
-      <Loader
-        loading={loading}
-        minLoaderTime={pluginsLength === 0 ? 1500 : 100 + timers[timers.length - 1]}
-        loadingChildren={
-          <h3 style={{ textAlign: 'center' }} className="mt-3">
-            Summary
-          </h3>
-        }
-      >
-        {pluginsLength === 0 && (
-          <button
-            className="btn btn-primaryColor mx-auto"
-            style={{ borderRadius: '50%', width: '42px', height: '42px' }}
-          >
-            <i className="fas fa-check" />
-          </button>
-        )}
-        <div
-          className="mt-3"
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'column',
-          }}
-        >
-          <h3>Your route is now available!</h3>
 
-          <button
-            className="btn btn-primaryColor"
-            onClick={() => {
-              if (['mock', 'graphql'].includes(state.route.kind))
-                history.push(`/routes/${createdRoute.id}?tab=flow`, {
-                  plugin:
-                    state.route.kind === 'mock'
-                      ? 'cp:otoroshi.next.plugins.MockResponse'
-                      : 'cp:otoroshi.next.plugins.GraphQLBackend',
-                });
-              else history.push(`/routes/${createdRoute.id}?tab=flow`);
-            }}
-          >
-            {state.route.kind === 'mock'
-              ? 'Start creating mocks'
-              : state.route.kind === 'graphql'
-                ? 'Start creating schema'
-                : 'Start editing plugins'}
-          </button>
+      <div className="mt-3">
+        <LoaderItem
+          timeout={timers[timers.length - 2]}
+          text={<h4 style={{ color: 'var(--color_level3)' }}>Your route is now available</h4>}
+        />
+      </div>
+
+      <LoaderItem timeout={timers[timers.length - 1]}>
+        <div className="d-flex justify-content-center">
+          <div className="cards mx-3">
+            <div className="cards-header d-flex align-items-center justify-content-center">
+              <h4 className="mt-3" style={{ color: 'var(--text)' }}>
+                {state.route.kind === 'mock'
+                  ? 'Creating mocks'
+                  : state.route.kind === 'graphql'
+                    ? 'Creating schema'
+                    : 'Editing plugins'}
+              </h4>
+            </div>
+            <div className="cards-body">
+              <div className="cards-title">Draft way</div>
+              <div className="cards-description d-flex flex-column" style={{ flex: 1 }}>
+                <p>Continue to edit your route before publishing it</p>
+                <div className="d-flex justify-content-end mt-auto">
+                  <button
+                    className="btn btn-primaryColor"
+                    onClick={() => {
+                      if (['mock', 'graphql'].includes(state.route.kind))
+                        history.push(`/routes/${createdRoute.id}?tab=flow`, {
+                          plugin:
+                            state.route.kind === 'mock'
+                              ? 'cp:otoroshi.next.plugins.MockResponse'
+                              : 'cp:otoroshi.next.plugins.GraphQLBackend',
+                        });
+                      else history.push(`/routes/${createdRoute.id}?tab=flow`);
+                    }}
+                  >
+                    {state.route.kind === 'mock'
+                      ? 'Start creating mocks'
+                      : state.route.kind === 'graphql'
+                        ? 'Start creating schema'
+                        : 'Start editing plugins'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="cards mx-3 cursor-pointer">
+            <div className="cards-header d-flex align-items-center justify-content-center">
+              <h4 className="mt-3" style={{ color: 'var(--text)' }}>
+                Road to production
+              </h4>
+            </div>
+            <div className="cards-body">
+              <div className="cards-title">Publish way</div>
+              <div className="cards-description d-flex flex-column" style={{ flex: 1 }}>
+                <p>Expose the generate route to the world</p>
+                <div className="d-flex justify-content-end mt-auto">
+                  <button
+                    className="ms-2 btn btn-primaryColor"
+                    onClick={() => {
+                      nextClient
+                        .forEntityNext(nextClient.ENTITIES.ROUTES)
+                        .update({
+                          ...createdRoute,
+                          enabled: true,
+                        })
+                        .then(() => {
+                          history.push(`/routes/${createdRoute.id}?tab=informations`);
+                        });
+                    }}
+                  >
+                    Publish
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </Loader>
+      </LoaderItem>
     </>
   );
 };
 
-const LoaderItem = ({ text, timeout }) => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), timeout);
-
-    return () => timeout;
-  }, []);
-
+const LoaderItem = ({ text, timeout, children }) => {
   return (
     <div
       style={{
@@ -342,39 +365,26 @@ const LoaderItem = ({ text, timeout }) => {
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '6px',
+        animation: `routePlugin 1s ease-in-out forwards`,
+        animationDelay: `${timeout * 2}ms`,
+        opacity: 0,
       }}
     >
-      <Loader loading={loading} minLoaderTime={timeout}>
-        <button
-          className="btn btn-primaryColor mx-auto"
-          style={{
-            borderRadius: '50%',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <i className="fas fa-check" />
-        </button>
-      </Loader>
       <div
         style={{
-          flex: 1,
-          marginLeft: '12px',
-          fontWeight: loading ? 'normal' : 'bold',
+          fontWeight: 'bold',
         }}
       >
         {text}
       </div>
+      {children}
     </div>
   );
 };
 
 export class RouteWizard extends React.Component {
   state = {
-    steps: 4,
+    steps: 5,
     step: 1,
     route: {
       name: 'My new route',
@@ -418,21 +428,47 @@ export class RouteWizard extends React.Component {
     });
   };
 
+  displaySteps = (step, steps) => {
+    return Array.from({ length: steps }, (_, i) => {
+      const index = i + 1;
+      return (
+        <span
+          key={index}
+          style={{
+            display: 'inline-block',
+            width: 100,
+            height: 5,
+            marginRight: 5,
+            backgroundColor: index === step ? 'var(--color-primary)' : 'var(--bg-color_level3)',
+          }}
+        />
+      );
+    });
+  };
+
   render() {
     const { steps, step, error } = this.state;
 
     return (
       <div className="wizard">
         <div className="wizard-container">
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '2.5rem',
+            }}
+          >
             <label style={{ fontSize: '1.15rem' }}>
               <i
                 className="fas fa-times me-3"
                 onClick={() => this.props.hide()}
                 style={{ cursor: 'pointer' }}
               />
-              <span>{`Create a new route(Step ${step <= steps ? step : steps} of ${steps})`}</span>
+              <span>Create a new route</span>
             </label>
+            <div className="steps-bar">{this.displaySteps(step, steps)}</div>
 
             <div className="wizard-content">
               {step === 1 && (
@@ -462,10 +498,12 @@ export class RouteWizard extends React.Component {
                 />
               )}
               {step === 5 && <ProcessStep state={this.state} history={this.props.history} />}
-              {step <= steps && (
+
+              {step <= 4 && (
                 <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  className="mt-auto"
+                  className={`mt-auto d-flex align-items-center ${
+                    step !== 1 ? 'justify-content-between' : 'justify-content-end'
+                  }`}
                 >
                   {step !== 1 && (
                     <Button type="primaryColor" text="Previous" onClick={this.prevStep} />
@@ -473,40 +511,27 @@ export class RouteWizard extends React.Component {
                   <button
                     className="btn btn-primaryColor"
                     style={{
-                      backgroundColor: 'var(--color-primary)',
-                      borderColor: 'var(--color-primary)',
                       padding: '12px 48px',
                     }}
                     disabled={error}
-                    onClick={this.nextStep}
-                  >
-                    {step === steps ? 'Create' : 'Continue'}
-                  </button>
-
-                  {step === steps && (
-                    <button
-                      className="btn btn-primaryColor ms-1"
-                      style={{
-                        backgroundColor: 'var(--color-primary)',
-                        borderColor: 'var(--color-primary)',
-                        padding: '12px 48px',
-                      }}
-                      disabled={error}
-                      onClick={() => {
+                    onClick={() => {
+                      if (step === 4) {
                         this.setState(
                           {
                             route: {
                               ...this.state.route,
-                              enabled: true,
+                              enabled: false,
                             },
                           },
                           this.nextStep
                         );
-                      }}
-                    >
-                      Create and publish
-                    </button>
-                  )}
+                      } else {
+                        this.nextStep();
+                      }
+                    }}
+                  >
+                    {step === 4 ? 'Create' : 'Continue'}
+                  </button>
                 </div>
               )}
             </div>
