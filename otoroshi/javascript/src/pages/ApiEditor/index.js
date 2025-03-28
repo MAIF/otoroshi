@@ -533,6 +533,13 @@ const ROUTE_FORM_SETTINGS = {
                 label: 'Route name',
                 placeholder: 'My users route'
             },
+            enabled: {
+                type: 'box-bool',
+                label: 'Enabled',
+                props: {
+                    description: 'When enabled, this option allows traffic on.',
+                },
+            },
             frontend: {
                 type: 'form',
                 label: 'Frontend',
@@ -604,31 +611,41 @@ const ROUTE_FORM_SETTINGS = {
         {
             type: 'group',
             collapsable: true,
+            collapsed: true,
+            name: '1. Enabled the route',
+            fields: ['enabled'],
+            summaryFields: ['enabled']
+        },
+        {
+            type: 'group',
+            collapsable: true,
             collapsed: false,
-            name: '1. Add your domains',
+            name: '2. Add your domains',
             fields: ['frontend'],
-            summaryFields: ['domains']
         },
         {
             type: 'group',
             collapsable: true,
             collapsed: true,
-            name: '2. Add plugins to your route by selecting a flow',
+            name: '3. Add plugins to your route by selecting a flow',
             fields: ['flow_ref'],
+            summaryFields: ['flow_ref']
         },
         {
             type: 'group',
             collapsable: true,
             collapsed: true,
-            name: '3. Configure the backend',
+            name: '4. Configure the backend',
             fields: ['backend'],
+            summaryFields: ['backend']
         },
         {
             type: 'group',
             collapsable: true,
             collapsed: true,
-            name: '4. Additional informations',
+            name: '5. Additional informations',
             fields: ['name'],
+            summaryFields: ['name']
         }
     ]
 }
@@ -680,6 +697,7 @@ function NewRoute(props) {
                     setRoute({
                         ...route,
                         name: 'My first route',
+                        enabled: true,
                         frontend,
                         backend: item.backends.length && item.backends[0].id,
                         usingExistingBackend: true,

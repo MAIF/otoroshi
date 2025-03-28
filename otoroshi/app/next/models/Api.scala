@@ -71,7 +71,7 @@ case object ApiRemoved extends ApiState {
 //}
 
 case class ApiRoute(id: String,
-                    enabled: Boolean,
+                    enabled: Boolean = true,
                     name: Option[String],
                     frontend: NgFrontend,
                     flowRef: String,
