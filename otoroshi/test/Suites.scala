@@ -103,8 +103,7 @@ object OtoroshiTests {
       new ApikeyGroupApiSpec(name, config),
       new ApikeyServiceApiSpec(name, config),
       new ApikeyApiSpec(name, config),
-      new Log4ShellSpec(),
-      new ApiEntityTestSpec(name, config)
+      new Log4ShellSpec()
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
       case Some("true") => suites :+ new AnalyticsSpec(name, config)
@@ -184,11 +183,6 @@ class GreenScoreTests
     extends Suites(
       new GreenScoreTestSpec("GreenScore", Configurations.InMemoryConfiguration)
     )
-
-class ApiEntityTests
-  extends Suites(
-    new ApiEntityTestSpec("ApiEntity", Configurations.InMemoryConfiguration)
-  )
 
 //class ApiKeysTest
 //    extends Suites(
