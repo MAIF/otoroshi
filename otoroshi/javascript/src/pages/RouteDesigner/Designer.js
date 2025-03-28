@@ -1837,10 +1837,10 @@ const UnselectedNode = ({
   ports,
 }) => {
   if (route && route.frontend && route.backend && !hideText) {
-    const frontend = route.frontend;
-    const backend = route.backend;
+    const frontend = route.frontend
+    const backend = route.backend
 
-    const rawMethods = (frontend.methods || []).filter((m) => m.length);
+    const rawMethods = (frontend.methods || []).filter((m) => m.length)
 
     const allMethods =
       rawMethods && rawMethods.length > 0
@@ -1853,18 +1853,18 @@ const UnselectedNode = ({
             {m}
           </span>
         ))
-        : [<span className="badge bg-success">ALL</span>];
+        : [<span className="badge bg-success">ALL</span>]
 
     const copy = (value, setCopyIconName) => {
       if (window.isSecureContext && navigator.clipboard) {
-        navigator.clipboard.writeText(value);
+        navigator.clipboard.writeText(value)
       } else {
-        unsecuredCopyToClipboard(value);
+        unsecuredCopyToClipboard(value)
       }
-      setCopyIconName('fas fa-check');
+      setCopyIconName('fas fa-check')
 
       setTimeout(() => {
-        setCopyIconName('fas fa-copy');
+        setCopyIconName('fas fa-copy')
       }, 2000);
     };
 

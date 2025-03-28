@@ -219,7 +219,7 @@ function Subscriptions(props) {
     const deleteItem = item => client.delete(item)
         .then(() => window.location.reload())
 
-    if (rawSubscriptions.isLoading || !item)
+    if (rawSubscriptions.isLoading)
         return <SimpleLoader />
 
     return <Table
@@ -1900,7 +1900,7 @@ function NewAPI(props) {
             .then(() => historyPush(history, location, `/apis/${value.id}`));
     }
 
-    if (!value || !item)
+    if (!value)
         return <SimpleLoader />
 
     return <>

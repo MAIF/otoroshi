@@ -72,7 +72,6 @@ export default ({ route }) => {
     const params = new URLSearchParams(window.location.search);
     const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
     const queryTab = params.get('tab');
-    // console.log(currentTab, tab, onTryIt, queryTab)
 
     if (onTryIt) {
       return onTryIt === tab ? 'active' : '';

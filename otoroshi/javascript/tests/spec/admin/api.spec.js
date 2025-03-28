@@ -1,5 +1,4 @@
 const { test, expect } = require('@playwright/test')
-const { SECTIONS } = require('../../utils')
 
 let context
 
@@ -64,8 +63,6 @@ async function publishedDraftAPI(page) {
 
     await page.getByText('Learn about testing API').click()
     await page.locator('div').filter({ hasText: /^Off$/ }).locator('div').nth(1).click()
-    await page.getByRole('button', { name: 'Update DEV' }).click()
-
     await page.getByRole('link', { name: ' Overview' }).click()
 
     await page.getByText('Publish your API to the').click()

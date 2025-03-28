@@ -74,11 +74,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
     <>
       <div
         className={`wizard ${!open ? 'wizard--hidden' : ''}`}
-        style={{
-          background: 'none',
-        }}
-        onClick={closeTab}
-      >
+        style={{ background: 'none' }}
+        onClick={closeTab}>
         <div
           className={`wizard-container ${!open ? 'wizard--hidden' : ''}`}
           style={{

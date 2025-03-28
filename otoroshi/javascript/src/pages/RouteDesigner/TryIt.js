@@ -279,8 +279,6 @@ export default function ({ route, hide }) {
 
     const { clientId, clientSecret } = apikey || request.apikey;
 
-    console.log(format, apikey, apikeyHeader);
-
     return {
       ...Object.fromEntries(
         Object.entries(request.headers).filter(
@@ -858,9 +856,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       else if (unit === 'ns') return value;
       else return roundNsTo(value);
     }
-  };
-
-  console.log(selectedStep, selectedPlugin);
+  }
 
   const spaces = range(0, 50)
     .map((i) => '          ')

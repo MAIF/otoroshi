@@ -211,7 +211,6 @@ export function PublisDraftButton(props) {
     if (isFirstRender.current) {
       isFirstRender.current = false;
     } else {
-      console.log('reset after pathname changed', pathname);
       resetDraftSignal();
     }
   }, [pathname]);
