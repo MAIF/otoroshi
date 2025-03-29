@@ -2160,6 +2160,7 @@ class BackOfficeController(
         `@service` = route.name,
         descriptor = Some(route.legacy),
         route = Some(route),
+        matchedJwtVerifier = None,
         `@product` = route.metadata.getOrElse("product", "--"),
         remainingQuotas = RemainingQuotas(),
         viz = None,

@@ -319,6 +319,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
           subdomain = ""
         )
       ),
+      matchedJwtVerifier = None,
       remainingQuotas = RemainingQuotas(),
       viz = None,
       geolocationInfo = None,

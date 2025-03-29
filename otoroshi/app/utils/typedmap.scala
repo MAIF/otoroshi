@@ -48,9 +48,11 @@ final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends 
       case ((key, value: AtomicInteger), idx)                                                      => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value.get()))
       case ((key, value: AtomicBoolean), idx)                                                      => (key.displayName.getOrElse(s"key-${idx}"), JsBoolean(value.get()))
       case ((key, value: Target), idx)                                                             => (key.displayName.getOrElse(s"key-${idx}"), value.json)
+      case ((key, value: JwtVerifier), idx)                                                        => (key.displayName.getOrElse(s"key-${idx}"), value.asJson)
       case ((key, value: GwError), idx)                                                            => (key.displayName.getOrElse(s"key-${idx}"), value.json)
       case ((key, value: JsValue), idx)                                                            => (key.displayName.getOrElse(s"key-${idx}"), value)
       case ((key, value: Jsonable), idx)                                                           => (key.displayName.getOrElse(s"key-${idx}"), value.json)
+      case ((key, value: AsJson), idx)                                                             => (key.displayName.getOrElse(s"key-${idx}"), value.asJson)
       case ((key, value: Map[_, _]), idx)                                                          =>
         (
           key.displayName.getOrElse(s"key-${idx}"),

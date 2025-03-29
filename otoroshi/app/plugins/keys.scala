@@ -2,16 +2,15 @@ package otoroshi.plugins
 
 import akka.Done
 import akka.util.ByteString
-
-import java.util.concurrent.atomic.AtomicLong
-import otoroshi.models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, RemainingQuotas, Target}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
+import otoroshi.models._
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.RequestHeader
 
+import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Promise
 
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
@@ -19,6 +18,7 @@ case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: J
 object Keys {
   val BackendDurationKey       = TypedKey[Long]("otoroshi.core.BackendDuration")
   val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
+  val JwtVerifierKey           = TypedKey[JwtVerifier]("otoroshi.core.JwtVerifier")
   val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
   val ApiKeyJwtKey             = TypedKey[JsValue]("otoroshi.core.ApiKeyJwt")
   val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")

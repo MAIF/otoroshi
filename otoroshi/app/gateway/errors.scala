@@ -142,7 +142,8 @@ object Errors {
             Some(attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message + " / " + message).getOrElse(message)),
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
         ).toAnalytics()(env)
       }
       case (_, Some(route))      => {
@@ -233,7 +234,8 @@ object Errors {
             Some(attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message + " / " + message).getOrElse(message)),
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
         ).toAnalytics()(env)
       }
       case _                     => {
@@ -288,7 +290,8 @@ object Errors {
             Some(attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message + " / " + message).getOrElse(message)),
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
         ).toAnalytics()(env)
       }
     }

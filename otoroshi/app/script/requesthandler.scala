@@ -251,7 +251,8 @@ class ForwardTrafficHandler extends RequestHandler {
               clientCertChain = Seq.empty[String],
               userAgentInfo = None,
               geolocationInfo = None,
-              extraAnalyticsData = None
+              extraAnalyticsData = None,
+              matchedJwtVerifier = None,
             ).toAnalytics()
             isChunked match {
               case true  => {
