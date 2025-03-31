@@ -26,7 +26,7 @@ object Keys {
   val UserKey                  = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
   val GeolocationInfoKey       = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
   val UserAgentInfoKey         = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
-  val ExtraAnalyticsDataKey    = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
+  val ExtraAnalyticsDataKey    = TypedKey[JsObject]("otoroshi.plugins.ExtraAnalyticsData")
 
   val CaptureRequestBodyKey         = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
   val RequestTimestampKey           = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
@@ -41,7 +41,7 @@ object Keys {
   val RequestNumberKey              = TypedKey[Int]("otoroshi.core.RequestNumber")
   val SnowFlakeKey                  = TypedKey[String]("otoroshi.core.SnowFlake")
   val ElCtxKey                      = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
-  val GatewayEventExtraInfosKey     = TypedKey[JsValue]("otoroshi.core.GatewayEventExtraInfos")
+  val GatewayEventExtraInfosKey     = TypedKey[JsObject]("otoroshi.core.GatewayEventExtraInfos")
   val PreExtractedRequestTargetKey  = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
   val PreExtractedRequestTargetsKey = TypedKey[Seq[NgTarget]]("otoroshi.core.PreExtractedRequestTargets")
   val GwErrorKey                    = TypedKey[GwError]("otoroshi.core.GwError")

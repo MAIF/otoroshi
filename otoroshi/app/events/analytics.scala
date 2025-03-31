@@ -352,7 +352,7 @@ case class GatewayEvent(
     headersOut: Seq[Header],
     otoroshiHeadersIn: Seq[Header],
     otoroshiHeadersOut: Seq[Header],
-    extraInfos: Option[JsValue],
+    extraInfos: Option[JsObject],
     responseChunked: Boolean,
     identity: Option[Identity] = None,
     gwError: Option[String] = None,
@@ -368,7 +368,7 @@ case class GatewayEvent(
     clientCertChain: Seq[String] = Seq.empty[String],
     userAgentInfo: Option[JsValue],
     geolocationInfo: Option[JsValue],
-    extraAnalyticsData: Option[JsValue]
+    extraAnalyticsData: Option[JsObject]
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = headers.find(h => h.key.toLowerCase() == "user-agent").map(_.value)

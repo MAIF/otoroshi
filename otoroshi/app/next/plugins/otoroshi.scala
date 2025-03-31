@@ -373,7 +373,6 @@ class OtoroshiChallenge extends NgRequestTransformer {
           )
           val extraInfos    = ctx.attrs
             .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
-            .map(_.as[JsObject])
             .getOrElse(Json.obj())
           val newExtraInfos =
             extraInfos ++ Json.obj(

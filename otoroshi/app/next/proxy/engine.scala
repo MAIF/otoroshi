@@ -3819,7 +3819,7 @@ class ProxyEngine() extends RequestHandler {
         gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
         userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
         geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-        extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+        extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
         matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
       )
       evt.toAnalytics()
@@ -3982,7 +3982,7 @@ class ProxyEngine() extends RequestHandler {
           gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-          extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+          extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
           matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
         )
 
