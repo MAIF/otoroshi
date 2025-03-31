@@ -24,6 +24,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[OpenTelemetry support](./opentelemetry.md)
 * @ref:[Green score](./green-score.md)
 * @ref:[Custom HTTP Listeners](./http-listeners.md)
+* @ref:[Sunsetting Service Descriptors](./deprecating-sd.md)
 
 @@@ index
 
@@ -49,5 +50,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [OpenTelemetry support](./opentelemetry.md)
 * [Green score](./green-score.md)
 * [Custom HTTP Listeners](./http-listeners.md)
+* [Sunsetting Service Descriptors](./deprecating-sd.md)
   
 @@@
