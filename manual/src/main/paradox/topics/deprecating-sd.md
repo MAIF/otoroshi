@@ -28,7 +28,11 @@ you can enable a job launched after the start of the otoroshi cluster by setting
 
 ## Migration API
 
-TODO
+You can migrate service descriptor to routes by calling the following endpoint
+
+```sh
+curl -X POST -H 'Content-Type: application/json' http://otoroshi-api.oto.tools:8080/api/services/service-xxxxxxxx/route -d '{}'
+```
 
 ## Migration button
 
