@@ -94,30 +94,38 @@ class ServiceDescriptorMigrationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
+  private def warn(message: String)(implicit env: Env): Unit = {
+    env.logger.warn(s"[service-descriptors-migration] $message")
+  }
+
+  private def error(message: String, t: Throwable)(implicit env: Env): Unit = {
+    env.logger.error(s"[service-descriptors-migration] $message", t)
+  }
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     if (env.configuration.getOptional[Boolean]("otoroshi.service-descriptors-migration-job.enabled").getOrElse(false)) {
-      env.logger.warn("Running full Service Descriptors migration !!!")
-      env.logger.warn("")
+      warn("Running full Service Descriptors migration !!!")
+      warn("")
       env.datastores.serviceDescriptorDataStore.findAll(force = true).flatMap { descriptors =>
         val backup = new File("./service-descriptors-backup.json")
-        env.logger.warn(s" - writing a backup to '${backup.getAbsolutePath}'")
-        env.logger.warn("")
+        warn(s" - writing a backup to '${backup.getAbsolutePath}'")
+        warn("")
         val json = JsArray(descriptors.map(_.json))
         Files.writeString(backup.toPath, json.stringify)
         Source(descriptors.toList)
           .mapAsync(1) { descriptor =>
-            env.logger.warn(s" - migrating '${descriptor.name}' ...")
+            warn(s" - migrating '${descriptor.name}' ...")
             val route = NgRoute.fromServiceDescriptor(descriptor, debug = false)
             route.save().flatMap { _ =>
               env.datastores.serviceDescriptorDataStore.delete(descriptor).map { _ =>
-                env.logger.warn(s" - migrating '${descriptor.name}' - OK")
+                warn(s" - migrating '${descriptor.name}' - OK")
               }
             }.recover {
-              case t: Throwable => env.logger.error(s"error while migrating '${descriptor.name}'", t)
+              case t: Throwable => error(s"error while migrating '${descriptor.name}'", t)
             }
           }.runWith(Sink.ignore)(env.otoroshiMaterializer)
           .andThen {
-            case _ => env.logger.warn("migration done !")
+            case _ => warn("migration done !")
           }
       }.map(_ => ())
     } else {
