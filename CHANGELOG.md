@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.0.0] - 2025-03-31
+
+
+https://github.com/MAIF/otoroshi/milestone/112?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.24.0...v17.0.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.0.0
+
+
+### Added 
+
+- API entity with full lifecycle management (#2098)
+- Support flows of plugins (#2101)
+- Allow defining custom routes in API (#2102)
+- Allow defining custom backends in API (#2103)
+- Allow defining custom customers in API (#2104)
+- Allow defining custom subscriptions in API (#2105)
+- Expose full API health and metrics dashboard (#2106)
+- Implement API state management (#2107)
+- Investigate API deployment lifecycle management (#2108)
+- Allow activating circuit breaker on a specific route only (#2111)
+- Support target failover (#2113)
+- Allow Expression Language to use private apps user tokens (#2115)
+- Support JDK 24 (#2116)
+- allow to select a specific api group in the admin api openapi descriptor (#2118)
+- allow openapi to be consumed as yaml (#2119)
+- Add extra information in GatewayEvent about apikey rejection reason (#2120)
+- Add matched jwt verifier in GatewayEvents and attrs (#2124)
+- ServiceDescriptor migration toolkit (#2125)       
+      
+### Changed 
+
+- Change the type of `otoroshi.plugins.keys.ExtraAnalyticsData` (#2126)
+- Change the type of `otoroshi.plugins.keys.GatewayEventExtraInfos` (#2127)       
+      
+### Fixed 
+
+- Admin API should not be served in worker mode (#2112)
+- Scala schema fails on some SDK annotations (#2117)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @cbois
+
 ## [16.24.0] - 2025-02-26
 
 
