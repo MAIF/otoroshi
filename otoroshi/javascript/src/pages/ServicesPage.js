@@ -263,7 +263,7 @@ export class ServicesPage extends Component {
             routes
           </Link>
           . Service descriptors will be removed in Otoroshi v18.0.0.
-          </div>
+        </div>
         <Table
           parentProps={this.props}
           selfUrl="services"

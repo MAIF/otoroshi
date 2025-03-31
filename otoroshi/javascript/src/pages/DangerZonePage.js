@@ -36,6 +36,21 @@ function tryOrFalse(f) {
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
+function CircuitBreakerWarn(props) {
+  if (props.rawValue.useCircuitBreakers) {
+    return null;
+  }
+  return (
+    <div className="alert alert-danger" role="danger" style={{ marginTop: 20 }}>
+      You are not using circuit breaker. This behavior is linked to ServiceDescriptors and is deprecated There is a new way to configure otoroshi through{' '}
+      <Link style={{ color: 'var(--color-red)' }} to="/routes">
+        routes
+      </Link>
+      {' '} that always use circuit breakers. Service descriptors will be removed in Otoroshi v18.0.0.
+    </div>
+  )
+}
+
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
   for (let i in b) if (a[i] !== b[i]) return true;
@@ -713,6 +728,12 @@ export class DangerZonePage extends Component {
         help: 'Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.',
       },
     },
+    useCircuitBreakerWarn: {
+      type: CircuitBreakerWarn,
+      props: {
+        label: ''
+      }
+    },
     useCircuitBreakers: {
       type: 'bool',
       props: {
@@ -1243,6 +1264,7 @@ export class DangerZonePage extends Component {
     'apiReadOnly',
     // 'streamEntityOnly',
     'autoLinkToDefaultGroup',
+    'useCircuitBreakerWarn',
     'useCircuitBreakers',
     value.logAnalyticsOnServer ? 'logAnalyticsOnServer' : null,
     'useAkkaHttpClient',
