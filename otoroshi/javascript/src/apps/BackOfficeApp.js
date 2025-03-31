@@ -69,6 +69,37 @@ import { NgSelectRenderer } from '../components/nginputs';
 import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
 
+class ServiceDescriptorsMigrationPopup extends Component {
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <p style={{ textAlign: 'justify' }}>
+            It seems that you are still using Service Descriptors to route traffic, as you may know, Service Descriptors have been deprecated for <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 2 years</span>, since the rewrite of the proxy engine.
+          </p>
+          <p style={{ textAlign: 'justify' }}>
+            The next major version of Otoroshi (<span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span> for Service Descriptors. 
+            Once this version will be deployed, all your remaning Service Descriptors will be automatically migrated and deleted without further notice. 
+          </p>
+          <p style={{ textAlign: 'justify' }}>
+            We count <a href="/bo/dashboard/services" target="_blank"><span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>{this.props.count}</span> Service Descriptor</a> remaining in your database.
+            For more information about that, please read{' '}      
+            <a href="https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html" target="_blank">
+              the documentation
+            </a>
+          </p>
+          <p style={{ textAlign: 'justify' }}>Thanks for your understanding.</p>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={(e) => this.props.ok()}>
+            Close
+          </button>
+        </div>
+      </>
+    )
+  }
+}
+
 class AnonymousReportingEnabled extends Component {
   render() {
     return (
@@ -188,6 +219,24 @@ class BackOfficeAppContainer extends Component {
     }
   };
 
+  triggerServiceDescriptorsMigrationPopup = (env) => {
+    if (env.serviceDescriptorsCount > 0) {
+      const key = 'otoroshi-migrate-service-descs-popup';
+      const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
+      const ttl = (last + (8 * 24 * 60 * 60 * 1000));
+      if (ttl < Date.now()) {
+        window
+          .popup(
+            'Service Descriptors Sunsetting',
+            (ok, cancel) => <ServiceDescriptorsMigrationPopup count={env.serviceDescriptorsCount} ok={ok} cancel={cancel} />,
+            { style: { width: '100%' } }
+          ).then(() => {
+            localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }))
+          });
+      }
+    }
+  };
+
   componentDidMount() {
     Promise.all([
       BackOfficeServices.env(),
@@ -202,6 +251,7 @@ class BackOfficeAppContainer extends Component {
         usedNewEngine: env.newEngineEnabled,
       });
       this.triggerAnonymousReportingPopup(env);
+      this.triggerServiceDescriptorsMigrationPopup(env);
     });
     this.readShortMenu();
   }

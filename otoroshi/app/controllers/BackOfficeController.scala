@@ -442,6 +442,7 @@ class BackOfficeController(
         users       <- env.datastores.simpleAdminDataStore.findAll()
         refusedOpt  <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
         preferences <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
+        serviceDescriptors <- env.datastores.serviceDescriptorDataStore.count()
       } yield {
         val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
         val refusedDate               = refusedOpt.map(_.utf8String).map(DateTime.parse)
@@ -498,6 +499,7 @@ class BackOfficeController(
             "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "providerDashboardTitle"  -> env.providerDashboardTitle,
             "providerDashboardSecret" -> env.providerDashboardSecret,
+            "serviceDescriptorsCount" -> serviceDescriptors,
             "instanceId"              -> config.otoroshiId,
             "instanceName"            -> env.name,
             "anonymousReporting"      -> Json.obj(
