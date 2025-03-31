@@ -257,13 +257,13 @@ export class ServicesPage extends Component {
   render() {
     return (
       <div>
-        <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
+        <div className="alert alert-danger" role="danger" style={{ marginTop: 20 }}>
           You are using service descriptors. There is a new way to configure otoroshi through{' '}
-          <Link style={{ color: 'var(--color-primary)' }} to="/routes">
+          <Link style={{ color: 'var(--color-red)' }} to="/routes">
             routes
           </Link>
-          . Service descriptors will be eventually deprecated in future otoroshi versions.
-        </div>
+          . Service descriptors will be removed in Otoroshi v18.0.0.
+          </div>
         <Table
           parentProps={this.props}
           selfUrl="services"
