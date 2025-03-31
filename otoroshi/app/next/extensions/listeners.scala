@@ -150,7 +150,7 @@ case class HttpListener(
 }
 
 object HttpListener {
-  val logger  = Logger("otoroshi-http-listeners")
+  val logger                                                              = Logger("otoroshi-http-listeners")
   def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env) = HttpListener(
     location = EntityLocation.ownEntityLocation(ctx)(env),
     id = "http-listener_" + UUID.randomUUID().toString,
@@ -160,7 +160,7 @@ object HttpListener {
     config = HttpListenerConfig.default,
     metadata = Map.empty
   )
-  val format  = new Format[HttpListener] {
+  val format                                                              = new Format[HttpListener] {
     override def writes(o: HttpListener): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,

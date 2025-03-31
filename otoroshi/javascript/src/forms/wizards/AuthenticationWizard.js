@@ -214,7 +214,7 @@ export class AuthenticationWizard extends React.Component {
     breadcrumb: ['Informations'],
   };
 
-  onChange = (field, value, callback = () => { }) => {
+  onChange = (field, value, callback = () => {}) => {
     this.setState(
       {
         authenticationConfig: {
@@ -476,9 +476,9 @@ export class AuthenticationWizard extends React.Component {
 
                               const allProps = props
                                 ? {
-                                  ...props,
-                                  onChange: (e) => props.onChange(e, i),
-                                }
+                                    ...props,
+                                    onChange: (e) => props.onChange(e, i),
+                                  }
                                 : defaultProps;
 
                               return React.createElement(component, {
@@ -500,12 +500,12 @@ export class AuthenticationWizard extends React.Component {
                                   transformSettings:
                                     authenticationConfig.strategy?.type === 'Transform'
                                       ? {
-                                        location: authenticationConfig.strategy?.transformSettings
-                                          ?.location
-                                          ? authenticationConfig.source
-                                          : authenticationConfig.strategy?.transformSettings
-                                            ?.out_location?.source,
-                                      }
+                                          location: authenticationConfig.strategy?.transformSettings
+                                            ?.location
+                                            ? authenticationConfig.source
+                                            : authenticationConfig.strategy?.transformSettings
+                                                ?.out_location?.source,
+                                        }
                                       : undefined,
                                 },
                               }}
@@ -702,7 +702,7 @@ function TypeStep({ value, onChange }) {
   return (
     <>
       <h3>Choose your provider</h3>
-      <NgForm value={value} schema={schema} flow={['type']} onChange={() => { }} />
+      <NgForm value={value} schema={schema} flow={['type']} onChange={() => {}} />
     </>
   );
 }
@@ -749,7 +749,7 @@ function OAuth2PreConfiguration({ value, onChange }) {
   return (
     <>
       <h3>Let's start with the OAuth2 configuration</h3>
-      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => { }} />
+      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => {}} />
     </>
   );
 }

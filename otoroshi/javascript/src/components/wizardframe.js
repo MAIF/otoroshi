@@ -10,18 +10,30 @@ function Header({ onClose, title }) {
   );
 }
 
-function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okClassName = '', state }) {
+function WizardActions({
+  cancel,
+  ok,
+  cancelLabel,
+  okLabel,
+  noCancel,
+  noOk,
+  okClassName = '',
+  state,
+}) {
   return (
-    <div className="d-flex mt-auto justify-content-between align-items-center" style={{
-      position: 'sticky',
-      bottom: 0,
-      right: 0,
-      left: 0,
-      marginLeft: '-50px',
-      padding: '1rem',
-      background: 'var(--bg-color_level2)',
-      zIndex: 100
-    }}>
+    <div
+      className="d-flex mt-auto justify-content-between align-items-center"
+      style={{
+        position: 'sticky',
+        bottom: 0,
+        right: 0,
+        left: 0,
+        marginLeft: '-50px',
+        padding: '1rem',
+        background: 'var(--bg-color_level2)',
+        zIndex: 100,
+      }}
+    >
       {!noCancel && (
         <Button
           className="ms-auto"
@@ -38,7 +50,7 @@ function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okCla
       {!noOk && (
         <Button
           className={okClassName ? okClassName : 'ms-auto'}
-          onClick={e => ok(e, state)}
+          onClick={(e) => ok(e, state)}
           text={okLabel || 'Ok'}
           type="save"
           style={{
@@ -53,20 +65,25 @@ function WizardActions({ cancel, ok, cancelLabel, okLabel, noCancel, noOk, okCla
 }
 
 export function WizardFrame(props) {
-
-  const [state, setState] = useState()
+  const [state, setState] = useState();
 
   return (
     <div className="wizard">
       <div className="wizard-container">
-        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem 0 0 2.5rem', flex: 1, position: 'relative' }}>
+        <div
+          className="d-flex"
+          style={{
+            flexDirection: 'column',
+            padding: '2.5rem 0 0 2.5rem',
+            flex: 1,
+            position: 'relative',
+          }}
+        >
           <Header title={props.title} onClose={props.cancel} />
-          {props.children
-            ? props.schildren
-            : props.body(props.ok, props.cancel, state, setState)}
+          {props.children ? props.schildren : props.body(props.ok, props.cancel, state, setState)}
           <WizardActions {...props} state={state} />
         </div>
       </div>
     </div>
-  )
+  );
 }

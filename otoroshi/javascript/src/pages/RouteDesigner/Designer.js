@@ -25,7 +25,12 @@ import {
 } from './DesignerConfig';
 import Loader from '../../components/Loader';
 import { FeedbackButton } from './FeedbackButton';
-import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase, unsecuredCopyToClipboard } from '../../util';
+import {
+  toUpperCaseLabels,
+  REQUEST_STEPS_FLOW,
+  firstLetterUppercase,
+  unsecuredCopyToClipboard,
+} from '../../util';
 import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -250,66 +255,66 @@ const Modal = ({ question, onOk, onCancel }) => (
   </div>
 );
 
-export default forwardRef(
-  ({ value, setSaveButton, history, setValue, ...props }, ref) => {
-    const { routeId } = props;
-    const location = useLocation();
+export default forwardRef(({ value, setSaveButton, history, setValue, ...props }, ref) => {
+  const { routeId } = props;
+  const location = useLocation();
 
-    const childRef = useRef();
+  const childRef = useRef();
 
-    useImperativeHandle(ref, () => ({
-      onTestingButtonClick() {
-        childRef.current.toggleTryIt();
-      },
-    }));
+  useImperativeHandle(ref, () => ({
+    onTestingButtonClick() {
+      childRef.current.toggleTryIt();
+    },
+  }));
 
-    useEffect(() => {
-      if (location?.state?.showTryIt || window.location.search.includes('showTryIt')) {
-        childRef.current.toggleTryIt();
-      } else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
-    }, [location.state]);
+  useEffect(() => {
+    if (location?.state?.showTryIt || window.location.search.includes('showTryIt')) {
+      childRef.current.toggleTryIt();
+    } else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
+  }, [location.state]);
 
-    return (
-      <Designer
-        ref={childRef}
-        history={history}
-        routeId={routeId}
-        value={value}
-        setValue={setValue}
-        setSaveButton={setSaveButton}
-      />
-    );
-  }
-);
+  return (
+    <Designer
+      ref={childRef}
+      history={history}
+      routeId={routeId}
+      value={value}
+      setValue={setValue}
+      setSaveButton={setSaveButton}
+    />
+  );
+});
 
 const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => {
-  return <div className="main-view relative-container" style={{ flex: 'initial' }}>
-    <NodeElement
-      element={frontend}
-      className="frontend-container-button"
-      selectedNode={selectedNode}
-      setSelectedNode={setSelectedNode}
-      bold={true}
-      onRemove={removeNode}
-    />
-    <div
-      className="frontend-button"
-      style={{
-        opacity: !selectedNode || (selectedNode && selectedNode.id === 'Frontend') ? 1 : 0.25,
-        background:
-          selectedNode && selectedNode.id === 'Frontend'
-            ? 'linear-gradient(to right, var(--color-primary) 55%, transparent 1%)'
-            : 'linear-gradient(to right, var(--bg-color_level2) 55%, transparent 1%)',
-        color:
-          selectedNode && selectedNode.id === 'Frontend'
-            ? 'var(--color-white)'
-            : 'var(--color_level2)',
-      }}
-    >
-      <i className="fas fa-user frontend-button-icon" />
+  return (
+    <div className="main-view relative-container" style={{ flex: 'initial' }}>
+      <NodeElement
+        element={frontend}
+        className="frontend-container-button"
+        selectedNode={selectedNode}
+        setSelectedNode={setSelectedNode}
+        bold={true}
+        onRemove={removeNode}
+      />
+      <div
+        className="frontend-button"
+        style={{
+          opacity: !selectedNode || (selectedNode && selectedNode.id === 'Frontend') ? 1 : 0.25,
+          background:
+            selectedNode && selectedNode.id === 'Frontend'
+              ? 'linear-gradient(to right, var(--color-primary) 55%, transparent 1%)'
+              : 'linear-gradient(to right, var(--bg-color_level2) 55%, transparent 1%)',
+          color:
+            selectedNode && selectedNode.id === 'Frontend'
+              ? 'var(--color-white)'
+              : 'var(--color_level2)',
+        }}
+      >
+        <i className="fas fa-user frontend-button-icon" />
+      </div>
     </div>
-  </div>
-}
+  );
+};
 
 const Container = ({ children, onClick, showTryIt }) => {
   const [propagate, setPropagate] = useState();
@@ -558,7 +563,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -574,7 +579,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -592,9 +597,7 @@ class Designer extends React.Component {
         ? Promise.resolve(incomingRoute)
         : this.props.value
           ? Promise.resolve(this.props.value)
-          : nextClient
-            .forEntityNext(nextClient.ENTITIES.ROUTES)
-            .findById(this.props.routeId),
+          : nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
         Plugins('Designer').map((plugin) => {
@@ -602,10 +605,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                showAdvancedDesignerView: (pluginName) => {
-                  this.setState({ advancedDesignerView: pluginName });
-                },
-              })
+                  showAdvancedDesignerView: (pluginName) => {
+                    this.setState({ advancedDesignerView: pluginName });
+                  },
+                })
               : plugin.config_schema,
           };
         })
@@ -684,43 +687,41 @@ class Designer extends React.Component {
         };
       }
 
-      const isApis = window.location.pathname.includes('/apis')
+      const isApis = window.location.pathname.includes('/apis');
 
       const frontendConfiguration = isApis ? ApiFrontend : Frontend;
       const backendConfiguration = isApis ? ApiBackend : Backend;
 
-      this.setState(
-        {
-          ports,
-          backends,
-          loading: false,
-          categories: categories.filter((category) => !['Job'].includes(category)),
-          route: { ...routeWithNodeId },
-          originalRoute: { ...routeWithNodeId },
-          plugins: formattedPlugins.map((p) => ({
-            ...p,
-            selected: p.plugin_multi_inst
-              ? false
-              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-          })),
-          nodes,
-          frontend: {
-            ...frontendConfiguration,
-            config_schema: toUpperCaseLabels(frontendConfiguration.schema),
-            config_flow: frontendConfiguration.flow,
-            nodeId: 'Frontend',
-            readOnly: isApis
-          },
-          backend: {
-            ...backendConfiguration,
-            config_schema: toUpperCaseLabels(backendConfiguration.schema),
-            config_flow: backendConfiguration.flow,
-            nodeId: 'Backend',
-            readOnly: isApis
-          },
-          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-        }
-      );
+      this.setState({
+        ports,
+        backends,
+        loading: false,
+        categories: categories.filter((category) => !['Job'].includes(category)),
+        route: { ...routeWithNodeId },
+        originalRoute: { ...routeWithNodeId },
+        plugins: formattedPlugins.map((p) => ({
+          ...p,
+          selected: p.plugin_multi_inst
+            ? false
+            : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+        })),
+        nodes,
+        frontend: {
+          ...frontendConfiguration,
+          config_schema: toUpperCaseLabels(frontendConfiguration.schema),
+          config_flow: frontendConfiguration.flow,
+          nodeId: 'Frontend',
+          readOnly: isApis,
+        },
+        backend: {
+          ...backendConfiguration,
+          config_schema: toUpperCaseLabels(backendConfiguration.schema),
+          config_flow: backendConfiguration.flow,
+          nodeId: 'Backend',
+          readOnly: isApis,
+        },
+        selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+      });
     });
   };
 
@@ -934,14 +935,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                    plugin: newNode.id,
-                    // [newNode.configRoot]: {
-                    ...newNode.config,
-                    // },
-                  }
+                      plugin: newNode.id,
+                      // [newNode.configRoot]: {
+                      ...newNode.config,
+                      // },
+                    }
                   : {
-                    ...newNode.config,
-                  },
+                      ...newNode.config,
+                    },
               },
             ],
           },
@@ -1172,8 +1173,8 @@ class Designer extends React.Component {
         plugin_index: Object.fromEntries(
           Object.entries(
             plugin.plugin_index ||
-            this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-            {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
           ).map(([key, v]) => [snakeCase(key), v])
         ),
       })),
@@ -1460,17 +1461,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1829,42 +1830,36 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({
-  hideText,
-  route,
-  clearPlugins,
-  selectBackend,
-  ports,
-}) => {
+const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports }) => {
   if (route && route.frontend && route.backend && !hideText) {
-    const frontend = route.frontend
-    const backend = route.backend
+    const frontend = route.frontend;
+    const backend = route.backend;
 
-    const rawMethods = (frontend.methods || []).filter((m) => m.length)
+    const rawMethods = (frontend.methods || []).filter((m) => m.length);
 
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
-        : [<span className="badge bg-success">ALL</span>]
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
+              {m}
+            </span>
+          ))
+        : [<span className="badge bg-success">ALL</span>];
 
     const copy = (value, setCopyIconName) => {
       if (window.isSecureContext && navigator.clipboard) {
-        navigator.clipboard.writeText(value)
+        navigator.clipboard.writeText(value);
       } else {
-        unsecuredCopyToClipboard(value)
+        unsecuredCopyToClipboard(value);
       }
-      setCopyIconName('fas fa-check')
+      setCopyIconName('fas fa-check');
 
       setTimeout(() => {
-        setCopyIconName('fas fa-copy')
+        setCopyIconName('fas fa-copy');
       }, 2000);
     };
 
@@ -2022,12 +2017,21 @@ const UnselectedNode = ({
                   : target.hostname;
                 const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
                 const start = target.tls ? 'https://' : 'http://';
-                const backup = target.backup ? (<span className="badge bg-secondary" style={{ fontSize: '.75rem', marginRight: 10 }}>backup</span>) : '';
+                const backup = target.backup ? (
+                  <span
+                    className="badge bg-secondary"
+                    style={{ fontSize: '.75rem', marginRight: 10 }}
+                  >
+                    backup
+                  </span>
+                ) : (
+                  ''
+                );
                 const mtls =
                   target.tls_config &&
-                    target.tls_config.enabled &&
-                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                      .length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                    .length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2111,8 +2115,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -2315,9 +2320,7 @@ class EditView extends React.Component {
   };
 
   onValidate = (newValue) => {
-
-    if (!newValue)
-      return
+    if (!newValue) return;
 
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
@@ -2381,10 +2384,11 @@ class EditView extends React.Component {
     const { id, name, icon } = selectedNode;
     const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state;
 
-    const showActions = !selectedNode.legacy && !readOnly && !usingExistingBackend && !selectedNode.readOnly
+    const showActions =
+      !selectedNode.legacy && !readOnly && !usingExistingBackend && !selectedNode.readOnly;
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
-    const isApis = window.location.pathname.includes('/apis')
+    const isApis = window.location.pathname.includes('/apis');
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
 
@@ -2411,9 +2415,12 @@ class EditView extends React.Component {
             hidePreview();
           }}
         />
-        <div className="dark-background" style={{
-          paddingTop: isApis ? '1rem' : 'inherit'
-        }}>
+        <div
+          className="dark-background"
+          style={{
+            paddingTop: isApis ? '1rem' : 'inherit',
+          }}
+        >
           {selectedNode.description && (
             <Description
               text={selectedNode.description}
@@ -2444,7 +2451,7 @@ class EditView extends React.Component {
                 usingExistingBackend: e,
               });
             }}
-            onChange={backend_ref =>
+            onChange={(backend_ref) =>
               setRoute({
                 ...route,
                 backend_ref,
@@ -2553,9 +2560,7 @@ export const BackendSelector = ({
   route,
   backends,
 }) => {
-
-  if (!enabled)
-    return null
+  if (!enabled) return null;
   return (
     enabled && (
       <div className="dark-background backend-selector">

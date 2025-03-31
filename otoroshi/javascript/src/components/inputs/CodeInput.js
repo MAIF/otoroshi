@@ -31,7 +31,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) { }
+          } catch (ex) {}
         }}
       />
     );

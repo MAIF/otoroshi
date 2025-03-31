@@ -3,14 +3,14 @@ export default {
   config_schema: {
     certId: {
       type: 'select',
-      label: "KeyPair",
+      label: 'KeyPair',
       props: {
-        optionsFrom: "/bo/api/proxy/api/certificates?keypair=true",
+        optionsFrom: '/bo/api/proxy/api/certificates?keypair=true',
         optionsTransformer: {
           label: 'name',
           value: 'id',
         },
-      }
+      },
     },
     source: {
       type: 'form',
@@ -40,7 +40,7 @@ export default {
         name: {
           type: 'string',
           label: 'Name',
-        }
+        },
       },
       flow: [
         'type',
@@ -93,7 +93,7 @@ export default {
         name: {
           type: 'string',
           label: 'Name',
-        }
+        },
       },
       flow: [
         'type',
@@ -119,7 +119,7 @@ export default {
           fields: ['name'],
         },
       ],
-    }
+    },
   },
   config_flow: ['certId', 'source', 'forward_location'],
 };

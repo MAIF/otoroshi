@@ -142,20 +142,22 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 object EntityLocation {
   val default = EntityLocation()
   def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(implicit env: Env): EntityLocation = {
-    rawCtx.map(ctx =>
-      getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
+    rawCtx
+      .map(ctx => getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
       .getOrElse(EntityLocation.default)
   }
-  private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)
-                                                              (implicit env: Env) = {
+  private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)(
+      implicit env: Env
+  ) = {
     EntityLocation(
-        tenant = currentTenant,
-        teams = env.proxyState.allTeams()
-          .filter(item => currentTenant.value == item.location.tenant.value || currentTenant == TenantId.all)
-          .filter(item => canUserRead(item.asInstanceOf[T]))
-          .map(_.id)
-          .slice(0, 1)
-      )
+      tenant = currentTenant,
+      teams = env.proxyState
+        .allTeams()
+        .filter(item => currentTenant.value == item.location.tenant.value || currentTenant == TenantId.all)
+        .filter(item => canUserRead(item.asInstanceOf[T]))
+        .map(_.id)
+        .slice(0, 1)
+    )
   }
   def fromBackOffice(ctx: BackOfficeActionContextAuth[JsValue])(implicit env: Env): EntityLocation = {
     getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead)
@@ -191,10 +193,11 @@ object EntityLocation {
           tenant = json.select("tenant").asOpt[String].map(TenantId.apply).getOrElse(TenantId.default),
           teams = teams match {
             case Some(value) => value
-            case None => if (teamsAsJsonArray.isEmpty)
-              Seq(TeamId.default)
-            else
-              teamsAsJsonArray
+            case None        =>
+              if (teamsAsJsonArray.isEmpty)
+                Seq(TeamId.default)
+              else
+                teamsAsJsonArray
           }
         )
       } match {

@@ -48,7 +48,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, future}
+import scala.concurrent.{future, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
@@ -438,10 +438,10 @@ class BackOfficeController(
     BackOfficeActionAuth.async { ctx =>
       val hash = BCrypt.hashpw("password", BCrypt.gensalt())
       for {
-        config      <- env.datastores.globalConfigDataStore.singleton()
-        users       <- env.datastores.simpleAdminDataStore.findAll()
-        refusedOpt  <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
-        preferences <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
+        config             <- env.datastores.globalConfigDataStore.singleton()
+        users              <- env.datastores.simpleAdminDataStore.findAll()
+        refusedOpt         <- env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused")
+        preferences        <- env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email)
         serviceDescriptors <- env.datastores.serviceDescriptorDataStore.count()
       } yield {
         val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
@@ -1871,14 +1871,17 @@ class BackOfficeController(
   }
 
   def getOwnEntityLocation() = BackOfficeActionAuth.async { ctx =>
-    Ok(EntityLocation(
-      tenant = ctx.currentTenant,
-      teams = env.proxyState.allTeams()
-        .filter(item => ctx.currentTenant.value == item.location.tenant.value || ctx.currentTenant == TenantId.all)
-        .filter(item => ctx.canUserRead(item))
-        .map(_.id)
-        .slice(0, 1)
-    ).json).future
+    Ok(
+      EntityLocation(
+        tenant = ctx.currentTenant,
+        teams = env.proxyState
+          .allTeams()
+          .filter(item => ctx.currentTenant.value == item.location.tenant.value || ctx.currentTenant == TenantId.all)
+          .filter(item => ctx.canUserRead(item))
+          .map(_.id)
+          .slice(0, 1)
+      ).json
+    ).future
   }
 
   def updateUiMode() = BackOfficeActionAuth.async(parse.json) { ctx =>

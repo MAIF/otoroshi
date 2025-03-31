@@ -422,15 +422,14 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   }
 }
 
-
 case class NgJweSignerConfig(
-  keyManagementAlgorithm: JWEAlgorithm = JWEAlgorithm.RSA_OAEP_256,
-  contentEncryptionAlgorithm: EncryptionMethod = EncryptionMethod.A128CBC_HS256,
-  certId: Option[String] = None,
-  source: JwtTokenLocation = InHeader("X-JWT-Token"),
-  forwardLocation: JwtTokenLocation = InHeader("X-JWT-Token"),
-  strict: Boolean = false,
-  payload: Map[String, String] = Map.empty
+    keyManagementAlgorithm: JWEAlgorithm = JWEAlgorithm.RSA_OAEP_256,
+    contentEncryptionAlgorithm: EncryptionMethod = EncryptionMethod.A128CBC_HS256,
+    certId: Option[String] = None,
+    source: JwtTokenLocation = InHeader("X-JWT-Token"),
+    forwardLocation: JwtTokenLocation = InHeader("X-JWT-Token"),
+    strict: Boolean = false,
+    payload: Map[String, String] = Map.empty
 ) extends NgPluginConfig {
   def json: JsValue = NgJweSignerConfig.format.writes(this)
 }
@@ -439,13 +438,20 @@ object NgJweSignerConfig {
   val format = new Format[NgJweSignerConfig] {
     override def reads(json: JsValue): JsResult[NgJweSignerConfig] = Try {
       NgJweSignerConfig(
-        keyManagementAlgorithm = json.select("key_management_algorithm").asOpt[String]
-          .map(keyManagementAlgorithmFromString).getOrElse(JWEAlgorithm.RSA_OAEP_256),
-        contentEncryptionAlgorithm = json.select("content_encryption_algorithm").asOpt[String]
-        .map(contentEncryptionAlgorithmFromString).getOrElse(EncryptionMethod.A128CBC_HS256),
+        keyManagementAlgorithm = json
+          .select("key_management_algorithm")
+          .asOpt[String]
+          .map(keyManagementAlgorithmFromString)
+          .getOrElse(JWEAlgorithm.RSA_OAEP_256),
+        contentEncryptionAlgorithm = json
+          .select("content_encryption_algorithm")
+          .asOpt[String]
+          .map(contentEncryptionAlgorithmFromString)
+          .getOrElse(EncryptionMethod.A128CBC_HS256),
         certId = json.select("certId").asOpt[String],
         source = JwtTokenLocation.fromJson((json \ "source").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
-        forwardLocation = JwtTokenLocation.fromJson((json \ "forward_location").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
+        forwardLocation =
+          JwtTokenLocation.fromJson((json \ "forward_location").as[JsValue]).getOrElse(InHeader("X-JWT-Token")),
         strict = json.select("strict").asOpt[Boolean].getOrElse(false),
         payload = json.select("payload").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
@@ -454,13 +460,13 @@ object NgJweSignerConfig {
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJweSignerConfig): JsValue             = Json.obj(
-      "keyManagementAlgorithm" -> keyManagementAlgorithmToString(o.keyManagementAlgorithm),
+      "keyManagementAlgorithm"     -> keyManagementAlgorithmToString(o.keyManagementAlgorithm),
       "contentEncryptionAlgorithm" -> contentEncryptionAlgorithmToString(o.contentEncryptionAlgorithm),
-      "certId" -> o.certId,
-      "source" -> o.source.asJson,
-      "forward_location" -> o.forwardLocation.asJson,
-      "strict" -> o.strict,
-      "metadata" -> o.payload
+      "certId"                     -> o.certId,
+      "source"                     -> o.source.asJson,
+      "forward_location"           -> o.forwardLocation.asJson,
+      "strict"                     -> o.strict,
+      "metadata"                   -> o.payload
     )
   }
 
@@ -474,9 +480,9 @@ object NgJweSignerConfig {
     case EncryptionMethod.A128CBC_HS256 => "A128CBC_HS256"
     case EncryptionMethod.A192CBC_HS384 => "A192CBC_HS384"
     case EncryptionMethod.A256CBC_HS512 => "A256CBC_HS512"
-    case EncryptionMethod.A128GCM => "A128GCM"
-    case EncryptionMethod.A192GCM => "A192GCM"
-    case EncryptionMethod.A256GCM => "A256GCM"
+    case EncryptionMethod.A128GCM       => "A128GCM"
+    case EncryptionMethod.A192GCM       => "A192GCM"
+    case EncryptionMethod.A256GCM       => "A256GCM"
   }
 
   private def keyManagementAlgorithmFromString(value: String) = value match {
@@ -489,12 +495,11 @@ object NgJweSignerConfig {
     case "A128CBC_HS256" => EncryptionMethod.A128CBC_HS256
     case "A192CBC_HS384" => EncryptionMethod.A192CBC_HS384
     case "A256CBC_HS512" => EncryptionMethod.A256CBC_HS512
-    case "A128GCM" => EncryptionMethod.A128GCM
-    case "A192GCM" => EncryptionMethod.A192GCM
-    case "A256GCM" => EncryptionMethod.A256GCM
+    case "A128GCM"       => EncryptionMethod.A128GCM
+    case "A192GCM"       => EncryptionMethod.A192GCM
+    case "A256GCM"       => EncryptionMethod.A256GCM
   }
 }
-
 
 class JweSigner extends NgAccessValidator with NgRequestTransformer {
 
@@ -525,14 +530,14 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
     config.certId match {
       case Some(certId) =>
         val cert = DynamicSSLEngineProvider.certificates
-            .get(certId)
-            .orElse {
-              DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
-            }
+          .get(certId)
+          .orElse {
+            DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+          }
 
         cert match {
           case Some(cert) =>
-            val keyPair = cert.cryptoKeyPair
+            val keyPair     = cert.cryptoKeyPair
             val jsonKeypair = new RSAKey.Builder(keyPair.getPublic.asInstanceOf[RSAPublicKey])
               .keyID(cert.id)
               .build()
@@ -543,8 +548,31 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             val enc = config.contentEncryptionAlgorithm
             val kid = jsonKeypair.select("kid").asOpt[String].orNull
 
-            val header = new JWEHeader(alg, enc, null, "JWT", null, null, null, null, null, null, null, kid,
-                null, null, null, null, null, 0, null, null, null, null, null)
+            val header = new JWEHeader(
+              alg,
+              enc,
+              null,
+              "JWT",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              kid,
+              null,
+              null,
+              null,
+              null,
+              null,
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            )
 
             val claimsSet = new JWTClaimsSet.Builder()
             claimsSet.issuer(env.Headers.OtoroshiIssuer)
@@ -555,69 +583,68 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             claimsSet.jwtID(IdGenerator.uuid)
 
             val interpolatedToken = JwtExpressionLanguage
-                  .fromJson(
-                    config.payload.foldLeft(Json.obj()) { case (acc, item) => acc.deepMerge(Json.obj(item._1 -> item._2)) },
-                    Some(ctx.request),
-                    ctx.route.serviceDescriptor.some,
-                    None,
-                    ctx.apikey,
-                    ctx.user,
-                    Map.empty[String, String],
-                    attrs = ctx.attrs,
-                    env
-                  )
-                  .as[JsObject]
+              .fromJson(
+                config.payload.foldLeft(Json.obj()) { case (acc, item) => acc.deepMerge(Json.obj(item._1 -> item._2)) },
+                Some(ctx.request),
+                ctx.route.serviceDescriptor.some,
+                None,
+                ctx.apikey,
+                ctx.user,
+                Map.empty[String, String],
+                attrs = ctx.attrs,
+                env
+              )
+              .as[JsObject]
 
             interpolatedToken.value.foreach { case (key, value) =>
               val newValue = value match {
-                case JsNull => ""
+                case JsNull             => ""
                 case boolean: JsBoolean => boolean
-                case JsNumber(value) => value
-                case JsString(value) => value
-                case JsArray(value) => value
-                case o @ JsObject(_) => Json.stringify(o)
+                case JsNumber(value)    => value
+                case JsString(value)    => value
+                case JsArray(value)     => value
+                case o @ JsObject(_)    => Json.stringify(o)
               }
               claimsSet.claim(key, newValue)
             }
 
-            val jwe = new EncryptedJWT(header, claimsSet.build())
+            val jwe      = new EncryptedJWT(header, claimsSet.build())
             jwe.encrypt(new RSAEncrypter(keyPair.getPublic.asInstanceOf[RSAPublicKey]));
             val jweToken = jwe.serialize()
 
             config.source match {
               case queryParam: InQueryParam =>
-                  val incomingUrl = ctx.otoroshiRequest.url
-                  val url = ctx.otoroshiRequest.queryParams match {
-                    case arr if arr.nonEmpty  =>
-                      val params = arr ++ Map(queryParam.name -> jweToken)
-                      val queryString = params.mkString("&")
-                      s"${incomingUrl.split("\\?").head}?$queryString"
-                    case _                    => s"$incomingUrl?${queryParam.name}=$jweToken"
-                  }
-                  Right(ctx.otoroshiRequest.copy(url = url))
-                  .future
-                case InHeader(n, _)  =>
-                  Right(ctx.otoroshiRequest.copy(
-                    headers = ctx.otoroshiRequest.headers ++ Map(n -> s"Bearer $jweToken")))
-                  .future
-                case InCookie(n)     =>
-                  Right(ctx.otoroshiRequest.copy(
-                    cookies = ctx.otoroshiRequest.cookies ++ Seq(DefaultWSCookie(n, jweToken))))
-                  .future
-              }
+                val incomingUrl = ctx.otoroshiRequest.url
+                val url         = ctx.otoroshiRequest.queryParams match {
+                  case arr if arr.nonEmpty =>
+                    val params      = arr ++ Map(queryParam.name -> jweToken)
+                    val queryString = params.mkString("&")
+                    s"${incomingUrl.split("\\?").head}?$queryString"
+                  case _                   => s"$incomingUrl?${queryParam.name}=$jweToken"
+                }
+                Right(ctx.otoroshiRequest.copy(url = url)).future
+              case InHeader(n, _)           =>
+                Right(
+                  ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(n -> s"Bearer $jweToken"))
+                ).future
+              case InCookie(n)              =>
+                Right(
+                  ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies ++ Seq(DefaultWSCookie(n, jweToken)))
+                ).future
+            }
 
-
-          case None =>  Results
-            .BadRequest(Json.obj("error" -> "invalid configuration"))
-            .left
-            .future
+          case None =>
+            Results
+              .BadRequest(Json.obj("error" -> "invalid configuration"))
+              .left
+              .future
         }
 
       case None =>
-         Results
-            .BadRequest(Json.obj("error" -> "invalid configuration"))
-            .left
-            .future
+        Results
+          .BadRequest(Json.obj("error" -> "invalid configuration"))
+          .left
+          .future
     }
   }
 }
@@ -644,7 +671,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
   override def description: Option[String]       = "This plugin validates and extracts the payload of JWE".some
 
   private def onError(message: String, config: NgJweSignerConfig, ctx: NgTransformerRequestContext) = {
-    if(config.strict)
+    if (config.strict)
       Left(Results.Unauthorized(Json.obj("error" -> "invalid token"))).future
     else
       Right(ctx.otoroshiRequest).future
@@ -656,59 +683,59 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
-      case None => Right(ctx.otoroshiRequest).future
+      case None         => Right(ctx.otoroshiRequest).future
       case Some(certId) =>
         val cert = DynamicSSLEngineProvider.certificates
-            .get(certId)
-            .orElse {
-              DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
-            }
+          .get(certId)
+          .orElse {
+            DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+          }
 
         cert match {
-          case None =>  Right(ctx.otoroshiRequest).future
+          case None       => Right(ctx.otoroshiRequest).future
           case Some(cert) =>
             val keyPair = cert.cryptoKeyPair
 
             val token: Option[String] = config.source match {
               case queryParam: InQueryParam => ctx.otoroshiRequest.queryParam(queryParam.name)
-                case InHeader(n, _)  => ctx.otoroshiRequest.header(n).map(_.replaceAll("Bearer ", ""))
-                case InCookie(n)     => ctx.otoroshiRequest.cookies.find(_.name == n).map(_.value)
-              }
+              case InHeader(n, _)           => ctx.otoroshiRequest.header(n).map(_.replaceAll("Bearer ", ""))
+              case InCookie(n)              => ctx.otoroshiRequest.cookies.find(_.name == n).map(_.value)
+            }
 
             token match {
               case Some(token) =>
                 Try {
-                  val test = JWEObject.parse(token)
+                  val test  = JWEObject.parse(token)
                   test.decrypt(new RSADecrypter(keyPair.getPrivate.asInstanceOf[RSAPrivateKey]))
                   val value = test.getPayload.toString
 
                   config.forwardLocation match {
                     case queryParam: InQueryParam =>
-                        val incomingUrl = ctx.otoroshiRequest.url
-                        val url = ctx.otoroshiRequest.queryParams match {
-                          case arr if arr.nonEmpty  =>
-                            val params = arr ++ Map(queryParam.name -> value)
-                            val queryString = params.mkString("&")
-                            s"${incomingUrl.split("\\?").head}?$queryString"
-                          case _                    => s"$incomingUrl?${queryParam.name}=$value"
-                        }
-                        Right(ctx.otoroshiRequest.copy(url = url))
-                        .future
-                      case InHeader(n, _)  =>
-                        Right(ctx.otoroshiRequest.copy(
-                          headers = ctx.otoroshiRequest.headers ++ Map(n -> value)))
-                        .future
-                      case InCookie(n)     =>
-                        Right(ctx.otoroshiRequest.copy(
-                          cookies = ctx.otoroshiRequest.cookies ++ Seq(DefaultWSCookie(n, URLEncoder.encode(value, "UTF-8")))))
-                        .future
-                    }
-                } recover  {
+                      val incomingUrl = ctx.otoroshiRequest.url
+                      val url         = ctx.otoroshiRequest.queryParams match {
+                        case arr if arr.nonEmpty =>
+                          val params      = arr ++ Map(queryParam.name -> value)
+                          val queryString = params.mkString("&")
+                          s"${incomingUrl.split("\\?").head}?$queryString"
+                        case _                   => s"$incomingUrl?${queryParam.name}=$value"
+                      }
+                      Right(ctx.otoroshiRequest.copy(url = url)).future
+                    case InHeader(n, _)           =>
+                      Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(n -> value))).future
+                    case InCookie(n)              =>
+                      Right(
+                        ctx.otoroshiRequest.copy(
+                          cookies =
+                            ctx.otoroshiRequest.cookies ++ Seq(DefaultWSCookie(n, URLEncoder.encode(value, "UTF-8")))
+                        )
+                      ).future
+                  }
+                } recover {
                   case e: IllegalStateException => onError(e.getMessage, config, ctx)
-                  case e: JOSEException => onError(e.getMessage, config, ctx)
-                  case _ => Left(Results.Unauthorized(Json.obj("error" -> "invalid token"))).future
+                  case e: JOSEException         => onError(e.getMessage, config, ctx)
+                  case _                        => Left(Results.Unauthorized(Json.obj("error" -> "invalid token"))).future
                 } get
-              case None => Left(Results.BadRequest(Json.obj("error" -> "something wrong happened"))).future
+              case None        => Left(Results.BadRequest(Json.obj("error" -> "something wrong happened"))).future
             }
         }
     }

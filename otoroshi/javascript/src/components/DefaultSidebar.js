@@ -128,7 +128,7 @@ export function DefaultSidebar(props) {
 
   const onRouteTab =
     window.location.pathname.startsWith('/bo/dashboard/routes/') ||
-    window.location.pathname.startsWith('/bo/dashboard/apis/')
+    window.location.pathname.startsWith('/bo/dashboard/apis/');
 
   const links = graph(props.env);
 
@@ -197,8 +197,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                          clientY: client.clientY - start.clientY,
+                        }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -339,7 +339,6 @@ function Block({
             .filter((d) => d.display === undefined || d.display())
             .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
             .map(({ title, link, icon, tag }) => {
-
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
               if (link.indexOf('http') === 0) {
                 const iconTitle = description ? `${title} - ${description}` : title;
@@ -445,7 +444,7 @@ function Block({
                         marginLeft: 15,
                         maxWidth: 130,
                       }}
-                      className='pe-2'
+                      className="pe-2"
                     >
                       {title}
                     </div>
@@ -493,8 +492,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -533,9 +533,13 @@ function SidebarLink({
           style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
         >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
-          <span style={{ marginTop: '4px' }} className='d-flex align-items-center' title={iconTitle}>
+          <span
+            style={{ marginTop: '4px' }}
+            className="d-flex align-items-center"
+            title={iconTitle}
+          >
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
-            <div className='ms-2'>{props.tag}</div>
+            <div className="ms-2">{props.tag}</div>
           </span>
         </Link>
       )}
@@ -549,9 +553,13 @@ function SidebarLink({
           style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
         >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
-          <span style={{ marginTop: '4px' }} className='d-flex align-items-center' title={iconTitle}>
+          <span
+            style={{ marginTop: '4px' }}
+            className="d-flex align-items-center"
+            title={iconTitle}
+          >
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
-            <div className='ms-2'>{props.tag}</div>
+            <div className="ms-2">{props.tag}</div>
           </span>
         </a>
       )}

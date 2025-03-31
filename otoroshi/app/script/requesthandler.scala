@@ -252,7 +252,7 @@ class ForwardTrafficHandler extends RequestHandler {
               userAgentInfo = None,
               geolocationInfo = None,
               extraAnalyticsData = None,
-              matchedJwtVerifier = None,
+              matchedJwtVerifier = None
             ).toAnalytics()
             isChunked match {
               case true  => {

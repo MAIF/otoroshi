@@ -114,7 +114,7 @@ object AsyncUtils {
               next(all.tail)
             }
           }
-          case Success(true) => {
+          case Success(true)  => {
             results = results :+ head
             if (all.size == 1) {
               promise.trySuccess(results)
@@ -130,7 +130,9 @@ object AsyncUtils {
     promise.future
   }
 
-  def findAsyncF[I](items: Seq[I])(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[I]] = {
+  def findAsyncF[I](
+      items: Seq[I]
+  )(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[I]] = {
 
     val promise = Promise[Option[I]]()
 

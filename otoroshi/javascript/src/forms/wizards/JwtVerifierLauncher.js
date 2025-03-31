@@ -7,7 +7,7 @@ import JwtVerifierForm from '../entities/JwtVerifier';
 export class JwtVerifierLauncher extends React.Component {
   state = {
     verifier: undefined,
-    isLoading: true
+    isLoading: true,
   };
 
   componentDidMount() {
@@ -28,7 +28,7 @@ export class JwtVerifierLauncher extends React.Component {
     } else
       this.setState({
         verifier: undefined,
-        isLoading: false
+        isLoading: false,
       });
   };
 
@@ -36,15 +36,16 @@ export class JwtVerifierLauncher extends React.Component {
     const { verifier, isLoading } = this.state;
     const { openComponent, onChange } = this.props;
 
-    if (isLoading)
-      return <div style={{ minHeight: 110 }} />
+    if (isLoading) return <div style={{ minHeight: 110 }} />;
 
     return (
       <div style={{ flex: 1 }}>
         <div className="row mb-3">
-          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>Verifier</label>
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            Verifier
+          </label>
           <div className="col-sm-10">
-            {verifier ?
+            {verifier ? (
               <NgForm
                 style={{
                   position: 'relative',
@@ -58,11 +59,19 @@ export class JwtVerifierLauncher extends React.Component {
                     renderer: () => {
                       return (
                         <div className="d-flex justify-content-end mt-3">
-                          <Button className="btn-sm" type="danger" onClick={() => onChange(undefined)}>
+                          <Button
+                            className="btn-sm"
+                            type="danger"
+                            onClick={() => onChange(undefined)}
+                          >
                             <i className="fas fa-times me-1" />
                             Unselect
                           </Button>
-                          <Button type="info" onClick={() => openComponent({})} className="mx-1 btn-sm">
+                          <Button
+                            type="info"
+                            onClick={() => openComponent({})}
+                            className="mx-1 btn-sm"
+                          >
                             <i className="fas fa-key me-1" />
                             Choose another
                           </Button>
@@ -96,12 +105,15 @@ export class JwtVerifierLauncher extends React.Component {
                     fields: ['actions'],
                   },
                 ]}
-              /> : <Button
+              />
+            ) : (
+              <Button
                 type="info"
                 text="Select a verifier"
                 onClick={openComponent}
                 className="w-100"
-              />}
+              />
+            )}
           </div>
         </div>
       </div>

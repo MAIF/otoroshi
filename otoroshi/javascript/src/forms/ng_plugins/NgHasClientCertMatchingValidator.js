@@ -32,5 +32,11 @@ export default {
       label: 'Allowed issuer DNs (regex)',
     },
   },
-  config_flow: ['serial_numbers', 'subject_dns', 'issuer_dns', 'regex_subject_dns', 'regex_issuer_dns'],
+  config_flow: [
+    'serial_numbers',
+    'subject_dns',
+    'issuer_dns',
+    'regex_subject_dns',
+    'regex_issuer_dns',
+  ],
 };

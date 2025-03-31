@@ -731,7 +731,7 @@ object NgRoute {
           hostname = "request.otoroshi.io",
           port = 443,
           tls = true,
-          backup = false,
+          backup = false
         )
       ),
       root = "/",
@@ -1318,7 +1318,7 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
             hostname = "request.otoroshi.io",
             port = 443,
             tls = true,
-            backup = false,
+            backup = false
           )
         ),
         root = "/",

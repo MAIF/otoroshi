@@ -502,18 +502,18 @@ export default class MocksDesigner extends React.Component {
                 : this.getState().resources,
               endpoints: Number.isFinite(idx)
                 ? this.getState()[elementName].map((r, i) => {
-                  if (i === idx) return newEndpoint;
-                  return r;
-                })
+                    if (i === idx) return newEndpoint;
+                    return r;
+                  })
                 : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
             });
           } else {
             this.setAndSave({
               resources: Number.isFinite(idx)
                 ? this.getState().resources.map((r, i) => {
-                  if (i === idx) return value;
-                  return r;
-                })
+                    if (i === idx) return value;
+                    return r;
+                  })
                 : [...this.getState().resources, value],
             });
           }
@@ -713,7 +713,7 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
             <p>{resource_list ? `List of ${model || 'Model'}` : model || 'Model'}</p>
           </div>
           <Suspense fallback={<div>Loading ....</div>}>
-            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
+            <CodeInput value={body} onChange={() => {}} mode="json" editorOnly={true} />
           </Suspense>
         </div>
       </div>

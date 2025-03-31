@@ -152,7 +152,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def extractId(value: T): String
   def extractIdJson(value: JsValue): String
   def idFieldName(): String
-  def template(version: String, params: Map[String, String], ctx: Option[ApiActionContext[_]] = None): JsValue = Json.obj()
+  def template(version: String, params: Map[String, String], ctx: Option[ApiActionContext[_]] = None): JsValue =
+    Json.obj()
 
   def canRead: Boolean
   def canCreate: Boolean
@@ -412,16 +413,17 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
     canDelete: Boolean = true,
-    canBulk: Boolean = true,
+    canBulk: Boolean = true
 ) extends ResourceAccessApi[T] {
-  override def key(id: String): String                                           = keyf.apply(id)
-  override def extractId(value: T): String                                       = value.theId
-  override def extractIdJson(value: JsValue): String                             = extractIdJsonf(value)
-  override def idFieldName(): String                                             = idFieldNamef()
-  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[_]]): JsValue = tmpl(version, template, ctx)
-  override def all(): Seq[T]                                                     = throw new UnsupportedOperationException()
-  override def one(id: String): Option[T]                                        = throw new UnsupportedOperationException()
-  override def update(values: Seq[T]): Unit                                      = throw new UnsupportedOperationException()
+  override def key(id: String): String                                                                             = keyf.apply(id)
+  override def extractId(value: T): String                                                                         = value.theId
+  override def extractIdJson(value: JsValue): String                                                               = extractIdJsonf(value)
+  override def idFieldName(): String                                                                               = idFieldNamef()
+  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[_]]): JsValue =
+    tmpl(version, template, ctx)
+  override def all(): Seq[T]                                                                                       = throw new UnsupportedOperationException()
+  override def one(id: String): Option[T]                                                                          = throw new UnsupportedOperationException()
+  override def update(values: Seq[T]): Unit                                                                        = throw new UnsupportedOperationException()
 }
 
 case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
@@ -441,14 +443,18 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     stateOne: (String) => Option[T],
     stateUpdate: (Seq[T]) => Unit
 ) extends ResourceAccessApi[T] {
-  override def key(id: String): String                                           = keyf.apply(id)
-  override def extractId(value: T): String                                       = value.theId
-  override def extractIdJson(value: JsValue): String                             = extractIdJsonf(value)
-  override def idFieldName(): String                                             = idFieldNamef()
-  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[_]] = None): JsValue = tmpl(version, template, ctx)
-  override def all(): Seq[T]                                                     = stateAll()
-  override def one(id: String): Option[T]                                        = stateOne(id)
-  override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
+  override def key(id: String): String               = keyf.apply(id)
+  override def extractId(value: T): String           = value.theId
+  override def extractIdJson(value: JsValue): String = extractIdJsonf(value)
+  override def idFieldName(): String                 = idFieldNamef()
+  override def template(
+      version: String,
+      template: Map[String, String],
+      ctx: Option[ApiActionContext[_]] = None
+  ): JsValue                                         = tmpl(version, template, ctx)
+  override def all(): Seq[T]                         = stateAll()
+  override def one(id: String): Option[T]            = stateOne(id)
+  override def update(values: Seq[T]): Unit          = stateUpdate(values)
 }
 
 case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocationSupport](
@@ -474,14 +480,18 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
     deleteValidator: Function6[T, JsValue, String, String, DeleteAction, Env, Future[Either[JsValue, Unit]]] =
       (ent: T, _: JsValue, _: String, _: String, _: DeleteAction, _: Env) => ().rightf
 ) extends ResourceAccessApi[T] {
-  override def key(id: String): String                                           = keyf.apply(id)
-  override def extractId(value: T): String                                       = value.theId
-  override def extractIdJson(value: JsValue): String                             = extractIdJsonf(value)
-  override def idFieldName(): String                                             = idFieldNamef()
-  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[_]] = None): JsValue = tmpl(version, template, ctx)
-  override def all(): Seq[T]                                                     = stateAll()
-  override def one(id: String): Option[T]                                        = stateOne(id)
-  override def update(values: Seq[T]): Unit                                      = stateUpdate(values)
+  override def key(id: String): String               = keyf.apply(id)
+  override def extractId(value: T): String           = value.theId
+  override def extractIdJson(value: JsValue): String = extractIdJsonf(value)
+  override def idFieldName(): String                 = idFieldNamef()
+  override def template(
+      version: String,
+      template: Map[String, String],
+      ctx: Option[ApiActionContext[_]] = None
+  ): JsValue                                         = tmpl(version, template, ctx)
+  override def all(): Seq[T]                         = stateAll()
+  override def one(id: String): Option[T]            = stateOne(id)
+  override def update(values: Seq[T]): Unit          = stateUpdate(values)
   override def writeValidation(
       entity: T,
       body: JsValue,
@@ -526,7 +536,7 @@ class OtoroshiResources(env: Env) {
         },
         stateAll = () => env.proxyState.allRawRoutes(),
         stateOne = id => env.proxyState.rawRoute(id),
-        stateUpdate = seq => env.proxyState.updateRawRoutes(seq),
+        stateUpdate = seq => env.proxyState.updateRawRoutes(seq)
       )
     ),
     Resource(
@@ -561,7 +571,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.routeCompositionDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.routeCompositionDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.routeCompositionDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allRouteCompositions(),
         stateOne = id => env.proxyState.routeComposition(id),
         stateUpdate = seq => env.proxyState.updateNgSRouteCompositions(seq)
@@ -580,7 +590,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.serviceDescriptorDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.serviceDescriptorDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.serviceDescriptorDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allServices(),
         stateOne = id => env.proxyState.service(id),
         stateUpdate = seq => env.proxyState.updateServices(seq)
@@ -599,7 +609,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.tcpServiceDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.tcpServiceDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.tcpServiceDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allTcpServices(),
         stateOne = id => env.proxyState.tcpService(id),
         stateUpdate = seq => env.proxyState.updateTcpServices(seq)
@@ -645,7 +655,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.apiKeyDataStore.extractId,
         json => json.select("clientId").asString,
         () => "clientId",
-        (v, p, ctx)=> env.datastores.apiKeyDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.apiKeyDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allApikeys(),
         stateOne = id => env.proxyState.apikey(id),
         stateUpdate = seq => env.proxyState.updateApikeys(seq)
@@ -665,7 +675,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.certificatesDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=>
+        (v, p, ctx) =>
           env.datastores.certificatesDataStore
             .template(ctx)(env.otoroshiExecutionContext, env)
             .awaitf(10.seconds)(env.otoroshiExecutionContext)
@@ -689,7 +699,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.globalJwtVerifierDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.globalJwtVerifierDataStore.template(env).json,
+        (v, p, ctx) => env.datastores.globalJwtVerifierDataStore.template(env).json,
         stateAll = () => env.proxyState.allJwtVerifiers(),
         stateOne = id => env.proxyState.jwtVerifier(id),
         stateUpdate = seq => env.proxyState.updateJwtVerifiers(seq)
@@ -708,7 +718,8 @@ class OtoroshiResources(env: Env) {
         env.datastores.authConfigsDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(env.otoroshiExecutionContext).json,
+        (v, p, ctx) =>
+          env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(env.otoroshiExecutionContext).json,
         stateAll = () => env.proxyState.allAuthModules(),
         stateOne = id => env.proxyState.authModule(id),
         stateUpdate = seq => env.proxyState.updateAuthModules(seq)
@@ -838,7 +849,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.serviceGroupDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.serviceGroupDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.serviceGroupDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allServiceGroups(),
         stateOne = id => env.proxyState.serviceGroup(id),
         stateUpdate = seq => env.proxyState.updateServiceGroups(seq)
@@ -857,7 +868,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.tenantDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.tenantDataStore.template(env).json,
+        (v, p, ctx) => env.datastores.tenantDataStore.template(env).json,
         stateAll = () => env.proxyState.allTenants(),
         stateOne = id => env.proxyState.tenant(id),
         stateUpdate = seq => env.proxyState.updateTenants(seq)
@@ -876,7 +887,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.tenantDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.tenantDataStore.template(env).json,
+        (v, p, ctx) => env.datastores.tenantDataStore.template(env).json,
         stateAll = () => env.proxyState.allTenants(),
         stateOne = id => env.proxyState.tenant(id),
         stateUpdate = seq => env.proxyState.updateTenants(seq)
@@ -895,7 +906,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.teamDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.teamDataStore.template(TenantId.default).json,
+        (v, p, ctx) => env.datastores.teamDataStore.template(TenantId.default).json,
         stateAll = () => env.proxyState.allTeams(),
         stateOne = id => env.proxyState.team(id),
         stateUpdate = seq => env.proxyState.updateTeams(seq)
@@ -915,7 +926,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.dataExporterConfigDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.dataExporterConfigDataStore.template(p.get("type"), ctx).json,
+        (v, p, ctx) => env.datastores.dataExporterConfigDataStore.template(p.get("type"), ctx).json,
         stateAll = () => env.proxyState.allDataExporters(),
         stateOne = id => env.proxyState.dataExporter(id),
         stateUpdate = seq => env.proxyState.updateDataExporters(seq)
@@ -935,7 +946,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.scriptDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.scriptDataStore.template(env).json,
+        (v, p, ctx) => env.datastores.scriptDataStore.template(env).json,
         stateAll = () => env.proxyState.allScripts(),
         stateOne = id => env.proxyState.script(id),
         stateUpdate = seq => env.proxyState.updateScripts(seq)
@@ -954,7 +965,7 @@ class OtoroshiResources(env: Env) {
         env.datastores.wasmPluginsDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (v, p, ctx)=> env.datastores.wasmPluginsDataStore.template(env, ctx).json,
+        (v, p, ctx) => env.datastores.wasmPluginsDataStore.template(env, ctx).json,
         stateAll = () => env.proxyState.allWasmPlugins(),
         stateOne = id => env.proxyState.wasmPlugin(id),
         stateUpdate = seq => env.proxyState.updateWasmPlugins(seq)
@@ -974,7 +985,7 @@ class OtoroshiResources(env: Env) {
         c => env.datastores.globalConfigDataStore.extractId(c.config),
         json => "global",
         () => "id",
-        (v, p, ctx)=> env.datastores.globalConfigDataStore.template.json,
+        (v, p, ctx) => env.datastores.globalConfigDataStore.template.json,
         canCreate = false,
         canDelete = false,
         canBulk = false,
@@ -1001,7 +1012,7 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
         stateUpdate = seq => env.proxyState.updateDrafts(seq),
-        writeValidator = Draft.writeValidator,
+        writeValidator = Draft.writeValidator
 //        deleteValidator = Draft.deleteValidator,
       )
     ),
@@ -1023,14 +1034,8 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
         stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = (entity, body, oldEntity, singularName, id, action, env) => Api.writeValidator(
-          entity,
-          body,
-          oldEntity,
-          singularName,
-          id,
-          action,
-          env)
+        writeValidator = (entity, body, oldEntity, singularName, id, action, env) =>
+          Api.writeValidator(entity, body, oldEntity, singularName, id, action, env)
       )
     ),
     //////
@@ -1052,10 +1057,10 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.apiConsumerSubscription(id),
         stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq),
         writeValidator = ApiConsumerSubscription.writeValidator,
-        deleteValidator = ApiConsumerSubscription.deleteValidator,
+        deleteValidator = ApiConsumerSubscription.deleteValidator
       )
     )
-  )++ env.adminExtensions.resources()
+  ) ++ env.adminExtensions.resources()
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
@@ -1150,7 +1155,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
           val values: Seq[JsObject]            = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           val default                          =
-            defaultEntity.orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject]).getOrElse(Json.obj())
+            defaultEntity
+              .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
+              .getOrElse(Json.obj())
           val jsonValues: Map[String, JsValue] = values
             .map(obj => (obj.select("path").asString, obj.select("value").asValue))
             .map {
@@ -1196,7 +1203,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
           val values: Map[String, String]      = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last)
           val default                          =
-            defaultEntity.orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject]).getOrElse(Json.obj())
+            defaultEntity
+              .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
+              .getOrElse(Json.obj())
           val jsonValues: Map[String, JsValue] = values.mapValues {
             case str if str == "null"                                     => JsNull
             case str if str == "true"                                     => JsBoolean(true)
@@ -2539,17 +2548,24 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   def openapi() = Action { req =>
-    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
-    val accepted = req.acceptedTypes.map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0)))).filter {
-      case ("application/json", _) => true
-      case ("application/yaml", _) => true
-      case ("text/yaml", _) => true
-      case _ => false
-    }.sortWith((a, b) => a._2.compareTo(b._2) > 0).map(_._1).headOption
+    val body     = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
+    val accepted = req.acceptedTypes
+      .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
+      .filter {
+        case ("application/json", _) => true
+        case ("application/yaml", _) => true
+        case ("text/yaml", _)        => true
+        case _                       => false
+      }
+      .sortWith((a, b) => a._2.compareTo(b._2) > 0)
+      .map(_._1)
+      .headOption
     accepted match {
-      case Some("application/yaml") => Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
-      case Some("text/yaml") =>        Ok(Yaml.write(Json.parse(body))).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
-      case _ =>                        Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
+      case Some("application/yaml") =>
+        Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+      case Some("text/yaml")        =>
+        Ok(Yaml.write(Json.parse(body))).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+      case _                        => Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
     }
   }
 }

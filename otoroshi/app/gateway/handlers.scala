@@ -595,7 +595,10 @@ class GatewayRequestHandler(
             env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
               super.routeRequest(request)
             )
-          case h if (h == env.adminApiExposedHost || env.adminApiDomains.contains(h) || h == env.adminApiHost) && !env.exposeAdminApi => {
+          case h
+              if (h == env.adminApiExposedHost || env.adminApiDomains.contains(
+                h
+              ) || h == env.adminApiHost) && !env.exposeAdminApi => {
             Some(adminApiNotExposed())
           }
           case _                                                                                                   => {

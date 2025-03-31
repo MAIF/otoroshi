@@ -75,16 +75,31 @@ class ServiceDescriptorsMigrationPopup extends Component {
       <>
         <div className="modal-body">
           <p style={{ textAlign: 'justify' }}>
-            It seems that you are still using Service Descriptors to route traffic, as you may know, Service Descriptors have been deprecated for <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 2 years</span>, since the rewrite of the proxy engine.
+            It seems that you are still using Service Descriptors to route traffic, as you may know,
+            Service Descriptors have been deprecated for{' '}
+            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 2 years</span>,
+            since the rewrite of the proxy engine.
           </p>
           <p style={{ textAlign: 'justify' }}>
-            The next major version of Otoroshi (<span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span> for Service Descriptors. 
-            Once this version will be deployed, all your remaning Service Descriptors will be automatically migrated and deleted without further notice. 
+            The next major version of Otoroshi (
+            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
+            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
+            for Service Descriptors. Once this version will be deployed, all your remaning Service
+            Descriptors will be automatically migrated and deleted without further notice.
           </p>
           <p style={{ textAlign: 'justify' }}>
-            We count <a href="/bo/dashboard/services" target="_blank"><span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>{this.props.count}</span> Service Descriptor</a> remaining in your database.
-            For more information about that, please read{' '}      
-            <a href="https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html" target="_blank">
+            We count{' '}
+            <a href="/bo/dashboard/services" target="_blank">
+              <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>
+                {this.props.count}
+              </span>{' '}
+              Service Descriptor
+            </a>{' '}
+            remaining in your database. For more information about that, please read{' '}
+            <a
+              href="https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html"
+              target="_blank"
+            >
               the documentation
             </a>
           </p>
@@ -96,7 +111,7 @@ class ServiceDescriptorsMigrationPopup extends Component {
           </button>
         </div>
       </>
-    )
+    );
   }
 }
 
@@ -223,15 +238,22 @@ class BackOfficeAppContainer extends Component {
     if (env.serviceDescriptorsCount > 0) {
       const key = 'otoroshi-migrate-service-descs-popup';
       const last = JSON.parse(localStorage.getItem(key) || '{"last_seen":0}').last_seen || 0;
-      const ttl = (last + (8 * 24 * 60 * 60 * 1000));
+      const ttl = last + 8 * 24 * 60 * 60 * 1000;
       if (ttl < Date.now()) {
         window
           .popup(
             'Service Descriptors Sunsetting',
-            (ok, cancel) => <ServiceDescriptorsMigrationPopup count={env.serviceDescriptorsCount} ok={ok} cancel={cancel} />,
+            (ok, cancel) => (
+              <ServiceDescriptorsMigrationPopup
+                count={env.serviceDescriptorsCount}
+                ok={ok}
+                cancel={cancel}
+              />
+            ),
             { style: { width: '100%' } }
-          ).then(() => {
-            localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }))
+          )
+          .then(() => {
+            localStorage.setItem(key, JSON.stringify({ last_seen: Date.now() }));
           });
       }
     }
@@ -344,15 +366,19 @@ class BackOfficeAppContainer extends Component {
             </>
           )}
           {/* <div className='container-fluid'> */}
-          <div style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }} id="otoroshi-container">
+          <div
+            style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}
+            id="otoroshi-container"
+          >
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
-                    } sidebar-toggle`}
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -512,10 +538,7 @@ class BackOfficeAppContainer extends Component {
                         }
                       />
                       <Route
-                        path={[
-                          '/routes/:routeId',
-                          '/routes'
-                        ]}
+                        path={['/routes/:routeId', '/routes']}
                         component={(props) => (
                           <RouteDesignerPage
                             globalEnv={this.state.env}
@@ -530,10 +553,7 @@ class BackOfficeAppContainer extends Component {
                         )}
                       />
                       <Route
-                        path={[
-                          '/apis/:apiId',
-                          '/apis',
-                        ]}
+                        path={['/apis/:apiId', '/apis']}
                         component={(props) => (
                           <ApiEditorPage
                             globalEnv={this.state.env}

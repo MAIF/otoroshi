@@ -132,8 +132,9 @@ function ManagerTitle({
       </div>
 
       <Dropdown className="mb-1">
-        {!isCreation && (location.state?.routeFromService ? tab.tab === 'Informations' : true) &&
-          <MoreActionsButton value={value} history={history} />}
+        {!isCreation && (location.state?.routeFromService ? tab.tab === 'Informations' : true) && (
+          <MoreActionsButton value={value} history={history} />
+        )}
       </Dropdown>
       {saveButton}
       <PublisDraftButton className="ms-2 mb-1" />
@@ -172,11 +173,7 @@ class Manager extends React.Component {
       if (!this.state.template) this.loadRoute();
     }
 
-    if (
-      ['saveTypeButton'].some(
-        (field) => this.state[field] !== prevState[field]
-      )
-    ) {
+    if (['saveTypeButton'].some((field) => this.state[field] !== prevState[field])) {
       this.setTitle();
     }
   }
@@ -331,30 +328,32 @@ const RoutesView = ({ history, globalEnv }) => {
       )}
       <RoutesTable
         globalEnv={globalEnv}
-        injectTopBar={<>
-          <button
-            onClick={() => setCreation(true)}
-            className="btn btn-primary btn-sm"
-            style={{
-              _backgroundColor: 'var(--color-primary)',
-              _borderColor: 'var(--color-primary)',
-              marginLeft: 5,
-            }}
-          >
-            <i className="fas fa-hat-wizard" /> Create with wizard
-          </button>
-          <button
-            onClick={() => setImportServiceDescriptor(true)}
-            className="btn btn-primary btn-sm"
-            style={{
-              _backgroundColor: 'var(--color-primary)',
-              _borderColor: 'var(--color-primary)',
-              marginLeft: 5,
-            }}
-          >
-            <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
-          </button>
-        </>}
+        injectTopBar={
+          <>
+            <button
+              onClick={() => setCreation(true)}
+              className="btn btn-primary btn-sm"
+              style={{
+                _backgroundColor: 'var(--color-primary)',
+                _borderColor: 'var(--color-primary)',
+                marginLeft: 5,
+              }}
+            >
+              <i className="fas fa-hat-wizard" /> Create with wizard
+            </button>
+            <button
+              onClick={() => setImportServiceDescriptor(true)}
+              className="btn btn-primary btn-sm"
+              style={{
+                _backgroundColor: 'var(--color-primary)',
+                _borderColor: 'var(--color-primary)',
+                marginLeft: 5,
+              }}
+            >
+              <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
+            </button>
+          </>
+        }
       />
     </>
   );

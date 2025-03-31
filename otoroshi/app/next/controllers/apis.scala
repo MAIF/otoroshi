@@ -18,34 +18,35 @@ import scala.+:
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
+class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apis-controller")
 
-  case class RouteStats(calls: Long = 0,
-                        dataIn: Long = 0,
-                        dataOut: Long = 0,
-                        rate: Double = 0.0,
-                        duration: Double = 0.0,
-                        overhead: Double = 0.0) {
+  case class RouteStats(
+      calls: Long = 0,
+      dataIn: Long = 0,
+      dataOut: Long = 0,
+      rate: Double = 0.0,
+      duration: Double = 0.0,
+      overhead: Double = 0.0
+  ) {
     def json = Json.obj(
-      "calls" -> calls,
-      "dataIn" -> dataIn,
-      "dataOut" -> dataOut,
-      "rate" -> round(rate),
+      "calls"    -> calls,
+      "dataIn"   -> dataIn,
+      "dataOut"  -> dataOut,
+      "rate"     -> round(rate),
       "duration" -> round(duration),
       "overhead" -> round(overhead)
     )
 
     private def round(value: Double): Double = {
       if (value == 0) {
-          0
+        0
       } else {
-          (value * 100).round / 100.toDouble
+        (value * 100).round / 100.toDouble
       }
     }
   }
@@ -67,24 +68,27 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
           )
         )
 
-         def fetch(): Future[JsObject] = {
-            env.datastores.draftsDataStore.findById(id) flatMap {
-              case None => Json.obj().vfuture
-              case Some(api) => Api.format.reads(api.content)
-                  .get
-                  .toRoutes.flatMap(routes => Future.sequence(routes.map(getStatsOfRoute)))
-                  .map(stats => foldStats(stats).json)
-            }
+        def fetch(): Future[JsObject] = {
+          env.datastores.draftsDataStore.findById(id) flatMap {
+            case None      => Json.obj().vfuture
+            case Some(api) =>
+              Api.format
+                .reads(api.content)
+                .get
+                .toRoutes
+                .flatMap(routes => Future.sequence(routes.map(getStatsOfRoute)))
+                .map(stats => foldStats(stats).json)
+          }
         }
 
         every match {
           case Some(millis) =>
             Ok.chunked(
-                Source
-                  .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
-                  .flatMapConcat(_ => Source.future(fetch()))
-                  .map(json => s"data: ${Json.stringify(json)}\n\n")
-              ).as("text/event-stream")
+              Source
+                .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
+                .flatMapConcat(_ => Source.future(fetch()))
+                .map(json => s"data: ${Json.stringify(json)}\n\n")
+            ).as("text/event-stream")
               .future
           case None         =>
             Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json").future
@@ -93,30 +97,32 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
 
   def foldStats(stats: Seq[RouteStats]) = {
-    stats.foldLeft(RouteStats()) { case (acc, item) => acc.copy(
-      calls  = acc.calls + item.calls,
-      rate  = acc.rate + item.rate,
-      duration  = acc.duration + item.duration,
-      overhead  = acc.overhead + item.overhead,
-    )}
+    stats.foldLeft(RouteStats()) { case (acc, item) =>
+      acc.copy(
+        calls = acc.calls + item.calls,
+        rate = acc.rate + item.rate,
+        duration = acc.duration + item.duration,
+        overhead = acc.overhead + item.overhead
+      )
+    }
   }
 
   def getStatsOfRoute(route: NgRoute) = {
     for {
-      calls                     <- env.datastores.serviceDescriptorDataStore.calls(route.id)
-      dataIn                    <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
-      dataOut                   <- env.datastores.serviceDescriptorDataStore.dataOutFor(route.id)
-      rate                      <- env.datastores.serviceDescriptorDataStore.callsPerSec(route.id)
-      duration                  <- env.datastores.serviceDescriptorDataStore.callsDuration(route.id)
-      overhead                  <- env.datastores.serviceDescriptorDataStore.callsOverhead(route.id)
+      calls    <- env.datastores.serviceDescriptorDataStore.calls(route.id)
+      dataIn   <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
+      dataOut  <- env.datastores.serviceDescriptorDataStore.dataOutFor(route.id)
+      rate     <- env.datastores.serviceDescriptorDataStore.callsPerSec(route.id)
+      duration <- env.datastores.serviceDescriptorDataStore.callsDuration(route.id)
+      overhead <- env.datastores.serviceDescriptorDataStore.callsOverhead(route.id)
     } yield {
       RouteStats(
-        calls                     = calls,
-        dataIn                    = dataIn,
-        dataOut                   = dataOut,
-        rate                      = rate,
-        duration                  = duration,
-        overhead                  = overhead
+        calls = calls,
+        dataIn = dataIn,
+        dataOut = dataOut,
+        rate = rate,
+        duration = duration,
+        overhead = overhead
       )
     }
   }
@@ -139,29 +145,29 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         )
 
         def fetch(): Future[JsObject] = {
-            env.datastores.apiDataStore.findById(id) flatMap  {
-              case None => Json.obj().vfuture
-              case Some(api) => api.toRoutes.flatMap(routes =>
-                  Future.sequence(routes.map(getStatsOfRoute)))
-                  .map(stats => foldStats(stats).json)
-            }
+          env.datastores.apiDataStore.findById(id) flatMap {
+            case None      => Json.obj().vfuture
+            case Some(api) =>
+              api.toRoutes
+                .flatMap(routes => Future.sequence(routes.map(getStatsOfRoute)))
+                .map(stats => foldStats(stats).json)
+          }
         }
 
         every match {
           case Some(millis) =>
             Ok.chunked(
-                Source
-                  .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
-                  .flatMapConcat(_ => Source.future(fetch()))
-                  .map(json => s"data: ${Json.stringify(json)}\n\n")
-              ).as("text/event-stream")
+              Source
+                .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
+                .flatMapConcat(_ => Source.future(fetch()))
+                .map(json => s"data: ${Json.stringify(json)}\n\n")
+            ).as("text/event-stream")
               .future
           case None         =>
             Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json").future
         }
       }
     }
-
 
   def start(id: String) = {
     ApiAction.async { ctx =>
@@ -187,10 +193,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
   def toggleApiRoutesStatus(apiId: String, newStatus: Boolean): Future[Result] = {
     env.datastores.apiDataStore.findById(apiId).flatMap {
-      case Some(api) => env.datastores.apiDataStore.set(api.copy(
-          state = ApiPublished,
-          routes = api.routes.map(route => route.copy(enabled = newStatus))))
-        .flatMap(_ => Results.Ok.future)
+      case Some(api) =>
+        env.datastores.apiDataStore
+          .set(api.copy(state = ApiPublished, routes = api.routes.map(route => route.copy(enabled = newStatus))))
+          .flatMap(_ => Results.Ok.future)
       case None      => Results.NotFound.future
     }
   }
@@ -243,8 +249,8 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     env.datastores.apiDataStore.findById(apiId).flatMap {
       case Some(api) =>
         var result: Option[String] = Some("")
-        val newAPI = api.copy(consumers = api.consumers.map(consumer => {
-          if(consumer.id == consumerId) {
+        val newAPI                 = api.copy(consumers = api.consumers.map(consumer => {
+          if (consumer.id == consumerId) {
             if (Api.updateConsumerStatus(consumer, consumer.copy(status = status))) {
               consumer.copy(status = status)
             } else {
@@ -257,9 +263,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         }))
 
         result match {
-          case None => Results.BadRequest(Json.obj("error" -> "you can't update consumer status")).future
-          case Some(_) => env.datastores.apiDataStore.set(newAPI)
-            .flatMap(_ => Results.Ok.vfuture)
+          case None    => Results.BadRequest(Json.obj("error" -> "you can't update consumer status")).future
+          case Some(_) =>
+            env.datastores.apiDataStore
+              .set(newAPI)
+              .flatMap(_ => Results.Ok.vfuture)
         }
       case None      => Results.NotFound.future
     }
@@ -329,16 +337,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         )
 
         env.datastores.apiDataStore.findById(apiId) flatMap {
-          case None => Results.NotFound.future
+          case None      => Results.NotFound.future
           case Some(api) =>
             ApiDeployment._fmt.reads(ctx.request.body) match {
-              case JsError(_) => Results.BadRequest(Json.obj("error" -> "bad entity")).future
+              case JsError(_)               => Results.BadRequest(Json.obj("error" -> "bad entity")).future
               case JsSuccess(deployment, _) =>
                 env.datastores.draftsDataStore.findById(apiId) flatMap {
-                  case None => Results.NotFound.future
+                  case None               => Results.NotFound.future
                   case Some(draftWrapper) =>
                     Api.format.reads(draftWrapper.content) match {
-                      case JsError(_) => Results.NotFound.future
+                      case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
                         val updatedApi = apiDraft.copy(
                           versions = api.versions :+ deployment.version,
@@ -346,15 +354,19 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                           version = deployment.version,
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
-                          state = if(apiDraft.state == ApiStaging) ApiPublished else api.state
+                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
                         )
-                        env.datastores.apiDataStore.set(updatedApi)
+                        env.datastores.apiDataStore
+                          .set(updatedApi)
                           .map(result => {
                             ApiDeploymentEvent(
                               `@id` = env.snowflakeGenerator.nextIdStr(),
                               `@timestamp` = DateTime.now(),
                               apiRef = deployment.apiRef,
-                              owner = if (deployment.owner.isEmpty) ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner) else deployment.owner,
+                              owner =
+                                if (deployment.owner.isEmpty)
+                                  ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner)
+                                else deployment.owner,
                               at = deployment.at,
                               apiDefinition = deployment.apiDefinition,
                               version = deployment.version,

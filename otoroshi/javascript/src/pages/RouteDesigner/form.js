@@ -576,7 +576,7 @@ export class RouteForm extends Component {
 
   componentDidMount() {
     this.entity = window.location.pathname.split('/')[3];
-    this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES)
+    this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
     this.loadPlugins();
   }
 

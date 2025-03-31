@@ -77,7 +77,7 @@ class StaticAssetEndpoint extends NgRequestTransformer {
           hostname = uri.authority.host.toString(),
           port = uri.effectivePort,
           tls = url.startsWith("https://"),
-          backup = false,
+          backup = false
         )
         ctx.otoroshiRequest
           .copy(

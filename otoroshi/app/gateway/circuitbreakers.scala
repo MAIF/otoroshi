@@ -155,7 +155,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       trackingId: String,
       requestHeader: RequestHeader,
       attrs: TypedMap,
-      attempts: Int,
+      attempts: Int
   ): Option[(Target, AkkaCircuitBreaker)] = {
     chooseTargetNg(
       descriptor.id,
@@ -168,7 +168,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       trackingId,
       requestHeader,
       attrs,
-      attempts,
+      attempts
     )
   }
 
@@ -184,7 +184,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       trackingId: String,
       requestHeader: RequestHeader,
       attrs: TypedMap,
-      attempts: Int,
+      attempts: Int
   ): Option[(Target, AkkaCircuitBreaker)] = {
     val raw_targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
@@ -198,7 +198,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     } else {
       // this is where failover actually happens
       val (primaryTargets, secondaryTargets) = raw_targets.partition(_.isPrimary)
-      val target: Target = if (primaryTargets.nonEmpty && secondaryTargets.isEmpty) {
+      val target: Target                     = if (primaryTargets.nonEmpty && secondaryTargets.isEmpty) {
         targetsLoadBalancing.select(reqId, trackingId, requestHeader, primaryTargets, descriptorId, attempts)
       } else if (primaryTargets.isEmpty && secondaryTargets.nonEmpty) {
         targetsLoadBalancing.select(reqId, trackingId, requestHeader, secondaryTargets, descriptorId, attempts)
@@ -395,7 +395,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             trackingId,
             requestHeader,
             attrs,
-            attempts,
+            attempts
           ) match {
             case Some((target, breaker)) =>
               val alreadyFailed = new AtomicBoolean(false)

@@ -5,7 +5,7 @@ export function JsonExportButton({ value, entityKind }) {
   return (
     <SquareButton
       onClick={() => {
-        const itemName = entityKind ? entityKind.toLowerCase() : 'route'
+        const itemName = entityKind ? entityKind.toLowerCase() : 'route';
         const kind = entityKind || 'Route';
         const name = value.id
           .replace(/ /g, '-')

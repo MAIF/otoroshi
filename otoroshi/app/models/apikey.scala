@@ -10,7 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
@@ -23,7 +32,13 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterDecodedJWT,
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterSyntax
+}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
@@ -1847,9 +1862,13 @@ object ApiKeyHelper {
               case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                  => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)            => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)          =>
-                (apikey.some, s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some).left
+                (
+                  apikey.some,
+                  s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some
+                ).left
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer)  => apikey.right
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) => (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) =>
+                (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
@@ -2004,20 +2023,32 @@ object ApiKeyHelper {
 
     val config = env.datastores.globalConfigDataStore.latest()
 
-    def error(status: Results.Status, message: String, code: String, extraAnalyticsMessage: Option[String]): Future[Either[Result, ApiKey]] = {
+    def error(
+        status: Results.Status,
+        message: String,
+        code: String,
+        extraAnalyticsMessage: Option[String]
+    ): Future[Either[Result, ApiKey]] = {
       val finalAttrs = extraAnalyticsMessage match {
-        case None => attrs
+        case None          => attrs
         case Some(message) => {
           val key = "apikey_rejection_reason"
           attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
             case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> message)
-            case Some(other) => other
-            case None => Json.obj(key -> message)
+            case Some(other)             => other
+            case None                    => Json.obj(key -> message)
           }
         }
       }
       Errors
-        .craftResponseResult(message, status, req, None /* TODO: pass the service None */, code.some, attrs = finalAttrs)
+        .craftResponseResult(
+          message,
+          status,
+          req,
+          None /* TODO: pass the service None */,
+          code.some,
+          attrs = finalAttrs
+        )
         .map(Left.apply)
     }
 
@@ -2076,15 +2107,22 @@ object ApiKeyHelper {
     }
 
     detectApikeyTuple(req, constraints, attrs) match {
-      case None              => error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
+      case None              =>
+        error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
       case Some(apikeyTuple) =>
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
-          case Left((None, additionalMessage))                                                                                  => error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)
-          case Left((Some(apikey), additionalMessage))                                                                                  =>
+          case Left((None, additionalMessage))                                                                     =>
+            error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)
+          case Left((Some(apikey), additionalMessage))                                                             =>
             sendRevokedApiKeyAlert(apikey)
             error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)
           case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints)                                =>
-            error(Results.Unauthorized, "invalid apikey", "errors.invalid.api.key", s"apikey '${apikey.clientId}' routing did not match".some)
+            error(
+              Results.Unauthorized,
+              "invalid apikey",
+              "errors.invalid.api.key",
+              s"apikey '${apikey.clientId}' routing did not match".some
+            )
           case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 => {
             apikey.restrictions
               .handleRestrictions(service, None, Some(apikey), req, attrs)
@@ -2109,7 +2147,12 @@ object ApiKeyHelper {
                 }
               case (false, _, quotas)            =>
                 sendQuotasExceededError(apikey, quotas)
-                error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests", s"apikey '${apikey.clientId}' quotas exceeded".some)
+                error(
+                  Results.TooManyRequests,
+                  "You performed too much requests",
+                  "errors.too.much.requests",
+                  s"apikey '${apikey.clientId}' quotas exceeded".some
+                )
             }
           }
         }

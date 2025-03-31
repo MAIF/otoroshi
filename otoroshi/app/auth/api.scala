@@ -464,7 +464,9 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
 
   def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
 
-  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[_]] = None)(implicit ec: ExecutionContext): AuthModuleConfig = {
+  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[_]] = None)(implicit
+      ec: ExecutionContext
+  ): AuthModuleConfig = {
 
     val defaultValue = BasicAuthModuleConfig(
       id = IdGenerator.namedId("auth_mod", env),

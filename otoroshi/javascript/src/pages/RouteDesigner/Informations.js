@@ -12,7 +12,7 @@ const capitalize = 'Route';
 const lowercase = 'route';
 const fetchName = 'ROUTES';
 const link = 'routes';
-const entityName = 'route'
+const entityName = 'route';
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId, ...props }, ref) => {
@@ -300,7 +300,7 @@ export const Informations = forwardRef(
         renderer: () => {
           const what = window.location.pathname.split('/')[3];
           const id = window.location.pathname.split('/')[4];
-          const kind = nextClient.ENTITIES.ROUTES
+          const kind = nextClient.ENTITIES.ROUTES;
           return (
             <div className="row mb-3">
               <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>

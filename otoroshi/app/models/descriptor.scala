@@ -193,7 +193,7 @@ trait LoadBalancing {
       requestHeader: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target
 }
 
@@ -225,7 +225,7 @@ object RoundRobin extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
@@ -236,14 +236,14 @@ object Failover extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "NaiveFailover")
   override def select(
-    reqId: String,
-    trackingId: String,
-    req: RequestHeader,
-    targets: Seq[Target],
-    descId: String,
-    attempts: Int,
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
   )(implicit env: Env): Target = {
-    val reqNumber = if (attempts > 0) attempts - 1 else 0
+    val reqNumber  = if (attempts > 0) attempts - 1 else 0
     val index: Int = reqNumber % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
@@ -259,7 +259,7 @@ object Random extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
@@ -275,7 +275,7 @@ object Sticky extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
@@ -292,7 +292,7 @@ object IpAddressHash extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val remoteAddress = req.theIpAddress
     val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
@@ -334,7 +334,7 @@ object BestResponseTime extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
@@ -364,7 +364,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       req: RequestHeader,
       targets: Seq[Target],
       descId: String,
-      attempts: Int,
+      attempts: Int
   )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
@@ -591,13 +591,13 @@ case class Target(
     metadata: Map[String, String] = Map.empty
 ) {
 
-  def toJson        = Target.format.writes(this)
-  def json          = toJson
-  def asUrl         = s"${scheme}://$host"
-  def asKey         = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asTargetStr   = s"$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asCleanTarget = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
-  def isPrimary: Boolean = !backup
+  def toJson               = Target.format.writes(this)
+  def json                 = toJson
+  def asUrl                = s"${scheme}://$host"
+  def asKey                = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr          = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asCleanTarget        = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
+  def isPrimary: Boolean   = !backup
   def isSecondary: Boolean = backup
 
   lazy val thePort: Int = if (host.contains(":")) {
@@ -2398,7 +2398,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           host = "changeme.cleverapps.io",
           scheme = "https",
           mtlsConfig = MtlsConfig(),
-          backup = false,
+          backup = false
         )
       ),
       detectApiKeySooner = false,
@@ -2421,7 +2421,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       .templates
       .descriptor
       .map { template =>
-        ServiceDescriptor._fmt.reads(defaultDescriptor.json.asObject.deepMerge(template)).get
+        ServiceDescriptor._fmt
+          .reads(defaultDescriptor.json.asObject.deepMerge(template))
+          .get
           .copy(location = EntityLocation.ownEntityLocation(ctx))
       }
       .getOrElse {

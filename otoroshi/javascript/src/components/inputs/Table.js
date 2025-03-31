@@ -75,7 +75,8 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
       <div
         className={`wizard ${!open ? 'wizard--hidden' : ''}`}
         style={{ background: 'none' }}
-        onClick={closeTab}>
+        onClick={closeTab}
+      >
         <div
           className={`wizard-container ${!open ? 'wizard--hidden' : ''}`}
           style={{
@@ -375,10 +376,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -458,12 +459,14 @@ class TableComponent extends Component {
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) {
-      e.preventDefault()
+      e.preventDefault();
     }
 
-    if ((typeof this.props.hideEditButton === 'function' ?
-      !this.props.hideEditButton(item) :
-      !this.props.hideEditButton)) {
+    if (
+      typeof this.props.hideEditButton === 'function'
+        ? !this.props.hideEditButton(item)
+        : !this.props.hideEditButton
+    ) {
       this.props.navigateTo(item);
     }
   };
@@ -529,10 +532,11 @@ class TableComponent extends Component {
       e.preventDefault();
     }
 
-    if ((typeof this.props.hideEditButton === 'function' ?
-      !this.props.hideEditButton(item) :
-      !this.props.hideEditButton)) {
-
+    if (
+      typeof this.props.hideEditButton === 'function'
+        ? !this.props.hideEditButton(item)
+        : !this.props.hideEditButton
+    ) {
       this.mountShortcuts();
 
       let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
@@ -780,10 +784,14 @@ class TableComponent extends Component {
                   }
                 }}
                 style={{
-                  cursor: ((typeof this.props.hideEditButton === 'function' ?
-                    !this.props.hideEditButton(value) :
-                    !this.props.hideEditButton)) ? 'pointer' : 'initial',
-                  width: '100%'
+                  cursor: (
+                    typeof this.props.hideEditButton === 'function'
+                      ? !this.props.hideEditButton(value)
+                      : !this.props.hideEditButton
+                  )
+                    ? 'pointer'
+                    : 'initial',
+                  width: '100%',
                 }}
               >
                 {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
@@ -805,9 +813,9 @@ class TableComponent extends Component {
         accessor: (item) => (
           <div style={{ textAlign: 'left' }}>
             <div>
-              {(typeof this.props.hideEditButton === 'function' ?
-                !this.props.hideEditButton(item) :
-                !this.props.hideEditButton) &&
+              {(typeof this.props.hideEditButton === 'function'
+                ? !this.props.hideEditButton(item)
+                : !this.props.hideEditButton) && (
                 <button
                   type="button"
                   className="btn btn-sm btn-success me-2"
@@ -820,7 +828,7 @@ class TableComponent extends Component {
                 >
                   <i className="fas fa-pencil-alt" />
                 </button>
-              }
+              )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -897,7 +905,7 @@ class TableComponent extends Component {
                   right: 0,
                   top: '1.15rem',
                   width: 'fit-content',
-                  paddingRight: 0
+                  paddingRight: 0,
                 }}
               >
                 <button
@@ -939,7 +947,7 @@ class TableComponent extends Component {
                 ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 style={{
-                  scrollbarWidth: 'none'
+                  scrollbarWidth: 'none',
                 }}
                 manual
                 page={this.state.page}

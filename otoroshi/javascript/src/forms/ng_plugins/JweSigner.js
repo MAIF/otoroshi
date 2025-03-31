@@ -28,14 +28,14 @@ export default {
     },
     certId: {
       type: 'select',
-      label: "KeyPair",
+      label: 'KeyPair',
       props: {
-        optionsFrom: "/bo/api/proxy/api/certificates?keypair=true",
+        optionsFrom: '/bo/api/proxy/api/certificates?keypair=true',
         optionsTransformer: {
           label: 'name',
           value: 'id',
         },
-      }
+      },
     },
     source: {
       type: 'form',
@@ -65,7 +65,7 @@ export default {
         name: {
           type: 'string',
           label: 'Name',
-        }
+        },
       },
       flow: [
         'type',
@@ -95,7 +95,13 @@ export default {
     payload: {
       label: 'Claims',
       type: 'object',
-    }
+    },
   },
-  config_flow: ['key_management_algorithm', 'content_encryption_algorithm', 'payload', 'certId', 'source'],
+  config_flow: [
+    'key_management_algorithm',
+    'content_encryption_algorithm',
+    'payload',
+    'certId',
+    'source',
+  ],
 };

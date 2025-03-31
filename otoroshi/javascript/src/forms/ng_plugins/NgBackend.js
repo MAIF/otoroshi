@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 import explainations from '../../explainations';
 import { LoadBalancingSelector } from '../../pages/ApiEditor/LoadBalancingSelector';
@@ -353,7 +353,7 @@ export default {
           help: 'Tell if this target is a backup one (a secondary one). Backup targets are only used when all the primary targets have failed',
           props: {
             defaultValue: false,
-          }
+          },
         },
         protocol: {
           type: 'dots',
@@ -529,8 +529,8 @@ export default {
       schema: {
         type: {
           renderer: (props) => {
-            return <LoadBalancingSelector onChange={props.onChange} value={props.value} />
-          }
+            return <LoadBalancingSelector onChange={props.onChange} value={props.value} />;
+          },
           // type: 'select',
           // help: 'The load balancing algorithm used',
           // label: 'Type',

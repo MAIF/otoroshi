@@ -143,7 +143,7 @@ object Errors {
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
-          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
         ).toAnalytics()(env)
       }
       case (_, Some(route))      => {
@@ -235,7 +235,7 @@ object Errors {
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
-          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
         ).toAnalytics()(env)
       }
       case _                     => {
@@ -291,7 +291,7 @@ object Errors {
           userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
-          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
         ).toAnalytics()(env)
       }
     }

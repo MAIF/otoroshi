@@ -63,11 +63,13 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
             "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
             "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> Stats.sumDouble(
-              concurrentHandledRequests.toDouble,
-              _.concurrentHandledRequests.toDouble,
-              membersStats
-            ).toLong
+            "concurrentHandledRequests" -> Stats
+              .sumDouble(
+                concurrentHandledRequests.toDouble,
+                _.concurrentHandledRequests.toDouble,
+                membersStats
+              )
+              .toLong
           )
         )
       }
@@ -172,11 +174,13 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                   "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
                   "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
                   "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
-                  "concurrentHandledRequests" -> Stats.sumDouble(
-                    concurrentHandledRequests.toDouble,
-                    _.concurrentHandledRequests.toDouble,
-                    membersStats
-                  ).toLong
+                  "concurrentHandledRequests" -> Stats
+                    .sumDouble(
+                      concurrentHandledRequests.toDouble,
+                      _.concurrentHandledRequests.toDouble,
+                      membersStats
+                    )
+                    .toLong
                 )
               }
             case serviceId =>
@@ -200,11 +204,13 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
                 "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
                 "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
-                "concurrentHandledRequests" -> Stats.sumDouble(
-                  concurrentHandledRequests.toDouble,
-                  _.concurrentHandledRequests.toDouble,
-                  membersStats
-                ).toLong
+                "concurrentHandledRequests" -> Stats
+                  .sumDouble(
+                    concurrentHandledRequests.toDouble,
+                    _.concurrentHandledRequests.toDouble,
+                    membersStats
+                  )
+                  .toLong
               )
           }
 

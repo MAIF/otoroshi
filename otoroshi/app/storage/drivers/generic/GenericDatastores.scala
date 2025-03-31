@@ -178,7 +178,7 @@ class GenericDataStores(
 
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore  = new KvApiConsumerSubscriptionDataStore(redis, env)
+  private lazy val _apiConsumerSubscriptionDataStore = new KvApiConsumerSubscriptionDataStore(redis, env)
 
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
 

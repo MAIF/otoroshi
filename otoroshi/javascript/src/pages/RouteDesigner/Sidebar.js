@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 
-const LINKS = route =>
+const LINKS = (route) =>
   [
     {
       to: `/routes/${route.id}?tab=informations`,
@@ -108,8 +108,9 @@ export default ({ route }) => {
             <Link
               to={to}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                } m-0 ${isActive(tab)}`}
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                openedSidebar ? 'ms-3' : ''
+              } m-0 ${isActive(tab)}`}
             >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
@@ -129,8 +130,9 @@ export default ({ route }) => {
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                    } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                    openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

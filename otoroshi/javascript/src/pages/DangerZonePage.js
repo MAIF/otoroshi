@@ -42,13 +42,14 @@ function CircuitBreakerWarn(props) {
   }
   return (
     <div className="alert alert-danger" role="danger" style={{ marginTop: 20 }}>
-      You are not using circuit breaker. This behavior is linked to ServiceDescriptors and is deprecated There is a new way to configure otoroshi through{' '}
+      You are not using circuit breaker. This behavior is linked to ServiceDescriptors and is
+      deprecated There is a new way to configure otoroshi through{' '}
       <Link style={{ color: 'var(--color-red)' }} to="/routes">
         routes
-      </Link>
-      {' '} that always use circuit breakers. Service descriptors will be removed in Otoroshi v18.0.0.
+      </Link>{' '}
+      that always use circuit breakers. Service descriptors will be removed in Otoroshi v18.0.0.
     </div>
-  )
+  );
 }
 
 function shallowDiffers(a, b) {
@@ -731,8 +732,8 @@ export class DangerZonePage extends Component {
     useCircuitBreakerWarn: {
       type: CircuitBreakerWarn,
       props: {
-        label: ''
-      }
+        label: '',
+      },
     },
     useCircuitBreakers: {
       type: 'bool',

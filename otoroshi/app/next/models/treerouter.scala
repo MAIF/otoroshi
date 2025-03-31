@@ -107,11 +107,12 @@ case class NgTreeRouter(
           case None                                     =>
             // println("should display on standard listener")
             routes.copy(routes =
-              routes.routes.filter(r =>
-                r.notBoundToListener || r.boundToListener(HttpListenerNames.Standard) || r.boundToListener(
-                  HttpListenerNames.Experimental
+              routes.routes
+                .filter(r =>
+                  r.notBoundToListener || r.boundToListener(HttpListenerNames.Standard) || r.boundToListener(
+                    HttpListenerNames.Experimental
+                  )
                 )
-              )
                 .sortBy(item => !(item.frontend.query.nonEmpty || item.frontend.headers.nonEmpty))
             )
           case Some(listener) if forCurrentListenerOnly =>
@@ -361,7 +362,10 @@ object NgTreeRouter_Test {
         frontend =
           NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(s"test-tree-router-next-gen.oto.tools/api/$id"))),
         backend = NgBackend.empty
-          .copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))),
+          .copy(
+            root = s"/id/${id}",
+            targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))
+          ),
         backendRef = None,
         plugins = NgPlugins(Seq.empty)
       )
@@ -384,8 +388,8 @@ object NgTreeRouter_Test {
         exportReporting = false,
         groups = Seq("default"),
         frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(rpath)), stripPath = false),
-        backend =
-          NgBackend.empty.copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))),
+        backend = NgBackend.empty
+          .copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false, backup = false))),
         backendRef = None,
         plugins = NgPlugins(Seq.empty)
       )

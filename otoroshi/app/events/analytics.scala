@@ -942,7 +942,7 @@ case class ApiDeploymentEvent(
     apiDefinition: JsValue,
     version: String,
     `@service`: String,
-    `@serviceId`: String,
+    `@serviceId`: String
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None

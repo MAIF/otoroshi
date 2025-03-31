@@ -981,7 +981,7 @@ object OpenApi {
     }
 
     extensionGroup match {
-      case None => finalDoc
+      case None        => finalDoc
       case Some(group) => {
         cache.getOrElseUpdate(
           group, {
@@ -994,39 +994,45 @@ object OpenApi {
 
             def buildFilteredComponentsSchema(initialObj: JsValue, componentsSchema: JsObject): JsObject = {
               var previousNeededComponents: Set[String] = Set.empty
-              var previousComponents: JsValue = Json.obj("paths" -> initialObj, "schemas" -> Json.obj())
-              var run = true
+              var previousComponents: JsValue           = Json.obj("paths" -> initialObj, "schemas" -> Json.obj())
+              var run                                   = true
               while (run) {
                 val neededComponents = findNeededComponents(previousComponents)
                 if (neededComponents.size == previousNeededComponents.size) {
                   run = false
                 } else {
-                  previousComponents = Json.obj("paths" -> initialObj, "schemas" -> JsObject(componentsSchema.value.filter {
-                    case (key, _) if neededComponents.contains(key) => true
-                    case _ => false
-                  }))
+                  previousComponents = Json.obj(
+                    "paths"   -> initialObj,
+                    "schemas" -> JsObject(componentsSchema.value.filter {
+                      case (key, _) if neededComponents.contains(key) => true
+                      case _                                          => false
+                    })
+                  )
                   previousNeededComponents = neededComponents
                 }
               }
               previousComponents.select("schemas").asObject
             }
 
-            val json = Json.parse(finalDoc).asObject
+            val json  = Json.parse(finalDoc).asObject
             val paths = json.select("paths").asObject
 
-            val tags = json.select("tags").asArray
-            val components = json.select("components").asObject
+            val tags             = json.select("tags").asArray
+            val components       = json.select("components").asObject
             val componentsSchema = json.select("components").select("schemas").asObject
-            val filteredPaths = JsObject(paths.value.filter(_._1.startsWith(s"/apis/${group}")))
-            val needTags = filteredPaths.values.flatMap { path =>
+            val filteredPaths    = JsObject(paths.value.filter(_._1.startsWith(s"/apis/${group}")))
+            val needTags         = filteredPaths.values.flatMap { path =>
               path.asObject.values.flatMap { endpoint =>
                 endpoint.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
               }
             }.toSet
-            val filteredTags = JsArray(tags.value.filter(t => needTags.contains(t.select("name").asString))) //t.select("name").asString.startsWith(group)))
+            val filteredTags     = JsArray(
+              tags.value.filter(t => needTags.contains(t.select("name").asString))
+            ) //t.select("name").asString.startsWith(group)))
             val filteredComponentsSchema = buildFilteredComponentsSchema(filteredPaths, componentsSchema)
-            val customComponents = components ++ Json.obj("schemas" -> filteredComponentsSchema)
-            val customDoc = json ++ Json.obj("tags" -> filteredTags, "paths" -> filteredPaths, "components" -> customComponents)
+            val customComponents         = components ++ Json.obj("schemas" -> filteredComponentsSchema)
+            val customDoc                =
+              json ++ Json.obj("tags" -> filteredTags, "paths" -> filteredPaths, "components" -> customComponents)
             customDoc.prettify
           }
         )

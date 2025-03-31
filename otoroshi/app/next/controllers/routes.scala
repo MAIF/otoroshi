@@ -195,7 +195,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
             hostname = "request.otoroshi.io",
             port = 443,
             tls = true,
-            backup = false,
+            backup = false
           )
         ),
         root = "/",

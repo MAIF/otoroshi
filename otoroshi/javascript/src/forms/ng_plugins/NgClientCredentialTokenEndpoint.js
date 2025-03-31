@@ -5,12 +5,12 @@ export default {
       label: 'Default keypair id',
       type: 'select',
       props: {
-        optionsFrom: "/bo/api/proxy/api/certificates?keypair=true",
+        optionsFrom: '/bo/api/proxy/api/certificates?keypair=true',
         optionsTransformer: {
           label: 'name',
           value: 'id',
         },
-      }
+      },
     },
     expiration: {
       type: 'number',

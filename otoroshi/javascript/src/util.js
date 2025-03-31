@@ -17,10 +17,10 @@ export const toUpperCaseLabels = (obj) => {
         : isLabelField
           ? v.charAt(0).toUpperCase() + v.slice(1)
           : typeof value === 'object' &&
-            value !== null &&
-            key !== 'transformer' &&
-            key !== 'optionsTransformer' &&
-            !Array.isArray(value)
+              value !== null &&
+              key !== 'transformer' &&
+              key !== 'optionsTransformer' &&
+              !Array.isArray(value)
             ? toUpperCaseLabels(value)
             : value,
     };

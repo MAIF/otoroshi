@@ -266,8 +266,7 @@ export function RoutesTable(props) {
       ].filter((c) => c),
     });
 
-  const fetchTemplate = () =>
-    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
+  const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
 
   const ref = useRef();
 

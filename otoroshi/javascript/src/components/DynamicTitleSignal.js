@@ -31,15 +31,17 @@ export function DynamicTitleSignal(props) {
   }
 
   if (typeof content === 'object' && !Array.isArray(content) && content !== null) {
-    return <div style={{ position: 'relative' }}>
-      <div className="page-header">
-        <h3 className="page-header_title">
-          {content.value}
-          {!content.noThumbtack && <Thumbtack {...props} getTitle={() => content.value} />}
-          {content.children}
-        </h3>
+    return (
+      <div style={{ position: 'relative' }}>
+        <div className="page-header">
+          <h3 className="page-header_title">
+            {content.value}
+            {!content.noThumbtack && <Thumbtack {...props} getTitle={() => content.value} />}
+            {content.children}
+          </h3>
+        </div>
       </div>
-    </div>
+    );
   }
 
   return (

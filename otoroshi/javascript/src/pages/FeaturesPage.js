@@ -186,9 +186,7 @@ export const graph = (env) => {
           img: 'routes',
           icon: () => 'fa-brush',
           link: '/apis',
-          tag: <span className='badge bg-xs bg-warning'>
-            ALPHA
-          </span>
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
       ],
     },
@@ -477,7 +475,7 @@ export class FeaturesPage extends Component {
                     icon,
                     absoluteImg,
                     link = '',
-                    tag
+                    tag,
                   }) => (
                     <Feature
                       title={title}

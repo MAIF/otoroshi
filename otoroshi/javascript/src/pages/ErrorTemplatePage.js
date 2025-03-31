@@ -46,10 +46,11 @@ export class ErrorTemplatesPage extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error
-        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-        : `<h2 style="color:white;">${title}</h2>`
-      }
+            ${
+              error
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>

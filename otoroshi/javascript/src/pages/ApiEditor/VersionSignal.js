@@ -1,3 +1,3 @@
-import { signal } from "signals-react-safe";
+import { signal } from 'signals-react-safe';
 
-export const signalVersion = signal("Published");
+export const signalVersion = signal('Published');

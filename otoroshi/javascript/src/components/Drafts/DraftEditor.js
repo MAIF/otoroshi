@@ -19,9 +19,9 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
-      refetchOnWindowFocus: false
-    }
-  }
+      refetchOnWindowFocus: false,
+    },
+  },
 });
 
 function findDraftByEntityId(id) {
@@ -196,7 +196,8 @@ export function PublisDraftModalContent({ draft, currentItem }) {
     <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
       <JsonViewCompare
         oldData={currentItem || entityContent}
-        newData={draft || draftContext.draft} />
+        newData={draft || draftContext.draft}
+      />
     </div>
   );
 }

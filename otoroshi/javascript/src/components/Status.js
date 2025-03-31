@@ -15,9 +15,9 @@ export class Uptime extends Component {
     const test = this.props.health.dates.map((h) => {
       const availability = h.status.length
         ? h.status
-          .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
-          .reduce((acc, curr) => acc + curr.percentage, 0)
-          .toFixed(2)
+            .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
+            .reduce((acc, curr) => acc + curr.percentage, 0)
+            .toFixed(2)
         : `unknown`;
       return { date: h.dateAsString, availability, status: h.status };
     });
@@ -30,18 +30,21 @@ export class Uptime extends Component {
           value.status
             .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
             .reduce((acc, curr) => acc + curr.percentage, 0) /
-          length
+            length
         );
       }, 0);
 
     return (
       <div className={`health-container ${this.props.className}`}>
         <div className="container--header d-flex align-items-center justify-content-between">
-          <span style={{ color: 'var(--text)' }}>{new Date(this.props.health.dates[this.props.health.dates.length - 1]?.dateAsString).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+          <span style={{ color: 'var(--text)' }}>
+            {new Date(
+              this.props.health.dates[this.props.health.dates.length - 1]?.dateAsString
+            ).toLocaleDateString('fr-FR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
           </span>
           <div className="uptime-avg">{formatPercentage(avg)}</div>
         </div>
@@ -86,7 +89,6 @@ export class Uptime extends Component {
   }
 }
 
-
 // export function SmoothUptime({ health, stopTheCountUnknownStatus, className }) {
 //   const test = health.dates.map((h) => {
 //     const availability = h.status.length
@@ -116,7 +118,6 @@ export class Uptime extends Component {
 //       (item.availability !== 'unknown' && item.availability >= 95 && item.availability < 99) ? 'orange' :
 //         (item.availability !== 'unknown' && item.availability < 95) ? 'red' : 'gray'
 //   }
-
 
 //   const items = test.reduce((acc, item) => {
 //     const clazz = getAvailability(item)
