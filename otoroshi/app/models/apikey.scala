@@ -10,18 +10,10 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
+import otoroshi.actions.ApiActionContext
 import otoroshi.next.plugins.api.NgAccess
 import play.api.Logger
 import play.api.libs.json._
@@ -31,13 +23,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
@@ -516,13 +502,14 @@ object ApiKey {
 }
 
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
-  def initiateNewApiKey(groupId: String, env: Env): ApiKey = {
+  def initiateNewApiKey(groupId: String, env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
@@ -535,13 +522,14 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       }
   }
 
-  def template(env: Env): ApiKey = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

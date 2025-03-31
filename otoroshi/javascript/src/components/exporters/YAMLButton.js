@@ -5,13 +5,8 @@ export function YAMLExportButton({ value, entityKind }) {
   return (
     <SquareButton
       onClick={() => {
-        const what = window.location.pathname.split('/')[3];
-        const itemName = entityKind
-          ? entityKind.toLowerCase()
-          : what === 'routes'
-            ? 'route'
-            : 'route-composition';
-        const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
+        const itemName = entityKind ? entityKind.toLowerCase() : 'route'
+        const kind = entityKind || 'Route'
         const name = value.id
           .replace(/ /g, '-')
           .replace(/\(/g, '')

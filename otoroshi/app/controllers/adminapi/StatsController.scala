@@ -2,15 +2,16 @@ package otoroshi.controllers.adminapi
 
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
-
 import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import otoroshi.cluster.StatsView
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}
+
 import javax.management.{Attribute, ObjectName}
 import otoroshi.models.RightsChecker.Anyone
+import otoroshi.next.controllers.Stats
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -25,36 +26,6 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-stats-api")
-
-  private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
-    (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
-       0.0
-     } else {
-       stats.map(extractor).:+(value).fold(0.0)(_ + _) / (stats.size + 1)
-     }).applyOn {
-      case Double.NaN                    => 0.0
-      case Double.NegativeInfinity       => 0.0
-      case Double.PositiveInfinity       => 0.0
-      case v if v.toString == "NaN"      => 0.0
-      case v if v.toString == "Infinity" => 0.0
-      case v                             => v
-    }
-  }
-
-  private def sumDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
-    if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
-      0.0
-    } else {
-      stats.map(extractor).:+(value).fold(0.0)(_ + _)
-    }.applyOn {
-      case Double.NaN                    => 0.0
-      case Double.NegativeInfinity       => 0.0
-      case Double.PositiveInfinity       => 0.0
-      case v if v.toString == "NaN"      => 0.0
-      case v if v.toString == "Infinity" => 0.0
-      case v                             => v
-    }
-  }
 
   def globalLiveStats() =
     ApiAction.async { ctx =>
@@ -87,12 +58,12 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             "calls"                     -> calls,
             "dataIn"                    -> dataIn,
             "dataOut"                   -> dataOut,
-            "rate"                      -> sumDouble(rate, _.rate, membersStats),
-            "duration"                  -> avgDouble(duration, _.duration, membersStats),
-            "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> sumDouble(
+            "rate"                      -> Stats.sumDouble(rate, _.rate, membersStats),
+            "duration"                  -> Stats.avgDouble(duration, _.duration, membersStats),
+            "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> Stats.sumDouble(
               concurrentHandledRequests.toDouble,
               _.concurrentHandledRequests.toDouble,
               membersStats
@@ -196,12 +167,12 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                   "calls"                     -> calls,
                   "dataIn"                    -> dataIn,
                   "dataOut"                   -> dataOut,
-                  "rate"                      -> sumDouble(rate, _.rate, membersStats),
-                  "duration"                  -> avgDouble(duration, _.duration, membersStats),
-                  "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-                  "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-                  "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-                  "concurrentHandledRequests" -> sumDouble(
+                  "rate"                      -> Stats.sumDouble(rate, _.rate, membersStats),
+                  "duration"                  -> Stats.avgDouble(duration, _.duration, membersStats),
+                  "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
+                  "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
+                  "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
+                  "concurrentHandledRequests" -> Stats.sumDouble(
                     concurrentHandledRequests.toDouble,
                     _.concurrentHandledRequests.toDouble,
                     membersStats
@@ -224,12 +195,12 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                 "calls"                     -> calls,
                 "dataIn"                    -> dataIn,
                 "dataOut"                   -> dataOut,
-                "rate"                      -> sumDouble(rate, _.rate, membersStats),
-                "duration"                  -> avgDouble(duration, _.duration, membersStats),
-                "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-                "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-                "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-                "concurrentHandledRequests" -> sumDouble(
+                "rate"                      -> Stats.sumDouble(rate, _.rate, membersStats),
+                "duration"                  -> Stats.avgDouble(duration, _.duration, membersStats),
+                "overhead"                  -> Stats.avgDouble(overhead, _.overhead, membersStats),
+                "dataInRate"                -> Stats.sumDouble(dataInRate, _.dataInRate, membersStats),
+                "dataOutRate"               -> Stats.sumDouble(dataOutRate, _.dataOutRate, membersStats),
+                "concurrentHandledRequests" -> Stats.sumDouble(
                   concurrentHandledRequests.toDouble,
                   _.concurrentHandledRequests.toDouble,
                   membersStats

@@ -9,6 +9,7 @@ import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
 import otoroshi.env.Env
@@ -2308,13 +2309,13 @@ object Implicits {
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template(env: Env): GlobalJwtVerifier = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): GlobalJwtVerifier = {
     val defaultJwt = GlobalJwtVerifier(
       id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",
       desc = "New jwt verifier",
       metadata = Map.empty
-    )
+    ).copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

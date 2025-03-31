@@ -17,7 +17,6 @@ export class SimpleLoginPage extends Component {
     e.preventDefault();
 
     const loginPage = this.getLink(this.state.email);
-    console.log(loginPage);
     try {
       fetch(loginPage, {
         credentials: 'include',

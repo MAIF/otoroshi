@@ -3,7 +3,7 @@ package otoroshi.tcp
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.settings.ServerSettings
 import akka.http.scaladsl.util.FastFuture
@@ -16,7 +16,7 @@ import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
 import javax.net.ssl._
-import otoroshi.models.{IpFiltering, ServiceDescriptor}
+import otoroshi.models.{EntityLocation, IpFiltering, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -984,7 +984,7 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template(env: Env): TcpService = {
+  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): TcpService = {
     val defaultService = TcpService(
       id = IdGenerator.namedId("tcp_service", env),
       enabled = true,
@@ -1008,6 +1008,7 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
         )
       )
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

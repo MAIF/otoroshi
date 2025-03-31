@@ -143,9 +143,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -241,7 +240,7 @@ export function LabelAndInput(_props) {
   const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
-  if (ngOptions.spread && !_props.readOnly) {
+  if ((ngOptions.spread && !_props.readOnly) || _props.raw) {
     return _props.children;
   }
 
@@ -605,10 +604,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <label className='col-xs-12 col-sm-2 col-form-label' style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -627,18 +629,7 @@ export class NgBoxBooleanRenderer extends Component {
           }}
         >
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
-            <div
-              style={{
-                // color: "var(--color-primary)",
-                fontWeight: 'bold',
-                marginLeft: '5px',
-                marginTop: '7px',
-                marginBottom: '10px',
-              }}
-            >
-              {label}
-            </div>
-            <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
+            <div className="me-1" style={{ margin: '10px 0 10px 5px' }}>
               <p>{description}</p>
               {readOnly ? (
                 <ReadOnlyField value={value ? 'true' : 'false'} />
@@ -688,8 +679,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -883,21 +874,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
@@ -1207,6 +1198,15 @@ export class NgSelectRenderer extends Component {
     const readOnly = this.props.readOnly;
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
 
+    let components = this.props.components || {}
+
+    if (props.noOptionsMessage) {
+      components = {
+        ...components,
+        NoOptionsMessage: props.noOptionsMessage
+      }
+    }
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
@@ -1235,6 +1235,7 @@ export class NgSelectRenderer extends Component {
             }}
             components={{
               IndicatorSeparator: () => null,
+              ...components
             }}
             styles={{
               control: (baseStyles) => ({

@@ -1138,6 +1138,7 @@ class ReverseProxyAction(env: Env) {
                                                               1
                                                             )
                                                         }
+
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                                       // Round robin loadbalancing is happening here !!!!!
                                                       //val target = targets.apply(index.toInt)

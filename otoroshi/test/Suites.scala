@@ -179,7 +179,7 @@ class AnalyticsTests
       new AlertAndAnalyticsSpec("InMemory", Configurations.InMemoryConfiguration)
     )
 
-class GreenScoreTest
+class GreenScoreTests
     extends Suites(
       new GreenScoreTestSpec("GreenScore", Configurations.InMemoryConfiguration)
     )

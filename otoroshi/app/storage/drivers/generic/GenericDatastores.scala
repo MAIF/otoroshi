@@ -6,6 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.ConfigFactory
+import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterMode, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -172,6 +173,14 @@ class GenericDataStores(
   private lazy val _draftDataStore = new KvDraftDataStore(redis, env)
 
   override def draftsDataStore: DraftDataStore = _draftDataStore
+
+  private lazy val _apiDataStore = new KvApiDataStore(redis, env)
+
+  override def apiDataStore: ApiDataStore = _apiDataStore
+
+  private lazy val _apiConsumerSubscriptionDataStore  = new KvApiConsumerSubscriptionDataStore(redis, env)
+
+  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
 
   private lazy val _adminPreferencesDatastore = new AdminPreferencesDatastore(env)
 

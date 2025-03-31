@@ -1584,10 +1584,6 @@ export function findAllRoutesWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/routes', ps);
 }
 
-export function findAllRouteCompositionsWithPagination(ps) {
-  return findAllWithPagination('/bo/api/proxy/api/route-compositions', ps);
-}
-
 export function findAllServicesWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/services', ps);
 }
@@ -2050,8 +2046,8 @@ export function routeEntries(routeId) {
   return fetch(`/bo/api/routes/${routeId}/entries`).then((r) => r.json());
 }
 
-export function routePorts(routeId) {
-  return fetch(`/bo/api/routes/${routeId}/ports`).then((r) => r.json());
+export function routePorts() {
+  return fetch(`/bo/api/env/ports `).then((r) => r.json());
 }
 
 export function graphQLTryIt(url) {
@@ -2102,14 +2098,14 @@ const fetchWrapper = (url, method = 'GET', body) => {
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 };
-const fetchWrapperNext = (url, method = 'GET', body) => {
+export const fetchWrapperNext = (url, method = 'GET', body, group = 'any') => {
   const headers = {
     Accept: 'application/json',
   };
   if (body) {
     headers['Content-Type'] = 'application/json';
   }
-  return fetch(`/bo/api/proxy/apis/any/v1${url}`, {
+  return fetch(`/bo/api/proxy/apis/${group}/v1${url}`, {
     method,
     credentials: 'include',
     headers: headers,
@@ -2181,9 +2177,10 @@ export const nextClient = {
     ROUTES: 'routes',
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
-    SERVICES: 'route-compositions',
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
+    APIS: 'apis',
+    API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions'
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {

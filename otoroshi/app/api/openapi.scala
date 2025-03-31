@@ -886,7 +886,7 @@ object OpenApi {
     finalSchemas
   }
 
-  def generate(env: Env, version: Option[String], extensionGroup: Option[String]): String = {
+  def generate(env: Env, version: Option[String], extensionGroup: Option[String] = None): String = {
     // TODO: missing live metrics api
     // TODO: missing analytics api
     val finalDoc = if (env.isDev) {

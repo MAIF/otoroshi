@@ -24,7 +24,7 @@
   position: relative;
   height: 100vh;
 
-  padding-bottom: 5em;
+  padding-bottom: 10em;
 
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -55,7 +55,7 @@
 }
 
 .page-header_title {
-  margin-top: 32px;
+  margin-top: 1rem;
   // margin-left: 25px;
   padding-bottom: 9px;
   border-bottom: 1px solid var(--color-primary);

@@ -151,6 +151,15 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def add(plugin: NgPluginInstance): NgPlugins = copy(slots = slots :+ plugin)
 
+  def remove(pluginId: String): NgPlugins = copy(slots = slots.filterNot(_.plugin == pluginId))
+
+  def togglePluginState(pluginId: String, enabled: Boolean): NgPlugins = copy(slots = slots.map(slot =>
+    if (slot.plugin == pluginId) {
+      slot.copy(enabled = enabled)
+    } else {
+      slot
+    }))
+
   def json: JsValue = JsArray(slots.map(_.json))
 
   def hasPlugin[A](implicit ct: ClassTag[A]): Boolean = getPluginByClass[A](ct).isDefined

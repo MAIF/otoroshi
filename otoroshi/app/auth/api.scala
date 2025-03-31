@@ -1,6 +1,7 @@
 package otoroshi.auth
 
 import akka.stream.scaladsl.{Sink, Source}
+import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
 import otoroshi.next.models.{NgRoute, NgTlsConfig}
@@ -463,7 +464,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
 
   def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
 
-  def template(modType: Option[String], env: Env)(implicit ec: ExecutionContext): AuthModuleConfig = {
+  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[_]] = None)(implicit ec: ExecutionContext): AuthModuleConfig = {
 
     val defaultValue = BasicAuthModuleConfig(
       id = IdGenerator.namedId("auth_mod", env),
@@ -474,11 +475,13 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       sessionCookieValues = SessionCookieValues(),
       clientSideSessionEnabled = true
     )
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
 
     val defaultModule = modType match {
       case Some(ref) =>
         templates()(env)
           .find(config => config.`type` == ref)
+          .map(_.withLocation(EntityLocation.ownEntityLocation(ctx)(env)))
           .getOrElse(defaultValue)
       case _         => defaultValue
     }

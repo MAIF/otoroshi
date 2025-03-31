@@ -1,3 +1,10 @@
 node_modules
 .DS_Store
 stats.json
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+tests/playwright
+playwright-report

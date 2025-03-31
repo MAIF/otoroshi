@@ -524,10 +524,12 @@ case class DefaultTemplates(
     certificate: Option[JsObject] = Json.obj().some,  // Option[Cert],
     script: Option[JsObject] = Json.obj().some,       // Option[Script],
     draft: Option[JsObject] = Json.obj().some,        // Option[Draft],
+    api: Option[JsObject] = Json.obj().some,          // Option[Api],
     tcpService: Option[JsObject] = Json.obj().some,   // Option[TcpService],
     dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
     tenant: Option[JsObject] = Json.obj().some,       // Option[Tenant],
-    team: Option[JsObject] = Json.obj().some          // Option[Team],
+    team: Option[JsObject] = Json.obj().some,          // Option[Team],
+    apiConsumerSubscription: Option[JsObject] = Json.obj().some // Option[ApiConsumerSubscription],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -550,10 +552,12 @@ object DefaultTemplates {
           certificate = json.select("certificate").asOpt[JsObject],
           script = json.select("script").asOpt[JsObject],
           draft = json.select("draft").asOpt[JsObject],
+          api = json.select("api").asOpt[JsObject],
           tcpService = json.select("tcpService").asOpt[JsObject],
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
-          team = json.select("team").asOpt[JsObject]
+          team = json.select("team").asOpt[JsObject],
+          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -574,10 +578,12 @@ object DefaultTemplates {
       "certificate"  -> o.certificate.getOrElse(JsNull).asValue,
       "script"       -> o.script.getOrElse(JsNull).asValue,
       "draft"        -> o.draft.getOrElse(JsNull).asValue,
+      "api"          -> o.api.getOrElse(JsNull).asValue,
       "tcpService"   -> o.tcpService.getOrElse(JsNull).asValue,
       "dataExporter" -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"       -> o.tenant.getOrElse(JsNull).asValue,
-      "team"         -> o.team.getOrElse(JsNull).asValue
+      "team"         -> o.team.getOrElse(JsNull).asValue,
+      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue
     )
   }
 }

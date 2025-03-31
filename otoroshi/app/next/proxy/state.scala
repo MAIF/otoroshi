@@ -1,6 +1,7 @@
 package otoroshi.next.proxy
 
 import com.github.blemale.scaffeine.Scaffeine
+import next.models.{Api, ApiConsumerSubscription}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
@@ -33,28 +34,30 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .result()
 
-  private val globalConfigRef     = new AtomicReference[GlobalConfig]()
-  private val raw_routes          = new UnboundedTrieMap[String, NgRoute]()
-  private val apikeys             = new UnboundedTrieMap[String, ApiKey]()
-  private val backends            = new UnboundedTrieMap[String, NgBackend]()
-  private val ngroutecompositions = new UnboundedTrieMap[String, NgRouteComposition]()
-  private val ngbackends          = new UnboundedTrieMap[String, StoredNgBackend]()
-  private val jwtVerifiers        = new UnboundedTrieMap[String, GlobalJwtVerifier]()
-  private val certificates        = new UnboundedTrieMap[String, Cert]()
-  private val authModules         = new UnboundedTrieMap[String, AuthModuleConfig]()
-  private val errorTemplates      = new UnboundedTrieMap[String, ErrorTemplate]()
-  private val services            = new UnboundedTrieMap[String, ServiceDescriptor]()
-  private val teams               = new UnboundedTrieMap[String, Team]()
-  private val tenants             = new UnboundedTrieMap[String, Tenant]()
-  private val serviceGroups       = new UnboundedTrieMap[String, ServiceGroup]()
-  private val dataExporters       = new UnboundedTrieMap[String, DataExporterConfig]()
-  private val otoroshiAdmins      = new UnboundedTrieMap[String, OtoroshiAdmin]()
-  private val backofficeSessions  = new UnboundedTrieMap[String, BackOfficeUser]()
-  private val privateAppsSessions = new UnboundedTrieMap[String, PrivateAppsUser]()
-  private val tcpServices         = new UnboundedTrieMap[String, TcpService]()
-  private val scripts             = new UnboundedTrieMap[String, Script]()
-  private val wasmPlugins         = new UnboundedTrieMap[String, WasmPlugin]()
-  private val drafts              = new UnboundedTrieMap[String, Draft]()
+  private val globalConfigRef           = new AtomicReference[GlobalConfig]()
+  private val raw_routes                = new UnboundedTrieMap[String, NgRoute]()
+  private val apikeys                   = new UnboundedTrieMap[String, ApiKey]()
+  private val backends                  = new UnboundedTrieMap[String, NgBackend]()
+  private val ngroutecompositions       = new UnboundedTrieMap[String, NgRouteComposition]()
+  private val ngbackends                = new UnboundedTrieMap[String, StoredNgBackend]()
+  private val jwtVerifiers              = new UnboundedTrieMap[String, GlobalJwtVerifier]()
+  private val certificates              = new UnboundedTrieMap[String, Cert]()
+  private val authModules               = new UnboundedTrieMap[String, AuthModuleConfig]()
+  private val errorTemplates            = new UnboundedTrieMap[String, ErrorTemplate]()
+  private val services                  = new UnboundedTrieMap[String, ServiceDescriptor]()
+  private val teams                     = new UnboundedTrieMap[String, Team]()
+  private val tenants                   = new UnboundedTrieMap[String, Tenant]()
+  private val serviceGroups             = new UnboundedTrieMap[String, ServiceGroup]()
+  private val dataExporters             = new UnboundedTrieMap[String, DataExporterConfig]()
+  private val otoroshiAdmins            = new UnboundedTrieMap[String, OtoroshiAdmin]()
+  private val backofficeSessions        = new UnboundedTrieMap[String, BackOfficeUser]()
+  private val privateAppsSessions       = new UnboundedTrieMap[String, PrivateAppsUser]()
+  private val tcpServices               = new UnboundedTrieMap[String, TcpService]()
+  private val scripts                   = new UnboundedTrieMap[String, Script]()
+  private val wasmPlugins               = new UnboundedTrieMap[String, WasmPlugin]()
+  private val drafts                    = new UnboundedTrieMap[String, Draft]()
+  private val apis                      = new UnboundedTrieMap[String, Api]()
+  private val apiConsumerSubscriptions  = new UnboundedTrieMap[String, ApiConsumerSubscription]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -106,51 +109,55 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
-  def globalConfig(): Option[GlobalConfig]                          = Option(globalConfigRef.get())
-  def wasmPlugin(id: String): Option[WasmPlugin]                    = wasmPlugins.get(id)
-  def draft(id: String): Option[Draft]                              = drafts.get(id)
-  def script(id: String): Option[Script]                            = scripts.get(id)
-  def backend(id: String): Option[NgBackend]                        = backends.get(id)
-  def storedBackend(id: String): Option[StoredNgBackend]            = ngbackends.get(id)
-  def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
-  def route(id: String): Option[NgRoute]                            = routes.get(id)
-  def routeComposition(id: String): Option[NgRouteComposition]      = ngroutecompositions.get(id)
-  def apikey(id: String): Option[ApiKey]                            = apikeys.get(id)
-  def jwtVerifier(id: String): Option[GlobalJwtVerifier]            = jwtVerifiers.get(id)
-  def certificate(id: String): Option[Cert]                         = certificates.get(id)
-  def authModule(id: String): Option[AuthModuleConfig]              = authModules.get(id)
-  def authModuleAsync(id: String): Future[Option[AuthModuleConfig]] = authModules.get(id).vfuture
-  def service(id: String): Option[ServiceDescriptor]                = services.get(id)
-  def team(id: String): Option[Team]                                = teams.get(id)
-  def tenant(id: String): Option[Tenant]                            = tenants.get(id)
-  def serviceGroup(id: String): Option[ServiceGroup]                = serviceGroups.get(id)
-  def dataExporter(id: String): Option[DataExporterConfig]          = dataExporters.get(id)
-  def otoroshiAdmin(id: String): Option[OtoroshiAdmin]              = otoroshiAdmins.get(id)
-  def backofficeSession(id: String): Option[BackOfficeUser]         = backofficeSessions.get(id)
-  def privateAppsSession(id: String): Option[PrivateAppsUser]       = privateAppsSessions.get(id)
-  def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
-  def rawRoute(id: String): Option[NgRoute]                         = raw_routes.get(id)
+  def globalConfig(): Option[GlobalConfig]                                  = Option(globalConfigRef.get())
+  def wasmPlugin(id: String): Option[WasmPlugin]                            = wasmPlugins.get(id)
+  def draft(id: String): Option[Draft]                                      = drafts.get(id)
+  def apiConsumerSubscription(id: String): Option[ApiConsumerSubscription]  = apiConsumerSubscriptions.get(id)
+  def api(id: String): Option[Api]                                          = apis.get(id)
+  def script(id: String): Option[Script]                                    = scripts.get(id)
+  def backend(id: String): Option[NgBackend]                                = backends.get(id)
+  def storedBackend(id: String): Option[StoredNgBackend]                    = ngbackends.get(id)
+  def errorTemplate(id: String): Option[ErrorTemplate]                      = errorTemplates.get(id)
+  def route(id: String): Option[NgRoute]                                    = routes.get(id)
+  def routeComposition(id: String): Option[NgRouteComposition]              = ngroutecompositions.get(id)
+  def apikey(id: String): Option[ApiKey]                                    = apikeys.get(id)
+  def jwtVerifier(id: String): Option[GlobalJwtVerifier]                    = jwtVerifiers.get(id)
+  def certificate(id: String): Option[Cert]                                 = certificates.get(id)
+  def authModule(id: String): Option[AuthModuleConfig]                      = authModules.get(id)
+  def authModuleAsync(id: String): Future[Option[AuthModuleConfig]]         = authModules.get(id).vfuture
+  def service(id: String): Option[ServiceDescriptor]                        = services.get(id)
+  def team(id: String): Option[Team]                                        = teams.get(id)
+  def tenant(id: String): Option[Tenant]                                    = tenants.get(id)
+  def serviceGroup(id: String): Option[ServiceGroup]                        = serviceGroups.get(id)
+  def dataExporter(id: String): Option[DataExporterConfig]                  = dataExporters.get(id)
+  def otoroshiAdmin(id: String): Option[OtoroshiAdmin]                      = otoroshiAdmins.get(id)
+  def backofficeSession(id: String): Option[BackOfficeUser]                 = backofficeSessions.get(id)
+  def privateAppsSession(id: String): Option[PrivateAppsUser]               = privateAppsSessions.get(id)
+  def tcpService(id: String): Option[TcpService]                            = tcpServices.get(id)
+  def rawRoute(id: String): Option[NgRoute]                                 = raw_routes.get(id)
 
-  def allWasmPlugins(): Seq[WasmPlugin]               = wasmPlugins.values.toSeq
-  def allDrafts(): Seq[Draft]                         = drafts.values.toSeq
-  def allScripts(): Seq[Script]                       = scripts.values.toSeq
-  def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq
-  def allRoutes(): Seq[NgRoute]                       = routes.values.toSeq
-  def allRouteCompositions(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
-  def allApikeys(): Seq[ApiKey]                       = apikeys.values.toSeq
-  def allJwtVerifiers(): Seq[GlobalJwtVerifier]       = jwtVerifiers.values.toSeq
-  def allCertificates(): Seq[Cert]                    = certificates.values.toSeq
-  def allCertificatesMap(): TrieMap[String, Cert]     = certificates
-  def allAuthModules(): Seq[AuthModuleConfig]         = authModules.values.toSeq
-  def allServices(): Seq[ServiceDescriptor]           = services.values.toSeq
-  def allTeams(): Seq[Team]                           = teams.values.toSeq
-  def allTenants(): Seq[Tenant]                       = tenants.values.toSeq
-  def allServiceGroups(): Seq[ServiceGroup]           = serviceGroups.values.toSeq
-  def allDataExporters(): Seq[DataExporterConfig]     = dataExporters.values.toSeq
-  def allOtoroshiAdmins(): Seq[OtoroshiAdmin]         = otoroshiAdmins.values.toSeq
-  def allBackofficeSessions(): Seq[BackOfficeUser]    = backofficeSessions.values.toSeq
-  def allPrivateAppsSessions(): Seq[PrivateAppsUser]  = privateAppsSessions.values.toSeq
-  def allTcpServices(): Seq[TcpService]               = tcpServices.values.toSeq
+  def allWasmPlugins(): Seq[WasmPlugin]                             = wasmPlugins.values.toSeq
+  def allDrafts(): Seq[Draft]                                       = drafts.values.toSeq
+  def allApiConsumerSubscriptions(): Seq[ApiConsumerSubscription]   = apiConsumerSubscriptions.values.toSeq
+  def allApis(): Seq[Api]                                           = apis.values.toSeq
+  def allScripts(): Seq[Script]                                     = scripts.values.toSeq
+  def allRawRoutes(): Seq[NgRoute]                                  = raw_routes.values.toSeq
+  def allRoutes(): Seq[NgRoute]                                     = routes.values.toSeq
+  def allRouteCompositions(): Seq[NgRouteComposition]               = ngroutecompositions.values.toSeq
+  def allApikeys(): Seq[ApiKey]                                     = apikeys.values.toSeq
+  def allJwtVerifiers(): Seq[GlobalJwtVerifier]                     = jwtVerifiers.values.toSeq
+  def allCertificates(): Seq[Cert]                                  = certificates.values.toSeq
+  def allCertificatesMap(): TrieMap[String, Cert]                   = certificates
+  def allAuthModules(): Seq[AuthModuleConfig]                       = authModules.values.toSeq
+  def allServices(): Seq[ServiceDescriptor]                         = services.values.toSeq
+  def allTeams(): Seq[Team]                                         = teams.values.toSeq
+  def allTenants(): Seq[Tenant]                                     = tenants.values.toSeq
+  def allServiceGroups(): Seq[ServiceGroup]                         = serviceGroups.values.toSeq
+  def allDataExporters(): Seq[DataExporterConfig]                   = dataExporters.values.toSeq
+  def allOtoroshiAdmins(): Seq[OtoroshiAdmin]                       = otoroshiAdmins.values.toSeq
+  def allBackofficeSessions(): Seq[BackOfficeUser]                  = backofficeSessions.values.toSeq
+  def allPrivateAppsSessions(): Seq[PrivateAppsUser]                = privateAppsSessions.values.toSeq
+  def allTcpServices(): Seq[TcpService]                             = tcpServices.values.toSeq
 
   def allNgServices(): Seq[NgRouteComposition]  = ngroutecompositions.values.toSeq
   def allStoredBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
@@ -198,6 +205,15 @@ class NgProxyState(env: Env) {
 
   def updateDrafts(values: Seq[Draft]): Unit = {
     drafts.addAll(values.map(v => (v.id, v))).remAll(drafts.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateApiConsumerSubscriptions(values: Seq[ApiConsumerSubscription]): Unit = {
+    apiConsumerSubscriptions.addAll(values.map(v => (v.id, v)))
+      .remAll(apiConsumerSubscriptions.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateApis(values: Seq[Api]): Unit = {
+    apis.addAll(values.map(v => (v.id, v))).remAll(apis.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTenants(values: Seq[Tenant]): Unit = {
@@ -555,35 +571,39 @@ class NgProxyState(env: Env) {
     val debug        = config.debug
     val debugHeaders = config.debugHeaders
     for {
-      _                   <- env.vaults.renewSecretsInCache()
-      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK
-      routescomp          <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
-      genRoutesDomain     <- generateRoutesByDomain(env)
-      genRoutesPath       <- generateRoutesByName(env)
-      genRandom           <- generateRandomRoutes(env)
-      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
-      fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
-      newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-                               NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                             ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
-      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
-      certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
-      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
-      modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets() // secrets OK
-      backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets() // secrets OK
-      errorTemplates      <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
-      teams               <- env.datastores.teamDataStore.findAll() // no need for secrets
-      tenants             <- env.datastores.tenantDataStore.findAll() // no need for secrets
-      serviceGroups       <- env.datastores.serviceGroupDataStore.findAll() // no need for secrets
-      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets() // secrets OK
-      simpleAdmins        <- env.datastores.simpleAdminDataStore.findAll() // no need for secrets
-      webauthnAdmins      <- env.datastores.webAuthnAdminDataStore.findAll() // no need for secrets
-      backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll() // no need for secrets
-      privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
-      tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
-      scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
-      wasmPlugins         <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
-      drafts              <- env.datastores.draftsDataStore.findAll()
+      _                         <- env.vaults.renewSecretsInCache()
+      routes                    <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK
+      routescomp                <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
+      apis                      <- env.datastores.apiDataStore.findAllAndFillSecrets() // secrets OK
+      apisRoutes                <- Future.sequence(apis.map(api => api.toRoutes)).map(_.flatten)
+      genRoutesDomain           <- generateRoutesByDomain(env)
+      genRoutesPath             <- generateRoutesByName(env)
+      genRandom                 <- generateRandomRoutes(env)
+      descriptors               <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
+      fakeRoutes                 = if (dev) Seq(NgRoute.fake) else Seq.empty
+      newRoutes                  = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
+                                      NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+                                    ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ apisRoutes ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+      apikeys                   <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
+      certs                     <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
+      verifiers                 <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
+      modules                   <- env.datastores.authConfigsDataStore.findAllAndFillSecrets() // secrets OK
+      backends                  <- env.datastores.backendsDataStore.findAllAndFillSecrets() // secrets OK
+      errorTemplates            <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
+      teams                     <- env.datastores.teamDataStore.findAll() // no need for secrets
+      tenants                   <- env.datastores.tenantDataStore.findAll() // no need for secrets
+      serviceGroups             <- env.datastores.serviceGroupDataStore.findAll() // no need for secrets
+      dataExporters             <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets() // secrets OK
+      simpleAdmins              <- env.datastores.simpleAdminDataStore.findAll() // no need for secrets
+      webauthnAdmins            <- env.datastores.webAuthnAdminDataStore.findAll() // no need for secrets
+      backofficeSessions        <- env.datastores.backOfficeUserDataStore.findAll() // no need for secrets
+      privateAppsSessions       <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
+      tcpServices               <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
+      scripts                   <- env.datastores.scriptDataStore.findAll() // no need for secrets
+      wasmPlugins               <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
+      drafts                    <- env.datastores.draftsDataStore.findAll()
+      apiConsumerSubscriptions  <- env.datastores.apiConsumerSubscriptionDataStore.findAll()
+      apis                      <- env.datastores.apiDataStore.findAll()
       croutes             <- if (dev) {
                                NgRouteComposition
                                  .fromOpenApi(
@@ -618,11 +638,12 @@ class NgProxyState(env: Env) {
                                    )
                                  })
                              } else Seq.empty[NgRoute].vfuture
+      apisRoutes          <- Future.sequence(apis.map(_.toRoutes)).map(_.flatten)
       _                   <- env.adminExtensions.syncStates()
     } yield {
       env.proxyState.updateGlobalConfig(gc)
       env.proxyState.updateRawRoutes(routes)
-      env.proxyState.updateRoutes(newRoutes ++ croutes)
+      env.proxyState.updateRoutes(newRoutes ++ croutes ++ apisRoutes)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)
@@ -641,6 +662,8 @@ class NgProxyState(env: Env) {
       env.proxyState.updateScripts(scripts)
       env.proxyState.updateWasmPlugins(wasmPlugins)
       env.proxyState.updateDrafts(drafts)
+      env.proxyState.updateApiConsumerSubscriptions(apiConsumerSubscriptions)
+      env.proxyState.updateApis(apis)
       env.proxyState.updateNgBackends(backends)
       env.proxyState.updateNgSRouteCompositions(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)
