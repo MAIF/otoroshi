@@ -323,7 +323,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../imgs/sd-migration-job-auto.png" /></div>
 <h2><a href="#migration-api" name="migration-api" class="anchor"><span class="anchor-link"></span></a>Migration API</h2>
 <p>You can migrate service descriptor to routes by calling the following endpoint</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; http://otoroshi-api.oto.tools:8080/api/services/service-xxxxxxxx/route -d &#39;{}&#39;
+<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; &quot;http://otoroshi-api.oto.tools:8080/api/services/service-xxxxxxxx/route&quot; -d &#39;{}&#39;
 </code></pre>
 <h2><a href="#migration-button" name="migration-button" class="anchor"><span class="anchor-link"></span></a>Migration button</h2>
 <p>on any Service Descriptor, you can click on the <code>convert to route</code> button</p><div class="centered-img">
