@@ -4,11 +4,27 @@ for more than 2 years, after the @ref[rewrite of the proxy engine](./engine.md) 
 
 Now (v17.0.0) it's time to go ahead and provide some migration tools to help users getting rid of Service Descriptor in favor of routes before completely removing support of Service Descriptors in v18.0.0 (probably in 2026). Under the hood the new proxy engine already convert your Service Descriptors to Route in order to route traffic to your backends. The idea here is to remove the Service Descriptor entity in favor of the Route entity and let the user adapt their workflows and automations.
 
-This toolkit consists of 3 tools that you can use to migrate existing Service Descriptors.
+If you still have Service Descriptors in you database, otoroshi will warn you in the logs
+
+@@@ div { .centered-img }
+<img src="../imgs/sd-migration-logs.png" />
+@@@
+
+you will also have a popup displayed in the backoffice from time to time
+
+@@@ div { .centered-img }
+<img src="../imgs/sd-migration-popup.png" />
+@@@
+
+This toolkit consists of 3 tools that you can use to migrate existing Service Descriptors
 
 ## Migration Job
 
-TODO
+you can enable a job launched after the start of the otoroshi cluster by setting `otoroshi.service-descriptors-migration-job.enabled=true` or `OTOROSHI_SERVICE_DESCRIPTORS_MIGRATION_JOB_ENABLED=true`
+
+@@@ div { .centered-img }
+<img src="../imgs/sd-migration-job-auto.png" />
+@@@
 
 ## Migration API
 
@@ -16,4 +32,14 @@ TODO
 
 ## Migration button
 
-TODO
+on any Service Descriptor, you can click on the `convert to route` button
+
+@@@ div { .centered-img }
+<img src="../imgs/sd-migration-ui.png" />
+@@@
+
+and just confirm it
+
+@@@ div { .centered-img }
+<img src="../imgs/sd-migration-ui-confirm.png" />
+@@@
