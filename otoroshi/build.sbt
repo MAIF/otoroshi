@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "16.25.0-dev"
+version := "17.0.0"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
