@@ -565,7 +565,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
       case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc)                            => {
-        Ok(NgRoute.fromServiceDescriptor(desc, false).json).vfuture
+        Ok(NgRoute.fromServiceDescriptor(desc, debug = false).json).vfuture
       }
     }
   }
@@ -575,9 +575,10 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
       case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc)                            => {
-        val route = NgRoute.fromServiceDescriptor(desc, false)
+        val route = NgRoute.fromServiceDescriptor(desc, debug = false)
         route.save().map { _ =>
           val port = if (ctx.request.theSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt
+          desc.copy(enabled = false).save()
           Ok(
             route.json.asObject ++ Json.obj(
               "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/routes/${route.id}",
