@@ -183,9 +183,12 @@ export const graph = (env) => {
         {
           title: 'Apis',
           description: 'All apis',
-          img: 'apis',
+          img: 'routes',
           icon: () => 'fa-brush',
           link: '/apis',
+          tag: <span className='badge bg-xs bg-warning'>
+            ALPHA
+          </span>
         },
       ],
     },
@@ -377,7 +380,7 @@ const AutoLink = (props) => {
   }
 };
 
-const Feature = ({ title, description, img, link, icon }) => {
+const Feature = ({ title, description, img, link, icon, tag }) => {
   const iconValue = icon ? icon() : null;
   const className = _.isString(iconValue)
     ? iconValue.indexOf(' ') > -1
@@ -395,7 +398,7 @@ const Feature = ({ title, description, img, link, icon }) => {
       ></div>
       <div className="cards-body">
         <div className="cards-title">
-          {zeIcon} {title}
+          {zeIcon} {title} {tag}
         </div>
         <div className="cards-description">
           <p>{description}</p>
@@ -474,6 +477,7 @@ export class FeaturesPage extends Component {
                     icon,
                     absoluteImg,
                     link = '',
+                    tag
                   }) => (
                     <Feature
                       title={title}
@@ -481,6 +485,7 @@ export class FeaturesPage extends Component {
                       description={description}
                       img={absoluteImg || `/assets/images/svgs/${img}.svg`}
                       link={link}
+                      tag={tag}
                     />
                   )
                 )}

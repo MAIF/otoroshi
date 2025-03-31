@@ -338,7 +338,8 @@ function Block({
           {features
             .filter((d) => d.display === undefined || d.display())
             .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
-            .map(({ title, link, icon }) => {
+            .map(({ title, link, icon, tag }) => {
+
               const alreadyInShortcuts = !!shortcuts.find((s) => s === title.toLowerCase());
               if (link.indexOf('http') === 0) {
                 const iconTitle = description ? `${title} - ${description}` : title;
@@ -444,9 +445,11 @@ function Block({
                         marginLeft: 15,
                         maxWidth: 130,
                       }}
+                      className='pe-2'
                     >
                       {title}
                     </div>
+                    {tag}
                   </div>
                   {addShortcutButton && (
                     <i
@@ -530,8 +533,9 @@ function SidebarLink({
           style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
         >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
-          <span style={{ marginTop: '4px' }} title={iconTitle}>
+          <span style={{ marginTop: '4px' }} className='d-flex align-items-center' title={iconTitle}>
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+            <div className='ms-2'>{props.tag}</div>
           </span>
         </Link>
       )}
@@ -545,8 +549,9 @@ function SidebarLink({
           style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
         >
           <CustomIcon icon={icon} title={iconTitle} />{' '}
-          <span style={{ marginTop: '4px' }} title={iconTitle}>
+          <span style={{ marginTop: '4px' }} className='d-flex align-items-center' title={iconTitle}>
             {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+            <div className='ms-2'>{props.tag}</div>
           </span>
         </a>
       )}

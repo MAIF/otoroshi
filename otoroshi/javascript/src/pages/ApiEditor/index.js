@@ -1947,7 +1947,15 @@ function Apis(props) {
     const location = useLocation()
 
     useEffect(() => {
-        props.setTitle('Apis')
+        props.setTitle({
+            value: 'Apis',
+            noThumbtack: true,
+            children: <div className='m-0 ms-2' style={{ fontSize: '1rem' }}>
+                <span className='badge bg-xs bg-warning'>
+                    ALPHA
+                </span>
+            </div>
+        })
         return () => props.setTitle(undefined)
     }, [])
 
@@ -3080,7 +3088,7 @@ function publishAPI(draft, api, history) {
                         queryParams.delete("version");
                         window.history.replaceState(null, null, "?" + queryParams.toString());
                         window.location.reload()
-                        
+
                         history.push(`/apis/${api.id}`)
                     })
                     .then(() => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
