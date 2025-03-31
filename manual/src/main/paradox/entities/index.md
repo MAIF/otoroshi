@@ -22,6 +22,15 @@ Any entity has the following properties
 @@@
 
 @@@div { .entities }
+<img src="../imgs/entities-apis.png">
+<div>
+<span>Routes</span>
+<span>Proxy your applications with apis</span>
+</div>
+@ref:[View](./apis.md)
+@@@
+
+@@@div { .entities }
 <img src="../imgs/entities-certificates.png">
 <div>
 <span>Backends</span>
@@ -142,6 +151,7 @@ Any entity has the following properties
 @@@ index
 
 * [Routes](./routes.md)
+* [Apis](./apis.md)
 * [Backends](./backends.md)
 * [Organizations](./organizations.md)
 * [Teams](./teams.md)
