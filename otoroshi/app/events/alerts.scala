@@ -395,7 +395,7 @@ case class SnowMonkeyStartedAlert(
       "alert"         -> "SnowMonkeyStartedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class SnowMonkeyStoppedAlert(
@@ -423,7 +423,7 @@ case class SnowMonkeyStoppedAlert(
       "alert"         -> "SnowMonkeyStoppedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class SnowMonkeyConfigUpdatedAlert(
@@ -451,7 +451,7 @@ case class SnowMonkeyConfigUpdatedAlert(
       "alert"         -> "SnowMonkeyConfigUpdatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class SnowMonkeyResetAlert(
@@ -479,7 +479,7 @@ case class SnowMonkeyResetAlert(
       "alert"         -> "SnowMonkeyResetAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -508,7 +508,7 @@ case class CertCreatedAlert(
       "alert"         -> "CertCreatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -537,7 +537,7 @@ case class CertUpdatedAlert(
       "alert"         -> "CertUpdatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -566,7 +566,7 @@ case class CertDeleteAlert(
       "alert"         -> "CertDeleteAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -588,7 +588,7 @@ case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
       "@serviceId"  -> `@serviceId`,
       "@service"    -> `@service`,
       "@env"        -> `@env`,
-      "audit"       -> "CertRenewalAlert",
+      "alert"       -> "CertRenewalAlert",
       "certificate" -> cert.toJson
     )
 }
@@ -611,7 +611,7 @@ case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
       "@serviceId"  -> `@serviceId`,
       "@service"    -> `@service`,
       "@env"        -> `@env`,
-      "audit"       -> "CertExpiredAlert",
+      "alert"       -> "CertExpiredAlert",
       "certificate" -> cert.toJson
     )
 }
@@ -634,7 +634,7 @@ case class CertAlmostExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@t
       "@serviceId"  -> `@serviceId`,
       "@service"    -> `@service`,
       "@env"        -> `@env`,
-      "audit"       -> "CertAlmostExpiredAlert",
+      "alert"       -> "CertAlmostExpiredAlert",
       "certificate" -> cert.toJson
     )
 }
@@ -661,7 +661,7 @@ case class SnowMonkeyOutageRegisteredAlert(
       "alert"         -> "SnowMonkeyResetAlert",
       "adminApiAlert" -> true,
       "user"          -> "--",
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -978,7 +978,7 @@ case class GlobalConfigModification(
       "oldConfig"     -> oldConfig,
       "newConfig"     -> newConfig,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
@@ -1121,7 +1121,7 @@ case class ServiceGroupCreatedAlert(
       "alert"         -> "ServiceGroupCreatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ServiceGroupUpdatedAlert(
@@ -1149,7 +1149,7 @@ case class ServiceGroupUpdatedAlert(
       "alert"         -> "ServiceGroupUpdatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ServiceGroupDeletedAlert(
@@ -1177,7 +1177,7 @@ case class ServiceGroupDeletedAlert(
       "alert"         -> "ServiceGroupDeletedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ServiceCreatedAlert(
@@ -1205,7 +1205,7 @@ case class ServiceCreatedAlert(
       "alert"         -> "ServiceCreatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ServiceUpdatedAlert(
@@ -1233,7 +1233,7 @@ case class ServiceUpdatedAlert(
       "alert"         -> "ServiceUpdatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ServiceDeletedAlert(
@@ -1261,7 +1261,7 @@ case class ServiceDeletedAlert(
       "alert"         -> "ServiceDeletedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ApiKeyCreatedAlert(
@@ -1289,7 +1289,7 @@ case class ApiKeyCreatedAlert(
       "alert"         -> "ApiKeyCreatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ApiKeyUpdatedAlert(
@@ -1317,7 +1317,7 @@ case class ApiKeyUpdatedAlert(
       "alert"         -> "ApiKeyUpdatedAlert",
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 case class ApiKeyDeletedAlert(
@@ -1345,7 +1345,7 @@ case class ApiKeyDeletedAlert(
       "alert"         -> "ApiKeyDeletedAlert",
       "adminApiAlert" -> true,
       "identity"      -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 /*

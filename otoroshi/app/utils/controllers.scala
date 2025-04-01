@@ -74,7 +74,7 @@ case class GenericAlert(
       "alert"         -> alertName,
       "adminApiAlert" -> true,
       "user"          -> user,
-      "audit"         -> audit.toJson
+      "audit_payload" -> audit.toJson
     )
 }
 
