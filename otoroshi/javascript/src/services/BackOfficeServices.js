@@ -1046,31 +1046,10 @@ export function findAllJwtVerifiers(paginationState) {
 }
 
 export function findAllEvents(paginationState, serviceId, from, to, limit = 500, order = 'asc') {
-  function getValueAtPath(path, obj) {
-    return path.split('.').reduce((acc, key) => {
-      if (acc[key]) return acc[key];
-      return {};
-    }, obj);
-  }
-
   return findAllWithPagination(
     `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     paginationState
-  ).then((events) => {
-    const filters = (paginationState.filtered || []).map((field) => [field.id, field.value]);
-    const hasFilters = filters.length > 0;
-
-    if (events.data && hasFilters) {
-      return {
-        ...events,
-        data: events.data.filter((event) => {
-          return filters.every(([filterKey, filterValue]) => {
-            return ('' + getValueAtPath(filterKey, event)).includes(filterValue + '');
-          });
-        }),
-      };
-    } else return events;
-  });
+  )
 }
 
 export function findJwtVerifierById(id) {
@@ -2230,6 +2209,8 @@ export const nextClient = {
       schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
       fetch: (path) => fetchWrapperNext(`/${entity}${path}`),
+      patch: (content, fieldId) =>
+        fetchWrapperNext(`/${entity}/${fieldId}`, 'PATCH', content),
     };
   },
   forEntityNextWithGroup: (group, entity) => {

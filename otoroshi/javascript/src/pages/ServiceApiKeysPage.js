@@ -56,9 +56,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,11 +255,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -800,23 +798,23 @@ const ApiKeysConstants = {
       },
       notFilterable: true,
       content: (item) => item.enabled,
-      cell: (v, item, table) => (
-        <SimpleBooleanInput
-          value={item.enabled}
-          onChange={(value) => {
-            nextClient
-              .forEntityNext(nextClient.ENTITIES.APIKEYS)
-              .update(
-                {
-                  ...item,
-                  enabled: value,
-                },
-                'clientId'
-              )
-              .then(() => table.update());
-          }}
-        />
-      ),
+      cell: (v, item, table) => <SimpleBooleanInput
+        value={item.enabled}
+        onChange={(value) => {
+          nextClient
+            .forEntityNext(nextClient.ENTITIES.APIKEYS)
+            .patch([
+              {
+                op: "replace",
+                path: "/enabled",
+                value: value
+              }
+            ],
+              item.clientId
+            )
+            .then(() => table.update());
+        }}
+      />
     },
     {
       title: 'Stats',
@@ -834,9 +832,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -923,8 +920,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+        .forEntityNext(nextClient.ENTITIES.SERVICES)
+        .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -984,7 +981,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-                `routes/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
@@ -1020,7 +1017,7 @@ export class ServiceApiKeysPage extends Component {
           stayAfterSave={true}
           injectTable={(table) => (this.table = table)}
           showActions={true}
-          displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          displayTrash={(item) => !(this.state.env && this.state.env.adminApikeyId === item.clientId)}
           showLink={false}
           rowNavigation={true}
           export={true}
@@ -1279,7 +1276,8 @@ export class ApiKeysPage extends Component {
           createItem={this.createItem}
           stayAfterSave={true}
           showActions={true}
-          displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          // displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
+          displayTrash={(item) => !(this.state.env && this.state.env.adminApikeyId === item.clientId)}
           showLink={false}
           rowNavigation={true}
           export={true}

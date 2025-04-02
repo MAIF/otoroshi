@@ -271,13 +271,15 @@ object DataExporter {
           val rawEvents = items.map(_._2)
           Try(sendWithSource(events, rawEvents).recover { case e: Throwable =>
             val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
-            logger.error(message, e)
+            logger.error(s"$message ${e.getMessage}")
+            logger.debug(message, e)
             withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
             ExportResult.ExportResultFailure(s"$message: ${e.getMessage}")
           }) match {
             case Failure(e) =>
               val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
-              logger.error(message, e)
+              logger.error(s"$message ${e.getMessage}")
+              logger.debug(message, e)
               withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
               ExportResult.ExportResultFailure(s"$message: ${e.getMessage}").vfuture
             case Success(f) => f

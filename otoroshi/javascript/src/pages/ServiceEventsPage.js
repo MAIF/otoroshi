@@ -59,7 +59,8 @@ export class ServiceEventsPage extends Component {
     to: moment(),
     limit: 500,
     asc: true,
-    error: undefined
+    error: undefined,
+    hasElasticseachExporter: true
   };
 
   columns = [
@@ -151,6 +152,7 @@ export class ServiceEventsPage extends Component {
     }, // (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
+      filterId: 'identity.label',
       content: (item) => safe(item.identity, (i) => i.label + ' (' + i.identity + ')'),
     },
     {
@@ -184,7 +186,7 @@ export class ServiceEventsPage extends Component {
     { title: 'reqId', content: (item) => item.reqId, filterId: 'reqId' },
     {
       title: 'To',
-      filterable: false,
+      notFilterable: true,
       content: (item) => safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.to.scheme}://${item.to.host}${item.to.uri}`,
       cell: (v, item) => {
         const url = safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`);
@@ -197,7 +199,7 @@ export class ServiceEventsPage extends Component {
     },
     {
       title: 'Target',
-      filterable: false,
+      notFilterable: true,
       content: (item) => safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.target.scheme}://${item.target.host}${item.target.uri}`,
       cell: (v, item) => {
         const url = safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`);
@@ -210,6 +212,7 @@ export class ServiceEventsPage extends Component {
     },
     {
       title: 'url',
+      filterId: 'url',
       content: (item) => item.url,
       cell: (v, item) => (
         <a target="_blank" href={item.url}>
@@ -217,7 +220,11 @@ export class ServiceEventsPage extends Component {
         </a>
       ),
     },
-    { title: 'Headers Count', content: (item) => item.headers.length, filterable: false },
+    {
+      title: 'Headers Count',
+      content: (item) => item.headers.length,
+      notFilterable: true
+    },
     {
       title: 'Calls per sec',
       filterId: 'remainingQuotas.throttlingCallsPerWindow',
@@ -301,6 +308,13 @@ export class ServiceEventsPage extends Component {
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });
     });
+
+    BackOfficeServices.findAllDataExporterConfigs()
+      .then(exporters => {
+        this.setState({
+          hasElasticseachExporter: exporters?.data?.find(exporter => exporter.type === 'elastic' && exporter.enabled === true)
+        })
+      })
   }
 
   fetchEvents = (paginationState) => {
@@ -316,9 +330,9 @@ export class ServiceEventsPage extends Component {
       this.state.asc ? 'asc' : 'desc'
     )
       .then(result => {
-        if (result.data && result.data.error) {
+        if ((result.data && result.data.error) || result.error) {
           this.setState({
-            error: result.data.error
+            error: result.error ? result.error : result.data.error
           })
           return []
         }
@@ -347,7 +361,15 @@ export class ServiceEventsPage extends Component {
         <p style={{ color: 'var(--text)' }}>
           {this.state.error}
         </p>
-        <DangerZoneCard />
+        <div className='d-flex gap-2'>
+          <DangerZoneCard title="Danger Zone"
+            text="Go to the danger zone and add your Elasticsearch configuration."
+            link='/dangerzone?section=Elastic'
+          />
+          {!this.state.hasElasticseachExporter && <DangerZoneCard title="Exporters"
+            text="If you haven't done it yet, go to the Exporters, add a new Elasticsearch exporter and enable it."
+            link="/exporters" />}
+        </div>
       </div>
     }
 
@@ -411,23 +433,23 @@ export class ServiceEventsPage extends Component {
   }
 }
 
-function DangerZoneCard() {
+function DangerZoneCard({ title, text, link }) {
   const history = useHistory()
 
   return (
     <div
-      onClick={() => history.push('/dangerzone?section=Elastic')}
+      onClick={() => history.push(link)}
       className="cards apis-cards"
     >
       <div className="cards-body">
         <div className="cards-title d-flex align-items-center justify-content-between">
-          Danger zone{' '}
+          {title}{' '}
           <span className="badge custom-badge api-status-deprecated">
             <i className="fas fa-exclamation-triangle" />
           </span>
         </div>
         <p className="cards-description" style={{ position: 'relative' }}>
-          Go to the danger zone to add your Elasticsearch configuration.
+          {text}
           <i className="fas fa-chevron-right fa-lg navigate-icon" />
         </p>
       </div>

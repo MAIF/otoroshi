@@ -791,7 +791,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
               resp.ignore()
             }
           case Failure(e)    =>
-            logger.error(s"Error publishing event to elastic", e)
+            logger.error(s"Error publishing event to elastic ${e.getMessage}")
+            logger.debug("Error publishing event to elastic", e)
         }
         post
       }

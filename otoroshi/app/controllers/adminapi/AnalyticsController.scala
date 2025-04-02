@@ -9,20 +9,10 @@ import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.mvc.{
-  AbstractController,
-  Action,
-  AnyContent,
-  AnyContentAsEmpty,
-  BodyParser,
-  BodyParsers,
-  ControllerComponents,
-  RequestHeader,
-  Result,
-  Results
-}
+import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
+import play.api.mvc.{AbstractController, Action, AnyContent, AnyContentAsEmpty, BodyParser, BodyParsers, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.jobs.updates._
+import utils.EntityFiltering
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -439,9 +429,11 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .map(_.getOrElse(Json.obj()))
               .map { r =>
                 // logger.debug(s"$r")
-                (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
+                val events = (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
+
+                EntityFiltering.process(events, ctx.request)
               }
-              .map(json => Ok(json))
+              .map(result => Ok(result.content).withHeaders("X-Pages" -> result.pages.toString))
           }
         }
       }
