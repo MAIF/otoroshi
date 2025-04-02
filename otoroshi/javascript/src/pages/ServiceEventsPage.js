@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
-import { converterBase2 } from 'byte-converter';
 import { Table, SimpleBooleanInput } from '../components/inputs';
 import moment from 'moment';
 import queryString from 'query-string';
@@ -9,6 +8,8 @@ import queryString from 'query-string';
 import { OtoDatePicker } from '../components/datepicker';
 
 import DesignerSidebar from './RouteDesigner/Sidebar';
+import { useHistory } from 'react-router-dom';
+import JsonViewCompare from '../components/Drafts/Compare';
 
 function readableType(contentType) {
   if (contentType.indexOf('text/html') > -1) {
@@ -58,6 +59,7 @@ export class ServiceEventsPage extends Component {
     to: moment(),
     limit: 500,
     asc: true,
+    error: undefined
   };
 
   columns = [
@@ -78,10 +80,17 @@ export class ServiceEventsPage extends Component {
           type="button"
           className="btn btn-success btn-sm"
           onClick={(e) =>
-            window.newAlert(
-              <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
-              'Content'
-            )
+            window.wizard("Event content", () => <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
+              <JsonViewCompare
+                oldData={item}
+                newData={item}
+              />
+            </div>, {
+              noCancel: true
+            })
+            // <pre style={{ minHeight: 300 }}>
+            //   {JSON.stringify(item, null, 2)}
+            // </pre>)
           }
         >
           content
@@ -137,12 +146,11 @@ export class ServiceEventsPage extends Component {
     { title: 'method', content: (item) => item.method, filterId: 'method' },
     {
       title: 'Access By',
+      filterId: 'identity.identityType',
       content: (item) => safe(item.identity, (i) => i.identityType),
-      filterable: false,
     }, // (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
-      filterable: false,
       content: (item) => safe(item.identity, (i) => i.label + ' (' + i.identity + ')'),
     },
     {
@@ -306,10 +314,16 @@ export class ServiceEventsPage extends Component {
       this.state.to,
       limit,
       this.state.asc ? 'asc' : 'desc'
-    ).then(
-      (d) => d,
-      (err) => console.error(err)
-    );
+    )
+      .then(result => {
+        if (result.data && result.data.error) {
+          this.setState({
+            error: result.data.error
+          })
+          return []
+        }
+        return result
+      })
   };
 
   updateDateRange = (from, to) => {
@@ -320,6 +334,23 @@ export class ServiceEventsPage extends Component {
 
   render() {
     if (!this.state.service) return null;
+
+    if (this.state.error) {
+      return <div
+        className="alert alert-secondary editor"
+        role="alert"
+        style={{
+          background: 'var(--bg-color_level2)',
+          borderColor: 'var(--bg-color_level2)',
+        }}
+      >
+        <p style={{ color: 'var(--text)' }}>
+          {this.state.error}
+        </p>
+        <DangerZoneCard />
+      </div>
+    }
+
     return (
       <div style={{ width: 'calc(100vw - 52px)', overflowX: 'hidden' }}>
         <div className="row" style={{ marginBottom: 30 }}>
@@ -378,4 +409,28 @@ export class ServiceEventsPage extends Component {
       </div>
     );
   }
+}
+
+function DangerZoneCard() {
+  const history = useHistory()
+
+  return (
+    <div
+      onClick={() => history.push('/dangerzone?section=Elastic')}
+      className="cards apis-cards"
+    >
+      <div className="cards-body">
+        <div className="cards-title d-flex align-items-center justify-content-between">
+          Danger zone{' '}
+          <span className="badge custom-badge api-status-deprecated">
+            <i className="fas fa-exclamation-triangle" />
+          </span>
+        </div>
+        <p className="cards-description" style={{ position: 'relative' }}>
+          Go to the danger zone to add your Elasticsearch configuration.
+          <i className="fas fa-chevron-right fa-lg navigate-icon" />
+        </p>
+      </div>
+    </div>
+  );
 }

@@ -1,4 +1,4 @@
-import React, { Component, Suspense, useState } from 'react';
+import React, { Component, Suspense, useEffect, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Form, SelectInput, BooleanInput } from '../components/inputs';
 import { Proxy } from '../components/Proxy';
@@ -348,7 +348,7 @@ function WasmoTester(props) {
                   ...props.rawValue.wasmoSettings,
                 }),
               })
-                .catch((_) => {})
+                .catch((_) => { })
                 .then((r) => {
                   console.log(r.status);
                   if (r.status !== 200) {
@@ -363,7 +363,7 @@ function WasmoTester(props) {
                         height={window.innerHeight - 320}
                         label=""
                         help="..."
-                        onChange={() => {}}
+                        onChange={() => { }}
                         value={value}
                       />
                       <p className="text-center" style={{ fontWeight: 'bold' }}>
@@ -1393,6 +1393,16 @@ export class DangerZonePage extends Component {
       this.setState({ value, originalValue: value })
     );
     this.mountShortcuts();
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const scrollToSection = queryParams.get('section')
+    if (scrollToSection)
+      document.querySelectorAll("span").forEach(span => {
+        if (span.textContent.trim().includes(scrollToSection)) {
+          span.scrollIntoView({ behavior: "smooth", block: "start" })
+          span.click()
+        }
+      });
   }
 
   componentWillUnmount() {
@@ -1934,11 +1944,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
-      plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-    }`;
+      }`;
   };
 
   return (

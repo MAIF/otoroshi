@@ -9,15 +9,17 @@ import './datepicker.css';
 
 export class OtoDatePicker extends Component {
   onChange = (value, dateString) => {
-    const from = value[0];
-    const to = value[1];
-    if (
-      from &&
-      to &&
-      this.props.updateDateRange &&
-      (!this.props.from.isSame(from) || !this.props.to.isSame(to))
-    ) {
-      this.props.updateDateRange(from, to);
+    if (value) {
+      const from = value[0];
+      const to = value[1];
+      if (
+        from &&
+        to &&
+        this.props.updateDateRange &&
+        (!this.props.from.isSame(from) || !this.props.to.isSame(to))
+      ) {
+        this.props.updateDateRange(from, to);
+      }
     }
   };
 
