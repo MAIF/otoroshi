@@ -550,7 +550,7 @@ EOF
 <p>@@@ div</p>
 <p>This time, the response will be received, and the CORS rules will be checked by your browser. To see the headers added by Otoroshi in the response, expose these headers by specifying them in the plugin configuration.</p>
 <p>Now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank"><a href="http://otoroshi.oto.tools:8080/">http://otoroshi.oto.tools:8080/</a></a>, <strong>log in with the credential generated in the logs</strong>. and navigate to the CORS route previously created.</p>
-<p>Edit the CORS plugin by adding an new entry <code>*</code> in the <code>Expose headers</code> input, and save your route. Try calling your route again using the button.</p>
+<p>Edit the CORS plugin by adding a new entry <code>*</code> in the <code>Expose headers</code> input, and save your route. Try calling your route again using the button.</p>
 <p>@@@ div { .centered-img } <img src="../imgs/cors/expose_headers.png" /></p></div>
 <p>You should now be able to see the headers sent back by Otoroshi. Let&rsquo;s reduce the scope of allowed origins by restricting access to the route to your own domain only.</p>
 <p>Edit the CORS plugin by replacing the <code>*</code> entry of the <code>Allow origins</code> input by &rsquo;<a href="http://localhost:8080">http://localhost:8080</a>, and save your route. Try calling your route again using the button.</p>
