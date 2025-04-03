@@ -22,9 +22,9 @@ Any entity has the following properties
 @@@
 
 @@@div { .entities }
-<img src="../imgs/entities-apis.png">
+<img src="../imgs/entities-routes.png">
 <div>
-<span>Routes</span>
+<span>APIs</span>
 <span>Proxy your applications with apis</span>
 </div>
 @ref:[View](./apis.md)
