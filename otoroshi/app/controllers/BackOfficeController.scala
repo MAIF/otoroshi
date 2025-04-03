@@ -790,6 +790,7 @@ class BackOfficeController(
           services   <- env.datastores.serviceDescriptorDataStore.findAll()
           tcServices <- env.datastores.tcpServiceDataStore.findAll()
           routes     <- env.datastores.routeDataStore.findAll()
+          apis       <- env.datastores.apiDataStore.findAll()
         } yield {
           val finalServices =
             services.map(s =>
@@ -798,6 +799,9 @@ class BackOfficeController(
             routes.map(s =>
               SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
             ) ++
+            apis.map(s =>
+              SearchedService(s.name, s.id, "default", "api", "api", s.location)
+            )++
             tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
           finalServices
         }

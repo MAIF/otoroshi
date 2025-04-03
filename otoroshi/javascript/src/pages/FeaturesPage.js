@@ -181,7 +181,7 @@ export const graph = (env) => {
           link: '/drafts',
         },
         {
-          title: 'Apis',
+          title: 'APIs',
           description: 'All apis',
           img: 'routes',
           icon: () => 'fa-brush',

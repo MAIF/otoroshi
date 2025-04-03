@@ -641,6 +641,8 @@ export class TopBar extends Component {
               this.gotoRoute(v.serviceId);
             } else if (v.type === 'tcp') {
               this.gotoTcpService({ env: v.env, value: v.serviceId });
+            } else if (v.type === 'api') {
+              this.gotoAPI(v.serviceId);
             }
           },
         }));
@@ -650,6 +652,12 @@ export class TopBar extends Component {
           env: <span className="fas fa-road" />,
           label: 'Routes',
           value: 'All Routes',
+        });
+        options.push({
+          action: () => this.routeTo('/apis'),
+          env: <span className="fas fa-road" />,
+          label: 'APIs',
+          value: 'All APIs',
         });
         options.push({
           action: () => this.routeTo('/backends'),
@@ -1073,6 +1081,14 @@ export class TopBar extends Component {
       this.props.history.push(`/routes/${routeId}?tab=flow`);
     } else {
       window.location.href = `/bo/dashboard/routes/${routeId}?tab=flow`;
+    }
+  };
+
+  gotoAPI = (apiId) => {
+    if (this.props.history) {
+      this.props.history.push(`/apis/${apiId}`);
+    } else {
+      window.location.href = `/bo/dashboard/apiId/${routeId}`;
     }
   };
 
@@ -1723,7 +1739,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-            // style={{ zIndex: 100 }}
+          // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -2074,9 +2090,8 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${
-                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                      } py-2 pb-4`}
+                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                        } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });

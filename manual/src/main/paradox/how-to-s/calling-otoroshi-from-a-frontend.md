@@ -230,7 +230,7 @@ This time, the response will be received, and the CORS rules will be checked by 
 
 Now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs**. and navigate to the CORS route previously created.
 
-Edit the CORS plugin by adding an new entry `*` in the `Expose headers` input, and save your route. Try calling your route again using the button.
+Edit the CORS plugin by adding a new entry `*` in the `Expose headers` input, and save your route. Try calling your route again using the button.
 
 @@@ div { .centered-img }
 <img src="../imgs/cors/expose_headers.png" />

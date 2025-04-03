@@ -2167,7 +2167,7 @@ function Apis(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Apis',
+      value: 'APIs',
       noThumbtack: true,
       children: (
         <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
