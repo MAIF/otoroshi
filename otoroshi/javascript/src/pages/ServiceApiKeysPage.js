@@ -399,7 +399,7 @@ function CopyFromLineItem({ item }) {
     setTimeout(() => {
       setCopyIconName('fas fa-copy');
     }, 2000);
-  };
+  }
 
   return (
     <button
@@ -1058,7 +1058,7 @@ export class ApiKeysPage extends Component {
       clientId: true,
       clientName: true,
       stats: true,
-      credentials: true,
+      credentials: true
     },
   };
 
@@ -1072,7 +1072,7 @@ export class ApiKeysPage extends Component {
 
   loadFields = () => {
     try {
-      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'));
+      const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR || '{}'))
 
       if (values.apikeys)
         this.setState({
@@ -1116,14 +1116,17 @@ export class ApiKeysPage extends Component {
   };
 
   fetchAllApiKeys = (paginationState) => {
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
-      ...paginationState,
-      fields: [
-        ...Object.keys(this.state.fields).map((field) =>
-          this.state.fields[field] ? field : undefined
-        ),
-      ].filter((c) => c),
-    });
+    return nextClient
+      .forEntityNext(nextClient.ENTITIES.APIKEYS)
+      .findAllWithPagination({
+        ...paginationState,
+        fields: [
+          ...Object.keys(this.state.fields).map((field) =>
+            this.state.fields[field] ? field : undefined
+          ),
+          'clientSecret'
+        ].filter((c) => c),
+      });
   };
 
   fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).template();
