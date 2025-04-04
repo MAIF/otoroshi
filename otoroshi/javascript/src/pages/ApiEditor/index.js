@@ -36,6 +36,7 @@ import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClient
 import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
+import { Row } from '../../components/Row';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -2122,17 +2123,6 @@ function OpenapiImport(props) {
       </div>
     </>
   );
-}
-
-function Row({ title, children, className = 'col-sm-10' }) {
-  return <div className="row mb-3">
-    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-      {title}
-    </label>
-    <div className={className}>
-      {children}
-    </div>
-  </div>
 }
 
 function OpenAPILoader() {

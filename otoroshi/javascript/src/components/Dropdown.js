@@ -1,10 +1,10 @@
 import React from 'react';
 
-export function Dropdown({ children, className = '', style = {}, buttonStyle }) {
+export function Dropdown({ children, className = '', style = {}, buttonStyle, h100 = true }) {
   return (
     <div className={`dropdown ${className}`} style={style}>
       <button
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background h-100"
+        className={`btn btn-sm toggle-form-buttons d-flex align-items-center dark-background ${h100 ? 'h-100' : ''}`}
         style={{
           backgroundColor: 'var(--bg-color_level2)',
           color: 'var(--color_level2)',

@@ -95,14 +95,14 @@ function Selector({ setMode, disableSelectMode }) {
           },
           {
             title: 'CLONE',
-            text: 'Create a new one fron an existing Authentication',
+            text: 'Create a new one from an existing Authentication',
             mode: 'clone',
           },
         ].map(({ title, text, mode, disabled }) =>
           disabled ? null : (
             <Button
               key={mode}
-              type="dark"
+              type="quiet"
               className="py-3 my-2"
               style={{ border: '1px solid #f9b000' }}
               onClick={() => setMode(mode)}
@@ -214,7 +214,7 @@ export class AuthenticationWizard extends React.Component {
     breadcrumb: ['Informations'],
   };
 
-  onChange = (field, value, callback = () => {}) => {
+  onChange = (field, value, callback = () => { }) => {
     this.setState(
       {
         authenticationConfig: {
@@ -257,36 +257,34 @@ export class AuthenticationWizard extends React.Component {
     if (mode === 'update_in_wizard') {
       return (
         <div className="wizard">
-          <EscapeModalListener hide={this.props.hide}>
-            <div className="wizard-container" ref={this.props.ref}>
-              <div
-                className="d-flex"
-                style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
-              >
-                <Header onClose={this.props.hide} mode={mode} />
-                <div className="wizard-content">
-                  <AuthModuleConfig
-                    value={authenticationConfig}
-                    onChange={(authenticationConfig) => this.setState({ authenticationConfig })}
-                  />
+          <div className="wizard-container" ref={this.props.ref}>
+            <div
+              className="d-flex"
+              style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
+            >
+              <Header onClose={this.props.hide} mode={mode} />
+              <div className="wizard-content">
+                <AuthModuleConfig
+                  value={authenticationConfig}
+                  onChange={(authenticationConfig) => this.setState({ authenticationConfig })}
+                />
 
-                  <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
-                    <FeedbackButton
-                      style={{
-                        backgroundColor: 'var(--color-primary)',
-                        borderColor: 'var(--color-primary)',
-                        padding: '12px 48px',
-                      }}
-                      onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
-                      onSuccess={this.props.hide}
-                      icon={() => <i className="fas fa-paper-plane" />}
-                      text="Save the authentication configuration"
-                    />
-                  </div>
+                <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+                  <FeedbackButton
+                    style={{
+                      backgroundColor: 'var(--color-primary)',
+                      borderColor: 'var(--color-primary)',
+                      padding: '12px 48px',
+                    }}
+                    onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
+                    onSuccess={this.props.hide}
+                    icon={() => <i className="fas fa-paper-plane" />}
+                    text="Save the authentication configuration"
+                  />
                 </div>
               </div>
             </div>
-          </EscapeModalListener>
+          </div>
         </div>
       );
     } else {
@@ -422,124 +420,122 @@ export class AuthenticationWizard extends React.Component {
 
       return (
         <div className="wizard">
-          <EscapeModalListener hide={this.props.hide}>
-            <div className="wizard-container" ref={this.props.ref}>
-              <div
-                className="d-flex"
-                style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
-              >
-                <Header onClose={this.props.hide} mode={mode} />
+          <div className="wizard-container" ref={this.props.ref}>
+            <div
+              className="d-flex"
+              style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
+            >
+              <Header onClose={this.props.hide} mode={mode} />
 
-                {mode === 'selector' && (
-                  <Selector
-                    setMode={(mode) => this.setState({ mode })}
-                    disableSelectMode={this.props.disableSelectMode}
-                  />
-                )}
+              {mode === 'selector' && (
+                <Selector
+                  setMode={(mode) => this.setState({ mode })}
+                  disableSelectMode={this.props.disableSelectMode}
+                />
+              )}
 
-                {mode !== 'selector' && (
-                  <>
-                    {['edition', 'clone'].includes(mode) ? (
-                      <AuthenticationSelector
-                        mode={mode}
-                        handleSelect={(authentication) => {
-                          if (this.props.onConfirm && mode === 'edition') {
-                            this.props.onConfirm(authentication.id);
-                          } else {
-                            this.setState({
-                              mode: 'continue',
-                              authenticationConfig: {
-                                ...authentication,
-                                id: `auth_mod_${uuid()}`,
-                              },
-                            });
-                          }
-                        }}
+              {mode !== 'selector' && (
+                <>
+                  {['edition', 'clone'].includes(mode) ? (
+                    <AuthenticationSelector
+                      mode={mode}
+                      handleSelect={(authentication) => {
+                        if (this.props.onConfirm && mode === 'edition') {
+                          this.props.onConfirm(authentication.id);
+                        } else {
+                          this.setState({
+                            mode: 'continue',
+                            authenticationConfig: {
+                              ...authentication,
+                              id: `auth_mod_${uuid()}`,
+                            },
+                          });
+                        }
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <Breadcrumb
+                        value={this.state.breadcrumb}
+                        onClick={(i) => this.setState({ step: i + 1 })}
                       />
-                    ) : (
-                      <>
-                        <Breadcrumb
-                          value={this.state.breadcrumb}
-                          onClick={(i) => this.setState({ step: i + 1 })}
-                        />
-                        <div className="wizard-content">
-                          {STEPS.map(({ component, props, condition, onChange, index }, i) => {
-                            if (
-                              (step === i + 1 || step === index) &&
-                              (condition ? condition(authenticationConfig) : true)
-                            ) {
-                              const defaultProps = {
-                                value: authenticationConfig,
-                                onChange: (value) =>
-                                  this.setState({ authenticationConfig: value }, onChange),
-                              };
+                      <div className="wizard-content">
+                        {STEPS.map(({ component, props, condition, onChange, index }, i) => {
+                          if (
+                            (step === i + 1 || step === index) &&
+                            (condition ? condition(authenticationConfig) : true)
+                          ) {
+                            const defaultProps = {
+                              value: authenticationConfig,
+                              onChange: (value) =>
+                                this.setState({ authenticationConfig: value }, onChange),
+                            };
 
-                              const allProps = props
-                                ? {
-                                    ...props,
-                                    onChange: (e) => props.onChange(e, i),
-                                  }
-                                : defaultProps;
+                            const allProps = props
+                              ? {
+                                ...props,
+                                onChange: (e) => props.onChange(e, i),
+                              }
+                              : defaultProps;
 
-                              return React.createElement(component, {
-                                key: component.name,
-                                ...allProps,
+                            return React.createElement(component, {
+                              key: component.name,
+                              ...allProps,
+                            });
+                          } else {
+                            return null;
+                          }
+                        })}
+                        {showSummary && (
+                          <WizardLastStep
+                            onConfirm={this.props.onConfirm}
+                            breadcrumb={this.state.breadcrumb}
+                            value={{
+                              ...authenticationConfig,
+                              strategy: {
+                                ...authenticationConfig.strategy,
+                                transformSettings:
+                                  authenticationConfig.strategy?.type === 'Transform'
+                                    ? {
+                                      location: authenticationConfig.strategy?.transformSettings
+                                        ?.location
+                                        ? authenticationConfig.source
+                                        : authenticationConfig.strategy?.transformSettings
+                                          ?.out_location?.source,
+                                    }
+                                    : undefined,
+                              },
+                            }}
+                          />
+                        )}
+                        {!showSummary && (
+                          <WizardActions
+                            nextStep={this.nextStep}
+                            prevStep={this.prevStep}
+                            step={step}
+                            goBack={() => {
+                              this.setState({
+                                mode: this.props.mode || 'selector',
                               });
-                            } else {
-                              return null;
-                            }
-                          })}
-                          {showSummary && (
-                            <WizardLastStep
-                              onConfirm={this.props.onConfirm}
-                              breadcrumb={this.state.breadcrumb}
-                              value={{
-                                ...authenticationConfig,
-                                strategy: {
-                                  ...authenticationConfig.strategy,
-                                  transformSettings:
-                                    authenticationConfig.strategy?.type === 'Transform'
-                                      ? {
-                                          location: authenticationConfig.strategy?.transformSettings
-                                            ?.location
-                                            ? authenticationConfig.source
-                                            : authenticationConfig.strategy?.transformSettings
-                                                ?.out_location?.source,
-                                        }
-                                      : undefined,
-                                },
-                              }}
-                            />
-                          )}
-                          {!showSummary && (
-                            <WizardActions
-                              nextStep={this.nextStep}
-                              prevStep={this.prevStep}
-                              step={step}
-                              goBack={() => {
-                                this.setState({
-                                  mode: this.props.mode || 'selector',
-                                });
-                              }}
-                            />
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-                {['edition', 'clone'].includes(mode) && (
-                  <GoBackSelection
-                    goBack={() => {
-                      this.setState({
-                        mode: this.props.mode || 'selector',
-                      });
-                    }}
-                  />
-                )}
-              </div>
+                            }}
+                          />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+              {['edition', 'clone'].includes(mode) && (
+                <GoBackSelection
+                  goBack={() => {
+                    this.setState({
+                      mode: this.props.mode || 'selector',
+                    });
+                  }}
+                />
+              )}
             </div>
-          </EscapeModalListener>
+          </div>
         </div>
       );
     }
@@ -632,7 +628,7 @@ function InformationsStep({ name, onChange }) {
           flex={true}
           className="my-3"
           style={{
-            fontSize: '2em',
+            fontSize: '1.5em',
           }}
           label="Route name"
           value={name}
@@ -676,14 +672,8 @@ function TypeStep({ value, onChange }) {
     type: {
       renderer: () => {
         return (
-          <div
-            style={{
-              display: 'flex',
-              gap: '10px',
-              flexWrap: 'wrap',
-              justifyContent: 'flex-start',
-            }}
-          >
+          <div className='d-flex gap-2 justify-content-start'
+            style={{ flexWrap: 'wrap' }}>
             {PROVIDERS.map(({ type, desc, title }) => (
               <SelectableButton
                 value={type}
@@ -701,8 +691,8 @@ function TypeStep({ value, onChange }) {
 
   return (
     <>
-      <h3>Choose your provider</h3>
-      <NgForm value={value} schema={schema} flow={['type']} onChange={() => {}} />
+      <h3 className='mb-3'>Choose your provider</h3>
+      <NgForm value={value} schema={schema} flow={['type']} onChange={() => { }} />
     </>
   );
 }
@@ -749,7 +739,7 @@ function OAuth2PreConfiguration({ value, onChange }) {
   return (
     <>
       <h3>Let's start with the OAuth2 configuration</h3>
-      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => {}} />
+      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => { }} />
     </>
   );
 }
@@ -1071,19 +1061,19 @@ function InMemoryConfiguration({ value, onChange }) {
 
   return (
     <div>
-      <h3>In memory configuration</h3>
+      <h3 className='mb-3'>In memory configuration</h3>
 
-      <div>
-        <div className="d-flex mb-3">
-          <label style={{ flex: 1 }}>Name</label>
-          <label style={{ flex: 1 }}>Email</label>
-          <label style={{ minWidth: '84px' }} className="text-center">
-            Has Password?
-          </label>
-          <label style={{ minWidth: '84px' }} className="text-center">
-            Actions
-          </label>
-        </div>
+      <div className="d-flex mb-3">
+        <label style={{ flex: 1 }}>Name</label>
+        <label style={{ flex: 1 }}>Email</label>
+        <label style={{ minWidth: '84px' }} className="text-center">
+          Has Password?
+        </label>
+        <label style={{ minWidth: '84px' }} className="text-center">
+          Actions
+        </label>
+      </div>
+      <div className='d-flex flex-column'>
         {(value.users || []).map((user, i) => (
           <User
             {...user}
@@ -1094,11 +1084,11 @@ function InMemoryConfiguration({ value, onChange }) {
         ))}
 
         {(value.users || []).length === 0 && <p>No users.</p>}
-
-        <Button className="btn-sm mt-3" onClick={addUser}>
-          <i className="fas fa-plus-circle me-2" /> Add user
-        </Button>
       </div>
+
+      <Button className="btn-sm ms-auto mt-3" onClick={addUser}>
+        <i className="fas fa-plus-circle me-2" /> Add user
+      </Button>
     </div>
   );
 }
@@ -1273,89 +1263,59 @@ class User extends React.Component {
     const { email, name, metadata, password } = this.props;
 
     return (
-      <div className="mb-1">
-        <div className="d-flex">
-          <NgStringRenderer
-            inputStyle={{ border: 'none', flex: 1, marginRight: '.25em' }}
-            ngOptions={{
-              spread: true,
-            }}
-            value={name}
-            onChange={(name) =>
-              this.props.onChange({
-                ...this.props,
-                name,
-              })
-            }
-          />
-          <NgStringRenderer
-            inputStyle={{ flex: 1, border: 'none' }}
-            ngOptions={{
-              spread: true,
-            }}
-            value={email}
-            onChange={(email) =>
-              this.props.onChange({
-                ...this.props,
-                email,
-              })
-            }
-          />
-          <div
-            className="d-flex align-items-center justify-content-center"
-            style={{ minWidth: '84px' }}
-          >
-            <i className={`fas fa-${password ? 'check' : 'times'}`} />
-          </div>
-          <div
-            style={{ minWidth: '84px' }}
-            className="d-flex align-items-center justify-content-center"
-          >
-            <Dropdown>
-              <SquareButton
-                className="btn-sm"
-                type="danger"
-                onClick={this.props.removeUser}
-                text="Remove user"
-                icon="fa-trash"
-              />
-              <SquareButton
-                className="btn-sm"
-                onClick={this.generatePassword}
-                text="Generate password"
-                icon="fa-cog"
-              />
-            </Dropdown>
-          </div>
+      <div className="d-flex mb-1">
+        <NgStringRenderer
+          inputStyle={{ border: 'none', flex: 1, marginRight: '.25em' }}
+          ngOptions={{
+            spread: true,
+          }}
+          value={name}
+          onChange={(name) =>
+            this.props.onChange({
+              ...this.props,
+              name,
+            })
+          }
+        />
+        <NgStringRenderer
+          inputStyle={{ flex: 1, border: 'none' }}
+          ngOptions={{
+            spread: true,
+          }}
+          value={email}
+          onChange={(email) =>
+            this.props.onChange({
+              ...this.props,
+              email,
+            })
+          }
+        />
+        <div
+          className="d-flex align-items-center justify-content-center"
+          style={{ minWidth: '84px' }}
+        >
+          <i className={`fas fa-${password ? 'check' : 'times'}`} />
         </div>
-        {/* <div className="col-12">
-          <div className="row mb-3">
-            <label for="input-Name" className="col-xs-12 col-sm-2 col-form-label">
-              Metadata
-            </label>
-            <div className="col-sm-10 d-flex">
-              <input
-                type="text"
-                placeholder="User metadata"
-                className="form-control"
-                value={
-                  this.state.rawUser !== JSON.stringify(metadata)
-                    ? this.state.rawUser
-                    : JSON.stringify(metadata)
-                }
-                onChange={(e) => {
-                  try {
-                    const finalValue = JSON.parse(e.target.value);
-                    this.setState({ rawUser: JSON.stringify(finalValue) });
-                    this.props.onChange(email, 'metadata', finalValue);
-                  } catch (err) {
-                    this.setState({ rawUser: e.target.value });
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div> */}
+        <div
+          style={{ minWidth: '84px' }}
+          className="d-flex align-items-center justify-content-center"
+        >
+          <Dropdown h100={false}>
+            <SquareButton
+              className="btn-sm"
+              type="danger"
+              onClick={this.props.removeUser}
+              text="Remove user"
+              icon="fa-trash"
+            />
+            <SquareButton
+              className="btn-sm"
+              onClick={this.generatePassword}
+              text="Generate password"
+              icon="fa-cog"
+            />
+          </Dropdown>
+        </div>
       </div>
     );
   }
@@ -1364,7 +1324,7 @@ class User extends React.Component {
 function SelectableButton({ value, expected, title, desc, onChange }) {
   return (
     <Button
-      type={value === expected ? 'primaryColor' : 'dark'}
+      type={value === expected ? 'primaryColor' : 'quiet'}
       className="py-3 d-flex align-items-center flex-column col-3"
       style={{
         gap: '12px',

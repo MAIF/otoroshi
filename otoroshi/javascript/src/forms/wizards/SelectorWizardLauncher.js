@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../../components/Button';
 import { NgForm } from '../../components/nginputs';
+import { Row } from '../../components/Row';
 
 export class SelectorWizardLauncher extends React.Component {
   state = {
@@ -35,14 +36,14 @@ export class SelectorWizardLauncher extends React.Component {
     const { openComponent, onChange, entityName, entityField } = this.props;
 
     if (!entity) {
-      return (
+      return <Row title="Authentication module" className='col-sm-10 d-flex align-items-center'>
         <Button
           type="info"
-          text={`Start by select or create a ${entityName}`}
+          text="Select a module"
           onClick={openComponent}
-          className="w-100"
+          className="btn-sm w-100"
         />
-      );
+      </Row>
     } else {
       return (
         <div style={{ flex: 1 }}>
