@@ -616,6 +616,7 @@ GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.con
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)
 
+POST    /apis/apis.otoroshi.io/v1/apis/_openapi                                           otoroshi.next.controllers.adminapi.ApisController.fromOpenapi()
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/deployments                                 otoroshi.next.controllers.adminapi.ApisController.createNewVersion(apiId)
 GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
 GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)

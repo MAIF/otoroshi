@@ -406,6 +406,20 @@ object implicits {
     def asOptInt: Option[Int]         = obj.asOpt[Int]
     def asOptLong: Option[Long]       = obj.asOpt[Long]
   }
+  implicit class BetterJsValueReader(private val obj: JsValue)         extends AnyVal {
+    def selectAsString(path: String): String              = obj.select(path).asString
+    def selectAsInt(path: String): Int                    = obj.select(path).asInt
+    def selectAsDouble(path: String): Double              = obj.select(path).asDouble
+    def selectAsLong(path: String): Long                  = obj.select(path).asLong
+    def selectAsBoolean(path: String): Boolean            = obj.select(path).asBoolean
+    def selectAsObject(path: String): JsObject            = obj.select(path).asObject
+    def selectAsArray(path: String): JsArray              = obj.select(path).asArray
+    def selectAsValue(path: String): JsValue              = obj.select(path).asValue
+    def selectAsOptString(path: String): Option[String]   = obj.select(path).asOptString
+    def selectAsOptBoolean(path: String): Option[Boolean] = obj.select(path).asOptBoolean
+    def selectAsOptInt(path: String): Option[Int]         = obj.select(path).asOptInt
+    def selectAsOptLong(path: String): Option[Long]       = obj.select(path).asOptLong
+  }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
     def block(atMost: Duration): A                                            = Await.result(obj, atMost)
     def awaitf(atMost: Duration)(implicit ec: ExecutionContext): A            = Await.result(obj, atMost)

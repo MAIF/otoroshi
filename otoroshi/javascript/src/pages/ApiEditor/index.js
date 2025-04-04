@@ -652,72 +652,63 @@ const ROUTE_FORM_SETTINGS = {
         },
       },
       backend: {
-        renderer: (props) => {
-          return (
-            <div className="row mb-3">
-              <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-                Backend
-              </label>
-              <div className="col-sm-10">
-                <NgSelectRenderer
-                  id="backend_select"
-                  value={props.rootValue.backend_ref || props.rootValue.backend}
-                  placeholder="Select an existing backend"
-                  label={' '}
-                  ngOptions={{
-                    spread: true,
-                  }}
-                  isClearable
-                  onChange={(backend_ref) => {
-                    props.rootOnChange({
-                      ...props.rootValue,
-                      usingExistingBackend: true,
-                      backend: backend_ref,
-                    });
-                  }}
-                  components={{
-                    Option: (props) => {
-                      return (
-                        <div
-                          className="d-flex align-items-center m-0 p-2"
-                          style={{ gap: '.5rem' }}
-                          onClick={() => {
-                            props.selectOption(props.data);
-                          }}
-                        >
-                          <span
-                            className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
-                          >
-                            {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                          </span>
-                          {props.data.label}
-                        </div>
-                      );
-                    },
-                    SingleValue: (props) => {
-                      return (
-                        <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
-                          <span
-                            className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
-                          >
-                            {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                          </span>
-                          {props.data.label}
-                        </div>
-                      );
-                    },
-                  }}
-                  options={[...item.backends, ...backends]}
-                  optionsTransformer={(arr) =>
-                    arr.map((item) => ({ label: item.name, value: item.id }))
-                  }
-                />
-              </div>
-            </div>
-          );
-        },
+        renderer: (props) => <Row title="Backend">
+          <NgSelectRenderer
+            id="backend_select"
+            value={props.rootValue.backend_ref || props.rootValue.backend}
+            placeholder="Select an existing backend"
+            label={' '}
+            ngOptions={{
+              spread: true,
+            }}
+            isClearable
+            onChange={(backend_ref) => {
+              props.rootOnChange({
+                ...props.rootValue,
+                usingExistingBackend: true,
+                backend: backend_ref,
+              });
+            }}
+            components={{
+              Option: (props) => {
+                return (
+                  <div
+                    className="d-flex align-items-center m-0 p-2"
+                    style={{ gap: '.5rem' }}
+                    onClick={() => {
+                      props.selectOption(props.data);
+                    }}
+                  >
+                    <span
+                      className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+                    >
+                      {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                    </span>
+                    {props.data.label}
+                  </div>
+                );
+              },
+              SingleValue: (props) => {
+                return (
+                  <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
+                    <span
+                      className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+                    >
+                      {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                    </span>
+                    {props.data.label}
+                  </div>
+                );
+              },
+            }}
+            options={[...item.backends, ...backends]}
+            optionsTransformer={(arr) =>
+              arr.map((item) => ({ label: item.name, value: item.id }))
+            }
+          />
+        </Row>
       },
-    };
+    }
   },
   flow: [
     {
@@ -980,31 +971,22 @@ const CONSUMER_FORM_SETTINGS = {
       label: 'Name',
     },
     consumer_kind: {
-      renderer: (props) => {
-        return (
-          <div className="row mb-3">
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              Consumer kind
-            </label>
-            <div className="col-sm-10">
-              <NgDotsRenderer
-                value={props.value}
-                options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
-                ngOptions={{
-                  spread: true,
-                }}
-                onChange={(newType) => {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    settings: TEMPLATES[newType],
-                    consumer_kind: newType,
-                  });
-                }}
-              />
-            </div>
-          </div>
-        );
-      },
+      renderer: (props) => <Row title="Consumer kind">
+        <NgDotsRenderer
+          value={props.value}
+          options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
+          ngOptions={{
+            spread: true,
+          }}
+          onChange={(newType) => {
+            props.rootOnChange({
+              ...props.rootValue,
+              settings: TEMPLATES[newType],
+              consumer_kind: newType,
+            });
+          }}
+        />
+      </Row>
     },
     status: {
       type: 'dots',
@@ -1550,6 +1532,8 @@ function EditBackend(props) {
 
   const [backend, setBackend] = useState();
 
+  console.log(backend)
+
   useEffect(() => {
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
@@ -1616,43 +1600,36 @@ function EditBackend(props) {
 }
 
 function TestingConfiguration(props) {
-  return (
-    <div className="row mb-3">
-      <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-        Configuration
-      </label>
-      <div className="col-sm-10">
-        Enable testing on your API to allow you to call all enabled routes. You just need to pass
-        the following specific header when making the calls. This security measure, enforced by
-        Otoroshi, prevents unauthorized users from accessing your draft API.
-        <div className="d-flex flex-column gap-2 mt-3">
-          <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
-          <div className="input-group">
-            <input
-              className="form-control"
-              disabled
-              type="text"
-              value={props.rootValue?.headerValue}
-            />
+  return <Row title="Configuration">
+    Enable testing on your API to allow you to call all enabled routes. You just need to pass
+    the following specific header when making the calls. This security measure, enforced by
+    Otoroshi, prevents unauthorized users from accessing your draft API.
+    <div className="d-flex flex-column gap-2 mt-3">
+      <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+      <div className="input-group">
+        <input
+          className="form-control"
+          disabled
+          type="text"
+          value={props.rootValue?.headerValue}
+        />
 
-            <span
-              className="input-group-text"
-              style={{ cursor: 'pointer' }}
-              title="copy bearer"
-              onClick={() => {
-                props.onSecretRotation({
-                  ...props.item.testing,
-                  headerValue: v4(),
-                });
-              }}
-            >
-              <i className="fas fa-rotate" />
-            </span>
-          </div>
-        </div>
+        <span
+          className="input-group-text"
+          style={{ cursor: 'pointer' }}
+          title="copy bearer"
+          onClick={() => {
+            props.onSecretRotation({
+              ...props.item.testing,
+              headerValue: v4(),
+            });
+          }}
+        >
+          <i className="fas fa-rotate" />
+        </span>
       </div>
     </div>
-  );
+  </Row>
 }
 
 function Testing(props) {
@@ -1690,22 +1667,13 @@ function Testing(props) {
       ),
     },
     routes: {
-      renderer: () => {
-        return (
-          <div className="row mb-3">
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              Configuration
-            </label>
-            <div className="col-sm-10">
-              <div className="relative">
-                <RoutesView api={item} />
-              </div>
-            </div>
-          </div>
-        );
-      },
-    },
-  };
+      renderer: () => <Row title="Configuration">
+        <div className="relative">
+          <RoutesView api={item} />
+        </div>
+      </Row>
+    }
+  }
 
   let flow = ['enabled', 'config'];
 
@@ -2070,6 +2038,133 @@ function NewFlow(props) {
   );
 }
 
+function OpenapiImport(props) {
+  const [state, setState] = useState({
+    openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
+    domain: 'petstore.oto.tools',
+    serverURL: undefined,
+    step: 0
+  })
+
+  const [newAPI, setAPI] = useState()
+
+  // 'https://petstore3.swagger.io/api/v3/'
+
+  const schema = {
+    openapi: {
+      type: 'string',
+      label: 'Openapi URL',
+    },
+    domain: {
+      type: 'string',
+      label: 'Exposed domain',
+    },
+    serverURL: {
+      type: 'string',
+      label: 'Server URL'
+    },
+    action: {
+      renderer: () => <Row title="Server URL" className='col-sm-10 d-flex align-items-center'>
+        <Button
+          type="success"
+          className='btn-sm'
+          text="Read file"
+          onClick={() => {
+            fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/_openapi`, 'POST', state, 'apis.otoroshi.io')
+              .then(api => {
+                console.log(api)
+                setState({
+                  ...state,
+                  serverURL: (api.backends?.length > 0 && api.backends[0].backend.targets.length > 0) ? api.backends[0].backend.targets[0].hostname : ''
+                })
+                setAPI(api)
+              })
+          }} />
+      </Row>
+    }
+  }
+
+  let flow = ['openapi', 'domain', 'action']
+
+  if (newAPI)
+    flow = ['openapi', 'domain', 'serverURL']
+
+  return (
+    <>
+      <div className="modal-body">
+        <NgForm
+          value={state}
+          flow={flow}
+          onChange={setState}
+          schema={schema} />
+      </div>
+      <div className="modal-footer">
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.cancel(e);
+          }}
+        >
+          Close
+        </button>
+        {newAPI && state.serverURL?.length > 0 && <button
+          type="button"
+          className="btn btn-success"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.ok(state);
+          }}
+        >
+          Ok
+        </button>}
+      </div>
+    </>
+  );
+}
+
+function Row({ title, children, className = 'col-sm-10' }) {
+  return <div className="row mb-3">
+    <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+      {title}
+    </label>
+    <div className={className}>
+      {children}
+    </div>
+  </div>
+}
+
+function OpenAPILoader() {
+  const history = useHistory()
+  const location = useLocation()
+
+  const importOpenApiModalResponse = content => {
+    fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/_openapi`, 'POST', content, 'apis.otoroshi.io')
+      .then(api => {
+        nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+          .create(api)
+          .then(() => historyPush(history, location, `/apis/${api.id}`))
+      })
+  }
+
+  return <Row title="OpenAPI">
+    <Button
+      type="success"
+      className="btn-sm d-flex"
+      text="Load openapi"
+      onClick={() => {
+        return window
+          .popup(
+            'Import routes from openapi',
+            (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
+            { __style: { width: '100%' } }
+          )
+          .then(importOpenApiModalResponse);
+      }} />
+  </Row>
+}
+
 function NewAPI(props) {
   const history = useHistory();
   const location = useLocation();
@@ -2109,38 +2204,18 @@ function NewAPI(props) {
       type: 'string',
       props: { label: 'Description' },
     },
-    metadata: {
-      type: 'object',
-      props: { label: 'metadata' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'tags' },
-    },
-    capture: {
-      type: 'bool',
-      label: 'Capture route traffic',
-      props: {
-        labelColumn: 3,
-      },
-    },
-    debug_flow: {
-      type: 'bool',
-      label: 'Debug the route',
-      props: {
-        labelColumn: 3,
-      },
-    },
-    export_reporting: {
-      type: 'bool',
-      label: 'Export reporting',
-      props: {
-        labelColumn: 3,
-      },
-    },
+    openapi: {
+      renderer: OpenAPILoader
+
+    }
   };
 
-  const flow = ['location', 'id', 'name', 'description'];
+  const flow = ['location', {
+    type: 'group',
+    name: 'Informations',
+    collapsable: false,
+    fields: ['id', 'name', 'description', 'openapi']
+  }];
 
   const createApi = () => {
     nextClient
@@ -2153,7 +2228,7 @@ function NewAPI(props) {
 
   return (
     <>
-      <Form schema={schema} flow={flow} value={value} onChange={setValue} />
+      <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
       <Button type="success" className="btn-sm ms-auto d-flex" onClick={createApi} text="Create" />
     </>
   );
@@ -2330,7 +2405,7 @@ function FlowDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ value })}
-        setSaveButton={() => {}}
+        setSaveButton={() => { }}
       />
     </div>
   );
@@ -2656,39 +2731,34 @@ function Informations(props) {
     danger_zone: {
       renderer: (inputProps) => {
         return (
-          <div className="row mb-3">
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              Delete this API
-            </label>
-            <div className="col-sm-10">
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <p>Once you delete an API, there is no going back. Please be certain.</p>
-                <Button
-                  style={{ width: 'fit-content' }}
-                  disabled={inputProps.rootValue?.id === props.globalEnv.adminApiId} // TODO
-                  type="danger"
-                  onClick={() => {
-                    window
-                      .newConfirm('Are you sure you want to delete this entity ?')
-                      .then((ok) => {
-                        if (ok) {
-                          nextClient
-                            .forEntityNext(nextClient.ENTITIES.APIS)
-                            .deleteById(inputProps.rootValue?.id)
-                            .then(() => {
-                              historyPush(history, location, '/');
-                            });
-                        }
-                      });
-                  }}
-                >
-                  Delete this API
-                </Button>
-              </div>
+          <Row title="Delete this API">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <p>Once you delete an API, there is no going back. Please be certain.</p>
+              <Button
+                style={{ width: 'fit-content' }}
+                disabled={inputProps.rootValue?.id === props.globalEnv.adminApiId} // TODO
+                type="danger"
+                onClick={() => {
+                  window
+                    .newConfirm('Are you sure you want to delete this entity ?')
+                    .then((ok) => {
+                      if (ok) {
+                        nextClient
+                          .forEntityNext(nextClient.ENTITIES.APIS)
+                          .deleteById(inputProps.rootValue?.id)
+                          .then(() => {
+                            historyPush(history, location, '/');
+                          });
+                      }
+                    });
+                }}
+              >
+                Delete this API
+              </Button>
             </div>
-          </div>
-        );
-      },
+          </Row>
+        )
+      }
     },
   };
   const flow = [
@@ -3217,41 +3287,43 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
-
-  const copy = (value, method, setCopyIconName) => {
-    let command = value;
-
-    if (version === 'Draft' || version === 'staging') {
-      command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
-    } else {
-      command = `curl ${method ? `-X ${method}` : ''} ${value}`;
-    }
-
-    if (window.isSecureContext && navigator.clipboard) {
-      navigator.clipboard.writeText(command);
-    } else {
-      unsecuredCopyToClipboard(command);
-    }
-    setCopyIconName('fas fa-check');
-
-    setTimeout(() => {
-      setCopyIconName('fas fa-copy');
-    }, 2000);
-  };
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
 
   return frontend.domains.map((domain, idx) => {
     const [copyIconName, setCopyIconName] = useState('fas fa-copy');
+
+
+    const copy = (value, method, setCopyIconName) => {
+      let command = value;
+
+      if (version === 'Draft' || version === 'staging') {
+        command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
+      } else {
+        command = `curl ${method ? `-X ${method}` : ''} ${value}`;
+      }
+
+      if (window.isSecureContext && navigator.clipboard) {
+        navigator.clipboard.writeText(command);
+      } else {
+        unsecuredCopyToClipboard(command);
+      }
+      setCopyIconName('fas fa-check');
+
+      setTimeout(() => {
+        setCopyIconName('fas fa-copy');
+      }, 2000);
+    };
+
     const exact = frontend.exact;
     const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
     const start = 'http://';
@@ -3289,7 +3361,7 @@ function RouteItem({ item, api, ports }) {
               >
                 <i className={copyIconName} />
               </Button>
-              {rawMethods[i] === 'GET' && (
+              {rawMethods[i] === 'GET' && version === 'Published' && (
                 <Button
                   className="btn btn-sm ms-1"
                   type="primaryColor"

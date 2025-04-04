@@ -1,52 +1,22 @@
 package next.models
 
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import diffson.PatchOps
+import next.models.ApiConsumerKind.Keyless
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
-import otoroshi.models.{
-  Draft,
-  EntityLocation,
-  EntityLocationSupport,
-  LoadBalancing,
-  RemainingQuotas,
-  RoundRobin,
-  ServiceDescriptor
-}
-import otoroshi.next.models.{NgPluginInstance, _}
-import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, RoundRobin, ServiceDescriptor}
+import otoroshi.next.models._
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.{
-  ApikeyCalls,
-  ForceHttpsTraffic,
-  JwtVerificationOnly,
-  NgApikeyCallsConfig,
-  NgClientCredentialTokenEndpoint,
-  NgClientCredentialTokenEndpointConfig,
-  NgHasClientCertMatchingValidator,
-  NgHasClientCertMatchingValidatorConfig,
-  NgJwtVerificationOnlyConfig,
-  OIDCAccessTokenValidator,
-  OverrideHost
-}
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig, NgPluginHelper}
+import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import otoroshi.utils.UrlSanitizer.sanitize
+import otoroshi.utils.syntax.implicits.{BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterSyntax}
+import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -106,7 +76,7 @@ case object ApiRemoved    extends ApiState {
 case class ApiRoute(
     id: String,
     enabled: Boolean = true,
-    name: Option[String],
+    name: Option[String] = None,
     frontend: NgFrontend,
     flowRef: String,
     backend: String
@@ -146,7 +116,7 @@ case class ApiFlows(id: String, name: String, consumers: Seq[String] = Seq.empty
 
 object ApiFlows {
   def empty(implicit env: Env): ApiFlows = ApiFlows(
-    IdGenerator.namedId("api_flows", env),
+    "default_flow",
     "default_flow",
     plugins = NgPlugins.apply(
       slots = Seq(
@@ -818,6 +788,11 @@ case class ApiTesting(
 )
 
 object ApiTesting {
+
+  val default = ApiTesting(
+    headerValue = IdGenerator.uuid
+)
+
   val _fmt: Format[ApiTesting] = new Format[ApiTesting] {
     override def writes(o: ApiTesting): JsValue             = Json.obj(
       "enabled"     -> o.enabled,
@@ -844,8 +819,8 @@ case class Api(
     id: String,
     name: String,
     description: String,
-    tags: Seq[String],
-    metadata: Map[String, String],
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
     version: String,
     versions: Seq[String] = Seq("0.0.1"),
     debugFlow: Boolean,
@@ -854,13 +829,13 @@ case class Api(
     state: ApiState,
     enabled: Boolean = true,
     blueprint: ApiBlueprint,
-    routes: Seq[ApiRoute],
-    backends: Seq[ApiBackend],
-    flows: Seq[ApiFlows],
-    clients: Seq[ApiBackendClient],
-    documentation: Option[ApiDocumentation],
-    consumers: Seq[ApiConsumer],
-    deployments: Seq[ApiDeployment],
+    routes: Seq[ApiRoute] = Seq.empty,
+    backends: Seq[ApiBackend] = Seq.empty,
+    flows: Seq[ApiFlows] = Seq.empty,
+    clients: Seq[ApiBackendClient] = Seq.empty,
+    documentation: Option[ApiDocumentation] = None,
+    consumers: Seq[ApiConsumer] = Seq.empty,
+    deployments: Seq[ApiDeployment] = Seq.empty,
     testing: ApiTesting
     // TODO: monitoring and heath ????
 ) extends EntityLocationSupport {
@@ -905,13 +880,13 @@ case class Api(
 
           Future
             .sequence(routes.map(route => routeToNgRoute(route, this.some)) ++ draftRoutes)
-            .map(routes =>
+            .map(routes => {
               routes
                 .collect { case Some(value) =>
                   value
                 }
                 .filter(_.enabled)
-            )
+            })
         })
     }
   }
@@ -985,9 +960,96 @@ case class Api(
 }
 
 object Api {
-//  def addPluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
-//    api.copy(flows = api.flows.map(flow => addPluginToFlow[T](consumer, flow)))
-//  }
+
+   def fromOpenApi(domain: String, openapi: String, serverURL: Option[String])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Api] = {
+    val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
+      env.Ws.url(openapi).get().map(_.body)
+    } else {
+      FastFuture.successful(openapi)
+    }
+    codef.map { code =>
+      val json                        = Json.parse(code)
+      val name                        = json.select("info").select("title").as[String]
+      val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
+      val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
+      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+        val serverUrl    = serverURL.getOrElse(server.selectAsString("url"))
+        val serverUri    = Uri(serverUrl)
+
+        val serverDomain = serverUri.authority.host.toString()
+        val tls          = serverUri.scheme.toLowerCase().contains("https")
+        val port         = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
+        NgTarget(
+          id = serverUrl,
+          hostname = if (serverDomain.isEmpty) serverUrl else serverDomain,
+          port = port,
+          tls = tls)
+      }
+      val paths                       = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
+
+      val backend = ApiBackend(
+        id = s"${name}_backend",
+        name = s"${name}_backend",
+        backend = NgBackend.empty.copy(
+          targets = targets,
+          root = "/",
+          rewrite = false,
+          loadBalancing = RoundRobin
+        )
+      )
+
+      val routes: Seq[ApiRoute] = paths.value.toSeq.map { case (path, obj) =>
+        val cleanPath = path.replace("{", ":").replace("}", "")
+        val methods   = obj.as[JsObject].value.toSeq.map(_._1.toUpperCase())
+
+        val name = obj.as[JsObject].value.toSeq.map(_._2.select("summary").asOptString.getOrElse(cleanPath))
+          .headOption
+
+        ApiRoute(
+          frontend = NgFrontend(
+            domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
+            headers = Map.empty,
+            query = Map.empty,
+            methods = methods,
+            stripPath = false,
+            exact = true
+          ),
+          backend = backend.id,
+          flowRef = "default_flow",
+          id = name.getOrElse(sanitize(cleanPath)),
+          name = name.getOrElse(cleanPath).some
+        )
+      }
+
+      Api(
+        location = EntityLocation.default,
+        id = "api_route" + IdGenerator.uuid,
+        name = name,
+        description = description,
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        routes = routes,
+        testing = ApiTesting.default,
+        version = version,
+        blueprint = ApiBlueprint.REST,
+        state = ApiStaging,
+        backends = Seq(backend),
+        consumers = Seq(ApiConsumer(
+          id = "keyless",
+          name = "keyless_consumer",
+          consumerKind = Keyless,
+          autoValidation = true,
+          settings = ApiConsumerSettings.Keyless(),
+          status = ApiConsumerStatus.Published
+        ))
+      )
+    }
+  }
+
 
   private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit
       ct: ClassTag[T]
