@@ -34,17 +34,17 @@ import scala.util._
 
 object CorazaPlugin {
   val rootContextIds     = new AtomicInteger(100)
-  val testRules          = Json.parse("""{
-    "directives_map": {
-      "default": []
-    },
-    "rules": [
-      "SecDebugLogLevel 9",
-      "SecRuleEngine On",
-      "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny\""
-    ],
-    "default_directive": "default"
-  }""")
+//  val testRules          = Json.parse("""{
+//    "directives_map": {
+//      "default": []
+//    },
+//    "rules": [
+//      "SecDebugLogLevel 9",
+//      "SecRuleEngine On",
+//      "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny\""
+//    ],
+//    "default_directive": "default"
+//  }""")
   val corazaDefaultRules = """{
     |  "directives_map": {
     |      "default": [
@@ -65,7 +65,32 @@ object CorazaPluginKeys {
   val CorazaWasmVmKey    = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 }
 
-class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) {
+trait CorazaImplementation {
+  def config: CorazaWafConfig
+
+  def start(attrs: TypedMap): Future[Unit]
+
+  def stop(attrs: TypedMap): Future[Unit] = {
+    ().vfuture
+  }
+
+  def runRequestPath(request: RequestHeader, attrs: TypedMap): Future[NgAccess]
+
+  def runRequestBodyPath(
+      request: RequestHeader,
+      req: NgPluginHttpRequest,
+      body_bytes: Option[ByteString],
+      attrs: TypedMap
+  ): Future[Either[mvc.Result, Unit]]
+
+  def runResponsePath(
+      response: NgPluginHttpResponse,
+      body_bytes: Option[ByteString],
+      attrs: TypedMap
+  ): Future[Either[mvc.Result, Unit]]
+}
+
+class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) extends CorazaImplementation {
 
   // WasmVmPool.logger.debug("new CorazaPlugin")
 
@@ -365,9 +390,6 @@ class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, e
     }
   }
 
-  def stop(attrs: TypedMap): Future[Unit] = {
-    ().vfuture
-  }
   // TODO - need to save VmData in attrs to get it from the start function and reuse the same slotId
   def runRequestPath(request: RequestHeader, attrs: TypedMap): Future[NgAccess] = {
     val contId = contextId.incrementAndGet()
@@ -446,9 +468,9 @@ object NgCorazaWAFConfig {
 
 object NgCorazaWAF {
 
-  private val plugins = new UnboundedTrieMap[String, CorazaPlugin]()
+  private val plugins = new UnboundedTrieMap[String, CorazaImplementation]()
 
-  def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaPlugin = plugins.synchronized {
+  def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaImplementation = plugins.synchronized {
     val config     = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash = config.json.stringify.sha512
     val key        = s"ref=${ref}&hash=${configHash}"
@@ -456,9 +478,10 @@ object NgCorazaWAF {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      val url = "wasm/coraza-proxy-wasm-v31a1e6a187ee07a476d737342ebb731fb2171e25.wasm"
-      val p   = new CorazaPlugin(
-        WasmConfig(
+      val url = if (config.proxyWasmIntegration) "wasm/coraza-proxy-wasm-v31a1e6a187ee07a476d737342ebb731fb2171e25.wasm" else
+        "wasm/corazanext.wasm"
+
+      val wasmConfig = WasmConfig(
           source = WasmSource(
             kind = WasmSourceKind.ClassPath,
             path = url
@@ -473,12 +496,15 @@ object NgCorazaWAF {
             maxMemoryUsage = 0.9,
             maxAvgCallDuration = 1.day,
             maxUnusedDuration = 5.minutes
-          )
-        ),
-        config,
-        url,
-        env
-      )
+          ),
+          allowedPaths = if (config.proxyWasmIntegration) Map.empty else Map(
+            "/tmp" -> "/tmp",
+//            "/Users/zwitterion/Documents/opensource/coraza/plugin_data/coreruleset" -> "/tmp/coreruleset",
+//            "/Users/zwitterion/Documents/opensource/coraza/plugin_data/coreruleset/rules"-> "/tmp/coreruleset/rules"
+          ))
+      val p   = if (config.proxyWasmIntegration) new CorazaPlugin(wasmConfig, config, url, env) else
+        new CorazaNextPlugin(wasmConfig, config, url, env)
+
       plugins.put(key, p)
       p
     }
@@ -625,7 +651,8 @@ case class CorazaWafConfig(
     metadata: Map[String, String],
     inspectBody: Boolean,
     config: JsObject,
-    poolCapacity: Int
+    poolCapacity: Int,
+    proxyWasmIntegration: Boolean
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = CorazaWafConfig.format.writes(this)
@@ -645,6 +672,7 @@ object CorazaWafConfig {
     tags = Seq.empty,
     config = CorazaPlugin.corazaDefaultRules.asObject,
     inspectBody = true,
+    proxyWasmIntegration = false,
     poolCapacity = 2
   )
   val format                      = new Format[CorazaWafConfig] {
@@ -656,7 +684,8 @@ object CorazaWafConfig {
       "tags"          -> JsArray(o.tags.map(JsString.apply)),
       "config"        -> o.config,
       "inspect_body"  -> o.inspectBody,
-      "pool_capacity" -> o.poolCapacity
+      "pool_capacity" -> o.poolCapacity,
+      "proxy_wasm_integration" -> o.proxyWasmIntegration
     )
     override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
       CorazaWafConfig(
@@ -668,7 +697,8 @@ object CorazaWafConfig {
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
-        poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
+        poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2),
+        proxyWasmIntegration = json.selectAsOptBoolean("proxy_wasm_integration").getOrElse(true)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

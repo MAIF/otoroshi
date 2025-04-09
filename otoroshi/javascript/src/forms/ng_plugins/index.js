@@ -145,7 +145,6 @@ import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
 import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
-import NgHttpWasm from './NgHttpWasm';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
@@ -169,7 +168,6 @@ const pluginsArray = [
   CanaryMode,
   ContextValidation,
   NgCorazaWAF,
-  NgHttpWasm,
   Cors,
   DisableHttp10,
   EndlessHttpResponse,

@@ -40,31 +40,32 @@ class ProxyWasmState(
       data: VmData
   ): Result = {
     // println(s"proxyLog: $logLevel - $messageData - $messageSize")
-    getMemory(plugin, messageData, messageSize)
-      .fold(
-        Error.toResult,
-        r => {
-          val message = r._2.utf8String
-          logLevel match {
-            case 0 =>
-              logger.trace(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.TRACE, message, data))
-            case 1 =>
-              logger.debug(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.DEBUG, message, data))
-            case 2 =>
-              logger.info(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.INFO, message, data))
-            case 3 =>
-              logger.warn(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.WARN, message, data))
-            case _ =>
-              logger.error(message)
-              logCallback.foreach(_.apply(org.slf4j.event.Level.ERROR, message, data))
-          }
-          ResultOk
-        }
-      )
+//    getMemory(plugin, messageData, messageSize)
+//      .fold(
+//        Error.toResult,
+//        r => {
+//          val message = r._2.utf8String
+//          logLevel match {
+//            case 0 =>
+//              logger.trace(message)
+//              logCallback.foreach(_.apply(org.slf4j.event.Level.TRACE, message, data))
+//            case 1 =>
+//              logger.debug(message)
+//              logCallback.foreach(_.apply(org.slf4j.event.Level.DEBUG, message, data))
+//            case 2 =>
+//              logger.info(message)
+//              logCallback.foreach(_.apply(org.slf4j.event.Level.INFO, message, data))
+//            case 3 =>
+//              logger.warn(message)
+//              logCallback.foreach(_.apply(org.slf4j.event.Level.WARN, message, data))
+//            case _ =>
+//              logger.error(message)
+//              logCallback.foreach(_.apply(org.slf4j.event.Level.ERROR, message, data))
+//          }
+//          ResultOk
+//        }
+//      )
+    ResultOk
   }
 
   override def proxyResumeStream(plugin: ExtismCurrentPlugin, streamType: StreamType): Result = {

@@ -60,6 +60,13 @@ export function setupCorazaExtension(registerExtension) {
             ],
           },
         },
+        proxy_wasm_integration: {
+          type: 'bool',
+          props: {
+            help: 'Use the Legacy version',
+            label: 'Use the proxy-wasm integration',
+          },
+        },
         include_crs: {
           type: 'bool',
           props: {
@@ -121,6 +128,7 @@ export function setupCorazaExtension(registerExtension) {
         '<<<WAF config.',
         'mode',
         'include_crs',
+        'proxy_wasm_integration',
         'custom_rules_infos',
         'custom_rules',
         '>>>Raw Coraza config.',
