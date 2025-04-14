@@ -30,7 +30,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
   }
 
   override def runRequestPath(request: RequestHeader, attrs: TypedMap): Future[NgAccess] = {
-    val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
+    val instance: WasmVm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
     val in = Json.obj(
       "request" -> Json.obj(
         "url" -> request.uri,
@@ -39,6 +39,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       )
     )
 
+    if (config.inspectBody)
     instance.callCorazaNext("evaluate", in.stringify).map {
         case Left(_) => NgAccess.NgDenied(Results.Forbidden)
         case Right(value) =>
@@ -55,7 +56,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
                                    req: NgPluginHttpRequest,
                                    body_bytes: Option[ByteString],
                                    attrs: TypedMap): Future[Either[mvc.Result, Unit]] = {
-    if (body_bytes.isDefined)  {
+    if (body_bytes.isDefined) {
       val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
       val in = Json.obj(
         "request" -> Json.obj(

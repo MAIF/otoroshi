@@ -34,29 +34,9 @@ import scala.util._
 
 object CorazaPlugin {
   val rootContextIds     = new AtomicInteger(100)
-//  val testRules          = Json.parse("""{
-//    "directives_map": {
-//      "default": []
-//    },
-//    "rules": [
-//      "SecDebugLogLevel 9",
-//      "SecRuleEngine On",
-//      "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny\""
-//    ],
-//    "default_directive": "default"
-//  }""")
   val corazaDefaultRules = """{
-    |  "directives_map": {
-    |      "default": [
-    |        "Include @recommended-conf",
-    |        "Include @crs-setup-conf",
-    |        "Include @owasp_crs/*.conf",
-    |        "SecRuleEngine On"
-    |      ]
-    |  },
-    |  "default_directives": "default",
-    |  "metric_labels": {},
-    |  "per_authority_directives": {}
+    |  "directives": "Include @recommended-conf\n Include @crs-setup-conf\n Include @owasp_crs/*.conf\n SecRuleEngine On"
+    |  "inspect_bodies": "false",
     |}""".stripMargin.parseJson
 }
 
