@@ -185,6 +185,7 @@ object BaseQuotas {
 }
 
 trait LoadBalancing {
+  def needsInflightRequests: Boolean = false
   def needTrackingCookie: Boolean
   def toJson: JsValue
   def select(
@@ -204,6 +205,8 @@ object LoadBalancing {
       (json \ "type").asOpt[String] match {
         case Some("RoundRobin")               => JsSuccess(RoundRobin)
         case Some("NaiveFailover")            => JsSuccess(Failover)
+        case Some("PowerOfTwoRandomChoices")  => JsSuccess(PowerOfTwoRandomChoices)
+        case Some("LeastConnections")         => JsSuccess(LeastConnections)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
@@ -212,6 +215,72 @@ object LoadBalancing {
           JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
         case _                                => JsSuccess(RoundRobin)
       }
+  }
+}
+
+object LocalTargetsInflightRequestMonitor {
+  private val inflight = new UnboundedTrieMap[String, AtomicLong]()
+  def incrementInflightRequestsFor(target: Target): Unit = {
+    inflight.getOrElseUpdate(target.lkey, new AtomicLong(0L)).incrementAndGet()
+  }
+  def decrementInflightRequestsFor(target: Target): Unit = {
+    inflight.getOrElseUpdate(target.lkey, new AtomicLong(0L)).decrementAndGet()
+  }
+  def inflightFor(target: Target): Long = {
+    inflight.getOrElseUpdate(target.lkey, new AtomicLong(0L)).get()
+  }
+}
+
+object LeastConnections extends LoadBalancing {
+  private val reqCounter = new AtomicInteger(0)
+  val needTrackingCookie: Boolean = false
+  override val needsInflightRequests: Boolean = true
+  override def toJson: JsValue             = Json.obj("type" -> "LeastConnections")
+  override def select(
+                       reqId: String,
+                       trackingId: String,
+                       req: RequestHeader,
+                       targets: Seq[Target],
+                       descId: String,
+                       attempts: Int
+                     )(implicit env: Env): Target = {
+    val targetsWithLoad = targets.map(t => (t, LocalTargetsInflightRequestMonitor.inflightFor(t)))
+    val minLoad = targetsWithLoad.map(_._2).min
+    val leastLoadedTargets = targetsWithLoad.collect {
+      case (t, load) if load == minLoad => t
+    }
+    val leastLoadedTargetsSize = if (leastLoadedTargets.nonEmpty) leastLoadedTargets.size else 1
+    leastLoadedTargets(reqCounter.incrementAndGet() % leastLoadedTargetsSize)
+  }
+}
+
+object PowerOfTwoRandomChoices extends LoadBalancing {
+
+  val needTrackingCookie: Boolean = false
+  override val needsInflightRequests: Boolean = true
+  override def toJson: JsValue             = Json.obj("type" -> "PowerOfTwoRandomChoices")
+  override def select(
+    reqId: String,
+    trackingId: String,
+    req: RequestHeader,
+    targets: Seq[Target],
+    descId: String,
+    attempts: Int
+  )(implicit env: Env): Target = {
+    val targetIndex1 = scala.util.Random.nextInt(targets.length)
+    var targetIndex2 = scala.util.Random.nextInt(targets.length)
+    if (targetIndex1 == targetIndex2) {
+      targetIndex2 = (targetIndex2 + 1) % targets.length
+    }
+    val target1 = targets.apply(targetIndex1)
+    val target2 = targets.apply(targetIndex1)
+    val inflightTarget1: Long = LocalTargetsInflightRequestMonitor.inflightFor(target1)
+    val inflightTarget2: Long = LocalTargetsInflightRequestMonitor.inflightFor(target2)
+    if (inflightTarget1 < inflightTarget2) {
+      target1
+    } else {
+      target2
+    }
   }
 }
 
@@ -599,6 +668,8 @@ case class Target(
   def asCleanTarget        = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
   def isPrimary: Boolean   = !backup
   def isSecondary: Boolean = backup
+
+  lazy val lkey = asKey
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt

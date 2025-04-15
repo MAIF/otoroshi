@@ -12,6 +12,12 @@ export function LoadBalancingSelector({ onChange, value }) {
               'Ensures a fair distribution of requests but does not consider target load or response time.',
           },
           {
+            key: 'PowerOfTwoRandomChoices',
+            text: 'Choose two random targets amongst healthy targets and finally uses the one with less inflight requests',
+            advice:
+              'Ensures a very simple random approach while making the best choice when choosing the final target.',
+          },
+          {
             key: 'BestResponseTime',
             text: 'Selects the target with the lowest recorded response time from the list of backend targets.',
             advice: 'Helps optimize performance by prioritizing the fastest target.',
@@ -39,6 +45,11 @@ export function LoadBalancingSelector({ onChange, value }) {
             advice:
               'Prioritizes targets with lower response times while considering configured weights.',
           },
+          {
+            key: 'LeastConnections',
+            text: 'Least connections from the list of backend targets.',
+            advice: 'Request is passed to the server with the least number of active connections.'
+          }
         ].map(({ key, text, advice }) => (
           <button
             type="button"

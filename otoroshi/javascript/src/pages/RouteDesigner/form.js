@@ -336,11 +336,13 @@ export const schemas = {
           label: 'type',
           possibleValues: [
             'RoundRobin',
+            'PowerOfTwoRandomChoices',
             'Random',
             'Sticky',
             'IpAddressHash',
             'BestResponseTime',
             'WeightedBestResponseTime',
+            'LeastConnections',
           ].map((e) => ({ value: e, label: e })),
         },
       },

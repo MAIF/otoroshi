@@ -531,19 +531,6 @@ export default {
           renderer: (props) => {
             return <LoadBalancingSelector onChange={props.onChange} value={props.value} />;
           },
-          // type: 'select',
-          // help: 'The load balancing algorithm used',
-          // label: 'Type',
-          // props: {
-          //   options: [
-          //     'BestResponseTime',
-          //     'IpAddressHash',
-          //     'Random',
-          //     'RoundRobin',
-          //     'Sticky',
-          //     'WeightedBestResponseTime',
-          //   ],
-          // },
         },
         ratio: {
           label: 'ratio',

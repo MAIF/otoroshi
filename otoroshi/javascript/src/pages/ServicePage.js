@@ -1794,6 +1794,10 @@ export class ServicePage extends Component {
                       label: 'RoundRobin',
                     },
                     {
+                      value: 'PowerOfTwoRandomChoices',
+                      label: 'PowerOfTwoRandomChoices',
+                    },
+                    {
                       value: 'Random',
                       label: 'Random',
                     },
@@ -1813,6 +1817,10 @@ export class ServicePage extends Component {
                       value: 'WeightedBestResponseTime',
                       label: 'WeightedBestResponseTime',
                     },
+                    {
+                      value: 'LeastConnections',
+                      label: 'LeastConnections',
+                    }
                   ]}
                   help="The load balancing algorithm used"
                   onChange={(e) => this.changeTheValue('targetsLoadBalancing', { type: e })}

@@ -186,18 +186,18 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       attrs: TypedMap,
       attempts: Int
   ): Option[(Target, AkkaCircuitBreaker)] = {
-    val raw_targets = _targets
+    val raw_healthy_targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
-    if (raw_targets.isEmpty) {
+    if (raw_healthy_targets.isEmpty) {
       None
     } else {
       // this is where failover actually happens
-      val (primaryTargets, secondaryTargets) = raw_targets.partition(_.isPrimary)
+      val (primaryTargets, secondaryTargets) = raw_healthy_targets.partition(_.isPrimary)
       val target: Target                     = if (primaryTargets.nonEmpty && secondaryTargets.isEmpty) {
         targetsLoadBalancing.select(reqId, trackingId, requestHeader, primaryTargets, descriptorId, attempts)
       } else if (primaryTargets.isEmpty && secondaryTargets.nonEmpty) {

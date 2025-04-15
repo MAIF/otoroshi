@@ -2093,6 +2093,7 @@ class ProxyEngine() extends RequestHandler {
     val cbStart             = System.currentTimeMillis()
     val route               =
       attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
+    val needsInflightRequests = route.backend.loadBalancing.needsInflightRequests
     val trackingId          = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
@@ -2109,10 +2110,15 @@ class ProxyEngine() extends RequestHandler {
       def callF(target: Target, attempts: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Result]] = {
         val backend = getBackend(target, route, attrs)
         attrs.put(Keys.BackendKey -> backend)
+        if (needsInflightRequests) {
+          LocalTargetsInflightRequestMonitor.incrementInflightRequestsFor(target)
+        }
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err)        => err.asResult().map(Left.apply)
           case r @ Right(value) => Right(value).vfuture
-        }
+        }.seffectOnIf(needsInflightRequests)(_.andThen {
+          case _ => LocalTargetsInflightRequestMonitor.decrementInflightRequestsFor(target)
+        })
       }
 
       def handleError(t: Throwable): Future[Either[Result, Result]] = {
@@ -2301,7 +2307,12 @@ class ProxyEngine() extends RequestHandler {
       //val target = targets.apply(index.toInt)
       val backend = getBackend(target, route, attrs)
       attrs.put(Keys.BackendKey -> backend)
-      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
+      if (needsInflightRequests) {
+        LocalTargetsInflightRequestMonitor.incrementInflightRequestsFor(target)
+      }
+      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart)).seffectOnIf(needsInflightRequests)(_.value.andThen {
+        case _ => LocalTargetsInflightRequestMonitor.decrementInflightRequestsFor(target)
+      })
     }
   }
 
@@ -2318,6 +2329,7 @@ class ProxyEngine() extends RequestHandler {
     val cbStart             = System.currentTimeMillis()
     val route               =
       attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
+    val needsInflightRequests = route.backend.loadBalancing.needsInflightRequests
     val trackingId          = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
@@ -2337,10 +2349,15 @@ class ProxyEngine() extends RequestHandler {
       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
         val backend = getBackend(target, route, attrs)
         attrs.put(Keys.BackendKey -> backend)
+        if (needsInflightRequests) {
+          LocalTargetsInflightRequestMonitor.incrementInflightRequestsFor(target)
+        }
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err)        => err.asResult().map(Left.apply)
           case r @ Right(value) => Right(value).vfuture
-        }
+        }.seffectOnIf(needsInflightRequests)(_.andThen {
+          case _ => LocalTargetsInflightRequestMonitor.decrementInflightRequestsFor(target)
+        })
       }
 
       def handleError(t: Throwable): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
@@ -2525,7 +2542,12 @@ class ProxyEngine() extends RequestHandler {
       //val target = targets.apply(index.toInt)
       val backend        = getBackend(target, route, attrs)
       attrs.put(Keys.BackendKey -> backend)
-      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
+      if (needsInflightRequests) {
+        LocalTargetsInflightRequestMonitor.incrementInflightRequestsFor(target)
+      }
+      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart)).seffectOnIf(needsInflightRequests)(_.value.andThen {
+        case _ => LocalTargetsInflightRequestMonitor.decrementInflightRequestsFor(target)
+      })
     }
   }
 
