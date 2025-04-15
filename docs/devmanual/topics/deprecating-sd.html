@@ -330,6 +330,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../imgs/sd-migration-ui.png" /></div>
 <p>and just confirm it</p><div class="centered-img">
 <img src="../imgs/sd-migration-ui-confirm.png" /></div>
+<h2><a href="#kubernetes-usage" name="kubernetes-usage" class="anchor"><span class="anchor-link"></span></a>Kubernetes usage</h2>
+<p>if you still use Service Descriptor through Kubernetes Ingress job or Kubernetes CRDs job, you will have logs warning you about it from time to time.</p>
+<p>For the <code>Kubernetes CRDs job</code> case, just use <code>Route</code> CRDs instead of <code>ServiceDescriptor</code> CRDs.</p>
+<p>For the <code>Kubernetes Ingress job</code>, you can use the <code>ingress.otoroshi.io/is-route=true</code> annotation and use <code>NgRoute specific annotations</code>. You&rsquo;ll find the list<a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/ingress.scala#L310-L328">here</a>.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
@@ -347,6 +351,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/deprecating-sd.html#migration-job" class="header">Migration Job</a></li>
     <li><a href="../topics/deprecating-sd.html#migration-api" class="header">Migration API</a></li>
     <li><a href="../topics/deprecating-sd.html#migration-button" class="header">Migration button</a></li>
+    <li><a href="../topics/deprecating-sd.html#kubernetes-usage" class="header">Kubernetes usage</a></li>
   </ul></li>
 </ul>
 </div>
