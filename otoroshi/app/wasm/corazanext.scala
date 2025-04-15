@@ -18,14 +18,17 @@ import scala.util._
 class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) extends CorazaImplementation {
   private implicit val ec = env.otoroshiExecutionContext
 
-  private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
+  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool.getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty)).flatMap { vm =>
       attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
-        vm.finitialize {
-          vm.callCorazaNext("initialize", "", None, Some(config.config.stringify))
-        }
+      vm.finitialize {
+        vm.callCorazaNext("initialize", "", None,  Json.stringify(Json.obj(
+          "directives" -> config.directives.mkString("\n"),
+          "inspect_bodies" -> config.inspectBody
+        )).some)
+      }
     }
   }
 
@@ -39,7 +42,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       )
     )
 
-    if (config.inspectBody)
+    // if (config.inspectBody)
     instance.callCorazaNext("evaluate", in.stringify).map {
         case Left(_) => NgAccess.NgDenied(Results.Forbidden)
         case Right(value) =>

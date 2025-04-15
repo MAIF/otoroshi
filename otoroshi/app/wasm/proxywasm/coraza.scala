@@ -2,10 +2,7 @@ package otoroshi.wasm.proxywasm
 
 import akka.stream.Materializer
 import akka.util.ByteString
-import com.sksamuel.exts.concurrent.Futures.RichFuture
 import io.otoroshi.wasm4s.scaladsl._
-import org.extism.sdk.HostFunction
-import org.extism.sdk.wasmotoroshi._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
@@ -17,27 +14,23 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.wasm._
-import play.api.libs.json._
 import play.api._
+import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic._
-import scala.concurrent.duration._
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.util._
 
 object CorazaPlugin {
   val rootContextIds     = new AtomicInteger(100)
-  val corazaDefaultRules = """{
-    |  "directives": "Include @recommended-conf\n Include @crs-setup-conf\n Include @owasp_crs/*.conf\n SecRuleEngine On"
-    |  "inspect_bodies": "false",
-    |}""".stripMargin.parseJson
 }
 
 object CorazaPluginKeys {
@@ -70,364 +63,6 @@ trait CorazaImplementation {
   ): Future[Either[mvc.Result, Unit]]
 }
 
-class CorazaPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) extends CorazaImplementation {
-
-  // WasmVmPool.logger.debug("new CorazaPlugin")
-
-  private implicit val ev = env
-  private implicit val ec = env.otoroshiExecutionContext
-  private implicit val ma = env.otoroshiMaterializer
-
-  private lazy val timeout                 = 10.seconds
-  private lazy val started                 = new AtomicBoolean(false)
-  private lazy val logger                  = Logger("otoroshi-plugin-coraza")
-  private lazy val vmConfigurationSize     = 0
-  private lazy val rules                   = config.config
-  private lazy val pluginConfigurationSize = rules.stringify.byteString.length
-  private lazy val contextId               = new AtomicInteger(0)
-  private lazy val state                   =
-    new ProxyWasmState(
-      CorazaPlugin.rootContextIds.incrementAndGet(),
-      contextId,
-      Some((l, m, vmd) => logCallback(l, m, vmd)),
-      env
-    )
-  private lazy val pool: WasmVmPool        = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
-
-  def logCallback(level: org.slf4j.event.Level, msg: String, data: VmData): Unit = {
-    CorazaTrailEvent(level, msg, data.request, data.route).debug(evt => evt.toJson.prettify.debugPrintln).toAnalytics()
-  }
-
-  def isStarted(): Boolean = started.get()
-
-  def createFunctions(ref: AtomicReference[WasmVmData]): Seq[HostFunction[EnvUserData]] = {
-    ProxyWasmFunctions.build(state, ref)
-  }
-
-  def callPluginWithoutResults(
-      function: String,
-      params: Parameters,
-      data: VmData,
-      attrs: TypedMap
-  ): Future[Either[JsValue, ResultsWrapper]] = {
-    attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
-      case None     =>
-        /* TODO - REPLACE WITH logger.error( */
-        println("no vm found in attrs")
-        Left(Json.obj("error" -> "no vm found in attrs")).vfuture
-      case Some(vm) => {
-        WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-        val callId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).getOrElse(0)
-        vm.call(
-          WasmFunctionParameters.NoResult(function, params),
-          Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes)))
-        ).map { opt =>
-          opt.map { res =>
-            res._2.free()
-            res._2
-          }
-        }
-      }
-    }
-  }
-
-  def callPluginWithResults(
-      function: String,
-      params: Parameters,
-      results: Int,
-      data: VmData,
-      attrs: TypedMap
-  ): Future[ResultsWrapper] = {
-    attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey) match {
-      case None     =>
-        /* TODO - REPLACE WITH logger.error( */
-        println("no vm found in attrs")
-        Future.failed(new RuntimeException("no vm found in attrs"))
-      case Some(vm) => {
-        WasmUtils.traceHostVm(function + s" - vm: ${vm.index}")
-        val callId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).getOrElse(0)
-        vm.call(
-          WasmFunctionParameters.BothParamsResults(function, params, results),
-          Some(data.copy(properties = data.properties + ("wasm-vm-id" -> callId.bytes)))
-        ).flatMap {
-          case Left(err)           =>
-            /* TODO - REPLACE WITH logger.error( */
-            println(s"error while calling plugin: ${err}")
-            Future.failed(new RuntimeException(s"callPluginWithResults: ${err.stringify}"))
-          case Right((_, results)) => results.vfuture
-        }
-      }
-    }
-  }
-
-  def proxyOnContexCreate(contextId: Int, rootContextId: Int, attrs: TypedMap, rootData: VmData): Future[Unit] = {
-    val prs = new Parameters(2)
-      .pushInts(contextId, rootContextId)
-    callPluginWithoutResults("proxy_on_context_create", prs, rootData, attrs).map(_ => ())
-    // TODO - just try to reset context for each request without call proxyOnConfigure
-  }
-
-  def proxyOnVmStart(attrs: TypedMap, rootData: VmData): Future[Boolean] = {
-    val prs = new Parameters(2)
-      .pushInts(0, vmConfigurationSize)
-    callPluginWithResults("proxy_on_vm_start", prs, 1, rootData, attrs).map { proxyOnVmStartAction =>
-      val res = proxyOnVmStartAction.results.getValues()(0).v.i32 != 0
-      proxyOnVmStartAction.free()
-      res
-    }
-  }
-
-  def proxyOnConfigure(rootContextId: Int, attrs: TypedMap, rootData: VmData): Future[Boolean] = {
-    val prs = new Parameters(2)
-      .pushInts(rootContextId, pluginConfigurationSize)
-    callPluginWithResults("proxy_on_configure", prs, 1, rootData, attrs).map { proxyOnConfigureAction =>
-      val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
-      proxyOnConfigureAction.free()
-      res
-    }
-  }
-
-  def proxyOnDone(rootContextId: Int, attrs: TypedMap): Future[Boolean] = {
-    val prs      = new Parameters(1).pushInt(rootContextId)
-    val rootData = VmData.empty()
-    callPluginWithResults("proxy_on_done", prs, 1, rootData, attrs).map { proxyOnConfigureAction =>
-      val res = proxyOnConfigureAction.results.getValues()(0).v.i32 != 0
-      proxyOnConfigureAction.free()
-      res
-    }
-  }
-
-  def proxyOnDelete(rootContextId: Int, attrs: TypedMap): Future[Unit] = {
-    val prs      = new Parameters(1).pushInt(rootContextId)
-    val rootData = VmData.empty()
-    callPluginWithoutResults("proxy_on_delete", prs, rootData, attrs).map(_ => ())
-  }
-
-  def proxyStart(attrs: TypedMap, rootData: VmData): Future[ResultsWrapper] = {
-    callPluginWithoutResults("_start", new Parameters(0), rootData, attrs).map { res =>
-      res.right.get
-    }
-  }
-
-  def proxyCheckABIVersion(attrs: TypedMap, rootData: VmData): Future[Unit] = {
-    callPluginWithoutResults(
-      "proxy_abi_version_0_2_0",
-      new Parameters(0),
-      rootData,
-      attrs
-    ).map(_ => ())
-  }
-
-  def reportError(result: Result, vm: WasmVm, from: String): Unit = {
-    /* TODO - REPLACE WITH logger.error( */
-    println(s"[${vm.index}] from: $from - error: ${result.value} - ${vm.calls} / ${vm.current}")
-  }
-
-  def proxyOnRequestHeaders(
-      contextId: Int,
-      request: RequestHeader,
-      attrs: TypedMap
-  ): Future[Either[play.api.mvc.Result, Unit]] = {
-    val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
-    val endOfStream = 1
-    val sizeHeaders = 0
-    val prs         = new Parameters(3).pushInts(contextId, sizeHeaders, endOfStream)
-    callPluginWithResults("proxy_on_request_headers", prs, 1, data, attrs).map { requestHeadersAction =>
-      val number = requestHeadersAction.results.getValues()(0).v.i32
-      val result = Result.valueToType(number)
-      requestHeadersAction.free()
-      if (result != Result.ResultOk || data.httpResponse.isDefined) {
-        data.httpResponse match {
-          case None           =>
-            reportError(result, vm, "proxyOnRequestHeaders")
-            Left(
-              play.api.mvc.Results
-                .InternalServerError(Json.obj("error" -> s"no http response in context 1: ${result.value}"))
-            ) // TODO: not sure if okay
-          case Some(response) => Left(response)
-        }
-      } else {
-        Right(())
-      }
-    }
-  }
-
-  def proxyOnRequestBody(
-      contextId: Int,
-      request: RequestHeader,
-      req: NgPluginHttpRequest,
-      body_bytes: ByteString,
-      attrs: TypedMap
-  ): Future[Either[play.api.mvc.Result, Unit]] = {
-    val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withRequest(request, attrs.get(otoroshi.next.plugins.Keys.RouteKey), attrs)(env)
-    data.bodyInRef.set(body_bytes)
-    val endOfStream = 1
-    val sizeBody    = body_bytes.size.bytes.length
-    val prs         = new Parameters(3).pushInts(contextId, sizeBody, endOfStream)
-    callPluginWithResults("proxy_on_request_body", prs, 1, data, attrs).map { requestHeadersAction =>
-      val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
-      requestHeadersAction.free()
-      if (result != Result.ResultOk || data.httpResponse.isDefined) {
-        data.httpResponse match {
-          case None           =>
-            reportError(result, vm, "proxyOnRequestBody")
-            Left(
-              play.api.mvc.Results
-                .InternalServerError(Json.obj("error" -> s"no http response in context 2: ${result.value}"))
-            ) // TODO: not sure if okay
-          case Some(response) => Left(response)
-        }
-      } else {
-        Right(())
-      }
-    }
-  }
-
-  def proxyOnResponseHeaders(
-      contextId: Int,
-      response: NgPluginHttpResponse,
-      body_bytes: Option[ByteString],
-      attrs: TypedMap
-  ): Future[Either[play.api.mvc.Result, Unit]] = {
-    val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withResponse(response, attrs, body_bytes)(env)
-    val endOfStream = 1
-    val sizeHeaders = 0
-    val prs         = new Parameters(3).pushInts(contextId, sizeHeaders, endOfStream)
-    callPluginWithResults("proxy_on_response_headers", prs, 1, data, attrs).map { requestHeadersAction =>
-      val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
-      requestHeadersAction.free()
-      if (result != Result.ResultOk || data.httpResponse.isDefined) {
-        data.httpResponse match {
-          case None           =>
-            reportError(result, vm, "proxyOnResponseHeaders")
-            Left(
-              play.api.mvc.Results
-                .InternalServerError(Json.obj("error" -> s"no http response in context 3: ${result.value}"))
-            ) // TODO: not sure if okay
-          case Some(response) => Left(response)
-        }
-      } else {
-        Right(())
-      }
-    }
-  }
-
-  def proxyOnResponseBody(
-      contextId: Int,
-      response: NgPluginHttpResponse,
-      body_bytes: ByteString,
-      attrs: TypedMap
-  ): Future[Either[play.api.mvc.Result, Unit]] = {
-    val vm          = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data        = VmData.empty().withResponse(response, attrs, body_bytes.some)(env)
-    data.bodyOutRef.set(body_bytes)
-    val endOfStream = 1
-    val sizeBody    = body_bytes.size.bytes.length
-    val prs         = new Parameters(3).pushInts(contextId, sizeBody, endOfStream)
-    callPluginWithResults("proxy_on_response_body", prs, 1, data, attrs).map { requestHeadersAction =>
-      val result = Result.valueToType(requestHeadersAction.results.getValues()(0).v.i32)
-      requestHeadersAction.free()
-      if (result != Result.ResultOk || data.httpResponse.isDefined) {
-        data.httpResponse match {
-          case None           =>
-            reportError(result, vm, "proxyOnResponseBody")
-            Left(
-              play.api.mvc.Results
-                .InternalServerError(Json.obj("error" -> s"no http response in context 4: ${result.value}"))
-            ) // TODO: not sure if okay
-          case Some(response) => Left(response)
-        }
-      } else {
-        Right(())
-      }
-    }
-  }
-
-  def start(attrs: TypedMap): Future[Unit] = {
-    pool.getPooledVm(WasmVmInitOptions(false, true, createFunctions)).flatMap { vm =>
-      val data = VmData.withRules(rules)
-      attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
-      vm.finitialize {
-        proxyStart(attrs, data).flatMap { _ =>
-          proxyCheckABIVersion(attrs, data).flatMap { _ =>
-            // according to ABI, we should create a root context id before any operations
-            proxyOnContexCreate(state.rootContextId, 0, attrs, data).flatMap { _ =>
-              proxyOnVmStart(attrs, data).flatMap {
-                case true =>
-                  proxyOnConfigure(state.rootContextId, attrs, data).map {
-                    case true => started.set(true)
-                    case _    => /* TODO - REPLACE WITH logger.error( */ println("failed to configure coraza")
-                  }
-                case _    => /* TODO - REPLACE WITH logger.error( */ println("failed to start coraza vm").vfuture
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // TODO - need to save VmData in attrs to get it from the start function and reuse the same slotId
-  def runRequestPath(request: RequestHeader, attrs: TypedMap): Future[NgAccess] = {
-    val contId = contextId.incrementAndGet()
-    attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey -> contId)
-    val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val data     = VmData.withRules(rules)
-    proxyOnContexCreate(contId, state.rootContextId, attrs, data).flatMap { _ =>
-      proxyOnRequestHeaders(contId, request, attrs).map {
-        case Left(errRes) =>
-          proxyOnDone(contId, attrs)
-          proxyOnDelete(contId, attrs)
-          NgAccess.NgDenied(errRes)
-        case Right(_)     => NgAccess.NgAllowed
-      }
-    }
-  }
-
-  def runRequestBodyPath(
-      request: RequestHeader,
-      req: NgPluginHttpRequest,
-      body_bytes: Option[ByteString],
-      attrs: TypedMap
-  ): Future[Either[mvc.Result, Unit]] = {
-    val contId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).get
-    val f      =
-      if (body_bytes.isDefined) proxyOnRequestBody(contId, request, req, body_bytes.get, attrs) else Right(()).vfuture
-    // proxy_on_http_request_trailers
-    // proxy_on_http_request_metadata : H2 only
-    f.map {
-      case Left(errRes) =>
-        proxyOnDone(contId, attrs)
-        proxyOnDelete(contId, attrs)
-        Left(errRes)
-      case Right(_)     => Right(())
-    }
-  }
-
-  def runResponsePath(
-      response: NgPluginHttpResponse,
-      body_bytes: Option[ByteString],
-      attrs: TypedMap
-  ): Future[Either[mvc.Result, Unit]] = {
-    val contId = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaContextIdKey).get
-    proxyOnResponseHeaders(contId, response, body_bytes, attrs).flatMap {
-      case Left(e)  => Left(e).vfuture
-      case Right(_) => {
-        val res =
-          if (body_bytes.isDefined) proxyOnResponseBody(contId, response, body_bytes.get, attrs) else Right(()).vfuture
-        // proxy_on_http_response_trailers
-        // proxy_on_http_response_metadata : H2 only
-        proxyOnDone(contId, attrs)
-        proxyOnDelete(contId, attrs)
-        res
-      }
-    }
-  }
-}
-
 case class NgCorazaWAFConfig(ref: String) extends NgPluginConfig {
   override def json: JsValue = NgCorazaWAFConfig.format.writes(this)
 }
@@ -458,8 +93,7 @@ object NgCorazaWAF {
     val plugin          = if (plugins.contains(key)) {
       plugins(key)
     } else {
-      val url = if (config.proxyWasmIntegration) "wasm/coraza-proxy-wasm-v31a1e6a187ee07a476d737342ebb731fb2171e25.wasm" else
-        "wasm/corazanext.wasm"
+      val url = "wasm/corazanext.wasm"
 
       val wasmConfig = WasmConfig(
           source = WasmSource(
@@ -477,13 +111,8 @@ object NgCorazaWAF {
             maxAvgCallDuration = 1.day,
             maxUnusedDuration = 5.minutes
           ),
-          allowedPaths = if (config.proxyWasmIntegration) Map.empty else Map(
-            "/tmp" -> "/tmp",
-//            "/Users/zwitterion/Documents/opensource/coraza/plugin_data/coreruleset" -> "/tmp/coreruleset",
-//            "/Users/zwitterion/Documents/opensource/coraza/plugin_data/coreruleset/rules"-> "/tmp/coreruleset/rules"
-          ))
-      val p   = if (config.proxyWasmIntegration) new CorazaPlugin(wasmConfig, config, url, env) else
-        new CorazaNextPlugin(wasmConfig, config, url, env)
+          allowedPaths = Map("/tmp" -> "/tmp"))
+      val p   = new CorazaNextPlugin(wasmConfig, config, url, env)
 
       plugins.put(key, p)
       p
@@ -630,9 +259,14 @@ case class CorazaWafConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     inspectBody: Boolean,
+    directives: Seq[String] = Seq(
+      "Include @recommended-conf",
+      "Include @crs-setup-conf",
+      "Include @owasp_crs/*.conf",
+      "SecRuleEngine On"
+    ),
     config: JsObject,
-    poolCapacity: Int,
-    proxyWasmIntegration: Boolean
+    poolCapacity: Int
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = CorazaWafConfig.format.writes(this)
@@ -650,9 +284,9 @@ object CorazaWafConfig {
     description = "New WAF",
     metadata = Map.empty,
     tags = Seq.empty,
-    config = CorazaPlugin.corazaDefaultRules.asObject,
+    config = Json.obj(),
     inspectBody = true,
-    proxyWasmIntegration = false,
+    directives = Seq.empty,
     poolCapacity = 2
   )
   val format                      = new Format[CorazaWafConfig] {
@@ -664,8 +298,8 @@ object CorazaWafConfig {
       "tags"          -> JsArray(o.tags.map(JsString.apply)),
       "config"        -> o.config,
       "inspect_body"  -> o.inspectBody,
+      "directives"    -> o.directives,
       "pool_capacity" -> o.poolCapacity,
-      "proxy_wasm_integration" -> o.proxyWasmIntegration
     )
     override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
       CorazaWafConfig(
@@ -677,8 +311,12 @@ object CorazaWafConfig {
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
-        poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2),
-        proxyWasmIntegration = json.selectAsOptBoolean("proxy_wasm_integration").getOrElse(true)
+        directives = (json \ "directives")
+          .asOpt[JsArray]
+          .getOrElse(Json.arr())
+          .value
+          .map(_.as[String]),
+        poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

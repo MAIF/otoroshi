@@ -4,6 +4,8 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
+import { NgCodeRenderer, NgSingleCodeLineRenderer, SingleLineCode } from '../../components/nginputs';
+import { Row } from '../../components/Row';
 
 const extensionId = 'otoroshi.extensions.CorazaWAF';
 
@@ -60,13 +62,6 @@ export function setupCorazaExtension(registerExtension) {
             ],
           },
         },
-        proxy_wasm_integration: {
-          type: 'bool',
-          props: {
-            help: 'Use the Legacy version',
-            label: 'Use the proxy-wasm integration',
-          },
-        },
         include_crs: {
           type: 'bool',
           props: {
@@ -90,11 +85,24 @@ export function setupCorazaExtension(registerExtension) {
           type: 'array',
           props: {
             label: '',
-            component: (props) => (
-              <CodeInput
-                {...props}
-                label=""
-                mode="prolog"
+            component: (props) => <Row>
+              <NgCodeRenderer
+                ngOptions={{
+                  spread: true,
+                }}
+                rawSchema={{
+                  props: {
+                    showGutter: false,
+                    ace_config: {
+                      onLoad: editor => editor.renderer.setPadding(20),
+                      maxLines: Infinity,
+                      fontSize: 14,
+                    },
+                    editorOnly: true,
+                    height: '100%',
+                    mode: 'prolog',
+                  },
+                }}
                 value={props.itemValue}
                 onChange={(e) => {
                   const arr = props.value;
@@ -102,7 +110,7 @@ export function setupCorazaExtension(registerExtension) {
                   props.onChange(arr);
                 }}
               />
-            ),
+            </Row>
           },
         },
       };
@@ -128,7 +136,6 @@ export function setupCorazaExtension(registerExtension) {
         '<<<WAF config.',
         'mode',
         'include_crs',
-        'proxy_wasm_integration',
         'custom_rules_infos',
         'custom_rules',
         '>>>Raw Coraza config.',
@@ -178,17 +185,12 @@ export function setupCorazaExtension(registerExtension) {
               include_crs: true,
               custom_rules: [],
               config: {
-                directives_map: {
-                  default: [
-                    'Include @recommended-conf',
-                    'Include @crs-setup-conf',
-                    'Include @owasp_crs/*.conf',
-                    'SecRuleEngine DetectionOnly',
-                  ],
-                },
-                default_directives: 'default',
-                metric_labels: {},
-                per_authority_directives: {},
+                directives: [
+                  'Include @recommended-conf',
+                  'Include @crs-setup-conf',
+                  'Include @owasp_crs/*.conf',
+                  'SecRuleEngine DetectionOnly',
+                ],
               },
             }),
             itemName: 'Coraza WAF config',
@@ -196,33 +198,49 @@ export function setupCorazaExtension(registerExtension) {
             formFlow: this.formFlow,
             columns: this.columns,
             stayAfterSave: true,
-            fetchItems: (paginationState) =>
+            fetchItems: () =>
               this.client.findAll().then((arr) => {
                 const base = [
                   'Include @recommended-conf',
                   'Include @crs-setup-conf',
                   'Include @owasp_crs/*.conf',
                   'SecRuleEngine DetectionOnly',
-                  'SecRuleEngine On',
                 ];
                 return arr.map((item) => {
                   let mode = 'DetectionOnly';
-                  if (item.config.directives_map.default.indexOf('SecRuleEngine On') > -1) {
+                  console.log(item)
+                  if (item.config.directives?.includes('SecRuleEngine On')) {
+                    mode = 'On';
+                  } else if (item.config.directives_map?.default.indexOf('SecRuleEngine On') > -1) {
                     mode = 'On';
                   }
-                  const include_crs =
-                    item.config.directives_map.default.indexOf('Include @owasp_crs/*.conf') > -1;
-                  const custom_rules = item.config.directives_map.default.filter((line) => {
-                    return base.indexOf(line) === -1;
-                  });
-                  const r = {
+                  const include_crs = item.config.directives?.includes('Include @owasp_crs/*.conf') ||
+                    item.config.directives_map?.default.indexOf('Include @owasp_crs/*.conf') > -1;
+
+                  const oldDirectives = item.config.directives_map?.default
+                  let custom_rules = (item.config.directives ?? oldDirectives ?? [])
+
+                  if (!Array.isArray(custom_rules))
+                    custom_rules = custom_rules.split("\n")
+
+                  if (item.inspectBody) {
+                    custom_rules.push('SecRequestBodyAccess On')
+                    custom_rules.push('SecResponseBodyAccess On');
+                  }
+
+                  return {
                     ...item,
                     mode,
                     include_crs,
-                    custom_rules,
-                  };
-                  console.log(r);
-                  return r;
+                    custom_rules: custom_rules.filter((line) => ![...base,
+                      "SecRuleEngine On",
+                      "SecRequestBodyAccess On",
+                      "SecResponseBodyAccess On",
+                      "Include @coraza",
+                      "Include @crs-setup",
+                      "Include @owasp_crs/*.conf"
+                    ].find(rule => line.includes(rule)))
+                  }
                 });
               }),
             updateItem: (content) => {
@@ -230,13 +248,29 @@ export function setupCorazaExtension(registerExtension) {
               if (content.include_crs) {
                 d.push('Include @owasp_crs/*.conf');
               }
-              content.custom_rules.forEach((v) => d.push(v));
+              content.custom_rules
+                .filter((line) => [
+                  "SecRuleEngine On",
+                  "SecRequestBodyAccess On",
+                  "SecResponseBodyAccess On",
+                  "Include @coraza",
+                  "Include @crs-setup",
+                  "Include @owasp_crs/*.conf"
+                ].indexOf(line) === -1)
+                .forEach((v) => d.push(v));
+
               if (content.mode === 'On') {
                 d.push('SecRuleEngine On');
               } else {
                 d.push('SecRuleEngine DetectionOnly');
               }
-              content.config.directives_map.default = d;
+
+              if (content.inspectBody) {
+                d.push('SecRequestBodyAccess On')
+                d.push('SecResponseBodyAccess On');
+              }
+
+              content.config.directives = d;
               return this.client.update(content);
             },
             createItem: (content) => {
@@ -250,7 +284,14 @@ export function setupCorazaExtension(registerExtension) {
               } else {
                 d.push('SecRuleEngine DetectionOnly');
               }
-              content.config.directives_map.default = d;
+
+              if (content.inspectBody) {
+                d.push('SecRequestBodyAccess On')
+                d.push('SecResponseBodyAccess On');
+              }
+
+              content.config.directives = d;
+
               return this.client.create(content);
             },
             deleteItem: this.client.delete,
@@ -275,7 +316,7 @@ export function setupCorazaExtension(registerExtension) {
               } else {
                 d.push('SecRuleEngine DetectionOnly');
               }
-              newValue.config.directives_map.default = d;
+              newValue.config.directives = d;
               onChange(newValue);
             },
           },
