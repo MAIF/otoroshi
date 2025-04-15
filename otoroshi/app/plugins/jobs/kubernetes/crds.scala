@@ -1540,6 +1540,30 @@ object KubernetesCRDsJob {
     }
   }
 
+  private val callsCounter = new java.util.concurrent.atomic.AtomicLong(0L)
+
+  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(implicit env: Env, ec: ExecutionContext ): Unit = {
+    if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
+      val calls = callsCounter.incrementAndGet()
+      if (calls == 1 || calls % 10 == 0) {
+        val count = ctx.kubernetes.serviceDescriptors
+        env.logger.warn("")
+        env.logger.warn(s"-------------------------------------------------------------------------")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
+        env.logger.warn(s"##   through the Kubernetes CRDs integration job.                      ##")
+        env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
+        env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"##   for more information about that, please read                      ##")
+        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"-------------------------------------------------------------------------")
+        env.logger.warn("")
+      }
+    }
+  }
+
   def importCRDEntities(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext)(implicit
       env: Env,
       ec: ExecutionContext
@@ -2028,6 +2052,7 @@ object KubernetesCRDsJob {
                          (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)),
                          (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert))
                        )
+                _    = warnAboutServiceDescriptorUsage(ctx)
                 _    = logger.info("importing CRDs entities")
                 _   <- importCRDEntities(conf, attrs, clientSupport, ctx)
                 _    = logger.info("deleting outdated entities")
