@@ -13,6 +13,7 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgRoute, NgTarget}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -290,6 +291,45 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         (parts.head, parts.last)
       }
       .toMap
+  def applyRoute(route: NgRoute): NgRoute = {
+    annotations
+      .filter {
+        case (key, _) if key.startsWith("ingress.otoroshi.io/") => true
+        case _                                                  => false
+      }
+      .map { case (key, value) =>
+        (key.replace("ingress.otoroshi.io/", ""), value)
+      }
+      .foldLeft(route) { case (d, (key, value)) =>
+        toCamelCase(key) match {
+          case "raw" => {
+            val raw = Json.parse(value).as[JsObject]
+            val current = route.json.as[JsObject]
+            NgRoute.fromJsons(current.deepMerge(raw))
+          }
+          case "groups" => d.copy(groups = Seq(value))
+          case "enabled" => d.copy(enabled = value.toBoolean)
+          case "debugFlow" => d.copy(debugFlow = value.toBoolean)
+          case "debug_flow" => d.copy(debugFlow = value.toBoolean)
+          case "capture" => d.copy(capture = value.toBoolean)
+          case "exportReporting" => d.copy(exportReporting = value.toBoolean)
+          case "export_reporting" => d.copy(exportReporting = value.toBoolean)
+          case "backendRef" => d.copy(backendRef = value.some)
+          case "backend_ref" => d.copy(backendRef = value.some)
+          case "frontend.headers" => d.copy(frontend = d.frontend.copy(headers = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
+          case "frontend.query" => d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
+          case "frontend.methods" => d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+          case "frontend.stripPath" => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
+          case "frontend.exact" => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
+          case "backend.rewrite" => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
+          case "backend.loadBalancing" => d.copy(backend = d.backend.copy(loadBalancing = LoadBalancing.fromString(value)))
+          case "backend.healthCheck" => d.copy(backend = d.backend.copy(healthCheck = Try(HealthCheck.format.reads(value.parseJson).asOpt).toOption.flatten))
+          case "backend.client" => d.copy(backend = d.backend.copy(client = Try(NgClientConfig.format.reads(value.parseJson).asOpt).toOption.flatten.getOrElse(NgClientConfig())))
+          case str if str.startsWith("plugins-") => d.copy(plugins = d.plugins.add(NgPluginInstance.readFrom(value.parseJson)))
+          case _ => d
+        }
+      }
+  }
   def apply(desc: ServiceDescriptor): ServiceDescriptor = {
     annotations
       .filter {
@@ -571,6 +611,7 @@ object KubernetesIngressSyncJob {
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
       implicit val mat = env.otoroshiMaterializer
+      val syncedServiceDescriptors = new AtomicLong(0L)
       val _client      = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
         shouldRunNext.set(false)
@@ -602,16 +643,34 @@ object KubernetesIngressSyncJob {
                           val certNames     = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
                           val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
                           (ingressRaw.ingress.spec.backend match {
+                            case Some(backend) if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                              backend.asRoute(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
+                                case None       => ().future
+                                case Some(route) => route.save()
+                              }
+                            }
                             case Some(backend) => {
                               backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
                                 case None       => ().future
-                                case Some(desc) => desc.save()
+                                case Some(desc) =>
+                                  syncedServiceDescriptors.incrementAndGet()
+                                  desc.save()
+                              }
+                            }
+                            case None if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                              ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                                ingressRaw.asRoutes(conf, otoroshiConfig, client, logger).flatMap { routes =>
+                                  Future.sequence(routes.map(_.save()))
+                                }
                               }
                             }
                             case None          => {
                               ingressRaw.updateIngressStatus(client).flatMap { _ =>
                                 ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
-                                  Future.sequence(descs.map(_.save()))
+                                  Future.sequence(descs.map { c =>
+                                    syncedServiceDescriptors.incrementAndGet()
+                                    c.save()
+                                  })
                                 }
                               }
                             }
@@ -636,6 +695,28 @@ object KubernetesIngressSyncJob {
                             s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
                           }
                         }
+                      }
+
+                      env.datastores.routeDataStore.findAll().flatMap { routes =>
+                        val toDelete = routes
+                          .filter { service =>
+                            service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
+                          }
+                          .map { service =>
+                            (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
+                          }
+                          .filterNot { case (ingressId, _, _) =>
+                            existingInKube.contains(ingressId)
+                          }
+                        logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
+                        env.datastores.routeDataStore
+                          .deleteByIds(toDelete.map(_._2))
+                          .andThen { case Failure(e) =>
+                            e.printStackTrace()
+                          }
+                          .map { _ =>
+                            ()
+                          }
                       }
 
                       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
@@ -666,6 +747,7 @@ object KubernetesIngressSyncJob {
           }
           .flatMap { _ =>
             logger.info("sync done !")
+            warnAboutServiceDescriptorUsage(syncedServiceDescriptors)
             if (shouldRunNext.get()) {
               shouldRunNext.set(false)
               logger.info("restart job right now because sync was asked during sync ")
@@ -687,6 +769,30 @@ object KubernetesIngressSyncJob {
         ().future
       }
     }
+
+  private val callsCounter = new AtomicLong(0L)
+
+  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(implicit env: Env, ec: ExecutionContext ): Unit = {
+    val count = counter.get()
+    if (count > 0) {
+      val calls = callsCounter.incrementAndGet()
+      if (calls == 1 || calls % 10 == 0) {
+        env.logger.warn("")
+        env.logger.warn(s"-------------------------------------------------------------------------")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"##   It seems that you are still using Service Descriptors             ##")
+        env.logger.warn(s"##   through the Kubernetes Ingresses integration job.                 ##")
+        env.logger.warn(s"##   we count ${count} entities remaining. the next major                ")
+        env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"##   for more information about that, please read                      ##")
+        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##                                                                     ##")
+        env.logger.warn(s"-------------------------------------------------------------------------")
+        env.logger.warn("")
+      }
+    }
+  }
 }
 
 object KubernetesIngressToDescriptor {
@@ -701,6 +807,19 @@ object KubernetesIngressToDescriptor {
     val namespace = obj.namespace
     val ingress   = obj.ingress
     asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
+  }
+
+  def asRoutes(
+                     obj: KubernetesIngress
+                   )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+                                                                                                                       env: Env,
+                                                                                                                       ec: ExecutionContext
+                   ): Future[Seq[NgRoute]] = {
+    val uid       = obj.uid
+    val name      = obj.name
+    val namespace = obj.namespace
+    val ingress   = obj.ingress
+    asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
   }
 
   def asDescriptors(
@@ -840,6 +959,159 @@ object KubernetesIngressToDescriptor {
                       }
                       .map { desc =>
                         otoConfig.apply(desc).some
+                      }
+                  }
+                }
+              }
+          }
+        }
+      }
+      .runWith(Sink.seq)
+      .map(_.flatten)
+  }
+
+  def asRoutes(
+     uid: String,
+     name: String,
+     namespace: String,
+     ingress: IngressSupport.NetworkingV1beta1IngressItem,
+     conf: KubernetesConfig,
+     otoConfig: OtoAnnotationConfig,
+     client: KubernetesClient,
+     logger: Logger
+   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+    implicit val mat = env.otoroshiMaterializer
+    Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
+      .mapAsync(1) {
+        case (rule, path) => {
+          client.fetchService(namespace, path.backend.serviceName).flatMap {
+            case None              =>
+              logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
+              None.future
+            case Some(kubeService) =>
+              client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
+                val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
+                  "wildcard"
+                ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
+
+                val serviceName                    = kubeService.name
+                val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
+                val maybePortSpec: Option[JsValue] =
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                    path.backend.servicePort match {
+                      case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
+                      case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
+                      case _                       => false
+                    }
+                  }
+                maybePortSpec match {
+                  case None           =>
+                    logger.info(s"Service port not found")
+                    None.future
+                  case Some(portSpec) => {
+                    val portName             = (portSpec \ "name").as[String]
+                    val portValue            = (portSpec \ "port").as[Int]
+                    val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
+                    val targets: Seq[Target] = serviceType match {
+                      case "ExternalName" =>
+                        val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
+                        Seq(Target(s"$serviceExternalName:$portValue", protocol))
+                      case _              =>
+                        kubeEndpointOpt match {
+                          case None               =>
+                            serviceType match {
+                              case "ClusterIP"    =>
+                                val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                              case "NodePort"     =>
+                                val serviceIp =
+                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                              case "LoadBalancer" =>
+                                val serviceIp =
+                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                              case _              => Seq.empty
+                            }
+                          case Some(kubeEndpoint) => {
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            if (subsets.isEmpty) {
+                              Seq.empty
+                            } else {
+                              subsets.flatMap { subset =>
+                                val endpointPort: Int = (subset \ "ports")
+                                  .as[JsArray]
+                                  .value
+                                  .find { port =>
+                                    (port \ "name").as[String] == portName
+                                  }
+                                  .map(v => (v \ "port").as[Int])
+                                  .getOrElse(80)
+                                val endpointProtocol  =
+                                  if (endpointPort == 443 || portName == "https") "https" else "http"
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                addresses.map { address =>
+                                  val serviceIp = (address \ "ip").as[String]
+                                  Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
+                                }
+                              }
+                            }
+                          }
+                        }
+                    }
+                    env.datastores.routeDataStore
+                      .findById(id)
+                      .map {
+                        case None       => ("create", env.datastores.routeDataStore.template())
+                        case Some(route) => ("update", route)
+                      }
+                      .map { case (action, route) =>
+                        val creationDate: String =
+                          if (action == "create") DateTime.now().toString
+                          else route.metadata.getOrElse("created-at", DateTime.now().toString)
+                        val newRoute              = route.copy(
+                          id = id,
+                          groups = Seq(conf.defaultGroup),
+                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path.getOrElse("/"),
+                          frontend = NgFrontend(
+                            domains = Seq(NgDomainAndPath(rule.host.getOrElse("*") + path.path.getOrElse(""))),
+                            headers = Map.empty,
+                            query = Map.empty,
+                            methods = Seq.empty,
+                            stripPath = true,
+                            exact = false
+                          ),
+                          backend = NgBackend(
+                            targets = targets.map(t => NgTarget.fromTarget(t)),
+                            root = path.path.getOrElse("/"),
+                            rewrite = false,
+                            loadBalancing = RoundRobin,
+                            healthCheck = None,
+                            client = NgClientConfig(),
+                          ),
+                          metadata = Map(
+                            "otoroshi-provider"     -> "kubernetes-ingress",
+                            "created-at"            -> creationDate,
+                            "updated-at"            -> DateTime.now().toString,
+                            "kubernetes-name"       -> name,
+                            "kubernetes-namespace"  -> namespace,
+                            "kubernetes-path"       -> s"$namespace/$name",
+                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
+                              .getOrElse("/")}".slugifyWithSlash,
+                            "kubernetes-uid"        -> uid
+                          )
+                        )
+                        action match {
+                          case "create" =>
+                            logger.info(s"""Creating route "${newRoute.name}" from "$namespace/$name"""")
+                          case "update" =>
+                            logger.info(s"""Updating route "${newRoute.name}" from "$namespace/$name"""")
+                          case _        =>
+                        }
+                        newRoute
+                      }
+                      .map { desc =>
+                        otoConfig.applyRoute(desc).some
                       }
                   }
                 }
@@ -1084,6 +1356,40 @@ object IngressSupport {
       )
       KubernetesIngressToDescriptor
         .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
+          env,
+          ec
+        )
+        .map(_.headOption)
+    }
+    def asRoute(
+                      namespace: String,
+                      conf: KubernetesConfig,
+                      otoConfig: OtoAnnotationConfig,
+                      client: KubernetesClient,
+                      logger: Logger
+                    )(implicit env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
+      val ingress = IngressSupport.NetworkingV1beta1IngressItem(
+        spec = NetworkingV1beta1IngressSpec(
+          backend = None,
+          rules = Seq(
+            NetworkingV1beta1IngressRule(
+              host = "*".some,
+              http = NetworkingV1beta1HTTPIngressRuleValue.apply(
+                Seq(
+                  NetworkingV1beta1HTTPIngressPath(
+                    backend = this,
+                    path = "/".some
+                  )
+                )
+              )
+            )
+          ),
+          tls = Seq.empty
+        ),
+        status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
+      )
+      KubernetesIngressToDescriptor
+        .asRoutes("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
           env,
           ec
         )

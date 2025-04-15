@@ -2,6 +2,7 @@ package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
+import otoroshi.next.models.NgRoute
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -133,6 +134,14 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
       ec: ExecutionContext
   ): Future[Seq[ServiceDescriptor]] = {
     KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(env, ec)
+  }
+
+  def asRoutes(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
+    implicit
+    env: Env,
+    ec: ExecutionContext
+  ): Future[Seq[NgRoute]] = {
+    KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(env, ec)
   }
 }
 

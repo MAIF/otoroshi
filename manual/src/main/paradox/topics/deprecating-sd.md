@@ -47,3 +47,11 @@ and just confirm it
 @@@ div { .centered-img }
 <img src="../imgs/sd-migration-ui-confirm.png" />
 @@@
+
+## Kubernetes usage
+
+if you still use Service Descriptor through Kubernetes Ingress job or Kubernetes CRDs job, you will have logs warning you about it from time to time.
+
+For the `Kubernetes CRDs job` case, just use `Route` CRDs instead of `ServiceDescriptor` CRDs.
+
+For the `Kubernetes Ingress job`, you can use the `ingress.otoroshi.io/is-route=true` annotation and use `NgRoute specific annotations`. You'll find the list[here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/ingress.scala#L310-L328).

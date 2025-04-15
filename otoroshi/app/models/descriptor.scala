@@ -199,6 +199,9 @@ trait LoadBalancing {
 }
 
 object LoadBalancing {
+  def fromString(name: String): LoadBalancing = {
+    format.reads(Json.obj("type" -> name)).getOrElse(RoundRobin)
+  }
   val format: Format[LoadBalancing] = new Format[LoadBalancing] {
     override def writes(o: LoadBalancing): JsValue             = o.toJson
     override def reads(json: JsValue): JsResult[LoadBalancing] =
