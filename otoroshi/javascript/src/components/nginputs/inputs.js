@@ -517,7 +517,7 @@ export class NgDateRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         <input
-          type="date"
+          type={this.props.type || 'date'}
           className="form-control"
           placeholder={props.placeholder}
           title={props.help}
