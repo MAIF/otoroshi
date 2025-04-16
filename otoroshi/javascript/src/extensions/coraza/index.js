@@ -6,6 +6,7 @@ import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
 import { NgCodeRenderer, NgSingleCodeLineRenderer, SingleLineCode } from '../../components/nginputs';
 import { Row } from '../../components/Row';
+import { Button } from '../../components/Button';
 
 const extensionId = 'otoroshi.extensions.CorazaWAF';
 
@@ -39,8 +40,15 @@ export function setupCorazaExtension(registerExtension) {
           props: { label: 'Tags' },
         },
         inspect_body: {
-          type: 'bool',
-          props: { label: 'Inspect req/res body' },
+          type: 'box-bool',
+          props: {
+            label: 'Inspect request and response bodies',
+            description: <div>
+              It is a ModSecurity directive that enables inspection of the request body (e.g., POST data, JSON, XML).
+
+              <p>With it set to On, ModSecurity can analyze the full content of incoming requests — not just headers and URLs — allowing detection of attacks hidden in form submissions or API calls.</p>
+            </div>
+          },
         },
         pool_capacity: {
           type: 'number',
@@ -52,20 +60,46 @@ export function setupCorazaExtension(registerExtension) {
             label: 'Coraza config.',
           },
         },
-        mode: {
-          type: 'select',
+        is_blocking_mode: {
+          type: 'box-bool',
           props: {
-            label: 'Mode',
-            possibleValues: [
-              { label: 'Detection Only', value: 'DetectionOnly' },
-              { label: 'Blocking', value: 'On' },
-            ],
+            label: 'Is Blocking transaction ?',
+            description: <div>
+              SecRuleEngine is a directive in ModSecurity (a web application firewall) that controls whether rules are enforced or just logged.
+
+              <p><span style={{
+                fontWeight: 'bold'
+              }}>Blocking mode: </span> Rules are fully enforced. Matching requests can trigger disruptive actions such as blocking or redirecting.</p>
+
+              <p><span style={{
+                fontWeight: 'bold'
+              }}>DetectionOnly: </span> Rules are processed, but no disruptive actions (like blocking) are taken. Attack details are logged as events.</p>
+            </div>
           },
+          // props: {
+          //   label: 'Mode',
+          //   possibleValues: [
+          //     { label: 'Detection Only', value: 'DetectionOnly' },
+          //     { label: 'Blocking', value: 'On' },
+          //   ],
+          // },
         },
-        include_crs: {
-          type: 'bool',
+        include_owasp_crs: {
+          type: 'box-bool',
           props: {
-            help: 'to know more about it, go to https://coraza.io/docs/tutorials/coreruleset/',
+            description: <div>
+              Allows to enable or disable the OWASP Core Rule Set (CRS) for their Coraza Web Application Firewall configuration.
+              <div>
+                To know more about it, <Button
+                  className="btn-sm"
+                  onClick={() => {
+                    window.open(
+                      "https://coraza.io/docs/tutorials/coreruleset/",
+                      '_blank'
+                    );
+                  }}>check the ruleset</Button>
+              </div>
+            </div>,
             label: 'Use OWASP CRS',
           },
         },
@@ -75,16 +109,23 @@ export function setupCorazaExtension(registerExtension) {
             label: 'Custom rules',
             value: (
               <p style={{ marginTop: 6 }}>
-                to know more about custom rules, go to{' '}
-                <a href="https://coraza.io/docs/seclang/">https://coraza.io/docs/seclang/</a>
+                To know more about {' '}
+                <Button
+                  className="btn-sm"
+                  onClick={() => {
+                    window.open(
+                      "https://coraza.io/docs/seclang/",
+                      '_blank'
+                    );
+                  }}>custom rules</Button>
               </p>
             ),
           },
         },
-        custom_rules: {
+        directives: {
           type: 'array',
           props: {
-            label: '',
+            label: 'Directives',
             component: (props) => <Row>
               <NgCodeRenderer
                 ngOptions={{
@@ -131,15 +172,13 @@ export function setupCorazaExtension(registerExtension) {
         'description',
         'tags',
         'metadata',
-        'pool_capacity',
-        'inspect_body',
         '<<<WAF config.',
-        'mode',
-        'include_crs',
+        'pool_capacity',
+        'is_blocking_mode',
+        'inspect_body',
+        'include_owasp_crs',
         'custom_rules_infos',
-        'custom_rules',
-        '>>>Raw Coraza config.',
-        'config',
+        'directives',
       ];
 
       componentDidMount() {
@@ -181,17 +220,10 @@ export function setupCorazaExtension(registerExtension) {
               tags: [],
               metadata: {},
               inspect_body: true,
+              include_owasp_crs: true,
+              pool_capacity: 2,
               mode: 'DetectionOnly',
-              include_crs: true,
-              custom_rules: [],
-              config: {
-                directives: [
-                  'Include @recommended-conf',
-                  'Include @crs-setup-conf',
-                  'Include @owasp_crs/*.conf',
-                  'SecRuleEngine DetectionOnly',
-                ],
-              },
+              directives: []
             }),
             itemName: 'Coraza WAF config',
             formSchema: this.formSchema,
@@ -208,77 +240,74 @@ export function setupCorazaExtension(registerExtension) {
                 ];
                 return arr.map((item) => {
                   let mode = 'DetectionOnly';
-                  console.log(item)
-                  if (item.config.directives?.includes('SecRuleEngine On')) {
-                    mode = 'On';
-                  } else if (item.config.directives_map?.default.indexOf('SecRuleEngine On') > -1) {
+                  if (item.directives.includes('SecRuleEngine On')) {
                     mode = 'On';
                   }
-                  const include_crs = item.config.directives?.includes('Include @owasp_crs/*.conf') ||
-                    item.config.directives_map?.default.indexOf('Include @owasp_crs/*.conf') > -1;
+                  const include_owasp_crs = item.directives.includes('Include @owasp_crs/*.conf')
 
-                  const oldDirectives = item.config.directives_map?.default
-                  let custom_rules = (item.config.directives ?? oldDirectives ?? [])
-
-                  if (!Array.isArray(custom_rules))
-                    custom_rules = custom_rules.split("\n")
+                  let directives = item.directives
 
                   if (item.inspectBody) {
-                    custom_rules.push('SecRequestBodyAccess On')
-                    custom_rules.push('SecResponseBodyAccess On');
+                    directives.push('SecRequestBodyAccess On')
+                    directives.push('SecResponseBodyAccess On');
                   }
 
                   return {
                     ...item,
                     mode,
-                    include_crs,
-                    custom_rules: custom_rules.filter((line) => ![...base,
-                      "SecRuleEngine On",
-                      "SecRequestBodyAccess On",
-                      "SecResponseBodyAccess On",
-                      "Include @coraza",
-                      "Include @crs-setup",
-                      "Include @owasp_crs/*.conf"
-                    ].find(rule => line.includes(rule)))
+                    include_owasp_crs,
+                    directives: directives
+                      .filter((line) => ![
+                        ...base,
+                        "SecRuleEngine On",
+                        "SecRequestBodyAccess On",
+                        "SecResponseBodyAccess On",
+                        "Include @coraza",
+                        "Include @crs-setup",
+                        "Include @owasp_crs/*.conf"
+                      ].find(rule => line.includes(rule)))
                   }
                 });
               }),
             updateItem: (content) => {
-              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
-              if (content.include_crs) {
-                d.push('Include @owasp_crs/*.conf');
-              }
-              content.custom_rules
-                .filter((line) => [
-                  "SecRuleEngine On",
-                  "SecRequestBodyAccess On",
-                  "SecResponseBodyAccess On",
-                  "Include @coraza",
-                  "Include @crs-setup",
-                  "Include @owasp_crs/*.conf"
-                ].indexOf(line) === -1)
-                .forEach((v) => d.push(v));
+              console.log(content)
+              // const d = ['Include @recommended-conf', 'Include @crs-setup-conf']
+              // if (content.include_owasp_crs) {
+              //   d.push('Include @owasp_crs/*.conf')
+              // }
+              // content.directives
+              //   .filter((line) => [
+              //     "SecRuleEngine On",
+              //     "SecRuleEngine DetectionOnly",
+              //     "SecRequestBodyAccess On",
+              //     "SecResponseBodyAccess On",
+              //     "Include @coraza",
+              //     "Include @recommended-conf",
+              //     "Include @crs-setup",
+              //     "Include @owasp_crs/*.conf"
+              //   ].indexOf(line) === -1)
+              //   .forEach((v) => d.push(v))
 
-              if (content.mode === 'On') {
-                d.push('SecRuleEngine On');
-              } else {
-                d.push('SecRuleEngine DetectionOnly');
-              }
+              // if (content.mode === 'On') {
+              //   d.push('SecRuleEngine On')
+              // } else {
+              //   d.push('SecRuleEngine DetectionOnly')
+              // }
 
-              if (content.inspectBody) {
-                d.push('SecRequestBodyAccess On')
-                d.push('SecResponseBodyAccess On');
-              }
+              // if (content.inspectBody) {
+              //   d.push('SecRequestBodyAccess On')
+              //   d.push('SecResponseBodyAccess On')
+              // }
 
-              content.config.directives = d;
-              return this.client.update(content);
+              // content.directives = d
+              return this.client.update({ ...content })
             },
             createItem: (content) => {
               const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
-              if (content.include_crs) {
+              if (content.include_owasp_crs) {
                 d.push('Include @owasp_crs/*.conf');
               }
-              content.custom_rules.forEach((v) => d.push(v));
+              content.directives.forEach((v) => d.push(v));
               if (content.mode === 'On') {
                 d.push('SecRuleEngine On');
               } else {
@@ -290,7 +319,7 @@ export function setupCorazaExtension(registerExtension) {
                 d.push('SecResponseBodyAccess On');
               }
 
-              content.config.directives = d;
+              content.directives = d;
 
               return this.client.create(content);
             },
@@ -306,17 +335,17 @@ export function setupCorazaExtension(registerExtension) {
             export: true,
             kubernetesKind: 'coraza-waf.extensions.otoroshi.io/CorazaConfig',
             onStateChange: (newValue, oldValue, onChange) => {
-              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
-              if (newValue.include_crs) {
-                d.push('Include @owasp_crs/*.conf');
-              }
-              newValue.custom_rules.forEach((v) => d.push(v));
-              if (newValue.mode === 'On') {
-                d.push('SecRuleEngine On');
-              } else {
-                d.push('SecRuleEngine DetectionOnly');
-              }
-              newValue.config.directives = d;
+              // const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
+              // if (newValue.include_owasp_crs) {
+              //   d.push('Include @owasp_crs/*.conf');
+              // }
+              // newValue.directives.forEach((v) => d.push(v));
+              // if (newValue.mode === 'On') {
+              //   d.push('SecRuleEngine On');
+              // } else {
+              //   d.push('SecRuleEngine DetectionOnly');
+              // }
+              // newValue.directives = d;
               onChange(newValue);
             },
           },

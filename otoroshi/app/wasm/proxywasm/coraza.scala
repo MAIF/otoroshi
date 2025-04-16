@@ -259,13 +259,14 @@ case class CorazaWafConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     inspectBody: Boolean,
+    includeOwaspCRS: Boolean = true,
+    isBlockingMode: Boolean = true,
     directives: Seq[String] = Seq(
       "Include @recommended-conf",
       "Include @crs-setup-conf",
       "Include @owasp_crs/*.conf",
       "SecRuleEngine On"
     ),
-    config: JsObject,
     poolCapacity: Int
 ) extends EntityLocationSupport {
   override def internalId: String               = id
@@ -284,24 +285,28 @@ object CorazaWafConfig {
     description = "New WAF",
     metadata = Map.empty,
     tags = Seq.empty,
-    config = Json.obj(),
     inspectBody = true,
+    includeOwaspCRS = true,
     directives = Seq.empty,
     poolCapacity = 2
   )
   val format                      = new Format[CorazaWafConfig] {
     override def writes(o: CorazaWafConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
-      "id"            -> o.id,
-      "name"          -> o.name,
-      "description"   -> o.description,
-      "metadata"      -> o.metadata,
-      "tags"          -> JsArray(o.tags.map(JsString.apply)),
-      "config"        -> o.config,
-      "inspect_body"  -> o.inspectBody,
-      "directives"    -> o.directives,
-      "pool_capacity" -> o.poolCapacity,
+      "id"                -> o.id,
+      "name"              -> o.name,
+      "description"       -> o.description,
+      "metadata"          -> o.metadata,
+      "tags"              -> JsArray(o.tags.map(JsString.apply)),
+      "inspect_body"      -> o.inspectBody,
+      "is_blocking_mode"  -> o.isBlockingMode,
+      "include_owasp_crs" -> o.includeOwaspCRS,
+      "directives"        -> o.directives,
+      "pool_capacity"     -> o.poolCapacity,
     )
     override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
+      val oldConfig = (json \ "config").asOpt[JsObject]
+      val oldDirectives: Option[JsArray] = oldConfig.flatMap(_.selectAsOptObject("directives_map").flatMap(_.selectAsOptArray("default")))
+
       CorazaWafConfig(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = (json \ "id").as[String],
@@ -309,11 +314,12 @@ object CorazaWafConfig {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
+        isBlockingMode = (json \ "is_blocking_mode").asOpt[Boolean].getOrElse(true),
+        includeOwaspCRS = (json \ "include_owasp_crs").asOpt[Boolean].getOrElse(true),
         directives = (json \ "directives")
           .asOpt[JsArray]
-          .getOrElse(Json.arr())
+          .getOrElse(oldDirectives.getOrElse(Json.arr()))
           .value
           .map(_.as[String]),
         poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
