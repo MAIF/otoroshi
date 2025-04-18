@@ -565,6 +565,7 @@ export class NewExporterForm extends Component {
   };
 
   render() {
+    console.log(this.data())
     return (
       <>
         <Collapse initCollapsed={false} label="Location" lineEnd={true}>

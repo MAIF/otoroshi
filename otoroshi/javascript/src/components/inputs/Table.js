@@ -376,10 +376,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -532,32 +532,46 @@ class TableComponent extends Component {
       e.preventDefault();
     }
 
-    if (
-      typeof this.props.hideEditButton === 'function'
-        ? !this.props.hideEditButton(item)
-        : !this.props.hideEditButton
-    ) {
-      this.mountShortcuts();
+    const state = this.tableRef?.current?.state || {};
+    const page = state.page || 0;
 
-      let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+    return this.props.fetchItems({
+      filtered: state.filtered,
+      sorted: state.sorted,
+      pageSize: this.state.rowsPerPage,
+      page: page + 1,
+    })
+      .then(res => {
+        console.log(res)
 
-      if (this.props.rawEditUrl) {
-        routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
-      }
+        if (
+          typeof this.props.hideEditButton === 'function'
+            ? !this.props.hideEditButton(item)
+            : !this.props.hideEditButton
+        ) {
+          this.mountShortcuts();
 
-      window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+          let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
 
-      if (this.props.parentProps.setTitle) {
-        this.props.parentProps.setTitle(
-          `Update a ${this.props.itemName}`,
-          this.updateItemAndStay,
-          item
-        );
-      }
-      this.setState({ currentItem: item, showEditForm: true });
-    }
+          if (this.props.rawEditUrl) {
+            routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+          }
+
+          window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
+
+          if (this.props.parentProps.setTitle) {
+            this.props.parentProps.setTitle(
+              `Update a ${this.props.itemName}`,
+              this.updateItemAndStay,
+              item
+            );
+          }
+          this.setState({ currentItem: item, showEditForm: true });
+        }
+
+        console.log(res)
+      })
   };
-
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
@@ -816,19 +830,19 @@ class TableComponent extends Component {
               {(typeof this.props.hideEditButton === 'function'
                 ? !this.props.hideEditButton(item)
                 : !this.props.hideEditButton) && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-success me-2"
-                  {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                  onClick={(e) => {
-                    this.props.navigateOnEdit
-                      ? this.props.navigateOnEdit(item)
-                      : this.showEditForm(e, item);
-                  }}
-                >
-                  <i className="fas fa-pencil-alt" />
-                </button>
-              )}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-success me-2"
+                    {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
+                    onClick={(e) => {
+                      this.props.navigateOnEdit
+                        ? this.props.navigateOnEdit(item)
+                        : this.showEditForm(e, item);
+                    }}
+                  >
+                    <i className="fas fa-pencil-alt" />
+                  </button>
+                )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"

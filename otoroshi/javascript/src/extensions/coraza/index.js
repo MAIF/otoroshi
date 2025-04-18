@@ -230,99 +230,9 @@ export function setupCorazaExtension(registerExtension) {
             formFlow: this.formFlow,
             columns: this.columns,
             stayAfterSave: true,
-            fetchItems: () =>
-              this.client.findAll().then((arr) => {
-                const base = [
-                  'Include @recommended-conf',
-                  'Include @crs-setup-conf',
-                  'Include @owasp_crs/*.conf',
-                  'SecRuleEngine DetectionOnly',
-                ];
-                return arr.map((item) => {
-                  let mode = 'DetectionOnly';
-                  if (item.directives.includes('SecRuleEngine On')) {
-                    mode = 'On';
-                  }
-                  const include_owasp_crs = item.directives.includes('Include @owasp_crs/*.conf')
-
-                  let directives = item.directives
-
-                  if (item.inspectBody) {
-                    directives.push('SecRequestBodyAccess On')
-                    directives.push('SecResponseBodyAccess On');
-                  }
-
-                  return {
-                    ...item,
-                    mode,
-                    include_owasp_crs,
-                    directives: directives
-                      .filter((line) => ![
-                        ...base,
-                        "SecRuleEngine On",
-                        "SecRequestBodyAccess On",
-                        "SecResponseBodyAccess On",
-                        "Include @coraza",
-                        "Include @crs-setup",
-                        "Include @owasp_crs/*.conf"
-                      ].find(rule => line.includes(rule)))
-                  }
-                });
-              }),
-            updateItem: (content) => {
-              console.log(content)
-              // const d = ['Include @recommended-conf', 'Include @crs-setup-conf']
-              // if (content.include_owasp_crs) {
-              //   d.push('Include @owasp_crs/*.conf')
-              // }
-              // content.directives
-              //   .filter((line) => [
-              //     "SecRuleEngine On",
-              //     "SecRuleEngine DetectionOnly",
-              //     "SecRequestBodyAccess On",
-              //     "SecResponseBodyAccess On",
-              //     "Include @coraza",
-              //     "Include @recommended-conf",
-              //     "Include @crs-setup",
-              //     "Include @owasp_crs/*.conf"
-              //   ].indexOf(line) === -1)
-              //   .forEach((v) => d.push(v))
-
-              // if (content.mode === 'On') {
-              //   d.push('SecRuleEngine On')
-              // } else {
-              //   d.push('SecRuleEngine DetectionOnly')
-              // }
-
-              // if (content.inspectBody) {
-              //   d.push('SecRequestBodyAccess On')
-              //   d.push('SecResponseBodyAccess On')
-              // }
-
-              // content.directives = d
-              return this.client.update({ ...content })
-            },
-            createItem: (content) => {
-              const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
-              if (content.include_owasp_crs) {
-                d.push('Include @owasp_crs/*.conf');
-              }
-              content.directives.forEach((v) => d.push(v));
-              if (content.mode === 'On') {
-                d.push('SecRuleEngine On');
-              } else {
-                d.push('SecRuleEngine DetectionOnly');
-              }
-
-              if (content.inspectBody) {
-                d.push('SecRequestBodyAccess On')
-                d.push('SecResponseBodyAccess On');
-              }
-
-              content.directives = d;
-
-              return this.client.create(content);
-            },
+            fetchItems: this.client.findAll,
+            updateItem: this.client.update,
+            createItem: this.client.create,
             deleteItem: this.client.delete,
             navigateTo: (item) => {
               window.location = `/bo/dashboard/extensions/coraza-waf/coraza-configs/edit/${item.id}`;
@@ -334,20 +244,7 @@ export function setupCorazaExtension(registerExtension) {
             extractKey: (item) => item.id,
             export: true,
             kubernetesKind: 'coraza-waf.extensions.otoroshi.io/CorazaConfig',
-            onStateChange: (newValue, oldValue, onChange) => {
-              // const d = ['Include @recommended-conf', 'Include @crs-setup-conf'];
-              // if (newValue.include_owasp_crs) {
-              //   d.push('Include @owasp_crs/*.conf');
-              // }
-              // newValue.directives.forEach((v) => d.push(v));
-              // if (newValue.mode === 'On') {
-              //   d.push('SecRuleEngine On');
-              // } else {
-              //   d.push('SecRuleEngine DetectionOnly');
-              // }
-              // newValue.directives = d;
-              onChange(newValue);
-            },
+            onStateChange: (newValue, oldValue, onChange) => onChange(newValue),
           },
           null
         );
