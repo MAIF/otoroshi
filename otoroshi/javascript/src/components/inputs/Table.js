@@ -532,46 +532,32 @@ class TableComponent extends Component {
       e.preventDefault();
     }
 
-    const state = this.tableRef?.current?.state || {};
-    const page = state.page || 0;
+    if (
+      typeof this.props.hideEditButton === 'function'
+        ? !this.props.hideEditButton(item)
+        : !this.props.hideEditButton
+    ) {
+      this.mountShortcuts();
 
-    return this.props.fetchItems({
-      filtered: state.filtered,
-      sorted: state.sorted,
-      pageSize: this.state.rowsPerPage,
-      page: page + 1,
-    })
-      .then(res => {
-        console.log(res)
+      let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
 
-        if (
-          typeof this.props.hideEditButton === 'function'
-            ? !this.props.hideEditButton(item)
-            : !this.props.hideEditButton
-        ) {
-          this.mountShortcuts();
+      if (this.props.rawEditUrl) {
+        routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
+      }
 
-          let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+      window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
 
-          if (this.props.rawEditUrl) {
-            routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
-          }
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
+    }
+  }
 
-          window.history.replaceState({}, `Update a ${this.props.itemName}`, routeTo);
-
-          if (this.props.parentProps.setTitle) {
-            this.props.parentProps.setTitle(
-              `Update a ${this.props.itemName}`,
-              this.updateItemAndStay,
-              item
-            );
-          }
-          this.setState({ currentItem: item, showEditForm: true });
-        }
-
-        console.log(res)
-      })
-  };
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
@@ -837,7 +823,9 @@ class TableComponent extends Component {
                     onClick={(e) => {
                       this.props.navigateOnEdit
                         ? this.props.navigateOnEdit(item)
-                        : this.showEditForm(e, item);
+                        //: this.showEditForm(e, item);
+                        : this.gotoItem(e, item)
+
                     }}
                   >
                     <i className="fas fa-pencil-alt" />

@@ -452,7 +452,7 @@ object CorazaError {
     override def writes(o: CorazaError): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CorazaError] = Try {
       CorazaError(
-        message= json.selectAsOptString("message").getOrElse(""),
+        message= json.selectAsString("message"),
         uri = json.selectAsOptString("uri").getOrElse(""),
         rule = CorazaRule.fmt
               .reads((json \ "rule").asOpt[JsValue].getOrElse(JsNull))
@@ -498,9 +498,14 @@ case class CorazaTrailEvent(
   private val timestamp = DateTime.now()
 
   override def toJson(implicit env: Env): JsValue = {
-    val rules = rawMatchedRules.split("\n").toSeq.map(line => CorazaError.fmt.reads(JsString(line))).collect {
-      case JsSuccess(e, _) => e
-    }
+    val rules = rawMatchedRules
+      .split("\n")
+      .toSeq
+      .map(line => {
+        CorazaError.fmt.reads(Json.parse(line))
+      }).collect {
+        case JsSuccess(e, _) => e
+      }
 
     Json.obj(
       "@id" -> `@id`,
@@ -587,6 +592,9 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
           .asOpt[String]
           .getOrElse(Json.stringify(Json.obj("error" -> "---")))
 
+        if(errors.nonEmpty)
+          CorazaTrailEvent(errors, request, route).toAnalytics()(env)
+          
         if (response) {
           NgAccess.NgAllowed
         } else {
@@ -601,8 +609,6 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
     if (config.isBlockingMode) {
       NgAccess.NgDenied(Results.Forbidden)
     } else {
-      // TODO - send event and log it
-      CorazaTrailEvent(errors, request, route)
       NgAccess.NgAllowed
     }
   }
