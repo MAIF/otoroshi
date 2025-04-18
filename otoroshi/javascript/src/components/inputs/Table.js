@@ -376,10 +376,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-            ...paginationState,
-            pageSize: this.state.rowsPerPage,
-            page: page + 1,
-          })
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -556,7 +556,7 @@ class TableComponent extends Component {
       }
       this.setState({ currentItem: item, showEditForm: true });
     }
-  };
+  }
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -816,19 +816,21 @@ class TableComponent extends Component {
               {(typeof this.props.hideEditButton === 'function'
                 ? !this.props.hideEditButton(item)
                 : !this.props.hideEditButton) && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-success me-2"
-                  {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                  onClick={(e) => {
-                    this.props.navigateOnEdit
-                      ? this.props.navigateOnEdit(item)
-                      : this.showEditForm(e, item);
-                  }}
-                >
-                  <i className="fas fa-pencil-alt" />
-                </button>
-              )}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-success me-2"
+                    {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
+                    onClick={(e) => {
+                      this.props.navigateOnEdit
+                        ? this.props.navigateOnEdit(item)
+                        //: this.showEditForm(e, item);
+                        : this.gotoItem(e, item)
+
+                    }}
+                  >
+                    <i className="fas fa-pencil-alt" />
+                  </button>
+                )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"

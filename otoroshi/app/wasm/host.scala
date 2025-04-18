@@ -4,9 +4,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
-import io.otoroshi.wasm4s.scaladsl.opa._
-import org.extism.sdk.{ExtismCurrentPlugin, ExtismFunction, HostFunction, HostUserData, LibExtism}
-import org.extism.sdk.wasmotoroshi._
+import org.extism.sdk._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
@@ -17,7 +15,6 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
-import otoroshi.wasm.httpwasm.HttpWasmFunctions
 import play.api.Logger
 import play.api.libs.json._
 
