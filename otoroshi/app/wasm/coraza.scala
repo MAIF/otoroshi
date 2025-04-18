@@ -13,10 +13,9 @@ import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
-import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.{ReplaceAllWith, TypedMap}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -24,7 +23,7 @@ import otoroshi.wasm._
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc
-import play.api.mvc.{RequestHeader, Results}
+import play.api.mvc.Results
 
 import scala.collection.Seq
 import scala.concurrent._
@@ -594,7 +593,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
 
         if(errors.nonEmpty)
           CorazaTrailEvent(errors, request, route).toAnalytics()(env)
-          
+
         if (response) {
           NgAccess.NgAllowed
         } else {
