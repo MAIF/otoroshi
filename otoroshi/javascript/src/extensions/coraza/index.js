@@ -135,12 +135,12 @@ export function setupCorazaExtension(registerExtension) {
                   props: {
                     showGutter: false,
                     ace_config: {
-                      onLoad: editor => editor.renderer.setPadding(20),
-                      maxLines: Infinity,
+                      onLoad: editor => editor.renderer.setPadding(10),
+                      // maxLines: 20,
                       fontSize: 14,
                     },
                     editorOnly: true,
-                    height: '100%',
+                    height: '10rem',
                     mode: 'prolog',
                   },
                 }}
