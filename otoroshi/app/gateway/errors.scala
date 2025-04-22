@@ -313,7 +313,7 @@ object Errors {
           .apply(otoroshi.views.html.oto.maintenance(env))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg     -> message,
+            env.Headers.OtoroshiErrorMsg     -> Option(message).getOrElse("--"),
             env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       } else if (maybeCauseId.contains("errors.service.under.construction")) {
@@ -321,7 +321,7 @@ object Errors {
           .apply(otoroshi.views.html.oto.build(env))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg     -> message,
+            env.Headers.OtoroshiErrorMsg     -> Option(message).getOrElse("--"),
             env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       } else {
@@ -337,7 +337,7 @@ object Errors {
         body
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg     -> message,
+            env.Headers.OtoroshiErrorMsg     -> Option(message).getOrElse("--"),
             env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       }
@@ -348,7 +348,7 @@ object Errors {
           .apply(Json.obj("error" -> cause, "error_description" -> message))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg   -> message,
+            env.Headers.OtoroshiErrorMsg   -> Option(message).getOrElse("--"),
             env.Headers.OtoroshiErrorCause -> cause,
             env.Headers.OtoroshiStateResp  -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
@@ -357,7 +357,7 @@ object Errors {
           .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg     -> message,
+            env.Headers.OtoroshiErrorMsg     -> Option(message).getOrElse("--"),
             env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       }
@@ -392,7 +392,7 @@ object Errors {
               .as("text/html")
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
-                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiErrorMsg     -> Option(message).getOrElse("--"),
                 env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
               )
           } else {
