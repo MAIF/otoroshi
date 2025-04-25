@@ -20,6 +20,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm._
+import play.api.libs.json
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc
@@ -631,7 +632,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
           "url"     -> req.uri.path.toString(),
           "method"  -> req.method,
           "headers" -> req.headers,
-          "body"    -> body_bytes.get,
+          "body"    -> body_bytes.get.toArray[Byte].map(b => b & 0xFF),
           "proto" -> req.version.toUpperCase
       )
 
@@ -668,7 +669,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
           ).applyOnWithOpt(attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.HasBodyKey)) {
             case (obj, hasBody) =>
               if (hasBody)
-                obj.deepMerge(Json.obj("body"-> requestBody))
+                obj.deepMerge(Json.obj("body"-> requestBody.toArray[Byte].map(b => b & 0xFF)))
               else
                 obj
           },
@@ -677,9 +678,12 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
             "proto" -> request.version.toUpperCase,
             "status" -> response.status,
           ).applyOnWithOpt(body_bytes) {
-            case (obj, body) => obj.deepMerge(Json.obj("body"-> body))
+            case (obj, body) =>
+              obj.deepMerge(Json.obj("body"-> body.toArray[Byte].map(b => b & 0xFF)))
           },
         )
+
+
 
         evaluate(instance, in, isResponse = true, request, route)
           .map {
