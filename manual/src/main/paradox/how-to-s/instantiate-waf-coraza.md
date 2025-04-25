@@ -17,90 +17,38 @@ Sometimes you may want to secure an app with a [Web Appplication Firewall (WAF)]
 
 first, go on [the features page of otoroshi](http://otoroshi.oto.tools:8080/bo/dashboard/features) and then click on the [Coraza WAF configs. item](http://otoroshi.oto.tools:8080/bo/dashboard/extensions/coraza-waf/coraza-configs). 
 
-Now create a new configuration, give it a name and a description, ensure that you enabled the `Inspect req/res body` flag and save your configuration.
+Now, create a new configuration by giving it a name and description. Make sure to enable the `Inspect request/response body` flag, then save your configuration.
 
-The corresponding admin api call is the following :
+The corresponding Admin API call is as follows:
 
 ```sh
 curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs' \
   -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
 {
-  "id": "coraza-waf-demo",
+  "id": "coraza-wafdemo",
   "name": "My blocking WAF",
   "description": "An awesome WAF",
   "inspect_body": true,
-  "config": {
-    "directives_map": {
-      "default": [
-        "Include @recommended-conf",
-        "Include @crs-setup-conf",
-        "Include @owasp_crs/*.conf",
-        "SecRuleEngine DetectionOnly"
-      ]
-    },
-    "default_directives": "default",
-    "per_authority_directives": {}
-  }
+  "is_blocking_mode": true,
+  "include_owasp_crs": true,
+  "directives": []
 }'
 ```
 
 ### Configure Coraza and the OWASP Core Rule Set
 
-Now you can easily configure the coraza WAF in the `json` config. section. By default it should look something like :
+Now you can easily configure the coraza WAF in the `directives` field.
+
+You can find anything about OWASP core rules in [the documentation of Coraza](https://coraza.io/docs/tutorials/introduction/).
+
+Here, we have the basic setup to apply the OWASP Core Rule Set in detection mode only.
+This means that whenever Coraza detects something suspicious in a request, it will simply log it and allow the request to proceed.
+To enable blocking, set is_blocking_mode to true.
+
+We can also deny access to the `/admin` uri by adding the following directive
 
 ```json
-{
-  "directives_map": {
-    "default": [
-      "Include @recommended-conf",
-      "Include @crs-setup-conf",
-      "Include @owasp_crs/*.conf",
-      "SecRuleEngine DetectionOnly"
-    ]
-  },
-  "default_directives": "default",
-  "per_authority_directives": {}
-}
-```
-
-You can find anything about it in [the documentation of Coraza](https://coraza.io/docs/tutorials/introduction/).
-
-here we have the basic setup to apply the OWASP core rule set in detection mode only. 
-So each time Coraza will find something weird in a request, it will only log it but let the request pass.
- We can enable blocking by setting `"SecRuleEngine On"`
-
-we can also deny access to the `/admin` uri by adding the following directive
-
-```json
-"SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny\""
-```
-
-You can also provide multiple profile of rules in the `directives_map` with different names and use the `per_authority_directives` object to map hostnames to a specific profile.
-
-the corresponding admin api call is the following :
-
-```sh
-curl -X PUT 'http://otoroshi-api.oto.tools:8080/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/coraza-waf-demo' \
-  -u admin-api-apikey-id:admin-api-apikey-secret -H 'Content-Type: application/json' -d '
-{
-  "id": "coraza-waf-demo",
-  "name": "My blocking WAF",
-  "description": "An awesome WAF",
-  "inspect_body": true,
-  "config": {
-    "directives_map": {
-      "default": [
-        "Include @recommended-conf",
-        "Include @crs-setup-conf",
-        "Include @owasp_crs/*.conf",
-        "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny\"",
-        "SecRuleEngine On"
-      ]
-    },
-    "default_directives": "default",
-    "per_authority_directives": {}
-  }
-}'
+"SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny,msg:'ADMIN PATH forbidden'\""
 ```
 
 ### Add the WAF plugin on your route
@@ -179,61 +127,75 @@ Content-Length: 0
 
 ```
 
-if you look at otoroshi logs you will find something like :
-
-```log
-[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell 
-  [file "@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf"] [line "10608"] [id "944150"] [rev ""] 
-  [msg "Potential Remote Command Execution: Log4j / Log4shell"] [data ""] [severity "critical"] 
-  [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] [tag "application-multi"] 
-  [tag "language-java"] [tag "platform-multi"] [tag "attack-rce"] [tag "OWASP_CRS"] 
-  [tag "capec/1000/152/137/6"] [tag "PCI/6.5.2"] [tag "paranoia-level/1"] [hostname "wwwwouf.oto.tools"] 
-  [uri "/"] [unique_id "uTYakrlgMBydVGLodbz"]
-[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning. Inbound Anomaly Score Exceeded (Total Score: 5) 
-  [file "@owasp_crs/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "11029"] [id "949110"] [rev ""] 
-  [msg "Inbound Anomaly Score Exceeded (Total Score: 5)"] 
-  [data ""] [severity "emergency"] [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] 
-  [tag "anomaly-evaluation"] [hostname "wwwwouf.oto.tools"] [uri "/"] [unique_id "uTYakrlgMBydVGLodbz"]
-[info] otoroshi-proxy-wasm - Transaction interrupted tx_id="uTYakrlgMBydVGLodbz" context_id=3 action="deny" phase="http_response_headers"
-...
-[error] otoroshi-proxy-wasm - [client "127.0.0.1"] Coraza: Warning.  [file ""] [line "12914"] 
-  [id "101"] [rev ""] [msg ""] [data ""] [severity "emergency"] [ver ""] [maturity "0"] [accuracy "0"] 
-  [hostname "wwwwouf.oto.tools"] [uri "/admin"] [unique_id "mqXZeMdzRaVAqIiqvHf"]
-[info] otoroshi-proxy-wasm - Transaction interrupted tx_id="mqXZeMdzRaVAqIiqvHf" context_id=2 action="deny" phase="http_request_headers"
-```
-
 ### Generated events
 
 each time Coraza will generate log about vunerability detection, an event will be generated in otoroshi and exporter through the usual data exporter way. The event will look like :
 
 ```json
 {
-  "@id" : "86b647450-3cc7-42a9-aaec-828d261a8c74",
-  "@timestamp" : 1684938211157,
-  "@type" : "CorazaTrailEvent",
-  "@product" : "otoroshi",
-  "@serviceId" : "--",
-  "@service" : "--",
-  "@env" : "prod",
-  "level" : "ERROR",
-  "msg" : "Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell",
-  "fields" : {
-    "hostname" : "wouf.oto.tools",
-    "maturity" : "0",
-    "line" : "10608",
-    "unique_id" : "oNbisKlXWaCdXntaUpq",
-    "tag" : "paranoia-level/1",
-    "data" : "",
-    "accuracy" : "0",
-    "uri" : "/",
-    "rev" : "",
-    "id" : "944150",
-    "client" : "127.0.0.1",
-    "ver" : "OWASP_CRS/4.0.0-rc1",
-    "file" : "@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf",
-    "msg" : "Potential Remote Command Execution: Log4j / Log4shell",
-    "severity" : "critical"
-  },
-  "raw" : "[client \"127.0.0.1\"] Coraza: Warning. Potential Remote Command Execution: Log4j / Log4shell [file \"@owasp_crs/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\"] [line \"10608\"] [id \"944150\"] [rev \"\"] [msg \"Potential Remote Command Execution: Log4j / Log4shell\"] [data \"\"] [severity \"critical\"] [ver \"OWASP_CRS/4.0.0-rc1\"] [maturity \"0\"] [accuracy \"0\"] [tag \"application-multi\"] [tag \"language-java\"] [tag \"platform-multi\"] [tag \"attack-rce\"] [tag \"OWASP_CRS\"] [tag \"capec/1000/152/137/6\"] [tag \"PCI/6.5.2\"] [tag \"paranoia-level/1\"] [hostname \"wouf.oto.tools\"] [uri \"/\"] [unique_id \"oNbisKlXWaCdXntaUpq\"]\n",
+    "@id": "c9a7d86d0-c382-4831-89b8-4bb9c4eb96a6",
+    "@timestamp": 1744964454673,
+    "@type": "CorazaTrailEvent",
+    "@product": "otoroshi",
+    "@serviceId": "--",
+    "@service": "--",
+    "@env": "prod",
+    "route" {},
+    "msg": [
+        {
+            "message": "XSS Attack Detected via libinjection",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 941100,
+                "file": "@owasp_crs/REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+                "severity": 2
+            }
+        },
+        {
+            "message": "XSS Filter - Category 1: Script Tag Vector",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 941110,
+                "file": "@owasp_crs/REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+                "severity": 2
+            }
+        },
+        {
+            "message": "NoScript XSS InjectionChecker: HTML Injection",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 941160,
+                "file": "@owasp_crs/REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+                "severity": 2
+            }
+        },
+        {
+            "message": "Javascript method detected",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 941390,
+                "file": "@owasp_crs/REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+                "severity": 2
+            }
+        },
+        {
+            "message": "SQL Injection Attack Detected via libinjection",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 942100,
+                "file": "@owasp_crs/REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+                "severity": 2
+            }
+        },
+        {
+            "message": "Inbound Anomaly Score Exceeded (Total Score: 25)",
+            "uri": "/admiasdasdn",
+            "rule": {
+                "id": 949110,
+                "file": "@owasp_crs/REQUEST-949-BLOCKING-EVALUATION.conf",
+                "severity": 0
+            }
+        }
+    ]
 }
 ```
